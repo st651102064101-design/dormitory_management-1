@@ -9,8 +9,8 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
-// ดึงข้อมูลข่าว
-$stmt = $pdo->query("SELECT * FROM news ORDER BY news_date DESC, news_id DESC");
+// ดึงข้อมูลข่าว (เรียงตาม ID ใหม่สุดก่อน)
+$stmt = $pdo->query("SELECT * FROM news ORDER BY news_id DESC");
 $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // นับจำนวนข่าว
@@ -229,7 +229,113 @@ foreach ($newsList as $news) {
         font-weight: 600;
         cursor: pointer;
       }
-        .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+      #submitNewsBtn:hover {
+        background: #31A74F !important;
+        opacity: 0.9;
+      }
+      #submitNewsBtn:active {
+        opacity: 0.8;
+      }
+      /* Custom Confirmation Modal */
+      .confirm-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(4px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10000;
+        animation: fadeIn 0.2s ease;
+      }
+      .confirm-modal {
+        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(248, 113, 113, 0.3);
+        border-radius: 16px;
+        padding: 2rem;
+        max-width: 450px;
+        width: 90%;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        animation: slideUp 0.3s ease;
+      }
+      .confirm-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      .confirm-icon {
+        width: 48px;
+        height: 48px;
+        background: linear-gradient(135deg, #dc2626, #991b1b);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .confirm-title {
+        font-size: 1.35rem;
+        font-weight: 700;
+        color: #f87171;
+        margin: 0;
+      }
+      .confirm-message {
+        color: #e2e8f0;
+        font-size: 1rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+      }
+      .confirm-message strong {
+        color: #fca5a5;
+        font-weight: 600;
+      }
+      .confirm-actions {
+        display: flex;
+        gap: 0.75rem;
+      }
+      .confirm-btn {
+        flex: 1;
+        padding: 0.85rem 1.5rem;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      .confirm-btn-delete {
+        background: #dc2626;
+        color: white;
+      }
+      .confirm-btn-delete:hover {
+        background: #b91c1c;
+        transform: translateY(-1px);
+      }
+      .confirm-btn-cancel {
+        background: rgba(148, 163, 184, 0.15);
+        color: #cbd5e1;
+        border: 1px solid rgba(148, 163, 184, 0.3);
+      }
+      .confirm-btn-cancel:hover {
+        background: rgba(148, 163, 184, 0.25);
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slideUp {
+        from { transform: translateY(20px); opacity: 0; }
+        to { transform: translateY(0); opacity: 1; }
+      }
+        .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; margin-right: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
         .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
     </style>
   </head>
@@ -264,11 +370,11 @@ foreach ($newsList as $news) {
             <div class="news-stats">
               <div class="news-stat-card">
                 <h3>ข่าวทั้งหมด</h3>
-                <div class="stat-value"><?php echo number_format($totalNews); ?></div>
+                <div class="stat-value" id="totalNewsCount"><?php echo number_format($totalNews); ?></div>
               </div>
               <div class="news-stat-card">
                 <h3>ข่าวใหม่ (30 วัน)</h3>
-                <div class="stat-value" style="color:#22c55e;"><?php echo number_format($recentNews); ?></div>
+                <div class="stat-value" id="recentNewsCount" style="color:#22c55e;"><?php echo number_format($recentNews); ?></div>
               </div>
             </div>
           </section>
@@ -297,15 +403,18 @@ foreach ($newsList as $news) {
                   </div>
                   <div>
                     <label for="news_by">ผู้เผยแพร่</label>
-                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="ชื่อผู้เผยแพร่" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" />
+                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="ชื่อผู้เผยแพร่" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" readonly style="background: rgba(8,12,24,0.5); cursor: not-allowed; color: rgba(255,255,255,0.6);" />
                   </div>
                 </div>
                 <div class="news-form-actions">
-                  <button type="submit" id="submitNewsBtn" style="flex:2; background: #34C759; color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
+                  <button type="submit" id="submitNewsBtn" style="flex:1; background: #34C759; color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     เผยแพร่ข่าว
                   </button>
-                  <button type="reset" class="animate-ui-action-btn delete" style="flex:1;">ล้างข้อมูล</button>
+                  <button type="reset" style="flex:1; background: #FF3B30; color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    ล้างข้อมูล
+                  </button>
                 </div>
               </div>
             </form>
@@ -326,9 +435,14 @@ foreach ($newsList as $news) {
                 <p>เริ่มต้นเพิ่มข่าวใหม่จากฟอร์มด้านบน</p>
               </div>
             <?php else: ?>
-              <div style="margin-top:1rem;">
-                <?php foreach ($newsList as $news): ?>
-                  <div class="news-card">
+              <div style="margin-top:1rem;" id="newsContainer">
+                <?php 
+                $displayLimit = 6;
+                $totalNews = count($newsList);
+                foreach ($newsList as $index => $news): 
+                  $isHidden = $index >= $displayLimit ? ' style="display:none;"' : '';
+                ?>
+                  <div class="news-card news-item" data-news-id="<?php echo $news['news_id']; ?>"<?php echo $isHidden; ?>>
                     <div class="news-card-header">
                       <h3 class="news-card-title"><?php echo htmlspecialchars($news['news_title']); ?></h3>
                     </div>
@@ -354,6 +468,16 @@ foreach ($newsList as $news) {
                   </div>
                 <?php endforeach; ?>
               </div>
+              <?php if ($totalNews > $displayLimit): ?>
+                <div style="text-align:center; margin-top:1.5rem;">
+                  <button type="button" id="showMoreBtn" onclick="showMoreNews()" style="background:#007AFF; color:#fff; border:none; border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.3s;">
+                    ดูเพิ่มเติม (<?php echo $totalNews - $displayLimit; ?> รายการ)
+                  </button>
+                  <button type="button" id="showLessBtn" onclick="showLessNews()" style="display:none; background:#FF9500; color:#fff; border:none; border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.3s;">
+                    แสดงน้อยลง
+                  </button>
+                </div>
+              <?php endif; ?>
             <?php endif; ?>
           </section>
         </div>
@@ -401,6 +525,35 @@ foreach ($newsList as $news) {
     <script>
       const newsData = <?php echo json_encode($newsList); ?>;
       
+      // ฟังก์ชันอัพเดทสถิติข่าว
+      function updateStats(action) {
+        const totalEl = document.getElementById('totalNewsCount');
+        const recentEl = document.getElementById('recentNewsCount');
+        
+        if (!totalEl || !recentEl) return;
+        
+        let totalCount = parseInt(totalEl.textContent.replace(/,/g, ''));
+        let recentCount = parseInt(recentEl.textContent.replace(/,/g, ''));
+        
+        if (action === 'add') {
+          totalCount++;
+          recentCount++; // ข่าวใหม่ที่เพิ่มจะอยู่ในช่วง 30 วันเสมอ
+        } else if (action === 'delete') {
+          totalCount = Math.max(0, totalCount - 1);
+          recentCount = Math.max(0, recentCount - 1); // สมมุติว่าเป็นข่าวใหม่
+        }
+        
+        totalEl.textContent = totalCount.toLocaleString();
+        recentEl.textContent = recentCount.toLocaleString();
+        
+        // เอฟเฟกต์เล็กๆ
+        [totalEl, recentEl].forEach(el => {
+          el.style.transition = 'transform 0.3s ease';
+          el.style.transform = 'scale(1.15)';
+          setTimeout(() => { el.style.transform = 'scale(1)'; }, 300);
+        });
+      }
+      
       // Hard block animate-ui modal for edit buttons on this page
       document.addEventListener('DOMContentLoaded', () => {
         // Disable animate-ui openModal globally on this page
@@ -426,18 +579,61 @@ foreach ($newsList as $news) {
         const newsForm = document.getElementById('newsForm');
         
         if (submitBtn && newsForm) {
-          // Prevent modal interference by stopping propagation
+          // Prevent default form submission and handle via AJAX
           submitBtn.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            // Submit form directly if valid
-            if (newsForm.checkValidity()) {
-              newsForm.submit();
-            } else {
+            if (!newsForm.checkValidity()) {
               newsForm.reportValidity();
+              return false;
             }
+            
+            // Collect form data
+            const formData = new FormData(newsForm);
+            
+            // Submit via AJAX
+            fetch('../Manage/process_news.php', {
+              method: 'POST',
+              body: formData,
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+              }
+            })
+            .then(response => response.json())
+            .then(result => {
+              if (result.success) {
+                showSuccessToast(result.message || 'เผยแพร่ข่าวสำเร็จ');
+                
+                // เก็บข้อมูลก่อน reset
+                const newsInfo = {
+                  id: result.news_id,
+                  title: newsForm.querySelector('[name="news_title"]').value,
+                  details: newsForm.querySelector('[name="news_details"]').value,
+                  date: newsForm.querySelector('[name="news_date"]').value,
+                  by: newsForm.querySelector('[name="news_by"]').value
+                };
+                
+                newsForm.reset();
+                
+                // คืนค่า news_by กลับมาหลัง reset
+                newsForm.querySelector('[name="news_by"]').value = newsInfo.by;
+                
+                // เพิ่มข่าวใหม่ลงใน DOM แทนการ reload
+                if (result.news_id) {
+                  addNewsToList(newsInfo);
+                  updateStats('add'); // อัพเดทสถิติ
+                }
+              } else {
+                showErrorToast(result.error || 'เกิดข้อผิดพลาดในการเผยแพร่ข่าว');
+              }
+            })
+            .catch(error => {
+              console.error(error);
+              showErrorToast('เกิดข้อผิดพลาดในการส่งข้อมูล');
+            });
+            
             return false;
           }, true); // Capture phase
         }
@@ -467,27 +663,199 @@ foreach ($newsList as $news) {
         document.getElementById('editForm').reset();
       }
       
-      function deleteNews(newsId, newsTitle) {
-        if (!confirm(`ยืนยันการลบข่าว "${newsTitle}"?`)) return;
+      // Custom Confirmation Dialog
+      function showConfirmDialog(title, message) {
+        return new Promise((resolve) => {
+          const overlay = document.createElement('div');
+          overlay.className = 'confirm-overlay';
+          overlay.innerHTML = `
+            <div class="confirm-modal">
+              <div class="confirm-header">
+                <div class="confirm-icon">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <line x1="12" y1="8" x2="12" y2="12"/>
+                    <line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                </div>
+                <h3 class="confirm-title">${escapeHtml(title)}</h3>
+              </div>
+              <div class="confirm-message">${message}</div>
+              <div class="confirm-actions">
+                <button class="confirm-btn confirm-btn-cancel" data-action="cancel">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"/>
+                    <line x1="6" y1="6" x2="18" y2="18"/>
+                  </svg>
+                  ยกเลิก
+                </button>
+                <button class="confirm-btn confirm-btn-delete" data-action="confirm">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="3 6 5 6 21 6"/>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                  </svg>
+                  ยืนยันลบ
+                </button>
+              </div>
+            </div>
+          `;
+          
+          overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) {
+              overlay.remove();
+              resolve(false);
+            }
+          });
+          
+          overlay.querySelectorAll('[data-action]').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const confirmed = btn.dataset.action === 'confirm';
+              overlay.remove();
+              resolve(confirmed);
+            });
+          });
+          
+          document.body.appendChild(overlay);
+        });
+      }
+      
+      async function deleteNews(newsId, newsTitle) {
+        const confirmed = await showConfirmDialog(
+          'ยืนยันการลบข่าว',
+          `คุณต้องการลบข่าว <strong>"${escapeHtml(newsTitle)}"</strong> หรือไม่?<br><br>การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+        );
         
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '../Manage/delete_news.php';
+        if (!confirmed) return;
         
-        const idField = document.createElement('input');
-        idField.type = 'hidden';
-        idField.name = 'news_id';
-        idField.value = newsId;
+        try {
+          const formData = new FormData();
+          formData.append('news_id', newsId);
+          
+          const response = await fetch('../Manage/delete_news.php', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            showSuccessToast(result.message);
+            // ลบ card ออกจาก DOM
+            const newsCard = document.querySelector(`[data-news-id="${newsId}"]`);
+            if (newsCard) {
+              newsCard.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+              newsCard.style.opacity = '0';
+              newsCard.style.transform = 'scale(0.9)';
+              setTimeout(() => {
+                newsCard.remove();
+                updateStats('delete'); // อัพเดทสถิติหลังลบ card
+              }, 300);
+            }
+          } else {
+            showErrorToast(result.error || 'เกิดข้อผิดพลาดในการลบข่าว');
+          }
+        } catch (error) {
+          console.error('Delete error:', error);
+          showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        }
+      }
+      
+      // ฟังก์ชันเพิ่มข่าวใหม่ลงใน DOM
+      function addNewsToList(newsInfo) {
+        const { id: newsId, title, details, date, by } = newsInfo;
         
-        form.appendChild(idField);
-        document.body.appendChild(form);
-        form.submit();
+        // เพิ่มข้อมูลลงใน newsData array เพื่อให้ editNews ใช้ได้
+        newsData.unshift({
+          news_id: newsId,
+          news_title: title,
+          news_details: details,
+          news_date: date,
+          news_by: by
+        });
+        
+        // Format date เป็น dd/mm/yyyy
+        const dateObj = new Date(date);
+        const formattedDate = String(dateObj.getDate()).padStart(2, '0') + '/' + 
+                             String(dateObj.getMonth() + 1).padStart(2, '0') + '/' + 
+                             dateObj.getFullYear();
+        
+        const newsHTML = `
+          <div class="news-card news-item" data-news-id="${newsId}" style="opacity: 0; transform: scale(0.95);">
+            <div class="news-card-header">
+              <h3 class="news-card-title">${escapeHtml(title)}</h3>
+            </div>
+            <div class="news-card-meta">
+              <span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                ${formattedDate}
+              </span>
+              ${by ? `<span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                ${escapeHtml(by)}
+              </span>` : ''}
+            </div>
+            <div class="news-card-content">
+              <p>${escapeHtml(details)}</p>
+            </div>
+            <div class="news-card-actions">
+              <button type="button" class="animate-ui-action-btn edit" onclick="editNews(${newsId})">แก้ไข</button>
+              <button type="button" class="animate-ui-action-btn delete" onclick="deleteNews(${newsId}, '${escapeHtml(title).replace(/'/g, "\\'")}')">ลบ</button>
+            </div>
+          </div>
+        `;
+        
+        const newsContainer = document.getElementById('newsContainer');
+        if (newsContainer) {
+          // เพิ่มข่าวใหม่ที่ตำแหน่งแรกสุด (บนสุด)
+          newsContainer.insertAdjacentHTML('afterbegin', newsHTML);
+          
+          // Animate fade in
+          const newCard = newsContainer.querySelector(`[data-news-id="${newsId}"]`);
+          setTimeout(() => {
+            newCard.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+            newCard.style.opacity = '1';
+            newCard.style.transform = 'scale(1)';
+          }, 10);
+        }
+      }
+      
+      // Helper function เพื่อ escape HTML
+      function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
       }
       
       // Close modal when clicking outside
       document.getElementById('editModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeEditModal();
       });
+
+      // Show more/less news functions
+      function showMoreNews() {
+        const hiddenItems = document.querySelectorAll('.news-item[style*="display:none"]');
+        hiddenItems.forEach(item => {
+          item.style.display = '';
+        });
+        document.getElementById('showMoreBtn').style.display = 'none';
+        document.getElementById('showLessBtn').style.display = 'inline-block';
+      }
+
+      function showLessNews() {
+        const allItems = document.querySelectorAll('.news-item');
+        allItems.forEach((item, index) => {
+          if (index >= 6) {
+            item.style.display = 'none';
+          }
+        });
+        document.getElementById('showMoreBtn').style.display = 'inline-block';
+        document.getElementById('showLessBtn').style.display = 'none';
+        // Scroll to news section
+        document.getElementById('newsContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
     </script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
   </body>
