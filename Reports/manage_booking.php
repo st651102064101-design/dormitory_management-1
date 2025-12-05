@@ -54,7 +54,7 @@ $statusMap = [
         gap: 1.5rem;
         margin-top: 1rem;
       }
-      .rooms-grid.list-view { display: flex; flex-direction: column; gap: 0.65rem; }
+      .rooms-grid.list-view { display: flex; flex-direction: column; gap: 0.5rem; }
       .view-toggle { display: inline-flex; gap: 0.5rem; margin-top: 1rem; }
       .view-toggle button {
         padding: 0.5rem 0.9rem;
@@ -72,21 +72,20 @@ $statusMap = [
       }
       .room-card {
         position: relative;
-        border: 1px solid rgba(255,255,255,0.08);
         border-radius: 12px;
         background: transparent;
         box-shadow: 0 12px 30px rgba(0,0,0,0.35);
         color: #f5f8ff;
         perspective: 1200px;
-        min-height: 360px;
+        min-height: 440px;
       }
-      .rooms-grid.list-view .room-card { min-height: 260px; display: flex; align-items: stretch; overflow: hidden; }
+      .rooms-grid.list-view .room-card { min-height: auto; }
       .room-card-inner {
         position: relative;
         width: 100%;
         height: 100%;
         border-radius: 12px;
-        transition: transform 0.35s ease;
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
         transform-style: preserve-3d;
       }
       .rooms-grid.list-view .room-card-inner { height: auto; }
@@ -94,6 +93,7 @@ $statusMap = [
         transform: rotateY(180deg);
         box-shadow: 0 16px 36px rgba(0,0,0,0.45);
         border-color: rgba(96,165,250,0.5);
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
       }
       .rooms-grid.list-view .room-card:hover .room-card-inner,
       .rooms-grid.list-view .room-card .room-card-inner {
@@ -111,9 +111,11 @@ $statusMap = [
         justify-content: space-between;
         gap: 0.6rem;
         border: 1px solid rgba(255,255,255,0.05);
+        overflow: hidden;
       }
       .room-card-face.front { padding-bottom: 1.25rem; }
-      .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 180px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 1.25rem; align-items: stretch; }
+      .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 220px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 0.6rem; align-items: stretch; }
+      .rooms-grid.list-view .room-price { font-size: 1.1rem; line-height: 1.2; margin: 0.5rem 0; }
       .room-card-face.back {
         transform: rotateY(180deg);
         align-items: flex-start;
@@ -127,18 +129,18 @@ $statusMap = [
         margin-bottom: 0.75rem;
       }
       .room-face-body { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
-      .rooms-grid.list-view .room-face-body { flex-direction: row; align-items: center; gap: 1.25rem; }
+      .rooms-grid.list-view .room-face-body { flex-direction: row; align-items: center; gap: 0.5rem; }
       .room-face-details { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 0; }
-      .rooms-grid.list-view .room-face-details { width: auto; }
+      .rooms-grid.list-view .room-face-details { width: auto; gap: 0.2rem; }
       .room-number { font-size: 1.5rem; font-weight: bold; color: #f5f8ff; }
       .room-status { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: #4caf50; color: white; }
-      .room-info { margin: 0.5rem 0; color: rgba(255,255,255,0.75); }
-      .room-info-item { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.95rem; }
+      .room-info { margin: 0.2rem 0; color: rgba(255,255,255,0.75); font-size: 0.9rem; }
+      .room-info-item { display: flex; justify-content: space-between; padding: 0.1rem 0; font-size: 0.9rem; }
       .room-price { font-size: 1.25rem; font-weight: bold; color: #60a5fa; margin: 0.75rem 0; }
       .room-image-container {
-        margin: 0.75rem 0;
+        margin: 0.25rem 0;
         aspect-ratio: 4 / 3;
-        min-height: 200px;
+        min-height: 250px;
         overflow: hidden;
         border-radius: 10px;
         background: linear-gradient(135deg, rgba(30,41,59,0.85), rgba(15,23,42,0.9));
@@ -146,10 +148,10 @@ $statusMap = [
         align-items: center;
         justify-content: center;
       }
-      .rooms-grid.list-view .room-image-container { margin: 0; width: 280px; max-width: 320px; min-height: 180px; flex-shrink: 0; }
+      .rooms-grid.list-view .room-image-container { margin: 0; width: 128px; max-width: 150px; min-height: 88px; flex-shrink: 0; }
       .room-image-container img { width: 100%; height: 100%; object-fit: cover; }
       .book-btn-front { display: none; }
-      .rooms-grid.list-view .book-btn-front { display: inline-flex; width: 160px; justify-content: center; }
+      .rooms-grid.list-view .book-btn-front { display: inline-flex; width: 140px; justify-content: center; margin-left: auto; flex-shrink: 0; }
       .rooms-grid.list-view .room-card-face.front { position: relative; display: flex; align-items: stretch; }
       .rooms-grid.list-view .room-info-item { justify-content: flex-start; gap: 0.5rem; }
       .book-btn {
@@ -186,7 +188,6 @@ $statusMap = [
         border-radius: 16px;
         max-width: 520px;
         width: min(520px, 95vw);
-        max-height: 90vh;
         overflow-y: auto;
         color: #f5f8ff;
       }
@@ -285,6 +286,7 @@ $statusMap = [
                       <div class="room-card-face front">
                         <div class="room-card-header">
                           <span class="room-number">ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?></span>
+                          <span class="room-price-header">฿<?php echo number_format((int)$room['type_price']); ?> / เดือน</span>
                           <span class="room-status">ว่าง</span>
                         </div>
                         <div class="room-face-body">
@@ -302,9 +304,30 @@ $statusMap = [
                                 <span><strong><?php echo htmlspecialchars($room['type_name']); ?></strong></span>
                               </div>
                             </div>
-                            <div class="room-price">
-                              ฿<?php echo number_format((int)$room['type_price']); ?> / เดือน
-                            </div>
+                            <!-- Room price moved to header -->
+                                <style>
+                                  .room-price-header {
+                                    font-size: 1.1rem;
+                                    font-weight: bold;
+                                    color: #60a5fa;
+                                    margin-left: 0.5rem;
+                                    margin-right: auto;
+                                    background: rgba(15,23,42,0.15);
+                                    border-radius: 8px;
+                                    padding: 0.15em 0.7em;
+                                    display: inline-block;
+                                    vertical-align: middle;
+                                  }
+                                  .room-card-header {
+                                    gap: 0.5rem;
+                                  }
+                                  @media (max-width: 768px) {
+                                    .room-price-header {
+                                      font-size: 1rem;
+                                      padding: 0.1em 0.5em;
+                                    }
+                                  }
+                                </style>
                             <div class="room-info list-book-btn">
                               <button type="button" class="book-btn book-btn-front"
                                       data-room-id="<?php echo $room['room_id']; ?>"
