@@ -1,15 +1,16 @@
 <?php
 declare(strict_types=1);
 session_start();
+header('Content-Type: application/json');
 
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ../Login.php');
-    exit;
+    http_response_code(401);
+    die(json_encode(['success' => false, 'error' => 'ไม่ได้รับอนุญาต']));
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../Reports/manage_expenses.php');
-    exit;
+    http_response_code(405);
+    die(json_encode(['success' => false, 'error' => 'Method not allowed']));
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
@@ -25,9 +26,7 @@ try {
     $rate_water = isset($_POST['rate_water']) ? (float)$_POST['rate_water'] : 0;
 
     if ($ctr_id <= 0 || $exp_month === '') {
-        $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
-        header('Location: ../Reports/manage_expenses.php');
-        exit;
+        die(json_encode(['success' => false, 'error' => 'กรุณากรอกข้อมูลให้ครบถ้วน']));
     }
 
     // แปลง month input (YYYY-MM) เป็น date (YYYY-MM-01)
@@ -45,9 +44,7 @@ try {
     $contract = $ctrStmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$contract) {
-        $_SESSION['error'] = 'ไม่พบข้อมูลสัญญา';
-        header('Location: ../Reports/manage_expenses.php');
-        exit;
+        die(json_encode(['success' => false, 'error' => 'ไม่พบข้อมูลสัญญา']));
     }
 
     $room_price = (int)($contract['type_price'] ?? 0);
@@ -61,9 +58,7 @@ try {
     $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM expense WHERE ctr_id = ? AND DATE_FORMAT(exp_month, '%Y-%m') = ?");
     $checkStmt->execute([$ctr_id, $exp_month]);
     if ((int)$checkStmt->fetchColumn() > 0) {
-        $_SESSION['error'] = 'มีการบันทึกค่าใช้จ่ายของเดือนนี้แล้ว';
-        header('Location: ../Reports/manage_expenses.php');
-        exit;
+        die(json_encode(['success' => false, 'error' => 'มีการบันทึกค่าใช้จ่ายของเดือนนี้แล้ว']));
     }
 
     // บันทึกข้อมูล (สถานะ 0 = ยังไม่จ่าย)
@@ -85,11 +80,20 @@ try {
         $ctr_id
     ]);
 
-    $_SESSION['success'] = 'เพิ่มค่าใช้จ่ายเรียบร้อยแล้ว (ยอดรวม ฿' . number_format($exp_total) . ')';
-    header('Location: ../Reports/manage_expenses.php');
+    echo json_encode([
+        'success' => true,
+        'message' => 'เพิ่มค่าใช้จ่ายเรียบร้อยแล้ว (ยอดรวม ฿' . number_format($exp_total) . ')'
+    ]);
     exit;
 } catch (PDOException $e) {
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
-    header('Location: ../Reports/manage_expenses.php');
+    http_response_code(500);
+    error_log('Process Expense Error: ' . $e->getMessage() . ' | Code: ' . $e->getCode());
+    echo json_encode(['success' => false, 'error' => 'เกิดข้อผิดพลาดในฐานข้อมูล: ' . $e->getMessage()]);
+    exit;
+} catch (Exception $e) {
+    http_response_code(500);
+    error_log('Process Expense Error: ' . $e->getMessage());
+    echo json_encode(['success' => false, 'error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()]);
     exit;
 }
+?>
