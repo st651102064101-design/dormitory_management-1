@@ -1,13 +1,22 @@
 <?php
 declare(strict_types=1);
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
 session_start();
 
+// Log เพื่อ debug
+error_log('process_news.php called');
+error_log('Session admin_username: ' . ($_SESSION['admin_username'] ?? 'NOT SET'));
+
 if (empty($_SESSION['admin_username'])) {
+    error_log('No admin session - redirecting to login');
+    $_SESSION['error'] = 'กรุณาเข้าสู่ระบบก่อน';
     header('Location: ../Login.php');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    error_log('Not POST request - redirecting');
     header('Location: ../Reports/manage_news.php');
     exit;
 }
@@ -23,19 +32,36 @@ try {
     $news_by = trim($_POST['news_by'] ?? '');
 
     if ($news_title === '' || $news_details === '' || $news_date === '') {
+        error_log('Validation failed - missing required fields');
         $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
         header('Location: ../Reports/manage_news.php');
         exit;
     }
 
+    error_log('Inserting news: ' . $news_title);
     $insert = $pdo->prepare("INSERT INTO news (news_title, news_details, news_date, news_by) VALUES (?, ?, ?, ?)");
-    $insert->execute([$news_title, $news_details, $news_date, $news_by === '' ? null : $news_by]);
+    $result = $insert->execute([$news_title, $news_details, $news_date, $news_by === '' ? null : $news_by]);
+    
+    $lastId = $pdo->lastInsertId();
+    error_log('Insert result: ' . ($result ? 'success' : 'failed') . ', Last ID: ' . $lastId);
 
-    $_SESSION['success'] = 'เผยแพร่ข่าวเรียบร้อยแล้ว';
+    if ($result && $lastId > 0) {
+        $_SESSION['success'] = 'เผยแพร่ข่าวเรียบร้อยแล้ว (ID: ' . $lastId . ')';
+    } else {
+        $_SESSION['error'] = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
+    }
+    
     header('Location: ../Reports/manage_news.php');
     exit;
 } catch (PDOException $e) {
+    error_log('PDO Exception in process_news.php: ' . $e->getMessage());
+    error_log('Stack trace: ' . $e->getTraceAsString());
     $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    header('Location: ../Reports/manage_news.php');
+    exit;
+} catch (Exception $e) {
+    error_log('General Exception in process_news.php: ' . $e->getMessage());
+    $_SESSION['error'] = 'เกิดข้อผิดพลาดของระบบ: ' . $e->getMessage();
     header('Location: ../Reports/manage_news.php');
     exit;
 }

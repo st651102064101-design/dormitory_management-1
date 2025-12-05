@@ -496,80 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     console.error(error);
                 }
             } else if (title.includes('เพิ่ม') && /ข่าว/i.test(title)) {
-                const formData = new FormData(event.target);
-                try {
-                    const response = await fetch('../Manage/add_news.php', {
-                        method: 'POST',
-                        body: formData
-                    });
-                    const result = await response.json();
-                    if (result.success) {
-                        showToast(result.message || 'เพิ่มข่าวเรียบร้อย', 1400);
-                        closeModal();
-                        // If we're on the dashboard with a small news report, refresh that panel instead of redirecting
-                        const newsPanel = document.getElementById('report-news-content');
-                        if (newsPanel) {
-                            try {
-                                const res = await fetch('manage_news.php');
-                                const html = await res.text();
-                                const parser = new DOMParser();
-                                const doc = parser.parseFromString(html, 'text/html');
-                                const table = doc.querySelector('.report-table');
-                                newsPanel.innerHTML = table ? table.outerHTML : '<p>ไม่พบข้อมูล</p>';
-                            } catch (e) {
-                                console.error('Failed to refresh news panel', e);
-                                setTimeout(() => { window.location.href = 'manage_news.php'; }, 400);
-                            }
-                            return;
-                        }
-
-                        // If currently on manage_news.php and table exists, prepend the new row to avoid full reload
-                        const newsTable = document.getElementById('table-news');
-                        if (newsTable) {
-                            try {
-                                const tbody = newsTable.tBodies[0] || newsTable.querySelector('tbody');
-                                if (tbody) {
-                                    const tr = document.createElement('tr');
-                                    const dateCell = document.createElement('td'); dateCell.textContent = (formData.get('วันที่') || '');
-                                    const titleCell = document.createElement('td'); titleCell.textContent = (formData.get('หัวข้อ') || '');
-                                    const detailsCell = document.createElement('td'); detailsCell.textContent = (formData.get('รายละเอียด') || '');
-                                    const byCell = document.createElement('td'); byCell.textContent = (result.by || '');
-                                    const actionCell = document.createElement('td'); actionCell.className = 'crud-column';
-                                    const editBtn = document.createElement('button');
-                                    editBtn.type = 'button'; editBtn.className = 'animate-ui-action-btn edit crud-action';
-                                    editBtn.dataset.entity = `ข่าว ${result.id}`;
-                                    editBtn.dataset.fields = 'วันที่,หัวข้อ,รายละเอียด';
-                                    editBtn.dataset.newsId = result.id;
-                                    editBtn.dataset.newsDate = formData.get('วันที่') || '';
-                                    editBtn.dataset.newsTitle = formData.get('หัวข้อ') || '';
-                                    editBtn.dataset.newsDetails = formData.get('รายละเอียด') || '';
-                                    editBtn.textContent = 'แก้ไข';
-                                    const delBtn = document.createElement('button');
-                                    delBtn.type = 'button'; delBtn.className = 'animate-ui-action-btn delete crud-action';
-                                    delBtn.dataset.entity = `ข่าว ${result.id}`;
-                                    delBtn.dataset.itemId = result.id;
-                                    delBtn.dataset.deleteEndpoint = '../Manage/delete_news.php';
-                                    delBtn.textContent = 'ลบ';
-                                    actionCell.appendChild(editBtn); actionCell.appendChild(delBtn);
-                                    tr.appendChild(dateCell); tr.appendChild(titleCell); tr.appendChild(detailsCell); tr.appendChild(byCell); tr.appendChild(actionCell);
-                                    tbody.insertBefore(tr, tbody.firstChild);
-                                }
-                            } catch (e) {
-                                console.error('Failed to insert new news row', e);
-                                setTimeout(() => { window.location.href = 'manage_news.php'; }, 400);
-                            }
-                            return;
-                        }
-
-                        // Default: navigate to full list page
-                        setTimeout(() => { window.location.href = 'manage_news.php'; }, 400);
-                    } else {
-                        showToast(result.error || 'เกิดข้อผิดพลาดในการเพิ่มข่าว', 3000);
-                    }
-                } catch (error) {
-                    showToast('เกิดข้อผิดพลาดในการส่งข้อมูล', 3000);
-                    console.error(error);
-                }
+                // Skip this block - let form submit naturally
+                return;
             } else if (title.includes('แก้ไข ห้องพัก')) {
                 const formData = new FormData(event.target);
                 try {
@@ -733,7 +661,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 (button?.dataset.allowSubmit === 'true') ||
                 (button?.dataset.animateUiSkip === 'true') ||
                 (button?.dataset.noModal === 'true') ||
-                (button?.getAttribute('type') === 'submit')
+                (button?.getAttribute('type') === 'submit') ||
+                (button?.closest('form')?.id === 'newsForm')
             ) {
                 return; // let native submit happen
             }
@@ -743,6 +672,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         if (target.matches('.animate-ui-edit-btn, .animate-ui-edit-btn *, .animate-ui-action-btn.edit, .animate-ui-action-btn.edit *')) {
             const button = target.closest('.animate-ui-edit-btn') || target.closest('.animate-ui-action-btn.edit');
+            
+            // If page has custom edit modal disabled flag, skip animate-ui modal entirely
+            if (document.body?.dataset?.disableEditModal === 'true') {
+                return;
+            }
+            
+            // If this is an edit button tied to a room (data-room-id), skip animate-ui modal
+            if (button) {
+                const roomId = button.dataset.roomId || button.getAttribute('data-room-id');
+                if (roomId) {
+                    return;
+                }
+            }
+            
+            // Skip if button has explicit opt-out flags
+            if (
+                button?.dataset?.noModal === 'true' ||
+                button?.dataset?.animateUiSkip === 'true' ||
+                button?.dataset?.allowSubmit === 'true'
+            ) {
+                return;
+            }
+            
+            // Only open animate-ui modal for other edit buttons (not rooms)
             const entity = button?.dataset.entity || 'ข้อมูลที่เลือก';
             const fields = (button?.dataset.fields || '').split(',').map(f => f.trim()).filter(Boolean);
             try { console.debug('edit button clicked', { entity, fields, dataset: button?.dataset }); } catch (e) {}

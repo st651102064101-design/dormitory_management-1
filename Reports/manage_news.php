@@ -32,6 +32,8 @@ foreach ($newsList as $news) {
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <style>
+        /* Force-hide animate-ui modal overlays on this page */
+        .animate-ui-modal, .animate-ui-modal-overlay { display: none !important; visibility: hidden !important; opacity: 0 !important; }
       .news-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -150,7 +152,7 @@ foreach ($newsList as $news) {
       }
     </style>
   </head>
-  <body class="reports-page">
+  <body class="reports-page" data-disable-edit-modal="true">
     <div class="app-shell">
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main">
@@ -191,7 +193,7 @@ foreach ($newsList as $news) {
                 <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">เผยแพร่ข่าวสารและประกาศสำคัญ</p>
               </div>
             </div>
-            <form action="../Manage/process_news.php" method="post">
+            <form action="../Manage/process_news.php" method="post" id="newsForm">
               <div class="news-form">
                 <div class="news-form-group">
                   <label for="news_title">หัวข้อข่าว <span style="color:#f87171;">*</span></label>
@@ -212,7 +214,7 @@ foreach ($newsList as $news) {
                   </div>
                 </div>
                 <div class="news-form-actions">
-                  <button type="submit" class="animate-ui-add-btn" style="flex:2;">
+                  <button type="submit" id="submitNewsBtn" style="flex:2; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     เผยแพร่ข่าว
                   </button>
@@ -259,7 +261,7 @@ foreach ($newsList as $news) {
                       <?php echo nl2br(htmlspecialchars($news['news_details'])); ?>
                     </div>
                     <div class="news-card-actions">
-                      <button type="button" class="animate-ui-action-btn edit" onclick="editNews(<?php echo $news['news_id']; ?>)">แก้ไข</button>
+                      <button type="button" class="animate-ui-action-btn edit" data-no-modal="true" data-animate-ui-skip="true" data-news-id="<?php echo $news['news_id']; ?>" onclick="editNews(<?php echo $news['news_id']; ?>)">แก้ไข</button>
                       <button type="button" class="animate-ui-action-btn delete" onclick="deleteNews(<?php echo $news['news_id']; ?>, '<?php echo htmlspecialchars(addslashes($news['news_title'])); ?>')">ลบ</button>
                     </div>
                   </div>
@@ -272,7 +274,7 @@ foreach ($newsList as $news) {
     </div>
 
     <!-- Edit Modal -->
-    <div class="booking-modal" id="editModal" style="display:none;">
+    <div class="booking-modal" id="editModal" style="display:none; z-index: 20000;">
       <div class="booking-modal-content" style="max-width:600px;">
         <h2>แก้ไขข่าวประชาสัมพันธ์</h2>
         <form id="editForm" method="POST" action="../Manage/update_news.php">
@@ -312,17 +314,71 @@ foreach ($newsList as $news) {
     <script>
       const newsData = <?php echo json_encode($newsList); ?>;
       
+      // Hard block animate-ui modal for edit buttons on this page
+      document.addEventListener('DOMContentLoaded', () => {
+        // Disable animate-ui openModal globally on this page
+        window.openModal = function() { return; };
+
+        // Capture-phase delegation: open our edit modal and stop animate-ui
+        document.body.addEventListener('click', (e) => {
+          const editBtn = e.target.closest('.animate-ui-action-btn.edit');
+          if (editBtn) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            const id = editBtn.dataset.newsId || editBtn.getAttribute('data-news-id');
+            if (id) {
+              editNews(id);
+            }
+          }
+        }, true);
+      });
+
+      // Block animate-ui from intercepting the submit button
+      document.addEventListener('DOMContentLoaded', function() {
+        const submitBtn = document.getElementById('submitNewsBtn');
+        const newsForm = document.getElementById('newsForm');
+        
+        if (submitBtn && newsForm) {
+          // Use capture phase to run before animate-ui's bubble phase handler
+          submitBtn.addEventListener('click', function(e) {
+            e.stopImmediatePropagation(); // Stop ALL other handlers
+          }, true); // true = capture phase
+          
+          // Ensure form submission works
+          submitBtn.addEventListener('click', function(e) {
+            if (newsForm.checkValidity()) {
+              newsForm.submit();
+            } else {
+              newsForm.reportValidity();
+            }
+          });
+        }
+      });
+      
       function editNews(newsId) {
         const news = newsData.find(n => n.news_id == newsId);
-        if (!news) return;
-        
+        console.log('เปิด modal แก้ไขข่าว', newsId, news);
+        if (!news) {
+          alert('ไม่พบข้อมูลข่าว');
+          return;
+        }
         document.getElementById('edit_news_id').value = news.news_id;
         document.getElementById('edit_news_title').value = news.news_title;
         document.getElementById('edit_news_details').value = news.news_details;
         document.getElementById('edit_news_date').value = news.news_date;
         document.getElementById('edit_news_by').value = news.news_by || '';
-        
-        document.getElementById('editModal').style.display = 'flex';
+        // ปรับ style modal ให้แสดง overlay
+        const modal = document.getElementById('editModal');
+        modal.style.display = 'flex';
+        modal.style.alignItems = 'center';
+        modal.style.justifyContent = 'center';
+        modal.style.background = 'rgba(0,0,0,0.45)';
+        modal.style.position = 'fixed';
+        modal.style.top = '0';
+        modal.style.left = '0';
+        modal.style.width = '100vw';
+        modal.style.height = '100vh';
+        modal.style.zIndex = '20000';
       }
       
       function closeEditModal() {

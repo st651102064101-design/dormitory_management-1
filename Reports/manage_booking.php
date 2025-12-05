@@ -13,7 +13,7 @@ $stmt = $pdo->query("
     SELECT r.*, rt.type_name, rt.type_price 
     FROM room r 
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id 
-    WHERE r.room_status = '0'
+    WHERE r.room_status = '1'
     ORDER BY r.room_number
 ");
 $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -54,7 +54,7 @@ $statusMap = [
         gap: 1.5rem;
         margin-top: 1rem;
       }
-      .rooms-grid.list-view { display: flex; flex-direction: column; gap: 0.5rem; }
+      .rooms-grid.list-view { display: flex; flex-direction: column; gap: 1rem; }
       .view-toggle { display: inline-flex; gap: 0.5rem; margin-top: 1rem; }
       .view-toggle button {
         padding: 0.5rem 0.9rem;
@@ -118,8 +118,8 @@ $statusMap = [
         overflow: hidden;
       }
       .room-card-face.front { padding-bottom: 1.25rem; }
-      .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 220px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 0.6rem; align-items: stretch; }
-      .rooms-grid.list-view .room-price { font-size: 1.1rem; line-height: 1.2; margin: 0.5rem 0; }
+      .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 100px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 1.2rem; align-items: center; padding: 1rem 1.5rem; }
+      .rooms-grid.list-view .room-price { font-size: 1rem; line-height: 1.2; margin: 0.3rem 0; }
       .room-card-face.back {
         transform: rotateY(180deg);
         align-items: flex-start;
@@ -133,8 +133,9 @@ $statusMap = [
         margin-bottom: 0.75rem;
       }
       .room-face-body { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
-      .rooms-grid.list-view .room-face-body { flex-direction: row; align-items: center; gap: 0.5rem; }
+      .rooms-grid.list-view .room-face-body { flex-direction: row; align-items: center; gap: 1.5rem; flex: 1; }
       .room-face-details { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 0; }
+      .rooms-grid.list-view .room-number { min-width: 80px; }
       .rooms-grid.list-view .room-face-details { width: auto; gap: 0.2rem; }
       .room-number { font-size: 1.5rem; font-weight: bold; color: #f5f8ff; }
       .room-status { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: #4caf50; color: white; }
@@ -152,12 +153,15 @@ $statusMap = [
         align-items: center;
         justify-content: center;
       }
-      .rooms-grid.list-view .room-image-container { margin: 0; width: 128px; max-width: 150px; min-height: 88px; flex-shrink: 0; }
+      .rooms-grid.list-view .room-image-container { margin: 0; width: 80px; max-width: 80px; min-height: 60px; height: 60px; flex-shrink: 0; }
       .room-image-container img { width: 100%; height: 100%; object-fit: cover; }
       .book-btn-front { display: none; }
-      .rooms-grid.list-view .book-btn-front { display: inline-flex; width: 140px; justify-content: center; margin-left: auto; flex-shrink: 0; }
-      .rooms-grid.list-view .room-card-face.front { position: relative; display: flex; align-items: stretch; }
-      .rooms-grid.list-view .room-info-item { justify-content: flex-start; gap: 0.5rem; }
+      .rooms-grid.list-view .book-btn-front { display: inline-flex; width: 120px; justify-content: center; flex-shrink: 0; padding: 0.6rem 1rem; font-size: 0.9rem; margin-left: auto; }
+      .rooms-grid.list-view .room-card-face.front { position: relative; display: flex; align-items: center; }
+      .rooms-grid.list-view .room-info-item { justify-content: flex-start; gap: 0.5rem; font-size: 0.85rem; }
+      .rooms-grid.list-view .room-number { font-size: 1.1rem; }
+      .rooms-grid.list-view .room-face-details { gap: 0.3rem; }
+      .rooms-grid.list-view .list-book-btn { margin-left: auto; }
       .book-btn {
         width: 100%;
         padding: 0.75rem;
@@ -239,6 +243,36 @@ $statusMap = [
       .btn-submit:hover { background: linear-gradient(135deg, #7dd3fc, #2563eb); }
       .btn-cancel { background: rgba(248, 113, 113, 0.15); color: #fecaca; border: 1px solid rgba(248, 113, 113, 0.4); }
       .btn-cancel:hover { background: rgba(248, 113, 113, 0.3); }
+      
+      /* Hidden rooms and load more button */
+      .room-card.hidden-room { display: none; }
+      .load-more-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+      }
+      .load-more-btn {
+        padding: 0.75rem 2rem;
+        background: linear-gradient(135deg, rgba(37,99,235,0.2), rgba(29,78,216,0.2));
+        color: #60a5fa;
+        border: 1px solid rgba(96,165,250,0.4);
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .load-more-btn:hover {
+        background: linear-gradient(135deg, rgba(37,99,235,0.3), rgba(29,78,216,0.3));
+        border-color: rgba(96,165,250,0.6);
+        transform: translateY(-1px);
+      }
+      .load-more-btn.hidden {
+        display: none;
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -288,8 +322,8 @@ $statusMap = [
               </div>
             <?php else: ?>
               <div class="rooms-grid" id="roomsGrid" aria-live="polite">
-                <?php foreach($availableRooms as $room): ?>
-                  <div class="room-card">
+                <?php foreach($availableRooms as $index => $room): ?>
+                  <div class="room-card <?php echo $index >= 5 ? 'hidden-room' : ''; ?>" data-index="<?php echo $index; ?>">
                     <div class="room-card-inner">
                       <div class="room-card-face front">
                         <div class="room-card-header">
@@ -370,6 +404,14 @@ $statusMap = [
                   </div>
                 <?php endforeach; ?>
               </div>
+              <?php if (count($availableRooms) > 5): ?>
+              <div class="load-more-container">
+                <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreRooms()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  <span id="loadMoreText">โหลดเพิ่มเติม (<span id="remainingCount"><?php echo count($availableRooms) - 5; ?></span> ห้อง)</span>
+                </button>
+              </div>
+              <?php endif; ?>
             <?php endif; ?>
           </section>
 
@@ -594,6 +636,36 @@ $statusMap = [
           }
         });
       });
+      
+      // Load More Rooms Function
+      let visibleRooms = 5;
+      const ROOMS_PER_LOAD = 5;
+      
+      function loadMoreRooms() {
+        const hiddenRooms = document.querySelectorAll('.room-card.hidden-room');
+        const totalRooms = document.querySelectorAll('.room-card').length;
+        let showCount = 0;
+        
+        hiddenRooms.forEach((room, index) => {
+          if (showCount < ROOMS_PER_LOAD) {
+            room.classList.remove('hidden-room');
+            showCount++;
+            visibleRooms++;
+          }
+        });
+        
+        // Update remaining count
+        const remaining = totalRooms - visibleRooms;
+        const remainingCountEl = document.getElementById('remainingCount');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        
+        if (remaining > 0) {
+          remainingCountEl.textContent = remaining;
+        } else {
+          // Hide button when all rooms are shown
+          loadMoreBtn.classList.add('hidden');
+        }
+      }
       
       // ปิด modal
       function closeBookingModal() {

@@ -85,6 +85,7 @@ $nextRoomNumber = str_pad((string)($maxRoomNumber + 1), 2, '0', STR_PAD_LEFT);
 // ดึงประเภทห้อง
 $stmt = $pdo->query("SELECT type_id, type_name, type_price FROM roomtype ORDER BY type_name ASC");
 $roomTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+$defaultTypeId = $roomTypes[0]['type_id'] ?? '';
 
 // นับสถานะห้อง
 $vacant = 0;
@@ -268,9 +269,207 @@ $totalRooms = count($rooms);
         gap: 0.75rem;
         margin-top: 1rem;
       }
+      
+      /* Edit Modal Styles */
+      .booking-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 10000;
+        padding: 1rem;
+      }
+      .booking-modal-content {
+        background: linear-gradient(135deg, rgba(15,23,42,0.98), rgba(2,6,23,0.98));
+        border-radius: 16px;
+        padding: 2rem;
+        width: 100%;
+        max-height: 90vh;
+        overflow-y: auto;
+        border: 1px solid rgba(96,165,250,0.3);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+      }
+      .booking-modal-content h2 {
+        margin: 0 0 1.5rem 0;
+        color: #f5f8ff;
+        font-size: 1.5rem;
+      }
+      .booking-form-group {
+        margin-bottom: 1.25rem;
+      }
+      .booking-form-group label {
+        display: block;
+        color: rgba(255,255,255,0.85);
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+      .booking-form-group input,
+      .booking-form-group select,
+      .booking-form-group textarea {
+        width: 100%;
+        padding: 0.75rem 0.85rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(8,12,24,0.9);
+        color: #f5f8ff;
+        font-family: inherit;
+        font-size: 0.95rem;
+      }
+      .booking-form-group input:focus,
+      .booking-form-group select:focus,
+      .booking-form-group textarea:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+      }
+      .booking-form-actions {
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+      }
+      .btn-submit {
+        flex: 1;
+        padding: 0.85rem 1.5rem;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .btn-submit:hover {
+        background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        box-shadow: 0 4px 12px rgba(37,99,235,0.4);
+        transform: translateY(-1px);
+      }
+      .btn-cancel {
+        flex: 1;
+        padding: 0.85rem 1.5rem;
+        background: rgba(100,116,139,0.2);
+        color: #cbd5e1;
+        border: 1px solid rgba(148,163,184,0.3);
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .btn-cancel:hover {
+        background: rgba(100,116,139,0.3);
+        border-color: rgba(148,163,184,0.5);
+      }
+      
+      /* View Toggle Button */
+      .view-toggle-btn {
+        padding: 0.6rem 1.2rem;
+        background: rgba(37,99,235,0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(96,165,250,0.3);
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .view-toggle-btn:hover {
+        background: rgba(37,99,235,0.25);
+        border-color: rgba(96,165,250,0.5);
+      }
+      
+      /* Table View Styles */
+      .rooms-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 1rem;
+      }
+      .rooms-table thead {
+        background: rgba(15,23,42,0.6);
+      }
+      .rooms-table th {
+        padding: 1rem;
+        text-align: left;
+        color: #f5f8ff;
+        font-weight: 600;
+        border-bottom: 2px solid rgba(96,165,250,0.3);
+      }
+      .rooms-table td {
+        padding: 0.65rem 1rem;
+        color: #cbd5e1;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+        font-size: 0.9rem;
+      }
+      .rooms-table tbody tr {
+        transition: background 0.2s ease;
+      }
+      .rooms-table tbody tr:hover {
+        background: rgba(30,41,59,0.5);
+      }
+      .rooms-table tbody tr.hidden-row {
+        display: none;
+      }
+      .room-image-small {
+        width: 45px;
+        height: 45px;
+        border-radius: 6px;
+        object-fit: cover;
+        background: linear-gradient(135deg, #1e293b, #0f172a);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+      }
+      .room-image-small img {
+        width: 100%;
+        height: 100%;
+        border-radius: 8px;
+        object-fit: cover;
+      }
+      .rooms-table .room-card-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: flex-start;
+      }
+      .rooms-table-view { display: none; }
+      .rooms-grid-view { display: grid; }
+      
+      .load-more-container {
+        display: flex;
+        justify-content: center;
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+      }
+      .load-more-btn {
+        padding: 0.75rem 2rem;
+        background: linear-gradient(135deg, rgba(37,99,235,0.2), rgba(29,78,216,0.2));
+        color: #60a5fa;
+        border: 1px solid rgba(96,165,250,0.4);
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .load-more-btn:hover {
+        background: linear-gradient(135deg, rgba(37,99,235,0.3), rgba(29,78,216,0.3));
+        border-color: rgba(96,165,250,0.6);
+        transform: translateY(-1px);
+      }
+      .load-more-btn.hidden {
+        display: none;
+      }
     </style>
   </head>
-  <body class="reports-page">
+  <body class="reports-page" data-disable-edit-modal="true">
     <div class="app-shell">
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main">
@@ -329,9 +528,8 @@ $totalRooms = count($rooms);
                       <button type="button" class="add-type-btn delete-type-btn" id="deleteTypeBtn">ลบประเภทห้อง</button>
                     </div>
                     <select id="type_id" name="type_id" required>
-                      <option value="">-- เลือกประเภทห้อง --</option>
-                      <?php foreach ($roomTypes as $type): ?>
-                        <option value="<?php echo $type['type_id']; ?>">
+                      <?php foreach ($roomTypes as $index => $type): ?>
+                        <option value="<?php echo $type['type_id']; ?>" <?php echo ($index === 0 ? 'selected' : ''); ?>>
                           <?php echo htmlspecialchars($type['type_name']); ?> (<?php echo number_format($type['type_price']); ?> บาท/เดือน)
                         </option>
                       <?php endforeach; ?>
@@ -361,11 +559,15 @@ $totalRooms = count($rooms);
           </section>
 
           <section class="manage-panel">
-            <div class="section-header">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
               <div>
                 <h1>รายการห้องพัก</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ห้องพักและข้อมูลทั้งหมด</p>
               </div>
+              <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                <span id="viewToggleText">มุมมองแถว</span>
+              </button>
             </div>
             
             <?php if (empty($rooms)): ?>
@@ -375,7 +577,8 @@ $totalRooms = count($rooms);
                 <p>เริ่มต้นเพิ่มห้องพัก</p>
               </div>
             <?php else: ?>
-              <div class="rooms-grid">
+              <!-- Grid View -->
+              <div class="rooms-grid rooms-grid-view" id="roomsGrid">
                 <?php foreach ($rooms as $room): ?>
                   <div class="room-card">
                     <div class="room-card-image">
@@ -395,12 +598,65 @@ $totalRooms = count($rooms);
                         <?php echo $room['room_status'] == '1' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
                       </div>
                       <div class="room-card-actions">
-                        <button type="button" class="animate-ui-action-btn edit" onclick="editRoom(<?php echo $room['room_id']; ?>)">แก้ไข</button>
+                        <button type="button" class="animate-ui-action-btn edit" data-room-id="<?php echo $room['room_id']; ?>" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(<?php echo $room['room_id']; ?>)">แก้ไข</button>
                         <button type="button" class="animate-ui-action-btn delete" onclick="deleteRoom(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars(addslashes($room['room_number'])); ?>')">ลบ</button>
                       </div>
                     </div>
                   </div>
                 <?php endforeach; ?>
+              </div>
+              
+              <!-- Table View -->
+              <div class="rooms-table-view" id="roomsTable">
+                <table class="rooms-table">
+                  <thead>
+                    <tr>
+                      <th>รูปภาพ</th>
+                      <th>หมายเลขห้อง</th>
+                      <th>ประเภท</th>
+                      <th>ราคา/เดือน</th>
+                      <th>สถานะ</th>
+                      <th>จัดการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach ($rooms as $index => $room): ?>
+                      <tr class="room-row <?php echo $index >= 5 ? 'hidden-row' : ''; ?>" data-index="<?php echo $index; ?>">
+                        <td>
+                          <div class="room-image-small">
+                            <?php if (!empty($room['room_image'])): ?>
+                              <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
+                            <?php else: ?>
+                              🛏️
+                            <?php endif; ?>
+                          </div>
+                        </td>
+                        <td style="font-weight:600;color:#f5f8ff;">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></td>
+                        <td><?php echo htmlspecialchars($room['type_name'] ?? '-'); ?></td>
+                        <td><?php echo number_format($room['type_price'] ?? 0); ?> บาท</td>
+                        <td>
+                          <span class="room-card-status <?php echo $room['room_status'] == '1' ? 'vacant' : 'occupied'; ?>">
+                            <?php echo $room['room_status'] == '1' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
+                          </span>
+                        </td>
+                        <td>
+                          <div class="room-card-actions">
+                            <button type="button" class="animate-ui-action-btn edit" data-room-id="<?php echo $room['room_id']; ?>" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(<?php echo $room['room_id']; ?>)">แก้ไข</button>
+                            <button type="button" class="animate-ui-action-btn delete" onclick="deleteRoom(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars(addslashes($room['room_number'])); ?>')">ลบ</button>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+                <?php if (count($rooms) > 5): ?>
+                <div class="load-more-container">
+                  <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreRooms()">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                    <span id="loadMoreText">โหลดเพิ่มเติม (<span id="remainingCount"><?php echo count($rooms) - 5; ?></span> ห้อง)</span>
+                  </button>
+                </div>
+                <?php endif; ?>
               </div>
             <?php endif; ?>
           </section>
@@ -462,8 +718,18 @@ $totalRooms = count($rooms);
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
+      // Hide animate-ui modal overlays for this page
+      document.addEventListener('DOMContentLoaded', () => {
+        const overlays = document.querySelectorAll('.animate-ui-modal-overlay');
+        overlays.forEach(el => {
+          el.style.display = 'none';
+          el.remove();
+        });
+      });
+
       const roomsData = <?php echo json_encode($rooms); ?>;
-      
+      window.roomsData = roomsData;
+
       function editRoom(roomId) {
         const room = roomsData.find(r => r.room_id == roomId);
         if (!room) return;
@@ -482,6 +748,7 @@ $totalRooms = count($rooms);
         
         document.getElementById('editModal').style.display = 'flex';
       }
+      window.editRoom = editRoom;
       
       function closeEditModal() {
         document.getElementById('editModal').style.display = 'none';
@@ -583,6 +850,33 @@ $totalRooms = count($rooms);
       document.getElementById('addTypeBtnEdit')?.addEventListener('click', addRoomTypeFlow);
       document.getElementById('deleteTypeBtn')?.addEventListener('click', () => deleteRoomTypeFlow('type_id'));
       document.getElementById('deleteTypeBtnEdit')?.addEventListener('click', () => deleteRoomTypeFlow('edit_type_id'));
+      
+      // Wire up edit buttons - highest priority capture to block animate-ui
+      const invokeEdit = (btn, evt) => {
+        if (!btn) return;
+        // Remove any animate-ui modal overlays immediately
+        document.querySelectorAll('.animate-ui-modal-overlay').forEach(el => {
+          el.style.display = 'none';
+          el.remove();
+        });
+        try { evt?.stopImmediatePropagation?.(); } catch (err) {}
+        try { evt?.stopPropagation?.(); } catch (err) {}
+        evt?.preventDefault?.();
+        const id = btn.getAttribute('data-room-id');
+        if (id) {
+          try { editRoom(id); } catch (err) { console.error('editRoom failed', err); }
+        }
+      };
+      // Use capture phase to intercept before animate-ui
+      document.body.addEventListener('click', (e) => {
+        const btn = e.target.closest('.animate-ui-action-btn.edit');
+        if (!btn) return;
+        invokeEdit(btn, e);
+      }, { capture: true });
+      // Also bind directly on each button
+      document.querySelectorAll('.animate-ui-action-btn.edit').forEach(btn => {
+        btn.addEventListener('click', (evt) => invokeEdit(btn, evt), { capture: true });
+      });
       // Toast helper for inline flows (fallbacks to alert if CSS/JS not ready)
       const toast = (msg, duration = 2200) => {
         if (typeof window.showToast === 'function') {
@@ -606,6 +900,11 @@ $totalRooms = count($rooms);
       // Debug submit add-room form: alert values then continue submit
       const addRoomForm = document.querySelector('form[action="manage_rooms.php"]');
       if (addRoomForm) {
+        const defaultTypeId = '<?php echo $defaultTypeId; ?>';
+        const typeSelectEl = document.getElementById('type_id');
+        if (typeSelectEl && defaultTypeId && !typeSelectEl.value) {
+          typeSelectEl.value = defaultTypeId;
+        }
         const validateAddRoom = () => {
           const roomNumberInput = document.getElementById('room_number');
           if (!roomNumberInput || !roomNumberInput.value.trim()) {
@@ -649,12 +948,95 @@ $totalRooms = count($rooms);
             console.log('[AddRoom] button clicked', vals);
           });
         }
+        const resetBtn = addRoomForm.querySelector('button[type="reset"]');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            addRoomForm.reset();
+            const roomNumberInput = document.getElementById('room_number');
+            if (roomNumberInput) roomNumberInput.value = '';
+            const fileInput = document.getElementById('room_image');
+            if (fileInput) fileInput.value = '';
+            if (typeSelectEl && defaultTypeId) typeSelectEl.value = defaultTypeId;
+            const statusSelect = document.getElementById('room_status');
+            if (statusSelect) statusSelect.value = '1';
+            toast('ล้างข้อมูลแล้ว', 1800);
+          });
+        }
       }
       
       // Close modal when clicking outside
       document.getElementById('editModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeEditModal();
       });
+
+      // View Toggle Function
+      let currentView = 'grid'; // 'grid' or 'table'
+      
+      function toggleView() {
+        const gridView = document.getElementById('roomsGrid');
+        const tableView = document.getElementById('roomsTable');
+        const toggleText = document.getElementById('viewToggleText');
+        const toggleBtn = document.getElementById('viewToggleBtn');
+        
+        if (currentView === 'grid') {
+          // Switch to table view
+          gridView.style.display = 'none';
+          tableView.style.display = 'block';
+          toggleText.textContent = 'มุมมองการ์ด';
+          toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg><span id="viewToggleText">มุมมองการ์ด</span>`;
+          currentView = 'table';
+          try { localStorage.setItem('roomsView', 'table'); } catch (e) {}
+        } else {
+          // Switch to grid view
+          gridView.style.display = 'grid';
+          tableView.style.display = 'none';
+          toggleText.textContent = 'มุมมองแถว';
+          toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span id="viewToggleText">มุมมองแถว</span>`;
+          currentView = 'grid';
+          try { localStorage.setItem('roomsView', 'grid'); } catch (e) {}
+        }
+      }
+      
+      // Restore saved view on page load
+      document.addEventListener('DOMContentLoaded', () => {
+        try {
+          const savedView = localStorage.getItem('roomsView');
+          if (savedView === 'table' && currentView === 'grid') {
+            toggleView();
+          }
+        } catch (e) {}
+      });
+
+      // Load More Rooms Function
+      let visibleRooms = 5;
+      const ROOMS_PER_LOAD = 5;
+      
+      function loadMoreRooms() {
+        const hiddenRows = document.querySelectorAll('.room-row.hidden-row');
+        const totalRooms = document.querySelectorAll('.room-row').length;
+        let showCount = 0;
+        
+        hiddenRows.forEach((row, index) => {
+          if (showCount < ROOMS_PER_LOAD) {
+            row.classList.remove('hidden-row');
+            showCount++;
+            visibleRooms++;
+          }
+        });
+        
+        // Update remaining count
+        const remaining = totalRooms - visibleRooms;
+        const remainingCountEl = document.getElementById('remainingCount');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        
+        if (remaining > 0) {
+          remainingCountEl.textContent = remaining;
+        } else {
+          // Hide button when all rooms are shown
+          loadMoreBtn.classList.add('hidden');
+        }
+      }
     </script>
   </body>
 </html>
