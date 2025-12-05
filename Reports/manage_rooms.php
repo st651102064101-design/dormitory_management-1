@@ -117,6 +117,7 @@ $totalRooms = count($rooms);
     <title>จัดการห้องพัก</title>
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <style>
       .rooms-stats {
         display: grid;
@@ -773,8 +774,13 @@ $totalRooms = count($rooms);
         document.getElementById('editForm').reset();
       }
       
-      function deleteRoom(roomId, roomNumber) {
-        if (!confirm(`ยืนยันการลบห้อง "${roomNumber}"?`)) return;
+      async function deleteRoom(roomId, roomNumber) {
+        const confirmed = await showConfirmDialog(
+          'ยืนยันการลบห้อง',
+          `คุณต้องการลบห้อง <strong>"${roomNumber}"</strong> หรือไม่?<br><br>การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+        );
+        
+        if (!confirmed) return;
         
         const form = document.createElement('form');
         form.method = 'POST';
@@ -831,11 +837,17 @@ $totalRooms = count($rooms);
       }
 
       // Delete room type (current selection)
-      function deleteRoomTypeFlow(selectId) {
+      async function deleteRoomTypeFlow(selectId) {
         const sel = document.getElementById(selectId);
         if (!sel || !sel.value) { showErrorToast('เลือกประเภทห้องที่จะลบก่อน'); return; }
         const opt = sel.options[sel.selectedIndex];
-        if (!confirm(`ยืนยันการลบประเภท "${opt.text}" ?`)) return;
+        
+        const confirmed = await showConfirmDialog(
+          'ยืนยันการลบประเภทห้อง',
+          `คุณต้องการลบประเภทห้อง <strong>"${opt.text}"</strong> หรือไม่?<br><br>การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+        );
+        
+        if (!confirmed) return;
 
         const formData = new FormData();
         formData.append('type_id', sel.value);
@@ -1048,5 +1060,6 @@ $totalRooms = count($rooms);
       }
     </script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
+    <script src="../Assets/Javascript/confirm-modal.js"></script>
   </body>
 </html>

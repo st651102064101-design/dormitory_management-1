@@ -46,6 +46,7 @@ $statusMap = [
     <title>จองห้องพัก</title>
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <style>
       .booking-section { margin-bottom: 2rem; }
       .rooms-grid {
@@ -798,9 +799,14 @@ $statusMap = [
       }
       
       // อัพเดทสถานะการจอง
-      function updateBookingStatus(bookingId, newStatus) {
+      async function updateBookingStatus(bookingId, newStatus) {
         const statusText = newStatus === '2' ? 'เข้าพัก' : 'ยกเลิก';
-        if (confirm(`ยืนยันการ${statusText}การจองนี้?`)) {
+        const confirmed = await showConfirmDialog(
+          `ยืนยันการ${statusText}การจอง`,
+          `คุณต้องการเปลี่ยนสถานะการจองนี้เป็น <strong>"${statusText}"</strong> หรือไม่?`
+        );
+        
+        if (confirmed) {
           const form = document.createElement('form');
           form.method = 'POST';
           form.action = '../Manage/update_booking_status.php';
@@ -822,5 +828,6 @@ $statusMap = [
         }
       }
     </script>
+    <script src="../Assets/Javascript/confirm-modal.js"></script>
   </body>
 </html>

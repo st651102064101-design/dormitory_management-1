@@ -37,6 +37,7 @@ foreach ($tenants as $t) {
     <title>จัดการข้อมูลผู้เช่า</title>
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <style>
       .tenant-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin-top:1rem; }
       .tenant-stat-card { background:linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95)); border-radius:16px; padding:1.25rem; border:1px solid rgba(255,255,255,0.08); color:#f5f8ff; box-shadow:0 15px 35px rgba(3,7,18,0.4); }
@@ -415,10 +416,17 @@ foreach ($tenants as $t) {
         });
 
         document.querySelectorAll('.btn-delete-tenant').forEach(btn => {
-          btn.addEventListener('click', () => {
+          btn.addEventListener('click', async () => {
             const id = btn.dataset.tntId;
             if (!id) return;
-            if (!confirm(`ยืนยันการลบผู้เช่า ${id}?`)) return;
+            
+            const confirmed = await showConfirmDialog(
+              'ยืนยันการลบผู้เช่า',
+              `คุณต้องการลบผู้เช่า <strong>ID: ${id}</strong> หรือไม่?<br><br>ข้อมูลทั้งหมดจะถูกลบอย่างถาวร`
+            );
+            
+            if (!confirmed) return;
+            
             const form = document.createElement('form');
             form.method = 'POST';
             form.action = '../Manage/delete_tenant.php';
@@ -446,5 +454,6 @@ foreach ($tenants as $t) {
         });
       });
     </script>
+    <script src="../Assets/Javascript/confirm-modal.js"></script>
   </body>
 </html>

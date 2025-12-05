@@ -113,6 +113,7 @@ function formatContractPeriod($startDate, $endDate) {
     <title>จัดการสัญญาเช่า</title>
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <style>
       .contract-stats {
         display: grid;
@@ -413,13 +414,18 @@ function formatContractPeriod($startDate, $endDate) {
 
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="../Assets/Javascript/confirm-modal.js"></script>
     <script>
-      function updateContractStatus(contractId, newStatus) {
+      async function updateContractStatus(contractId, newStatus) {
         const labelMap = { '0': 'สถานะปกติ', '1': 'ยกเลิกสัญญา', '2': 'แจ้งยกเลิก' };
         const confirmText = labelMap[newStatus] || 'อัปเดต';
-        if (!confirm(`ยืนยันการเปลี่ยนสัญญาเป็นสถานะ "${confirmText}"?`)) {
-          return;
-        }
+        
+        const confirmed = await showConfirmDialog(
+          'ยืนยันการเปลี่ยนสถานะสัญญา',
+          `คุณต้องการเปลี่ยนสัญญานี้เป็น <strong>"${confirmText}"</strong> หรือไม่?`
+        );
+        
+        if (!confirmed) return;
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '../Manage/update_contract_status.php';

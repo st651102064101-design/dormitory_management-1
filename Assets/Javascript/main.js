@@ -180,10 +180,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemId = button?.dataset.itemId;
             const endpoint = button?.dataset.deleteEndpoint;
 
-            if (!itemId || !endpoint) {
-                showToast('ข้อมูลไม่สมบูรณ์', 3000);
-                return;
-            }
+            // if (!itemId || !endpoint) {
+            //     showToast('ข้อมูลไม่สมบูรณ์', 3000);
+            //     return;
+            // }
 
             fetch(endpoint, {
                 method: 'POST',
@@ -202,10 +202,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     showToast(result.error || 'เกิดข้อผิดพลาด', 3000);
                 }
             })
-            .catch(error => {
-                showToast('เกิดข้อผิดพลาดในการส่งข้อมูล', 3000);
-                console.error(error);
-            });
+            // .catch(error => {
+            //     showToast('เกิดข้อผิดพลาดในการส่งข้อมูล', 3000);
+            //     console.error(error);
+            // });
         }
     });
 });

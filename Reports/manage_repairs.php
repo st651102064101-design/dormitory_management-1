@@ -104,6 +104,7 @@ function relativeTimeInfo(?string $dateTimeStr): array {
     <title>จัดการการแจ้งซ่อม</title>
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <style>
       /* Disable animate-ui modal overlays on this page */
       .animate-ui-modal, .animate-ui-modal-overlay { display:none !important; visibility:hidden !important; opacity:0 !important; }
@@ -391,9 +392,15 @@ function relativeTimeInfo(?string $dateTimeStr): array {
         });
       }
 
-      function updateRepairStatus(repairId, status) {
+      async function updateRepairStatus(repairId, status) {
         if (!repairId) return;
-        if (!confirm('ยืนยันสถานะ: ทำการซ่อม?')) return;
+        
+        const confirmed = await showConfirmDialog(
+          'ยืนยันการเปลี่ยนสถานะ',
+          `คุณต้องการเปลี่ยนสถานะเป็น <strong>"ทำการซ่อม"</strong> หรือไม่?`
+        );
+        
+        if (!confirmed) return;
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '../Manage/update_repair_status.php';
@@ -545,5 +552,6 @@ function relativeTimeInfo(?string $dateTimeStr): array {
       });
     </script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
+    <script src="../Assets/Javascript/confirm-modal.js"></script>
   </body>
 </html>

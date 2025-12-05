@@ -31,6 +31,7 @@ foreach ($newsList as $news) {
     <title>จัดการข่าวประชาสัมพันธ์</title>
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <style>
         /* Force-hide animate-ui modal overlays on this page */
         .animate-ui-modal, .animate-ui-modal-overlay { display: none !important; visibility: hidden !important; opacity: 0 !important; }
@@ -235,105 +236,6 @@ foreach ($newsList as $news) {
       }
       #submitNewsBtn:active {
         opacity: 0.8;
-      }
-      /* Custom Confirmation Modal */
-      .confirm-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.7);
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 10000;
-        animation: fadeIn 0.2s ease;
-      }
-      .confirm-modal {
-        background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-        border: 1px solid rgba(248, 113, 113, 0.3);
-        border-radius: 16px;
-        padding: 2rem;
-        max-width: 450px;
-        width: 90%;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-        animation: slideUp 0.3s ease;
-      }
-      .confirm-header {
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        margin-bottom: 1.5rem;
-      }
-      .confirm-icon {
-        width: 48px;
-        height: 48px;
-        background: linear-gradient(135deg, #dc2626, #991b1b);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-      }
-      .confirm-title {
-        font-size: 1.35rem;
-        font-weight: 700;
-        color: #f87171;
-        margin: 0;
-      }
-      .confirm-message {
-        color: #e2e8f0;
-        font-size: 1rem;
-        line-height: 1.6;
-        margin-bottom: 2rem;
-      }
-      .confirm-message strong {
-        color: #fca5a5;
-        font-weight: 600;
-      }
-      .confirm-actions {
-        display: flex;
-        gap: 0.75rem;
-      }
-      .confirm-btn {
-        flex: 1;
-        padding: 0.85rem 1.5rem;
-        border: none;
-        border-radius: 10px;
-        font-weight: 600;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 0.5rem;
-      }
-      .confirm-btn-delete {
-        background: #dc2626;
-        color: white;
-      }
-      .confirm-btn-delete:hover {
-        background: #b91c1c;
-        transform: translateY(-1px);
-      }
-      .confirm-btn-cancel {
-        background: rgba(148, 163, 184, 0.15);
-        color: #cbd5e1;
-        border: 1px solid rgba(148, 163, 184, 0.3);
-      }
-      .confirm-btn-cancel:hover {
-        background: rgba(148, 163, 184, 0.25);
-      }
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-      @keyframes slideUp {
-        from { transform: translateY(20px); opacity: 0; }
-        to { transform: translateY(0); opacity: 1; }
       }
         .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; margin-right: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
         .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
@@ -663,62 +565,6 @@ foreach ($newsList as $news) {
         document.getElementById('editForm').reset();
       }
       
-      // Custom Confirmation Dialog
-      function showConfirmDialog(title, message) {
-        return new Promise((resolve) => {
-          const overlay = document.createElement('div');
-          overlay.className = 'confirm-overlay';
-          overlay.innerHTML = `
-            <div class="confirm-modal">
-              <div class="confirm-header">
-                <div class="confirm-icon">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"/>
-                    <line x1="12" y1="8" x2="12" y2="12"/>
-                    <line x1="12" y1="16" x2="12.01" y2="16"/>
-                  </svg>
-                </div>
-                <h3 class="confirm-title">${escapeHtml(title)}</h3>
-              </div>
-              <div class="confirm-message">${message}</div>
-              <div class="confirm-actions">
-                <button class="confirm-btn confirm-btn-cancel" data-action="cancel">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="18" y1="6" x2="6" y2="18"/>
-                    <line x1="6" y1="6" x2="18" y2="18"/>
-                  </svg>
-                  ยกเลิก
-                </button>
-                <button class="confirm-btn confirm-btn-delete" data-action="confirm">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="3 6 5 6 21 6"/>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                  </svg>
-                  ยืนยันลบ
-                </button>
-              </div>
-            </div>
-          `;
-          
-          overlay.addEventListener('click', (e) => {
-            if (e.target === overlay) {
-              overlay.remove();
-              resolve(false);
-            }
-          });
-          
-          overlay.querySelectorAll('[data-action]').forEach(btn => {
-            btn.addEventListener('click', () => {
-              const confirmed = btn.dataset.action === 'confirm';
-              overlay.remove();
-              resolve(confirmed);
-            });
-          });
-          
-          document.body.appendChild(overlay);
-        });
-      }
-      
       async function deleteNews(newsId, newsTitle) {
         const confirmed = await showConfirmDialog(
           'ยืนยันการลบข่าว',
@@ -858,5 +704,6 @@ foreach ($newsList as $news) {
       }
     </script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
+    <script src="../Assets/Javascript/confirm-modal.js"></script>
   </body>
 </html>
