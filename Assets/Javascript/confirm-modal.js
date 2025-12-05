@@ -4,15 +4,16 @@
  * 
  * @param {string} title - หัวข้อของ modal
  * @param {string} message - ข้อความที่ต้องการแสดง (รองรับ HTML)
+ * @param {string} type - ประเภท: 'delete' (แดง) หรือ 'warning' (สีส้ม) - default: 'delete'
  * @returns {Promise<boolean>} - คืนค่า true ถ้ากดยืนยัน, false ถ้ายกเลิก
  * 
  * ตัวอย่างการใช้งาน:
- * const confirmed = await showConfirmDialog('ยืนยันการลบ', 'คุณต้องการลบรายการนี้หรือไม่?');
+ * const confirmed = await showConfirmDialog('ยืนยันการลบ', 'คุณต้องการลบรายการนี้หรือไม่?', 'delete');
  * if (confirmed) {
  *   // ทำงานเมื่อกดยืนยัน
  * }
  */
-function showConfirmDialog(title, message) {
+function showConfirmDialog(title, message, type = 'delete') {
   return new Promise((resolve) => {
     // Helper function เพื่อ escape HTML
     function escapeHtml(text) {
@@ -20,6 +21,8 @@ function showConfirmDialog(title, message) {
       div.textContent = text;
       return div.innerHTML;
     }
+    
+    const buttonClass = type === 'warning' ? 'confirm-btn-warning' : 'confirm-btn-delete';
     
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
@@ -44,7 +47,7 @@ function showConfirmDialog(title, message) {
             </svg>
             ยกเลิก
           </button>
-          <button class="confirm-btn confirm-btn-delete" data-action="confirm">
+          <button class="confirm-btn ${buttonClass}" data-action="confirm">
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
               <polyline points="20 6 9 17 4 12"/>
             </svg>

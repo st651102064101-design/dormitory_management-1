@@ -349,7 +349,7 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
       </div>
     </div>
     <div style="margin-top:0.6rem">
-      <form action="../logout.php" method="post">
+      <form action="../logout.php" method="post" data-allow-submit>
         <button type="submit" class="logout-btn" aria-label="Log out">
           <span class="app-nav-icon" aria-hidden="true">⎋</span>
           <span class="app-nav-label">ออกจากระบบ</span>
@@ -367,7 +367,7 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
           </svg>
         </span>
       </div>
-      <form action="../logout.php" method="post" class="rail-logout">
+      <form action="../logout.php" method="post" class="rail-logout" data-allow-submit>
         <button type="submit" class="app-nav-icon" aria-label="Log out">⎋</button>
       </form>
     </div>

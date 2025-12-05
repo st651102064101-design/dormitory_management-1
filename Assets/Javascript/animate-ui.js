@@ -121,5 +121,13 @@ document.addEventListener('DOMContentLoaded', () => {
         e.preventDefault();
     });
 
+    // ===== Login Success Handler =====
+    if (window.__loginSuccess && window.__loginRedirect) {
+        console.log('Login successful, redirecting to:', window.__loginRedirect);
+        setTimeout(() => {
+            window.location.href = window.__loginRedirect;
+        }, 100);
+    }
+
     console.log('Animate UI setup complete');
 });

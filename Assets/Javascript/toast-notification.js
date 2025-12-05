@@ -1,6 +1,29 @@
 // Toast Notification System
 // ใช้สำหรับแสดงข้อความแจ้งเตือนแบบไม่บล็อกการทำงาน
 
+// สร้าง container สำหรับ toast ทั้งหมด
+function getToastContainer() {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.style.cssText = `
+      position: fixed;
+      bottom: 0;
+      right: 0;
+      padding: 2rem;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 1rem;
+      z-index: 9999;
+      pointer-events: none;
+    `;
+    document.body.appendChild(container);
+  }
+  return container;
+}
+
 /**
  * แสดง toast notification
  * @param {string} title - หัวข้อข้อความ
@@ -16,10 +39,24 @@ function showToast(title, message, type = 'success') {
     info: 'linear-gradient(135deg, #3b82f6, #2563eb)'
   };
   
+  const container = getToastContainer();
+  
   // สร้าง toast notification
   const toast = document.createElement('div');
   const bgColor = colors[type] || colors.success;
-  toast.style.cssText = `position:fixed; bottom:2rem; right:2rem; background:${bgColor}; color:#fff; padding:1rem 1.5rem; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:9999; min-width:300px; max-width:400px; transform:translateX(150%); transition:transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); cursor:pointer;`;
+  toast.style.cssText = `
+    background: ${bgColor};
+    color: #fff;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    min-width: 300px;
+    max-width: 400px;
+    transform: translateX(150%);
+    transition: transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    cursor: pointer;
+    pointer-events: auto;
+  `;
   
   // Title
   const titleEl = document.createElement('div');
@@ -33,7 +70,7 @@ function showToast(title, message, type = 'success') {
   
   toast.appendChild(titleEl);
   toast.appendChild(messageEl);
-  document.body.appendChild(toast);
+  container.appendChild(toast);
   
   // Animate in
   requestAnimationFrame(() => {

@@ -475,6 +475,108 @@ foreach ($newsList as $news) {
         }, true);
       });
 
+      // AJAX submit สำหรับ editForm
+      document.addEventListener('DOMContentLoaded', function() {
+        const editForm = document.getElementById('editForm');
+        if (editForm) {
+          editForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const formData = new FormData(editForm);
+            
+            try {
+              console.log('Submitting edit form...', Object.fromEntries(formData));
+              
+              const response = await fetch('../Manage/update_news_ajax.php', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              });
+              
+              console.log('Response status:', response.status);
+              
+              if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+              }
+              
+              const text = await response.text();
+              console.log('Raw response:', text);
+              
+              let result;
+              try {
+                result = JSON.parse(text);
+              } catch (e) {
+                console.error('Failed to parse JSON:', e);
+                showErrorToast('เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ');
+                return;
+              }
+              
+              console.log('Parsed result:', result);
+              
+              if (result.success) {
+                showSuccessToast(result.message || 'แก้ไขข่าวสำเร็จ');
+                closeEditModal();
+                
+                // อัพเดท card ใน DOM
+                const newsId = formData.get('news_id');
+                const newsCard = document.querySelector(`[data-news-id="${newsId}"]`);
+                if (newsCard) {
+                  const title = formData.get('news_title');
+                  const details = formData.get('news_details');
+                  const date = formData.get('news_date');
+                  const by = formData.get('news_by');
+                  
+                  // Format date
+                  const dateObj = new Date(date);
+                  const formattedDate = String(dateObj.getDate()).padStart(2, '0') + '/' + 
+                                       String(dateObj.getMonth() + 1).padStart(2, '0') + '/' + 
+                                       dateObj.getFullYear();
+                  
+                  // อัพเดท card content - ตรวจสอบว่า element มีอยู่
+                  const titleEl = newsCard.querySelector('.news-card-title');
+                  if (titleEl) titleEl.textContent = title;
+                  
+                  const contentEl = newsCard.querySelector('.news-card-content p');
+                  if (contentEl) contentEl.textContent = details;
+                  
+                  const metaSpans = newsCard.querySelectorAll('.news-card-meta span');
+                  if (metaSpans.length > 0) {
+                    metaSpans[0].innerHTML = `
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                      ${formattedDate}
+                    `;
+                  }
+                  
+                  if (by && metaSpans.length > 1) {
+                    metaSpans[1].innerHTML = `
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                      ${escapeHtml(by)}
+                    `;
+                  }
+                  
+                  // อัพเดท newsData array
+                  const newsIndex = newsData.findIndex(n => n.news_id == newsId);
+                  if (newsIndex !== -1) {
+                    newsData[newsIndex].news_title = title;
+                    newsData[newsIndex].news_details = details;
+                    newsData[newsIndex].news_date = date;
+                    newsData[newsIndex].news_by = by;
+                  }
+                }
+              } else {
+                showErrorToast(result.error || 'เกิดข้อผิดพลาดในการแก้ไขข่าว');
+              }
+            } catch (error) {
+              console.error('Update error:', error);
+              showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+          }, true);
+        }
+      });
+      
       // Block animate-ui from intercepting the submit button
       document.addEventListener('DOMContentLoaded', function() {
         const submitBtn = document.getElementById('submitNewsBtn');
@@ -559,10 +661,18 @@ foreach ($newsList as $news) {
       }
       
       function closeEditModal() {
+        console.log('Closing edit modal...');
         const modal = document.getElementById('editModal');
-        modal.classList.remove('is-open');
-        modal.style.display = 'none';
-        document.getElementById('editForm').reset();
+        if (modal) {
+          modal.style.display = 'none';
+          const form = document.getElementById('editForm');
+          if (form) {
+            form.reset();
+          }
+          console.log('Modal closed successfully');
+        } else {
+          console.error('Modal not found!');
+        }
       }
       
       async function deleteNews(newsId, newsTitle) {
@@ -647,7 +757,7 @@ foreach ($newsList as $news) {
               <p>${escapeHtml(details)}</p>
             </div>
             <div class="news-card-actions">
-              <button type="button" class="animate-ui-action-btn edit" onclick="editNews(${newsId})">แก้ไข</button>
+              <button type="button" class="animate-ui-action-btn edit" data-news-id="${newsId}">แก้ไข</button>
               <button type="button" class="animate-ui-action-btn delete" onclick="deleteNews(${newsId}, '${escapeHtml(title).replace(/'/g, "\\'")}')">ลบ</button>
             </div>
           </div>

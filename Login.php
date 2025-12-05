@@ -35,10 +35,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['admin_username'] = $row['admin_username'];
         $_SESSION['admin_name'] = $row['admin_name'] ?? '';
         $login_success = true;
+      } else {
+        $login_error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
       }
+    } else {
+      $login_error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
     }
-
-    $login_error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
   }
 }
 
@@ -55,7 +57,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="animate-ui-root">
       <section class="animate-ui-card" aria-live="polite" tabindex="0">
         <h1>เข้าสู่ระบบ</h1>
-        <form id="animate-ui-login" class="animate-ui-form" action="" method="post">
+        <form id="animate-ui-login" class="animate-ui-form" action="" method="post" data-allow-submit>
           <label for="username">Username</label>
           <input
             id="username"

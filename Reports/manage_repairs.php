@@ -246,7 +246,7 @@ function relativeTimeInfo(?string $dateTimeStr): array {
                   <?php else: ?>
                     <?php foreach ($repairs as $r): ?>
                       <?php $status = (string)($r['repair_status'] ?? ''); ?>
-                      <tr>
+                      <tr data-repair-id="<?php echo (int)$r['repair_id']; ?>">
                         <?php 
                           $repairDate = $r['repair_date'] ?? '';
                           $repairTime = $r['repair_time'] ?? '00:00:00';
@@ -292,7 +292,7 @@ function relativeTimeInfo(?string $dateTimeStr): array {
                         <td><?php echo nl2br(htmlspecialchars($r['repair_desc'] ?? '-')); ?></td>
                         <td><span class="status-badge" style="background: <?php echo $statusColors[$status] ?? '#94a3b8'; ?>;"><?php echo $statusMap[$status] ?? 'ไม่ระบุ'; ?></span></td>
                         <td class="crud-column">
-                          <div class="crud-actions">
+                          <div class="crud-actions" data-repair-id="<?php echo (int)$r['repair_id']; ?>">
                             <?php if ($status === '0'): ?>
                               <button type="button" class="animate-ui-action-btn edit repair-primary" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '1')">ทำการซ่อม</button>
                             <?php elseif ($status === '1'): ?>
@@ -397,25 +397,41 @@ function relativeTimeInfo(?string $dateTimeStr): array {
         
         const confirmed = await showConfirmDialog(
           'ยืนยันการเปลี่ยนสถานะ',
-          `คุณต้องการเปลี่ยนสถานะเป็น <strong>"ทำการซ่อม"</strong> หรือไม่?`
+          `คุณต้องการเปลี่ยนสถานะเป็น <strong>"ทำการซ่อม"</strong> หรือไม่?`,
+          'warning'
         );
         
         if (!confirmed) return;
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '../Manage/update_repair_status.php';
-        const idField = document.createElement('input');
-        idField.type = 'hidden';
-        idField.name = 'repair_id';
-        idField.value = repairId;
-        const statusField = document.createElement('input');
-        statusField.type = 'hidden';
-        statusField.name = 'repair_status';
-        statusField.value = status;
-        form.appendChild(idField);
-        form.appendChild(statusField);
-        document.body.appendChild(form);
-        form.submit();
+        
+        try {
+          const formData = new FormData();
+          formData.append('repair_id', repairId);
+          formData.append('repair_status', status);
+          
+          const response = await fetch('../Manage/update_repair_status_ajax.php', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            showSuccessToast(result.message);
+            
+            // โหลดข้อมูลซ่อมใหม่เพื่อรีเฟรชตาราง
+            setTimeout(() => {
+              loadRepairList();
+            }, 500);
+          } else {
+            showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        }
       }
 
       // แสดง toast notification ด้านล่างขวา (ปิดอัตโนมัติหลัง 3 วินาที)

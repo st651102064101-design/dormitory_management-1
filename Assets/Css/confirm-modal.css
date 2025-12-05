@@ -92,6 +92,16 @@
   transform: translateY(-1px);
 }
 
+.confirm-btn-warning {
+  background: #f97316;
+  color: white;
+}
+
+.confirm-btn-warning:hover {
+  background: #ea580c;
+  transform: translateY(-1px);
+}
+
 .confirm-btn-cancel {
   background: rgba(148, 163, 184, 0.15);
   color: #cbd5e1;
