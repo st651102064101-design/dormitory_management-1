@@ -139,6 +139,8 @@ foreach ($contracts as $ctr) {
         flex-wrap: wrap;
         gap: 0.4rem;
       }
+      .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+      .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
       .notice-banner {
         margin-top: 0.75rem;
         padding: 0.75rem 1rem;

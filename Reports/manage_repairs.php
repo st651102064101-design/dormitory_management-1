@@ -1,6 +1,10 @@
 <?php
 declare(strict_types=1);
 session_start();
+
+// ตั้ง timezone เป็น กรุงเทพ
+date_default_timezone_set('Asia/Bangkok');
+
 if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
     exit;
@@ -17,12 +21,18 @@ $repairStmt = $pdo->query("SELECT r.*, c.ctr_id, t.tnt_name, rm.room_number
   ORDER BY r.repair_date DESC, r.repair_id DESC");
 $repairs = $repairStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// รายการสัญญาสำหรับเลือกห้อง/ผู้เช่า
-$contracts = $pdo->query("SELECT c.ctr_id, c.ctr_status, t.tnt_name, rm.room_number
+// รายการสัญญาสำหรับเลือกห้อง/ผู้เช่า (แสดงแค่ที่ซ่อมเสร็จแล้ว หรือ ไม่มีการซ่อมอยู่)
+$contracts = $pdo->query("
+  SELECT c.ctr_id, c.ctr_status, t.tnt_name, rm.room_number,
+         MAX(r.repair_status) as latest_repair_status
   FROM contract c
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
   LEFT JOIN room rm ON c.room_id = rm.room_id
-  ORDER BY rm.room_number")->fetchAll(PDO::FETCH_ASSOC);
+  LEFT JOIN repair r ON c.ctr_id = r.ctr_id
+  GROUP BY c.ctr_id
+  HAVING latest_repair_status IS NULL OR latest_repair_status = '2'
+  ORDER BY rm.room_number
+")->fetchAll(PDO::FETCH_ASSOC);
 
 $statusMap = [
   '0' => 'รอซ่อม',
@@ -95,6 +105,8 @@ function relativeTimeInfo(?string $dateStr): array {
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <style>
+      /* Disable animate-ui modal overlays on this page */
+      .animate-ui-modal, .animate-ui-modal-overlay { display:none !important; visibility:hidden !important; opacity:0 !important; }
       .repair-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem; margin-top:1rem; }
       .repair-stat-card { padding:1rem; border-radius:12px; background:#0f172a; color:#e2e8f0; border:1px solid rgba(148,163,184,0.25); box-shadow:0 12px 35px rgba(0,0,0,0.25); }
       .repair-stat-card h3 { margin:0; font-size:0.95rem; color:#cbd5e1; }
@@ -172,7 +184,7 @@ function relativeTimeInfo(?string $dateStr): array {
                 <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">เลือกห้อง/ผู้เช่า ระบุวันที่และรายละเอียดงานซ่อม</p>
               </div>
             </div>
-            <form action="../Manage/process_repair.php" method="post">
+            <form action="../Manage/process_repair.php" method="post" id="repairForm">
               <div class="repair-form">
                 <div>
                   <label for="ctr_id">สัญญา / ห้องพัก <span style="color:#f87171;">*</span></label>
@@ -187,8 +199,14 @@ function relativeTimeInfo(?string $dateStr): array {
                   </select>
                 </div>
                 <div>
-                  <label for="repair_date">วันที่แจ้ง <span style="color:#f87171;">*</span></label>
-                  <input type="date" id="repair_date" name="repair_date" required value="<?php echo date('Y-m-d'); ?>" />
+                  <label for="repair_date">วันที่แจ้ง</label>
+                  <input type="text" id="repair_date" name="repair_date" readonly style="background:rgba(148,163,184,0.1); cursor:not-allowed;" value="<?php echo date('d/m/Y'); ?>" />
+                  <input type="hidden" id="repair_date_hidden" name="repair_date_hidden" value="<?php echo date('Y-m-d'); ?>" />
+                </div>
+                <div>
+                  <label for="repair_time">เวลาแจ้ง</label>
+                  <input type="text" id="repair_time" name="repair_time" readonly style="background:rgba(148,163,184,0.1); cursor:not-allowed;" value="<?php echo date('H:i:s'); ?>" />
+                  <input type="hidden" id="repair_time_hidden" name="repair_time_hidden" value="<?php echo date('H:i:s'); ?>" />
                 </div>
                 <input type="hidden" name="repair_status" value="0" />
                 <div style="grid-column:1 / -1;">
@@ -196,7 +214,7 @@ function relativeTimeInfo(?string $dateStr): array {
                   <textarea id="repair_desc" name="repair_desc" required placeholder="เช่น แอร์ไม่เย็น น้ำรั่ว ซิงค์อุดตัน"></textarea>
                 </div>
                 <div class="repair-form-actions">
-                  <button type="submit" class="animate-ui-add-btn" style="flex:2;">บันทึกการแจ้งซ่อม</button>
+                  <button type="submit" class="animate-ui-add-btn" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" style="flex:2; cursor: pointer;">บันทึกการแจ้งซ่อม</button>
                   <button type="reset" class="animate-ui-action-btn delete" style="flex:1;">ล้างข้อมูล</button>
                 </div>
               </div>
@@ -263,6 +281,31 @@ function relativeTimeInfo(?string $dateStr): array {
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
+      // อัปเดตวันที่และเวลาลิงค์ทุกวินาที
+      function updateRepairTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear() + 543; // เปลี่ยนเป็นปีพุทธศักราช
+        
+        const timeInput = document.getElementById('repair_time');
+        const timeHidden = document.getElementById('repair_time_hidden');
+        const dateDisplay = document.getElementById('repair_date');
+        const dateHidden = document.getElementById('repair_date_hidden');
+        
+        if (timeInput) timeInput.value = `${hours}:${minutes}:${seconds}`;
+        if (timeHidden) timeHidden.value = `${hours}:${minutes}:${seconds}`;
+        if (dateDisplay) dateDisplay.value = `${day}/${month}/${year}`;
+        if (dateHidden) dateHidden.value = now.toISOString().split('T')[0];
+      }
+      
+      // อัปเดตทันทีและทุก 1 วินาที
+      updateRepairTime();
+      setInterval(updateRepairTime, 1000);
+
       function updateRepairStatus(repairId, status) {
         if (!repairId) return;
         if (!confirm('ยืนยันสถานะ: ทำการซ่อม?')) return;
@@ -282,6 +325,11 @@ function relativeTimeInfo(?string $dateStr): array {
         document.body.appendChild(form);
         form.submit();
       }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        updateRepairTime();
+        setInterval(updateRepairTime, 1000); // อัปเดตทุกวินาที
+      });
     </script>
   </body>
 </html>

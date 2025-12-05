@@ -440,6 +440,8 @@ $totalRooms = count($rooms);
         border-radius: 8px;
         object-fit: cover;
       }
+      .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+      .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
       .rooms-table .room-card-actions {
         display: flex;
         gap: 0.5rem;
