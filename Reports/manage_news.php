@@ -150,6 +150,85 @@ foreach ($newsList as $news) {
         margin-bottom: 1rem;
         opacity: 0.5;
       }
+      /* Edit modal layout */
+      #editModal {
+        display: none;
+        position: fixed;
+        inset: 0;
+        padding: 1.5rem;
+        background: rgba(8,15,30,0.7);
+        backdrop-filter: blur(6px);
+        align-items: center;
+        justify-content: center;
+        z-index: 20000;
+      }
+      #editModal.is-open { display: flex; }
+      #editModal .booking-modal-content {
+        width: min(720px, 100%);
+        background: linear-gradient(145deg, #0f172a, #111827);
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+        padding: 1.8rem;
+        color: #e2e8f0;
+      }
+      #editModal h2 {
+        margin-top: 0;
+        margin-bottom: 1rem;
+        color: #f8fafc;
+        text-align: center;
+      }
+      #editModal .booking-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        margin-bottom: 1rem;
+      }
+      #editModal label {
+        font-weight: 600;
+        color: rgba(255,255,255,0.85);
+      }
+      #editModal input,
+      #editModal textarea {
+        width: 100%;
+        padding: 0.75rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(15,23,42,0.85);
+        color: #f8fafc;
+        font-family: inherit;
+      }
+      #editModal textarea { min-height: 140px; resize: vertical; }
+      #editModal input:focus,
+      #editModal textarea:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+      }
+      #editModal .booking-form-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        margin-top: 1rem;
+      }
+      #editModal .btn-submit {
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #0b1727;
+        border: none;
+        border-radius: 10px;
+        padding: 0.75rem 1.4rem;
+        font-weight: 700;
+        cursor: pointer;
+      }
+      #editModal .btn-cancel {
+        background: rgba(248,250,252,0.1);
+        color: #e2e8f0;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 0.75rem 1.1rem;
+        font-weight: 600;
+        cursor: pointer;
+      }
     </style>
   </head>
   <body class="reports-page" data-disable-edit-modal="true">
@@ -274,8 +353,8 @@ foreach ($newsList as $news) {
     </div>
 
     <!-- Edit Modal -->
-    <div class="booking-modal" id="editModal" style="display:none; z-index: 20000;">
-      <div class="booking-modal-content" style="max-width:600px;">
+    <div class="booking-modal" id="editModal" style="display:none;">
+      <div class="booking-modal-content">
         <h2>แก้ไขข่าวประชาสัมพันธ์</h2>
         <form id="editForm" method="POST" action="../Manage/update_news.php">
           <input type="hidden" name="news_id" id="edit_news_id">
@@ -367,22 +446,15 @@ foreach ($newsList as $news) {
         document.getElementById('edit_news_details').value = news.news_details;
         document.getElementById('edit_news_date').value = news.news_date;
         document.getElementById('edit_news_by').value = news.news_by || '';
-        // ปรับ style modal ให้แสดง overlay
         const modal = document.getElementById('editModal');
+        modal.classList.add('is-open');
         modal.style.display = 'flex';
-        modal.style.alignItems = 'center';
-        modal.style.justifyContent = 'center';
-        modal.style.background = 'rgba(0,0,0,0.45)';
-        modal.style.position = 'fixed';
-        modal.style.top = '0';
-        modal.style.left = '0';
-        modal.style.width = '100vw';
-        modal.style.height = '100vh';
-        modal.style.zIndex = '20000';
       }
       
       function closeEditModal() {
-        document.getElementById('editModal').style.display = 'none';
+        const modal = document.getElementById('editModal');
+        modal.classList.remove('is-open');
+        modal.style.display = 'none';
         document.getElementById('editForm').reset();
       }
       
