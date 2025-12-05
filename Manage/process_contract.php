@@ -67,6 +67,13 @@ try {
 
     $pdo->commit();
 
+    // ตรวจสอบว่าเป็น AJAX request หรือไม่
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'เพิ่มสัญญาเรียบร้อยแล้ว']);
+        exit;
+    }
+
     $_SESSION['success'] = 'เพิ่มสัญญาเรียบร้อยแล้ว';
     header('Location: ../Reports/manage_contracts.php');
     exit;
@@ -74,7 +81,17 @@ try {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    
+    $errorMsg = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    
+    // ตรวจสอบว่าเป็น AJAX request หรือไม่
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $errorMsg]);
+        exit;
+    }
+    
+    $_SESSION['error'] = $errorMsg;
     header('Location: ../Reports/manage_contracts.php');
     exit;
 }

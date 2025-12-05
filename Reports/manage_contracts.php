@@ -291,7 +291,7 @@ function formatContractPeriod($startDate, $endDate) {
                 <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">ระบุผู้เช่า ห้อง วันที่เริ่ม-สิ้นสุด และเงินมัดจำ</p>
               </div>
             </div>
-            <form action="../Manage/process_contract.php" method="post">
+            <form action="../Manage/process_contract.php" method="post" data-allow-submit>
               <div class="contract-form">
                 <div class="contract-form-group">
                   <label for="tnt_id">ผู้เช่า <span style="color:#f87171;">*</span></label>
@@ -308,11 +308,32 @@ function formatContractPeriod($startDate, $endDate) {
                   <label for="room_id">ห้องพัก <span style="color:#f87171;">*</span></label>
                   <select name="room_id" id="room_id" required>
                     <option value="">-- เลือกห้องพัก --</option>
-                    <?php foreach ($rooms as $room): ?>
-                      <option value="<?php echo (int)$room['room_id']; ?>" data-room-status="<?php echo htmlspecialchars((string)$room['room_status']); ?>">
-                        ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?> (สถานะ: <?php echo $room['room_status'] === '0' ? 'ว่าง' : 'ไม่ว่าง'; ?>)
-                      </option>
-                    <?php endforeach; ?>
+                    
+                    <?php
+                    // แยกห้องตามสถานะ
+                    $availableRooms = array_filter($rooms, fn($r) => $r['room_status'] === '0');
+                    $occupiedRooms = array_filter($rooms, fn($r) => $r['room_status'] !== '0');
+                    ?>
+                    
+                    <?php if (!empty($availableRooms)): ?>
+                      <optgroup label="ห้องว่าง">
+                        <?php foreach ($availableRooms as $room): ?>
+                          <option value="<?php echo (int)$room['room_id']; ?>" data-room-status="0">
+                            ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>
+                          </option>
+                        <?php endforeach; ?>
+                      </optgroup>
+                    <?php endif; ?>
+                    
+                    <?php if (!empty($occupiedRooms)): ?>
+                      <optgroup label="ห้องไม่ว่าง">
+                        <?php foreach ($occupiedRooms as $room): ?>
+                          <option value="<?php echo (int)$room['room_id']; ?>" data-room-status="1">
+                            ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>
+                          </option>
+                        <?php endforeach; ?>
+                      </optgroup>
+                    <?php endif; ?>
                   </select>
                 </div>
                 <div class="contract-form-group">
@@ -493,6 +514,93 @@ function formatContractPeriod($startDate, $endDate) {
             endInput.min = startInput.value;
             if (endInput.value && endInput.value < startInput.value) {
               endInput.value = startInput.value;
+            }
+          });
+        }
+        
+        // Form submission handler with AJAX
+        const contractForm = document.querySelector('form[action="../Manage/process_contract.php"]');
+        if (contractForm) {
+          contractForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // ป้องกันการรีเฟรชหน้า
+            
+            const tntId = document.getElementById('tnt_id').value;
+            const roomId = document.getElementById('room_id').value;
+            const ctrStart = document.getElementById('ctr_start').value;
+            const ctrEnd = document.getElementById('ctr_end').value;
+            const ctrDeposit = document.getElementById('ctr_deposit').value;
+            
+            // Validation
+            if (!tntId || !roomId || !ctrStart || !ctrEnd) {
+              if (typeof showErrorToast === 'function') {
+                showErrorToast('กรุณากรอกข้อมูลให้ครบถ้วน');
+              } else {
+                alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+              }
+              return;
+            }
+            
+            if (ctrEnd < ctrStart) {
+              if (typeof showErrorToast === 'function') {
+                showErrorToast('วันที่สิ้นสุดต้องไม่น้อยกว่าวันที่เริ่มสัญญา');
+              } else {
+                alert('วันที่สิ้นสุดต้องไม่น้อยกว่าวันที่เริ่มสัญญา');
+              }
+              return;
+            }
+            
+            // ปิดปุ่มชั่วคราว
+            const submitBtn = contractForm.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<svg style="animation: spin 1s linear infinite; display: inline-block;" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> กำลังบันทึก...';
+            
+            try {
+              const formData = new FormData(contractForm);
+              const response = await fetch('../Manage/process_contract.php', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              });
+              
+              const result = await response.json();
+              console.log('Response:', result);
+              
+              if (result.success) {
+                // สำเร็จ - แสดง toast และรีเซ็ตฟอร์ม
+                if (typeof showSuccessToast === 'function') {
+                  showSuccessToast(result.message || 'บันทึกสัญญาเรียบร้อยแล้ว');
+                } else {
+                  alert(result.message || 'บันทึกสัญญาเรียบร้อยแล้ว');
+                }
+                
+                // รีเซ็ตฟอร์ม
+                contractForm.reset();
+                document.getElementById('room-status-hint').style.display = 'none';
+                
+                // รีโหลดหน้าเพื่ออัพเดทตาราง
+                setTimeout(() => {
+                  window.location.reload();
+                }, 1000);
+              } else {
+                if (typeof showErrorToast === 'function') {
+                  showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+                } else {
+                  alert(result.error || 'เกิดข้อผิดพลาด');
+                }
+              }
+            } catch (error) {
+              console.error('Error:', error);
+              if (typeof showErrorToast === 'function') {
+                showErrorToast('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+              } else {
+                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+              }
+            } finally {
+              submitBtn.disabled = false;
+              submitBtn.innerHTML = originalText;
             }
           });
         }

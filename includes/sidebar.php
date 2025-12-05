@@ -70,6 +70,20 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
     width: 100%;
   }
   
+  /* Active menu item styles */
+  .app-nav a.active,
+  .app-nav a.subitem.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.1));
+    border-left: 3px solid #3b82f6;
+    color: #60a5fa;
+    font-weight: 600;
+  }
+  
+  .app-nav a.active .app-nav-icon,
+  .app-nav a.subitem.active .app-nav-icon {
+    transform: scale(1.1);
+  }
+  
   /* Sidebar collapsed state - icon centered */
   aside.sidebar-collapsed {
     display: flex;
@@ -378,6 +392,28 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
 (function() {
   const sidebar = document.querySelector('.app-sidebar');
   const toggleBtn = document.getElementById('sidebar-toggle');
+  
+  // Set active menu item based on current page
+  function setActiveMenu() {
+    const currentPage = window.location.pathname.split('/').pop();
+    const menuLinks = document.querySelectorAll('.app-nav a');
+    
+    menuLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && (href === currentPage || href.endsWith('/' + currentPage))) {
+        link.classList.add('active');
+        
+        // Open parent details if inside a collapsible section
+        const parentDetails = link.closest('details');
+        if (parentDetails) {
+          parentDetails.setAttribute('open', '');
+        }
+      }
+    });
+  }
+  
+  // Run on page load
+  setActiveMenu();
   
   // Close sidebar when clicking overlay
   document.addEventListener('click', function(e) {
