@@ -63,7 +63,7 @@ try {
     // commit transaction
     $pdo->commit();
     
-    $_SESSION['success'] = 'จองห้องพักสำเร็จ';
+    $_SESSION['success'] = 'เพิ่มการจองห้องพักเรียบร้อยแล้ว';
     header('Location: ../Reports/manage_booking.php');
     exit;
     

@@ -46,7 +46,7 @@ try {
     error_log('Insert result: ' . ($result ? 'success' : 'failed') . ', Last ID: ' . $lastId);
 
     if ($result && $lastId > 0) {
-        $_SESSION['success'] = 'เผยแพร่ข่าวเรียบร้อยแล้ว (ID: ' . $lastId . ')';
+        $_SESSION['success'] = 'เพิ่มข่าวเรียบร้อยแล้ว (ID: ' . $lastId . ')';
     } else {
         $_SESSION['error'] = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
     }

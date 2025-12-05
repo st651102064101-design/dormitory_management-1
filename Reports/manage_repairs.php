@@ -412,42 +412,38 @@ function relativeTimeInfo(?string $dateTimeStr): array {
       }
 
       // แสดง toast notification ด้านล่างขวา (ปิดอัตโนมัติหลัง 3 วินาที)
-      function showCustomModal(title, message, type = 'success') {
-        // สร้าง toast notification
-        const toast = document.createElement('div');
-        const bgColor = type === 'success' ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'linear-gradient(135deg, #ef4444, #dc2626)';
-        toast.style.cssText = `position:fixed; bottom:2rem; right:2rem; background:${bgColor}; color:#fff; padding:1rem 1.5rem; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:9999; min-width:300px; max-width:400px; transform:translateX(150%); transition:transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); cursor:pointer;`;
-        
-        // Title
-        const titleEl = document.createElement('div');
-        titleEl.textContent = title;
-        titleEl.style.cssText = 'font-weight:700; font-size:1rem; margin-bottom:0.25rem;';
-        
-        // Message
-        const messageEl = document.createElement('div');
-        messageEl.textContent = message;
-        messageEl.style.cssText = 'font-size:0.9rem; opacity:0.95;';
-        
-        toast.appendChild(titleEl);
-        toast.appendChild(messageEl);
-        document.body.appendChild(toast);
-        
-        // Animate in
-        requestAnimationFrame(() => {
-          toast.style.transform = 'translateX(0)';
-        });
-        
-        // ฟังก์ชันปิด toast
-        const closeToast = () => {
-          toast.style.transform = 'translateX(150%)';
-          setTimeout(() => toast.remove(), 400);
-        };
-        
-        // ปิดอัตโนมัติหลัง 3 วินาที
-        setTimeout(closeToast, 3000);
-        
-        // คลิกเพื่อปิดก่อนเวลา
-        toast.onclick = closeToast;
+
+
+      // โหลด dropdown สัญญาใหม่
+      function loadContractOptions() {
+        fetch(window.location.href)
+          .then(response => response.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // ดึง options ใหม่จาก HTML ที่โหลดมา
+            const newSelect = doc.querySelector('#ctr_id');
+            const currentSelect = document.getElementById('ctr_id');
+            
+            if (newSelect && currentSelect) {
+              // เก็บค่าเดิม
+              const oldValue = currentSelect.value;
+              
+              // แทนที่ options ทั้งหมด
+              currentSelect.innerHTML = newSelect.innerHTML;
+              
+              // ถ้าค่าเดิมยังมีอยู่ ให้เลือกกลับ (แต่หลังเพิ่มการซ่อมแล้วน่าจะหายไป)
+              if (oldValue && currentSelect.querySelector(`option[value="${oldValue}"]`)) {
+                currentSelect.value = oldValue;
+              } else {
+                currentSelect.value = '';
+              }
+            }
+          })
+          .catch(error => {
+            console.error('Error loading contract options:', error);
+          });
       }
 
       // โหลดข้อมูลรายการแจ้งซ่อมใหม่
@@ -506,8 +502,8 @@ function relativeTimeInfo(?string $dateTimeStr): array {
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            // แสดง custom modal สำเร็จ
-            showCustomModal('สำเร็จ', data.message || 'บันทึกการแจ้งซ่อมเรียบร้อยแล้ว', 'success');
+            // แสดง toast notification
+            showSuccessToast(data.message || 'บันทึกการแจ้งซ่อมเรียบร้อยแล้ว');
             
             // รีเซ็ตฟอร์ม
             form.reset();
@@ -516,13 +512,16 @@ function relativeTimeInfo(?string $dateTimeStr): array {
             
             // โหลดข้อมูลใหม่แบบ AJAX (ไม่ reload หน้า)
             loadRepairList();
+            
+            // โหลด dropdown สัญญาใหม่
+            loadContractOptions();
           } else {
             throw new Error(data.message || 'เกิดข้อผิดพลาด');
           }
         })
         .catch(error => {
-          // แสดง custom modal error
-          showCustomModal('ข้อความจาก localhost', error.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+          // แสดง toast notification error
+          showErrorToast(error.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
         })
         .finally(() => {
           // Enable button
@@ -545,5 +544,6 @@ function relativeTimeInfo(?string $dateTimeStr): array {
         }
       });
     </script>
+    <script src="../Assets/Javascript/toast-notification.js"></script>
   </body>
 </html>

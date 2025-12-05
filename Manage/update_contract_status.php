@@ -68,11 +68,11 @@ try {
     $pdo->commit();
 
     $statusMessage = [
-        '0' => 'อัปเดตสถานะสัญญาเป็นปกติแล้ว',
-        '1' => 'ยกเลิกสัญญาเรียบร้อย',
-        '2' => 'บันทึกการแจ้งยกเลิกแล้ว',
+        '0' => 'แก้ไขสถานะสัญญาเป็นปกติแล้ว',
+        '1' => 'แก้ไขสัญญาเป็นยกเลิกเรียบร้อยแล้ว',
+        '2' => 'แก้ไขการแจ้งยกเลิกเรียบร้อยแล้ว',
     ];
-    $_SESSION['success'] = $statusMessage[$ctr_status] ?? 'อัปเดตข้อมูลสำเร็จ';
+    $_SESSION['success'] = $statusMessage[$ctr_status] ?? 'แก้ไขข้อมูลเรียบร้อยแล้ว';
     header('Location: ../Reports/manage_contracts.php');
     exit;
 } catch (PDOException $e) {

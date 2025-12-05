@@ -42,6 +42,68 @@ foreach ($contracts as $ctr) {
         $stats['notice']++;
     }
 }
+
+// ฟังก์ชันแปลงวันที่เป็นรูปแบบไทย (เช่น 1 ม.ค. 68)
+function formatThaiDate($dateStr) {
+    if (!$dateStr) return '-';
+    
+    $thaiMonths = [
+        1 => 'ม.ค.', 2 => 'ก.พ.', 3 => 'มี.ค.', 4 => 'เม.ย.',
+        5 => 'พ.ค.', 6 => 'มิ.ย.', 7 => 'ก.ค.', 8 => 'ส.ค.',
+        9 => 'ก.ย.', 10 => 'ต.ค.', 11 => 'พ.ย.', 12 => 'ธ.ค.'
+    ];
+    
+    $timestamp = strtotime($dateStr);
+    if (!$timestamp) return '-';
+    
+    $day = (int)date('j', $timestamp);
+    $month = (int)date('n', $timestamp);
+    $year = (int)date('Y', $timestamp) + 543; // แปลงเป็น พ.ศ.
+    $yearShort = $year - 2500; // แสดงแค่ 2 หัก (เช่น 2568 -> 68)
+    
+    return $day . ' ' . $thaiMonths[$month] . ' ' . $yearShort;
+}
+
+// ฟังก์ชันคำนวณระยะเวลาสัญญาและแสดงช่วงวันที่
+function formatContractPeriod($startDate, $endDate) {
+    if (!$startDate || !$endDate) return '-';
+    
+    $start = strtotime($startDate);
+    $end = strtotime($endDate);
+    
+    if (!$start || !$end) return '-';
+    
+    // คำนวณจำนวนวัน
+    $diffDays = ($end - $start) / (60 * 60 * 24);
+    
+    // คำนวณจำนวนเดือนและปี
+    $startDate = new DateTime($startDate);
+    $endDate = new DateTime($endDate);
+    $interval = $startDate->diff($endDate);
+    
+    $years = $interval->y;
+    $months = $interval->m;
+    
+    // สร้างข้อความระยะเวลา
+    $duration = [];
+    if ($years > 0) {
+        $duration[] = $years . ' ปี';
+    }
+    if ($months > 0) {
+        $duration[] = $months . ' เดือน';
+    }
+    if (empty($duration)) {
+        $duration[] = ceil($diffDays) . ' วัน';
+    }
+    
+    $durationText = implode(', ', $duration);
+    
+    // แสดงวันที่แบบไทย
+    $startFormatted = formatThaiDate($startDate->format('Y-m-d'));
+    $endFormatted = formatThaiDate($endDate->format('Y-m-d'));
+    
+    return $durationText . '<br><span style="color:#94a3b8;font-size:0.85rem;">' . $startFormatted . ' - ' . $endFormatted . '</span>';
+}
 ?>
 <!doctype html>
 <html lang="th">
@@ -171,14 +233,20 @@ foreach ($contracts as $ctr) {
           ?>
 
           <?php if (isset($_SESSION['success'])): ?>
-            <div style="padding: 1rem; margin-bottom: 1rem; background: #22c55e; color: #0f172a; border-radius: 10px; font-weight:600;">
-              <?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
-            </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', () => {
+                showSuccessToast('<?php echo addslashes($_SESSION['success']); ?>');
+              });
+            </script>
+            <?php unset($_SESSION['success']); ?>
           <?php endif; ?>
           <?php if (isset($_SESSION['error'])): ?>
-            <div style="padding: 1rem; margin-bottom: 1rem; background: #ef4444; color: #fff; border-radius: 10px; font-weight:600;">
-              <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
-            </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', () => {
+                showErrorToast('<?php echo addslashes($_SESSION['error']); ?>');
+              });
+            </script>
+            <?php unset($_SESSION['error']); ?>
           <?php endif; ?>
 
           <section class="manage-panel">
@@ -309,9 +377,7 @@ foreach ($contracts as $ctr) {
                         </td>
                         <td>
                           <?php 
-                            $start = $ctr['ctr_start'] ? date('d/m/Y', strtotime($ctr['ctr_start'])) : '-';
-                            $end = $ctr['ctr_end'] ? date('d/m/Y', strtotime($ctr['ctr_end'])) : '-';
-                            echo $start . ' - ' . $end;
+                            echo formatContractPeriod($ctr['ctr_start'], $ctr['ctr_end']);
                           ?>
                         </td>
                         <td>฿<?php echo number_format((int)($ctr['ctr_deposit'] ?? 0)); ?></td>
@@ -402,5 +468,6 @@ foreach ($contracts as $ctr) {
         }
       })();
     </script>
+    <script src="../Assets/Javascript/toast-notification.js"></script>
   </body>
 </html>

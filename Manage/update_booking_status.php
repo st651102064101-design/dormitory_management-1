@@ -51,18 +51,18 @@ try {
         // ยกเลิก -> ห้องว่าง
         $stmt = $pdo->prepare("UPDATE room SET room_status = '0' WHERE room_id = ?");
         $stmt->execute([$booking['room_id']]);
-        $message = 'ยกเลิกการจองสำเร็จ';
+        $message = 'ลบการจองเรียบร้อยแล้ว';
     } else if ($bkg_status === '2') {
         // เข้าพักแล้ว -> ห้องไม่ว่าง
         $stmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
         $stmt->execute([$booking['room_id']]);
-        $message = 'อัพเดทสถานะเป็นเข้าพักแล้วสำเร็จ';
+        $message = 'แก้ไขสถานะเป็นเข้าพักแล้วเรียบร้อยแล้ว';
     }
     
     // commit transaction
     $pdo->commit();
     
-    $_SESSION['success'] = $message ?? 'อัพเดทสถานะสำเร็จ';
+    $_SESSION['success'] = $message ?? 'แก้ไขสถานะเรียบร้อยแล้ว';
     header('Location: ../Reports/manage_booking.php');
     exit;
     
