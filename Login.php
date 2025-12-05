@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <script>
           window.__loginSuccess = true;
           window.__loginMessage = 'ล็อกอินสำเร็จ';
-          window.__loginRedirect = 'Reports/dashboard_charts.php';
+          window.__loginRedirect = 'Reports/manage_news.php';
         </script>
     <?php endif; ?>
     <script src="Assets/Javascript/animate-ui.js" defer></script>
