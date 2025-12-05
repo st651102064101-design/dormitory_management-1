@@ -85,6 +85,8 @@ foreach ($tenants as $t) {
       }
       .modal-actions .btn-cancel:hover { transform: translateY(-1px); background: rgba(248,113,113,0.22); border-color: rgba(248,113,113,0.7); }
       .modal-actions .btn-cancel:active { transform: translateY(0); opacity: 0.9; }
+      .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+      .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
     </style>
   </head>
   <body class="reports-page">
@@ -144,7 +146,7 @@ foreach ($tenants as $t) {
               <div class="tenant-form">
                 <div class="tenant-form-group">
                   <label for="tnt_id">เลขบัตรประชาชน (13 หลัก) <span style="color:#f87171;">*</span></label>
-                  <input type="text" id="tnt_id" name="tnt_id" maxlength="13" pattern="\\d{13}" required placeholder="เช่น 1103701234567" />
+                  <input type="text" id="tnt_id" name="tnt_id" maxlength="13" minlength="13" inputmode="numeric" pattern="\d{13}" required placeholder="เช่น 1103701234567" />
                 </div>
                 <div class="tenant-form-group">
                   <label for="tnt_name">ชื่อ-สกุล <span style="color:#f87171;">*</span></label>
@@ -194,7 +196,7 @@ foreach ($tenants as $t) {
                   </select>
                 </div>
                 <div class="tenant-form-actions">
-                  <button type="submit" class="animate-ui-add-btn" style="flex:2;">
+                  <button type="submit" class="animate-ui-add-btn" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" style="flex:2;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     บันทึกผู้เช่า
                   </button>
@@ -378,6 +380,14 @@ foreach ($tenants as $t) {
       }
 
       document.addEventListener('DOMContentLoaded', () => {
+        // ทำให้ input tnt_id รับเฉพาะตัวเลข
+        const tntIdInput = document.getElementById('tnt_id');
+        if (tntIdInput) {
+          tntIdInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^\d]/g, '').slice(0, 13);
+          });
+        }
+
         document.querySelectorAll('.btn-edit-tenant').forEach(btn => {
           btn.addEventListener('click', () => {
             openTenantModal({

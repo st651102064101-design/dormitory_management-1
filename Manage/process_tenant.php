@@ -30,8 +30,26 @@ try {
     $tnt_parentsphone = trim($_POST['tnt_parentsphone'] ?? '') ?: null;
     $tnt_status = ($_POST['tnt_status'] ?? '1') === '0' ? '0' : '1';
 
-    if ($tnt_id === '' || !preg_match('/^\d{13}$/', $tnt_id) || $tnt_name === '') {
-        $_SESSION['error'] = 'กรุณากรอกเลขบัตรประชาชน 13 หลักและชื่อผู้เช่า';
+    error_log("DEBUG tenant: tnt_id='$tnt_id' (len=" . strlen($tnt_id) . "), tnt_name='$tnt_name'");
+
+    // ตรวจสอบ tnt_id
+    if ($tnt_id === '') {
+        $_SESSION['error'] = 'กรุณากรอกเลขบัตรประชาชน';
+        error_log("ERROR: tnt_id is empty");
+        header('Location: ../Reports/manage_tenants.php');
+        exit;
+    }
+
+    if (!preg_match('/^\d{13}$/', $tnt_id)) {
+        $_SESSION['error'] = 'เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก (ได้รับ: ' . htmlspecialchars($tnt_id) . ')';
+        error_log("ERROR: tnt_id regex failed - '$tnt_id'");
+        header('Location: ../Reports/manage_tenants.php');
+        exit;
+    }
+
+    if ($tnt_name === '') {
+        $_SESSION['error'] = 'กรุณากรอกชื่อผู้เช่า';
+        error_log("ERROR: tnt_name is empty");
         header('Location: ../Reports/manage_tenants.php');
         exit;
     }
