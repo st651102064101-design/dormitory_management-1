@@ -41,10 +41,10 @@ try {
 
     $statusMessage = [
         '0' => 'ยกเลิกการชำระเงินแล้ว',
-        '1' => 'บันทึกการชำระเงินเรียบร้อย',
+        '1' => 'แก้ไขการชำระเงินเรียบร้อยแล้ว',
     ];
     
-    $_SESSION['success'] = $statusMessage[$exp_status] ?? 'อัปเดตสถานะสำเร็จ';
+    $_SESSION['success'] = $statusMessage[$exp_status] ?? 'แก้ไขสถานะเรียบร้อยแล้ว';
     header('Location: ../Reports/manage_expenses.php');
     exit;
 } catch (PDOException $e) {

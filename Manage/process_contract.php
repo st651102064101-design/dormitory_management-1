@@ -67,7 +67,7 @@ try {
 
     $pdo->commit();
 
-    $_SESSION['success'] = 'บันทึกสัญญาเรียบร้อยแล้ว';
+    $_SESSION['success'] = 'เพิ่มสัญญาเรียบร้อยแล้ว';
     header('Location: ../Reports/manage_contracts.php');
     exit;
 } catch (PDOException $e) {

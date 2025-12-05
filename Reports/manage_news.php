@@ -244,14 +244,20 @@ foreach ($newsList as $news) {
           ?>
 
           <?php if (isset($_SESSION['success'])): ?>
-            <div style="padding: 1rem; margin-bottom: 1rem; background: #22c55e; color: #0f172a; border-radius: 10px; font-weight:600;">
-              <?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
-            </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', () => {
+                showSuccessToast('<?php echo addslashes($_SESSION['success']); ?>');
+              });
+            </script>
+            <?php unset($_SESSION['success']); ?>
           <?php endif; ?>
           <?php if (isset($_SESSION['error'])): ?>
-            <div style="padding: 1rem; margin-bottom: 1rem; background: #ef4444; color: #fff; border-radius: 10px; font-weight:600;">
-              <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
-            </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', () => {
+                showErrorToast('<?php echo addslashes($_SESSION['error']); ?>');
+              });
+            </script>
+            <?php unset($_SESSION['error']); ?>
           <?php endif; ?>
 
           <section class="manage-panel">
@@ -482,5 +488,6 @@ foreach ($newsList as $news) {
         if (e.target === this) closeEditModal();
       });
     </script>
+    <script src="../Assets/Javascript/toast-notification.js"></script>
   </body>
 </html>

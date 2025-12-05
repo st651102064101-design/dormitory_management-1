@@ -85,7 +85,7 @@ try {
         $ctr_id
     ]);
 
-    $_SESSION['success'] = 'บันทึกค่าใช้จ่ายเรียบร้อยแล้ว (ยอดรวม ฿' . number_format($exp_total) . ')';
+    $_SESSION['success'] = 'เพิ่มค่าใช้จ่ายเรียบร้อยแล้ว (ยอดรวม ฿' . number_format($exp_total) . ')';
     header('Location: ../Reports/manage_expenses.php');
     exit;
 } catch (PDOException $e) {

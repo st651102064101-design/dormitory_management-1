@@ -342,21 +342,21 @@ $statusMap = [
 
           <!-- แสดง Success/Error Messages -->
           <?php if (isset($_SESSION['success'])): ?>
-            <div style="padding: 1rem; margin-bottom: 1rem; background: #4caf50; color: white; border-radius: 6px;">
-              <?php 
-                echo htmlspecialchars($_SESSION['success']); 
-                unset($_SESSION['success']);
-              ?>
-            </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', () => {
+                showSuccessToast('<?php echo addslashes($_SESSION['success']); ?>');
+              });
+            </script>
+            <?php unset($_SESSION['success']); ?>
           <?php endif; ?>
           
           <?php if (isset($_SESSION['error'])): ?>
-            <div style="padding: 1rem; margin-bottom: 1rem; background: #f44336; color: white; border-radius: 6px;">
-              <?php 
-                echo htmlspecialchars($_SESSION['error']); 
-                unset($_SESSION['error']);
-              ?>
-            </div>
+            <script>
+              document.addEventListener('DOMContentLoaded', () => {
+                showErrorToast('<?php echo addslashes($_SESSION['error']); ?>');
+              });
+            </script>
+            <?php unset($_SESSION['error']); ?>
           <?php endif; ?>
 
           <!-- ส่วนแสดงห้องว่าง -->
@@ -607,6 +607,7 @@ $statusMap = [
       </div>
     </div>
 
+    <script src="../Assets/Javascript/toast-notification.js"></script>
     <script src="../Assets/Javascript/animate-ui.js"></script>
     <script src="../Assets/Javascript/main.js"></script>
     <script>
