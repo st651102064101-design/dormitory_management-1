@@ -283,6 +283,10 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
   </div>
 
   <nav class="app-nav" aria-label="Main navigation">
+    <div class="group">
+      <a class="subitem" href="dashboard.php"><span class="app-nav-icon" aria-hidden="true">📊</span><span class="app-nav-label">แดชบอร์ด</span></a>
+    </div>
+  </nav>
 
   <nav class="app-nav" aria-label="Reports navigation">
     <div class="group">

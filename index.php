@@ -4,7 +4,7 @@ session_start();
 
 // ถ้า logged in แล้ว ให้ไปหน้า dashboard
 if (!empty($_SESSION['admin_username'])) {
-    header('Location: Reports/manage_news.php');
+    header('Location: Reports/dashboard.php');
     exit;
 }
 
