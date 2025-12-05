@@ -728,6 +728,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const target = event.target;
         if (target.matches('.animate-ui-add-btn, .animate-ui-add-btn *')) {
             const button = target.closest('.animate-ui-add-btn');
+            // allow real form submit (type="submit") or explicit opt-in flag
+            if (
+                (button?.dataset.allowSubmit === 'true') ||
+                (button?.dataset.animateUiSkip === 'true') ||
+                (button?.dataset.noModal === 'true') ||
+                (button?.getAttribute('type') === 'submit')
+            ) {
+                return; // let native submit happen
+            }
             const entity = button?.dataset.entity || 'ข้อมูลใหม่';
             const fields = (button?.dataset.fields || '').split(',').map(f => f.trim()).filter(Boolean);
             openModal({ title: `เพิ่ม ${entity}`, fields });

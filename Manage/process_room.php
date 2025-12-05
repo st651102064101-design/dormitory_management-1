@@ -36,7 +36,7 @@ try {
         exit;
     }
 
-    $room_image = null;
+    $room_image = '';
     if (!empty($_FILES['room_image']['name'])) {
         $file = $_FILES['room_image'];
         $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
@@ -57,6 +57,8 @@ try {
 
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
             $room_image = $filename;
+        } else {
+            $room_image = '';
         }
     }
 

@@ -9,6 +9,60 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// หากมีการส่งฟอร์มเพิ่มห้องจากหน้านี้ ให้บันทึกลงฐานข้อมูล
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['room_number'], $_POST['type_id'], $_POST['room_status'])) {
+  $roomNumber = trim($_POST['room_number']);
+  $typeId = (int)($_POST['type_id'] ?? 0);
+  $roomStatus = $_POST['room_status'] ?? '1';
+  $roomImage = '';
+
+  if ($roomNumber === '' || $typeId <= 0) {
+    $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
+    header('Location: manage_rooms.php');
+    exit;
+  }
+
+  try {
+    // ตรวจสอบห้องซ้ำ
+    $stmtCheck = $pdo->prepare('SELECT room_id FROM room WHERE room_number = ?');
+    $stmtCheck->execute([$roomNumber]);
+    if ($stmtCheck->fetch()) {
+      $_SESSION['error'] = 'หมายเลขห้องนี้มีอยู่แล้ว';
+      header('Location: manage_rooms.php');
+      exit;
+    }
+
+    // อัปโหลดรูปถ้ามี
+    if (!empty($_FILES['room_image']['name'])) {
+      $file = $_FILES['room_image'];
+      $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      if (in_array($file['type'], $allowed, true)) {
+        $uploadDir = __DIR__ . '/../Assets/Images/Rooms/';
+        if (!is_dir($uploadDir)) {
+          mkdir($uploadDir, 0755, true);
+        }
+        $filename = time() . '_' . basename($file['name']);
+        $filepath = $uploadDir . $filename;
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+          $roomImage = $filename;
+        }
+      }
+    }
+
+    // บันทึกข้อมูลห้อง
+    $stmtInsert = $pdo->prepare('INSERT INTO room (room_number, type_id, room_status, room_image) VALUES (?, ?, ?, ?)');
+    $stmtInsert->execute([$roomNumber, $typeId, $roomStatus, $roomImage]);
+
+    $_SESSION['success'] = 'เพิ่มห้องพัก ห้อง ' . htmlspecialchars($roomNumber) . ' เรียบร้อยแล้ว';
+    header('Location: manage_rooms.php');
+    exit;
+  } catch (PDOException $e) {
+    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    header('Location: manage_rooms.php');
+    exit;
+  }
+}
+
 // ดึงข้อมูลห้องพัก
 $stmt = $pdo->query("
     SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.type_id, rt.type_name, rt.type_price
@@ -17,6 +71,16 @@ $stmt = $pdo->query("
     ORDER BY CAST(r.room_number AS UNSIGNED) ASC
 ");
 $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// หาหมายเลขห้องถัดไป (padding 2 หลัก)
+$maxRoomNumber = 0;
+foreach ($rooms as $room) {
+  $num = (int)($room['room_number'] ?? 0);
+  if ($num > $maxRoomNumber) {
+    $maxRoomNumber = $num;
+  }
+}
+$nextRoomNumber = str_pad((string)($maxRoomNumber + 1), 2, '0', STR_PAD_LEFT);
 
 // ดึงประเภทห้อง
 $stmt = $pdo->query("SELECT type_id, type_name, type_price FROM roomtype ORDER BY type_name ASC");
@@ -169,6 +233,30 @@ $totalRooms = count($rooms);
         color: #f5f8ff;
         font-family: inherit;
       }
+      .add-type-row { display:flex; align-items:center; gap:0.5rem; }
+      .add-type-btn {
+        padding: 0.65rem 0.9rem;
+        border-radius: 10px;
+        border: 1px dashed rgba(96,165,250,0.6);
+        background: rgba(15,23,42,0.7);
+        color: #60a5fa;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+      .add-type-btn:hover {
+        background: rgba(37,99,235,0.15);
+        border-color: rgba(96,165,250,0.95);
+      }
+      .delete-type-btn {
+        border-color: rgba(248,113,113,0.6);
+        color: #fca5a5;
+      }
+      .delete-type-btn:hover {
+        background: rgba(248,113,113,0.15);
+        border-color: rgba(248,113,113,0.9);
+      }
       .room-form-group input:focus,
       .room-form-group select:focus {
         outline: none;
@@ -227,15 +315,19 @@ $totalRooms = count($rooms);
                 <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">สร้างห้องพัก</p>
               </div>
             </div>
-            <form action="../Manage/process_room.php" method="post" enctype="multipart/form-data">
+            <form action="manage_rooms.php" method="post" enctype="multipart/form-data">
               <div class="room-form">
                 <div class="room-form-group">
                   <label for="room_number">หมายเลขห้อง <span style="color:#f87171;">*</span></label>
-                  <input type="text" id="room_number" name="room_number" required maxlength="2" placeholder="เช่น 01, 02, ..." />
+                  <input type="text" id="room_number" name="room_number" required maxlength="2" placeholder="เช่น 01, 02, ..." value="<?php echo htmlspecialchars($nextRoomNumber); ?>" />
                 </div>
                 <div class="room-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                   <div>
-                    <label for="type_id">ประเภทห้อง <span style="color:#f87171;">*</span></label>
+                    <div class="add-type-row">
+                      <label for="type_id" style="margin:0;">ประเภทห้อง <span style="color:#f87171;">*</span></label>
+                      <button type="button" class="add-type-btn" id="addTypeBtn">+ เพิ่มประเภทห้อง</button>
+                      <button type="button" class="add-type-btn delete-type-btn" id="deleteTypeBtn">ลบประเภทห้อง</button>
+                    </div>
                     <select id="type_id" name="type_id" required>
                       <option value="">-- เลือกประเภทห้อง --</option>
                       <?php foreach ($roomTypes as $type): ?>
@@ -258,7 +350,7 @@ $totalRooms = count($rooms);
                   <input type="file" id="room_image" name="room_image" accept="image/*" />
                 </div>
                 <div class="room-form-actions">
-                  <button type="submit" class="animate-ui-add-btn" style="flex:2;">
+                  <button type="submit" class="animate-ui-add-btn" data-allow-submit="true" data-animate-ui-skip="true" data-no-modal="true" style="flex:2;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     เพิ่มห้องพัก
                   </button>
@@ -330,7 +422,11 @@ $totalRooms = count($rooms);
           
           <div class="booking-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div>
-              <label>ประเภทห้อง: <span style="color: red;">*</span></label>
+              <div class="add-type-row" style="margin-bottom:0.35rem;">
+                <label style="margin:0;">ประเภทห้อง: <span style="color: red;">*</span></label>
+                <button type="button" class="add-type-btn" id="addTypeBtnEdit">+ เพิ่มประเภทห้อง</button>
+                <button type="button" class="add-type-btn delete-type-btn" id="deleteTypeBtnEdit">ลบประเภทห้อง</button>
+              </div>
               <select name="type_id" id="edit_type_id" required>
                 <option value="">-- เลือกประเภทห้อง --</option>
                 <?php foreach ($roomTypes as $type): ?>
@@ -407,6 +503,152 @@ $totalRooms = count($rooms);
         form.appendChild(idField);
         document.body.appendChild(form);
         form.submit();
+      }
+
+      // Add new room type (inline prompt + AJAX)
+      function addRoomTypeFlow() {
+        const name = prompt('ชื่อประเภทห้อง');
+        if (!name) return;
+        const priceRaw = prompt('ราคา/เดือน (ตัวเลขเท่านั้น)');
+        if (!priceRaw) return;
+        const price = priceRaw.replace(/[^0-9]/g, '');
+        if (!price) { alert('กรุณากรอกราคาเป็นตัวเลข'); return; }
+
+        const formData = new FormData();
+        formData.append('type_name', name.trim());
+        formData.append('type_price', price);
+
+        fetch('../Manage/add_room_type.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) throw new Error(data.message || 'เพิ่มประเภทห้องไม่สำเร็จ');
+          const { id, label } = data;
+          const addOption = (selectId) => {
+            const sel = document.getElementById(selectId);
+            if (!sel) return;
+            const opt = document.createElement('option');
+            opt.value = id;
+            opt.textContent = label;
+            sel.appendChild(opt);
+            sel.value = id;
+          };
+          addOption('type_id');
+          addOption('edit_type_id');
+          alert('เพิ่มประเภทห้องเรียบร้อย');
+        })
+        .catch(err => {
+          console.error(err);
+          alert(err.message || 'เพิ่มประเภทห้องไม่สำเร็จ');
+        });
+      }
+
+      // Delete room type (current selection)
+      function deleteRoomTypeFlow(selectId) {
+        const sel = document.getElementById(selectId);
+        if (!sel || !sel.value) { alert('เลือกประเภทห้องที่จะลบก่อน'); return; }
+        const opt = sel.options[sel.selectedIndex];
+        if (!confirm(`ยืนยันการลบประเภท "${opt.text}" ?`)) return;
+
+        const formData = new FormData();
+        formData.append('type_id', sel.value);
+
+        fetch('../Manage/delete_room_type.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) throw new Error(data.message || 'ลบประเภทห้องไม่สำเร็จ');
+          // remove from both selects
+          ['type_id', 'edit_type_id'].forEach(id => {
+            const s = document.getElementById(id);
+            if (!s) return;
+            [...s.options].forEach((o, idx) => {
+              if (o.value === sel.value) s.remove(idx);
+            });
+            s.value = '';
+          });
+          alert('ลบประเภทห้องเรียบร้อย');
+        })
+        .catch(err => {
+          console.error(err);
+          alert(err.message || 'ลบประเภทห้องไม่สำเร็จ');
+        });
+      }
+
+      document.getElementById('addTypeBtn')?.addEventListener('click', addRoomTypeFlow);
+      document.getElementById('addTypeBtnEdit')?.addEventListener('click', addRoomTypeFlow);
+      document.getElementById('deleteTypeBtn')?.addEventListener('click', () => deleteRoomTypeFlow('type_id'));
+      document.getElementById('deleteTypeBtnEdit')?.addEventListener('click', () => deleteRoomTypeFlow('edit_type_id'));
+      // Toast helper for inline flows (fallbacks to alert if CSS/JS not ready)
+      const toast = (msg, duration = 2200) => {
+        if (typeof window.showToast === 'function') {
+          try { window.showToast(msg, duration); return; } catch (err) { console.warn(err); }
+        }
+        const existing = document.querySelector('.animate-ui-toast');
+        if (existing) existing.remove();
+        const el = document.createElement('div');
+        el.className = 'animate-ui-toast';
+        el.textContent = msg;
+        document.body.appendChild(el);
+        const hide = () => {
+          el.style.animation = 'toastOut 260ms ease forwards';
+          setTimeout(() => {
+            if (el.parentNode) el.parentNode.removeChild(el);
+          }, 260);
+        };
+        el.addEventListener('click', hide);
+        setTimeout(hide, duration);
+      };
+      // Debug submit add-room form: alert values then continue submit
+      const addRoomForm = document.querySelector('form[action="manage_rooms.php"]');
+      if (addRoomForm) {
+        const validateAddRoom = () => {
+          const roomNumberInput = document.getElementById('room_number');
+          if (!roomNumberInput || !roomNumberInput.value.trim()) {
+            toast('กรุณากรอกหมายเลขห้อง');
+            roomNumberInput?.focus();
+            return null;
+          }
+          const typeSelect = document.getElementById('type_id');
+          if (!typeSelect || !typeSelect.value) {
+            toast('กรุณาเลือกประเภทห้อง');
+            typeSelect?.focus();
+            return null;
+          }
+          const statusSelect = document.getElementById('room_status');
+          if (!statusSelect || !statusSelect.value) {
+            toast('กรุณาเลือกสถานะห้อง');
+            statusSelect?.focus();
+            return null;
+          }
+          const roomNumber = roomNumberInput.value.trim();
+          const typeText = typeSelect.options[typeSelect.selectedIndex]?.text || '';
+          const statusText = statusSelect ? statusSelect.options[statusSelect.selectedIndex]?.text || '' : '';
+          return { roomNumber, typeText, statusText };
+        };
+
+        addRoomForm.addEventListener('submit', (e) => {
+          const vals = validateAddRoom();
+          if (!vals) { e.preventDefault(); return; }
+          toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} | ${vals.statusText}`, 2600);
+          console.log('[AddRoom] submit fired', vals);
+        });
+        // เผื่อกรณีบางเบราว์เซอร์กดปุ่มแล้วไม่ได้เข้าฟอร์ม submit ให้ติดที่ปุ่มด้วย
+        const addRoomBtn = addRoomForm.querySelector('.animate-ui-add-btn');
+        if (addRoomBtn) {
+          addRoomBtn.addEventListener('click', (e) => {
+            // กัน event bubble ไปโดน handler กลางของ animate-ui ที่เปิด modal
+            e.stopImmediatePropagation();
+            const vals = validateAddRoom();
+            if (!vals) { e.preventDefault(); e.stopPropagation(); return; }
+            toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} | ${vals.statusText}`, 2600);
+            console.log('[AddRoom] button clicked', vals);
+          });
+        }
       }
       
       // Close modal when clicking outside
