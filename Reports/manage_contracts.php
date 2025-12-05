@@ -412,20 +412,44 @@ function formatContractPeriod($startDate, $endDate) {
       </main>
     </div>
 
+    <script>
+      // ปิดการทำงานของ modal ใน main.js
+      document.addEventListener('DOMContentLoaded', () => {
+        // ลบ modal overlay ที่ main.js สร้างขึ้น
+        const mainModals = document.querySelectorAll('.animate-ui-modal-overlay');
+        mainModals.forEach(modal => modal.remove());
+        
+        // ลบ modal ทุกประเภทที่ไม่ต้องการ
+        setInterval(() => {
+          document.querySelectorAll('.animate-ui-modal-overlay, .confirm-overlay').forEach(el => {
+            // เช็คว่าเป็น modal ที่เราต้องการหรือไม่
+            const title = el.querySelector('.confirm-title, h3');
+            if (title && title.textContent !== 'ยืนยันการเปลี่ยนสถานะสัญญา') {
+              el.remove();
+            }
+          });
+        }, 50);
+      });
+    </script>
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script src="../Assets/Javascript/confirm-modal.js"></script>
     <script>
+
       async function updateContractStatus(contractId, newStatus) {
         const labelMap = { '0': 'สถานะปกติ', '1': 'ยกเลิกสัญญา', '2': 'แจ้งยกเลิก' };
         const confirmText = labelMap[newStatus] || 'อัปเดต';
         
         const confirmed = await showConfirmDialog(
           'ยืนยันการเปลี่ยนสถานะสัญญา',
-          `คุณต้องการเปลี่ยนสัญญานี้เป็น <strong>"${confirmText}"</strong> หรือไม่?`
+          `คุณต้องการเปลี่ยนสัญญานี้เป็น <strong>"${confirmText}"</strong> หรือไม่?`,
+          'warning'
         );
         
-        if (!confirmed) return;
+        if (!confirmed) {
+          console.log('User cancelled update contract status');
+          return;
+        }
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '../Manage/update_contract_status.php';
