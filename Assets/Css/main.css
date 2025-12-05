@@ -1,0 +1,223 @@
+/* Main CSS for Report Pages */
+
+/* Sidebar Toggle Button */
+#sidebar-toggle {
+    background: transparent;
+    border: 0;
+    color: #fff;
+    padding: 0.6rem 0.85rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.3s ease;
+}
+
+#sidebar-toggle:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+#sidebar-toggle svg {
+    width: 24px;
+    height: 24px;
+    stroke-width: 2;
+}
+
+
+/* Modal and Toast Styles (complementary to animate-ui.css) */
+.animate-ui-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, #ffd166, #f97316);
+    color: #07122b;
+    padding: 0.8rem 1.25rem;
+    border-radius: 999px;
+    box-shadow: 0 10px 30px rgba(8, 16, 32, 0.45);
+    font-weight: 700;
+    z-index: 1200;
+    opacity: 0;
+    animation: toastIn 260ms ease forwards;
+}
+
+@keyframes toastIn {
+    from {
+        transform: translateX(-50%) translateY(10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes toastOut {
+    from {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+    to {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px);
+    }
+}
+
+/* Modal Overlay */
+.animate-ui-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1300;
+}
+
+.animate-ui-modal {
+    background: radial-gradient(circle at top, #1c2541, #0b0c10 60%);
+    border-radius: 1rem;
+    max-width: 480px;
+    width: min(90vw, 480px);
+    padding: 1.5rem;
+    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.55);
+}
+
+.animate-ui-modal h3 {
+    margin: 0 0 0.6rem 0;
+    font-size: 1.4rem;
+    color: #f5f8ff;
+}
+
+.animate-ui-modal form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.animate-ui-modal label {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.animate-ui-modal input,
+.animate-ui-modal textarea,
+.animate-ui-modal select {
+    border-radius: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.65);
+    color: #f5f5f5;
+    padding: 0.55rem 0.75rem;
+    font-size: 1rem;
+}
+
+.animate-ui-modal input:focus,
+.animate-ui-modal textarea:focus,
+.animate-ui-modal select:focus {
+    outline: none;
+    border-color: #9ef3ff;
+    box-shadow: 0 0 0 3px rgba(158, 243, 255, 0.25);
+}
+
+.animate-ui-modal button[type="submit"] {
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+    color: #fff;
+    cursor: pointer;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.animate-ui-modal button[type="submit"]:hover {
+    transform: scale(1.02);
+}
+
+.animate-ui-modal button[type="submit"]:active {
+    transform: scale(0.98);
+}
+
+.animate-ui-cancel-btn {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    font-weight: 700;
+    background: rgba(248, 113, 113, 0.15);
+    color: #fecaca;
+    cursor: pointer;
+    transition: background 150ms ease;
+}
+
+.animate-ui-cancel-btn:hover {
+    background: rgba(248, 113, 113, 0.25);
+}
+
+.animate-ui-modal-close {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.1rem;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    cursor: pointer;
+}
+
+/* Action Buttons */
+.animate-ui-action-btn {
+    border: 0;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    height: 2.5rem;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+
+.animate-ui-action-btn:hover {
+    transform: scale(1.02);
+}
+
+.animate-ui-action-btn:active {
+    transform: scale(0.98);
+}
+
+.animate-ui-action-btn.edit {
+    background: rgba(59, 130, 246, 0.15);
+    color: #bfdbfe;
+}
+
+.animate-ui-action-btn.edit:hover {
+    box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.animate-ui-action-btn.delete {
+    background: rgba(248, 113, 113, 0.15);
+    color: #fecaca;
+}
+
+.animate-ui-action-btn.delete:hover {
+    box-shadow: 0 4px 12px rgba(248, 113, 113, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .animate-ui-modal {
+        max-width: 90vw;
+    }
+
+    .manage-toolbar {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+}

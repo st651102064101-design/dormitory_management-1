@@ -1,0 +1,405 @@
+<?php
+declare(strict_types=1);
+session_start();
+if (empty($_SESSION['admin_username'])) {
+    header('Location: ../Login.php');
+    exit;
+}
+require_once __DIR__ . '/../ConnectDB.php';
+$pdo = connectDB();
+
+// ดึงข้อมูลสัญญา
+$ctrStmt = $pdo->query("\n  SELECT c.*,\n         t.tnt_name, t.tnt_phone,\n         r.room_number, r.room_status,\n         rt.type_name\n  FROM contract c\n  LEFT JOIN tenant t ON c.tnt_id = t.tnt_id\n  LEFT JOIN room r ON c.room_id = r.room_id\n  LEFT JOIN roomtype rt ON r.type_id = rt.type_id\n  ORDER BY c.ctr_start DESC, c.ctr_id DESC\n");
+$contracts = $ctrStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ดึงข้อมูลผู้เช่าและห้องสำหรับฟอร์มสร้างสัญญา
+$tenants = $pdo->query("SELECT tnt_id, tnt_name, tnt_phone FROM tenant ORDER BY tnt_name")->fetchAll(PDO::FETCH_ASSOC);
+$rooms = $pdo->query("SELECT room_id, room_number, room_status FROM room ORDER BY room_number")->fetchAll(PDO::FETCH_ASSOC);
+
+$statusMap = [
+  '0' => 'ปกติ',
+  '1' => 'ยกเลิกแล้ว',
+  '2' => 'แจ้งยกเลิก',
+];
+$statusColors = [
+  '0' => '#22c55e',
+  '1' => '#ef4444',
+  '2' => '#f97316',
+];
+
+$stats = [
+  'active' => 0,
+  'cancelled' => 0,
+  'notice' => 0,
+];
+foreach ($contracts as $ctr) {
+    $status = (string)($ctr['ctr_status'] ?? '');
+    if ($status === '0') {
+        $stats['active']++;
+    } elseif ($status === '1') {
+        $stats['cancelled']++;
+    } elseif ($status === '2') {
+        $stats['notice']++;
+    }
+}
+?>
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>จัดการสัญญาเช่า</title>
+    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <style>
+      .contract-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .contract-stat-card {
+        background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
+        border-radius: 16px;
+        padding: 1.25rem;
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #f5f8ff;
+        box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+      }
+      .contract-stat-card h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        color: rgba(255,255,255,0.7);
+      }
+      .contract-stat-card .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
+      }
+      .contract-stat-card .stat-chip {
+        margin-top: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        padding: 0.2rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.1);
+      }
+      .contract-form {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .contract-form-group label {
+        color: rgba(255,255,255,0.8);
+        font-weight: 600;
+        display: block;
+        margin-bottom: 0.4rem;
+      }
+      .contract-form-group input,
+      .contract-form-group select {
+        width: 100%;
+        padding: 0.75rem 0.85rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(8,12,24,0.85);
+        color: #f5f8ff;
+      }
+      .contract-form-group input:focus,
+      .contract-form-group select:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+      }
+      .contract-form-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin-top: 1.5rem;
+      }
+      .contract-form-actions button {
+        flex: 1;
+        min-width: 180px;
+      }
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 90px;
+        padding: 0.25rem 0.85rem;
+        border-radius: 999px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #fff;
+      }
+      .status-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .notice-banner {
+        margin-top: 0.75rem;
+        padding: 0.75rem 1rem;
+        border-radius: 0.75rem;
+        background: rgba(249,115,22,0.12);
+        color: #fb923c;
+        font-size: 0.9rem;
+      }
+      .contract-table-room {
+        display: flex;
+        flex-direction: column;
+        gap: 0.15rem;
+      }
+      .contract-room-meta {
+        font-size: 0.75rem;
+        color: #64748b;
+      }
+    </style>
+  </head>
+  <body class="reports-page">
+    <div class="app-shell">
+      <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+      <main class="app-main">
+        <div>
+          <?php 
+            $pageTitle = 'จัดการสัญญาเช่า';
+            include __DIR__ . '/../includes/page_header.php'; 
+          ?>
+
+          <?php if (isset($_SESSION['success'])): ?>
+            <div style="padding: 1rem; margin-bottom: 1rem; background: #22c55e; color: #0f172a; border-radius: 10px; font-weight:600;">
+              <?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
+            </div>
+          <?php endif; ?>
+          <?php if (isset($_SESSION['error'])): ?>
+            <div style="padding: 1rem; margin-bottom: 1rem; background: #ef4444; color: #fff; border-radius: 10px; font-weight:600;">
+              <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
+            </div>
+          <?php endif; ?>
+
+          <section class="manage-panel">
+            <div class="section-header">
+              <div>
+                <h1>ภาพรวมสัญญา</h1>
+                <p style="color:#94a3b8;margin-top:0.2rem;">ติดตามสถานะสัญญาและจำนวนที่ต้องดำเนินการ</p>
+              </div>
+            </div>
+            <div class="contract-stats">
+              <div class="contract-stat-card">
+                <h3>ใช้งานปกติ</h3>
+                <div class="stat-value"><?php echo number_format($stats['active']); ?></div>
+                <div class="stat-chip">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;"></span>
+                  สถานะปกติ
+                </div>
+              </div>
+              <div class="contract-stat-card">
+                <h3>แจ้งยกเลิก</h3>
+                <div class="stat-value"><?php echo number_format($stats['notice']); ?></div>
+                <div class="stat-chip">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#f97316;"></span>
+                  รอดำเนินการ
+                </div>
+              </div>
+              <div class="contract-stat-card">
+                <h3>ยกเลิกแล้ว</h3>
+                <div class="stat-value"><?php echo number_format($stats['cancelled']); ?></div>
+                <div class="stat-chip">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;"></span>
+                  ปิดสัญญาเรียบร้อย
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;">
+            <div class="section-header">
+              <div>
+                <h1>ทำสัญญาใหม่</h1>
+                <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">ระบุผู้เช่า ห้อง วันที่เริ่ม-สิ้นสุด และเงินมัดจำ</p>
+              </div>
+            </div>
+            <form action="../Manage/process_contract.php" method="post">
+              <div class="contract-form">
+                <div class="contract-form-group">
+                  <label for="tnt_id">ผู้เช่า <span style="color:#f87171;">*</span></label>
+                  <select name="tnt_id" id="tnt_id" required>
+                    <option value="">-- เลือกผู้เช่า --</option>
+                    <?php foreach ($tenants as $tenant): ?>
+                      <option value="<?php echo htmlspecialchars($tenant['tnt_id']); ?>">
+                        <?php echo htmlspecialchars($tenant['tnt_name']); ?> (<?php echo htmlspecialchars($tenant['tnt_phone']); ?>)
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="contract-form-group">
+                  <label for="room_id">ห้องพัก <span style="color:#f87171;">*</span></label>
+                  <select name="room_id" id="room_id" required>
+                    <option value="">-- เลือกห้องพัก --</option>
+                    <?php foreach ($rooms as $room): ?>
+                      <option value="<?php echo (int)$room['room_id']; ?>" data-room-status="<?php echo htmlspecialchars((string)$room['room_status']); ?>">
+                        ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?> (สถานะ: <?php echo $room['room_status'] === '0' ? 'ว่าง' : 'ไม่ว่าง'; ?>)
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="contract-form-group">
+                  <label for="ctr_start">วันที่เริ่มสัญญา <span style="color:#f87171;">*</span></label>
+                  <input type="date" id="ctr_start" name="ctr_start" required value="<?php echo date('Y-m-d'); ?>" />
+                </div>
+                <div class="contract-form-group">
+                  <label for="ctr_end">วันที่สิ้นสุด <span style="color:#f87171;">*</span></label>
+                  <input type="date" id="ctr_end" name="ctr_end" required min="<?php echo date('Y-m-d'); ?>" />
+                </div>
+                <div class="contract-form-group">
+                  <label for="ctr_deposit">เงินมัดจำ (บาท)</label>
+                  <input type="number" id="ctr_deposit" name="ctr_deposit" min="0" step="500" placeholder="เช่น 5000" value="2000" />
+                </div>
+              </div>
+              <div class="contract-form-actions">
+                <button type="submit" class="animate-ui-add-btn" style="flex:2;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
+                  บันทึกสัญญา
+                </button>
+                <button type="reset" class="animate-ui-action-btn delete" style="flex:1;">ล้างข้อมูล</button>
+              </div>
+              <div id="room-status-hint" class="notice-banner" style="display:none;"></div>
+            </form>
+          </section>
+
+          <section class="manage-panel">
+            <div class="section-header">
+              <div>
+                <h1>รายการสัญญาทั้งหมด</h1>
+                <p style="color:#94a3b8;margin-top:0.2rem;">อัปเดตสถานะหรือพิมพ์เอกสารได้จากที่นี่</p>
+              </div>
+            </div>
+            <div class="report-table">
+              <table class="table--compact" id="table-contracts">
+                <thead>
+                  <tr>
+                    <th>เลขที่สัญญา</th>
+                    <th>ผู้เช่า</th>
+                    <th>ห้องพัก</th>
+                    <th>ช่วงสัญญา</th>
+                    <th>เงินมัดจำ</th>
+                    <th>สถานะ</th>
+                    <th class="crud-column">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if (empty($contracts)): ?>
+                    <tr>
+                      <td colspan="7" style="text-align:center;padding:2rem;color:#64748b;">ยังไม่มีข้อมูลสัญญา</td>
+                    </tr>
+                  <?php else: ?>
+                    <?php foreach ($contracts as $ctr): ?>
+                      <tr>
+                        <td>#<?php echo str_pad((string)$ctr['ctr_id'], 4, '0', STR_PAD_LEFT); ?></td>
+                        <td>
+                          <div><?php echo htmlspecialchars($ctr['tnt_name'] ?? 'ไม่พบข้อมูล'); ?></div>
+                          <div class="contract-room-meta">โทร <?php echo htmlspecialchars($ctr['tnt_phone'] ?? '-'); ?></div>
+                        </td>
+                        <td>
+                          <div class="contract-table-room">ห้อง <?php echo str_pad((string)($ctr['room_number'] ?? 0), 2, '0', STR_PAD_LEFT); ?></div>
+                          <div class="contract-room-meta">ประเภท: <?php echo htmlspecialchars($ctr['type_name'] ?? '-'); ?></div>
+                        </td>
+                        <td>
+                          <?php 
+                            $start = $ctr['ctr_start'] ? date('d/m/Y', strtotime($ctr['ctr_start'])) : '-';
+                            $end = $ctr['ctr_end'] ? date('d/m/Y', strtotime($ctr['ctr_end'])) : '-';
+                            echo $start . ' - ' . $end;
+                          ?>
+                        </td>
+                        <td>฿<?php echo number_format((int)($ctr['ctr_deposit'] ?? 0)); ?></td>
+                        <td>
+                          <?php $status = (string)($ctr['ctr_status'] ?? ''); ?>
+                          <span class="status-badge" style="background: <?php echo $statusColors[$status] ?? '#94a3b8'; ?>;">
+                            <?php echo $statusMap[$status] ?? 'ไม่ระบุ'; ?>
+                          </span>
+                        </td>
+                        <td class="crud-column">
+                          <div class="status-actions">
+                            <?php if ($status === '0'): ?>
+                              <button type="button" class="animate-ui-action-btn delete" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '2')">แจ้งยกเลิก</button>
+                              <button type="button" class="animate-ui-action-btn delete" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '1')">ยกเลิกทันที</button>
+                            <?php elseif ($status === '2'): ?>
+                              <button type="button" class="animate-ui-action-btn edit" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '0')">กลับเป็นปกติ</button>
+                              <button type="button" class="animate-ui-action-btn delete" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '1')">ยกเลิกสัญญา</button>
+                            <?php elseif ($status === '1'): ?>
+                              <button type="button" class="animate-ui-action-btn edit" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '0')">เปิดใช้งานใหม่</button>
+                            <?php endif; ?>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <script src="../Assets/Javascript/animate-ui.js" defer></script>
+    <script src="../Assets/Javascript/main.js" defer></script>
+    <script>
+      function updateContractStatus(contractId, newStatus) {
+        const labelMap = { '0': 'สถานะปกติ', '1': 'ยกเลิกสัญญา', '2': 'แจ้งยกเลิก' };
+        const confirmText = labelMap[newStatus] || 'อัปเดต';
+        if (!confirm(`ยืนยันการเปลี่ยนสัญญาเป็นสถานะ "${confirmText}"?`)) {
+          return;
+        }
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '../Manage/update_contract_status.php';
+        const idField = document.createElement('input');
+        idField.type = 'hidden';
+        idField.name = 'ctr_id';
+        idField.value = contractId;
+        const statusField = document.createElement('input');
+        statusField.type = 'hidden';
+        statusField.name = 'ctr_status';
+        statusField.value = newStatus;
+        form.appendChild(idField);
+        form.appendChild(statusField);
+        document.body.appendChild(form);
+        form.submit();
+      }
+
+      (function setupFormHelpers() {
+        const roomSelect = document.getElementById('room_id');
+        const hint = document.getElementById('room-status-hint');
+        if (roomSelect && hint) {
+          roomSelect.addEventListener('change', () => {
+            const opt = roomSelect.options[roomSelect.selectedIndex];
+            const status = opt ? opt.dataset.roomStatus : null;
+            if (!status) {
+              hint.style.display = 'none';
+              return;
+            }
+            if (status === '0') {
+              hint.style.display = 'none';
+            } else {
+              hint.textContent = 'หมายเหตุ: ห้องนี้ไม่ว่าง หากทำสัญญาใหม่ระบบจะถือว่าเริ่มใช้งานทันที';
+              hint.style.display = 'block';
+            }
+          });
+        }
+        const startInput = document.getElementById('ctr_start');
+        const endInput = document.getElementById('ctr_end');
+        if (startInput && endInput) {
+          startInput.addEventListener('change', () => {
+            endInput.min = startInput.value;
+            if (endInput.value && endInput.value < startInput.value) {
+              endInput.value = startInput.value;
+            }
+          });
+        }
+      })();
+    </script>
+  </body>
+</html>

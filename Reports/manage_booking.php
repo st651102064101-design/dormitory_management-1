@@ -1,0 +1,520 @@
+<?php
+declare(strict_types=1);
+session_start();
+if (empty($_SESSION['admin_username'])) {
+    header('Location: ../Login.php');
+    exit;
+}
+require_once __DIR__ . '/../ConnectDB.php';
+$pdo = connectDB();
+
+// ดึงข้อมูลห้องที่ว่าง (room_status = '0')
+$stmt = $pdo->query("
+    SELECT r.*, rt.type_name, rt.type_price 
+    FROM room r 
+    LEFT JOIN roomtype rt ON r.type_id = rt.type_id 
+    WHERE r.room_status = '0'
+    ORDER BY r.room_number
+");
+$availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ดึงข้อมูลการจองทั้งหมด
+$stmtBookings = $pdo->query("
+  SELECT b.*, r.room_number, rt.type_name, rt.type_price
+  FROM booking b
+  LEFT JOIN room r ON b.room_id = r.room_id
+  LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+  WHERE b.bkg_status <> '0'
+  ORDER BY b.bkg_date DESC
+");
+$bookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC);
+
+// Debug: ตรวจสอบจำนวนข้อมูล
+// echo "<!-- จำนวนการจอง: " . count($bookings) . " -->";
+
+$statusMap = [
+  '0' => 'ยกเลิก',
+  '1' => 'จองแล้ว',
+  '2' => 'เข้าพักแล้ว',
+];
+?>
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>จองห้องพัก</title>
+    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <style>
+      .booking-section {
+        margin-bottom: 2rem;
+      }
+      .rooms-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-top: 1rem;
+      }
+      .room-card {
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1rem;
+        background: #fff;
+        transition: all 0.3s ease;
+      }
+      .room-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transform: translateY(-2px);
+      }
+      .room-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.75rem;
+      }
+      .room-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #333;
+      }
+      .room-status {
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.875rem;
+        background: #4caf50;
+        color: white;
+      }
+      .room-info {
+        margin: 0.5rem 0;
+      }
+      .room-info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 0.25rem 0;
+        font-size: 0.95rem;
+      }
+      .room-price {
+        font-size: 1.25rem;
+        font-weight: bold;
+        color: #2196f3;
+        margin: 0.75rem 0;
+      }
+      .room-image-container {
+        margin: 0.75rem 0;
+        height: 150px;
+        overflow: hidden;
+        border-radius: 6px;
+        background: #f5f5f5;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .room-image-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+      }
+      .book-btn {
+        width: 100%;
+        padding: 0.75rem;
+        background: #2196f3;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .book-btn:hover {
+        background: #1976d2;
+      }
+      .booking-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.85);
+        z-index: 1000;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+      .booking-modal.active {
+        display: flex;
+      }
+      .booking-modal-content {
+        background: radial-gradient(circle at top, #1c2541, #0b0c10 60%);
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 25px 60px rgba(7, 11, 23, 0.65);
+        padding: 2rem;
+        border-radius: 16px;
+        max-width: 520px;
+        width: min(520px, 95vw);
+        max-height: 90vh;
+        overflow-y: auto;
+        color: #f5f8ff;
+      }
+
+      .booking-modal-content h2 {
+        margin-top: 0;
+        color: #fff;
+        letter-spacing: 0.02em;
+      }
+      .booking-form-group {
+        margin-bottom: 1.5rem;
+      }
+      .booking-form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+        color: rgba(255,255,255,0.85);
+      }
+      .booking-form-group input,
+      .booking-form-group select {
+        width: 100%;
+        padding: 0.8rem 0.9rem;
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 10px;
+        font-size: 1rem;
+        background: rgba(12, 17, 29, 0.85);
+        color: #f5f5f5;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+
+      .booking-form-group input[readonly] {
+        background: rgba(255,255,255,0.05);
+        border-color: rgba(255,255,255,0.12);
+        cursor: not-allowed;
+        color: rgba(255,255,255,0.85);
+      }
+
+      .booking-form-group input:focus,
+      .booking-form-group select:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
+      }
+      .booking-form-actions {
+        display: flex;
+        gap: 1rem;
+        margin-top: 2rem;
+      }
+      .booking-form-actions button {
+        flex: 1;
+        padding: 0.75rem;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s;
+      }
+      .btn-submit {
+        background: linear-gradient(135deg, #60a5fa, #2563eb);
+        color: #fff;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35);
+      }
+      .btn-submit:hover {
+        background: linear-gradient(135deg, #7dd3fc, #2563eb);
+      }
+      .btn-cancel {
+        background: rgba(248, 113, 113, 0.15);
+        color: #fecaca;
+        border: 1px solid rgba(248, 113, 113, 0.4);
+      }
+      .btn-cancel:hover {
+        background: rgba(248, 113, 113, 0.3);
+      }
+    </style>
+  </head>
+  <body class="reports-page">
+    <div class="app-shell">
+      <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+      <main class="app-main">
+        <div>
+          <?php 
+            $pageTitle = 'จองห้องพัก';
+            include __DIR__ . '/../includes/page_header.php'; 
+          ?>
+
+          <!-- แสดง Success/Error Messages -->
+          <?php if (isset($_SESSION['success'])): ?>
+            <div style="padding: 1rem; margin-bottom: 1rem; background: #4caf50; color: white; border-radius: 6px;">
+              <?php 
+                echo htmlspecialchars($_SESSION['success']); 
+                unset($_SESSION['success']);
+              ?>
+            </div>
+          <?php endif; ?>
+          
+          <?php if (isset($_SESSION['error'])): ?>
+            <div style="padding: 1rem; margin-bottom: 1rem; background: #f44336; color: white; border-radius: 6px;">
+              <?php 
+                echo htmlspecialchars($_SESSION['error']); 
+                unset($_SESSION['error']);
+              ?>
+            </div>
+          <?php endif; ?>
+
+          <!-- ส่วนแสดงห้องว่าง -->
+          <section class="manage-panel booking-section">
+            <div class="section-header">
+              <div>
+                <h1>ห้องพักที่ว่าง</h1>
+              </div>
+            </div>
+            
+            <?php if (empty($availableRooms)): ?>
+              <div style="padding: 2rem; text-align: center; color: #666;">
+                <p style="font-size: 1.2rem;">ไม่มีห้องว่างในขณะนี้</p>
+              </div>
+            <?php else: ?>
+              <div class="rooms-grid">
+                <?php foreach($availableRooms as $room): ?>
+                  <div class="room-card">
+                    <div class="room-card-header">
+                      <span class="room-number">ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?></span>
+                      <span class="room-status">ว่าง</span>
+                    </div>
+                    
+                    <?php if (!empty($room['room_image'])): 
+                      $img = basename($room['room_image']); 
+                    ?>
+                      <div class="room-image-container">
+                        <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
+                      </div>
+                    <?php endif; ?>
+                    
+                    <div class="room-info">
+                      <div class="room-info-item">
+                        <span>ประเภท:</span>
+                        <span><strong><?php echo htmlspecialchars($room['type_name']); ?></strong></span>
+                      </div>
+                    </div>
+                    
+                    <div class="room-price">
+                      ฿<?php echo number_format((int)$room['type_price']); ?> / เดือน
+                    </div>
+                    
+                    <button type="button" class="book-btn" 
+                            data-room-id="<?php echo $room['room_id']; ?>"
+                            data-room-number="<?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>"
+                            data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
+                            data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
+                      จองห้องนี้
+                    </button>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+          </section>
+
+          <!-- ส่วนแสดงรายการจอง -->
+          <section class="manage-panel">
+            <div class="section-header">
+              <div>
+                <h1>รายการจองทั้งหมด</h1>
+              </div>
+            </div>
+            <div class="report-table">
+              <table class="table--compact" id="table-bookings">
+                <thead>
+                  <tr>
+                    <th>รหัสการจอง</th>
+                    <th>หมายเลขห้อง</th>
+                    <th>ประเภทห้อง</th>
+                    <th>วันที่จอง</th>
+                    <th>วันที่เข้าพัก</th>
+                    <th>สถานะ</th>
+                    <th>ราคา</th>
+                    <th class="crud-column">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if (empty($bookings)): ?>
+                    <tr>
+                      <td colspan="8" style="text-align: center; padding: 2rem; color: #666;">
+                        ยังไม่มีรายการจองในระบบ
+                      </td>
+                    </tr>
+                  <?php else: ?>
+                    <?php foreach($bookings as $bkg): ?>
+                      <tr>
+                        <td><?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
+                        <td><?php echo !empty($bkg['room_number']) ? str_pad((string)$bkg['room_number'], 2, '0', STR_PAD_LEFT) : '-'; ?></td>
+                        <td><?php echo htmlspecialchars($bkg['type_name'] ?? '-'); ?></td>
+                        <td><?php echo !empty($bkg['bkg_date']) ? date('d/m/Y', strtotime($bkg['bkg_date'])) : '-'; ?></td>
+                        <td><?php echo !empty($bkg['bkg_checkin_date']) ? date('d/m/Y', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
+                        <td>
+                          <span style="
+                            padding: 0.25rem 0.75rem;
+                            border-radius: 12px;
+                            font-size: 0.875rem;
+                            background: <?php 
+                              echo $bkg['bkg_status'] === '0' ? '#f44336' : 
+                                  ($bkg['bkg_status'] === '1' ? '#ff9800' : '#4caf50'); 
+                            ?>;
+                            color: white;
+                          ">
+                            <?php echo $statusMap[$bkg['bkg_status']] ?? 'ไม่ระบุ'; ?>
+                          </span>
+                        </td>
+                        <td>฿<?php echo number_format((int)($bkg['type_price'] ?? 0)); ?></td>
+                        <td class="crud-column">
+                          <?php if ($bkg['bkg_status'] === '1'): ?>
+                            <button type="button" 
+                                    class="animate-ui-action-btn edit" 
+                                    onclick="updateBookingStatus(<?php echo $bkg['bkg_id']; ?>, '2')">
+                              เข้าพัก
+                            </button>
+                            <button type="button" 
+                                    class="animate-ui-action-btn delete" 
+                                    onclick="updateBookingStatus(<?php echo $bkg['bkg_id']; ?>, '0')">
+                              ยกเลิก
+                            </button>
+                          <?php elseif ($bkg['bkg_status'] === '2'): ?>
+                            <span style="color: #4caf50; font-weight: 500;">เข้าพักแล้ว</span>
+                          <?php elseif ($bkg['bkg_status'] === '0'): ?>
+                            <span style="color: #f44336; font-weight: 500;">ยกเลิกแล้ว</span>
+                          <?php endif; ?>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+
+    <!-- Booking Modal -->
+    <div class="booking-modal" id="bookingModal">
+      <div class="booking-modal-content">
+        <h2>จองห้องพัก</h2>
+        <form id="bookingForm" method="POST" action="../Manage/process_booking.php">
+          <input type="hidden" name="room_id" id="modal_room_id">
+          
+          <div class="booking-form-group">
+            <label>หมายเลขห้อง:</label>
+            <input type="text" id="modal_room_number" readonly>
+          </div>
+          
+          <div class="booking-form-group">
+            <label>ประเภทห้อง:</label>
+            <input type="text" id="modal_room_type" readonly>
+          </div>
+          
+          <div class="booking-form-group">
+            <label>ราคา/เดือน:</label>
+            <input type="text" id="modal_room_price" readonly>
+          </div>
+          
+          <div class="booking-form-group">
+            <label>วันที่จอง: <span style="color: red;">*</span></label>
+            <input type="date" name="bkg_date" required value="<?php echo date('Y-m-d'); ?>">
+          </div>
+          
+          <div class="booking-form-group">
+            <label>วันที่เข้าพัก: <span style="color: red;">*</span></label>
+            <input type="date" name="bkg_checkin_date" required min="<?php echo date('Y-m-d'); ?>">
+          </div>
+          
+          <div class="booking-form-actions">
+            <button type="submit" class="btn-submit">ยืนยันการจอง</button>
+            <button type="button" class="btn-cancel" onclick="closeBookingModal()">ยกเลิก</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="../Assets/Javascript/animate-ui.js"></script>
+    <script src="../Assets/Javascript/main.js"></script>
+    <script>
+      // รอให้ DOM โหลดเสร็จ
+      document.addEventListener('DOMContentLoaded', function() {
+        console.log('Page loaded');
+        
+        // เปิด modal สำหรับจองห้อง
+        document.querySelectorAll('.book-btn').forEach(btn => {
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            console.log('Book button clicked');
+            
+            const roomId = this.dataset.roomId;
+            const roomNumber = this.dataset.roomNumber;
+            const roomType = this.dataset.roomType;
+            const roomPrice = this.dataset.roomPrice;
+            
+            console.log('Room data:', {roomId, roomNumber, roomType, roomPrice});
+            
+            document.getElementById('modal_room_id').value = roomId;
+            document.getElementById('modal_room_number').value = 'ห้อง ' + roomNumber;
+            document.getElementById('modal_room_type').value = roomType;
+            document.getElementById('modal_room_price').value = '฿' + roomPrice;
+            
+            document.getElementById('bookingModal').classList.add('active');
+          });
+        });
+        
+        // ปิด modal เมื่อคลิกนอก content
+        const modal = document.getElementById('bookingModal');
+        if (modal) {
+          modal.addEventListener('click', function(e) {
+            if (e.target === this) {
+              closeBookingModal();
+            }
+          });
+        }
+        
+        // ตั้งค่า default date
+        const today = new Date().toISOString().split('T')[0];
+        const dateInputs = document.querySelectorAll('input[type="date"]');
+        dateInputs.forEach(input => {
+          if (!input.value) {
+            input.min = today;
+          }
+        });
+      });
+      
+      // ปิด modal
+      function closeBookingModal() {
+        const modal = document.getElementById('bookingModal');
+        const form = document.getElementById('bookingForm');
+        
+        modal.classList.remove('active');
+        if (form) {
+          form.reset();
+        }
+      }
+      
+      // อัพเดทสถานะการจอง
+      function updateBookingStatus(bookingId, newStatus) {
+        const statusText = newStatus === '2' ? 'เข้าพัก' : 'ยกเลิก';
+        if (confirm(`ยืนยันการ${statusText}การจองนี้?`)) {
+          const form = document.createElement('form');
+          form.method = 'POST';
+          form.action = '../Manage/update_booking_status.php';
+          
+          const inputId = document.createElement('input');
+          inputId.type = 'hidden';
+          inputId.name = 'bkg_id';
+          inputId.value = bookingId;
+          
+          const inputStatus = document.createElement('input');
+          inputStatus.type = 'hidden';
+          inputStatus.name = 'bkg_status';
+          inputStatus.value = newStatus;
+          
+          form.appendChild(inputId);
+          form.appendChild(inputStatus);
+          document.body.appendChild(form);
+          form.submit();
+        }
+      }
+    </script>
+  </body>
+</html>

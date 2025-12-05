@@ -1,0 +1,11 @@
+AddDefaultCharset UTF-8
+AddType text/javascript .js
+
+<IfModule mod_headers.c>
+	<FilesMatch "\\.js$">
+		Header set Content-Type "text/javascript; charset=utf-8"
+	</FilesMatch>
+	<FilesMatch "\\.(html|php)$">
+		Header set Content-Type "text/html; charset=utf-8"
+	</FilesMatch>
+</IfModule>
