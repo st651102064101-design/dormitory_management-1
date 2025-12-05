@@ -182,7 +182,6 @@ foreach ($contracts as $ctr) {
           <section class="manage-panel">
             <div class="section-header">
               <div>
-                <h1>ภาพรวมสัญญา</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ติดตามสถานะสัญญาและจำนวนที่ต้องดำเนินการ</p>
               </div>
             </div>

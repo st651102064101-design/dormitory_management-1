@@ -172,12 +172,6 @@ foreach ($newsList as $news) {
           <?php endif; ?>
 
           <section class="manage-panel">
-            <div class="section-header">
-              <div>
-                <h1>ภาพรวมข่าวประชาสัมพันธ์</h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">สรุปข่าวสารและประกาศต่างๆ</p>
-              </div>
-            </div>
             <div class="news-stats">
               <div class="news-stat-card">
                 <h3>ข่าวทั้งหมด</h3>

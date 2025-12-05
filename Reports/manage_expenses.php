@@ -208,7 +208,6 @@ foreach ($expenses as $exp) {
           <section class="manage-panel">
             <div class="section-header">
               <div>
-                <h1>ภาพรวมค่าใช้จ่าย</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">สรุปยอดค่าใช้จ่ายและสถานะการชำระเงิน</p>
               </div>
             </div>

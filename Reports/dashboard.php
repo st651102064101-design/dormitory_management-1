@@ -104,37 +104,26 @@ try {
         }
 
         .stat-card {
-            background: white;
-            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));
+            border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            border-left: 4px solid #007bff;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
-        .stat-card.danger {
-            border-left-color: #dc3545;
-        }
-
-        .stat-card.success {
-            border-left-color: #28a745;
-        }
-
-        .stat-card.warning {
-            border-left-color: #ffc107;
-        }
-
-        .stat-card.info {
-            border-left-color: #17a2b8;
-        }
+        .stat-card.danger { box-shadow: 0 10px 30px rgba(220,53,69,0.25); }
+        .stat-card.success { box-shadow: 0 10px 30px rgba(40,167,69,0.22); }
+        .stat-card.warning { box-shadow: 0 10px 30px rgba(255,193,7,0.22); }
+        .stat-card.info { box-shadow: 0 10px 30px rgba(23,162,184,0.22); }
 
         .stat-card h3 {
             font-size: 14px;
-            color: #666;
+            color: rgba(255,255,255,0.7);
             margin-bottom: 10px;
             font-weight: normal;
         }
@@ -142,37 +131,22 @@ try {
         .stat-card .number {
             font-size: 32px;
             font-weight: bold;
-            color: #007bff;
-        }
-
-        .stat-card.danger .number {
-            color: #dc3545;
-        }
-
-        .stat-card.success .number {
-            color: #28a745;
-        }
-
-        .stat-card.warning .number {
-            color: #ffc107;
-        }
-
-        .stat-card.info .number {
-            color: #17a2b8;
+            color: #f5f8ff;
         }
 
         .chart-container {
-            background: white;
-            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(20,30,48,0.92), rgba(8,14,28,0.95));
+            border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.05);
             margin-bottom: 20px;
         }
 
         .chart-container h3 {
             margin-top: 0;
-            color: #333;
-            border-bottom: 2px solid #f0f0f0;
+            color: #f5f8ff;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             padding-bottom: 15px;
         }
 
@@ -189,17 +163,18 @@ try {
         }
 
         .report-section {
-            background: white;
-            border-radius: 8px;
+            background: linear-gradient(135deg, rgba(20,30,48,0.92), rgba(8,14,28,0.95));
+            border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.05);
             margin-bottom: 20px;
         }
 
         .report-section h3 {
             margin-top: 0;
-            color: #333;
-            border-bottom: 2px solid #f0f0f0;
+            color: #f5f8ff;
+            border-bottom: 1px solid rgba(255,255,255,0.06);
             padding-bottom: 15px;
         }
 
@@ -210,24 +185,24 @@ try {
         }
 
         .report-item {
-            background: #f8f9fa;
+            background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));
             padding: 15px;
-            border-radius: 6px;
+            border-radius: 10px;
             text-align: center;
-            border: 1px solid #e0e0e0;
+            border: 1px solid rgba(255,255,255,0.05);
         }
 
         .report-item label {
             display: block;
             font-size: 12px;
-            color: #666;
+            color: rgba(255,255,255,0.65);
             margin-bottom: 8px;
         }
 
         .report-item .value {
             font-size: 24px;
             font-weight: bold;
-            color: #007bff;
+            color: #f5f8ff;
         }
 
         @media (max-width: 768px) {
@@ -256,11 +231,6 @@ try {
         <main class="app-main">
             <div>
                 <?php $pageTitle = 'แดชบอร์ด'; include __DIR__ . '/../includes/page_header.php'; ?>
-
-                <div class="page-header">
-                    <h1>📊 แดชบอร์ด</h1>
-                    <p>สรุปข้อมูลการจัดการหอพัก</p>
-                </div>
 
             <!-- สรุปข้อมูล Overview -->
             <div class="dashboard-grid">

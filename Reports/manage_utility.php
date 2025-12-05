@@ -53,11 +53,6 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
           ?>
 
           <section class="manage-panel">
-            <div class="section-header">
-              <div>
-                <h1>รายงานสรุปการใช้น้ำ-ไฟ</h1>
-              </div>
-            </div>
             <div class="report-table">
             <table class="table--compact" id="table-utility">
               <thead>

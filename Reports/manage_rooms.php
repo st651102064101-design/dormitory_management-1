@@ -204,12 +204,6 @@ $totalRooms = count($rooms);
           <?php endif; ?>
 
           <section class="manage-panel">
-            <div class="section-header">
-              <div>
-                <h1>ภาพรวมห้องพัก</h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">สถานะและข้อมูลห้องพักทั้งหมด</p>
-              </div>
-            </div>
             <div class="rooms-stats">
               <div class="room-stat-card">
                 <h3>ห้องทั้งหมด</h3>
