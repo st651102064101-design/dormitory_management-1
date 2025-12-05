@@ -436,7 +436,7 @@ foreach ($tenants as $t) {
           const id = document.getElementById('tnt_id');
           if (id && !/^\d{13}$/.test(id.value.trim())) {
             e.preventDefault();
-            alert('เลขบัตรประชาชนต้องมี 13 หลัก');
+            showErrorToast('เลขบัตรประชาชนต้องมี 13 หลัก');
             id.focus();
           }
         });

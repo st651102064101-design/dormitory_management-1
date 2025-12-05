@@ -797,7 +797,7 @@ $totalRooms = count($rooms);
         const priceRaw = prompt('ราคา/เดือน (ตัวเลขเท่านั้น)');
         if (!priceRaw) return;
         const price = priceRaw.replace(/[^0-9]/g, '');
-        if (!price) { alert('กรุณากรอกราคาเป็นตัวเลข'); return; }
+        if (!price) { showErrorToast('กรุณากรอกราคาเป็นตัวเลข'); return; }
 
         const formData = new FormData();
         formData.append('type_name', name.trim());
@@ -822,18 +822,18 @@ $totalRooms = count($rooms);
           };
           addOption('type_id');
           addOption('edit_type_id');
-          alert('เพิ่มประเภทห้องเรียบร้อย');
+          showSuccessToast('เพิ่มประเภทห้องเรียบร้อยแล้ว');
         })
         .catch(err => {
           console.error(err);
-          alert(err.message || 'เพิ่มประเภทห้องไม่สำเร็จ');
+          showErrorToast(err.message || 'เพิ่มประเภทห้องไม่สำเร็จ');
         });
       }
 
       // Delete room type (current selection)
       function deleteRoomTypeFlow(selectId) {
         const sel = document.getElementById(selectId);
-        if (!sel || !sel.value) { alert('เลือกประเภทห้องที่จะลบก่อน'); return; }
+        if (!sel || !sel.value) { showErrorToast('เลือกประเภทห้องที่จะลบก่อน'); return; }
         const opt = sel.options[sel.selectedIndex];
         if (!confirm(`ยืนยันการลบประเภท "${opt.text}" ?`)) return;
 
@@ -856,11 +856,11 @@ $totalRooms = count($rooms);
             });
             s.value = '';
           });
-          alert('ลบประเภทห้องเรียบร้อย');
+          showSuccessToast('ลบประเภทห้องเรียบร้อยแล้ว');
         })
         .catch(err => {
           console.error(err);
-          alert(err.message || 'ลบประเภทห้องไม่สำเร็จ');
+          showErrorToast(err.message || 'ลบประเภทห้องไม่สำเร็จ');
         });
       }
 

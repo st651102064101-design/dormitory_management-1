@@ -153,31 +153,7 @@ document.addEventListener('DOMContentLoaded', () => {
         };
     }
 
-    // ===== Delete Modal =====
-    function openDeleteModal(config = {}) {
-        const title = config.title || 'ยืนยันการลบ';
-        const message = config.message || 'คุณต้องการดำเนินการนี้ใช่หรือไม่?';
-        const onConfirm = config.onConfirm || (() => {});
 
-        modalContainer.querySelector('h3').textContent = title;
-        const form = modalContainer.querySelector('form');
-        form.innerHTML = `
-            <div class="animate-ui-modal-fields">
-                <p style="color: rgba(255,255,255,0.8); margin: 0 0 1rem;">${message}</p>
-            </div>
-            <div style="display: flex; gap: 0.5rem; justify-content: flex-end;">
-                <button type="button" class="animate-ui-cancel-btn">ยกเลิก</button>
-                <button type="submit">ยืนยัน</button>
-            </div>
-        `;
-        form.onsubmit = (event) => {
-            event.preventDefault();
-            onConfirm();
-            closeModal();
-        };
-        form.querySelector('.animate-ui-cancel-btn').addEventListener('click', closeModal);
-        modalContainer.style.display = 'flex';
-    }
 
     // ===== Modal Close Handlers =====
     modalContainer.querySelector('.animate-ui-modal-close').addEventListener('click', closeModal);
@@ -197,7 +173,7 @@ document.addEventListener('DOMContentLoaded', () => {
             openModal({ title: `แก้ไข ${entity}`, fields, button });
         }
 
-        // Delete button
+        // Delete button - Direct delete without confirmation modal
         if (target.closest('.animate-ui-action-btn.delete')) {
             const button = target.closest('.animate-ui-action-btn.delete');
             const entity = button?.dataset.entity || 'รายการ';
@@ -209,32 +185,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 return;
             }
 
-            openDeleteModal({
-                title: 'ยืนยันการลบ',
-                message: `คุณต้องการลบ ${entity} ใช่หรือไม่?`,
-                onConfirm: () => {
-                    fetch(endpoint, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ id: itemId })
-                    })
-                    .then(response => response.json())
-                    .then(result => {
-                        if (result.success) {
-                            showToast(result.message || 'ลบสำเร็จ', 2000);
-                            setTimeout(() => {
-                                const row = button.closest('tr');
-                                if (row) row.remove();
-                            }, 300);
-                        } else {
-                            showToast(result.error || 'เกิดข้อผิดพลาด', 3000);
-                        }
-                    })
-                    .catch(error => {
-                        showToast('เกิดข้อผิดพลาดในการส่งข้อมูล', 3000);
-                        console.error(error);
-                    });
+            fetch(endpoint, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: itemId })
+            })
+            .then(response => response.json())
+            .then(result => {
+                if (result.success) {
+                    showToast(result.message || 'ลบ' + entity + 'เรียบร้อยแล้ว', 2000);
+                    setTimeout(() => {
+                        const row = button.closest('tr');
+                        if (row) row.remove();
+                    }, 300);
+                } else {
+                    showToast(result.error || 'เกิดข้อผิดพลาด', 3000);
                 }
+            })
+            .catch(error => {
+                showToast('เกิดข้อผิดพลาดในการส่งข้อมูล', 3000);
+                console.error(error);
             });
         }
     });

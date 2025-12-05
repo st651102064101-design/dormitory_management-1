@@ -446,7 +446,7 @@ foreach ($newsList as $news) {
         const news = newsData.find(n => n.news_id == newsId);
         console.log('เปิด modal แก้ไขข่าว', newsId, news);
         if (!news) {
-          alert('ไม่พบข้อมูลข่าว');
+          showErrorToast('ไม่พบข้อมูลข่าว');
           return;
         }
         document.getElementById('edit_news_id').value = news.news_id;

@@ -426,9 +426,9 @@ foreach ($expenses as $exp) {
                         </td>
                         <td class="crud-column">
                           <?php if ($status === '0'): ?>
-                            <button type="button" class="animate-ui-action-btn edit" onclick="updateExpenseStatus(<?php echo (int)$exp['exp_id']; ?>, '1')">ชำระแล้ว</button>
+                            <button type="button" class="animate-ui-action-btn btn-success" onclick="updateExpenseStatus(<?php echo (int)$exp['exp_id']; ?>, '1')">ชำระแล้ว</button>
                           <?php else: ?>
-                            <button type="button" class="animate-ui-action-btn delete" onclick="updateExpenseStatus(<?php echo (int)$exp['exp_id']; ?>, '0')">ยกเลิกชำระ</button>
+                            <button type="button" class="animate-ui-action-btn btn-cancel" onclick="updateExpenseStatus(<?php echo (int)$exp['exp_id']; ?>, '0')">ยกเลิกชำระ</button>
                           <?php endif; ?>
                         </td>
                       </tr>
@@ -445,10 +445,8 @@ foreach ($expenses as $exp) {
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
+      // Custom confirmation dialog (non-blocking)
       function updateExpenseStatus(expenseId, newStatus) {
-        const confirmText = newStatus === '1' ? 'บันทึกการชำระเงิน' : 'ยกเลิกการชำระเงิน';
-        if (!confirm(`ยืนยันการ${confirmText}?`)) return;
-        
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = '../Manage/update_expense_status.php';
@@ -524,12 +522,18 @@ foreach ($expenses as $exp) {
                   const water = prompt('กรอกอัตราค่าน้ำ/หน่วย (บาท)');
                   if (water === null) return;
                   const waterVal = parseFloat(water);
-                  if (Number.isNaN(waterVal) || waterVal < 0) { alert('กรุณากรอกตัวเลขค่าน้ำให้ถูกต้อง'); return; }
+                  if (Number.isNaN(waterVal) || waterVal < 0) { 
+                    showErrorToast('กรุณากรอกตัวเลขค่าน้ำให้ถูกต้อง'); 
+                    return; 
+                  }
 
                   const elec = prompt('กรอกอัตราค่าไฟ/หน่วย (บาท)');
                   if (elec === null) return;
                   const elecVal = parseFloat(elec);
-                  if (Number.isNaN(elecVal) || elecVal < 0) { alert('กรุณากรอกตัวเลขค่าไฟให้ถูกต้อง'); return; }
+                  if (Number.isNaN(elecVal) || elecVal < 0) { 
+                    showErrorToast('กรุณากรอกตัวเลขค่าไฟให้ถูกต้อง'); 
+                    return; 
+                  }
 
                   const formData = new FormData();
                   formData.append('rate_water', waterVal.toString());
@@ -553,12 +557,12 @@ foreach ($expenses as $exp) {
                       elecSel.appendChild(optElec);
                       waterSel.value = waterVal;
                       elecSel.value = elecVal;
-                      alert('เพิ่มเรตเรียบร้อย');
+                      showSuccessToast('เพิ่มเรตเรียบร้อยแล้ว');
                       if (typeof updatePreview === 'function') updatePreview();
                     })
                     .catch(err => {
                       console.error(err);
-                      alert(err.message || 'เพิ่มเรตไม่สำเร็จ');
+                      showErrorToast(err.message || 'เพิ่มเรตไม่สำเร็จ');
                     });
                 }
 
@@ -567,9 +571,11 @@ foreach ($expenses as $exp) {
                   const elecSel = document.getElementById('rate_elec');
                   const selected = waterSel.options[waterSel.selectedIndex];
                   const rateId = selected ? parseInt(selected.dataset.rateId || '0') : 0;
-                  if (!rateId) { alert('เรตนี้ลบไม่ได้ (ไม่มีรหัส)'); return; }
-                  if (!confirm('ยืนยันการลบเรตน้ำ/ไฟนี้?')) return;
-
+                  if (!rateId) { 
+                    showErrorToast('เรตนี้ลบไม่ได้ (ไม่มีรหัส)'); 
+                    return; 
+                  }
+                  
                   const formData = new FormData();
                   formData.append('rate_id', rateId.toString());
 
@@ -588,12 +594,12 @@ foreach ($expenses as $exp) {
                       // เลือก option แรกที่เหลืออยู่
                       if (waterSel.options.length) waterSel.selectedIndex = 0;
                       if (elecSel.options.length) elecSel.selectedIndex = 0;
-                      alert('ลบเรตเรียบร้อย');
+                      showSuccessToast('ลบเรตเรียบร้อยแล้ว');
                       if (typeof updatePreview === 'function') updatePreview();
                     })
                     .catch(err => {
                       console.error(err);
-                      alert(err.message || 'ลบเรตไม่สำเร็จ');
+                      showErrorToast(err.message || 'ลบเรตไม่สำเร็จ');
                     });
                 }
 
