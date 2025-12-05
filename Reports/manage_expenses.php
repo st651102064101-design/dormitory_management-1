@@ -150,6 +150,21 @@ foreach ($expenses as $exp) {
         color: #f5f8ff;
         font-size: 0.95rem;
       }
+      .add-type-row { display:flex; align-items:center; gap:0.5rem; justify-content:space-between; }
+      .add-type-btn {
+        padding: 0.5rem 0.85rem;
+        border-radius: 10px;
+        border: 1px dashed rgba(96,165,250,0.6);
+        background: rgba(15,23,42,0.7);
+        color: #60a5fa;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: background 0.2s ease, border-color 0.2s ease;
+      }
+      .add-type-btn:hover { background: rgba(37,99,235,0.15); border-color: rgba(96,165,250,0.95); }
+      .delete-type-btn { border-color: rgba(248,113,113,0.45); color: #fca5a5; }
+      .delete-type-btn:hover { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.75); }
       .expense-form-group input:focus,
       .expense-form-group select:focus {
         outline: none;
@@ -300,7 +315,13 @@ foreach ($expenses as $exp) {
                   <input type="number" id="exp_water_unit" name="exp_water_unit" min="0" step="1" required value="0" />
                 </div>
                 <div class="expense-form-group">
-                  <label for="rate_water">อัตราค่าน้ำ/หน่วย (บาท) <span style="color:#f87171;">*</span></label>
+                  <div class="add-type-row">
+                    <label for="rate_water" style="margin:0;">อัตราค่าน้ำ/หน่วย (บาท) <span style="color:#f87171;">*</span></label>
+                    <div style="display:flex; gap:0.35rem;">
+                      <button type="button" class="add-type-btn" id="addRateBtn">+ เพิ่มเรต</button>
+                      <button type="button" class="add-type-btn delete-type-btn" id="deleteRateBtn">ลบเรต</button>
+                    </div>
+                  </div>
                   <select id="rate_water" name="rate_water" required>
                     <?php foreach ($waterRates as $rate): ?>
                       <option value="<?php echo (float)($rate['rate_price'] ?? 0); ?>" data-rate-id="<?php echo (int)($rate['rate_id'] ?? 0); ?>">
@@ -489,6 +510,87 @@ foreach ($expenses as $exp) {
           updatePreview();
         }
       })();
+
+                // เพิ่ม/ลบเรตน้ำไฟ
+                function addRateFlow() {
+                  const water = prompt('กรอกอัตราค่าน้ำ/หน่วย (บาท)');
+                  if (water === null) return;
+                  const waterVal = parseFloat(water);
+                  if (Number.isNaN(waterVal) || waterVal < 0) { alert('กรุณากรอกตัวเลขค่าน้ำให้ถูกต้อง'); return; }
+
+                  const elec = prompt('กรอกอัตราค่าไฟ/หน่วย (บาท)');
+                  if (elec === null) return;
+                  const elecVal = parseFloat(elec);
+                  if (Number.isNaN(elecVal) || elecVal < 0) { alert('กรุณากรอกตัวเลขค่าไฟให้ถูกต้อง'); return; }
+
+                  const formData = new FormData();
+                  formData.append('rate_water', waterVal.toString());
+                  formData.append('rate_elec', elecVal.toString());
+
+                  fetch('../Manage/add_rate.php', { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(data => {
+                      if (!data.success) throw new Error(data.message || 'เพิ่มเรตไม่สำเร็จ');
+                      const waterSel = document.getElementById('rate_water');
+                      const elecSel = document.getElementById('rate_elec');
+                      const optWater = document.createElement('option');
+                      optWater.value = waterVal;
+                      optWater.dataset.rateId = data.rate_id;
+                      optWater.textContent = `฿${waterVal.toFixed(2)} / หน่วย`;
+                      const optElec = document.createElement('option');
+                      optElec.value = elecVal;
+                      optElec.dataset.rateId = data.rate_id;
+                      optElec.textContent = `฿${elecVal.toFixed(2)} / หน่วย`;
+                      waterSel.appendChild(optWater);
+                      elecSel.appendChild(optElec);
+                      waterSel.value = waterVal;
+                      elecSel.value = elecVal;
+                      alert('เพิ่มเรตเรียบร้อย');
+                      if (typeof updatePreview === 'function') updatePreview();
+                    })
+                    .catch(err => {
+                      console.error(err);
+                      alert(err.message || 'เพิ่มเรตไม่สำเร็จ');
+                    });
+                }
+
+                function deleteRateFlow() {
+                  const waterSel = document.getElementById('rate_water');
+                  const elecSel = document.getElementById('rate_elec');
+                  const selected = waterSel.options[waterSel.selectedIndex];
+                  const rateId = selected ? parseInt(selected.dataset.rateId || '0') : 0;
+                  if (!rateId) { alert('เรตนี้ลบไม่ได้ (ไม่มีรหัส)'); return; }
+                  if (!confirm('ยืนยันการลบเรตน้ำ/ไฟนี้?')) return;
+
+                  const formData = new FormData();
+                  formData.append('rate_id', rateId.toString());
+
+                  fetch('../Manage/delete_rate.php', { method: 'POST', body: formData })
+                    .then(res => res.json())
+                    .then(data => {
+                      if (!data.success) throw new Error(data.message || 'ลบเรตไม่สำเร็จ');
+                      // remove matching rate_id in both selects
+                      [waterSel, elecSel].forEach(sel => {
+                        [...sel.options].forEach((o, idx) => {
+                          if (parseInt(o.dataset.rateId || '0') === rateId) {
+                            sel.remove(idx);
+                          }
+                        });
+                      });
+                      // เลือก option แรกที่เหลืออยู่
+                      if (waterSel.options.length) waterSel.selectedIndex = 0;
+                      if (elecSel.options.length) elecSel.selectedIndex = 0;
+                      alert('ลบเรตเรียบร้อย');
+                      if (typeof updatePreview === 'function') updatePreview();
+                    })
+                    .catch(err => {
+                      console.error(err);
+                      alert(err.message || 'ลบเรตไม่สำเร็จ');
+                    });
+                }
+
+                document.getElementById('addRateBtn')?.addEventListener('click', addRateFlow);
+                document.getElementById('deleteRateBtn')?.addEventListener('click', deleteRateFlow);
     </script>
   </body>
 </html>
