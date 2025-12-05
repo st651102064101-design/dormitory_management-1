@@ -134,6 +134,29 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
       margin: 0 !important;
     }
     
+    /* Show team avatar/logo on mobile/tablet */
+    .team-switcher {
+      display: flex !important;
+      width: 100% !important;
+      margin-bottom: 1rem !important;
+    }
+    
+    .team-avatar {
+      display: flex !important;
+      width: 100% !important;
+      height: auto !important;
+    }
+    
+    .team-avatar-img {
+      display: block !important;
+      width: 100% !important;
+      height: auto !important;
+    }
+    
+    .team-meta {
+      display: none !important;
+    }
+    
     /* When mobile-open class is applied, slide in from left */
     .app-sidebar.mobile-open {
       transform: translateX(0) !important;
