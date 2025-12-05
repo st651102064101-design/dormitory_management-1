@@ -7,23 +7,119 @@ if (empty($_SESSION['admin_username'])) {
 }
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
-$stmt = $pdo->query("SELECT r.*, c.ctr_id, t.tnt_name FROM repair r LEFT JOIN contract c ON r.ctr_id = c.ctr_id LEFT JOIN tenant t ON c.tnt_id = t.tnt_id ORDER BY r.repair_date DESC");
-$rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-// Map repair_status codes to human-readable labels
-$status_labels = [
+
+// รายการการแจ้งซ่อม
+$repairStmt = $pdo->query("SELECT r.*, c.ctr_id, t.tnt_name, rm.room_number
+  FROM repair r
+  LEFT JOIN contract c ON r.ctr_id = c.ctr_id
+  LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+  LEFT JOIN room rm ON c.room_id = rm.room_id
+  ORDER BY r.repair_date DESC, r.repair_id DESC");
+$repairs = $repairStmt->fetchAll(PDO::FETCH_ASSOC);
+
+// รายการสัญญาสำหรับเลือกห้อง/ผู้เช่า
+$contracts = $pdo->query("SELECT c.ctr_id, c.ctr_status, t.tnt_name, rm.room_number
+  FROM contract c
+  LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+  LEFT JOIN room rm ON c.room_id = rm.room_id
+  ORDER BY rm.room_number")->fetchAll(PDO::FETCH_ASSOC);
+
+$statusMap = [
   '0' => 'รอซ่อม',
   '1' => 'กำลังซ่อม',
   '2' => 'ซ่อมเสร็จแล้ว',
 ];
+$statusColors = [
+  '0' => '#f97316',
+  '1' => '#60a5fa',
+  '2' => '#22c55e',
+];
+
+$stats = [
+  'pending' => 0,
+  'inprogress' => 0,
+  'done' => 0,
+];
+foreach ($repairs as $r) {
+  if (($r['repair_status'] ?? '') === '0') $stats['pending']++;
+  elseif (($r['repair_status'] ?? '') === '1') $stats['inprogress']++;
+  elseif (($r['repair_status'] ?? '') === '2') $stats['done']++;
+}
+
+function relativeTimeInfo(?string $dateStr): array {
+  if (!$dateStr) return ['label' => '-', 'class' => ''];
+  try {
+    $tz = new DateTimeZone('Asia/Bangkok');
+    $target = new DateTime($dateStr, $tz);
+    $now = new DateTime('now', $tz);
+  } catch (Exception $e) {
+    return ['label' => '-', 'class' => ''];
+  }
+
+  $diff = $now->getTimestamp() - $target->getTimestamp();
+  if ($diff < 0) return ['label' => 'เร็วๆ นี้', 'class' => 'time-neutral'];
+
+  if ($diff < 60) {
+    $sec = max(1, $diff);
+    return ['label' => $sec . ' วินาทีที่แล้ว', 'class' => 'time-fresh'];
+  }
+  if ($diff < 3600) {
+    $min = (int)floor($diff / 60);
+    return ['label' => $min . ' นาทีที่แล้ว', 'class' => 'time-fresh'];
+  }
+  if ($diff < 86400) {
+    $hrs = (int)floor($diff / 3600);
+    return ['label' => $hrs . ' ชม.ที่แล้ว', 'class' => 'time-fresh'];
+  }
+
+  $days = (int)floor($diff / 86400);
+  if ($days === 1) return ['label' => 'เมื่อวาน', 'class' => 'time-warning'];
+  if ($days === 2) return ['label' => 'เมื่อวานซืน', 'class' => 'time-warning'];
+  if ($days < 4) return ['label' => $days . ' วันที่แล้ว', 'class' => 'time-warning'];
+
+  if ($days < 30) return ['label' => $days . ' วันที่แล้ว', 'class' => 'time-danger'];
+
+  $months = (int)floor($days / 30);
+  if ($months < 12) return ['label' => $months . ' เดือนที่แล้ว', 'class' => 'time-danger'];
+
+  $years = (int)floor($days / 365);
+  return ['label' => $years . ' ปีที่แล้ว', 'class' => 'time-danger'];
+}
 ?>
 <!doctype html>
 <html lang="th">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>รายงานการแจ้งซ่อม</title>
+    <title>จัดการการแจ้งซ่อม</title>
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <style>
+      .repair-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem; margin-top:1rem; }
+      .repair-stat-card { padding:1rem; border-radius:12px; background:#0f172a; color:#e2e8f0; border:1px solid rgba(148,163,184,0.25); box-shadow:0 12px 35px rgba(0,0,0,0.25); }
+      .repair-stat-card h3 { margin:0; font-size:0.95rem; color:#cbd5e1; }
+      .repair-stat-card .stat-number { font-size:1.8rem; font-weight:700; margin-top:0.35rem; }
+      .repair-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin-top:1rem; }
+      .repair-form label { font-weight:600; color:#cbd5e1; margin-bottom:0.35rem; display:block; }
+      .repair-form input, .repair-form select, .repair-form textarea { width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid rgba(148,163,184,0.35); background:#0b162a; color:#e2e8f0; }
+      .repair-form textarea { min-height:110px; resize:vertical; }
+      .repair-form-actions { grid-column:1 / -1; display:flex; gap:0.75rem; }
+      .status-badge { display:inline-flex; align-items:center; justify-content:center; min-width:90px; padding:0.25rem 0.75rem; border-radius:999px; font-weight:600; color:#fff; }
+      .crud-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
+      .reports-page .manage-panel { background:#0f172a; border:1px solid rgba(148,163,184,0.2); box-shadow:0 12px 30px rgba(0,0,0,0.2); margin-top:1rem; }
+      .reports-page .manage-panel:first-of-type { margin-top:0; }
+      .repair-primary,
+      .animate-ui-action-btn.edit.repair-primary { background: #f97316; color: #fff; border: 1px solid #ea580c; font-weight:800; letter-spacing:0.2px; }
+      .repair-primary:hover,
+      .animate-ui-action-btn.edit.repair-primary:hover { background: #fb923c; border-color: #f97316; transform: translateY(-1px); box-shadow: none; }
+      .repair-primary:active,
+      .animate-ui-action-btn.edit.repair-primary:active { transform: scale(0.98); box-shadow: none; }
+      .time-badge { display:inline-flex; align-items:center; padding:0.25rem 0.6rem; border-radius:999px; font-weight:600; font-size:0.85rem; }
+      .time-fresh { background:#d1fae5; color:#065f46; }
+      .time-warning { background:#fef3c7; color:#92400e; }
+      .time-danger { background:#fee2e2; color:#b91c1c; }
+      .time-neutral { background:#e2e8f0; color:#0f172a; }
+    </style>
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -31,54 +127,161 @@ $status_labels = [
       <main class="app-main">
         <div>
           <?php 
-            $pageTitle = 'รายงานการแจ้งซ่อมอุปกรณ์ภายในห้อง';
+            $pageTitle = 'จัดการการแจ้งซ่อมอุปกรณ์';
             include __DIR__ . '/../includes/page_header.php'; 
           ?>
+
+          <?php if (isset($_SESSION['success'])): ?>
+            <div style="padding: 1rem; margin-bottom: 1rem; background: #22c55e; color: #0f172a; border-radius: 10px; font-weight:600;">
+              <?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
+            </div>
+          <?php endif; ?>
+          <?php if (isset($_SESSION['error'])): ?>
+            <div style="padding: 1rem; margin-bottom: 1rem; background: #ef4444; color: #fff; border-radius: 10px; font-weight:600;">
+              <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
+            </div>
+          <?php endif; ?>
 
           <section class="manage-panel">
             <div class="section-header">
               <div>
-                <h1>รายงานการแจ้งซ่อมอุปกรณ์ภายในห้อง</h1>
+                <h1>สรุปการแจ้งซ่อม</h1>
+                <p style="color:#94a3b8;margin-top:0.25rem;">สถานะปัจจุบันของงานซ่อมทั้งหมด</p>
               </div>
-              <?php 
-                $entityName = 'การซ่อม';
-                $entityFields = 'วันที่,ผู้แจ้ง,รายละเอียด,สถานะ';
-                include __DIR__ . '/../includes/manage_toolbar.php'; 
-              ?>
+            </div>
+            <div class="repair-stats">
+              <div class="repair-stat-card" style="border-color:rgba(249,115,22,0.35);">
+                <h3>รอซ่อม</h3>
+                <div class="stat-number" style="color:#f97316;"><?php echo (int)$stats['pending']; ?></div>
+              </div>
+              <div class="repair-stat-card" style="border-color:rgba(96,165,250,0.35);">
+                <h3>กำลังซ่อม</h3>
+                <div class="stat-number" style="color:#60a5fa;"><?php echo (int)$stats['inprogress']; ?></div>
+              </div>
+              <div class="repair-stat-card" style="border-color:rgba(34,197,94,0.35);">
+                <h3>ซ่อมเสร็จแล้ว</h3>
+                <div class="stat-number" style="color:#22c55e;"><?php echo (int)$stats['done']; ?></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="manage-panel" style="color:#f8fafc;">
+            <div class="section-header">
+              <div>
+                <h1>เพิ่มการแจ้งซ่อม</h1>
+                <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">เลือกห้อง/ผู้เช่า ระบุวันที่และรายละเอียดงานซ่อม</p>
+              </div>
+            </div>
+            <form action="../Manage/process_repair.php" method="post">
+              <div class="repair-form">
+                <div>
+                  <label for="ctr_id">สัญญา / ห้องพัก <span style="color:#f87171;">*</span></label>
+                  <select id="ctr_id" name="ctr_id" required>
+                    <option value="">-- เลือกสัญญา --</option>
+                    <?php foreach ($contracts as $ctr): ?>
+                      <option value="<?php echo (int)$ctr['ctr_id']; ?>">
+                        ห้อง <?php echo str_pad((string)($ctr['room_number'] ?? '0'), 2, '0', STR_PAD_LEFT); ?> - <?php echo htmlspecialchars($ctr['tnt_name'] ?? 'ไม่ระบุ'); ?>
+                        <?php if (($ctr['ctr_status'] ?? '') !== '0') echo ' (ไม่ใช้งาน)'; ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div>
+                  <label for="repair_date">วันที่แจ้ง <span style="color:#f87171;">*</span></label>
+                  <input type="date" id="repair_date" name="repair_date" required value="<?php echo date('Y-m-d'); ?>" />
+                </div>
+                <input type="hidden" name="repair_status" value="0" />
+                <div style="grid-column:1 / -1;">
+                  <label for="repair_desc">รายละเอียด <span style="color:#f87171;">*</span></label>
+                  <textarea id="repair_desc" name="repair_desc" required placeholder="เช่น แอร์ไม่เย็น น้ำรั่ว ซิงค์อุดตัน"></textarea>
+                </div>
+                <div class="repair-form-actions">
+                  <button type="submit" class="animate-ui-add-btn" style="flex:2;">บันทึกการแจ้งซ่อม</button>
+                  <button type="reset" class="animate-ui-action-btn delete" style="flex:1;">ล้างข้อมูล</button>
+                </div>
+              </div>
+            </form>
+          </section>
+
+          <section class="manage-panel">
+            <div class="section-header">
+              <div>
+                <h1>รายการแจ้งซ่อมทั้งหมด</h1>
+                <p style="color:#94a3b8;margin-top:0.2rem;">ดูสถานะและจัดการงานซ่อม</p>
+              </div>
             </div>
             <div class="report-table">
-            <table class="table--compact" id="table-repairs">
-              <thead>
-                <tr>
-                  <th>วันที่</th>
-                  <th>ผู้แจ้ง</th>
-                  <th>รายละเอียด</th>
-                  <th>สถานะ</th>
-                  <th class="crud-column">จัดการ</th>
-                </tr>
-              </thead>
-              <tbody>
-<?php foreach($rows as $r): ?>
-                <tr>
-                  <td><?php echo htmlspecialchars($r['repair_date']); ?></td>
-                  <td><?php echo htmlspecialchars($r['tnt_name']); ?></td>
-                  <td><?php echo htmlspecialchars($r['repair_desc']); ?></td>
-                  <?php $status = (string)($r['repair_status'] ?? ''); ?>
-                  <td><?php echo htmlspecialchars($status_labels[$status] ?? $status); ?></td>
-                  <td class="crud-column">
-                    <button type="button" class="animate-ui-action-btn edit crud-action" data-entity="การซ่อม <?php echo htmlspecialchars($r['repair_desc']); ?>" data-fields="วันที่,รายละเอียด,สถานะ" data-repair-id="<?php echo htmlspecialchars($r['repair_id']); ?>" data-repair-date="<?php echo htmlspecialchars($r['repair_date']); ?>" data-repair-desc="<?php echo htmlspecialchars($r['repair_desc']); ?>" data-repair-status="<?php echo htmlspecialchars($r['repair_status']); ?>">แก้ไข</button>
-                    <button type="button" class="animate-ui-action-btn delete crud-action" data-entity="การซ่อม <?php echo htmlspecialchars($r['repair_desc']); ?>" data-item-id="<?php echo htmlspecialchars($r['repair_id']); ?>" data-delete-endpoint="../Manage/delete_repair.php">ลบ</button>
-                  </td>
-                </tr>
-<?php endforeach; ?>
-              </tbody>
-            </table>
+              <table class="table--compact" id="table-repairs">
+                <thead>
+                  <tr>
+                    <th>วันที่</th>
+                    <th>ห้อง/ผู้แจ้ง</th>
+                    <th>รายละเอียด</th>
+                    <th>สถานะ</th>
+                    <th class="crud-column">จัดการ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php if (empty($repairs)): ?>
+                    <tr><td colspan="5" style="text-align:center;padding:1.5rem;color:#94a3b8;">ยังไม่มีรายการแจ้งซ่อม</td></tr>
+                  <?php else: ?>
+                    <?php foreach ($repairs as $r): ?>
+                      <?php $status = (string)($r['repair_status'] ?? ''); ?>
+                      <tr>
+                        <?php $timeInfo = relativeTimeInfo($r['repair_date'] ?? null); ?>
+                        <td><span class="time-badge <?php echo htmlspecialchars($timeInfo['class']); ?>"><?php echo htmlspecialchars($timeInfo['label']); ?></span></td>
+                        <td>
+                          <div style="display:flex; flex-direction:column; gap:0.15rem;">
+                            <span>ห้อง <?php echo str_pad((string)($r['room_number'] ?? '0'), 2, '0', STR_PAD_LEFT); ?></span>
+                            <span style="color:#64748b; font-size:0.8rem;">ผู้แจ้ง: <?php echo htmlspecialchars($r['tnt_name'] ?? '-'); ?></span>
+                          </div>
+                        </td>
+                        <td><?php echo nl2br(htmlspecialchars($r['repair_desc'] ?? '-')); ?></td>
+                        <td><span class="status-badge" style="background: <?php echo $statusColors[$status] ?? '#94a3b8'; ?>;"><?php echo $statusMap[$status] ?? 'ไม่ระบุ'; ?></span></td>
+                        <td class="crud-column">
+                          <div class="crud-actions">
+                            <?php if ($status === '0'): ?>
+                              <button type="button" class="animate-ui-action-btn edit repair-primary" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '1')">ทำการซ่อม</button>
+                            <?php elseif ($status === '1'): ?>
+                              <span style="color:#60a5fa; font-weight:600;">กำลังซ่อม</span>
+                            <?php else: ?>
+                              <span style="color:#22c55e; font-weight:600;">ซ่อมเสร็จแล้ว</span>
+                            <?php endif; ?>
+                          </div>
+                        </td>
+                      </tr>
+                    <?php endforeach; ?>
+                  <?php endif; ?>
+                </tbody>
+              </table>
             </div>
           </section>
         </div>
       </main>
     </div>
+
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
+    <script>
+      function updateRepairStatus(repairId, status) {
+        if (!repairId) return;
+        if (!confirm('ยืนยันสถานะ: ทำการซ่อม?')) return;
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = '../Manage/update_repair_status.php';
+        const idField = document.createElement('input');
+        idField.type = 'hidden';
+        idField.name = 'repair_id';
+        idField.value = repairId;
+        const statusField = document.createElement('input');
+        statusField.type = 'hidden';
+        statusField.name = 'repair_status';
+        statusField.value = status;
+        form.appendChild(idField);
+        form.appendChild(statusField);
+        document.body.appendChild(form);
+        form.submit();
+      }
+    </script>
   </body>
 </html>
