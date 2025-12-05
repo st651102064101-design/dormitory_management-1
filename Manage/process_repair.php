@@ -65,11 +65,28 @@ try {
     $lastId = $pdo->lastInsertId();
     error_log("DEBUG repair: INSERT success, ID=$lastId");
     $_SESSION['success'] = 'บันทึกการแจ้งซ่อมเรียบร้อยแล้ว';
+    
+    // ตรวจสอบว่าเป็น AJAX request หรือไม่
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกการแจ้งซ่อมเรียบร้อยแล้ว', 'id' => $lastId]);
+        exit;
+    }
+    
     header('Location: ../Reports/manage_repairs.php');
     exit;
 } catch (Exception $e) {
     $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
     error_log('Repair Error: ' . $e->getMessage());
+    
+    // ตรวจสอบว่าเป็น AJAX request หรือไม่
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()]);
+        exit;
+    }
+    
     header('Location: ../Reports/manage_repairs.php');
     exit;
 }

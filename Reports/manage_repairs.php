@@ -56,11 +56,11 @@ foreach ($repairs as $r) {
   elseif (($r['repair_status'] ?? '') === '2') $stats['done']++;
 }
 
-function relativeTimeInfo(?string $dateStr): array {
-  if (!$dateStr) return ['label' => '-', 'class' => ''];
+function relativeTimeInfo(?string $dateTimeStr): array {
+  if (!$dateTimeStr) return ['label' => '-', 'class' => ''];
   try {
     $tz = new DateTimeZone('Asia/Bangkok');
-    $target = new DateTime($dateStr, $tz);
+    $target = new DateTime($dateTimeStr, $tz);
     $now = new DateTime('now', $tz);
   } catch (Exception $e) {
     return ['label' => '-', 'class' => ''];
@@ -126,7 +126,7 @@ function relativeTimeInfo(?string $dateStr): array {
       .animate-ui-action-btn.edit.repair-primary:hover { background: #fb923c; border-color: #f97316; transform: translateY(-1px); box-shadow: none; }
       .repair-primary:active,
       .animate-ui-action-btn.edit.repair-primary:active { transform: scale(0.98); box-shadow: none; }
-      .time-badge { display:inline-flex; align-items:center; padding:0.25rem 0.6rem; border-radius:999px; font-weight:600; font-size:0.85rem; }
+      .time-badge { display:inline-block; padding:0.3rem 0.65rem; border-radius:6px; font-weight:600; font-size:0.85rem; white-space:nowrap; }
       .time-fresh { background:#d1fae5; color:#065f46; }
       .time-warning { background:#fef3c7; color:#92400e; }
       .time-danger { background:#fee2e2; color:#b91c1c; }
@@ -246,8 +246,42 @@ function relativeTimeInfo(?string $dateStr): array {
                     <?php foreach ($repairs as $r): ?>
                       <?php $status = (string)($r['repair_status'] ?? ''); ?>
                       <tr>
-                        <?php $timeInfo = relativeTimeInfo($r['repair_date'] ?? null); ?>
-                        <td><span class="time-badge <?php echo htmlspecialchars($timeInfo['class']); ?>"><?php echo htmlspecialchars($timeInfo['label']); ?></span></td>
+                        <?php 
+                          $repairDate = $r['repair_date'] ?? '';
+                          $repairTime = $r['repair_time'] ?? '00:00:00';
+                          // ตัดเอาเฉพาะวันที่จาก repair_date (ตัดส่วนเวลา 00:00:00 ออก)
+                          $dateOnly = $repairDate ? explode(' ', $repairDate)[0] : '';
+                          
+                          // แปลงวันที่จาก ค.ศ. เป็น พ.ศ. สำหรับแสดงผล
+                          $displayDate = $dateOnly;
+                          if ($dateOnly) {
+                            $dateParts = explode('-', $dateOnly);
+                            if (count($dateParts) === 3 && (int)$dateParts[0] < 2100) {
+                              // ถ้าเป็น ค.ศ. (น้อยกว่า 2100) ให้แปลงเป็น พ.ศ.
+                              $displayDate = ((int)$dateParts[0] + 543) . '-' . $dateParts[1] . '-' . $dateParts[2];
+                            }
+                          }
+                          
+                          $repairDateTime = trim($dateOnly . ' ' . $repairTime);
+                          $timeInfo = relativeTimeInfo($repairDateTime);
+                        ?>
+                        <td>
+                          <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                            <span class="time-badge relative-time <?php echo htmlspecialchars($timeInfo['class']); ?>" 
+                                  data-datetime="<?php echo htmlspecialchars($repairDateTime); ?>">
+                              <?php echo htmlspecialchars($timeInfo['label']); ?>
+                            </span>
+                            <span style="color:#64748b; font-size:0.75rem;">
+                              <?php 
+                                if ($displayDate) {
+                                  echo htmlspecialchars($displayDate) . ' ' . htmlspecialchars($repairTime);
+                                } else {
+                                  echo '-';
+                                }
+                              ?>
+                            </span>
+                          </div>
+                        </td>
                         <td>
                           <div style="display:flex; flex-direction:column; gap:0.15rem;">
                             <span>ห้อง <?php echo str_pad((string)($r['room_number'] ?? '0'), 2, '0', STR_PAD_LEFT); ?></span>
@@ -289,7 +323,8 @@ function relativeTimeInfo(?string $dateStr): array {
         const seconds = String(now.getSeconds()).padStart(2, '0');
         const day = String(now.getDate()).padStart(2, '0');
         const month = String(now.getMonth() + 1).padStart(2, '0');
-        const year = now.getFullYear() + 543; // เปลี่ยนเป็นปีพุทธศักราช
+        const year = now.getFullYear();
+        const yearBE = year + 543; // เปลี่ยนเป็นปีพุทธศักราช
         
         const timeInput = document.getElementById('repair_time');
         const timeHidden = document.getElementById('repair_time_hidden');
@@ -298,13 +333,63 @@ function relativeTimeInfo(?string $dateStr): array {
         
         if (timeInput) timeInput.value = `${hours}:${minutes}:${seconds}`;
         if (timeHidden) timeHidden.value = `${hours}:${minutes}:${seconds}`;
-        if (dateDisplay) dateDisplay.value = `${day}/${month}/${year}`;
-        if (dateHidden) dateHidden.value = now.toISOString().split('T')[0];
+        if (dateDisplay) dateDisplay.value = `${day}/${month}/${yearBE}`;
+        // ใช้เวลาท้องถิ่น (ค.ศ.) สำหรับเก็บฐานข้อมูล
+        if (dateHidden) dateHidden.value = `${year}-${month}-${day}`;
       }
       
       // อัปเดตทันทีและทุก 1 วินาที
       updateRepairTime();
       setInterval(updateRepairTime, 1000);
+
+      // ฟังก์ชันคำนวณเวลาสัมพัทธ์
+      function getRelativeTime(dateTimeStr) {
+        if (!dateTimeStr) return { label: '-', class: '' };
+        
+        const target = new Date(dateTimeStr);
+        const now = new Date();
+        const diff = Math.floor((now - target) / 1000); // วินาที
+        
+        if (diff < 0) return { label: 'เร็วๆ นี้', class: 'time-neutral' };
+        
+        if (diff < 60) {
+          return { label: `${Math.max(1, diff)} วินาทีที่แล้ว`, class: 'time-fresh' };
+        }
+        if (diff < 3600) {
+          const min = Math.floor(diff / 60);
+          return { label: `${min} นาทีที่แล้ว`, class: 'time-fresh' };
+        }
+        if (diff < 86400) {
+          const hrs = Math.floor(diff / 3600);
+          return { label: `${hrs} ชม.ที่แล้ว`, class: 'time-fresh' };
+        }
+        
+        const days = Math.floor(diff / 86400);
+        if (days === 1) return { label: 'เมื่อวาน', class: 'time-warning' };
+        if (days === 2) return { label: 'เมื่อวานซืน', class: 'time-warning' };
+        if (days < 4) return { label: `${days} วันที่แล้ว`, class: 'time-warning' };
+        if (days < 30) return { label: `${days} วันที่แล้ว`, class: 'time-danger' };
+        
+        const months = Math.floor(days / 30);
+        if (months < 12) return { label: `${months} เดือนที่แล้ว`, class: 'time-danger' };
+        
+        const years = Math.floor(days / 365);
+        return { label: `${years} ปีที่แล้ว`, class: 'time-danger' };
+      }
+
+      // อัพเดทเวลาสัมพัทธ์ในตาราง
+      function updateRelativeTimes() {
+        document.querySelectorAll('.relative-time').forEach(badge => {
+          const datetime = badge.getAttribute('data-datetime');
+          if (!datetime) return;
+          
+          const timeInfo = getRelativeTime(datetime);
+          badge.textContent = timeInfo.label;
+          
+          // อัพเดท class
+          badge.className = 'time-badge relative-time ' + timeInfo.class;
+        });
+      }
 
       function updateRepairStatus(repairId, status) {
         if (!repairId) return;
@@ -326,9 +411,138 @@ function relativeTimeInfo(?string $dateStr): array {
         form.submit();
       }
 
+      // แสดง toast notification ด้านล่างขวา (ปิดอัตโนมัติหลัง 3 วินาที)
+      function showCustomModal(title, message, type = 'success') {
+        // สร้าง toast notification
+        const toast = document.createElement('div');
+        const bgColor = type === 'success' ? 'linear-gradient(135deg, #22c55e, #16a34a)' : 'linear-gradient(135deg, #ef4444, #dc2626)';
+        toast.style.cssText = `position:fixed; bottom:2rem; right:2rem; background:${bgColor}; color:#fff; padding:1rem 1.5rem; border-radius:12px; box-shadow:0 10px 30px rgba(0,0,0,0.3); z-index:9999; min-width:300px; max-width:400px; transform:translateX(150%); transition:transform 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); cursor:pointer;`;
+        
+        // Title
+        const titleEl = document.createElement('div');
+        titleEl.textContent = title;
+        titleEl.style.cssText = 'font-weight:700; font-size:1rem; margin-bottom:0.25rem;';
+        
+        // Message
+        const messageEl = document.createElement('div');
+        messageEl.textContent = message;
+        messageEl.style.cssText = 'font-size:0.9rem; opacity:0.95;';
+        
+        toast.appendChild(titleEl);
+        toast.appendChild(messageEl);
+        document.body.appendChild(toast);
+        
+        // Animate in
+        requestAnimationFrame(() => {
+          toast.style.transform = 'translateX(0)';
+        });
+        
+        // ฟังก์ชันปิด toast
+        const closeToast = () => {
+          toast.style.transform = 'translateX(150%)';
+          setTimeout(() => toast.remove(), 400);
+        };
+        
+        // ปิดอัตโนมัติหลัง 3 วินาที
+        setTimeout(closeToast, 3000);
+        
+        // คลิกเพื่อปิดก่อนเวลา
+        toast.onclick = closeToast;
+      }
+
+      // โหลดข้อมูลรายการแจ้งซ่อมใหม่
+      function loadRepairList() {
+        fetch(window.location.href)
+          .then(response => response.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // อัพเดทตาราง
+            const newTable = doc.querySelector('#table-repairs tbody');
+            const currentTable = document.querySelector('#table-repairs tbody');
+            if (newTable && currentTable) {
+              currentTable.innerHTML = newTable.innerHTML;
+              
+              // อัพเดทเวลาสัมพัทธ์สำหรับแถวใหม่
+              updateRelativeTimes();
+            }
+            
+            // อัพเดทสถิติ
+            const statsCards = doc.querySelectorAll('.repair-stat-card .stat-number');
+            const currentStats = document.querySelectorAll('.repair-stat-card .stat-number');
+            if (statsCards.length === currentStats.length) {
+              statsCards.forEach((stat, i) => {
+                if (currentStats[i]) {
+                  currentStats[i].textContent = stat.textContent;
+                }
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error loading repair list:', error);
+          });
+      }
+
+      // บันทึกการแจ้งซ่อมด้วย AJAX
+      function submitRepairForm(e) {
+        e.preventDefault();
+        
+        const form = document.getElementById('repairForm');
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
+        
+        // Disable button
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'กำลังบันทึก...';
+        
+        fetch('../Manage/process_repair.php', {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          },
+          body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            // แสดง custom modal สำเร็จ
+            showCustomModal('สำเร็จ', data.message || 'บันทึกการแจ้งซ่อมเรียบร้อยแล้ว', 'success');
+            
+            // รีเซ็ตฟอร์ม
+            form.reset();
+            document.getElementById('ctr_id').value = '';
+            document.getElementById('repair_desc').value = '';
+            
+            // โหลดข้อมูลใหม่แบบ AJAX (ไม่ reload หน้า)
+            loadRepairList();
+          } else {
+            throw new Error(data.message || 'เกิดข้อผิดพลาด');
+          }
+        })
+        .catch(error => {
+          // แสดง custom modal error
+          showCustomModal('ข้อความจาก localhost', error.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่', 'error');
+        })
+        .finally(() => {
+          // Enable button
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'บันทึกการแจ้งซ่อม';
+        });
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
         updateRepairTime();
-        setInterval(updateRepairTime, 1000); // อัปเดตทุกวินาที
+        setInterval(updateRepairTime, 1000); // อัปเดตฟอร์มทุกวินาที
+        
+        updateRelativeTimes();
+        setInterval(updateRelativeTimes, 1000); // อัปเดตเวลาสัมพัทธ์ทุกวินาที
+        
+        // เพิ่ม event listener สำหรับ form
+        const repairForm = document.getElementById('repairForm');
+        if (repairForm) {
+          repairForm.addEventListener('submit', submitRepairForm);
+        }
       });
     </script>
   </body>
