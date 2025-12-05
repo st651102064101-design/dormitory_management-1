@@ -167,7 +167,7 @@ $statusMap = [
       .book-btn {
         width: 100%;
         padding: 0.75rem;
-        background: #2196f3;
+        background: #007AFF;
         color: white;
         border: none;
         border-radius: 6px;
@@ -175,7 +175,7 @@ $statusMap = [
         cursor: pointer;
         transition: background 0.3s;
       }
-      .book-btn:hover { background: #1976d2; }
+      .book-btn:hover { background: #0A66DB; }
       /* Prevent hover animation when modal is open */
       body.modal-open .room-card:hover .room-card-inner {
         transform: none !important;
@@ -241,10 +241,10 @@ $statusMap = [
         cursor: pointer;
         transition: all 0.3s;
       }
-      .btn-submit { background: linear-gradient(135deg, #60a5fa, #2563eb); color: #fff; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35); }
-      .btn-submit:hover { background: linear-gradient(135deg, #7dd3fc, #2563eb); }
-      .btn-cancel { background: rgba(248, 113, 113, 0.15); color: #fecaca; border: 1px solid rgba(248, 113, 113, 0.4); }
-      .btn-cancel:hover { background: rgba(248, 113, 113, 0.3); }
+      .btn-submit { background: #007AFF; color: #fff; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.3); }
+      .btn-submit:hover { background: #0A66DB; opacity: 0.9; }
+      .btn-cancel { background: #FF3B30; color: #fff; border: none; }
+      .btn-cancel:hover { background: #E63D32; opacity: 0.9; }
       /* Alert โมดัล แบบเดียวกับ confirm ลบ */
       .booking-alert-modal {
         position: fixed;
@@ -533,7 +533,7 @@ $statusMap = [
                         <td class="crud-column">
                           <?php if ($bkg['bkg_status'] === '1'): ?>
                             <button type="button" 
-                                    class="animate-ui-action-btn edit" 
+                                    class="animate-ui-action-btn btn-success" 
                                     onclick="updateBookingStatus(<?php echo $bkg['bkg_id']; ?>, '2')">
                               เข้าพัก
                             </button>
@@ -543,9 +543,9 @@ $statusMap = [
                               ยกเลิก
                             </button>
                           <?php elseif ($bkg['bkg_status'] === '2'): ?>
-                            <span style="color: #4caf50; font-weight: 500;">เข้าพักแล้ว</span>
+                            <span style="color: #34C759; font-weight: 500;">เข้าพักแล้ว</span>
                           <?php elseif ($bkg['bkg_status'] === '0'): ?>
-                            <span style="color: #f44336; font-weight: 500;">ยกเลิกแล้ว</span>
+                            <span style="color: #FF3B30; font-weight: 500;">ยกเลิกแล้ว</span>
                           <?php endif; ?>
                         </td>
                       </tr>

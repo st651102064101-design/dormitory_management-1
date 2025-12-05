@@ -301,7 +301,7 @@ foreach ($newsList as $news) {
                   </div>
                 </div>
                 <div class="news-form-actions">
-                  <button type="submit" id="submitNewsBtn" style="flex:2; background: linear-gradient(135deg, #10b981, #059669); color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
+                  <button type="submit" id="submitNewsBtn" style="flex:2; background: #34C759; color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     เผยแพร่ข่าว
                   </button>
@@ -426,19 +426,20 @@ foreach ($newsList as $news) {
         const newsForm = document.getElementById('newsForm');
         
         if (submitBtn && newsForm) {
-          // Use capture phase to run before animate-ui's bubble phase handler
+          // Prevent modal interference by stopping propagation
           submitBtn.addEventListener('click', function(e) {
-            e.stopImmediatePropagation(); // Stop ALL other handlers
-          }, true); // true = capture phase
-          
-          // Ensure form submission works
-          submitBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            
+            // Submit form directly if valid
             if (newsForm.checkValidity()) {
               newsForm.submit();
             } else {
               newsForm.reportValidity();
             }
-          });
+            return false;
+          }, true); // Capture phase
         }
       });
       

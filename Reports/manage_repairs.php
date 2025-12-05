@@ -121,11 +121,11 @@ function relativeTimeInfo(?string $dateTimeStr): array {
       .reports-page .manage-panel { background:#0f172a; border:1px solid rgba(148,163,184,0.2); box-shadow:0 12px 30px rgba(0,0,0,0.2); margin-top:1rem; }
       .reports-page .manage-panel:first-of-type { margin-top:0; }
       .repair-primary,
-      .animate-ui-action-btn.edit.repair-primary { background: #f97316; color: #fff; border: 1px solid #ea580c; font-weight:800; letter-spacing:0.2px; }
+      .animate-ui-action-btn.edit.repair-primary { background: #FF9500; color: #fff; border: none; font-weight:600; letter-spacing:0.2px; }
       .repair-primary:hover,
-      .animate-ui-action-btn.edit.repair-primary:hover { background: #fb923c; border-color: #f97316; transform: translateY(-1px); box-shadow: none; }
+      .animate-ui-action-btn.edit.repair-primary:hover { background: #E68600; opacity: 0.9; transform: none; box-shadow: none; }
       .repair-primary:active,
-      .animate-ui-action-btn.edit.repair-primary:active { transform: scale(0.98); box-shadow: none; }
+      .animate-ui-action-btn.edit.repair-primary:active { opacity: 0.8; box-shadow: none; }
       .time-badge { display:inline-block; padding:0.3rem 0.65rem; border-radius:6px; font-weight:600; font-size:0.85rem; white-space:nowrap; }
       .time-fresh { background:#d1fae5; color:#065f46; }
       .time-warning { background:#fef3c7; color:#92400e; }
