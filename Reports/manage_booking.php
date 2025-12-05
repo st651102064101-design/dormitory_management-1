@@ -57,15 +57,18 @@ $statusMap = [
         margin-top: 1rem;
       }
       .room-card {
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
         padding: 1rem;
-        background: #fff;
+        background: linear-gradient(135deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));
         transition: all 0.3s ease;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+        color: #f5f8ff;
       }
       .room-card:hover {
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 16px 36px rgba(0,0,0,0.45);
         transform: translateY(-2px);
+        border-color: rgba(96,165,250,0.5);
       }
       .room-card-header {
         display: flex;
@@ -76,7 +79,7 @@ $statusMap = [
       .room-number {
         font-size: 1.5rem;
         font-weight: bold;
-        color: #333;
+        color: #f5f8ff;
       }
       .room-status {
         padding: 0.25rem 0.75rem;
@@ -87,6 +90,7 @@ $statusMap = [
       }
       .room-info {
         margin: 0.5rem 0;
+        color: rgba(255,255,255,0.75);
       }
       .room-info-item {
         display: flex;
@@ -97,15 +101,15 @@ $statusMap = [
       .room-price {
         font-size: 1.25rem;
         font-weight: bold;
-        color: #2196f3;
+        color: #60a5fa;
         margin: 0.75rem 0;
       }
       .room-image-container {
         margin: 0.75rem 0;
         height: 150px;
         overflow: hidden;
-        border-radius: 6px;
-        background: #f5f5f5;
+        border-radius: 10px;
+        background: linear-gradient(135deg, rgba(30,41,59,0.85), rgba(15,23,42,0.9));
         display: flex;
         align-items: center;
         justify-content: center;
