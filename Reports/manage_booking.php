@@ -95,6 +95,10 @@ $statusMap = [
         border-color: rgba(96,165,250,0.5);
         transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
       }
+      /* Prevent flip when modal is open */
+      body.modal-open .room-card:hover .room-card-inner {
+        transform: none !important;
+      }
       .rooms-grid.list-view .room-card:hover .room-card-inner,
       .rooms-grid.list-view .room-card .room-card-inner {
         transform: none;
@@ -166,6 +170,10 @@ $statusMap = [
         transition: background 0.3s;
       }
       .book-btn:hover { background: #1976d2; }
+      /* Prevent hover animation when modal is open */
+      body.modal-open .room-card:hover .room-card-inner {
+        transform: none !important;
+      }
       .booking-modal {
         display: none;
         position: fixed;
@@ -537,16 +545,43 @@ $statusMap = [
             document.getElementById('modal_room_price').value = '฿' + roomPrice;
             
             document.getElementById('bookingModal').classList.add('active');
+            document.body.classList.add('modal-open');
           });
         });
         
-        // ปิด modal เมื่อคลิกนอก content
+        // ปิด modal เมื่อคลิกนอก content (เฉพาะที่ background เท่านั้น)
         const modal = document.getElementById('bookingModal');
         if (modal) {
           modal.addEventListener('click', function(e) {
+            // ตรวจสอบว่าคลิกที่ background (ไม่ใช่ content)
             if (e.target === this) {
               closeBookingModal();
             }
+          });
+        }
+        
+        // ป้องกันการปิด modal เมื่อกดปุ่ม submit
+        const bookingForm = document.getElementById('bookingForm');
+        if (bookingForm) {
+          bookingForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // ส่งข้อมูลด้วย AJAX แทนการ redirect
+            const formData = new FormData(this);
+            
+            fetch('../Manage/process_booking.php', {
+              method: 'POST',
+              body: formData
+            })
+            .then(response => response.text())
+            .then(data => {
+              // ถ้าสำเร็จ ให้แสดงข้อความยืนยัน
+              console.log('Booking successful');
+              // Modal จะปิดเมื่อผู้ใช้กดปุ่มยกเลิก หรือคลิกนอก modal
+            })
+            .catch(error => {
+              console.error('Error:', error);
+            });
           });
         }
         
@@ -566,6 +601,7 @@ $statusMap = [
         const form = document.getElementById('bookingForm');
         
         modal.classList.remove('active');
+        document.body.classList.remove('modal-open');
         if (form) {
           form.reset();
         }
