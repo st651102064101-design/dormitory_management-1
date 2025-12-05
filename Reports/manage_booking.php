@@ -47,66 +47,98 @@ $statusMap = [
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <style>
-      .booking-section {
-        margin-bottom: 2rem;
-      }
+      .booking-section { margin-bottom: 2rem; }
       .rooms-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         gap: 1.5rem;
         margin-top: 1rem;
       }
+      .rooms-grid.list-view { display: flex; flex-direction: column; gap: 0.65rem; }
+      .view-toggle { display: inline-flex; gap: 0.5rem; margin-top: 1rem; }
+      .view-toggle button {
+        padding: 0.5rem 0.9rem;
+        border: 1px solid rgba(255,255,255,0.15);
+        border-radius: 10px;
+        background: rgba(15,23,42,0.85);
+        color: #f5f8ff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+      .view-toggle button.active {
+        background: linear-gradient(135deg, #60a5fa, #2563eb);
+        border-color: rgba(96,165,250,0.8);
+        box-shadow: 0 10px 20px rgba(37,99,235,0.35);
+      }
       .room-card {
+        position: relative;
         border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        background: transparent;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+        color: #f5f8ff;
+        perspective: 1200px;
+        min-height: 360px;
+      }
+      .rooms-grid.list-view .room-card { min-height: 260px; display: flex; align-items: stretch; overflow: hidden; }
+      .room-card-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        border-radius: 12px;
+        transition: transform 0.35s ease;
+        transform-style: preserve-3d;
+      }
+      .rooms-grid.list-view .room-card-inner { height: auto; }
+      .room-card:hover .room-card-inner {
+        transform: rotateY(180deg);
+        box-shadow: 0 16px 36px rgba(0,0,0,0.45);
+        border-color: rgba(96,165,250,0.5);
+      }
+      .rooms-grid.list-view .room-card:hover .room-card-inner,
+      .rooms-grid.list-view .room-card .room-card-inner {
+        transform: none;
+      }
+      .room-card-face {
+        position: absolute;
+        inset: 0;
         border-radius: 12px;
         padding: 1rem;
         background: linear-gradient(135deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));
-        transition: all 0.3s ease;
-        box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-        color: #f5f8ff;
+        backface-visibility: hidden;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 0.6rem;
+        border: 1px solid rgba(255,255,255,0.05);
       }
-      .room-card:hover {
-        box-shadow: 0 16px 36px rgba(0,0,0,0.45);
-        transform: translateY(-2px);
-        border-color: rgba(96,165,250,0.5);
+      .room-card-face.front { padding-bottom: 1.25rem; }
+      .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 180px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 1.25rem; align-items: stretch; }
+      .room-card-face.back {
+        transform: rotateY(180deg);
+        align-items: flex-start;
+        gap: 0.75rem;
       }
+      .rooms-grid.list-view .room-card-face.back { flex-direction: column; align-items: flex-start; display: none; }
       .room-card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
         margin-bottom: 0.75rem;
       }
-      .room-number {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #f5f8ff;
-      }
-      .room-status {
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        font-size: 0.875rem;
-        background: #4caf50;
-        color: white;
-      }
-      .room-info {
-        margin: 0.5rem 0;
-        color: rgba(255,255,255,0.75);
-      }
-      .room-info-item {
-        display: flex;
-        justify-content: space-between;
-        padding: 0.25rem 0;
-        font-size: 0.95rem;
-      }
-      .room-price {
-        font-size: 1.25rem;
-        font-weight: bold;
-        color: #60a5fa;
-        margin: 0.75rem 0;
-      }
+      .room-face-body { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+      .rooms-grid.list-view .room-face-body { flex-direction: row; align-items: center; gap: 1.25rem; }
+      .room-face-details { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 0; }
+      .rooms-grid.list-view .room-face-details { width: auto; }
+      .room-number { font-size: 1.5rem; font-weight: bold; color: #f5f8ff; }
+      .room-status { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: #4caf50; color: white; }
+      .room-info { margin: 0.5rem 0; color: rgba(255,255,255,0.75); }
+      .room-info-item { display: flex; justify-content: space-between; padding: 0.25rem 0; font-size: 0.95rem; }
+      .room-price { font-size: 1.25rem; font-weight: bold; color: #60a5fa; margin: 0.75rem 0; }
       .room-image-container {
         margin: 0.75rem 0;
-        height: 150px;
+        aspect-ratio: 4 / 3;
+        min-height: 200px;
         overflow: hidden;
         border-radius: 10px;
         background: linear-gradient(135deg, rgba(30,41,59,0.85), rgba(15,23,42,0.9));
@@ -114,11 +146,12 @@ $statusMap = [
         align-items: center;
         justify-content: center;
       }
-      .room-image-container img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
+      .rooms-grid.list-view .room-image-container { margin: 0; width: 280px; max-width: 320px; min-height: 180px; flex-shrink: 0; }
+      .room-image-container img { width: 100%; height: 100%; object-fit: cover; }
+      .book-btn-front { display: none; }
+      .rooms-grid.list-view .book-btn-front { display: inline-flex; width: 160px; justify-content: center; }
+      .rooms-grid.list-view .room-card-face.front { position: relative; display: flex; align-items: stretch; }
+      .rooms-grid.list-view .room-info-item { justify-content: flex-start; gap: 0.5rem; }
       .book-btn {
         width: 100%;
         padding: 0.75rem;
@@ -130,9 +163,7 @@ $statusMap = [
         cursor: pointer;
         transition: background 0.3s;
       }
-      .book-btn:hover {
-        background: #1976d2;
-      }
+      .book-btn:hover { background: #1976d2; }
       .booking-modal {
         display: none;
         position: fixed;
@@ -146,9 +177,7 @@ $statusMap = [
         justify-content: center;
         padding: 1.5rem;
       }
-      .booking-modal.active {
-        display: flex;
-      }
+      .booking-modal.active { display: flex; }
       .booking-modal-content {
         background: radial-gradient(circle at top, #1c2541, #0b0c10 60%);
         border: 1px solid rgba(255,255,255,0.08);
@@ -161,21 +190,9 @@ $statusMap = [
         overflow-y: auto;
         color: #f5f8ff;
       }
-
-      .booking-modal-content h2 {
-        margin-top: 0;
-        color: #fff;
-        letter-spacing: 0.02em;
-      }
-      .booking-form-group {
-        margin-bottom: 1.5rem;
-      }
-      .booking-form-group label {
-        display: block;
-        margin-bottom: 0.5rem;
-        font-weight: 600;
-        color: rgba(255,255,255,0.85);
-      }
+      .booking-modal-content h2 { margin-top: 0; color: #fff; letter-spacing: 0.02em; }
+      .booking-form-group { margin-bottom: 1.5rem; }
+      .booking-form-group label { display: block; margin-bottom: 0.5rem; font-weight: 600; color: rgba(255,255,255,0.85); }
       .booking-form-group input,
       .booking-form-group select {
         width: 100%;
@@ -187,25 +204,19 @@ $statusMap = [
         color: #f5f5f5;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
       }
-
       .booking-form-group input[readonly] {
         background: rgba(255,255,255,0.05);
         border-color: rgba(255,255,255,0.12);
         cursor: not-allowed;
         color: rgba(255,255,255,0.85);
       }
-
       .booking-form-group input:focus,
       .booking-form-group select:focus {
         outline: none;
         border-color: #60a5fa;
         box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.25);
       }
-      .booking-form-actions {
-        display: flex;
-        gap: 1rem;
-        margin-top: 2rem;
-      }
+      .booking-form-actions { display: flex; gap: 1rem; margin-top: 2rem; }
       .booking-form-actions button {
         flex: 1;
         padding: 0.75rem;
@@ -215,22 +226,10 @@ $statusMap = [
         cursor: pointer;
         transition: all 0.3s;
       }
-      .btn-submit {
-        background: linear-gradient(135deg, #60a5fa, #2563eb);
-        color: #fff;
-        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35);
-      }
-      .btn-submit:hover {
-        background: linear-gradient(135deg, #7dd3fc, #2563eb);
-      }
-      .btn-cancel {
-        background: rgba(248, 113, 113, 0.15);
-        color: #fecaca;
-        border: 1px solid rgba(248, 113, 113, 0.4);
-      }
-      .btn-cancel:hover {
-        background: rgba(248, 113, 113, 0.3);
-      }
+      .btn-submit { background: linear-gradient(135deg, #60a5fa, #2563eb); color: #fff; box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35); }
+      .btn-submit:hover { background: linear-gradient(135deg, #7dd3fc, #2563eb); }
+      .btn-cancel { background: rgba(248, 113, 113, 0.15); color: #fecaca; border: 1px solid rgba(248, 113, 113, 0.4); }
+      .btn-cancel:hover { background: rgba(248, 113, 113, 0.3); }
     </style>
   </head>
   <body class="reports-page">
@@ -268,6 +267,10 @@ $statusMap = [
               <div>
                 <h1>ห้องพักที่ว่าง</h1>
               </div>
+              <div class="view-toggle">
+                <button type="button" class="toggle-view-btn active" data-view="grid">Grid</button>
+                <button type="button" class="toggle-view-btn" data-view="list">List</button>
+              </div>
             </div>
             
             <?php if (empty($availableRooms)): ?>
@@ -275,40 +278,64 @@ $statusMap = [
                 <p style="font-size: 1.2rem;">ไม่มีห้องว่างในขณะนี้</p>
               </div>
             <?php else: ?>
-              <div class="rooms-grid">
+              <div class="rooms-grid" id="roomsGrid" aria-live="polite">
                 <?php foreach($availableRooms as $room): ?>
                   <div class="room-card">
-                    <div class="room-card-header">
-                      <span class="room-number">ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?></span>
-                      <span class="room-status">ว่าง</span>
-                    </div>
-                    
-                    <?php if (!empty($room['room_image'])): 
-                      $img = basename($room['room_image']); 
-                    ?>
-                      <div class="room-image-container">
-                        <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
+                    <div class="room-card-inner">
+                      <div class="room-card-face front">
+                        <div class="room-card-header">
+                          <span class="room-number">ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?></span>
+                          <span class="room-status">ว่าง</span>
+                        </div>
+                        <div class="room-face-body">
+                          <?php if (!empty($room['room_image'])): 
+                            $img = basename($room['room_image']); 
+                          ?>
+                            <div class="room-image-container">
+                              <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
+                            </div>
+                          <?php endif; ?>
+                          <div class="room-face-details">
+                            <div class="room-info">
+                              <div class="room-info-item">
+                                <span>ประเภท:</span>
+                                <span><strong><?php echo htmlspecialchars($room['type_name']); ?></strong></span>
+                              </div>
+                            </div>
+                            <div class="room-price">
+                              ฿<?php echo number_format((int)$room['type_price']); ?> / เดือน
+                            </div>
+                            <div class="room-info list-book-btn">
+                              <button type="button" class="book-btn book-btn-front"
+                                      data-room-id="<?php echo $room['room_id']; ?>"
+                                      data-room-number="<?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>"
+                                      data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
+                                      data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
+                                จองห้องนี้
+                              </button>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    <?php endif; ?>
-                    
-                    <div class="room-info">
-                      <div class="room-info-item">
-                        <span>ประเภท:</span>
-                        <span><strong><?php echo htmlspecialchars($room['type_name']); ?></strong></span>
+
+                      <div class="room-card-face back">
+                        <div>
+                          <div class="room-number" style="display:block;">ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?></div>
+                          <div style="margin-top:0.25rem; color: rgba(255,255,255,0.75);">ประเภท: <strong><?php echo htmlspecialchars($room['type_name']); ?></strong></div>
+                          <div style="margin-top:0.25rem; color: rgba(255,255,255,0.75);">ราคา: ฿<?php echo number_format((int)$room['type_price']); ?> / เดือน</div>
+                        </div>
+                        <div style="margin-top:auto; width:100%; display:flex; gap:0.5rem;">
+                          <button type="button" class="book-btn" 
+                                  style="flex:1;"
+                                  data-room-id="<?php echo $room['room_id']; ?>"
+                                  data-room-number="<?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>"
+                                  data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
+                                  data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
+                            จองห้องนี้
+                          </button>
+                        </div>
                       </div>
                     </div>
-                    
-                    <div class="room-price">
-                      ฿<?php echo number_format((int)$room['type_price']); ?> / เดือน
-                    </div>
-                    
-                    <button type="button" class="book-btn" 
-                            data-room-id="<?php echo $room['room_id']; ?>"
-                            data-room-number="<?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>"
-                            data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
-                            data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
-                      จองห้องนี้
-                    </button>
                   </div>
                 <?php endforeach; ?>
               </div>
@@ -441,6 +468,32 @@ $statusMap = [
       // รอให้ DOM โหลดเสร็จ
       document.addEventListener('DOMContentLoaded', function() {
         console.log('Page loaded');
+        const roomsGrid = document.getElementById('roomsGrid');
+        const viewToggleButtons = document.querySelectorAll('.toggle-view-btn');
+        const VIEW_KEY = 'bookingViewMode';
+
+        const applyViewMode = (mode) => {
+          if (!roomsGrid) return;
+          if (mode === 'list') {
+            roomsGrid.classList.add('list-view');
+          } else {
+            roomsGrid.classList.remove('list-view');
+          }
+          viewToggleButtons.forEach(b => {
+            b.classList.toggle('active', b.dataset.view === mode);
+          });
+        };
+
+        const savedView = localStorage.getItem(VIEW_KEY) || 'grid';
+        applyViewMode(savedView);
+
+        viewToggleButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            const mode = btn.dataset.view === 'list' ? 'list' : 'grid';
+            applyViewMode(mode);
+            localStorage.setItem(VIEW_KEY, mode);
+          });
+        });
         
         // เปิด modal สำหรับจองห้อง
         document.querySelectorAll('.book-btn').forEach(btn => {
