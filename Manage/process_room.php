@@ -19,7 +19,8 @@ try {
 
     $room_number = trim($_POST['room_number'] ?? '');
     $type_id = isset($_POST['type_id']) ? (int)$_POST['type_id'] : 0;
-    $room_status = $_POST['room_status'] ?? '1';
+    // สถานะห้องใหม่ให้เป็น "ว่าง" โดยอัตโนมัติ (0)
+    $room_status = '0';
 
     if ($room_number === '' || $type_id <= 0) {
         $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';

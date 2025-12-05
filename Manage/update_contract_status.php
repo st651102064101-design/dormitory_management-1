@@ -58,9 +58,9 @@ try {
 
     $room_id = (int)$contract['room_id'];
     if ($room_id > 0) {
-        if ($ctr_status === '1') {
+        if ($ctr_status === '1') { // ยกเลิกแล้ว
             $pdo->prepare("UPDATE room SET room_status = '0' WHERE room_id = ?")->execute([$room_id]);
-        } elseif ($ctr_status === '0') {
+        } elseif ($ctr_status === '0' || $ctr_status === '2') { // ปกติ หรือ รอแจ้งยกเลิก
             $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?")->execute([$room_id]);
         }
     }

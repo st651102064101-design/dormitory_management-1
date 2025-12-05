@@ -38,6 +38,31 @@ $activeContracts = $pdo->query("
   ORDER BY r.room_number
 ")->fetchAll(PDO::FETCH_ASSOC);
 
+// ดึงค่าไฟ/ค่าน้ำ จากตาราง rate (คอลัมน์ rate_water, rate_elec)
+$rateRows = [];
+try {
+  $rateRows = $pdo->query("SELECT rate_id, rate_water, rate_elec FROM rate ORDER BY rate_id")
+          ->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+  // ใช้ค่า fallback หากไม่มีตาราง rate หรือคอลัมน์ไม่ตรง
+  $rateRows = [];
+}
+
+$electricRates = array_map(function(array $row) {
+  return ['rate_id' => $row['rate_id'] ?? null, 'rate_price' => $row['rate_elec'] ?? null];
+}, $rateRows);
+$waterRates = array_map(function(array $row) {
+  return ['rate_id' => $row['rate_id'] ?? null, 'rate_price' => $row['rate_water'] ?? null];
+}, $rateRows);
+
+// fallback ค่าเดิมถ้าไม่มีข้อมูลจากตาราง rate
+if (empty($electricRates)) {
+  $electricRates = [ ['rate_id' => null, 'rate_price' => 7] ];
+}
+if (empty($waterRates)) {
+  $waterRates = [ ['rate_id' => null, 'rate_price' => 20] ];
+}
+
 $statusMap = [
   '0' => 'ยังไม่จ่าย',
   '1' => 'จ่ายแล้ว',
@@ -262,7 +287,13 @@ foreach ($expenses as $exp) {
                 </div>
                 <div class="expense-form-group">
                   <label for="rate_elec">อัตราค่าไฟ/หน่วย (บาท) <span style="color:#f87171;">*</span></label>
-                  <input type="number" id="rate_elec" name="rate_elec" min="0" step="0.01" required value="7" />
+                  <select id="rate_elec" name="rate_elec" required>
+                    <?php foreach ($electricRates as $rate): ?>
+                      <option value="<?php echo (float)($rate['rate_price'] ?? 0); ?>" data-rate-id="<?php echo (int)($rate['rate_id'] ?? 0); ?>">
+                        ฿<?php echo number_format((float)($rate['rate_price'] ?? 0), 2); ?> / หน่วย
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
                 </div>
                 <div class="expense-form-group">
                   <label for="exp_water_unit">หน่วยน้ำ <span style="color:#f87171;">*</span></label>
@@ -270,7 +301,13 @@ foreach ($expenses as $exp) {
                 </div>
                 <div class="expense-form-group">
                   <label for="rate_water">อัตราค่าน้ำ/หน่วย (บาท) <span style="color:#f87171;">*</span></label>
-                  <input type="number" id="rate_water" name="rate_water" min="0" step="0.01" required value="20" />
+                  <select id="rate_water" name="rate_water" required>
+                    <?php foreach ($waterRates as $rate): ?>
+                      <option value="<?php echo (float)($rate['rate_price'] ?? 0); ?>" data-rate-id="<?php echo (int)($rate['rate_id'] ?? 0); ?>">
+                        ฿<?php echo number_format((float)($rate['rate_price'] ?? 0), 2); ?> / หน่วย
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
                 </div>
                 
                 <div class="calc-preview" id="calcPreview" style="display:none;">
@@ -441,13 +478,15 @@ foreach ($expenses as $exp) {
         if (ctrSelect && elecUnit && elecRate && waterUnit && waterRate) {
           ctrSelect.addEventListener('change', updatePreview);
           elecUnit.addEventListener('input', updatePreview);
-          elecRate.addEventListener('input', updatePreview);
+          elecRate.addEventListener('change', updatePreview);
           waterUnit.addEventListener('input', updatePreview);
-          waterRate.addEventListener('input', updatePreview);
+          waterRate.addEventListener('change', updatePreview);
           
           document.getElementById('expenseForm').addEventListener('reset', () => {
             setTimeout(updatePreview, 10);
           });
+
+          updatePreview();
         }
       })();
     </script>

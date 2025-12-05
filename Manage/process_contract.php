@@ -61,6 +61,7 @@ try {
     $insert = $pdo->prepare("INSERT INTO contract (ctr_start, ctr_end, ctr_deposit, ctr_status, tnt_id, room_id) VALUES (?, ?, ?, '0', ?, ?)");
     $insert->execute([$ctr_start, $ctr_end, $depositValue, $tnt_id, $room_id]);
 
+    // ห้องที่มีสัญญาใหม่ให้เป็นไม่ว่าง (1)
     $updateRoom = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
     $updateRoom->execute([$room_id]);
 

@@ -20,7 +20,6 @@ try {
     $room_id = isset($_POST['room_id']) ? (int)$_POST['room_id'] : 0;
     $room_number = trim($_POST['room_number'] ?? '');
     $type_id = isset($_POST['type_id']) ? (int)$_POST['type_id'] : 0;
-    $room_status = $_POST['room_status'] ?? '1';
 
     if ($room_id <= 0 || $room_number === '' || $type_id <= 0) {
         $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
@@ -38,10 +37,12 @@ try {
     }
 
     // ดึงข้อมูลเดิม
-    $old = $pdo->prepare("SELECT room_image FROM room WHERE room_id = ?");
+    $old = $pdo->prepare("SELECT room_image, room_status FROM room WHERE room_id = ?");
     $old->execute([$room_id]);
     $oldData = $old->fetch(PDO::FETCH_ASSOC);
     $room_image = $oldData['room_image'];
+    // คงสถานะห้องเดิม ไม่เปิดให้แก้ไขผ่านฟอร์มนี้
+    $room_status = $oldData['room_status'];
 
     // อัพโหลดรูปภาพใหม่ถ้ามี
     if (!empty($_FILES['room_image']['name'])) {
@@ -75,8 +76,8 @@ try {
         }
     }
 
-    $update = $pdo->prepare("UPDATE room SET room_number = ?, type_id = ?, room_status = ?, room_image = ? WHERE room_id = ?");
-    $update->execute([$room_number, $type_id, $room_status, $room_image, $room_id]);
+    $update = $pdo->prepare("UPDATE room SET room_number = ?, type_id = ?, room_image = ? WHERE room_id = ?");
+    $update->execute([$room_number, $type_id, $room_image, $room_id]);
 
     $_SESSION['success'] = 'แก้ไขห้องพัก ห้อง ' . htmlspecialchars($room_number) . ' เรียบร้อยแล้ว';
     header('Location: ../Reports/manage_rooms.php');

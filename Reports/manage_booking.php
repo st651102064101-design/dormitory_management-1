@@ -13,7 +13,7 @@ $stmt = $pdo->query("
     SELECT r.*, rt.type_name, rt.type_price 
     FROM room r 
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id 
-    WHERE r.room_status = '1'
+    WHERE r.room_status = '0'
     ORDER BY r.room_number
 ");
 $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -155,6 +155,8 @@ $statusMap = [
       }
       .rooms-grid.list-view .room-image-container { margin: 0; width: 80px; max-width: 80px; min-height: 60px; height: 60px; flex-shrink: 0; }
       .room-image-container img { width: 100%; height: 100%; object-fit: cover; }
+      .room-image-placeholder { display: grid; place-items: center; color: rgba(148,163,184,0.85); gap: 0.35rem; text-align: center; }
+      .room-image-placeholder svg { width: 42px; height: 42px; opacity: 0.85; }
       .book-btn-front { display: none; }
       .rooms-grid.list-view .book-btn-front { display: inline-flex; width: 120px; justify-content: center; flex-shrink: 0; padding: 0.6rem 1rem; font-size: 0.9rem; margin-left: auto; }
       .rooms-grid.list-view .room-card-face.front { position: relative; display: flex; align-items: center; }
@@ -243,6 +245,59 @@ $statusMap = [
       .btn-submit:hover { background: linear-gradient(135deg, #7dd3fc, #2563eb); }
       .btn-cancel { background: rgba(248, 113, 113, 0.15); color: #fecaca; border: 1px solid rgba(248, 113, 113, 0.4); }
       .btn-cancel:hover { background: rgba(248, 113, 113, 0.3); }
+      /* Alert โมดัล แบบเดียวกับ confirm ลบ */
+      .booking-alert-modal {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0,0,0,0.55);
+        backdrop-filter: blur(4px);
+        z-index: 4000;
+        animation: toastIn 160ms ease-out;
+      }
+      .booking-alert-modal.hide { animation: toastOut 160ms ease-in forwards; }
+      .booking-alert-dialog {
+        width: min(520px, 92vw);
+        background: #0f172a;
+        color: #e2e8f0;
+        border-radius: 14px;
+        border: 1px solid rgba(255,255,255,0.08);
+        box-shadow: 0 20px 50px rgba(0,0,0,0.45);
+        padding: 1.6rem 1.4rem;
+        text-align: center;
+      }
+      .booking-alert-dialog.success { border-color: rgba(34,197,94,0.35); }
+      .booking-alert-dialog.error { border-color: rgba(239,68,68,0.45); }
+      .booking-alert-icon {
+        width: 56px;
+        height: 56px;
+        margin: 0 auto 0.85rem;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 1.8rem;
+        font-weight: 800;
+        color: #0b1727;
+      }
+      .booking-alert-dialog.success .booking-alert-icon { background: #22c55e; }
+      .booking-alert-dialog.error .booking-alert-icon { background: #ef4444; color: #fff; }
+      .booking-alert-message { font-size: 1.05rem; font-weight: 700; margin-bottom: 1.1rem; }
+      .booking-alert-actions { display: flex; justify-content: center; }
+      .booking-alert-ok {
+        min-width: 110px;
+        padding: 0.75rem 1.25rem;
+        border-radius: 10px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #0b1727;
+      }
+      .booking-alert-dialog.error .booking-alert-ok { background: linear-gradient(135deg, #ef4444, #dc2626); color: #fff; }
+      @keyframes toastIn { from { opacity: 0; transform: translate(0, -10px); } to { opacity: 1; transform: translate(0, 0); } }
+      @keyframes toastOut { from { opacity: 1; transform: translate(0, 0); } to { opacity: 0; transform: translate(0, -8px); } }
       
       /* Hidden rooms and load more button */
       .room-card.hidden-room { display: none; }
@@ -332,13 +387,22 @@ $statusMap = [
                           <span class="room-status">ว่าง</span>
                         </div>
                         <div class="room-face-body">
-                          <?php if (!empty($room['room_image'])): 
-                            $img = basename($room['room_image']); 
-                          ?>
-                            <div class="room-image-container">
+                          <div class="room-image-container">
+                            <?php if (!empty($room['room_image'])): 
+                              $img = basename($room['room_image']); 
+                            ?>
                               <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
-                            </div>
-                          <?php endif; ?>
+                            <?php else: ?>
+                              <div class="room-image-placeholder" aria-label="ไม่มีรูปห้อง">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                  <rect x="3" y="4" width="18" height="14" rx="2" ry="2"></rect>
+                                  <circle cx="8.5" cy="9.5" r="1.5"></circle>
+                                  <path d="M21 15l-4.5-4.5a2 2 0 0 0-3 0L5 19"></path>
+                                </svg>
+                                <span>ไม่มีรูป</span>
+                              </div>
+                            <?php endif; ?>
+                          </div>
                           <div class="room-face-details">
                             <div class="room-info">
                               <div class="room-info-item">
@@ -519,12 +583,20 @@ $statusMap = [
           
           <div class="booking-form-group">
             <label>วันที่จอง: <span style="color: red;">*</span></label>
-            <input type="date" name="bkg_date" required value="<?php echo date('Y-m-d'); ?>">
+            <input type="date" id="bkg_date" name="bkg_date" required value="<?php echo date('Y-m-d'); ?>" readonly>
           </div>
           
           <div class="booking-form-group">
             <label>วันที่เข้าพัก: <span style="color: red;">*</span></label>
             <input type="date" name="bkg_checkin_date" required min="<?php echo date('Y-m-d'); ?>">
+          </div>
+
+          <div class="booking-form-group" style="margin-top:-0.5rem;">
+            <label>ค่ามัดจำ (ชำระล่วงหน้า/หักคืนบิลแรก)</label>
+            <div style="padding:0.8rem 0.95rem; border-radius:10px; border:1px dashed rgba(255,255,255,0.25); background: rgba(255,255,255,0.03); color:#f5f5f5; font-weight:700;">
+              ฿2,000
+            </div>
+            <div style="margin-top:0.35rem; color:#cbd5e1; font-size:0.9rem;">จะหักออกจากยอดบิลวันเข้าพักอัตโนมัติ</div>
           </div>
           
           <div class="booking-form-actions">
@@ -605,10 +677,16 @@ $statusMap = [
         // ป้องกันการปิด modal เมื่อกดปุ่ม submit
         const bookingForm = document.getElementById('bookingForm');
         if (bookingForm) {
+          // ใส่ค่ามัดจำคงที่ 2000 ไปกับฟอร์ม (field เดิมไม่มีให้กรอก)
+          const depositField = document.createElement('input');
+          depositField.type = 'hidden';
+          depositField.name = 'bkg_deposit';
+          depositField.value = '2000';
+          bookingForm.appendChild(depositField);
+
           bookingForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // ส่งข้อมูลด้วย AJAX แทนการ redirect
             const formData = new FormData(this);
             
             fetch('../Manage/process_booking.php', {
@@ -617,23 +695,36 @@ $statusMap = [
             })
             .then(response => response.text())
             .then(data => {
-              // ถ้าสำเร็จ ให้แสดงข้อความยืนยัน
               console.log('Booking successful');
-              // Modal จะปิดเมื่อผู้ใช้กดปุ่มยกเลิก หรือคลิกนอก modal
+              closeBookingModal();
+              showBookingAlert('จองห้องพักสำเร็จ', 'success', () => window.location.reload());
             })
             .catch(error => {
               console.error('Error:', error);
+              showBookingAlert('จองไม่สำเร็จ กรุณาลองใหม่', 'error');
             });
           });
         }
         
-        // ตั้งค่า default date
+        // ตั้งค่า default date: วันที่จอง = วันนี้และปิดการเลือก, วันที่เข้าพัก = วันนี้ขึ้นไป พร้อมเปิด picker ให้ง่าย
         const today = new Date().toISOString().split('T')[0];
         const dateInputs = document.querySelectorAll('input[type="date"]');
         dateInputs.forEach(input => {
-          if (!input.value) {
-            input.min = today;
+          input.min = today;
+          if (!input.value) input.value = today;
+          // สำหรับวันที่จอง (bkg_date) ไม่ต้องให้เลือกเอง
+          if (input.id === 'bkg_date') {
+            input.readOnly = true;
+            return;
           }
+          // เปิด native picker ทันทีเมื่อคลิก/โฟกัส (ถ้าซัพพอร์ต showPicker)
+          const openPicker = () => {
+            if (typeof input.showPicker === 'function') {
+              try { input.showPicker(); } catch (e) {}
+            }
+          };
+          input.addEventListener('focus', openPicker);
+          input.addEventListener('click', openPicker);
         });
       });
       
@@ -665,6 +756,32 @@ $statusMap = [
           // Hide button when all rooms are shown
           loadMoreBtn.classList.add('hidden');
         }
+      }
+
+      // Alert แบบเดียวกับ confirm ลบ (โมดัลกลางจอ ปุ่มเดียว)
+      function showBookingAlert(message, variant = 'success', onClose = null) {
+        // ลบ modal เดิมถ้ามี
+        const existing = document.querySelector('.booking-alert-modal');
+        if (existing) existing.remove();
+        const overlay = document.createElement('div');
+        overlay.className = 'booking-alert-modal';
+        overlay.innerHTML = `
+          <div class="booking-alert-dialog ${variant}">
+            <div class="booking-alert-icon">${variant === 'success' ? '✓' : '!'}</div>
+            <div class="booking-alert-message">${message}</div>
+            <div class="booking-alert-actions">
+              <button type="button" class="booking-alert-ok">ตกลง</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(overlay);
+        const close = () => {
+          overlay.classList.add('hide');
+          setTimeout(() => overlay.remove(), 180);
+          if (typeof onClose === 'function') onClose();
+        };
+        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+        overlay.querySelector('.booking-alert-ok').addEventListener('click', close);
       }
       
       // ปิด modal

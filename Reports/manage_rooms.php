@@ -9,11 +9,20 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
-// หากมีการส่งฟอร์มเพิ่มห้องจากหน้านี้ ให้บันทึกลงฐานข้อมูล
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['room_number'], $_POST['type_id'], $_POST['room_status'])) {
+// ซิงก์สถานะห้องอัตโนมัติจากสัญญา (ctr_status 0/2 = มีผู้เช่า, 1 = ยกเลิก)
+try {
+  $pdo->exec("UPDATE room SET room_status = '0'");
+  $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (SELECT 1 FROM contract c WHERE c.room_id = room.room_id AND c.ctr_status IN ('0','2'))");
+} catch (PDOException $e) {
+  // ถ้าซิงก์ไม่สำเร็จ ให้ไปต่อแต่แสดงสถานะตามข้อมูลเดิม
+}
+
+// หากมีการส่งฟอร์มเพิ่มห้องจากหน้านี้ ให้บันทึกลงฐานข้อมูล (สถานะกำหนดอัตโนมัติ)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['room_number'], $_POST['type_id'])) {
   $roomNumber = trim($_POST['room_number']);
   $typeId = (int)($_POST['type_id'] ?? 0);
-  $roomStatus = $_POST['room_status'] ?? '1';
+  // ห้องใหม่เริ่มต้นเป็นว่าง (0)
+  $roomStatus = '0';
   $roomImage = '';
 
   if ($roomNumber === '' || $typeId <= 0) {
@@ -91,11 +100,11 @@ $defaultTypeId = $roomTypes[0]['type_id'] ?? '';
 $vacant = 0;
 $occupied = 0;
 foreach ($rooms as $room) {
-    if ($room['room_status'] == '1') {
-        $vacant++;
-    } else {
-        $occupied++;
-    }
+  if ($room['room_status'] === '0') {
+    $vacant++;
+  } else {
+    $occupied++;
+  }
 }
 
 $totalRooms = count($rooms);
@@ -535,13 +544,12 @@ $totalRooms = count($rooms);
                       <?php endforeach; ?>
                     </select>
                   </div>
-                  <div>
-                    <label for="room_status">สถานะห้อง <span style="color:#f87171;">*</span></label>
-                    <select id="room_status" name="room_status" required>
-                      <option value="1">ว่าง</option>
-                      <option value="0">ไม่ว่าง</option>
-                    </select>
-                  </div>
+                   <div>
+                     <label style="display:block;">สถานะห้อง</label>
+                     <div style="padding:0.9rem 0.85rem; border-radius:10px; border:1px dashed rgba(255,255,255,0.25); color:#cbd5e1;">
+                       ระบบจะปรับสถานะอัตโนมัติ เมื่อมีการจอง/ทำสัญญา (ว่าง = 0, ไม่ว่าง = 1)
+                     </div>
+                   </div>
                 </div>
                 <div class="room-form-group">
                   <label for="room_image">รูปภาพห้อง</label>
@@ -585,7 +593,12 @@ $totalRooms = count($rooms);
                       <?php if (!empty($room['room_image'])): ?>
                         <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
                       <?php else: ?>
-                        🛏️
+                        <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
+                          <path d="M6 12V7a2 2 0 0 1 2-2h2" />
+                          <path d="M2 16v-2" />
+                          <path d="M22 16v-2" />
+                        </svg>
                       <?php endif; ?>
                     </div>
                     <div class="room-card-content">
@@ -594,8 +607,8 @@ $totalRooms = count($rooms);
                         ประเภท: <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?><br>
                         ราคา: <?php echo number_format($room['type_price'] ?? 0); ?> บาท/เดือน
                       </div>
-                      <div class="room-card-status <?php echo $room['room_status'] == '1' ? 'vacant' : 'occupied'; ?>">
-                        <?php echo $room['room_status'] == '1' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
+                      <div class="room-card-status <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
+                        <?php echo $room['room_status'] === '0' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
                       </div>
                       <div class="room-card-actions">
                         <button type="button" class="animate-ui-action-btn edit" data-room-id="<?php echo $room['room_id']; ?>" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(<?php echo $room['room_id']; ?>)">แก้ไข</button>
@@ -627,7 +640,12 @@ $totalRooms = count($rooms);
                             <?php if (!empty($room['room_image'])): ?>
                               <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
                             <?php else: ?>
-                              🛏️
+                              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
+                                <path d="M6 12V7a2 2 0 0 1 2-2h2" />
+                                <path d="M2 16v-2" />
+                                <path d="M22 16v-2" />
+                              </svg>
                             <?php endif; ?>
                           </div>
                         </td>
@@ -635,8 +653,8 @@ $totalRooms = count($rooms);
                         <td><?php echo htmlspecialchars($room['type_name'] ?? '-'); ?></td>
                         <td><?php echo number_format($room['type_price'] ?? 0); ?> บาท</td>
                         <td>
-                          <span class="room-card-status <?php echo $room['room_status'] == '1' ? 'vacant' : 'occupied'; ?>">
-                            <?php echo $room['room_status'] == '1' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
+                          <span class="room-card-status <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
+                            <?php echo $room['room_status'] === '0' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
                           </span>
                         </td>
                         <td>
@@ -692,13 +710,6 @@ $totalRooms = count($rooms);
                 <?php endforeach; ?>
               </select>
             </div>
-            <div>
-              <label>สถานะห้อง: <span style="color: red;">*</span></label>
-              <select name="room_status" id="edit_room_status" required>
-                <option value="1">ว่าง</option>
-                <option value="0">ไม่ว่าง</option>
-              </select>
-            </div>
           </div>
           
           <div class="booking-form-group">
@@ -737,7 +748,6 @@ $totalRooms = count($rooms);
         document.getElementById('edit_room_id').value = room.room_id;
         document.getElementById('edit_room_number').value = room.room_number;
         document.getElementById('edit_type_id').value = room.type_id;
-        document.getElementById('edit_room_status').value = room.room_status;
         
         const preview = document.getElementById('edit_image_preview');
         if (room.room_image) {
@@ -918,22 +928,15 @@ $totalRooms = count($rooms);
             typeSelect?.focus();
             return null;
           }
-          const statusSelect = document.getElementById('room_status');
-          if (!statusSelect || !statusSelect.value) {
-            toast('กรุณาเลือกสถานะห้อง');
-            statusSelect?.focus();
-            return null;
-          }
           const roomNumber = roomNumberInput.value.trim();
           const typeText = typeSelect.options[typeSelect.selectedIndex]?.text || '';
-          const statusText = statusSelect ? statusSelect.options[statusSelect.selectedIndex]?.text || '' : '';
-          return { roomNumber, typeText, statusText };
+          return { roomNumber, typeText };
         };
 
         addRoomForm.addEventListener('submit', (e) => {
           const vals = validateAddRoom();
           if (!vals) { e.preventDefault(); return; }
-          toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} | ${vals.statusText}`, 2600);
+          toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} (สถานะกำหนดอัตโนมัติ)`, 2600);
           console.log('[AddRoom] submit fired', vals);
         });
         // เผื่อกรณีบางเบราว์เซอร์กดปุ่มแล้วไม่ได้เข้าฟอร์ม submit ให้ติดที่ปุ่มด้วย
@@ -944,7 +947,7 @@ $totalRooms = count($rooms);
             e.stopImmediatePropagation();
             const vals = validateAddRoom();
             if (!vals) { e.preventDefault(); e.stopPropagation(); return; }
-            toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} | ${vals.statusText}`, 2600);
+            toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} (สถานะกำหนดอัตโนมัติ)`, 2600);
             console.log('[AddRoom] button clicked', vals);
           });
         }
@@ -958,8 +961,6 @@ $totalRooms = count($rooms);
             const fileInput = document.getElementById('room_image');
             if (fileInput) fileInput.value = '';
             if (typeSelectEl && defaultTypeId) typeSelectEl.value = defaultTypeId;
-            const statusSelect = document.getElementById('room_status');
-            if (statusSelect) statusSelect.value = '1';
             toast('ล้างข้อมูลแล้ว', 1800);
           });
         }
