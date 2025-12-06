@@ -261,12 +261,28 @@ try {
                     <div class="logo-preview" id="logoPreview" style="margin-bottom: 1rem; text-align: center;">
                       <img src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" style="max-width: 200px; max-height: 200px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" />
                     </div>
+                    <a href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" download class="btn-save" style="display:inline-flex; align-items:center; gap:0.5rem; background: rgba(96,165,250,0.5); box-shadow:none; padding:0.6rem 1rem;">
+                      📥 ดาวน์โหลดรูปปัจจุบัน
+                    </a>
                   </div>
 
                   <div class="form-group">
                     <label>โหลดรูปเก่าจากระบบ</label>
                     <select id="oldLogoSelect" style="width: 100%; padding: 0.75rem 0.85rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(8,12,24,0.85); color: #f5f8ff; font-size: 0.95rem;">
                       <option value="">-- เลือกรูปเก่า --</option>
+                      <?php
+                        $logoDir = __DIR__ . '/../Assets/Images/';
+                        if (is_dir($logoDir)) {
+                          $files = scandir($logoDir);
+                          foreach ($files as $file) {
+                            if ($file === '.' || $file === '..') continue;
+                            $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                            if (!in_array($ext, ['jpg','jpeg','png'])) continue;
+                            if (stripos($file, 'logo') === false && !preg_match('/^\d+\.(jpg|jpeg|png)$/i', $file)) continue;
+                            echo '<option value="' . htmlspecialchars($file) . '">' . htmlspecialchars($file) . '</option>';
+                          }
+                        }
+                      ?>
                     </select>
                     <div id="oldLogoPreview" style="margin-top: 0.75rem;"></div>
                     <button type="button" id="loadOldLogoBtn" class="btn-save" style="margin-top: 0.75rem; background: rgba(96,165,250,0.5); box-shadow: none;">📂 โหลดรูปที่เลือก</button>
@@ -357,7 +373,7 @@ try {
                   </div>
                   <div>
                     <div style="color: #94a3b8; font-size: 0.9rem;">ฐานข้อมูล</div>
-                    <div style="color: #f5f8ff; font-weight: 600;">MySQL/MariaDB</div>
+                    <div style="color: #f5f8ff; font-weight: 600;">MySQL</div>
                   </div>
                   <div>
                     <div style="color: #94a3b8; font-size: 0.9rem;">สถานะระบบ</div>
@@ -410,10 +426,11 @@ try {
               oldLogoSelect.appendChild(option);
             });
           } else {
-            console.log('No old logos found');
+            showErrorToast(result.error || 'ไม่พบไฟล์เก่าในระบบ');
           }
         } catch (error) {
           console.error('Error loading old logos:', error);
+          showErrorToast('โหลดรายชื่อรูปเก่าไม่สำเร็จ');
         }
       }
 
@@ -458,6 +475,15 @@ try {
             const result = await response.json();
             if (result.success) {
               showSuccessToast('โหลดรูปเก่าสำเร็จ');
+              // Trigger browser download of the selected old file
+              const downloadLink = document.createElement('a');
+              downloadLink.href = `../Assets/Images/${encodeURIComponent(selectedFile)}`;
+              downloadLink.download = selectedFile;
+              downloadLink.style.display = 'none';
+              document.body.appendChild(downloadLink);
+              downloadLink.click();
+              document.body.removeChild(downloadLink);
+
               setTimeout(() => {
                 location.reload();
               }, 1000);
