@@ -437,9 +437,10 @@ body {
     padding: 1.25rem 0.75rem;
     box-shadow: 4px 0 24px rgba(0,0,0,0.6);
     gap: 0.5rem;
-    transition: width 0.3s ease, transform 0.3s ease;
-    overflow: hidden;
+    transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, transform 500ms cubic-bezier(0.4, 0, 0.2, 1) 0ms !important;
+    overflow-x: hidden;
     position: relative;
+    will-change: width;
 }
 .app-nav a .app-nav-icon {
     width: 1.9rem;
@@ -451,6 +452,9 @@ body {
     justify-content: center;
     margin-right: 0.5rem;
     font-size: 0.95rem;
+    transition: margin 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                width 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .app-nav summary .app-nav-icon,
 .app-nav .group > details summary .app-nav-icon { /* icon in the summary (Reports) */
@@ -464,34 +468,96 @@ body {
     margin-left: 0;
     margin-right: 0;
     font-size: 1.1rem;
+    transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                margin 400ms cubic-bezier(0.4, 0, 0.2, 1);
 }
-.app-nav a .app-nav-label { min-width:0; }
+.app-nav a .app-nav-label { 
+    min-width:0;
+    flex: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                width 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+    transform-origin: left;
+    white-space: nowrap;
+    will-change: opacity, transform;
+    text-decoration: none !important;
+}
+    width: auto;
+}
 .app-sidebar.collapsed .app-nav-label {
-    display: none;
+    opacity: 0;
+    transform: translateX(-20px) scaleX(0);
+    pointer-events: none;
+    width: 0;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }
 .app-sidebar.collapsed {
     width: 72px;
+    transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1) 0ms !important;
 }
 .app-sidebar.collapsed .team-meta,
 .app-sidebar.collapsed .plan,
 .app-sidebar.collapsed .team-meta .plan {
-    display: none;
+    opacity: 0;
+    transform: translateX(-20px) scaleX(0);
+    pointer-events: none;
+    width: 0;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }
 .app-sidebar.collapsed .team-avatar,
 .app-sidebar.collapsed .avatar { margin: 0 auto }
-.app-sidebar.collapsed summary { justify-content: center }
-.app-sidebar.collapsed .chev { display:none }
+.app-sidebar.collapsed summary { 
+    justify-content: center;
+    transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.app-sidebar.collapsed .chev { 
+    opacity: 0;
+    transform: scale(0) rotate(90deg);
+    pointer-events: none;
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
 .app-sidebar.collapsed .subitem {
-    justify-content: flex-end;
+    justify-content: center;
     padding-left: 0.35rem;
     padding-right: 0.35rem;
     width: 100%;
+    opacity: 1;
+    transform: translateX(0);
+    transition: padding-left 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                padding-right 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }
 .app-sidebar.collapsed .app-nav-icon {
     margin-right: 0;
+    transition: margin-right 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                margin-left 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                height 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }
 .app-sidebar.collapsed .summary-label {
-    display: none;
+    opacity: 0;
+    transform: translateX(-20px) scaleX(0);
+    pointer-events: none;
+    width: 0;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed .team-meta .name,
+.app-sidebar.collapsed .team-meta .plan {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
 }
 
 /* IMPORTANT: On mobile, never apply collapsed styles */
@@ -525,16 +591,49 @@ body {
     }
 }
 
-/* smooth width transition */
-.app-sidebar { transition: width 220ms ease; }
+
 .app-sidebar .team-switcher {
     display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem;border-radius:0.6rem;
     background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
 }
-.team-avatar { width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);display:flex;align-items:center;justify-content:center;font-weight:700 }
-.team-meta {display:flex;flex-direction:column;min-width:0}
-.team-meta .name {font-weight:700;font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.team-meta .plan {font-size:0.8rem;color:rgba(255,255,255,0.65)}
+.team-avatar { 
+    width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);
+    display:flex;align-items:center;justify-content:center;font-weight:700;
+    transition: width 350ms cubic-bezier(0.4, 0, 0.2, 1), 
+                height 350ms cubic-bezier(0.4, 0, 0.2, 1), 
+                margin 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.team-meta {
+    display:flex;flex-direction:column;min-width:0;
+    flex: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                width 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+    transform-origin: left;
+    overflow: hidden;
+    will-change: opacity, transform;
+    width: auto;
+}
+.team-meta .name {
+    font-weight:700;font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    will-change: opacity, transform;
+}
+.team-meta .plan {
+    font-size:0.8rem;color:rgba(255,255,255,0.65);
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms;
+    will-change: opacity, transform;
+}
 .app-sidebar .brand {
     color: #fff;
     font-weight: 800;
@@ -552,7 +651,7 @@ body {
 }
 .app-nav a {
     color: rgba(255,255,255,0.85);
-    text-decoration: none;
+    text-decoration: none !important;
     padding: 0.6rem 0.75rem;
     border-radius: 0.5rem;
     font-weight: 600;
@@ -560,6 +659,13 @@ body {
     grid-template-columns: auto 1fr;
     gap: 0.5rem;
     align-items: flex-start;
+    transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+    border: none !important;
+    outline: none !important;
+}
+.app-nav a .app-nav-icon {
+    transition: margin 350ms cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .app-nav .group {
     margin-top:0.6rem;padding-top:0.3rem;border-top:1px solid rgba(255,255,255,0.02)
@@ -569,13 +675,65 @@ body {
 }
 .app-nav summary {
     list-style:none;cursor:pointer;display:flex;align-items:center;gap:0.4rem;padding:0.55rem 0.75rem;color:rgba(255,255,255,0.9);font-weight:700;border-radius:0.5rem;justify-content:flex-start;
+    transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 .app-nav summary::-webkit-details-marker{display:none}
-.app-nav .subitem {display:grid;padding:0.4rem 1.1rem;color:rgba(255,255,255,0.75);font-weight:600;grid-template-columns:auto 1fr;gap:0.5rem;align-items:flex-start}
-.app-nav .subitem .app-nav-label { white-space: normal; }
+.app-nav summary .chev {
+    transition: transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    transform-origin: center;
+    will-change: transform, opacity;
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+.app-nav summary .summary-label {
+    flex: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+    transform-origin: left;
+    overflow: hidden;
+    white-space: nowrap;
+    will-change: opacity, transform;
+}
+.app-nav .subitem {
+    display:grid;padding:0.4rem 1.1rem;color:rgba(255,255,255,0.75);font-weight:600;grid-template-columns:auto 1fr;gap:0.5rem;align-items:flex-start;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                padding 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                margin 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    will-change: opacity, transform, padding;
+}
+.app-nav .subitem .app-nav-label { 
+    white-space: normal;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    will-change: opacity, transform;
+}
+.app-sidebar.collapsed .subitem .app-nav-label {
+    opacity: 0;
+    transform: translateX(-20px) scaleX(0);
+    pointer-events: none;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
 .app-nav a.active, .app-nav a:hover {
     background: rgba(255,255,255,0.06);
     color: #fff;
+    text-decoration: none !important;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+}
+
+.app-nav a.active .app-nav-label, .app-nav a:hover .app-nav-label {
+    text-decoration: none !important;
+    border-bottom: none !important;
 }
 .app-main {
     flex: 1 1 auto;
@@ -613,41 +771,155 @@ body.reports-page .animate-ui-card--wide {
     max-width: none;
 }
 .sidebar-footer { padding:0.5rem 0.75rem;border-top:1px solid rgba(255,255,255,0.02); margin-top: auto; }
-.user-row{display:flex;gap:0.6rem;align-items:center}
-.avatar {width:36px;height:36px;border-radius:8px;background:linear-gradient(90deg,#0b2233,#063547);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700}
+.user-row{display:flex;gap:0.6rem;align-items:center;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    will-change: opacity, transform;
+}
+.avatar {width:36px;height:36px;border-radius:8px;background:linear-gradient(90deg,#0b2233,#063547);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+    transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1), 
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1), 
+                margin 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
 /* Image variants for logo/avatar */
 .team-avatar img.team-avatar-img,
 .avatar img.avatar-img { width:100%; height:100%; object-fit:cover; display:block; border-radius:8px; }
 .team-avatar img.team-avatar-img { background: transparent; }
 .avatar img.avatar-img { background: transparent; }
-.user-meta{font-size:0.9rem}
-.user-meta .name{font-weight:700}
+.user-meta{font-size:0.9rem;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms;
+    will-change: opacity, transform;
+}
+.user-meta .name{font-weight:700;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
 .user-meta .email{font-size:0.75rem;color:rgba(255,255,255,0.65)}
 
 /* Sidebar footer rail for collapsed view */
-.sidebar-footer .sidebar-rail { display: none; gap: 0.6rem; align-items: center; justify-content: center; }
-.sidebar-footer .sidebar-rail .rail-user .app-nav-icon,
-.sidebar-footer .sidebar-rail .rail-logout .app-nav-icon { width:42px;height:42px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;background:rgba(255,255,255,0.03);font-size:1.05rem;color:#fff;border:0 }
-.sidebar-footer .logout-btn .app-nav-label { display: inline-block; margin-left: 0.4rem; }
+.sidebar-footer .sidebar-rail { 
+    display: none !important; 
+    gap: 0.6rem; 
+    align-items: center; 
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.sidebar-footer .logout-btn .app-nav-icon {
+    transition: margin 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                width 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+.app-sidebar.collapsed .sidebar-footer .logout-btn .app-nav-icon {
+    transition: margin 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                height 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+    flex-shrink: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sidebar-footer .logout-btn .app-nav-label { 
+    display: inline-block; 
+    margin-left: 0.4rem;
+    opacity: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms;
+}
 
-.sidebar-footer .logout-btn {
+.sidebar-footer .rail-user {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    opacity: 0;
+}
+
+.app-sidebar.collapsed .sidebar-footer .rail-user {
+    opacity: 1;
+}
+
+.app-sidebar.collapsed .sidebar-footer .rail-logout {
+    opacity: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+}
+
+.sidebar-footer .rail-logout button {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #000000;
+    font-size: 1.05rem;
+    color: #fff;
+    border: 0;
+    cursor: pointer;
+    transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1),
+                color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-footer .rail-logout button:hover {
+    background: #1a1a1a;
+}.sidebar-footer .logout-btn {
     width:100%;
     padding:0.45rem;
     border-radius:0.5rem;
-    background:#111;
+    background:#000000;
     color:#fff;
     border:0;
     display:flex;
     align-items:center;
     gap:0.5rem;
     justify-content:flex-start;
+    opacity: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms,
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms,
+                padding 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms;
+    min-width: auto;
 }
 
-.app-sidebar.collapsed .sidebar-footer .user-row { display: none; }
-.app-sidebar.collapsed .sidebar-footer .logout-btn { display: none; }
-.app-sidebar.collapsed .sidebar-footer .sidebar-rail { display: flex; }
-.app-sidebar.collapsed .sidebar-footer .logout-btn .app-nav-label { display: none; }
-.app-sidebar.collapsed .sidebar-footer .sidebar-rail { display: flex; flex-direction: column; padding: 0.6rem 0; }
+.app-sidebar.collapsed .sidebar-footer .user-row { 
+    opacity: 0;
+    transform: translateX(-20px);
+    pointer-events: none;
+    height: 0;
+    overflow: hidden;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                height 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed .sidebar-footer .logout-btn { 
+    display: none !important;
+}
+.app-sidebar.collapsed .sidebar-footer .sidebar-rail { 
+    display: flex !important; 
+    flex-direction: column; 
+    padding: 0.6rem 0;
+    opacity: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+}
+.app-sidebar.collapsed .sidebar-footer .logout-btn .app-nav-label { 
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
 .app-sidebar.collapsed .sidebar-footer { padding: 0.6rem 0; }
 .dashboard-grid {
     display: grid;

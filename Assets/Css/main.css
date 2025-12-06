@@ -297,6 +297,16 @@ section p,
 }
 
 /* Responsive adjustments */
+/* Theme Color Variables */
+html,
+body,
+.app-shell,
+.app-main,
+.reports-page {
+    background-color: var(--theme-bg-color) !important;
+    background: var(--theme-bg-color) !important;
+}
+
 @media (max-width: 768px) {
     .animate-ui-modal {
         max-width: 90vw;

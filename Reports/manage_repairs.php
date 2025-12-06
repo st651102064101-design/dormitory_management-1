@@ -121,15 +121,55 @@ try {
       /* Disable animate-ui modal overlays on this page */
       .animate-ui-modal, .animate-ui-modal-overlay { display:none !important; visibility:hidden !important; opacity:0 !important; }
       .repair-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem; margin-top:1rem; }
-      /* Light mode (white cards) */
-      body.live-light .repair-stat-card { padding:1rem; border-radius:12px; background:#ffffff; color:#111827; border:1px solid #e5e7eb; box-shadow:0 2px 8px rgba(0,0,0,0.08); }
-      body.live-light .repair-stat-card h3 { margin:0; font-size:0.95rem; color:#6b7280; }
-      body.live-light .repair-stat-card .stat-number { font-size:1.8rem; font-weight:700; margin-top:0.35rem; color:#111827; }
-
-      /* Dark/other modes (original dark cards) */
-      body:not(.live-light) .repair-stat-card { padding:1rem; border-radius:12px; background: #0f172a; color:#e2e8f0; border:1px solid rgba(148,163,184,0.2); box-shadow:0 12px 30px rgba(0,0,0,0.2); }
-      body:not(.live-light) .repair-stat-card h3 { margin:0; font-size:0.95rem; color:#cbd5e1; }
-      body:not(.live-light) .repair-stat-card .stat-number { font-size:1.8rem; font-weight:700; margin-top:0.35rem; color:#e2e8f0; }
+      
+      /* Default: Dark mode (original dark cards) */
+      .repair-stat-card { 
+        padding:1rem; 
+        border-radius:12px; 
+        background: #0f172a; 
+        color:#e2e8f0; 
+        border:1px solid rgba(148,163,184,0.2); 
+        box-shadow:0 12px 30px rgba(0,0,0,0.2);
+        transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+      }
+      .repair-stat-card h3 { margin:0; font-size:0.95rem; color:#cbd5e1; transition: color 0.35s ease; }
+      .repair-stat-card .stat-number { font-size:1.8rem; font-weight:700; margin-top:0.35rem; }
+      
+      /* Light mode override (when theme color is light/white) - detect by lightness of --theme-bg-color */
+      @supports (color: light-dark(white, black)) {
+        /* For browsers that support light-dark() */
+      }
+      
+      /* Manual light theme detection - when --theme-bg-color is white or light colors */
+      /* We'll use specific selectors for white theme */
+      html[style*="--theme-bg-color: #fff"] .repair-stat-card,
+      html[style*="--theme-bg-color: #FFF"] .repair-stat-card,
+      html[style*="--theme-bg-color: rgb(255, 255, 255)"] .repair-stat-card,
+      html[style*="--theme-bg-color: #ffffff"] .repair-stat-card,
+      html[style*="--theme-bg-color: #FFFFFF"] .repair-stat-card,
+      body[style*="background: #fff"] ~ * .repair-stat-card,
+      body[style*="background: #FFF"] ~ * .repair-stat-card,
+      body[style*="background: #ffffff"] ~ * .repair-stat-card,
+      body[style*="background: #FFFFFF"] ~ * .repair-stat-card,
+      body[style*="background: rgb(255, 255, 255)"] ~ * .repair-stat-card {
+        background:#ffffff !important; 
+        color:#111827 !important; 
+        border:1px solid #e5e7eb !important; 
+        box-shadow:0 2px 8px rgba(0,0,0,0.08) !important;
+      }
+      
+      html[style*="--theme-bg-color: #fff"] .repair-stat-card h3,
+      html[style*="--theme-bg-color: #FFF"] .repair-stat-card h3,
+      html[style*="--theme-bg-color: rgb(255, 255, 255)"] .repair-stat-card h3,
+      html[style*="--theme-bg-color: #ffffff"] .repair-stat-card h3,
+      html[style*="--theme-bg-color: #FFFFFF"] .repair-stat-card h3,
+      body[style*="background: #fff"] ~ * .repair-stat-card h3,
+      body[style*="background: #FFF"] ~ * .repair-stat-card h3,
+      body[style*="background: #ffffff"] ~ * .repair-stat-card h3,
+      body[style*="background: #FFFFFF"] ~ * .repair-stat-card h3,
+      body[style*="background: rgb(255, 255, 255)"] ~ * .repair-stat-card h3 {
+        color:#6b7280 !important;
+      }
       .repair-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin-top:1rem; }
       .repair-form label { font-weight:600; color:#cbd5e1; margin-bottom:0.35rem; display:block; }
       .repair-form input, .repair-form select, .repair-form textarea { width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid rgba(148,163,184,0.35); background:#0b162a; color:#e2e8f0; }
@@ -183,15 +223,15 @@ try {
             <div class="repair-stats">
               <div class="repair-stat-card" style="border-color:rgba(249,115,22,0.35);">
                 <h3>รอซ่อม</h3>
-                <div class="stat-number" style="color:#f97316;"><?php echo (int)$stats['pending']; ?></div>
+                <div class="stat-number" style="color:#f97316 !important;"><?php echo (int)$stats['pending']; ?></div>
               </div>
               <div class="repair-stat-card" style="border-color:rgba(96,165,250,0.35);">
                 <h3>กำลังซ่อม</h3>
-                <div class="stat-number" style="color:#60a5fa;"><?php echo (int)$stats['inprogress']; ?></div>
+                <div class="stat-number" style="color:#60a5fa !important;"><?php echo (int)$stats['inprogress']; ?></div>
               </div>
               <div class="repair-stat-card" style="border-color:rgba(34,197,94,0.35);">
                 <h3>ซ่อมเสร็จแล้ว</h3>
-                <div class="stat-number" style="color:#22c55e;"><?php echo (int)$stats['done']; ?></div>
+                <div class="stat-number" style="color:#22c55e !important;"><?php echo (int)$stats['done']; ?></div>
               </div>
             </div>
           </section>
@@ -571,6 +611,40 @@ try {
         });
       }
 
+      // ฟังก์ชันสำหรับตรวจจับและปรับสีการ์ดตาม theme
+      function updateCardTheme() {
+        const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim();
+        const bodyBg = getComputedStyle(document.body).backgroundColor;
+        
+        // ตรวจสอบว่าเป็นสีขาวหรือสีอ่อน
+        const isLightTheme = themeColor === '#fff' || themeColor === '#ffffff' || 
+                             themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
+                             bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
+        
+        const cards = document.querySelectorAll('.repair-stat-card');
+        cards.forEach(card => {
+          if (isLightTheme) {
+            // โหมดสีขาว
+            card.style.background = '#ffffff';
+            card.style.color = '#111827';
+            card.style.border = '1px solid #e5e7eb';
+            card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+            
+            const h3 = card.querySelector('h3');
+            if (h3) h3.style.color = '#6b7280';
+          } else {
+            // โหมดมืด (เดิม)
+            card.style.background = '#0f172a';
+            card.style.color = '#e2e8f0';
+            card.style.border = '1px solid rgba(148,163,184,0.2)';
+            card.style.boxShadow = '0 12px 30px rgba(0,0,0,0.2)';
+            
+            const h3 = card.querySelector('h3');
+            if (h3) h3.style.color = '#cbd5e1';
+          }
+        });
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
         updateRepairTime();
         setInterval(updateRepairTime, 1000); // อัปเดตฟอร์มทุกวินาที
@@ -583,6 +657,22 @@ try {
         if (repairForm) {
           repairForm.addEventListener('submit', submitRepairForm);
         }
+        
+        // ตรวจจับและปรับสีการ์ดตาม theme
+        updateCardTheme();
+        
+        // ตรวจสอบการเปลี่ยน theme color (ใช้ MutationObserver)
+        const observer = new MutationObserver(() => {
+          updateCardTheme();
+        });
+        observer.observe(document.documentElement, { 
+          attributes: true, 
+          attributeFilter: ['style'] 
+        });
+        observer.observe(document.body, { 
+          attributes: true, 
+          attributeFilter: ['style'] 
+        });
       });
     </script>
     <script src="../Assets/Javascript/toast-notification.js"></script>

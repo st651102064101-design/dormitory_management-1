@@ -6,11 +6,12 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $themeColor = '#0f172a';
+$fontSize = '1';
 try {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
     
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'font_size')");
     $settings = [];
     foreach ($settingsStmt->fetchAll(PDO::FETCH_ASSOC) as $setting) {
         $settings[$setting['setting_key']] = $setting['setting_value'];
@@ -19,6 +20,7 @@ try {
     $siteName = $settings['site_name'] ?? $siteName;
     $logoFilename = $settings['logo_filename'] ?? $logoFilename;
     $themeColor = $settings['theme_color'] ?? $themeColor;
+    $fontSize = $settings['font_size'] ?? $fontSize;
 } catch (Exception $e) {
     // ใช้ค่า default ถ้า database error
 }
@@ -26,7 +28,10 @@ try {
 <style>
   :root {
     --theme-bg-color: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>;
+    --font-scale: <?php echo htmlspecialchars($fontSize, ENT_QUOTES, 'UTF-8'); ?>;
   }
+
+  html { font-size: calc(16px * var(--font-scale, 1)); }
   
   /* พื้นหลังหลัก - ใช้ theme color */
   html, body, .app-shell, .app-main, .reports-page {
@@ -332,25 +337,15 @@ try {
     border-bottom: 1px solid #e5e7eb !important;
   }
   
-  /* Gradient border avatar like CodePen ref */
+  /* Simple avatar without border */
   .team-avatar,
   aside.app-sidebar .team-avatar,
   .app-sidebar .team-avatar {
     position: relative;
-    padding: 3px !important;
     border-radius: 12px !important;
-    background: linear-gradient(120deg,
-      #ff6b6b 0%,
-      #feca57 15%,
-      #ff9f43 30%,
-      #1dd1a1 45%,
-      #54a0ff 60%,
-      #5f27cd 75%,
-      #ff6b6b 100%) !important;
-    background-size: 300% 300%;
-    animation: avatarRainbow 4s linear infinite;
-    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(255,255,255,0.3) inset;
+    background: transparent !important;
     border: none !important;
+    padding: 0 !important;
   }
   
   .team-avatar-img,
@@ -360,14 +355,8 @@ try {
     height: 100%;
     border-radius: 12px !important;
     background: #ffffff !important;
-    border: 1px solid rgba(255,255,255,0.6) !important;
-    box-shadow: 0 8px 18px rgba(0,0,0,0.12);
-  }
-
-  @keyframes avatarRainbow {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
   }
   
   .team-meta .name,
@@ -533,6 +522,7 @@ try {
     gap: 0.5rem;
     padding: 0.5rem 0.75rem !important;
     margin: 0 !important;
+    transition: all 0.3s ease;
   }
   details summary .app-nav-icon {
     flex-shrink: 0;
@@ -541,9 +531,13 @@ try {
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: all 0.3s ease;
   }
   details summary .chev {
     transition: transform 0.3s ease;
+  }
+  details summary .summary-label {
+    transition: opacity 0.3s ease, transform 0.3s ease;
   }
   details[open] summary .chev {
     transform: rotate(90deg);
@@ -555,6 +549,7 @@ try {
     align-items: center;
     padding: 0.5rem !important;
     gap: 0.75rem;
+    transition: all 0.3s ease;
   }
   .team-avatar {
     width: 140px;
@@ -562,12 +557,13 @@ try {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.5rem !important;
+    padding: 0 !important;
     overflow: hidden;
     margin: 0 !important;
     border-radius: 16px;
-    background: linear-gradient(135deg, #dbeafe 0%, #a5f3fc 50%, #fbc2ff 100%);
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255,255,255,0.35) inset;
+    background: transparent;
+    box-shadow: none;
+    transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
   }
   .team-avatar-img {
     width: 100%;
@@ -577,24 +573,28 @@ try {
     object-fit: cover;
     background: #ffffff;
     border: 1px solid rgba(255,255,255,0.6);
+    transition: all 0.3s ease;
   } 
   .team-meta {
     display: block;
     text-align: center;
     width: 100%;
     padding: 0 0.5rem;
+    transition: opacity 0.3s ease, transform 0.3s ease;
   }
   .team-meta .name {
     font-size: 0.9rem;
     font-weight: 600;
     color: #e2e8f0;
     line-height: 1.3;
+    transition: all 0.3s ease;
   }
   .subitem {
     display: flex;
     align-items: center;
     gap: 0.5rem;
     padding-left: 0.75rem;
+    transition: all 0.3s ease;
   }
   .subitem .app-nav-icon {
     flex-shrink: 0;
@@ -984,6 +984,40 @@ try {
   const sidebar = document.querySelector('.app-sidebar');
   const toggleBtn = document.getElementById('sidebar-toggle');
   
+  // Toggle sidebar collapse on desktop
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // On desktop: toggle collapsed state
+      if (window.innerWidth > 1024) {
+        // Force browser reflow to ensure transitions work
+        sidebar.style.transition = 'none';
+        void sidebar.offsetHeight; // Trigger reflow
+        sidebar.style.transition = '';
+        
+        sidebar.classList.toggle('collapsed');
+        
+        // Save state to localStorage
+        localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        
+        console.log('Sidebar toggled:', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
+      } 
+      // On mobile: toggle mobile-open
+      else {
+        sidebar.classList.toggle('mobile-open');
+        document.body.classList.toggle('sidebar-open');
+      }
+    });
+  }
+  
+  // Restore sidebar state on page load (desktop only)
+  const savedState = localStorage.getItem('sidebarCollapsed');
+  if (savedState === 'true' && window.innerWidth > 1024) {
+    sidebar.classList.add('collapsed');
+  }
+  
   // Set active menu item based on current page
   function setActiveMenu() {
     const currentPage = window.location.pathname.split('/').pop();
@@ -1022,6 +1056,9 @@ try {
     if (window.innerWidth > 1024) {
       sidebar.classList.remove('mobile-open');
       document.body.classList.remove('sidebar-open');
+    } else {
+      // On mobile, remove collapsed state
+      sidebar.classList.remove('collapsed');
     }
   });
 })();
