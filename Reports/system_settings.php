@@ -64,11 +64,38 @@ try {
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <style>
+      html, body {
+        overflow-y: auto;
+        overflow-x: hidden;
+      }
       .system-settings-container {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        grid-template-columns: repeat(3, minmax(280px, 1fr));
         gap: 1.5rem;
         margin-top: 1rem;
+        padding-right: 0.75rem;
+      }
+      .logo-card { grid-column: 1; }
+      .col-2 { grid-column: 2; }
+      .col-3 { grid-column: 3; }
+      .settings-column {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+      }
+      @media (max-width: 1400px) {
+        .system-settings-container {
+          grid-template-columns: repeat(2, minmax(280px, 1fr));
+        }
+        .logo-card { grid-column: 1 / -1; }
+        .col-2, .col-3 { grid-column: auto; }
+      }
+      @media (max-width: 900px) {
+        .system-settings-container {
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        }
+        .logo-card { grid-column: 1 / -1; }
+        .col-2, .col-3 { grid-column: auto; }
       }
       .settings-card {
         background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95));
@@ -77,6 +104,7 @@ try {
         padding: 1.75rem;
         color: #f5f8ff;
         box-shadow: 0 12px 30px rgba(0,0,0,0.35);
+        margin-right: 1.5rem;
       }
       .settings-card h3 {
         margin: 0 0 1.2rem 0;
@@ -209,11 +237,22 @@ try {
       .reports-page .manage-panel { 
         margin-top: 1.4rem; 
         margin-bottom: 1.4rem; 
+        margin-right: 1rem;
+        margin-left: 0.75rem;
         background: #0f172a; 
         border: 1px solid rgba(148,163,184,0.2); 
         box-shadow: 0 12px 30px rgba(0,0,0,0.2); 
+        width: auto;
+        max-width: calc(100% - 1.75rem);
+        box-sizing: border-box;
       }
       .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
+      .logo-card { margin-right: 1.5rem; }
+      @media (max-width: 768px) {
+        .reports-page .manage-panel { margin-right: 0.5rem; margin-left: 0.5rem; max-width: calc(100% - 1rem); }
+        .settings-card { margin-right: 0.5rem; }
+        .logo-card { margin-right: 0.5rem; margin-left: 0; }
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -253,7 +292,7 @@ try {
 
             <div class="system-settings-container">
               <!-- Logo Settings -->
-              <div class="settings-card">
+              <div class="settings-card logo-card">
                 <h3><span>🎨</span> จัดการ Logo</h3>
                 <form id="logoForm" enctype="multipart/form-data">
                   <div class="form-group">
@@ -303,99 +342,103 @@ try {
                   <div class="status-badge" id="logoStatus"></div>
                 </form>
               </div>
+              
+              <div class="settings-column col-2">
+                <!-- Site Name Settings -->
+                <div class="settings-card">
+                  <h3><span>🏢</span> ชื่อสถานที่</h3>
+                  <form id="siteNameForm">
+                    <div class="form-group">
+                      <label>ชื่อหอพัก</label>
+                      <input type="text" id="siteName" name="site_name" value="<?php echo htmlspecialchars($siteName); ?>" maxlength="100" required />
+                      <small style="color: #94a3b8;">ชื่อที่จะแสดงในระบบ</small>
+                    </div>
+                    <button type="submit" class="btn-save">💾 บันทึกชื่อ</button>
+                    <div class="status-badge" id="siteNameStatus"></div>
+                  </form>
+                </div>
 
-              <!-- Site Name Settings -->
-              <div class="settings-card">
-                <h3><span>🏢</span> ชื่อสถานที่</h3>
-                <form id="siteNameForm">
-                  <div class="form-group">
-                    <label>ชื่อหอพัก</label>
-                    <input type="text" id="siteName" name="site_name" value="<?php echo htmlspecialchars($siteName); ?>" maxlength="100" required />
-                    <small style="color: #94a3b8;">ชื่อที่จะแสดงในระบบ</small>
-                  </div>
-                  <button type="submit" class="btn-save">💾 บันทึกชื่อ</button>
-                  <div class="status-badge" id="siteNameStatus"></div>
-                </form>
-              </div>
+                <!-- Theme Color Settings -->
+                <div class="settings-card">
+                  <h3><span>🎨</span> สีพื้นหลังระบบ</h3>
+                  <form id="themeColorForm">
+                    <div class="form-group">
+                      <label>เลือกสี</label>
+                      <div class="color-picker-wrapper">
+                        <input type="color" id="themeColor" name="theme_color" value="<?php echo htmlspecialchars($themeColor); ?>" />
+                        <div class="color-preview" id="colorPreview" style="background: <?php echo htmlspecialchars($themeColor); ?>;">
+                          <?php echo htmlspecialchars($themeColor); ?>
+                        </div>
+                      </div>
+                      <small style="color: #94a3b8; margin-top: 0.5rem;">เลือกสีสำหรับพื้นหลังระบบ</small>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 1rem;">
+                      <button type="button" class="quick-color" data-color="#0f172a" title="Dark Blue">🌙 Dark</button>
+                      <button type="button" class="quick-color" data-color="#ffffff" title="White">☀️ White</button>
+                      <button type="button" class="quick-color" data-color="#1e293b" title="Slate">⚪ Slate</button>
+                    </div>
+                    <button type="submit" class="btn-save">💾 บันทึกสี</button>
+                    <div class="status-badge" id="colorStatus"></div>
+                  </form>
+                </div>
 
-              <!-- Theme Color Settings -->
-              <div class="settings-card">
-                <h3><span>🎨</span> สีพื้นหลังระบบ</h3>
-                <form id="themeColorForm">
-                  <div class="form-group">
-                    <label>เลือกสี</label>
-                    <div class="color-picker-wrapper">
-                      <input type="color" id="themeColor" name="theme_color" value="<?php echo htmlspecialchars($themeColor); ?>" />
-                      <div class="color-preview" id="colorPreview" style="background: <?php echo htmlspecialchars($themeColor); ?>;">
-                        <?php echo htmlspecialchars($themeColor); ?>
+                <!-- Font Size Settings -->
+                <div class="settings-card">
+                  <h3><span>📝</span> ขนาดข้อความ</h3>
+                  <form id="fontSizeForm">
+                    <div class="form-group">
+                      <label>ขนาด</label>
+                      <select id="fontSize" name="font_size">
+                        <option value="0.9" <?php echo $fontSize === '0.9' ? 'selected' : ''; ?>>เล็ก (0.9)</option>
+                        <option value="1" <?php echo $fontSize === '1' ? 'selected' : ''; ?>>ปกติ (1.0) ✓</option>
+                        <option value="1.1" <?php echo $fontSize === '1.1' ? 'selected' : ''; ?>>ใหญ่ (1.1)</option>
+                        <option value="1.25" <?php echo $fontSize === '1.25' ? 'selected' : ''; ?>>ใหญ่มาก (1.25)</option>
+                      </select>
+                      <div class="font-size-preview" style="font-size: calc(1rem * <?php echo htmlspecialchars($fontSize); ?>);">
+                        ตัวอย่างข้อความ - นี่คือขนาดที่คุณเลือก
                       </div>
                     </div>
-                    <small style="color: #94a3b8; margin-top: 0.5rem;">เลือกสีสำหรับพื้นหลังระบบ</small>
-                  </div>
-                  <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 1rem;">
-                    <button type="button" class="quick-color" data-color="#0f172a" title="Dark Blue">🌙 Dark</button>
-                    <button type="button" class="quick-color" data-color="#ffffff" title="White">☀️ White</button>
-                    <button type="button" class="quick-color" data-color="#1e293b" title="Slate">⚪ Slate</button>
-                  </div>
-                  <button type="submit" class="btn-save">💾 บันทึกสี</button>
-                  <div class="status-badge" id="colorStatus"></div>
-                </form>
-              </div>
-
-              <!-- Font Size Settings -->
-              <div class="settings-card">
-                <h3><span>📝</span> ขนาดข้อความ</h3>
-                <form id="fontSizeForm">
-                  <div class="form-group">
-                    <label>ขนาด</label>
-                    <select id="fontSize" name="font_size">
-                      <option value="0.9" <?php echo $fontSize === '0.9' ? 'selected' : ''; ?>>เล็ก (0.9)</option>
-                      <option value="1" <?php echo $fontSize === '1' ? 'selected' : ''; ?>>ปกติ (1.0) ✓</option>
-                      <option value="1.1" <?php echo $fontSize === '1.1' ? 'selected' : ''; ?>>ใหญ่ (1.1)</option>
-                      <option value="1.25" <?php echo $fontSize === '1.25' ? 'selected' : ''; ?>>ใหญ่มาก (1.25)</option>
-                    </select>
-                    <div class="font-size-preview" style="font-size: calc(1rem * <?php echo htmlspecialchars($fontSize); ?>);">
-                      ตัวอย่างข้อความ - นี่คือขนาดที่คุณเลือก
-                    </div>
-                  </div>
-                  <button type="submit" class="btn-save">💾 บันทึกขนาด</button>
-                  <div class="status-badge" id="fontStatus"></div>
-                </form>
-              </div>
-
-              <!-- System Info -->
-              <div class="settings-card">
-                <h3><span>ℹ️</span> ข้อมูลระบบ</h3>
-                <div style="display: flex; flex-direction: column; gap: 0.75rem;">
-                  <div>
-                    <div style="color: #94a3b8; font-size: 0.9rem;">เวอร์ชัน PHP</div>
-                    <div style="color: #f5f8ff; font-weight: 600;"><?php echo phpversion(); ?></div>
-                  </div>
-                  <div>
-                    <div style="color: #94a3b8; font-size: 0.9rem;">ฐานข้อมูล</div>
-                    <div style="color: #f5f8ff; font-weight: 600;">MySQL</div>
-                  </div>
-                  <div>
-                    <div style="color: #94a3b8; font-size: 0.9rem;">สถานะระบบ</div>
-                    <div style="color: #86efac; font-weight: 600;">✓ ทำงานปกติ</div>
-                  </div>
-                  <div>
-                    <div style="color: #94a3b8; font-size: 0.9rem;">วันที่อัพเดทล่าสุด</div>
-                    <div style="color: #f5f8ff; font-weight: 600;"><?php echo date('d/m/Y H:i'); ?></div>
-                  </div>
+                    <button type="submit" class="btn-save">💾 บันทึกขนาด</button>
+                    <div class="status-badge" id="fontStatus"></div>
+                  </form>
                 </div>
               </div>
 
-              <!-- Database Backup -->
-              <div class="settings-card">
-                <h3><span>💾</span> สำรองข้อมูล</h3>
-                <form id="backupForm">
-                  <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
-                    สำรองฐานข้อมูลของคุณเพื่อป้องกันการสูญเสียข้อมูล
-                  </p>
-                  <button type="button" class="btn-save" id="backupBtn" style="margin-bottom: 0.5rem;">💾 สำรองข้อมูล</button>
-                  <div class="status-badge" id="backupStatus"></div>
-                </form>
+              <div class="settings-column col-3">
+                <!-- System Info -->
+                <div class="settings-card">
+                  <h3><span>ℹ️</span> ข้อมูลระบบ</h3>
+                  <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+                    <div>
+                      <div style="color: #94a3b8; font-size: 0.9rem;">เวอร์ชัน PHP</div>
+                      <div style="color: #f5f8ff; font-weight: 600;"><?php echo phpversion(); ?></div>
+                    </div>
+                    <div>
+                      <div style="color: #94a3b8; font-size: 0.9rem;">ฐานข้อมูล</div>
+                      <div style="color: #f5f8ff; font-weight: 600;">MySQL</div>
+                    </div>
+                    <div>
+                      <div style="color: #94a3b8; font-size: 0.9rem;">สถานะระบบ</div>
+                      <div style="color: #86efac; font-weight: 600;">✓ ทำงานปกติ</div>
+                    </div>
+                    <div>
+                      <div style="color: #94a3b8; font-size: 0.9rem;">วันที่อัพเดทล่าสุด</div>
+                      <div style="color: #f5f8ff; font-weight: 600;"><?php echo date('d/m/Y H:i'); ?></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Database Backup -->
+                <div class="settings-card">
+                  <h3><span>💾</span> สำรองข้อมูล</h3>
+                  <form id="backupForm">
+                    <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
+                      สำรองฐานข้อมูลของคุณเพื่อป้องกันการสูญเสียข้อมูล
+                    </p>
+                    <button type="button" class="btn-save" id="backupBtn" style="margin-bottom: 0.5rem;">💾 สำรองข้อมูล</button>
+                    <div class="status-badge" id="backupStatus"></div>
+                  </form>
+                </div>
               </div>
             </div>
           </section>
@@ -403,309 +446,8 @@ try {
       </main>
     </div>
 
-    <script>
-      // โหลดรูปเก่าจากระบบ
-      const oldLogoSelect = document.getElementById('oldLogoSelect');
-      const oldLogoPreview = document.getElementById('oldLogoPreview');
-      const loadOldLogoBtn = document.getElementById('loadOldLogoBtn');
-
-      // ดึงรายชื่อรูปเก่า
-      async function loadOldLogos() {
-        try {
-          const response = await fetch('../Manage/get_old_logos.php', {
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          });
-          const result = await response.json();
-          if (result.success && result.files.length > 0) {
-            result.files.forEach(file => {
-              const option = document.createElement('option');
-              option.value = file;
-              option.textContent = file;
-              oldLogoSelect.appendChild(option);
-            });
-          } else {
-            showErrorToast(result.error || 'ไม่พบไฟล์เก่าในระบบ');
-          }
-        } catch (error) {
-          console.error('Error loading old logos:', error);
-          showErrorToast('โหลดรายชื่อรูปเก่าไม่สำเร็จ');
-        }
-      }
-
-      // เรียก loadOldLogos เมื่อ dropdown พร้อม
-      if (oldLogoSelect) {
-        loadOldLogos();
-      }
-
-      // โหลดรูปตัวอย่างเมื่อเลือก
-      if (oldLogoSelect) {
-        oldLogoSelect.addEventListener('change', function() {
-          if (this.value) {
-            oldLogoPreview.innerHTML = `<img src="../Assets/Images/${this.value}" alt="Old Logo" style="max-width: 150px; max-height: 150px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />`;
-          } else {
-            oldLogoPreview.innerHTML = '';
-          }
-        });
-      }
-
-      // โหลดรูปเก่า
-      if (loadOldLogoBtn) {
-        loadOldLogoBtn.addEventListener('click', async function(e) {
-          e.preventDefault();
-          const selectedFile = oldLogoSelect.value;
-          if (!selectedFile) {
-            showErrorToast('กรุณาเลือกรูปเก่า');
-            return;
-          }
-
-          try {
-            const formData = new FormData();
-            formData.append('load_old_logo', selectedFile);
-
-            const response = await fetch('../Manage/save_system_settings.php', {
-              method: 'POST',
-              body: formData,
-              headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-              }
-            });
-
-            const result = await response.json();
-            if (result.success) {
-              showSuccessToast('โหลดรูปเก่าสำเร็จ');
-              // Trigger browser download of the selected old file
-              const downloadLink = document.createElement('a');
-              downloadLink.href = `../Assets/Images/${encodeURIComponent(selectedFile)}`;
-              downloadLink.download = selectedFile;
-              downloadLink.style.display = 'none';
-              document.body.appendChild(downloadLink);
-              downloadLink.click();
-              document.body.removeChild(downloadLink);
-
-              setTimeout(() => {
-                location.reload();
-              }, 1000);
-            } else {
-              showErrorToast(result.error || 'เกิดข้อผิดพลาด');
-            }
-          } catch (error) {
-            console.error('Error:', error);
-            showErrorToast('เกิดข้อผิดพลาด');
-          }
-        });
-      }
-
-      // Logo Upload
-      const logoForm = document.getElementById('logoForm');
-      const logoInput = document.getElementById('logoInput');
-      const logoPreview = document.getElementById('logoPreview');
-      const newLogoPreview = document.getElementById('newLogoPreview');
-      const logoStatus = document.getElementById('logoStatus');
-
-      logoInput.addEventListener('change', function() {
-        const file = this.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            newLogoPreview.innerHTML = `<img src="${e.target.result}" alt="New Logo" style="max-width: 150px; max-height: 150px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />`;
-          };
-          reader.readAsDataURL(file);
-        }
-      });
-
-      logoForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        try {
-          const response = await fetch('../Manage/save_system_settings.php', {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          });
-          
-          const result = await response.json();
-          if (result.success) {
-            showSuccessToast('บันทึก Logo สำเร็จ');
-            logoStatus.textContent = '✓ บันทึกแล้ว';
-            setTimeout(() => {
-              location.reload();
-            }, 1000);
-          } else {
-            showErrorToast(result.error || 'เกิดข้อผิดพลาด');
-            logoStatus.textContent = '✗ เกิดข้อผิดพลาด';
-          }
-        } catch (error) {
-          showErrorToast('เกิดข้อผิดพลาด');
-          logoStatus.textContent = '✗ เกิดข้อผิดพลาด';
-        }
-      });
-
-      // Site Name Form
-      const siteNameForm = document.getElementById('siteNameForm');
-      const siteNameStatus = document.getElementById('siteNameStatus');
-
-      siteNameForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        try {
-          const response = await fetch('../Manage/save_system_settings.php', {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          });
-          
-          const result = await response.json();
-          if (result.success) {
-            showSuccessToast('บันทึกชื่อสำเร็จ');
-            siteNameStatus.textContent = '✓ บันทึกแล้ว';
-          } else {
-            showErrorToast(result.error || 'เกิดข้อผิดพลาด');
-            siteNameStatus.textContent = '✗ เกิดข้อผิดพลาด';
-          }
-        } catch (error) {
-          showErrorToast('เกิดข้อผิดพลาด');
-          siteNameStatus.textContent = '✗ เกิดข้อผิดพลาด';
-        }
-      });
-
-      // Theme Color Form
-      const themeColorForm = document.getElementById('themeColorForm');
-      const themeColorInput = document.getElementById('themeColor');
-      const colorPreview = document.getElementById('colorPreview');
-      const colorStatus = document.getElementById('colorStatus');
-      const quickColorBtns = document.querySelectorAll('.quick-color');
-
-      themeColorInput.addEventListener('input', function() {
-        colorPreview.style.background = this.value;
-        colorPreview.textContent = this.value;
-      });
-
-      quickColorBtns.forEach(btn => {
-        btn.addEventListener('click', function(e) {
-          e.preventDefault();
-          const color = this.dataset.color;
-          themeColorInput.value = color;
-          colorPreview.style.background = color;
-          colorPreview.textContent = color;
-        });
-      });
-
-      themeColorForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        try {
-          const response = await fetch('../Manage/save_system_settings.php', {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          });
-          
-          const result = await response.json();
-          if (result.success) {
-            showSuccessToast('บันทึกสีสำเร็จ');
-            colorStatus.textContent = '✓ บันทึกแล้ว';
-          } else {
-            showErrorToast(result.error || 'เกิดข้อผิดพลาด');
-            colorStatus.textContent = '✗ เกิดข้อผิดพลาด';
-          }
-        } catch (error) {
-          showErrorToast('เกิดข้อผิดพลาด');
-          colorStatus.textContent = '✗ เกิดข้อผิดพลาด';
-        }
-      });
-
-      // Font Size Form
-      const fontSizeForm = document.getElementById('fontSizeForm');
-      const fontSizeSelect = document.getElementById('fontSize');
-      const fontStatus = document.getElementById('fontStatus');
-
-      fontSizeSelect.addEventListener('change', function() {
-        const preview = fontSizeForm.querySelector('.font-size-preview');
-        preview.style.fontSize = 'calc(1rem * ' + this.value + ')';
-      });
-
-      fontSizeForm.addEventListener('submit', async function(e) {
-        e.preventDefault();
-        const formData = new FormData(this);
-        
-        try {
-          const response = await fetch('../Manage/save_system_settings.php', {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          });
-          
-          const result = await response.json();
-          if (result.success) {
-            showSuccessToast('บันทึกขนาดข้อความสำเร็จ');
-            fontStatus.textContent = '✓ บันทึกแล้ว';
-          } else {
-            showErrorToast(result.error || 'เกิดข้อผิดพลาด');
-            fontStatus.textContent = '✗ เกิดข้อผิดพลาด';
-          }
-        } catch (error) {
-          showErrorToast('เกิดข้อผิดพลาด');
-          fontStatus.textContent = '✗ เกิดข้อผิดพลาด';
-        }
-      });
-
-      // Backup Button
-      const backupBtn = document.getElementById('backupBtn');
-      const backupStatus = document.getElementById('backupStatus');
-
-      backupBtn.addEventListener('click', async function(e) {
-        e.preventDefault();
-        
-        if (!confirm('คุณต้องการสำรองข้อมูลฐานข้อมูลหรือไม่?')) {
-          return;
-        }
-
-        backupBtn.disabled = true;
-        backupBtn.textContent = '⏳ กำลังสำรอง...';
-
-        try {
-          const response = await fetch('../Manage/backup_database.php', {
-            method: 'POST',
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          });
-          
-          const result = await response.json();
-          if (result.success) {
-            showSuccessToast('สำรองข้อมูลสำเร็จ');
-            backupStatus.textContent = '✓ สำรองแล้ว';
-            // Trigger download
-            const link = document.createElement('a');
-            link.href = result.file;
-            link.download = result.filename;
-            link.click();
-          } else {
-            showErrorToast(result.error || 'เกิดข้อผิดพลาด');
-            backupStatus.textContent = '✗ เกิดข้อผิดพลาด';
-          }
-        } catch (error) {
-          showErrorToast('เกิดข้อผิดพลาด');
-          backupStatus.textContent = '✗ เกิดข้อผิดพลาด';
-        } finally {
-          backupBtn.disabled = false;
-          backupBtn.textContent = '💾 สำรองข้อมูล';
-        }
-      });
-    </script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
+    <script src="../Assets/Javascript/system-settings.js"></script>
+    <script src="../Assets/Javascript/animate-ui.js"></script>
   </body>
 </html>

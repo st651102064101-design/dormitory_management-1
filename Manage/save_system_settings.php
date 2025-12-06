@@ -108,15 +108,58 @@ try {
             mkdir($uploadsDir, 0755, true);
         }
 
+        // เก็บสำรองโลโก้เดิม (ถ้ามี) โดยไม่ลบ จนกว่าจะเกิน 10 ไฟล์
+        $existingLogo = null;
+        foreach (['jpg', 'jpeg', 'png'] as $extCheck) {
+            $candidate = $uploadsDir . 'Logo.' . $extCheck;
+            if (file_exists($candidate)) {
+                $existingLogo = $candidate;
+                break;
+            }
+        }
+
+        if ($existingLogo) {
+            $backupName = 'Logo_backup_' . date('Ymd_His') . '.' . pathinfo($existingLogo, PATHINFO_EXTENSION);
+            @copy($existingLogo, $uploadsDir . $backupName);
+        }
+
         $filename = 'Logo.' . pathinfo($file['name'], PATHINFO_EXTENSION);
         $filepath = $uploadsDir . $filename;
 
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            // จำกัดไฟล์ logo ให้เหลือ 10 ไฟล์ล่าสุด
+            $logoFiles = [];
+            $dirItems = scandir($uploadsDir);
+            foreach ($dirItems as $item) {
+                if ($item === '.' || $item === '..') continue;
+                $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
+                if (!in_array($ext, ['jpg','jpeg','png'])) continue;
+                if (stripos($item, 'logo') !== false) {
+                    $logoFiles[] = $item;
+                }
+            }
+
+            // เรียงไฟล์ตามเวลาแก้ไข (ใหม่สุดอยู่ท้าย)
+            usort($logoFiles, function($a, $b) use ($uploadsDir) {
+                return filemtime($uploadsDir . $a) <=> filemtime($uploadsDir . $b);
+            });
+
+            $deleted = [];
+            while (count($logoFiles) > 10) {
+                $old = array_shift($logoFiles);
+                @unlink($uploadsDir . $old);
+                $deleted[] = $old;
+            }
+
             $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
             $stmt->execute(['logo_filename', $filename, $filename]);
 
             header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'message' => 'บันทึก Logo สำเร็จ']);
+            $msg = 'บันทึก Logo สำเร็จ';
+            if (!empty($deleted)) {
+                $msg .= ' | ลบรูปเก่าอัตโนมัติ ' . count($deleted) . ' ไฟล์';
+            }
+            echo json_encode(['success' => true, 'message' => $msg]);
             exit;
         } else {
             header('Content-Type: application/json');
