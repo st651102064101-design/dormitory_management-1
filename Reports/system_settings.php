@@ -68,7 +68,10 @@ try {
       :root {
         --theme-bg-color: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>;
       }
-      html, body {
+      html {
+        background: var(--theme-bg-color) !important;
+      }
+      body {
         overflow-y: auto;
         overflow-x: hidden;
         background: var(--theme-bg-color) !important;
@@ -277,7 +280,7 @@ try {
         margin-bottom: 1.4rem; 
         margin-right: 1rem;
         margin-left: 0.75rem;
-        background: #0f172a; 
+        background: var(--theme-bg-color); 
         border: 1px solid rgba(148,163,184,0.2); 
         box-shadow: 0 12px 30px rgba(0,0,0,0.2); 
         width: auto;
@@ -415,7 +418,9 @@ try {
                       <button type="button" class="quick-color" data-color="#ffffff" title="White">☀️ White</button>
                       <button type="button" class="quick-color" data-color="#1e293b" title="Slate">⚪ Slate</button>
                     </div>
-                    <button type="submit" class="btn-save">💾 บันทึกสี</button>
+                    <small style="color: #f97316; margin-top: 0.75rem; display: block; padding: 0.5rem; background: rgba(249, 115, 22, 0.1); border-radius: 4px;">
+                      💡 หากเปลี่ยนไป Dark Mode ไม่สำเร็จ โปรดรีเฟรชหน้า (Cmd+R หรือ F5)
+                    </small>
                     <div class="status-badge" id="colorStatus"></div>
                   </form>
                 </div>
@@ -435,9 +440,8 @@ try {
                       <div class="font-size-preview" style="font-size: calc(1rem * <?php echo htmlspecialchars($fontSize); ?>);">
                         ตัวอย่างข้อความ - นี่คือขนาดที่คุณเลือก
                       </div>
+                      <div class="status-badge" id="fontStatus"></div>
                     </div>
-                    <button type="submit" class="btn-save">💾 บันทึกขนาด</button>
-                    <div class="status-badge" id="fontStatus"></div>
                   </form>
                 </div>
               </div>
@@ -485,6 +489,7 @@ try {
     </div>
 
     <script src="../Assets/Javascript/toast-notification.js"></script>
+    <script src="../Assets/Javascript/confirm-modal.js"></script>
     <script src="../Assets/Javascript/system-settings.js"></script>
     <script src="../Assets/Javascript/animate-ui.js"></script>
   </body>

@@ -153,32 +153,41 @@ try {
         margin-bottom: 0.4rem;
         font-size: 0.9rem;
       }
+      /* Default: Dark mode inputs */
       .expense-form-group input,
       .expense-form-group select {
         width: 100%;
         padding: 0.75rem 0.85rem;
         border-radius: 10px;
-        border: 1px solid #d1d5db;
-        background: #ffffff;
-        color: #111827;
-        font-size: 0.95rem;
-      }
-
-      /* Dark mode inputs */
-      body:not(.live-light) .expense-form-group input,
-      body:not(.live-light) .expense-form-group select {
         background: rgba(15,23,42,0.9);
         color: #e2e8f0;
         border: 1px solid rgba(148,163,184,0.35);
+        font-size: 0.95rem;
+        transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease;
       }
-      body:not(.live-light) .expense-form-group input::placeholder,
-      body:not(.live-light) .expense-form-group select::placeholder {
+      .expense-form-group input::placeholder,
+      .expense-form-group select::placeholder {
         color: rgba(226,232,240,0.7);
       }
-      body:not(.live-light) .expense-form-group input:focus,
-      body:not(.live-light) .expense-form-group select:focus {
+      .expense-form-group input:focus,
+      .expense-form-group select:focus {
+        outline: none;
         border-color: #60a5fa;
         box-shadow: 0 0 0 2px rgba(96,165,250,0.25);
+      }
+      
+      /* Light mode inputs - will be applied via JavaScript */
+      .light-mode-input {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border: 1px solid #d1d5db !important;
+      }
+      .light-mode-input::placeholder {
+        color: #6b7280 !important;
+      }
+      .light-mode-input:focus {
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37,99,235,0.25) !important;
       }
       .add-type-row { display:flex; align-items:center; gap:0.5rem; justify-content:space-between; }
       .add-type-btn {
@@ -195,12 +204,6 @@ try {
       .add-type-btn:hover { background: rgba(37,99,235,0.15); border-color: rgba(96,165,250,0.95); }
       .delete-type-btn { border-color: rgba(248,113,113,0.45); color: #fca5a5; }
       .delete-type-btn:hover { background: rgba(248,113,113,0.12); border-color: rgba(248,113,113,0.75); }
-      .expense-form-group input:focus,
-      .expense-form-group select:focus {
-        outline: none;
-        border-color: #2563eb;
-        box-shadow: 0 0 0 2px rgba(37,99,235,0.25);
-      }
       .expense-form-actions {
         grid-column: 1 / -1;
         display: flex;
@@ -948,6 +951,46 @@ try {
 
                 document.getElementById('addRateBtn')?.addEventListener('click', addRateFlow);
                 document.getElementById('deleteRateBtn')?.addEventListener('click', deleteRateFlow);
+
+                // ฟังก์ชันสำหรับตรวจจับและปรับสี input fields ตาม theme
+                function updateInputTheme() {
+                  const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim();
+                  const bodyBg = getComputedStyle(document.body).backgroundColor;
+                  
+                  // ตรวจสอบว่าเป็นสีขาวหรือสีอ่อน
+                  const isLightTheme = themeColor === '#fff' || themeColor === '#ffffff' || 
+                                       themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
+                                       bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
+                  
+                  // เลือก input และ select ทั้งหมดในฟอร์ม
+                  const inputs = document.querySelectorAll('.expense-form-group input, .expense-form-group select');
+                  
+                  inputs.forEach(input => {
+                    if (isLightTheme) {
+                      // โหมดสีขาว
+                      input.classList.add('light-mode-input');
+                    } else {
+                      // โหมดมืด
+                      input.classList.remove('light-mode-input');
+                    }
+                  });
+                }
+
+                // เรียกใช้เมื่อโหลดหน้า
+                updateInputTheme();
+                
+                // ตรวจสอบการเปลี่ยน theme color (ใช้ MutationObserver)
+                const themeObserver = new MutationObserver(() => {
+                  updateInputTheme();
+                });
+                themeObserver.observe(document.documentElement, { 
+                  attributes: true, 
+                  attributeFilter: ['style'] 
+                });
+                themeObserver.observe(document.body, { 
+                  attributes: true, 
+                  attributeFilter: ['style'] 
+                });
     </script>
   </body>
 </html>

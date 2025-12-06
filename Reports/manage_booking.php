@@ -197,28 +197,36 @@ try {
       body.live-light .booking-stat-card .stat-value { color: #111827 !important; }
       body.live-light .booking-stat-card .stat-chip { background: #f3f4f6 !important; color: #374151 !important; }
 
-      body.live-light .room-card { box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important; color: #111827 !important; }
-      body.live-light .room-card-face {
+      body.live-light .room-card { 
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important; 
+        color: #111827 !important; 
+      }
+      body.live-light .room-card-face,
+      body.live-light .room-card-face.front,
+      body.live-light .room-card-face.back {
         background: #ffffff !important;
         border: 1px solid #e5e7eb !important;
         color: #111827 !important;
-        box-shadow: none !important;
-      }
-      body.live-light .rooms-grid .room-card-face.front,
-      body.live-light .rooms-grid .room-card-face.back {
-        background: #ffffff !important;
-        border: 1px solid #e5e7eb !important;
-        color: #111827 !important;
-      }
-      body.live-light .rooms-grid .room-card-face.front *,
-      body.live-light .rooms-grid .room-card-face.back * {
-        color: #111827 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
       }
       body.live-light .room-number { color: #111827 !important; }
-      body.live-light .room-info { color: #4b5563 !important; }
+      body.live-light .room-info,
+      body.live-light .room-info-item { color: #6b7280 !important; }
       body.live-light .room-price { color: #2563eb !important; }
-      body.live-light .room-card-face .room-status { color: #0f172a !important; }
+      body.live-light .room-status { background: #22c55e !important; color: #ffffff !important; }
       body.live-light .room-image-container { background: #f3f4f6 !important; }
+      body.live-light .book-btn { background: #2563eb !important; color: #ffffff !important; }
+      body.live-light .book-btn:hover { background: #1d4ed8 !important; }
+      body.live-light .view-toggle button { 
+        background: #f3f4f6 !important; 
+        color: #111827 !important; 
+        border: 1px solid #d1d5db !important; 
+      }
+      body.live-light .view-toggle button.active { 
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important; 
+        color: #ffffff !important;
+        border-color: #2563eb !important;
+      }
       .room-card-face.front { padding-bottom: 1.25rem; }
       .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 100px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 1.2rem; align-items: center; padding: 1rem 1.5rem; }
       .rooms-grid.list-view .room-price { font-size: 1rem; line-height: 1.2; margin: 0.3rem 0; }
@@ -1034,6 +1042,41 @@ try {
           form.submit();
         }
       }
+
+      // ฟังก์ชันสำหรับตรวจจับและปรับสีการ์ดตาม theme
+      function updateCardTheme() {
+        const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim();
+        const bodyBg = getComputedStyle(document.body).backgroundColor;
+        
+        // ตรวจสอบว่าเป็นสีขาวหรือสีอ่อน
+        const isLightTheme = themeColor === '#fff' || themeColor === '#ffffff' || 
+                             themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
+                             bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
+        
+        if (isLightTheme) {
+          document.body.classList.add('live-light');
+        } else {
+          document.body.classList.remove('live-light');
+        }
+      }
+
+      // เรียกใช้เมื่อโหลดหน้า
+      document.addEventListener('DOMContentLoaded', () => {
+        updateCardTheme();
+        
+        // ตรวจสอบการเปลี่ยน theme color (ใช้ MutationObserver)
+        const themeObserver = new MutationObserver(() => {
+          updateCardTheme();
+        });
+        themeObserver.observe(document.documentElement, { 
+          attributes: true, 
+          attributeFilter: ['style'] 
+        });
+        themeObserver.observe(document.body, { 
+          attributes: true, 
+          attributeFilter: ['style'] 
+        });
+      });
     </script>
     <script src="../Assets/Javascript/confirm-modal.js"></script>
     <script src="../Assets/Javascript/toast-notification.js"></script>

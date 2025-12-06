@@ -1,28 +1,27 @@
 <?php
-declare(strict_types=1);
+ob_start();
 session_start();
+ob_clean();
+
+error_reporting(0);
+ini_set('display_errors', 0);
+
+header('Content-Type: application/json; charset=utf-8');
 
 if (empty($_SESSION['admin_username'])) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
-    exit;
+    http_response_code(401);
+    die(json_encode(['success' => false, 'error' => 'Unauthorized'], JSON_UNESCAPED_UNICODE));
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'Invalid request method']);
-    exit;
+    http_response_code(400);
+    die(json_encode(['success' => false, 'error' => 'Invalid request method'], JSON_UNESCAPED_UNICODE));
 }
 
-require_once __DIR__ . '/../ConnectDB.php';
-
 try {
+    require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
     
-    // ดึง database name จาก connection string
-    $dbName = getenv('DB_NAME') ?? 'dormitory_management';
-    
-    // สร้าง backup ด้วย SQL dump
     $backupDir = __DIR__ . '/../backups/';
     if (!is_dir($backupDir)) {
         mkdir($backupDir, 0755, true);
@@ -32,59 +31,58 @@ try {
     $filename = 'backup_' . $timestamp . '.sql';
     $filepath = $backupDir . $filename;
 
-    // ดึงข้อมูลทุก table
-    $tables = [];
-    $result = $pdo->query("SHOW TABLES");
-    while ($row = $result->fetch(PDO::FETCH_NUM)) {
-        $tables[] = $row[0];
+    // Get all tables
+    $tables = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
+    
+    if (empty($tables)) {
+        throw new Exception('No tables found');
     }
 
-    // เริ่มสร้าง SQL dump
-    $sql = "-- Database Backup Generated at " . date('Y-m-d H:i:s') . "\n";
-    $sql .= "-- Tables: " . implode(', ', $tables) . "\n\n";
+    // Build SQL dump
+    $sql = "-- Backup: " . date('Y-m-d H:i:s') . "\n";
+    $sql .= "SET FOREIGN_KEY_CHECKS=0;\n\n";
 
     foreach ($tables as $table) {
-        // สร้าง CREATE TABLE statement
-        $createStmt = $pdo->query("SHOW CREATE TABLE `$table`");
-        $createRow = $createStmt->fetch(PDO::FETCH_NUM);
-        $sql .= "\n\n-- Table structure for table `$table`\n";
-        $sql .= "DROP TABLE IF EXISTS `$table`;\n";
-        $sql .= $createRow[1] . ";\n";
+        $sql .= "DROP TABLE IF EXISTS `" . str_replace('`', '``', $table) . "`;\n";
+        
+        $create = $pdo->query("SHOW CREATE TABLE `" . str_replace('`', '``', $table) . "`")->fetch();
+        $sql .= $create['Create Table'] . ";\n\n";
 
-        // ดึง data จาก table
-        $dataStmt = $pdo->query("SELECT * FROM `$table`");
-        $rows = $dataStmt->fetchAll(PDO::FETCH_ASSOC);
-
-        if (!empty($rows)) {
-            $sql .= "\n-- Dumping data for table `$table`\n";
+        $rows = $pdo->query("SELECT * FROM `" . str_replace('`', '``', $table) . "`")->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($rows as $row) {
+            $cols = [];
+            $vals = [];
             
-            foreach ($rows as $row) {
-                $columns = array_keys($row);
-                $values = array_map(function($val) use ($pdo) {
-                    return $val === null ? 'NULL' : $pdo->quote($val);
-                }, array_values($row));
-
-                $sql .= "INSERT INTO `$table` (`" . implode('`, `', $columns) . "`) VALUES (" . implode(', ', $values) . ");\n";
+            foreach ($row as $col => $val) {
+                $cols[] = '`' . str_replace('`', '``', $col) . '`';
+                $vals[] = ($val === null) ? 'NULL' : "'" . str_replace("'", "''", $val) . "'";
             }
+            
+            $sql .= "INSERT INTO `" . str_replace('`', '``', $table) . "` (" . implode(', ', $cols) . ") VALUES (" . implode(', ', $vals) . ");\n";
         }
+        $sql .= "\n";
     }
 
-    // บันทึกไฟล์
+    $sql .= "SET FOREIGN_KEY_CHECKS=1;\n";
+
     if (file_put_contents($filepath, $sql) !== false) {
-        header('Content-Type: application/json');
+        ob_end_clean();
+        http_response_code(200);
         echo json_encode([
             'success' => true,
-            'message' => 'สำรองข้อมูลสำเร็จ',
+            'message' => 'Backup successful',
             'filename' => $filename,
             'file' => '/Dormitory_Management/backups/' . $filename
-        ]);
+        ], JSON_UNESCAPED_UNICODE);
         exit;
     } else {
-        throw new Exception('ไม่สามารถบันทึกไฟล์ backup');
+        throw new Exception('Failed to write backup file');
     }
 
 } catch (Exception $e) {
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()]);
+    ob_end_clean();
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
     exit;
 }
