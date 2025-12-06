@@ -21,7 +21,13 @@ try {
     $ctr_status = $_POST['ctr_status'] ?? '';
 
     if ($ctr_id <= 0 || !in_array($ctr_status, ['0', '1', '2'], true)) {
-        $_SESSION['error'] = 'ข้อมูลไม่ครบถ้วน';
+        $errorMsg = 'ข้อมูลไม่ครบถ้วน';
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => $errorMsg]);
+            exit;
+        }
+        $_SESSION['error'] = $errorMsg;
         header('Location: ../Reports/manage_contracts.php');
         exit;
     }
@@ -30,7 +36,13 @@ try {
     $stmt->execute([$ctr_id]);
     $contract = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$contract) {
-        $_SESSION['error'] = 'ไม่พบข้อมูลสัญญา';
+        $errorMsg = 'ไม่พบข้อมูลสัญญา';
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => $errorMsg]);
+            exit;
+        }
+        $_SESSION['error'] = $errorMsg;
         header('Location: ../Reports/manage_contracts.php');
         exit;
     }
@@ -45,7 +57,13 @@ try {
         $conflict = $pdo->prepare("SELECT COUNT(*) FROM contract WHERE room_id = ? AND ctr_id <> ? AND ctr_status IN ('0','2')");
         $conflict->execute([(int)$contract['room_id'], $ctr_id]);
         if ((int)$conflict->fetchColumn() > 0) {
-            $_SESSION['error'] = 'ไม่สามารถกลับเป็นสถานะปกติได้ เนื่องจากมีสัญญาอื่นที่ใช้งานอยู่ในห้องนี้';
+            $errorMsg = 'ไม่สามารถกลับเป็นสถานะปกติได้ เนื่องจากมีสัญญาอื่นที่ใช้งานอยู่ในห้องนี้';
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => $errorMsg]);
+                exit;
+            }
+            $_SESSION['error'] = $errorMsg;
             header('Location: ../Reports/manage_contracts.php');
             exit;
         }
@@ -72,14 +90,34 @@ try {
         '1' => 'แก้ไขสัญญาเป็นยกเลิกเรียบร้อยแล้ว',
         '2' => 'แก้ไขการแจ้งยกเลิกเรียบร้อยแล้ว',
     ];
-    $_SESSION['success'] = $statusMessage[$ctr_status] ?? 'แก้ไขข้อมูลเรียบร้อยแล้ว';
+    
+    $message = $statusMessage[$ctr_status] ?? 'แก้ไขข้อมูลเรียบร้อยแล้ว';
+    
+    // ตรวจสอบว่าเป็น AJAX request หรือไม่
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => $message]);
+        exit;
+    }
+    
+    $_SESSION['success'] = $message;
     header('Location: ../Reports/manage_contracts.php');
     exit;
 } catch (PDOException $e) {
     if (isset($pdo) && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    
+    $errorMsg = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    
+    // ตรวจสอบว่าเป็น AJAX request หรือไม่
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => $errorMsg]);
+        exit;
+    }
+    
+    $_SESSION['error'] = $errorMsg;
     header('Location: ../Reports/manage_contracts.php');
     exit;
 }

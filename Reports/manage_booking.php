@@ -29,8 +29,23 @@ $stmtBookings = $pdo->query("
 ");
 $bookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC);
 
-// Debug: ตรวจสอบจำนวนข้อมูล
-// echo "<!-- จำนวนการจอง: " . count($bookings) . " -->";
+// คำนวณสถิติ
+$stats = [
+  'total' => 0,
+  'booked' => 0,
+  'checkedin' => 0,
+];
+foreach ($bookings as $bkg) {
+  $status = (string)($bkg['bkg_status'] ?? '');
+  if ($status !== '0') {
+    $stats['total']++;
+    if ($status === '1') {
+      $stats['booked']++;
+    } elseif ($status === '2') {
+      $stats['checkedin']++;
+    }
+  }
+}
 
 $statusMap = [
   '0' => 'ยกเลิก',
@@ -48,6 +63,40 @@ $statusMap = [
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <style>
+      .booking-stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .booking-stat-card {
+        background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
+        border-radius: 16px;
+        padding: 1.25rem;
+        border: 1px solid rgba(255,255,255,0.08);
+        color: #f5f8ff;
+        box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+      }
+      .booking-stat-card h3 {
+        margin: 0;
+        font-size: 0.95rem;
+        color: rgba(255,255,255,0.7);
+      }
+      .booking-stat-card .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin-top: 0.5rem;
+      }
+      .booking-stat-card .stat-chip {
+        margin-top: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.85rem;
+        padding: 0.2rem 0.75rem;
+        border-radius: 999px;
+        background: rgba(255,255,255,0.1);
+      }
       .booking-section { margin-bottom: 2rem; }
       .rooms-grid {
         display: grid;
@@ -79,6 +128,12 @@ $statusMap = [
         color: #f5f8ff;
         perspective: 1200px;
         min-height: 440px;
+        transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+      .room-card.removing {
+        opacity: 0;
+        transform: scale(0.7) rotateY(90deg);
+        pointer-events: none;
       }
       .rooms-grid.list-view .room-card { min-height: auto; }
       .room-card-inner {
@@ -359,6 +414,42 @@ $statusMap = [
             </script>
             <?php unset($_SESSION['error']); ?>
           <?php endif; ?>
+
+          <!-- ส่วนสถิติการจอง -->
+          <section class="manage-panel">
+            <div class="section-header">
+              <div>
+                <h1>ภาพรวมผู้เช่า</h1>
+                <p style="color:#94a3b8;margin-top:0.2rem;">สถิติผู้เช่าปัจจุบัน</p>
+              </div>
+            </div>
+            <div class="booking-stats">
+              <div class="booking-stat-card">
+                <h3>ผู้เช่าทั้งหมด</h3>
+                <div class="stat-value"><?php echo number_format($stats['total']); ?></div>
+                <div class="stat-chip">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#60a5fa;"></span>
+                  รวมทั้งหมด
+                </div>
+              </div>
+              <div class="booking-stat-card">
+                <h3>พักอยู่</h3>
+                <div class="stat-value"><?php echo number_format($stats['booked']); ?></div>
+                <div class="stat-chip">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;"></span>
+                  สถานะ = 1
+                </div>
+              </div>
+              <div class="booking-stat-card">
+                <h3>ย้ายออก</h3>
+                <div class="stat-value"><?php echo number_format($stats['checkedin']); ?></div>
+                <div class="stat-chip">
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;"></span>
+                  สถานะ = 0
+                </div>
+              </div>
+            </div>
+          </section>
 
           <!-- ส่วนแสดงห้องว่าง -->
           <section class="manage-panel booking-section">
@@ -693,17 +784,37 @@ $statusMap = [
             
             fetch('../Manage/process_booking.php', {
               method: 'POST',
-              body: formData
+              body: formData,
+              headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+              }
             })
-            .then(response => response.text())
-            .then(data => {
-              console.log('Booking successful');
-              closeBookingModal();
-              showBookingAlert('จองห้องพักสำเร็จ', 'success', () => window.location.reload());
+            .then(response => response.json())
+            .then(result => {
+              console.log('Booking response:', result);
+              
+              if (result.success) {
+                const bookedRoomId = formData.get('room_id');
+                closeBookingModal();
+                if (typeof showSuccessToast === 'function') {
+                  showSuccessToast(result.message || 'จองห้องพักสำเร็จ');
+                }
+                
+                // รีเฟรชข้อมูลโดยไม่รีโหลดหน้า พร้อม animation
+                setTimeout(() => {
+                  refreshBookingData(bookedRoomId);
+                }, 500);
+              } else {
+                if (typeof showErrorToast === 'function') {
+                  showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+                }
+              }
             })
             .catch(error => {
               console.error('Error:', error);
-              showBookingAlert('จองไม่สำเร็จ กรุณาลองใหม่', 'error');
+              if (typeof showErrorToast === 'function') {
+                showErrorToast('จองไม่สำเร็จ กรุณาลองใหม่');
+              }
             });
           });
         }
@@ -760,30 +871,80 @@ $statusMap = [
         }
       }
 
-      // Alert แบบเดียวกับ confirm ลบ (โมดัลกลางจอ ปุ่มเดียว)
-      function showBookingAlert(message, variant = 'success', onClose = null) {
-        // ลบ modal เดิมถ้ามี
-        const existing = document.querySelector('.booking-alert-modal');
-        if (existing) existing.remove();
-        const overlay = document.createElement('div');
-        overlay.className = 'booking-alert-modal';
-        overlay.innerHTML = `
-          <div class="booking-alert-dialog ${variant}">
-            <div class="booking-alert-icon">${variant === 'success' ? '✓' : '!'}</div>
-            <div class="booking-alert-message">${message}</div>
-            <div class="booking-alert-actions">
-              <button type="button" class="booking-alert-ok">ตกลง</button>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(overlay);
-        const close = () => {
-          overlay.classList.add('hide');
-          setTimeout(() => overlay.remove(), 180);
-          if (typeof onClose === 'function') onClose();
-        };
-        overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-        overlay.querySelector('.booking-alert-ok').addEventListener('click', close);
+
+      
+      // ฟังก์ชันรีเฟรชข้อมูล
+      function refreshBookingData(bookedRoomId = null) {
+        fetch(window.location.href)
+          .then(response => response.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // อัพเดทสถิติ
+            const statCards = document.querySelectorAll('.booking-stat-card .stat-value');
+            const newStats = doc.querySelectorAll('.booking-stat-card .stat-value');
+            
+            if (statCards.length === newStats.length) {
+              statCards.forEach((card, index) => {
+                card.textContent = newStats[index].textContent;
+              });
+            }
+            
+            // อัพเดทตารางการจอง (รายการจองทั้งหมด)
+            const newBookingTable = doc.querySelector('#table-bookings tbody');
+            const currentBookingTable = document.querySelector('#table-bookings tbody');
+            if (newBookingTable && currentBookingTable) {
+              currentBookingTable.innerHTML = newBookingTable.innerHTML;
+            }
+            
+            // อัพเดทรายการห้องว่าง with animation
+            const newRoomsGrid = doc.querySelector('#roomsGrid');
+            const currentRoomsGrid = document.querySelector('#roomsGrid');
+            if (newRoomsGrid && currentRoomsGrid) {
+              // ถ้ามีห้องที่ถูกจอง ให้ทำ animation ก่อน
+              if (bookedRoomId) {
+                const bookedCard = currentRoomsGrid.querySelector(`[data-room-id="${bookedRoomId}"]`)?.closest('.room-card');
+                if (bookedCard) {
+                  bookedCard.classList.add('removing');
+                  // รอ animation เสร็จก่อนอัพเดท DOM
+                  setTimeout(() => {
+                    updateRoomsGrid(newRoomsGrid, currentRoomsGrid);
+                  }, 600); // ตรงกับเวลาใน CSS transition
+                  return;
+                }
+              }
+              // ถ้าไม่มี animation ให้อัพเดทเลย
+              updateRoomsGrid(newRoomsGrid, currentRoomsGrid);
+            }
+          })
+          .catch(error => {
+            console.error('Error refreshing data:', error);
+          });
+      }
+      
+      // ฟังก์ชันช่วยอัพเดท rooms grid
+      function updateRoomsGrid(newRoomsGrid, currentRoomsGrid) {
+        currentRoomsGrid.innerHTML = newRoomsGrid.innerHTML;
+        
+        // ต้องผูก event listener ใหม่อีกครั้ง
+        document.querySelectorAll('.book-btn').forEach(btn => {
+          btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const roomId = this.dataset.roomId;
+            const roomNumber = this.dataset.roomNumber;
+            const roomType = this.dataset.roomType;
+            const roomPrice = this.dataset.roomPrice;
+            
+            document.getElementById('modal_room_id').value = roomId;
+            document.getElementById('modal_room_number').value = 'ห้อง ' + roomNumber;
+            document.getElementById('modal_room_type').value = roomType;
+            document.getElementById('modal_room_price').value = '฿' + roomPrice;
+            
+            document.getElementById('bookingModal').classList.add('active');
+            document.body.classList.add('modal-open');
+          });
+        });
       }
       
       // ปิด modal
@@ -829,5 +990,6 @@ $statusMap = [
       }
     </script>
     <script src="../Assets/Javascript/confirm-modal.js"></script>
+    <script src="../Assets/Javascript/toast-notification.js"></script>
   </body>
 </html>

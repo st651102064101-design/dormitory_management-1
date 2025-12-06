@@ -310,8 +310,8 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
 <aside class="app-sidebar">
   <div class="team-switcher">
     <div class="team-avatar">
-      <!-- Project logo (replace with Assets/Images/Lgoo.jpg) -->
-      <img src="/Dormitory_Management/Assets/Images/Lgoo.jpg" alt="Sangthian Dormitory logo" class="team-avatar-img" />
+      <!-- Project logo (replace with Assets/Images/Logo.jpg) -->
+      <img src="/Dormitory_Management/Assets/Images/Logo.jpg" alt="Sangthian Dormitory logo" class="team-avatar-img" />
     </div>
     <div class="team-meta">
       <div class="name">Sangthian Dormitory</div>

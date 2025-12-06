@@ -63,6 +63,19 @@ try {
     // commit transaction
     $pdo->commit();
     
+    // ตรวจสอบว่าเป็น AJAX request หรือไม่
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+              strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => true,
+            'message' => 'เพิ่มการจองห้องพักเรียบร้อยแล้ว'
+        ]);
+        exit;
+    }
+    
     $_SESSION['success'] = 'เพิ่มการจองห้องพักเรียบร้อยแล้ว';
     header('Location: ../Reports/manage_booking.php');
     exit;
@@ -72,6 +85,20 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    
+    // ตรวจสอบว่าเป็น AJAX request หรือไม่
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && 
+              strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode([
+            'success' => false,
+            'error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()
+        ]);
+        exit;
+    }
+    
     $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
     header('Location: ../Reports/manage_booking.php');
     exit;

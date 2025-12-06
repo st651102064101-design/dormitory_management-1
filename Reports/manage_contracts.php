@@ -102,7 +102,7 @@ function formatContractPeriod($startDate, $endDate) {
     $startFormatted = formatThaiDate($startDate->format('Y-m-d'));
     $endFormatted = formatThaiDate($endDate->format('Y-m-d'));
     
-    return $durationText . '<br><span style="color:#94a3b8;font-size:0.85rem;">' . $startFormatted . ' - ' . $endFormatted . '</span>';
+    return '<div style="text-align:center;">' . $durationText . '<br><span style="color:#94a3b8;font-size:0.85rem;">' . $startFormatted . ' - ' . $endFormatted . '</span></div>';
 }
 ?>
 <!doctype html>
@@ -220,6 +220,14 @@ function formatContractPeriod($startDate, $endDate) {
       .contract-room-meta {
         font-size: 0.75rem;
         color: #64748b;
+      }
+      #table-contracts tbody tr {
+        transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+      }
+      #table-contracts tbody tr.removing {
+        opacity: 0;
+        transform: translateX(-50px) scale(0.8);
+        background: rgba(239, 68, 68, 0.1);
       }
     </style>
   </head>
@@ -342,8 +350,30 @@ function formatContractPeriod($startDate, $endDate) {
                 </div>
                 <div class="contract-form-group">
                   <label for="ctr_end">วันที่สิ้นสุด <span style="color:#f87171;">*</span></label>
-                  <input type="date" id="ctr_end" name="ctr_end" required min="<?php echo date('Y-m-d'); ?>" />
+                  <input type="date" id="ctr_end" name="ctr_end" required />
+                  <div style="display:flex;gap:0.3rem;margin-top:0.5rem;flex-wrap:wrap;">
+                    <button type="button" class="quick-date-btn" data-months="3">+3 เดือน</button>
+                    <button type="button" class="quick-date-btn" data-months="6">+6 เดือน</button>
+                    <button type="button" class="quick-date-btn" data-months="9">+9 เดือน</button>
+                    <button type="button" class="quick-date-btn" data-months="12">+1 ปี</button>
+                  </div>
                 </div>
+                <style>
+                  .quick-date-btn {
+                    padding: 0.3rem 0.6rem;
+                    font-size: 0.75rem;
+                    border-radius: 6px;
+                    border: 1px solid rgba(96, 165, 250, 0.4);
+                    background: rgba(59, 130, 246, 0.1);
+                    color: #60a5fa;
+                    cursor: pointer;
+                    transition: all 0.2s;
+                  }
+                  .quick-date-btn:hover {
+                    background: rgba(59, 130, 246, 0.2);
+                    border-color: rgba(96, 165, 250, 0.6);
+                  }
+                </style>
                 <div class="contract-form-group">
                   <label for="ctr_deposit">เงินมัดจำ (บาท)</label>
                   <input type="number" id="ctr_deposit" name="ctr_deposit" min="0" step="500" placeholder="เช่น 5000" value="2000" />
@@ -374,7 +404,7 @@ function formatContractPeriod($startDate, $endDate) {
                     <th>เลขที่สัญญา</th>
                     <th>ผู้เช่า</th>
                     <th>ห้องพัก</th>
-                    <th>ช่วงสัญญา</th>
+                    <th style="text-align:center;">ช่วงสัญญา</th>
                     <th>เงินมัดจำ</th>
                     <th>สถานะ</th>
                     <th class="crud-column">จัดการ</th>
@@ -457,6 +487,49 @@ function formatContractPeriod($startDate, $endDate) {
     <script src="../Assets/Javascript/confirm-modal.js"></script>
     <script>
 
+      // ฟังก์ชันอัพเดทสถิติ
+      function updateStats(contractId = null) {
+        fetch(window.location.href)
+          .then(response => response.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // อัพเดทค่าสถิติ
+            const statCards = document.querySelectorAll('.contract-stat-card .stat-value');
+            const newStats = doc.querySelectorAll('.contract-stat-card .stat-value');
+            
+            if (statCards.length === newStats.length) {
+              statCards.forEach((card, index) => {
+                card.textContent = newStats[index].textContent;
+              });
+            }
+            
+            // อัพเดทตาราง with animation
+            const newTable = doc.querySelector('#table-contracts tbody');
+            const currentTable = document.querySelector('#table-contracts tbody');
+            if (newTable && currentTable) {
+              // ถ้ามีสัญญาที่ถูกอัพเดท ให้ทำ animation ก่อน
+              if (contractId) {
+                const targetRow = currentTable.querySelector(`tr:has(button[onclick*="${contractId}"])`);
+                if (targetRow) {
+                  targetRow.classList.add('removing');
+                  // รอ animation เสร็จก่อนอัพเดท DOM
+                  setTimeout(() => {
+                    currentTable.innerHTML = newTable.innerHTML;
+                  }, 500); // ตรงกับเวลาใน CSS transition
+                  return;
+                }
+              }
+              // ถ้าไม่มี animation ให้อัพเดทเลย
+              currentTable.innerHTML = newTable.innerHTML;
+            }
+          })
+          .catch(error => {
+            console.error('Error updating stats:', error);
+          });
+      }
+
       async function updateContractStatus(contractId, newStatus) {
         const labelMap = { '0': 'สถานะปกติ', '1': 'ยกเลิกสัญญา', '2': 'แจ้งยกเลิก' };
         const confirmText = labelMap[newStatus] || 'อัปเดต';
@@ -471,21 +544,46 @@ function formatContractPeriod($startDate, $endDate) {
           console.log('User cancelled update contract status');
           return;
         }
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '../Manage/update_contract_status.php';
-        const idField = document.createElement('input');
-        idField.type = 'hidden';
-        idField.name = 'ctr_id';
-        idField.value = contractId;
-        const statusField = document.createElement('input');
-        statusField.type = 'hidden';
-        statusField.name = 'ctr_status';
-        statusField.value = newStatus;
-        form.appendChild(idField);
-        form.appendChild(statusField);
-        document.body.appendChild(form);
-        form.submit();
+        
+        try {
+          const formData = new FormData();
+          formData.append('ctr_id', contractId);
+          formData.append('ctr_status', newStatus);
+          
+          const response = await fetch('../Manage/update_contract_status.php', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+          
+          const result = await response.json();
+          console.log('Response:', result);
+          
+          if (result.success) {
+            // แสดง toast สำเร็จ
+            if (typeof showSuccessToast === 'function') {
+              showSuccessToast(result.message || 'เปลี่ยนสถานะเรียบร้อยแล้ว');
+            }
+            
+            // อัพเดทสถิติและตาราง พร้อม animation
+            setTimeout(() => {
+              updateStats(contractId);
+            }, 500);
+          } else {
+            // แสดง error
+            if (typeof showErrorToast === 'function') {
+              showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+            }
+          }
+          
+        } catch (error) {
+          console.error('Error:', error);
+          if (typeof showErrorToast === 'function') {
+            showErrorToast('เกิดข้อผิดพลาดในการอัพเดทสถานะ');
+          }
+        }
       }
 
       (function setupFormHelpers() {
@@ -509,12 +607,48 @@ function formatContractPeriod($startDate, $endDate) {
         }
         const startInput = document.getElementById('ctr_start');
         const endInput = document.getElementById('ctr_end');
+        
+        // ฟังก์ชันคำนวณวันที่สิ้นสุด (อย่างน้อย 1 เดือนหลังวันเริ่ม)
+        function calculateMinEndDate(startDate) {
+          const date = new Date(startDate);
+          date.setMonth(date.getMonth() + 1);
+          date.setDate(date.getDate() + 1); // +1 วันเพื่อห้ามเดือนเดียวกัน
+          return date.toISOString().split('T')[0];
+        }
+        
+        // ฟังก์ชันเพิ่มเดือน
+        function addMonths(startDate, months) {
+          const date = new Date(startDate);
+          date.setMonth(date.getMonth() + months);
+          return date.toISOString().split('T')[0];
+        }
+        
         if (startInput && endInput) {
+          // ตั้งค่าเริ่มต้น: วันสิ้นสุด = 6 เดือนหลังวันเริ่ม
+          const initialEndDate = addMonths(startInput.value, 6);
+          endInput.value = initialEndDate;
+          endInput.min = calculateMinEndDate(startInput.value);
+          
+          // เมื่อเปลี่ยนวันเริ่มสัญญา
           startInput.addEventListener('change', () => {
-            endInput.min = startInput.value;
-            if (endInput.value && endInput.value < startInput.value) {
-              endInput.value = startInput.value;
+            const minEnd = calculateMinEndDate(startInput.value);
+            endInput.min = minEnd;
+            
+            // ถ้าวันสิ้นสุดน้อยกว่าขั้นต่ำ ให้ตั้งเป็น 6 เดือนหลังวันเริ่ม
+            if (!endInput.value || endInput.value < minEnd) {
+              endInput.value = addMonths(startInput.value, 6);
             }
+          });
+          
+          // ปุ่มทางลัด +6 เดือน, +1 ปี
+          document.querySelectorAll('.quick-date-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+              const months = parseInt(btn.dataset.months);
+              const startDate = startInput.value;
+              if (startDate) {
+                endInput.value = addMonths(startDate, months);
+              }
+            });
           });
         }
         
@@ -580,10 +714,10 @@ function formatContractPeriod($startDate, $endDate) {
                 contractForm.reset();
                 document.getElementById('room-status-hint').style.display = 'none';
                 
-                // รีโหลดหน้าเพื่ออัพเดทตาราง
+                // อัพเดทข้อมูลโดยไม่รีโหลดหน้า
                 setTimeout(() => {
-                  window.location.reload();
-                }, 1000);
+                  updateStats();
+                }, 500);
               } else {
                 if (typeof showErrorToast === 'function') {
                   showErrorToast(result.error || 'เกิดข้อผิดพลาด');
