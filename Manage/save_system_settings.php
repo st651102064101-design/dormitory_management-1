@@ -61,6 +61,16 @@ try {
         $newLogoFile = 'Logo.' . $ext;
         $newLogoPath = $uploadsDir . $newLogoFile;
 
+        // หากไฟล์เดิมคือไฟล์ปัจจุบันอยู่แล้ว ให้ถือว่าสำเร็จทันที
+        if (realpath($oldLogoPath) === realpath($newLogoPath)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['logo_filename', $newLogoFile, $newLogoFile]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'โหลดรูปเก่าสำเร็จ']);
+            exit;
+        }
+
         if (copy($oldLogoPath, $newLogoPath)) {
             $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
             $stmt->execute(['logo_filename', $newLogoFile, $newLogoFile]);

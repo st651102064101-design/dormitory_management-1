@@ -1,6 +1,25 @@
 <?php
 // Expect session already started and $adminName set in including script
 $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
+
+// ดึงชื่อระบบจาก database
+$siteName = 'Sangthian Dormitory';
+$logoFilename = 'Logo.jpg';
+try {
+    require_once __DIR__ . '/../ConnectDB.php';
+    $pdo = connectDB();
+    
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+    $settings = [];
+    foreach ($settingsStmt->fetchAll(PDO::FETCH_ASSOC) as $setting) {
+        $settings[$setting['setting_key']] = $setting['setting_value'];
+    }
+    
+    $siteName = $settings['site_name'] ?? $siteName;
+    $logoFilename = $settings['logo_filename'] ?? $logoFilename;
+} catch (Exception $e) {
+    // ใช้ค่า default ถ้า database error
+}
 ?>
 <style>
   details summary {
@@ -26,30 +45,42 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
   }
   .team-switcher {
     width: 100%;
-    aspect-ratio: 1 / 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem !important;
+    gap: 0.75rem;
+  }
+  .team-avatar {
+    width: 140px;
+    height: 140px;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0.5rem !important;
-  }
-  .team-avatar {
-    width: 100%;
-    height: 100%;
-    aspect-ratio: 1 / 1;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     overflow: hidden;
     margin: 0 !important;
     background: #0f1a2e;
+    border-radius: 12px;
   }
   .team-avatar-img {
     width: 100%;
     height: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     object-fit: cover;
   } 
   .team-meta {
-    display: none;
+    display: block;
+    text-align: center;
+    width: 100%;
+    padding: 0 0.5rem;
+  }
+  .team-meta .name {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #e2e8f0;
+    line-height: 1.3;
   }
   .subitem {
     display: flex;
@@ -86,9 +117,39 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
   
   /* Sidebar collapsed state - icon centered */
   aside.sidebar-collapsed {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+  }
+  aside.sidebar-collapsed .team-switcher {
+    width: auto !important;
+    gap: 0 !important;
+    padding: 0.5rem 0 !important;
+  }
+  aside.sidebar-collapsed .team-avatar {
+    width: 50px !important;
+    height: 50px !important;
+    padding: 0.25rem !important;
+    margin: 0 !important;
+  }
+  aside.sidebar-collapsed .team-meta {
+    display: none !important;
+  }
+  
+  /* Also apply to .app-sidebar.collapsed */
+  .app-sidebar.collapsed .team-switcher {
+    width: auto !important;
+    gap: 0 !important;
+    padding: 0.5rem 0 !important;
+  }
+  .app-sidebar.collapsed .team-avatar {
+    width: 50px !important;
+    height: 50px !important;
+    padding: 0.25rem !important;
+    margin: 0 !important;
+  }
+  .app-sidebar.collapsed .team-meta {
+    display: none !important;
   }
   aside.sidebar-collapsed .group {
     width: 100%;
@@ -151,6 +212,8 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
     /* Show team avatar/logo on mobile/tablet */
     .team-switcher {
       display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
       width: 100% !important;
       margin-bottom: 1rem !important;
     }
@@ -166,9 +229,19 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
       width: 100% !important;
       height: auto !important;
     }
-    
+
     .team-meta {
-      display: none !important;
+      display: block !important;
+      text-align: center !important;
+      margin-top: 0.75rem !important;
+      width: 100% !important;
+    }
+
+    .team-meta .name {
+      font-size: 0.95rem !important;
+      font-weight: 600 !important;
+      color: #e2e8f0 !important;
+      line-height: 1.3 !important;
     }
     
     /* When mobile-open class is applied, slide in from left */
@@ -304,18 +377,17 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
 <script>
   // Force reset collapsed on mobile IMMEDIATELY before CSS applies
   if (window.innerWidth <= 1024) {
-    document.write('<style>.app-sidebar.collapsed { all: revert !important; width: 240px !important; } .app-sidebar.collapsed .app-nav-label, .app-sidebar.collapsed .team-meta, .app-sidebar.collapsed .summary-label, .app-sidebar.collapsed .chev { all: revert !important; }</style>');
+    document.write('<style>.app-sidebar.collapsed { all: revert !important; width: 240px !important; } .app-sidebar.collapsed .app-nav-label, .app-sidebar.collapsed .summary-label, .app-sidebar.collapsed .chev { all: revert !important; } .app-sidebar.collapsed .team-avatar { width: 50px !important; height: 50px !important; padding: 0.25rem !important; } .app-sidebar.collapsed .team-meta { display: none !important; }</style>');
   }
 </script>
 <aside class="app-sidebar">
   <div class="team-switcher">
     <div class="team-avatar">
-      <!-- Project logo (replace with Assets/Images/Logo.jpg) -->
-      <img src="/Dormitory_Management/Assets/Images/Logo.jpg" alt="Sangthian Dormitory logo" class="team-avatar-img" />
+      <!-- Project logo from database -->
+      <img src="/Dormitory_Management/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="team-avatar-img" />
     </div>
     <div class="team-meta">
-      <div class="name">Sangthian Dormitory</div>
-      <div class="plan">หอพักแสงเทียน</div>
+      <div class="name"><?php echo htmlspecialchars($siteName); ?></div>
     </div>
   </div>
 
