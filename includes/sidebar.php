@@ -27,18 +27,485 @@ try {
   :root {
     --theme-bg-color: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>;
   }
+  
+  /* พื้นหลังหลัก - ใช้ theme color */
+  html, body, .app-shell, .app-main, .reports-page {
+    background: var(--theme-bg-color) !important;
+  }
+
+  /* Smooth animation when switching theme */
+  html, body, .app-shell, .app-main, .reports-page,
+  aside.app-sidebar, .manage-panel, .card, .panel, .stat-card,
+  .report-section, .report-item, .chart-container, .settings-card,
+  input, select, textarea, button {
+    transition: background-color 0.35s ease, color 0.35s ease,
+                border-color 0.35s ease, box-shadow 0.35s ease;
+  }
+
+  @keyframes themeFadeIn {
+    from { opacity: 0; filter: saturate(0.6); }
+    to { opacity: 1; filter: saturate(1); }
+  }
+
+  body.theme-fade {
+    animation: themeFadeIn 0.45s ease;
+  }
+
+  /* Live light mode (no reload) */
+  body.live-light,
+  body.live-light .app-shell,
+  body.live-light .app-main,
+  body.live-light.reports-page,
+  body.live-light .reports-page {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  body.live-light aside.app-sidebar {
+    background: #f9fafb !important;
+    border-right: 1px solid #e5e7eb !important;
+  }
+
+  body.live-light, body.live-light * {
+    color: #111827 !important;
+  }
+
+  body.live-light .settings-card,
+  body.live-light .manage-panel,
+  body.live-light .card,
+  body.live-light .panel,
+  body.live-light .stat-card,
+  body.live-light .report-section,
+  body.live-light .report-item,
+  body.live-light .chart-container,
+  body.live-light .booking-stat-card,
+  body.live-light .tenant-stat-card,
+  body.live-light .expense-stat-card,
+  body.live-light .news-stat-card,
+  body.live-light .contract-stat-card,
+  body.live-light .dashboard-grid .stat-card,
+  body.live-light .report-grid .report-item,
+  body.live-light .charts-row .chart-container {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  }
+
+  body.live-light input,
+  body.live-light select,
+  body.live-light textarea,
+  body.live-light button,
+  body.live-light .form-control {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+  }
+
+  /* User icon always white */
+  .sidebar-footer .avatar svg *,
+  .sidebar-footer .rail-user svg *,
+  .sidebar-footer .rail-logout .app-nav-icon,
+  .sidebar-footer .user-row .app-nav-icon {
+    color: #ffffff !important;
+    fill: currentColor !important;
+  }
+
+  body.live-light .status-badge.time-fresh { background:#d1fae5 !important; color:#065f46 !important; }
+  body.live-light .status-badge.time-warning { background:#fef3c7 !important; color:#92400e !important; }
+  body.live-light .status-badge.time-danger { background:#fee2e2 !important; color:#b91c1c !important; }
+  body.live-light .status-badge.time-neutral { background:#e5e7eb !important; color:#111827 !important; }
+
+  /* Soft fade animation (no overlay) */
+  @keyframes themeSoftFade {
+    from { opacity: 0.6; filter: blur(1px) saturate(0.8); }
+    to { opacity: 1; filter: blur(0) saturate(1); }
+  }
+
+  body.theme-softfade {
+    animation: themeSoftFade 0.45s ease;
+  }
+  
+  /* Sidebar - ใช้ theme color */
+  aside.app-sidebar {
+    background: var(--theme-bg-color) !important;
+  }
+  
+  /* ปรับสีตัวหนังสือตามความสว่างของพื้นหลัง */
+  <?php
+  // คำนวณความสว่างของสี
+  $hex = ltrim($themeColor, '#');
+  if (strlen($hex) === 6) {
+      $r = hexdec(substr($hex, 0, 2));
+      $g = hexdec(substr($hex, 2, 2));
+      $b = hexdec(substr($hex, 4, 2));
+      $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+      $isLight = $brightness > 155;
+  } else {
+      $isLight = false;
+  }
+  
+  if ($isLight): ?>
+  /* ===== LIGHT MODE - พื้นหลังสว่าง ===== */
+  
+  /* พื้นหลังทั้งหมดเป็นสีขาว */
   html, body {
-    background: var(--theme-bg-color) !important;
+    background: #ffffff !important;
   }
-  .app-shell {
-    background: var(--theme-bg-color) !important;
+  
+  .app-shell,
+  .app-main,
+  .reports-page,
+  body.reports-page {
+    background: #ffffff !important;
   }
-  .app-main {
-    background: var(--theme-bg-color) !important;
+  
+  /* Sidebar สีขาว */
+  aside.app-sidebar {
+    background: #f9fafb !important;
+    border-right: 1px solid #e5e7eb !important;
   }
-  .reports-page {
-    background: var(--theme-bg-color) !important;
+  
+  /* ตัวหนังสือทั้งหมดเป็นสีดำ */
+  body, body *,
+  .app-main, .app-main *,
+  .reports-page, .reports-page *,
+  h1, h2, h3, h4, h5, h6, p, span, div, label, a,
+  .section-header h1,
+  .settings-card h3,
+  .settings-card label,
+  .settings-card small,
+  aside.app-sidebar,
+  aside.app-sidebar *,
+  nav a, .sidebar-nav a, details summary,
+  .team-meta .name, .team-meta .role,
+  .manage-panel *,
+  .settings-card * {
+    color: #111827 !important;
   }
+  
+  /* Cards และ Panels สีขาว/เทาอ่อน */
+  .settings-card,
+  .manage-panel,
+  .card,
+  .panel {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Stat Cards สีขาว */
+  .booking-stat-card,
+  .tenant-stat-card,
+  .expense-stat-card,
+  .news-stat-card,
+  .contract-stat-card,
+  .stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .booking-stat-card *,
+  .tenant-stat-card *,
+  .expense-stat-card *,
+  .news-stat-card *,
+  .contract-stat-card *,
+  .stat-card * {
+    color: #111827 !important;
+  }
+  
+  /* Form Elements สีขาว */
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="date"],
+  input[type="password"],
+  input[type="file"],
+  input[type="color"],
+  select,
+  textarea {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #111827 !important;
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af !important;
+  }
+  
+  /* Buttons */
+  .quick-color,
+  button:not(.btn-save):not([type="submit"]) {
+    background: #f3f4f6 !important;
+    border: 1px solid #d1d5db !important;
+    color: #111827 !important;
+  }
+  
+  /* Sidebar Navigation */
+  nav a, 
+  .sidebar-nav a,
+  details summary {
+    color: #374151 !important;
+  }
+  
+  nav a:hover,
+  .sidebar-nav a:hover,
+  details summary:hover {
+    background: #f3f4f6 !important;
+    color: #111827 !important;
+  }
+  
+  nav a.active,
+  .sidebar-nav a.active {
+    background: #dbeafe !important;
+    color: #1e40af !important;
+  }
+  
+  /* Tables */
+  table {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  table thead {
+    background: #f9fafb !important;
+  }
+  
+  table thead th {
+    color: #111827 !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+  
+  table tbody tr {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+  }
+  
+  table tbody tr:hover {
+    background: #f9fafb !important;
+  }
+  
+  table tbody td {
+    color: #111827 !important;
+  }
+  
+  /* Header */
+  header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+  
+  header h2,
+  header * {
+    color: #111827 !important;
+  }
+  
+  #sidebar-toggle {
+    color: #111827 !important;
+  }
+  
+  #sidebar-toggle svg {
+    stroke: #111827 !important;
+  }
+  
+  /* Modals */
+  .modal-content,
+  .booking-modal-content,
+  .confirm-modal {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #111827 !important;
+  }
+  
+  /* Logo Preview */
+  .logo-preview,
+  .preview-area {
+    background: #f9fafb !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  /* Team Avatar Section - User Icon */
+  .team-switcher,
+  aside.app-sidebar .team-switcher {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+  
+  .team-avatar,
+  aside.app-sidebar .team-avatar,
+  .app-sidebar .team-avatar {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: none !important;
+  }
+  
+  .team-avatar-img,
+  aside.app-sidebar .team-avatar-img,
+  .app-sidebar .team-avatar-img {
+    background: transparent !important;
+    background-color: transparent !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 12px !important;
+  }
+  
+  .team-meta .name,
+  .team-meta .role {
+    color: #111827 !important;
+  }
+  
+  .team-info {
+    background: #ffffff !important;
+  }
+  
+  /* ปุ่มออกจากระบบ */
+  .logout-btn,
+  aside.app-sidebar .logout-btn,
+  .app-sidebar .logout-btn {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #111827 !important;
+  }
+  
+  .logout-btn:hover,
+  aside.app-sidebar .logout-btn:hover {
+    background: #f3f4f6 !important;
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+  }
+  
+  .logout-btn .app-nav-icon,
+  .logout-btn .app-nav-label,
+  aside.app-sidebar .logout-btn .app-nav-icon,
+  aside.app-sidebar .logout-btn .app-nav-label {
+    color: #111827 !important;
+  }
+  
+  /* Dashboard Cards */
+  .dashboard-grid .card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  /* Color Preview */
+  .color-preview {
+    color: #111827 !important;
+    border: 1px solid #d1d5db !important;
+  }
+  
+  /* Expense Stats Cards */
+  .expense-stats,
+  .expense-stat-card,
+  .booking-stats,
+  .room-stats {
+    background: #ffffff !important;
+  }
+  
+  .expense-stat-card,
+  .booking-stat-card,
+  .room-stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  .expense-stat-card *,
+  .booking-stat-card *,
+  .room-stat-card * {
+    color: #111827 !important;
+  }
+  
+  /* Available Rooms Grid */
+  .available-rooms-grid,
+  .rooms-grid {
+    background: transparent !important;
+  }
+  
+  .room-card,
+  .available-room-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #111827 !important;
+  }
+  
+  .room-card *,
+  .available-room-card * {
+    color: #111827 !important;
+  }
+  
+  /* Room Stats */
+  .room-stats .stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  .room-stats .stat-value,
+  .room-stats h3,
+  .room-stats p {
+    color: #111827 !important;
+  }
+  
+  /* Dashboard Cards - เฉพาะเจาะจง */
+  body.reports-page .dashboard-grid,
+  body.reports-page .dashboard-grid > div,
+  body.reports-page .dashboard-grid .card,
+  body.reports-page .chart-container,
+  body.reports-page .stat-overview,
+  body.reports-page .overview-card,
+  body.reports-page section,
+  body.reports-page section > div {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  body.reports-page .dashboard-grid *,
+  body.reports-page .chart-container *,
+  body.reports-page .stat-overview *,
+  body.reports-page .overview-card *,
+  body.reports-page section *,
+  body.reports-page section h2,
+  body.reports-page section h3,
+  body.reports-page section h4,
+  body.reports-page section p,
+  body.reports-page section span {
+    color: #111827 !important;
+  }
+  
+  /* Chart Cards */
+  body.reports-page .chart-card,
+  body.reports-page canvas {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+  
+  /* Override gradient backgrounds */
+  body.reports-page [style*="background: linear-gradient"],
+  body.reports-page [style*="background:linear-gradient"],
+  body.reports-page div[style*="background"],
+  body.reports-page section[style*="background"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+  
+  <?php endif; ?>
+  
+  <?php if ($isLight): ?>
+  <script>
+  // Force override inline styles for Light Mode
+  document.addEventListener('DOMContentLoaded', function() {
+    const allElements = document.querySelectorAll('section, div, .dashboard-grid, .chart-container');
+    allElements.forEach(el => {
+      const style = el.getAttribute('style');
+      if (style && (style.includes('background') || style.includes('linear-gradient'))) {
+        el.style.setProperty('background', '#ffffff', 'important');
+        el.style.setProperty('background-color', '#ffffff', 'important');
+        el.style.setProperty('color', '#111827', 'important');
+      }
+    });
+  });
+  </script>
+  <?php endif; ?>
   details summary {
     display: flex;
     align-items: center;
@@ -77,7 +544,7 @@ try {
     padding: 0.5rem !important;
     overflow: hidden;
     margin: 0 !important;
-    background: #0f1a2e;
+    background: var(--theme-bg-color, #0f1a2e);
     border-radius: 12px;
   }
   .team-avatar-img {
@@ -481,6 +948,13 @@ try {
   </div>
 </aside>
 
+<script>
+  // Fade-in animation on theme change/page load
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('theme-fade');
+    setTimeout(() => document.body.classList.remove('theme-fade'), 500);
+  });
+</script>
 <script>
 (function() {
   const sidebar = document.querySelector('.app-sidebar');

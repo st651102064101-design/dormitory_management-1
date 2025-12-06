@@ -198,12 +198,59 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   quickColorBtns.forEach(btn => {
-    btn.addEventListener('click', function(e) {
+    btn.addEventListener('click', async function(e) {
       e.preventDefault();
       const color = this.dataset.color;
       themeColorInput.value = color;
       colorPreview.style.background = color;
       colorPreview.textContent = color;
+
+      // Immediate visual feedback: soft fade
+      document.body.classList.add('theme-softfade');
+
+      // Apply theme instantly without reload
+      document.documentElement.style.setProperty('--theme-bg-color', color);
+      const brightness = (() => {
+        const hex = color.replace('#','');
+        if (hex.length !== 6) return 0;
+        const r = parseInt(hex.slice(0,2), 16);
+        const g = parseInt(hex.slice(2,4), 16);
+        const b = parseInt(hex.slice(4,6), 16);
+        return ((r * 299) + (g * 587) + (b * 114)) / 1000;
+      })();
+      if (brightness > 155) {
+        document.body.classList.add('live-light');
+      } else {
+        document.body.classList.remove('live-light');
+      }
+
+      
+      // บันทึกสีทันที
+      const formData = new FormData();
+      formData.append('theme_color', color);
+      
+      try {
+        const response = await fetch('../Manage/save_system_settings.php', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            showSuccessToast(result.message || 'บันทึกสีสำเร็จ');
+              // ไม่รีหน้า ปล่อยให้แอนิเมชันนุ่มๆ จบก่อนถอดคลาส
+              setTimeout(() => document.body.classList.remove('theme-softfade'), 700);
+          } else {
+            showErrorToast(result.message || 'เกิดข้อผิดพลาด');
+          }
+        }
+      } catch (error) {
+        showErrorToast('เกิดข้อผิดพลาด: ' + error.message);
+      }
     });
   });
 

@@ -185,6 +185,40 @@ try {
         border: 1px solid rgba(255,255,255,0.05);
         overflow: hidden;
       }
+
+      /* Light mode overrides */
+      body.live-light .booking-stat-card {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+      }
+      body.live-light .booking-stat-card h3 { color: #6b7280 !important; }
+      body.live-light .booking-stat-card .stat-value { color: #111827 !important; }
+      body.live-light .booking-stat-card .stat-chip { background: #f3f4f6 !important; color: #374151 !important; }
+
+      body.live-light .room-card { box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important; color: #111827 !important; }
+      body.live-light .room-card-face {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        color: #111827 !important;
+        box-shadow: none !important;
+      }
+      body.live-light .rooms-grid .room-card-face.front,
+      body.live-light .rooms-grid .room-card-face.back {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        color: #111827 !important;
+      }
+      body.live-light .rooms-grid .room-card-face.front *,
+      body.live-light .rooms-grid .room-card-face.back * {
+        color: #111827 !important;
+      }
+      body.live-light .room-number { color: #111827 !important; }
+      body.live-light .room-info { color: #4b5563 !important; }
+      body.live-light .room-price { color: #2563eb !important; }
+      body.live-light .room-card-face .room-status { color: #0f172a !important; }
+      body.live-light .room-image-container { background: #f3f4f6 !important; }
       .room-card-face.front { padding-bottom: 1.25rem; }
       .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 100px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 1.2rem; align-items: center; padding: 1rem 1.5rem; }
       .rooms-grid.list-view .room-price { font-size: 1rem; line-height: 1.2; margin: 0.3rem 0; }

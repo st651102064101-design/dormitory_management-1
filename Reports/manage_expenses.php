@@ -159,8 +159,8 @@ try {
         padding: 0.75rem 0.85rem;
         border-radius: 10px;
         border: 1px solid rgba(255,255,255,0.15);
-        background: rgba(8,12,24,0.85);
-        color: #f5f8ff;
+        background: #ffffff;
+        color: #111827;
         font-size: 0.95rem;
       }
       .add-type-row { display:flex; align-items:center; gap:0.5rem; justify-content:space-between; }

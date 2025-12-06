@@ -13,6 +13,18 @@ $admin_name = $_SESSION['admin_username'];
 try {
     $pdo = connectDB();
     
+    // ดึงข้อมูล theme_color จาก system_settings (key-value format)
+    $stmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
+    $themeColor = $stmt->fetchColumn() ?: '#0f172a';
+    
+    // คำนวณความสว่างของสี
+    $hex = ltrim($themeColor, '#');
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+    $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+    $isLight = $brightness > 155;
+    
     // 1. รายงานข้อมูลการเข้าพัก
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 2");
     $booking_count = $stmt->fetch()['total'] ?? 0;
@@ -116,26 +128,38 @@ try {
         }
 
         .stat-card {
+            <?php if ($isLight): ?>
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+            <?php else: ?>
             background: linear-gradient(135deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));
+            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+            border: 1px solid rgba(255,255,255,0.05);
+            <?php endif; ?>
             border-radius: 12px;
             padding: 20px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.35);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
         }
 
+        <?php if (!$isLight): ?>
         .stat-card.danger { box-shadow: 0 10px 30px rgba(220,53,69,0.25); }
         .stat-card.success { box-shadow: 0 10px 30px rgba(40,167,69,0.22); }
         .stat-card.warning { box-shadow: 0 10px 30px rgba(255,193,7,0.22); }
         .stat-card.info { box-shadow: 0 10px 30px rgba(23,162,184,0.22); }
+        <?php endif; ?>
 
         .stat-card h3 {
             font-size: 14px;
+            <?php if ($isLight): ?>
+            color: #6b7280;
+            <?php else: ?>
             color: rgba(255,255,255,0.7);
+            <?php endif; ?>
             margin-bottom: 10px;
             font-weight: normal;
         }
@@ -143,22 +167,37 @@ try {
         .stat-card .number {
             font-size: 32px;
             font-weight: bold;
+            <?php if ($isLight): ?>
+            color: #111827;
+            <?php else: ?>
             color: #f5f8ff;
+            <?php endif; ?>
         }
 
         .chart-container {
+            <?php if ($isLight): ?>
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+            <?php else: ?>
             background: linear-gradient(135deg, rgba(20,30,48,0.92), rgba(8,14,28,0.95));
-            border-radius: 12px;
-            padding: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.35);
             border: 1px solid rgba(255,255,255,0.05);
+            <?php endif; ?>
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 20px;
         }
 
         .chart-container h3 {
             margin-top: 0;
+            <?php if ($isLight): ?>
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            <?php else: ?>
             color: #f5f8ff;
             border-bottom: 1px solid rgba(255,255,255,0.06);
+            <?php endif; ?>
             padding-bottom: 15px;
         }
 
@@ -175,18 +214,29 @@ try {
         }
 
         .report-section {
+            <?php if ($isLight): ?>
+            background: #ffffff;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            border: 1px solid #e5e7eb;
+            <?php else: ?>
             background: linear-gradient(135deg, rgba(20,30,48,0.92), rgba(8,14,28,0.95));
-            border-radius: 12px;
-            padding: 20px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.35);
             border: 1px solid rgba(255,255,255,0.05);
+            <?php endif; ?>
+            border-radius: 12px;
+            padding: 20px;
             margin-bottom: 20px;
         }
 
         .report-section h3 {
             margin-top: 0;
+            <?php if ($isLight): ?>
+            color: #111827;
+            border-bottom: 1px solid #e5e7eb;
+            <?php else: ?>
             color: #f5f8ff;
             border-bottom: 1px solid rgba(255,255,255,0.06);
+            <?php endif; ?>
             padding-bottom: 15px;
         }
 
@@ -197,24 +247,37 @@ try {
         }
 
         .report-item {
+            <?php if ($isLight): ?>
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            <?php else: ?>
             background: linear-gradient(135deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));
+            border: 1px solid rgba(255,255,255,0.05);
+            <?php endif; ?>
             padding: 15px;
             border-radius: 10px;
             text-align: center;
-            border: 1px solid rgba(255,255,255,0.05);
         }
 
         .report-item label {
             display: block;
             font-size: 12px;
+            <?php if ($isLight): ?>
+            color: #6b7280;
+            <?php else: ?>
             color: rgba(255,255,255,0.65);
+            <?php endif; ?>
             margin-bottom: 8px;
         }
 
         .report-item .value {
             font-size: 24px;
             font-weight: bold;
+            <?php if ($isLight): ?>
+            color: #111827;
+            <?php else: ?>
             color: #f5f8ff;
+            <?php endif; ?>
         }
 
         @media (max-width: 768px) {
