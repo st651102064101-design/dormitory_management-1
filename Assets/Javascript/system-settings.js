@@ -63,51 +63,78 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (oldLogoSelect) {
     oldLogoSelect.addEventListener('change', function() {
+      const previewContainer = document.getElementById('oldLogoPreview');
       if (this.value) {
-        oldLogoPreview.innerHTML = `<img src="../Assets/Images/${this.value}" alt="Old Logo" style="max-width: 150px; max-height: 150px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />`;
-      } else {
-        oldLogoPreview.innerHTML = '';
-      }
-    });
-  }
+        previewContainer.innerHTML = `
+          <img src="../Assets/Images/${this.value}" alt="Old Logo" style="max-width: 80px; max-height: 80px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+          <button type="button" id="loadOldLogoBtn" style="margin: 0; padding: 0.4rem 0.6rem; min-width: auto; white-space: nowrap; align-self: center; font-size: 0.8rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59,130,246,0.3);">ตั้งเป็นรูปปัจจุบัน ✓</button>
+        `;
+        // เพิ่ม event listener ใหม่สำหรับปุ่มที่สร้างใหม่
+        const newBtn = document.getElementById('loadOldLogoBtn');
+        if (newBtn) {
+          newBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const selectedFile = oldLogoSelect.value;
+            if (!selectedFile) {
+              showErrorToast('กรุณาเลือกรูปเก่า');
+              return;
+            }
 
-  if (loadOldLogoBtn) {
-    loadOldLogoBtn.addEventListener('click', async function(e) {
-      e.preventDefault();
-      const selectedFile = oldLogoSelect.value;
-      if (!selectedFile) {
-        showErrorToast('กรุณาเลือกรูปเก่า');
-        return;
-      }
+            try {
+              const formData = new FormData();
+              formData.append('load_old_logo', selectedFile);
 
-      try {
-        const formData = new FormData();
-        formData.append('load_old_logo', selectedFile);
+              const response = await fetch('../Manage/save_system_settings.php', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              });
 
-        const response = await fetch('../Manage/save_system_settings.php', {
-          method: 'POST',
-          body: formData,
-          headers: {
-            'X-Requested-With': 'XMLHttpRequest'
-          }
-        });
-
-        const result = await response.json();
-        if (result.success) {
-          showSuccessToast('โหลดรูปเก่าสำเร็จ');
-          const downloadLink = document.createElement('a');
-          downloadLink.href = `../Assets/Images/${encodeURIComponent(selectedFile)}`;
-          downloadLink.download = selectedFile;
-          downloadLink.style.display = 'none';
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-        } else {
-          showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+              const result = await response.json();
+              if (result.success) {
+                showSuccessToast('โหลดรูปเก่าสำเร็จ');
+                
+                // อัพเดทรูปในหน้าเดิมโดยไม่ต้องรีเฟรช
+                setTimeout(() => {
+                  const ext = selectedFile.split('.').pop().toLowerCase();
+                  const newLogoFile = 'Logo.' + ext;
+                  const imageUrl = `../Assets/Images/${encodeURIComponent(newLogoFile)}?t=${Date.now()}`;
+                  const absImageUrl = `/Dormitory_Management/Assets/Images/${encodeURIComponent(newLogoFile)}?t=${Date.now()}`;
+                  
+                  // อัพเดท logo ในส่วน main
+                  const logoPreview = document.getElementById('logoPreview');
+                  if (logoPreview) {
+                    logoPreview.innerHTML = `<img src="${imageUrl}" alt="Logo" style="max-width: 200px; max-height: 200px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" />`;
+                  }
+                  
+                  // อัพเดท logo ใน sidebar (team-avatar-img)
+                  const sidebarLogo = document.querySelector('.team-avatar-img');
+                  if (sidebarLogo) {
+                    sidebarLogo.src = absImageUrl;
+                  }
+                  
+                  // รีเฟรชไอคอน favicon
+                  const icon = document.querySelector('link[rel="icon"]');
+                  if (icon) {
+                    icon.href = `../Assets/Images/Logo.${selectedFile.split('.').pop().toLowerCase()}?t=${Date.now()}`;
+                  }
+                  
+                  // รีเซ็ต dropdown และซ่อนปุ่ม
+                  oldLogoSelect.value = '';
+                  document.getElementById('oldLogoPreview').innerHTML = '';
+                }, 500);
+              } else {
+                showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+              }
+            } catch (error) {
+              showErrorToast('เกิดข้อผิดพลาด');
+            }
+          });
         }
-      } catch (error) {
-        console.error('Error:', error);
-        showErrorToast('เกิดข้อผิดพลาด');
+      } else {
+        previewContainer.innerHTML = '';
       }
     });
   }

@@ -100,6 +100,17 @@ try {
         flex-direction: column;
         gap: 1.5rem;
       }
+      #oldLogoPreview {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+      }
+      #oldLogoPreview img {
+        flex-shrink: 0;
+      }
+      #oldLogoPreview .btn-save {
+        flex-shrink: 0;
+      }
       @media (max-width: 1400px) {
         .system-settings-container {
           grid-template-columns: repeat(2, minmax(280px, 1fr));
@@ -348,24 +359,25 @@ try {
 
                   <div class="form-group">
                     <label>โหลดรูปเก่าจากระบบ</label>
-                    <select id="oldLogoSelect" style="width: 100%; padding: 0.75rem 0.85rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(8,12,24,0.85); color: #f5f8ff; font-size: 0.95rem;">
+                    <select id="oldLogoSelect" style="width: 100%; padding: 0.75rem 0.85rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(8,12,24,0.85); color: #f5f8ff; font-size: 0.95rem; margin-bottom: 0.5rem;">
                       <option value="">-- เลือกรูปเก่า --</option>
                       <?php
-                        $logoDir = __DIR__ . '/../Assets/Images/';
-                        if (is_dir($logoDir)) {
+                        $logoDir = realpath(__DIR__ . '/../Assets/Images/');
+                        if ($logoDir && is_dir($logoDir)) {
                           $files = scandir($logoDir);
                           foreach ($files as $file) {
                             if ($file === '.' || $file === '..') continue;
+                            if (is_dir($logoDir . '/' . $file)) continue;
                             $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+                            // รองรับไฟล์ jpg, jpeg, png เท่านั้น
                             if (!in_array($ext, ['jpg','jpeg','png'])) continue;
-                            if (stripos($file, 'logo') === false && !preg_match('/^\d+\.(jpg|jpeg|png)$/i', $file)) continue;
+                            // แสดงไฟล์ทั้งหมดที่เป็นรูป (ไม่ต้องมี "logo" ในชื่อ)
                             echo '<option value="' . htmlspecialchars($file) . '">' . htmlspecialchars($file) . '</option>';
                           }
                         }
                       ?>
                     </select>
-                    <div id="oldLogoPreview" style="margin-top: 0.75rem;"></div>
-                    <button type="button" id="loadOldLogoBtn" class="btn-save" style="margin-top: 0.75rem; background: rgba(96,165,250,0.5); box-shadow: none;">📂 โหลดรูปที่เลือก</button>
+                    <div id="oldLogoPreview" style="margin-top: 0.75rem; margin-bottom: 0.75rem; display: flex; align-items: flex-start; gap: 1rem;"></div>
                   </div>
 
                   <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5rem 0;">
