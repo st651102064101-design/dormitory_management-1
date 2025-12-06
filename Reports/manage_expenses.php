@@ -158,10 +158,27 @@ try {
         width: 100%;
         padding: 0.75rem 0.85rem;
         border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.15);
+        border: 1px solid #d1d5db;
         background: #ffffff;
         color: #111827;
         font-size: 0.95rem;
+      }
+
+      /* Dark mode inputs */
+      body:not(.live-light) .expense-form-group input,
+      body:not(.live-light) .expense-form-group select {
+        background: rgba(15,23,42,0.9);
+        color: #e2e8f0;
+        border: 1px solid rgba(148,163,184,0.35);
+      }
+      body:not(.live-light) .expense-form-group input::placeholder,
+      body:not(.live-light) .expense-form-group select::placeholder {
+        color: rgba(226,232,240,0.7);
+      }
+      body:not(.live-light) .expense-form-group input:focus,
+      body:not(.live-light) .expense-form-group select:focus {
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 2px rgba(96,165,250,0.25);
       }
       .add-type-row { display:flex; align-items:center; gap:0.5rem; justify-content:space-between; }
       .add-type-btn {
@@ -181,8 +198,8 @@ try {
       .expense-form-group input:focus,
       .expense-form-group select:focus {
         outline: none;
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+        border-color: #2563eb;
+        box-shadow: 0 0 0 2px rgba(37,99,235,0.25);
       }
       .expense-form-actions {
         grid-column: 1 / -1;

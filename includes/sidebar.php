@@ -332,21 +332,42 @@ try {
     border-bottom: 1px solid #e5e7eb !important;
   }
   
+  /* Gradient border avatar like CodePen ref */
   .team-avatar,
   aside.app-sidebar .team-avatar,
   .app-sidebar .team-avatar {
-    background: transparent !important;
-    background-color: transparent !important;
+    position: relative;
+    padding: 3px !important;
+    border-radius: 12px !important;
+    background: linear-gradient(120deg,
+      #ff6b6b 0%,
+      #feca57 15%,
+      #ff9f43 30%,
+      #1dd1a1 45%,
+      #54a0ff 60%,
+      #5f27cd 75%,
+      #ff6b6b 100%) !important;
+    background-size: 300% 300%;
+    animation: avatarRainbow 4s linear infinite;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18), 0 0 0 1px rgba(255,255,255,0.3) inset;
     border: none !important;
   }
   
   .team-avatar-img,
   aside.app-sidebar .team-avatar-img,
   .app-sidebar .team-avatar-img {
-    background: transparent !important;
-    background-color: transparent !important;
-    border: 1px solid #e5e7eb !important;
+    width: 100%;
+    height: 100%;
     border-radius: 12px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(255,255,255,0.6) !important;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.12);
+  }
+
+  @keyframes avatarRainbow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
   }
   
   .team-meta .name,
@@ -544,15 +565,18 @@ try {
     padding: 0.5rem !important;
     overflow: hidden;
     margin: 0 !important;
-    background: var(--theme-bg-color, #0f1a2e);
-    border-radius: 12px;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #dbeafe 0%, #a5f3fc 50%, #fbc2ff 100%);
+    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.25), 0 0 0 1px rgba(255,255,255,0.35) inset;
   }
   .team-avatar-img {
     width: 100%;
     height: 100%;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.12);
     object-fit: cover;
+    background: #ffffff;
+    border: 1px solid rgba(255,255,255,0.6);
   } 
   .team-meta {
     display: block;
