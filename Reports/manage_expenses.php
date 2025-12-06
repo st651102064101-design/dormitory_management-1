@@ -88,13 +88,25 @@ foreach ($expenses as $exp) {
         $stats['total_paid'] += (int)($exp['exp_total'] ?? 0);
     }
 }
+
+// ดึงค่าตั้งค่าระบบ
+$siteName = 'Sangthian Dormitory';
+$logoFilename = 'Logo.jpg';
+try {
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+    while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
+        if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
+        if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+    }
+} catch (PDOException $e) {}
 ?>
 <!doctype html>
 <html lang="th">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>จัดการค่าใช้จ่าย</title>
+    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการค่าใช้จ่าย</title>
+    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />

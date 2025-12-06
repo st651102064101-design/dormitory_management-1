@@ -120,12 +120,23 @@ document.addEventListener('DOMContentLoaded', () => {
       if (result.success) {
         showSuccessToast(result.message || 'บันทึก Logo สำเร็จ');
         logoStatus.textContent = '✓ บันทึกแล้ว';
+        
+        // อัปเดตรูป Logo ในหน้า
         if (logoInput.files && logoInput.files[0]) {
           const reader = new FileReader();
           reader.onload = function(e) {
             logoPreview.innerHTML = `<img src="${e.target.result}" alt="Logo" style="max-width: 200px; max-height: 200px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" />`;
           };
           reader.readAsDataURL(logoInput.files[0]);
+        }
+
+        // รีเฟรช dropdown รูปเก่า
+        await loadOldLogos();
+        
+        // อัปเดต Logo ใน sidebar (ถ้ามี)
+        const sidebarLogo = document.querySelector('.team-avatar-img');
+        if (sidebarLogo && result.filename) {
+          sidebarLogo.src = `../Assets/Images/${result.filename}?t=${Date.now()}`;
         }
       } else {
         showErrorToast(result.error || 'เกิดข้อผิดพลาด');
@@ -158,6 +169,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (result.success) {
         showSuccessToast('บันทึกชื่อสำเร็จ');
         siteNameStatus.textContent = '✓ บันทึกแล้ว';
+        
+        // อัปเดตชื่อใน sidebar (ถ้ามี)
+        const sidebarName = document.querySelector('.team-meta .name');
+        if (sidebarName && result.site_name) {
+          sidebarName.textContent = result.site_name;
+        }
       } else {
         showErrorToast(result.error || 'เกิดข้อผิดพลาด');
         siteNameStatus.textContent = '✗ เกิดข้อผิดพลาด';

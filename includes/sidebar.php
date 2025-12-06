@@ -2,14 +2,15 @@
 // Expect session already started and $adminName set in including script
 $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
 
-// ดึงชื่อระบบจาก database
+// ดึงชื่อระบบและการตั้งค่าจาก database
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
+$themeColor = '#0f172a';
 try {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
     
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
     $settings = [];
     foreach ($settingsStmt->fetchAll(PDO::FETCH_ASSOC) as $setting) {
         $settings[$setting['setting_key']] = $setting['setting_value'];
@@ -17,11 +18,27 @@ try {
     
     $siteName = $settings['site_name'] ?? $siteName;
     $logoFilename = $settings['logo_filename'] ?? $logoFilename;
+    $themeColor = $settings['theme_color'] ?? $themeColor;
 } catch (Exception $e) {
     // ใช้ค่า default ถ้า database error
 }
 ?>
 <style>
+  :root {
+    --theme-bg-color: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>;
+  }
+  html, body {
+    background: var(--theme-bg-color) !important;
+  }
+  .app-shell {
+    background: var(--theme-bg-color) !important;
+  }
+  .app-main {
+    background: var(--theme-bg-color) !important;
+  }
+  .reports-page {
+    background: var(--theme-bg-color) !important;
+  }
   details summary {
     display: flex;
     align-items: center;

@@ -1,5 +1,11 @@
 /* Main CSS for Report Pages */
 
+/* Global button focus outline removal */
+button:focus,
+button:focus-visible {
+    outline: none !important;
+}
+
 /* Sidebar Toggle Button */
 #sidebar-toggle {
     background: transparent;
@@ -13,6 +19,7 @@
     align-items: center;
     justify-content: center;
     transition: background 0.3s ease;
+    outline: none;
 }
 
 #sidebar-toggle:hover {

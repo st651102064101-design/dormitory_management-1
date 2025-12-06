@@ -10,6 +10,17 @@ $pdo = connectDB();
 // Sum of payments grouped by month
 $stmt = $pdo->query("SELECT DATE_FORMAT(p.pay_date, '%Y-%m') AS ym, SUM(p.pay_amount) AS total_received FROM payment p GROUP BY ym ORDER BY ym DESC");
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ดึงค่าตั้งค่าระบบ
+$siteName = 'Sangthian Dormitory';
+$logoFilename = 'Logo.jpg';
+try {
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+    while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
+        if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
+        if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+    }
+} catch (PDOException $e) {}
 ?>
 
 <!doctype html>
@@ -17,7 +28,8 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>รายงานรายรับ</title>
+    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายงานรายรับ</title>
+    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
   </head>

@@ -159,7 +159,7 @@ try {
             if (!empty($deleted)) {
                 $msg .= ' | ลบรูปเก่าอัตโนมัติ ' . count($deleted) . ' ไฟล์';
             }
-            echo json_encode(['success' => true, 'message' => $msg]);
+            echo json_encode(['success' => true, 'message' => $msg, 'filename' => $filename]);
             exit;
         } else {
             header('Content-Type: application/json');
@@ -175,7 +175,7 @@ try {
         $stmt->execute(['site_name', $siteName, $siteName]);
 
         header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'message' => 'บันทึกชื่อสำเร็จ']);
+        echo json_encode(['success' => true, 'message' => 'บันทึกชื่อสำเร็จ', 'site_name' => $siteName]);
         exit;
     }
 

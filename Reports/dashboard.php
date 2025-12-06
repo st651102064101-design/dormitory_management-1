@@ -73,6 +73,17 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM tenant WHERE tnt_status = 1");
     $tenant_active = $stmt->fetch()['total'] ?? 0;
     
+    // ดึงค่าตั้งค่าระบบ
+    $siteName = 'Sangthian Dormitory';
+    $logoFilename = 'Logo.jpg';
+    try {
+        $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+        while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
+            if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
+            if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+        }
+    } catch (PDOException $e) {}
+    
     // ข้อมูลรายได้รายเดือน
     $stmt = $pdo->query("SELECT DATE_FORMAT(exp_month, '%Y-%m') as month, SUM(exp_total) as total 
             FROM expense 
@@ -91,7 +102,8 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>แดชบอร์ด - ระบบจัดการหอพัก</title>
+    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - แดชบอร์ด</title>
+    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="../Assets/Css/main.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>

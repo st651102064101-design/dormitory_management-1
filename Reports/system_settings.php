@@ -59,14 +59,28 @@ try {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>จัดการระบบ</title>
+    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการระบบ</title>
+    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <style>
+      :root {
+        --theme-bg-color: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>;
+      }
       html, body {
         overflow-y: auto;
         overflow-x: hidden;
+        background: var(--theme-bg-color) !important;
+      }
+      .app-shell {
+        background: var(--theme-bg-color) !important;
+      }
+      .app-main {
+        background: var(--theme-bg-color) !important;
+      }
+      .reports-page {
+        background: var(--theme-bg-color) !important;
       }
       .system-settings-container {
         display: grid;
@@ -214,15 +228,39 @@ try {
         cursor: pointer;
         transition: all 0.3s ease;
         box-shadow: 0 4px 12px rgba(59,130,246,0.3);
+        outline: none;
       }
       .btn-save:hover {
         transform: translateY(-2px);
         box-shadow: 0 6px 16px rgba(59,130,246,0.4);
       }
+      .btn-save:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
+      }
       .btn-save:disabled {
         opacity: 0.6;
         cursor: not-allowed;
         transform: none;
+      }
+      .quick-color {
+        padding: 0.6rem;
+        border: 1px solid rgba(255,255,255,0.15);
+        background: rgba(8,12,24,0.85);
+        color: #f5f8ff;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 0.85rem;
+        outline: none;
+      }
+      .quick-color:hover {
+        background: rgba(59,130,246,0.2);
+        border-color: rgba(96,165,250,0.5);
+      }
+      .quick-color:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.25);
       }
       .status-badge {
         display: inline-block;
