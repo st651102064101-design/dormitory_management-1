@@ -343,6 +343,10 @@ $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
         <a class="" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true">🛠️</span><span class="app-nav-label">แจ้งซ่อม</span></a>
       </details>
     </div>
+
+    <div class="group">
+      <a class="subitem" href="system_settings.php"><span class="app-nav-icon" aria-hidden="true">🎨</span><span class="app-nav-label">จัดการระบบ</span></a>
+    </div>
   </nav>
 
   <div style="flex:1"></div>
