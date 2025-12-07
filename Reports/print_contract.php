@@ -168,7 +168,8 @@ function nameWithoutNickname($fullName) {
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Cordia New', Tahoma, serif; font-size: 14px; line-height: 1.6; background: #f5f5f5; padding: 20px; }
-        .print-container { width: 210mm; height: 297mm; padding: 20mm 12.7mm 20mm 20.32mm; background: white; margin: 20px auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        @page { size: A4; margin: 0; }
+        .print-container { width: 210mm; min-height: 297mm; height: auto; padding: 20mm 12.7mm 20mm 20.32mm; background: white; margin: 20px auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
         .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #000; }
         .header h1 { font-size: 18px; margin-bottom: 5px; }
         .header p { font-size: 13px; margin: 2px 0; }
@@ -183,10 +184,11 @@ function nameWithoutNickname($fullName) {
         .terms li { margin-bottom: 4px; }
         .signatures { margin-top: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px 30px; }
         .signature-box { font-size: 12px; }
-        .signature-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; justify-content: center; }
+        .signature-row { display: flex; align-items: center; gap: 8px; margin-bottom: calc(12px + 0.6pt); justify-content: center; }
         .signature-line { width: 240px; border-bottom: 1px dotted #000; min-height: 18px; }
         .signature-label { white-space: nowrap; }
         .signature-paren { white-space: nowrap; }
+        .clause-line { margin-bottom: 10px; }
         .underline { display: inline-flex; align-items: flex-end; justify-content: center; vertical-align: baseline; min-width: 40px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: center; line-height: 1; color: #0066cc; }
         .underline-long { min-width: 120px; }
         .underline-mid { min-width: 90px; }
@@ -194,7 +196,7 @@ function nameWithoutNickname($fullName) {
         .underline-wide { min-width: 160px; }
         .underline-phone { min-width: 110px; }
         .underline-xl { min-width: 320px; }
-        @media print { body { background: white; padding: 0; } .print-container { width: 100%; height: auto; margin: 0; padding: 20mm 12.7mm 20mm 20.32mm; box-shadow: none; } }
+        @media print { body { background: white; padding: 0; } .print-container { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 20mm 12.7mm 20mm 20.32mm; box-shadow: none; } }
     </style>
 </head>
 <body>
@@ -208,7 +210,7 @@ function nameWithoutNickname($fullName) {
                 ข้าพเจ้า นางรุ่งทิพย์ ชิ้นจอหอ ผู้จัดการหอพักแสงเทียน ซึ่งต่อไปนี้เรียกว่า "ผู้ให้เช่า" ฝ่ายหนึ่ง กับข้าพเจ้า
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;ชื่อ <span class="underline underline-long"><?php echo h(firstNameWithoutSurname($contract['tnt_name'] ?? '')); ?></span>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.&nbsp;&nbsp; ชื่อ <span class="underline underline-long"><?php echo h(firstNameWithoutSurname($contract['tnt_name'] ?? '')); ?></span>
                 สกุล <span class="underline underline-long"><?php echo h(surnameFromFullName($contract['tnt_name'] ?? '')); ?></span>
                 อายุ <span class="underline underline-short"><?php echo h($contract['tnt_age'] ?? ''); ?></span> ปี
             </div>
