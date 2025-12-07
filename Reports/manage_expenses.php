@@ -20,7 +20,7 @@ $expStmt = $pdo->query("
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
   LEFT JOIN room r ON c.room_id = r.room_id
   LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-  ORDER BY e.exp_month DESC, e.exp_id DESC
+  ORDER BY e.exp_id DESC
 ");
 $expenses = $expStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -551,15 +551,6 @@ try {
                           <div style="font-size:0.9rem;">
                             <div>ชำระแล้ว: <strong style="color:#22c55e;">฿<?php echo number_format($paidAmount); ?></strong></div>
                             <div style="color:#94a3b8;margin-top:0.25rem;">ค้างชำระ: <strong style="color:#ef4444;">฿<?php echo number_format($remainAmount); ?></strong></div>
-                            <?php if ($totalPayments > 0): ?>
-                              <button type="button" class="view-payment-btn" 
-                                      data-expense-id="<?php echo (int)$exp['exp_id']; ?>"
-                                      style="display:inline-block;margin-top:0.5rem;padding:0.35rem 0.75rem;background:linear-gradient(135deg, #3b82f6, #2563eb);color:#fff;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s ease;"
-                                      onmouseover="this.style.background='linear-gradient(135deg, #60a5fa, #3b82f6)'"
-                                      onmouseout="this.style.background='linear-gradient(135deg, #3b82f6, #2563eb)'">
-                                📄 ดูหลักฐาน (<?php echo $totalPayments; ?>)
-                              </button>
-                            <?php endif; ?>
                           </div>
                         </td>
                       </tr>

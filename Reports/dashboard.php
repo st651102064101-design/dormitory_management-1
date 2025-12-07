@@ -428,7 +428,7 @@ try {
                         <div class="value"><?php echo $payment_verified; ?></div>
                     </div>
                     <div class="report-item">
-                        <label><a href="report_payments.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
+                        <label><a href="report_invoice.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
                     </div>
                 </div>
             </div>
@@ -441,7 +441,7 @@ try {
                         <div class="value">฿<?php echo number_format($total_payment, 0); ?></div>
                     </div>
                     <div class="report-item">
-                        <label><a href="report_invoice.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
+                        <label><a href="report_payments.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
                     </div>
                 </div>
             </div>
@@ -488,7 +488,7 @@ try {
                         <div class="value">฿<?php echo number_format($total_revenue, 0); ?></div>
                     </div>
                     <div class="report-item">
-                        <label><a href="report_revenue.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
+                        <label><a href="manage_revenue.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
                     </div>
                 </div>
             </div>
