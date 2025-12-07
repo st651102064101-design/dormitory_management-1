@@ -149,23 +149,23 @@ try {
               <div id="table-view" style="display:none;margin-top:1.5rem;overflow-x:auto;">
                 <table class="table--compact" style="width:100%;border-collapse:collapse;">
                   <thead>
-                    <tr style="text-align:left;border-bottom:2px solid #475569;background:#0f172a;">
+                    <tr style="text-align:left;border-bottom:1px solid #475569;background:#0f172a;">
                       <th style="padding:0.75rem;color:#94a3b8;">รหัส</th>
                       <th style="padding:0.75rem;color:#94a3b8;">ห้อง/ผู้เช่า</th>
                       <th style="padding:0.75rem;color:#94a3b8;">วันที่อ่าน</th>
-                      <th colspan="3" style="padding:0.75rem;color:#22c55e;text-align:center;">💧 น้ำ</th>
-                      <th colspan="3" style="padding:0.75rem;color:#3b82f6;text-align:center;">⚡ ไฟ</th>
+                      <th colspan="3" style="padding:0.75rem;color:#22c55e;text-align:center;font-weight:700;">💧 น้ำ</th>
+                      <th colspan="3" style="padding:0.75rem;color:#3b82f6;text-align:center;font-weight:700;">⚡ ไฟ</th>
                     </tr>
-                    <tr style="text-align:left;border-bottom:1px solid #334155;background:#0f172a;">
-                      <th></th>
-                      <th></th>
-                      <th></th>
-                      <th style="padding:0.75rem;color:#94a3b8;text-align:right;">เริ่มต้น</th>
-                      <th style="padding:0.75rem;color:#94a3b8;text-align:right;">สิ้นสุด</th>
-                      <th style="padding:0.75rem;color:#94a3b8;text-align:right;">ใช้ไป</th>
-                      <th style="padding:0.75rem;color:#94a3b8;text-align:right;">เริ่มต้น</th>
-                      <th style="padding:0.75rem;color:#94a3b8;text-align:right;">สิ้นสุด</th>
-                      <th style="padding:0.75rem;color:#94a3b8;text-align:right;">ใช้ไป</th>
+                    <tr style="text-align:right;border-bottom:2px solid #475569;background:#0f172a;">
+                      <th style="padding:0.75rem;color:#94a3b8;text-align:left;"></th>
+                      <th style="padding:0.75rem;color:#94a3b8;text-align:left;"></th>
+                      <th style="padding:0.75rem;color:#94a3b8;text-align:left;"></th>
+                      <th style="padding:0.75rem;color:#22c55e;">เริ่มต้น</th>
+                      <th style="padding:0.75rem;color:#22c55e;">สิ้นสุด</th>
+                      <th style="padding:0.75rem;color:#22c55e;">ใช้ไป</th>
+                      <th style="padding:0.75rem;color:#3b82f6;">เริ่มต้น</th>
+                      <th style="padding:0.75rem;color:#3b82f6;">สิ้นสุด</th>
+                      <th style="padding:0.75rem;color:#3b82f6;">ใช้ไป</th>
                     </tr>
                   </thead>
                   <tbody>
