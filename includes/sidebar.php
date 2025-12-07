@@ -342,21 +342,25 @@ try {
   aside.app-sidebar .team-avatar,
   .app-sidebar .team-avatar {
     position: relative;
+    width: 120px !important;
+    height: 120px !important;
     border-radius: 12px !important;
     background: transparent !important;
     border: none !important;
     padding: 0 !important;
+    margin: 0 auto !important;
   }
   
   .team-avatar-img,
   aside.app-sidebar .team-avatar-img,
   .app-sidebar .team-avatar-img {
-    width: 100%;
-    height: 100%;
+    width: 120px !important;
+    height: 120px !important;
     border-radius: 12px !important;
     background: #ffffff !important;
     border: 1px solid rgba(0,0,0,0.08) !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    object-fit: cover !important;
   }
   
   .team-meta .name,
@@ -552,22 +556,22 @@ try {
     transition: all 0.3s ease;
   }
   .team-avatar {
-    width: 140px;
-    height: 140px;
+    width: 120px;
+    height: 120px;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 0 !important;
     overflow: hidden;
-    margin: 0 !important;
+    margin: 0 auto !important;
     border-radius: 16px;
     background: transparent;
     box-shadow: none;
     transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
   }
   .team-avatar-img {
-    width: 100%;
-    height: 100%;
+    width: 120px !important;
+    height: 120px !important;
     border-radius: 12px;
     box-shadow: 0 10px 24px rgba(0,0,0,0.12);
     object-fit: cover;
@@ -579,22 +583,60 @@ try {
     display: block;
     text-align: center;
     width: 100%;
-    padding: 0 0.5rem;
+    padding: 0.75rem 0.5rem 0 0.5rem;
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
   .team-meta .name {
-    font-size: 0.9rem;
-    font-weight: 600;
+    font-size: 1rem;
+    font-weight: 700;
     color: #e2e8f0;
-    line-height: 1.3;
+    line-height: 1.4;
+    margin-bottom: 0.25rem;
     transition: all 0.3s ease;
   }
   .subitem {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding-left: 0.75rem;
+    gap: 0.35rem;
+    padding-left: 0.5rem;
     transition: all 0.3s ease;
+  }
+  /* Tighten nav vertical spacing */
+  .app-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0;
+  }
+  .app-nav .group {
+    gap: 0.2rem;
+  }
+  /* Dashboard button: tighter background around icon/text */
+  .app-nav .group:first-child .subitem {
+    padding: 0rem 0.6rem;
+    border-radius: 12px;
+    min-height: auto;
+  }
+  .app-nav .group:first-child .subitem .app-nav-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 12px;
+    justify-content: center;
+    align-items: center;
+  }
+  /* Center the gear (manage) and palette (system settings) icons */
+  .app-nav-icon--management,
+  a[href="system_settings.php"] .app-nav-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    margin: 0;
+    line-height: 1;
+    flex-shrink: 0;
   }
   .subitem .app-nav-icon {
     flex-shrink: 0;
@@ -631,15 +673,20 @@ try {
   }
   aside.sidebar-collapsed .team-switcher {
     width: auto !important;
-    gap: 0 !important;
+      gap: 0.5rem !important;
     padding: 0.5rem 0 !important;
   }
   aside.sidebar-collapsed .team-avatar {
-    width: 50px !important;
-    height: 50px !important;
-    padding: 0.25rem !important;
-    margin: 0 !important;
+      width: 48px !important;
+      height: 48px !important;
+      padding: 0 !important;
+      margin: 0 auto !important;
   }
+    aside.sidebar-collapsed .team-avatar-img {
+      width: 48px !important;
+      height: 48px !important;
+      object-fit: cover !important;
+    }
   aside.sidebar-collapsed .team-meta {
     display: none !important;
   }
@@ -647,15 +694,20 @@ try {
   /* Also apply to .app-sidebar.collapsed */
   .app-sidebar.collapsed .team-switcher {
     width: auto !important;
-    gap: 0 !important;
+      gap: 0.5rem !important;
     padding: 0.5rem 0 !important;
   }
   .app-sidebar.collapsed .team-avatar {
-    width: 50px !important;
-    height: 50px !important;
-    padding: 0.25rem !important;
-    margin: 0 !important;
+      width: 48px !important;
+      height: 48px !important;
+      padding: 0 !important;
+      margin: 0 auto !important;
   }
+    .app-sidebar.collapsed .team-avatar-img {
+      width: 48px !important;
+      height: 48px !important;
+      object-fit: cover !important;
+    }
   .app-sidebar.collapsed .team-meta {
     display: none !important;
   }
@@ -728,14 +780,17 @@ try {
     
     .team-avatar {
       display: flex !important;
-      width: 100% !important;
-      height: auto !important;
+        width: 120px !important;
+        height: 120px !important;
+        margin: 0 auto !important;
     }
     
     .team-avatar-img {
       display: block !important;
-      width: 100% !important;
-      height: auto !important;
+        width: 120px !important;
+        height: 120px !important;
+        object-fit: cover !important;
+        border-radius: 12px !important;
     }
 
     .team-meta {
@@ -746,10 +801,10 @@ try {
     }
 
     .team-meta .name {
-      font-size: 0.95rem !important;
-      font-weight: 600 !important;
+        font-size: 1rem !important;
+        font-weight: 700 !important;
       color: #e2e8f0 !important;
-      line-height: 1.3 !important;
+        line-height: 1.4 !important;
     }
     
     /* When mobile-open class is applied, slide in from left */
@@ -885,11 +940,11 @@ try {
 <script>
   // Force reset collapsed on mobile IMMEDIATELY before CSS applies
   if (window.innerWidth <= 1024) {
-    document.write('<style>.app-sidebar.collapsed { all: revert !important; width: 240px !important; } .app-sidebar.collapsed .app-nav-label, .app-sidebar.collapsed .summary-label, .app-sidebar.collapsed .chev { all: revert !important; } .app-sidebar.collapsed .team-avatar { width: 50px !important; height: 50px !important; padding: 0.25rem !important; } .app-sidebar.collapsed .team-meta { display: none !important; }</style>');
+     document.write('<style>.app-sidebar.collapsed { all: revert !important; width: 240px !important; } .app-sidebar.collapsed .app-nav-label, .app-sidebar.collapsed .summary-label, .app-sidebar.collapsed .chev { all: revert !important; } .app-sidebar.collapsed .team-avatar { width: 120px !important; height: 120px !important; padding: 0 !important; margin: 0 auto !important; } .app-sidebar.collapsed .team-avatar-img { width: 120px !important; height: 120px !important; object-fit: cover !important; } .app-sidebar.collapsed .team-meta { display: block !important; text-align: center !important; padding-top: 0.75rem !important; }</style>');
   }
 </script>
 <aside class="app-sidebar">
-  <div class="team-switcher">
+  <div class="">
     <div class="team-avatar">
       <!-- Project logo from database -->
       <img src="/Dormitory_Management/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="team-avatar-img" />
@@ -929,7 +984,7 @@ try {
     </div>
   </nav>
 
-  <div style="flex:1"></div>
+  <div style="height:0.2rem"></div>
 
   <div class="sidebar-footer">
     <div class="user-row">

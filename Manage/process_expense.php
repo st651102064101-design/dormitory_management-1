@@ -71,8 +71,8 @@ try {
         $exp_month_date,
         $exp_elec_unit,
         $exp_water_unit,
-        (int)round($rate_elec * 100), // เก็บในหน่วยสตางค์หรือปรับตามต้องการ
-        (int)round($rate_water * 100),
+        (int)round($rate_elec), // เก็บเป็นบาทเต็ม
+        (int)round($rate_water), // เก็บเป็นบาทเต็ม
         $room_price,
         $exp_elec_chg,
         $exp_water,

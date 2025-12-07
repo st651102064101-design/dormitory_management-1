@@ -64,8 +64,8 @@ if (empty($waterRates)) {
 }
 
 $statusMap = [
-  '0' => 'ยังไม่จ่าย',
-  '1' => 'จ่ายแล้ว',
+  '0' => 'ยังไม่ชำระ',
+  '1' => 'ชำระแล้ว',
 ];
 $statusColors = [
   '0' => '#ef4444',
@@ -257,6 +257,35 @@ try {
       }
       .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
       .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
+      
+      /* ตารางแสดงทุกคอลัมน์ และเลื่อนแนวนอนได้ */
+      .report-table {
+        overflow-x: auto;
+        overflow-y: visible;
+      }
+      .report-table table {
+        min-width: 100%;
+        table-layout: auto;
+      }
+      .report-table th,
+      .report-table td {
+        white-space: nowrap;
+        min-width: fit-content;
+      }
+      
+      /* Override animate-ui.css: แสดงทุกคอลัมน์ในหน้านี้ */
+      #table-expenses.table--compact th,
+      #table-expenses.table--compact td {
+        display: table-cell !important;
+      }
+      
+      /* คอลัมน์ที่ต้องการให้กว้างพอ */
+      .report-table th:nth-child(5),
+      .report-table td:nth-child(5),
+      .report-table th:nth-child(6),
+      .report-table td:nth-child(6) {
+        min-width: 100px;
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -294,12 +323,12 @@ try {
             </div>
             <div class="expense-stats">
               <div class="expense-stat-card">
-                <h3>ยังไม่จ่าย</h3>
+                <h3>ยังไม่ชำระ</h3>
                 <div class="stat-value" style="color:#ef4444;"><?php echo number_format($stats['unpaid']); ?></div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_unpaid']); ?></div>
               </div>
               <div class="expense-stat-card">
-                <h3>จ่ายแล้ว</h3>
+                <h3>ชำระแล้ว</h3>
                 <div class="stat-value" style="color:#22c55e;"><?php echo number_format($stats['paid']); ?></div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_paid']); ?></div>
               </div>
@@ -409,6 +438,43 @@ try {
                 <h1>รายการค่าใช้จ่ายทั้งหมด</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ประวัติการเรียกเก็บค่าใช้จ่ายแต่ละห้อง</p>
               </div>
+              <div style="display:flex;gap:0.5rem;align-items:center;">
+                <label for="monthFilter" style="color:#94a3b8;font-size:0.9rem;font-weight:600;">กรองตามเดือน:</label>
+                <select id="monthFilter" style="padding:0.5rem 0.75rem;border-radius:8px;background:rgba(15,23,42,0.9);color:#e2e8f0;border:1px solid rgba(148,163,184,0.35);font-size:0.9rem;min-width:150px;">
+                  <option value="">ทั้งหมด</option>
+                  <?php
+                    // สร้างรายการเดือนที่มีข้อมูล
+                    $months = [];
+                    $thaiMonths = [
+                      '01' => 'มกราคม', '02' => 'กุมภาพันธ์', '03' => 'มีนาคม', '04' => 'เมษายน',
+                      '05' => 'พฤษภาคม', '06' => 'มิถุนายน', '07' => 'กรกฎาคม', '08' => 'สิงหาคม',
+                      '09' => 'กันยายน', '10' => 'ตุลาคม', '11' => 'พฤศจิกายน', '12' => 'ธันวาคม'
+                    ];
+                    
+                    foreach ($expenses as $exp) {
+                      if ($exp['exp_month']) {
+                        $monthKey = date('Y-m', strtotime($exp['exp_month']));
+                        $month = date('m', strtotime($exp['exp_month']));
+                        $year = date('Y', strtotime($exp['exp_month']));
+                        $yearThai = (int)$year + 543; // แปลงเป็น พ.ศ.
+                        $monthText = $thaiMonths[$month] . ' ' . $yearThai;
+                        
+                        if (!isset($months[$monthKey])) {
+                          $months[$monthKey] = $monthText;
+                        }
+                      }
+                    }
+                    krsort($months); // เรียงจากใหม่ไปเก่า
+                    
+                    $isFirst = true;
+                    foreach ($months as $key => $text) {
+                      $selected = $isFirst ? ' selected' : '';
+                      echo '<option value="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</option>';
+                      $isFirst = false;
+                    }
+                  ?>
+                </select>
+              </div>
             </div>
             <div class="report-table">
               <table class="table--compact" id="table-expenses">
@@ -417,12 +483,12 @@ try {
                     <th>รหัส</th>
                     <th>ห้อง/ผู้เช่า</th>
                     <th>เดือน/ปี</th>
-                    <th>ค่าห้อง</th>
-                    <th>ค่าไฟ</th>
-                    <th>ค่าน้ำ</th>
-                    <th>ยอดรวม</th>
+                    <th style="text-align:right;">ค่าห้อง</th>
+                    <th style="text-align:right;">ค่าไฟ</th>
+                    <th style="text-align:right;">ค่าน้ำ</th>
+                    <th style="text-align:right;">ยอดรวม</th>
                     <th>สถานะ</th>
-                    <th class="crud-column">จัดการ</th>
+                    <th>การชำระเงิน</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -441,16 +507,31 @@ try {
                           </div>
                         </td>
                         <td><?php echo $exp['exp_month'] ? date('m/Y', strtotime($exp['exp_month'])) : '-'; ?></td>
-                        <td>฿<?php echo number_format((int)($exp['room_price'] ?? 0)); ?></td>
-                        <td>
-                          <div><?php echo number_format((int)($exp['exp_elec_unit'] ?? 0)); ?> หน่วย</div>
-                          <div class="expense-meta">฿<?php echo number_format((int)($exp['exp_elec_chg'] ?? 0)); ?></div>
+                        <td style="text-align:right;">
+                          ฿<?php echo number_format((int)($exp['room_price'] ?? 0)); ?>
+                          <div class="expense-meta">ประเภท: <?php echo htmlspecialchars($exp['type_name'] ?? '-'); ?></div>
                         </td>
-                        <td>
-                          <div><?php echo number_format((int)($exp['exp_water_unit'] ?? 0)); ?> หน่วย</div>
-                          <div class="expense-meta">฿<?php echo number_format((int)($exp['exp_water'] ?? 0)); ?></div>
+                        <td style="text-align:right;">
+                          <?php
+                            $elecUnits = (int)($exp['exp_elec_unit'] ?? 0);
+                            $elecTotal = (int)($exp['exp_elec_chg'] ?? 0);
+                            $elecRate = $elecUnits > 0 ? $elecTotal / $elecUnits : 0;
+                          ?>
+                          <div><strong>ใช้ไฟ <?php echo number_format($elecUnits); ?></strong> หน่วย</div>
+                          <div class="expense-meta">฿<?php echo number_format($elecRate, 2); ?> / หน่วย</div>
+                          <div class="expense-meta">ยอดการใช้ไฟ: ฿<?php echo number_format($elecTotal); ?></div>
                         </td>
-                        <td><strong style="color:#22c55e;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></strong></td>
+                        <td style="text-align:right;">
+                          <?php
+                            $waterUnits = (int)($exp['exp_water_unit'] ?? 0);
+                            $waterTotal = (int)($exp['exp_water'] ?? 0);
+                            $waterRate = $waterUnits > 0 ? $waterTotal / $waterUnits : 0;
+                          ?>
+                          <div><strong><?php echo number_format($waterUnits); ?></strong> หน่วย</div>
+                          <div class="expense-meta">฿<?php echo number_format($waterRate, 2); ?> / หน่วย</div>
+                          <div class="expense-meta">ยอดการใช้น้ำ: ฿<?php echo number_format($waterTotal); ?></div>
+                        </td>
+                        <td style="text-align:right;"><strong style="color:#22c55e;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></strong></td>
                         <td>
                           <?php $status = (string)($exp['exp_status'] ?? ''); ?>
                           <span class="status-badge" style="background: <?php echo $statusColors[$status] ?? '#94a3b8'; ?>;">
@@ -458,11 +539,28 @@ try {
                           </span>
                         </td>
                         <td class="crud-column">
-                          <?php if ($status === '0'): ?>
-                            <button type="button" class="animate-ui-action-btn btn-success update-status-btn" data-expense-id="<?php echo (int)$exp['exp_id']; ?>" data-new-status="1">ชำระแล้ว</button>
-                          <?php else: ?>
-                            <button type="button" class="animate-ui-action-btn btn-cancel update-status-btn" data-expense-id="<?php echo (int)$exp['exp_id']; ?>" data-new-status="0">ยกเลิกชำระ</button>
-                          <?php endif; ?>
+                          <?php
+                            // ดึงข้อมูล payments ที่เกี่ยวข้องกับ expense นี้
+                            $payStmt = $pdo->prepare("SELECT COUNT(*) as cnt, SUM(CASE WHEN pay_status = '1' THEN pay_amount ELSE 0 END) as paid_amount FROM payment WHERE exp_id = ?");
+                            $payStmt->execute([(int)$exp['exp_id']]);
+                            $payInfo = $payStmt->fetch(PDO::FETCH_ASSOC);
+                            $totalPayments = (int)($payInfo['cnt'] ?? 0);
+                            $paidAmount = (int)($payInfo['paid_amount'] ?? 0);
+                            $remainAmount = (int)($exp['exp_total'] ?? 0) - $paidAmount;
+                          ?>
+                          <div style="font-size:0.9rem;">
+                            <div>ชำระแล้ว: <strong style="color:#22c55e;">฿<?php echo number_format($paidAmount); ?></strong></div>
+                            <div style="color:#94a3b8;margin-top:0.25rem;">ค้างชำระ: <strong style="color:#ef4444;">฿<?php echo number_format($remainAmount); ?></strong></div>
+                            <?php if ($totalPayments > 0): ?>
+                              <button type="button" class="view-payment-btn" 
+                                      data-expense-id="<?php echo (int)$exp['exp_id']; ?>"
+                                      style="display:inline-block;margin-top:0.5rem;padding:0.35rem 0.75rem;background:linear-gradient(135deg, #3b82f6, #2563eb);color:#fff;border:none;border-radius:6px;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all 0.2s ease;"
+                                      onmouseover="this.style.background='linear-gradient(135deg, #60a5fa, #3b82f6)'"
+                                      onmouseout="this.style.background='linear-gradient(135deg, #3b82f6, #2563eb)'">
+                                📄 ดูหลักฐาน (<?php echo $totalPayments; ?>)
+                              </button>
+                            <?php endif; ?>
+                          </div>
                         </td>
                       </tr>
                     <?php endforeach; ?>
@@ -473,6 +571,45 @@ try {
           </section>
         </div>
       </main>
+    </div>
+
+    <!-- Proof Modal -->
+    <div id="paymentProofModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
+      background:rgba(0,0,0,0);z-index:9999;
+      transition:background 0.45s cubic-bezier(0.32, 0.72, 0, 1);opacity:0;
+      padding:2rem;box-sizing:border-box;align-items:center;justify-content:center;">
+      
+      <button id="closePaymentProofModal" style="position:fixed;top:1rem;right:1rem;
+        background:rgba(255,255,255,0.15);color:#fff;border:none;width:3rem;height:3rem;
+        border-radius:50%;cursor:pointer;font-size:1.5rem;font-weight:600;
+        transition:all 0.4s cubic-bezier(0.32, 0.72, 0, 1);backdrop-filter:blur(20px) saturate(180%);
+        transform:scale(0.7);opacity:0;box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:10000;">✕</button>
+        
+      <div id="paymentProofContent" style="width:75vw;max-width:75vw;max-height:80vh;overflow-y:auto;
+        background:rgba(15,23,42,0.75);border-radius:20px;padding:1.5rem;
+        backdrop-filter:blur(40px) saturate(180%);box-shadow:0 25px 50px -12px rgba(0,0,0,0.6),
+        0 0 1px rgba(255,255,255,0.1) inset;transition:all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+        opacity:0;border:1px solid rgba(255,255,255,0.08);
+        text-align:center;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.85);">
+        
+        <img id="paymentProofImage" src="" alt="หลักฐานการชำระเงิน" 
+          style="width:100%;height:auto;border-radius:12px;display:none;
+          transition:opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1),transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+          transform:scale(0.98);" />
+        
+        <embed id="paymentProofEmbed" src="" type="application/pdf" 
+          style="width:80vw;height:80vh;border-radius:12px;display:none;
+          transition:opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);" />
+        
+        <div id="paymentProofError" style="display:none;color:#f87171;padding:2rem;text-align:center;
+          font-size:1.1rem;transition:opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);">
+          ไม่สามารถแสดงไฟล์ได้
+        </div>
+
+        <div id="paymentProofList" style="display:none;">
+          <!-- Payment list will be populated here -->
+        </div>
+      </div>
     </div>
 
     <script src="../Assets/Javascript/toast-notification.js"></script>
@@ -532,7 +669,7 @@ try {
         }
         
         const statusNum = parseInt(newStatus);
-        const statusText = statusNum === 1 ? 'จ่ายแล้ว' : 'ยังไม่จ่าย';
+        const statusText = statusNum === 1 ? 'ชำระแล้ว' : 'ยังไม่ชำระ';
         
         // ใช้ custom confirm modal
         console.log('Showing confirm dialog...');
@@ -991,6 +1128,277 @@ try {
                   attributes: true, 
                   attributeFilter: ['style'] 
                 });
+    </script>
+
+    <!-- Payment Proof Modal Script -->
+    <script>
+      const paymentProofModal = document.getElementById('paymentProofModal');
+      const closePaymentProofModal = document.getElementById('closePaymentProofModal');
+      const paymentProofImage = document.getElementById('paymentProofImage');
+      const paymentProofEmbed = document.getElementById('paymentProofEmbed');
+      const paymentProofError = document.getElementById('paymentProofError');
+      const paymentProofContent = document.getElementById('paymentProofContent');
+      const paymentProofList = document.getElementById('paymentProofList');
+
+      // Open modal when clicking view payment button
+      document.querySelectorAll('.view-payment-btn').forEach(btn => {
+        btn.addEventListener('click', async function() {
+          const expenseId = this.getAttribute('data-expense-id');
+          if (!expenseId) return;
+
+          try {
+            // Fetch payment records for this expense
+            console.log('Fetching payments for expense:', expenseId);
+            const response = await fetch('/Dormitory_Management/Reports/get_payment_proofs.php?exp_id=' + encodeURIComponent(expenseId), {
+              credentials: 'include'
+            });
+
+            console.log('Response status:', response.status);
+            const responseText = await response.text();
+            console.log('Response text:', responseText);
+            
+            if (!response.ok) throw new Error('Failed to fetch payments: ' + response.status);
+
+            const data = JSON.parse(responseText);
+            console.log('Fetched data:', data);
+
+            if (data.success && data.payments.length > 0) {
+              // Show first payment
+              showPaymentProof(data.payments[0]);
+
+              // Build payment list if multiple proofs
+              if (data.payments.length > 1) {
+                buildPaymentList(data.payments);
+              }
+            } else {
+              paymentProofError.textContent = 'ไม่พบหลักฐานการชำระเงิน';
+              paymentProofError.style.display = 'block';
+              paymentProofImage.style.display = 'none';
+              paymentProofEmbed.style.display = 'none';
+            }
+
+            // Show modal
+            requestAnimationFrame(() => {
+              paymentProofModal.style.display = 'flex';
+              requestAnimationFrame(() => {
+                paymentProofModal.style.background = 'rgba(0,0,0,0.75)';
+                paymentProofModal.style.opacity = '1';
+                paymentProofContent.style.transform = 'translate(-50%,-50%) scale(1)';
+                paymentProofContent.style.opacity = '1';
+                closePaymentProofModal.style.transform = 'scale(1)';
+                closePaymentProofModal.style.opacity = '1';
+              });
+            });
+          } catch (error) {
+            console.error('Error fetching payments:', error);
+            paymentProofError.textContent = 'เกิดข้อผิดพลาดในการดึงข้อมูล';
+            paymentProofError.style.display = 'block';
+            paymentProofModal.style.display = 'block';
+            paymentProofModal.style.background = 'rgba(0,0,0,0.75)';
+            paymentProofModal.style.opacity = '1';
+          }
+        });
+      });
+
+      function showPaymentProof(payment) {
+        // Hide all elements first
+        paymentProofImage.style.display = 'none';
+        paymentProofEmbed.style.display = 'none';
+        paymentProofError.style.display = 'none';
+
+        if (!payment.pay_proof) {
+          paymentProofError.textContent = 'ไม่มีหลักฐานสำหรับการชำระนี้';
+          paymentProofError.style.display = 'block';
+          return;
+        }
+
+        const ext = payment.pay_proof.toLowerCase().split('.').pop();
+        const isPdf = ext === 'pdf';
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+
+        if (isPdf) {
+          paymentProofEmbed.src = '../Assets/Images/Payments/' + payment.pay_proof;
+          paymentProofEmbed.style.display = 'block';
+        } else if (isImage) {
+          paymentProofImage.src = '../Assets/Images/Payments/' + payment.pay_proof;
+          paymentProofImage.style.display = 'block';
+          paymentProofImage.style.opacity = '0';
+          paymentProofImage.style.transform = 'scale(0.98)';
+          
+          paymentProofImage.onload = () => {
+            paymentProofImage.style.transition = 'opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1), transform 0.5s cubic-bezier(0.32, 0.72, 0, 1)';
+            paymentProofImage.style.opacity = '1';
+            paymentProofImage.style.transform = 'scale(1)';
+          };
+        } else {
+          paymentProofError.textContent = 'ประเภทไฟล์ไม่รองรับ';
+          paymentProofError.style.display = 'block';
+        }
+      }
+
+      function buildPaymentList(payments) {
+        paymentProofList.innerHTML = '<div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,0.1);"><p style="color:#94a3b8;font-size:0.9rem;margin-bottom:1rem;">หลักฐานการชำระอื่นๆ:</p>';
+        
+        payments.slice(1).forEach((payment, index) => {
+          const btn = document.createElement('button');
+          btn.type = 'button';
+          btn.textContent = `หลักฐาน ${index + 2}`;
+          btn.style.cssText = `
+            display: inline-block;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+            font-weight: 500;
+          `;
+          
+          btn.addEventListener('mouseover', function() {
+            this.style.background = 'rgba(255,255,255,0.15)';
+            this.style.borderColor = 'rgba(255,255,255,0.3)';
+          });
+          
+          btn.addEventListener('mouseout', function() {
+            this.style.background = 'rgba(255,255,255,0.1)';
+            this.style.borderColor = 'rgba(255,255,255,0.2)';
+          });
+          
+          btn.addEventListener('click', () => {
+            showPaymentProof(payment);
+          });
+          
+          paymentProofList.appendChild(btn);
+        });
+        
+        paymentProofList.innerHTML += '</div>';
+        paymentProofList.style.display = 'block';
+      }
+
+      // Close modal
+      function closeModal() {
+        paymentProofModal.style.background = 'rgba(0,0,0,0)';
+        paymentProofModal.style.opacity = '0';
+        paymentProofContent.style.transform = 'translate(-50%,-50%) scale(0.85)';
+        paymentProofContent.style.opacity = '0';
+        closePaymentProofModal.style.transform = 'scale(0.7)';
+        closePaymentProofModal.style.opacity = '0';
+
+        setTimeout(() => {
+          paymentProofModal.style.display = 'none';
+        }, 450);
+      }
+
+      closePaymentProofModal.addEventListener('click', closeModal);
+
+      paymentProofModal.addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && paymentProofModal.style.display !== 'none') {
+          closeModal();
+        }
+      });
+    </script>
+
+    <!-- Month Filter Script -->
+    <script>
+      (function() {
+        const monthFilter = document.getElementById('monthFilter');
+        const tableBody = document.querySelector('#table-expenses tbody');
+        
+        if (!monthFilter || !tableBody) return;
+        
+        // Trigger filter on page load
+        function filterByMonth() {
+          const selectedMonth = monthFilter.value;
+          const rows = tableBody.querySelectorAll('tr');
+          
+          rows.forEach(row => {
+            // ข้าม row ที่เป็นข้อความ "ยังไม่มีข้อมูล"
+            if (row.cells.length === 1) {
+              row.style.display = '';
+              return;
+            }
+            
+            if (!selectedMonth) {
+              // แสดงทั้งหมด
+              row.style.display = '';
+            } else {
+              // ดึงข้อมูลเดือน/ปีจากคอลัมน์ที่ 3 (index 2)
+              const dateCell = row.cells[2];
+              if (dateCell) {
+                const dateText = dateCell.textContent.trim(); // format: MM/YYYY
+                const [month, year] = dateText.split('/');
+                const rowMonth = `${year}-${month}`; // format: YYYY-MM
+                
+                if (rowMonth === selectedMonth) {
+                  row.style.display = '';
+                } else {
+                  row.style.display = 'none';
+                }
+              }
+            }
+          });
+          
+          // ตรวจสอบว่ามีแถวที่แสดงหรือไม่
+          const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
+          if (visibleRows.length === 0 && rows.length > 0) {
+            // ถ้าไม่มีแถวที่แสดง แสดงข้อความ
+            const noDataRow = document.createElement('tr');
+            noDataRow.id = 'no-data-filtered';
+            noDataRow.innerHTML = '<td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">ไม่พบข้อมูลในเดือนที่เลือก</td>';
+            
+            // ลบ row เก่าถ้ามี
+            const oldNoData = document.getElementById('no-data-filtered');
+            if (oldNoData) oldNoData.remove();
+            
+            tableBody.appendChild(noDataRow);
+          } else {
+            // ลบข้อความ "ไม่พบข้อมูล" ถ้ามี
+            const noDataRow = document.getElementById('no-data-filtered');
+            if (noDataRow) noDataRow.remove();
+          }
+        }
+        
+        monthFilter.addEventListener('change', filterByMonth);
+        
+        // เรียกใช้ filter ทันทีเมื่อโหลดหน้า
+        if (monthFilter.value) {
+          filterByMonth();
+        }
+        
+        // เพิ่มการจัดการ theme สำหรับ select
+        function updateSelectTheme() {
+          const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim();
+          const bodyBg = getComputedStyle(document.body).backgroundColor;
+          
+          const isLightTheme = themeColor === '#fff' || themeColor === '#ffffff' || 
+                               themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
+                               bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
+          
+          if (isLightTheme) {
+            monthFilter.style.background = '#ffffff';
+            monthFilter.style.color = '#111827';
+            monthFilter.style.borderColor = '#d1d5db';
+          } else {
+            monthFilter.style.background = 'rgba(15,23,42,0.9)';
+            monthFilter.style.color = '#e2e8f0';
+            monthFilter.style.borderColor = 'rgba(148,163,184,0.35)';
+          }
+        }
+        
+        updateSelectTheme();
+        
+        const themeObserver = new MutationObserver(updateSelectTheme);
+        themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+        themeObserver.observe(document.body, { attributes: true, attributeFilter: ['style'] });
+      })();
     </script>
   </body>
 </html>

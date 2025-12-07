@@ -428,7 +428,7 @@ try {
                         <div class="value"><?php echo $payment_verified; ?></div>
                     </div>
                     <div class="report-item">
-                        <label><a href="manage_stay.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
+                        <label><a href="report_payments.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
                     </div>
                 </div>
             </div>
