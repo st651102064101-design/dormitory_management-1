@@ -57,6 +57,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // รีเฟรชรายชื่อรูปเก่า
+  async function refreshOldLogosList() {
+    try {
+      // ลบ options ทั้งหมดยกเว้น placeholder
+      while (oldLogoSelect.options.length > 1) {
+        oldLogoSelect.remove(1);
+      }
+      
+      // โหลดรายชื่อใหม่
+      const response = await fetch('../Manage/get_old_logos.php', {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      });
+      const result = await response.json();
+      if (result.success && result.files.length > 0) {
+        result.files.forEach(file => {
+          const option = document.createElement('option');
+          option.value = file;
+          option.textContent = file;
+          oldLogoSelect.appendChild(option);
+        });
+      }
+    } catch (error) {
+      console.error('Error refreshing old logos:', error);
+    }
+  }
+
+  // ตั้ง refreshOldLogosList ให้ global เพื่อให้เรียกได้จากหลายที่
+  window.refreshOldLogosList = refreshOldLogosList;
+
   if (oldLogoSelect) {
     loadOldLogos();
   }
@@ -64,11 +95,108 @@ document.addEventListener('DOMContentLoaded', () => {
   if (oldLogoSelect) {
     oldLogoSelect.addEventListener('change', function() {
       const previewContainer = document.getElementById('oldLogoPreview');
+      const deleteContainer = document.getElementById('deleteLogoContainer');
       if (this.value) {
         previewContainer.innerHTML = `
           <img src="../Assets/Images/${this.value}" alt="Old Logo" style="max-width: 80px; max-height: 80px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
-          <button type="button" id="loadOldLogoBtn" style="margin: 0; padding: 0.4rem 0.6rem; min-width: auto; white-space: nowrap; align-self: center; font-size: 0.8rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59,130,246,0.3);">ตั้งเป็นรูปปัจจุบัน ✓</button>
+          <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <button type="button" id="loadOldLogoBtn" style="margin: 0; padding: 0.4rem 0.8rem; min-width: auto; white-space: nowrap; font-size: 0.8rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59,130,246,0.3);">✓ เปลี่ยน</button>
+            <button type="button" id="deleteOldLogoBtn" style="margin: 0; padding: 0.4rem 0.8rem; min-width: auto; white-space: nowrap; font-size: 0.8rem; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(239,68,68,0.3);">🗑️ ลบ</button>
+          </div>
         `;
+        
+        // ซ่อน deleteContainer เพราะปุ่มอยู่ใน previewContainer แล้ว
+        deleteContainer.innerHTML = ``;
+        
+        // Event listener สำหรับปุ่มเปลี่ยน
+        const loadBtn = document.getElementById('loadOldLogoBtn');
+        if (loadBtn) {
+          loadBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const selectedFile = oldLogoSelect.value;
+            if (!selectedFile) return;
+
+            try {
+              const formData = new FormData();
+              formData.append('load_old_logo', selectedFile);
+
+              const response = await fetch('../Manage/save_system_settings.php', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              });
+
+              const result = await response.json();
+              if (result.success) {
+                showSuccessToast('เปลี่ยนรูปสำเร็จ');
+                oldLogoSelect.value = '';
+                previewContainer.innerHTML = '';
+                deleteContainer.innerHTML = '';
+                // รีเฟรชรูปที่ทั่วระบบ
+                const timestamp = new Date().getTime();
+                document.querySelectorAll('[src*="Logo"]').forEach(img => {
+                  const src = img.getAttribute('src');
+                  if (src) {
+                    img.src = src + (src.includes('?') ? '&' : '?') + 't=' + timestamp;
+                  }
+                });
+                // รีเฟรช favicon
+                const favicon = document.querySelector('link[rel="icon"]');
+                if (favicon) {
+                  favicon.href = '../Assets/Images/Logo.jpg?' + timestamp;
+                }
+                
+                // รีเฟรช dropdown options
+                await refreshOldLogosList();
+              } else {
+                showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+              }
+            } catch (error) {
+              showErrorToast('เกิดข้อผิดพลาด');
+            }
+          });
+        }
+        
+        // Event listener สำหรับปุ่มลบ
+        const deleteBtn = document.getElementById('deleteOldLogoBtn');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            const selectedFile = oldLogoSelect.value;
+            const confirmed = await showConfirmDialog('ลบรูปเก่า', `คุณต้องการลบ ${selectedFile} หรือไม่?`, 'delete');
+            if (!confirmed) return;
+
+            try {
+              const formData = new FormData();
+              formData.append('delete_old_logo', selectedFile);
+
+              const response = await fetch('../Manage/save_system_settings.php', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              });
+
+              const result = await response.json();
+              if (result.success) {
+                showSuccessToast('ลบรูปเก่าสำเร็จ');
+                oldLogoSelect.value = '';
+                previewContainer.innerHTML = '';
+                deleteContainer.innerHTML = '';
+                // รีเฟรช dropdown options
+                await refreshOldLogosList();
+              } else {
+                showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+              }
+            } catch (error) {
+              showErrorToast('เกิดข้อผิดพลาด');
+            }
+          });
+        }
+        
         // เพิ่ม event listener ใหม่สำหรับปุ่มที่สร้างใหม่
         const newBtn = document.getElementById('loadOldLogoBtn');
         if (newBtn) {
@@ -185,7 +313,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         // รีเฟรช dropdown รูปเก่า
-        await loadOldLogos();
+        await refreshOldLogosList();
+        
+        // ล้างช่องกรอก input file
+        logoInput.value = '';
+        newLogoPreview.innerHTML = '';
         
         // อัปเดต Logo ใน sidebar (ถ้ามี)
         const sidebarLogo = document.querySelector('.team-avatar-img');

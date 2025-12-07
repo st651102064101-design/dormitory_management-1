@@ -378,6 +378,7 @@ try {
                       ?>
                     </select>
                     <div id="oldLogoPreview" style="margin-top: 0.75rem; margin-bottom: 0.75rem; display: flex; align-items: flex-start; gap: 1rem;"></div>
+                    <div id="deleteLogoContainer" style="display: none;"></div>
                   </div>
 
                   <hr style="border: none; border-top: 1px solid rgba(255,255,255,0.1); margin: 1.5rem 0;">
