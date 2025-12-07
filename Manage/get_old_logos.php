@@ -19,23 +19,21 @@ try {
                 continue;
             }
             
-            // ตรวจสอบเฉพาะไฟล์ logo ที่ลงท้ายด้วย jpg, jpeg, png
+            // ข้าม Logo.jpg และ Logo.png (ไฟล์ปัจจุบัน)
+            if (strtolower($file) === 'logo.jpg' || strtolower($file) === 'logo.png') {
+                continue;
+            }
+            
+            // ตรวจสอบเฉพาะไฟล์ jpg, jpeg, png
             $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
             if (in_array($ext, ['jpg', 'jpeg', 'png'])) {
-                // ดึงไฟล์ที่เกี่ยวข้องกับ logo
-                if (stripos($file, 'logo') !== false || preg_match('/^\d+\.(jpg|jpeg|png)$/i', $file)) {
-                    $files[] = $file;
-                }
+                $files[] = $file;
             }
         }
     }
     
-    // เรียงลำดับตามชื่อ (Logo.jpg อันดับแรก)
-    usort($files, function($a, $b) {
-        if (stripos($a, 'logo') !== false && stripos($b, 'logo') === false) return -1;
-        if (stripos($a, 'logo') === false && stripos($b, 'logo') !== false) return 1;
-        return strcmp($a, $b);
-    });
+    // เรียงลำดับตามชื่อ
+    sort($files);
     
     echo json_encode(['success' => true, 'files' => $files]);
 } catch (Exception $e) {

@@ -85,6 +85,58 @@ try {
         }
     }
 
+    // ลบรูปเก่า
+    if (!empty($_POST['delete_old_logo'])) {
+        $oldLogoFile = trim($_POST['delete_old_logo']);
+        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $oldLogoPath = $uploadsDir . $oldLogoFile;
+
+        // ตรวจสอบความปลอดภัย
+        if (!file_exists($oldLogoPath) || realpath($oldLogoPath) === false) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบไฟล์รูป']);
+            exit;
+        }
+
+        $realPath = realpath($oldLogoPath);
+        $realUploadDir = realpath($uploadsDir);
+        if (strpos($realPath, $realUploadDir) !== 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไฟล์ไม่ถูกต้อง']);
+            exit;
+        }
+
+        // ตรวจสอบนามสกุลไฟล์
+        $ext = strtolower(pathinfo($oldLogoFile, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG และ PNG']);
+            exit;
+        }
+
+        // ตรวจสอบว่ารูปที่จะลบกำลังถูกใช้อยู่
+        $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'logo_filename'");
+        $stmt->execute();
+        $currentLogo = $stmt->fetchColumn();
+
+        if ($currentLogo === $oldLogoFile) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบรูปได้ เพราะกำลังใช้อยู่ในระบบ']);
+            exit;
+        }
+
+        // ลบไฟล์
+        if (unlink($oldLogoPath)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'ลบรูปเก่าสำเร็จ']);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบรูป']);
+            exit;
+        }
+    }
+
     // จัดการ Logo Upload
     if (!empty($_FILES['logo'])) {
         $file = $_FILES['logo'];
