@@ -142,6 +142,7 @@ try {
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <style>
       .contract-stats {
         display: grid;
@@ -548,6 +549,31 @@ try {
           text.textContent = 'แสดงฟอร์ม';
         }
 
+        // Initialize DataTable
+        const contractTableEl = document.querySelector('#table-contracts');
+        if (contractTableEl && window.simpleDatatables) {
+          try {
+            const dt = new simpleDatatables.DataTable(contractTableEl, {
+              searchable: true,
+              fixedHeight: false,
+              perPage: 5,
+              perPageSelect: [5, 10, 25, 50, 100],
+              labels: {
+                placeholder: 'ค้นหา...',
+                perPage: '{select} แถวต่อหน้า',
+                noRows: 'ไม่มีข้อมูล',
+                info: 'แสดง {start}–{end} จาก {rows} รายการ'
+              },
+              columns: [
+                { select: 7, sortable: false }
+              ]
+            });
+            window.__contractDataTable = dt;
+          } catch (err) {
+            console.error('Failed to init contract table', err);
+          }
+        }
+
         // ลบ modal overlay ที่ main.js สร้างขึ้น
         const mainModals = document.querySelectorAll('.animate-ui-modal-overlay');
         mainModals.forEach(modal => modal.remove());
@@ -566,6 +592,7 @@ try {
     </script>
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script src="../Assets/Javascript/confirm-modal.js"></script>
     <script>
 

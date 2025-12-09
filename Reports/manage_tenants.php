@@ -917,8 +917,8 @@ try {
             const dt = new simpleDatatables.DataTable(tenantTableEl, {
               searchable: true,
               fixedHeight: false,
-              perPage: 10,
-              perPageSelect: [10, 25, 50, 100],
+              perPage: 5,
+              perPageSelect: [5, 10, 25, 50, 100],
               labels: {
                 placeholder: 'ค้นหา...',
                 perPage: '{select} แถวต่อหน้า',

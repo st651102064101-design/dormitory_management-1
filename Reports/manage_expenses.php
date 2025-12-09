@@ -126,6 +126,7 @@ try {
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <style>
       .expense-stats {
         display: grid;
@@ -635,6 +636,7 @@ try {
     <script src="../Assets/Javascript/confirm-modal.js"></script>
     <script src="../Assets/Javascript/animate-ui.js"></script>
     <script src="../Assets/Javascript/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
       function changeSortBy(sortValue) {
         const url = new URL(window.location);
@@ -872,6 +874,31 @@ try {
             section.style.display = 'none';
             icon.textContent = '▶';
             text.textContent = 'แสดงฟอร์ม';
+          }
+
+          // Initialize DataTable
+          const expenseTableEl = document.querySelector('#table-expenses');
+          if (expenseTableEl && window.simpleDatatables) {
+            try {
+              const dt = new simpleDatatables.DataTable(expenseTableEl, {
+                searchable: true,
+                fixedHeight: false,
+                perPage: 6,
+                perPageSelect: [6, 10, 25, 50, 100],
+                labels: {
+                  placeholder: 'ค้นหา...',
+                  perPage: '{select} แถวต่อหน้า',
+                  noRows: 'ไม่มีข้อมูล',
+                  info: 'แสดง {start}–{end} จาก {rows} รายการ'
+                },
+                columns: [
+                  { select: [7, 8], sortable: false }
+                ]
+              });
+              window.__expenseDataTable = dt;
+            } catch (err) {
+              console.error('Failed to init expense table', err);
+            }
           }
         });
       } else {

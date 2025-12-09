@@ -90,6 +90,7 @@ try {
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <style>
       .booking-stats {
         display: grid;
@@ -132,10 +133,10 @@ try {
         gap: 1.5rem;
         margin-top: 1rem;
       }
-      /* Desktop: fix 5 cards per row when there is space */
+      /* Desktop: fix 4 cards per row when there is space */
       @media (min-width: 1200px) {
         .rooms-grid {
-          grid-template-columns: repeat(5, minmax(0, 1fr));
+          grid-template-columns: repeat(4, minmax(0, 1fr));
         }
       }
       .rooms-grid.list-view { display: flex; flex-direction: column; gap: 1rem; }
@@ -790,6 +791,7 @@ try {
     <script src="../Assets/Javascript/toast-notification.js"></script>
     <script src="../Assets/Javascript/animate-ui.js"></script>
     <script src="../Assets/Javascript/main.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
       // Toggle available rooms visibility
       function toggleAvailableRooms() {
@@ -822,6 +824,31 @@ try {
           section.style.display = 'none';
           icon.textContent = '▶';
           text.textContent = 'แสดงห้องพักที่ว่าง';
+        }
+
+        // Initialize DataTable
+        const bookingTableEl = document.querySelector('#table-bookings');
+        if (bookingTableEl && window.simpleDatatables) {
+          try {
+            const dt = new simpleDatatables.DataTable(bookingTableEl, {
+              searchable: true,
+              fixedHeight: false,
+              perPage: 5,
+              perPageSelect: [5, 10, 25, 50, 100],
+              labels: {
+                placeholder: 'ค้นหา...',
+                perPage: '{select} แถวต่อหน้า',
+                noRows: 'ไม่มีข้อมูล',
+                info: 'แสดง {start}–{end} จาก {rows} รายการ'
+              },
+              columns: [
+                { select: 7, sortable: false }
+              ]
+            });
+            window.__bookingDataTable = dt;
+          } catch (err) {
+            console.error('Failed to init booking table', err);
+          }
         }
 
         console.log('Page loaded');

@@ -558,7 +558,34 @@ try {
     background: transparent;
     border: 1px solid transparent;
     border-radius: 12px;
+    cursor: pointer;
   }
+  
+  /* ลิงก์ภายใน summary */
+  details summary .summary-link {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+    padding: 0;
+    margin: 0;
+  }
+  
+  details summary .summary-link:hover {
+    text-decoration: none;
+    opacity: 0.8;
+  }
+  
+  /* ข้อความธรรมดาใน summary */
+  details summary .summary-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex: 1;
+  }
+  
   details summary .app-nav-icon {
     width: 1.8rem;
     height: 1.8rem;
@@ -569,7 +596,15 @@ try {
   }
   details summary .chev {
     transition: transform 0.3s ease;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 4px;
   }
+  
+  details summary .chev:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
   details summary .summary-label {
     transition: opacity 0.3s ease, transform 0.3s ease;
   }
@@ -642,15 +677,32 @@ try {
     color: #e2e8f0;
   }
   /* Tighten nav vertical spacing */
+  aside.app-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+  }
+  .app-sidebar nav {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
   .app-nav {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
-    margin: 0;
-    padding: 0;
+    gap: 0.15rem;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 0 0 auto !important;
+  }
+  .app-sidebar nav + nav {
+    margin-top: 0rem !important;
   }
   .app-nav .group {
-    gap: 0.2rem;
+    gap: 0.1rem;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
   }
   /* Dashboard button: tighter background around icon/text */
   .app-nav .group:first-child .subitem {
@@ -1018,13 +1070,14 @@ try {
 
   <nav class="app-nav" aria-label="Main navigation">
     <div class="group">
-      <details open>
+      <details id="nav-dashboard" open>
         <summary>
-          <span class="app-nav-icon" aria-hidden="true">📊</span>
-          <span class="summary-label">แดชบอร์ด</span>
+          <a href="dashboard.php" class="summary-link" onclick="event.stopPropagation();">
+            <span class="app-nav-icon" aria-hidden="true">📊</span>
+            <span class="summary-label">แดชบอร์ด</span>
+          </a>
           <span class="chev" style="margin-left:auto">›</span>
         </summary>
-        <a class="" href="dashboard.php"><span class="app-nav-icon" aria-hidden="true">📈</span><span class="app-nav-label">สรุป</span></a>
         <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">รายงาน การจอง</span></a>
         <a class="" href="report_booking.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงาน การเข้าพัก</span></a>
         <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true">💧</span><span class="app-nav-label">รายงาน สาธารณูปโภค</span></a>
@@ -1041,11 +1094,13 @@ try {
 
   <nav class="app-nav" aria-label="Reports navigation">
     <div class="group">
-      <details open>
+      <details id="nav-management" open>
         <summary>
-          <span class="app-nav-icon app-nav-icon--management" aria-hidden="true">⚙️</span>
-          <span class="summary-label">จัดการ</span>
-          <span class="chev" style="margin-left:auto">›</span>
+          <a href="manage.php" class="summary-link" onclick="event.stopPropagation();">
+            <span class="app-nav-icon app-nav-icon--management" aria-hidden="true">⚙️</span>
+            <span class="summary-label">จัดการ</span>
+          </a>
+          <span class="chev chev-toggle" data-target="nav-management" style="margin-left:auto;cursor:pointer;">›</span>
         </summary>
         <!-- manage_stay.php removed; link intentionally omitted -->
         <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true">📰</span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
@@ -1055,11 +1110,8 @@ try {
         <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">จัดการสัญญา</span></a>
         <a class="" href="manage_expenses.php"><span class="app-nav-icon" aria-hidden="true">💰</span><span class="app-nav-label">ค่าใช้จ่าย</span></a>
         <a class="" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true">🛠️</span><span class="app-nav-label">แจ้งซ่อม</span></a>
+        <a class="" href="system_settings.php"><span class="app-nav-icon" aria-hidden="true">🎨</span><span class="app-nav-label">ตั้งค่าระบบ</span></a>
       </details>
-    </div>
-
-    <div class="group">
-      <a class="subitem" href="system_settings.php"><span class="app-nav-icon" aria-hidden="true">🎨</span><span class="app-nav-label">จัดการระบบ</span></a>
     </div>
   </nav>
 
@@ -1161,18 +1213,21 @@ try {
       const href = link.getAttribute('href');
       if (href && (href === currentPage || href.endsWith('/' + currentPage))) {
         link.classList.add('active');
-        
-        // Open parent details if inside a collapsible section
-        const parentDetails = link.closest('details');
-        if (parentDetails) {
-          parentDetails.setAttribute('open', '');
-        }
       }
     });
   }
   
   // Run on page load
   setActiveMenu();
+
+  // Ensure summary links navigate (แดชบอร์ด/จัดการ)
+  document.querySelectorAll('summary .summary-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.stopPropagation(); // ป้องกันไม่ให้ toggle dropdown
+      // ให้ลิงก์ทำงานทันที
+      window.location.href = link.getAttribute('href');
+    });
+  });
   
   // Close sidebar when clicking overlay
   document.addEventListener('click', function(e) {
@@ -1199,41 +1254,114 @@ try {
 
 // Save and restore collapsible details state
 (function() {
-  // Function to restore state
+  let isInitializing = true;
+  
+  // Function to restore state - ทำงาน FORCE เพื่อ override ทุกอย่าง
   function restoreDetailsState() {
-    document.querySelectorAll('details').forEach(function(details) {
-      const id = details.id || details.querySelector('summary')?.textContent?.trim();
+    document.querySelectorAll('details[id]').forEach(function(details) {
+      const id = details.id;
       if (id) {
-        const key = 'details_' + id.replace(/[^a-zA-Z0-9]/g, '_');
+        const key = 'sidebar_details_' + id;
         const savedState = localStorage.getItem(key);
-        if (savedState === 'open') {
-          details.setAttribute('open', '');
-          details.open = true; // Also set property
-        } else if (savedState === 'closed') {
+        
+        // ใช้สถานะที่บันทึกไว้เสมอ ถ้ามี
+        if (savedState === 'closed') {
+          // ปิด dropdown - FORCE
           details.removeAttribute('open');
-          details.open = false; // Also set property
+          details.open = false;
+        } else if (savedState === 'open') {
+          // เปิด dropdown - FORCE
+          details.setAttribute('open', '');
+          details.open = true;
         }
+        // ถ้าไม่มีการบันทึก ใช้สถานะเริ่มต้นจาก HTML (ครั้งแรก)
       }
     });
-  }
-  
-  // Restore immediately
-  restoreDetailsState();
-  
-  // Also restore on DOMContentLoaded
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', restoreDetailsState);
+    
+    // หลังจาก restore เสร็จ ให้เริ่มบันทึกการเปลี่ยนแปลง
+    setTimeout(function() {
+      isInitializing = false;
+    }, 100);
   }
   
   // Save collapsible state on toggle
   document.addEventListener('toggle', function(e) {
-    if (e.target.tagName === 'DETAILS') {
-      const id = e.target.id || e.target.querySelector('summary')?.textContent?.trim();
-      if (id) {
-        const key = 'details_' + id.replace(/[^a-zA-Z0-9]/g, '_');
-        localStorage.setItem(key, e.target.open ? 'open' : 'closed');
-      }
+    if (e.target.tagName === 'DETAILS' && e.target.id && !isInitializing) {
+      const key = 'sidebar_details_' + e.target.id;
+      const newState = e.target.open ? 'open' : 'closed';
+      localStorage.setItem(key, newState);
+      console.log('💾 Saved:', key, '=', newState);
     }
   }, true);
+  
+  // Restore state when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(restoreDetailsState, 50);
+    });
+  } else {
+    // ทำงานทันทีและซ้ำอีกครั้งหลังจาก setActiveMenu ทำงานเสร็จ
+    restoreDetailsState();
+    setTimeout(restoreDetailsState, 50);
+    setTimeout(restoreDetailsState, 200);
+  }
+})();
+
+// Chevron toggle for dropdowns (separate from link navigation)
+(function() {
+  document.addEventListener('click', function(e) {
+    const chev = e.target.closest('.chev-toggle');
+    if (!chev) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const id = chev.getAttribute('data-target');
+    const details = id ? document.getElementById(id) : chev.closest('details');
+    if (!details) return;
+
+    details.open = !details.open;
+    const key = 'sidebar_details_' + details.id;
+    localStorage.setItem(key, details.open ? 'open' : 'closed');
+  });
+})();
+
+// Global sidebar toggle (ทำงานทุกหน้า)
+(function() {
+  const sidebar = document.querySelector('.app-sidebar');
+  const toggleBtn = document.getElementById('sidebar-toggle');
+  if (!sidebar || !toggleBtn) return;
+
+  // โหลดสถานะจาก localStorage (desktop เท่านั้น)
+  if (window.innerWidth > 1024 && localStorage.getItem('sidebarCollapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+  }
+
+  toggleBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (window.innerWidth > 1024) {
+      sidebar.style.transition = 'none';
+      void sidebar.offsetHeight;
+      sidebar.style.transition = '';
+
+      sidebar.classList.toggle('collapsed');
+      localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+    } else {
+      sidebar.classList.toggle('mobile-open');
+      document.body.classList.toggle('sidebar-open');
+    }
+  });
+
+  // ปิด sidebar เมื่อคลิกนอก (mobile)
+  document.addEventListener('click', function(e) {
+    if (window.innerWidth <= 1024 && sidebar.classList.contains('mobile-open')) {
+      if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        sidebar.classList.remove('mobile-open');
+        document.body.classList.remove('sidebar-open');
+      }
+    }
+  });
 })();
 </script>

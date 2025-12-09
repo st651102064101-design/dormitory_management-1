@@ -167,28 +167,26 @@ try {
               </div>
 
               <!-- Table View -->
-              <div id="table-view" style="display:none;margin-top:1.5rem;overflow-x:auto;">
-                <table class="table--compact" style="width:100%;border-collapse:collapse;">
-                  <thead>
-                    <tr style="text-align:left;border-bottom:1px solid #475569;background:#0f172a;">
-                      <th style="padding:0.75rem;color:#94a3b8;">รหัส</th>
-                      <th style="padding:0.75rem;color:#94a3b8;">ห้อง/ผู้เช่า</th>
-                      <th style="padding:0.75rem;color:#94a3b8;">วันที่อ่าน</th>
-                      <th colspan="3" style="padding:0.75rem;color:#22c55e;text-align:center;font-weight:700;">💧 น้ำ</th>
-                      <th colspan="3" style="padding:0.75rem;color:#3b82f6;text-align:center;font-weight:700;">⚡ ไฟ</th>
-                    </tr>
-                    <tr style="text-align:right;border-bottom:2px solid #475569;background:#0f172a;">
-                      <th style="padding:0.75rem;color:#94a3b8;text-align:left;"></th>
-                      <th style="padding:0.75rem;color:#94a3b8;text-align:left;"></th>
-                      <th style="padding:0.75rem;color:#94a3b8;text-align:left;"></th>
-                      <th style="padding:0.75rem;color:#22c55e;">เริ่มต้น</th>
-                      <th style="padding:0.75rem;color:#22c55e;">สิ้นสุด</th>
-                      <th style="padding:0.75rem;color:#22c55e;">ใช้ไป</th>
-                      <th style="padding:0.75rem;color:#3b82f6;">เริ่มต้น</th>
-                      <th style="padding:0.75rem;color:#3b82f6;">สิ้นสุด</th>
-                      <th style="padding:0.75rem;color:#3b82f6;">ใช้ไป</th>
-                    </tr>
-                  </thead>
+              <div id="table-view" style="display:none;margin-top:1.5rem;">
+                <div style="overflow-x:auto;border:1px solid #334155;border-radius:8px;background:#0f172a;">
+                  <table style="width:100%;border-collapse:collapse;min-width:1400px;">
+                    <thead>
+                      <tr style="background:#0f172a;">
+                        <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">รหัส</th>
+                        <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">ห้อง/ผู้เช่า</th>
+                        <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">วันที่อ่าน</th>
+                        <th colspan="3" style="padding:0.75rem;color:#22c55e;text-align:center;font-weight:700;border-bottom:1px solid #475569;border-right:3px solid #475569;font-size:1.1rem;">💧 น้ำ</th>
+                        <th colspan="3" style="padding:0.75rem;color:#3b82f6;text-align:center;font-weight:700;border-bottom:1px solid #475569;font-size:1.1rem;">⚡ ไฟ</th>
+                      </tr>
+                      <tr style="background:#0f172a;">
+                        <th style="padding:0.75rem;color:#22c55e;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">เริ่มต้น</th>
+                        <th style="padding:0.75rem;color:#22c55e;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">สิ้นสุด</th>
+                        <th style="padding:0.75rem;color:#22c55e;font-size:0.9rem;border-bottom:2px solid #475569;border-right:3px solid #475569;white-space:nowrap;">ใช้ไป</th>
+                        <th style="padding:0.75rem;color:#3b82f6;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">เริ่มต้น</th>
+                        <th style="padding:0.75rem;color:#3b82f6;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">สิ้นสุด</th>
+                        <th style="padding:0.75rem;color:#3b82f6;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">ใช้ไป</th>
+                      </tr>
+                    </thead>
                   <tbody>
 <?php foreach ($utilities as $util): ?>
                     <?php
@@ -197,22 +195,29 @@ try {
                       $readDate = $util['utl_date'] ? date('d/m/Y', strtotime($util['utl_date'])) : '-';
                     ?>
                     <tr style="border-bottom:1px solid #334155;background:#1e293b;">
-                      <td style="padding:0.75rem;color:#fff;">#<?php echo str_pad((string)($util['utl_id'] ?? '0'), 4, '0', STR_PAD_LEFT); ?></td>
-                      <td style="padding:0.75rem;">
-                        <div style="color:#fff;font-weight:600;">ห้อง <?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></div>
+                      <td style="padding:0.85rem;color:#fff;font-weight:600;white-space:nowrap;">#<?php echo str_pad((string)($util['utl_id'] ?? '0'), 4, '0', STR_PAD_LEFT); ?></td>
+                      <td style="padding:0.85rem;white-space:nowrap;">
+                        <div style="color:#fff;font-weight:600;margin-bottom:0.25rem;">ห้อง <?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></div>
                         <div style="color:#94a3b8;font-size:0.875rem;"><?php echo htmlspecialchars($util['tnt_name'] ?? '-'); ?></div>
                       </td>
-                      <td style="padding:0.75rem;color:#fff;"><?php echo $readDate; ?></td>
-                      <td style="padding:0.75rem;color:#fff;text-align:right;"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></td>
-                      <td style="padding:0.75rem;color:#fff;text-align:right;"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></td>
-                      <td style="padding:0.75rem;color:#22c55e;text-align:right;font-weight:700;"><?php echo number_format($waterUsage); ?></td>
-                      <td style="padding:0.75rem;color:#fff;text-align:right;"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></td>
-                      <td style="padding:0.75rem;color:#fff;text-align:right;"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></td>
-                      <td style="padding:0.75rem;color:#3b82f6;text-align:right;font-weight:700;"><?php echo number_format($elecUsage); ?></td>
+                      <td style="padding:0.85rem;color:#cbd5e1;white-space:nowrap;"><?php echo $readDate; ?></td>
+                      <!-- น้ำ: เริ่มต้น -->
+                      <td style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></td>
+                      <!-- น้ำ: สิ้นสุด -->
+                      <td style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></td>
+                      <!-- น้ำ: ใช้ไป -->
+                      <td style="padding:0.85rem;color:#22c55e;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:0.95rem;border-right:3px solid #475569;white-space:nowrap;"><?php echo number_format($waterUsage); ?></td>
+                      <!-- ไฟ: เริ่มต้น -->
+                      <td style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></td>
+                      <!-- ไฟ: สิ้นสุด -->
+                      <td style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></td>
+                      <!-- ไฟ: ใช้ไป -->
+                      <td style="padding:0.85rem;color:#3b82f6;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format($elecUsage); ?></td>
                     </tr>
 <?php endforeach; ?>
                   </tbody>
                 </table>
+                </div>
               </div>
             <?php endif; ?>
           </section>
@@ -262,20 +267,28 @@ try {
         const viewToggle = document.getElementById('toggle-view');
         const cardView = document.getElementById('card-view');
         const tableView = document.getElementById('table-view');
-        let isCardView = true;
+        let isCardView = localStorage.getItem('utilityViewMode') !== 'table';
+
+        function updateView() {
+          if (isCardView) {
+            cardView.style.display = 'grid';
+            tableView.style.display = 'none';
+            viewToggle.textContent = '📊 ตาราง';
+          } else {
+            cardView.style.display = 'none';
+            tableView.style.display = 'block';
+            viewToggle.textContent = '🃏 การ์ด';
+          }
+        }
+
+        // กำหนดมุมมองเริ่มต้น
+        updateView();
 
         if (viewToggle) {
           viewToggle.addEventListener('click', function() {
             isCardView = !isCardView;
-            if (isCardView) {
-              cardView.style.display = 'grid';
-              tableView.style.display = 'none';
-              viewToggle.textContent = '📊 ตาราง';
-            } else {
-              cardView.style.display = 'none';
-              tableView.style.display = 'block';
-              viewToggle.textContent = '🃏 การ์ด';
-            }
+            localStorage.setItem('utilityViewMode', isCardView ? 'card' : 'table');
+            updateView();
           });
         }
       })();

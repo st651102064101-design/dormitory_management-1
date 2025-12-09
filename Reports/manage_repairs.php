@@ -135,6 +135,7 @@ try {
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <style>
       /* Disable animate-ui modal overlays on this page */
       .animate-ui-modal, .animate-ui-modal-overlay { display:none !important; visibility:hidden !important; opacity:0 !important; }
@@ -483,6 +484,7 @@ try {
     <script src="../Assets/Javascript/toast-notification.js" defer></script>
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
       // Get server time (Bangkok timezone) for accurate relative time calculation
       const serverTimeMs = <?php echo (new DateTime('now', new DateTimeZone('Asia/Bangkok')))->getTimestamp() * 1000; ?>;
@@ -756,6 +758,31 @@ try {
           section.style.display = 'none';
           icon.textContent = '▶';
           text.textContent = 'แสดงฟอร์ม';
+        }
+
+        // Initialize DataTable
+        const repairTableEl = document.querySelector('#table-repairs');
+        if (repairTableEl && window.simpleDatatables) {
+          try {
+            const dt = new simpleDatatables.DataTable(repairTableEl, {
+              searchable: true,
+              fixedHeight: false,
+              perPage: 5,
+              perPageSelect: [5, 10, 25, 50, 100],
+              labels: {
+                placeholder: 'ค้นหา...',
+                perPage: '{select} แถวต่อหน้า',
+                noRows: 'ไม่มีข้อมูล',
+                info: 'แสดง {start}–{end} จาก {rows} รายการ'
+              },
+              columns: [
+                { select: 5, sortable: false }
+              ]
+            });
+            window.__repairDataTable = dt;
+          } catch (err) {
+            console.error('Failed to init repair table', err);
+          }
         }
         
         const imageInput = document.getElementById('repair_image');
