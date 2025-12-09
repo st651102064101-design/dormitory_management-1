@@ -17,59 +17,25 @@ try {
   // ถ้าซิงก์ไม่สำเร็จ ให้ไปต่อแต่แสดงสถานะตามข้อมูลเดิม
 }
 
+
 // หากมีการส่งฟอร์มเพิ่มห้องจากหน้านี้ ให้บันทึกลงฐานข้อมูล (สถานะกำหนดอัตโนมัติ)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['room_number'], $_POST['type_id'])) {
-  $roomNumber = trim($_POST['room_number']);
-  $typeId = (int)($_POST['type_id'] ?? 0);
-  // ห้องใหม่เริ่มต้นเป็นว่าง (0)
-  $roomStatus = '0';
-  $roomImage = '';
+// หมายเหตุ: เปลี่ยนเป็นใช้ AJAX แล้ว ดูใน Manage/add_room.php
 
-  if ($roomNumber === '' || $typeId <= 0) {
-    $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
-    header('Location: manage_rooms.php');
-    exit;
-  }
 
-  try {
-    // ตรวจสอบห้องซ้ำ
-    $stmtCheck = $pdo->prepare('SELECT room_id FROM room WHERE room_number = ?');
-    $stmtCheck->execute([$roomNumber]);
-    if ($stmtCheck->fetch()) {
-      $_SESSION['error'] = 'หมายเลขห้องนี้มีอยู่แล้ว';
-      header('Location: manage_rooms.php');
-      exit;
-    }
+// รับค่า sort จาก query parameter
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+$orderBy = 'ORDER BY r.room_id DESC';
 
-    // อัปโหลดรูปถ้ามี
-    if (!empty($_FILES['room_image']['name'])) {
-      $file = $_FILES['room_image'];
-      $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-      if (in_array($file['type'], $allowed, true)) {
-        $uploadDir = __DIR__ . '/../Assets/Images/Rooms/';
-        if (!is_dir($uploadDir)) {
-          mkdir($uploadDir, 0755, true);
-        }
-        $filename = time() . '_' . basename($file['name']);
-        $filepath = $uploadDir . $filename;
-        if (move_uploaded_file($file['tmp_name'], $filepath)) {
-          $roomImage = $filename;
-        }
-      }
-    }
-
-    // บันทึกข้อมูลห้อง
-    $stmtInsert = $pdo->prepare('INSERT INTO room (room_number, type_id, room_status, room_image) VALUES (?, ?, ?, ?)');
-    $stmtInsert->execute([$roomNumber, $typeId, $roomStatus, $roomImage]);
-
-    $_SESSION['success'] = 'เพิ่มห้องพัก ห้อง ' . htmlspecialchars($roomNumber) . ' เรียบร้อยแล้ว';
-    header('Location: manage_rooms.php');
-    exit;
-  } catch (PDOException $e) {
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
-    header('Location: manage_rooms.php');
-    exit;
-  }
+switch ($sortBy) {
+  case 'oldest':
+    $orderBy = 'ORDER BY r.room_id ASC';
+    break;
+  case 'room_number':
+    $orderBy = 'ORDER BY CAST(r.room_number AS UNSIGNED) ASC';
+    break;
+  case 'newest':
+  default:
+    $orderBy = 'ORDER BY r.room_id DESC';
 }
 
 // ดึงข้อมูลห้องพัก
@@ -77,7 +43,7 @@ $stmt = $pdo->query("
     SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.type_id, rt.type_name, rt.type_price
     FROM room r
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-    ORDER BY r.room_id DESC
+    $orderBy
 ");
 $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -544,7 +510,7 @@ try {
                 <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">สร้างห้องพัก</p>
               </div>
             </div>
-            <form action="manage_rooms.php" method="post" enctype="multipart/form-data">
+            <form id="addRoomForm" enctype="multipart/form-data">
               <div class="room-form">
                 <div class="room-form-group">
                   <label for="room_number">หมายเลขห้อง <span style="color:#f87171;">*</span></label>
@@ -588,15 +554,22 @@ try {
           </section>
 
           <section class="manage-panel">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>รายการห้องพัก</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ห้องพักและข้อมูลทั้งหมด</p>
               </div>
-              <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                <span id="viewToggleText">มุมมองแถว</span>
-              </button>
+              <div style="display:flex;gap:0.75rem;align-items:center;">
+                <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                  <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
+                  <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
+                  <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
+                </select>
+                <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  <span id="viewToggleText">มุมมองแถว</span>
+                </button>
+              </div>
             </div>
             
             <?php if (empty($rooms)): ?>
@@ -875,6 +848,9 @@ try {
               row.remove();
             }
             
+            // refresh หมายเลขห้องถัดไป
+            updateNextRoomNumber();
+            
             // แสดง toast สำเร็จ
             showSuccessToast(data.message);
           } else {
@@ -1017,64 +993,150 @@ try {
         el.addEventListener('click', hide);
         setTimeout(hide, 3000);
       };
-      // Debug submit add-room form: alert values then continue submit
-      const addRoomForm = document.querySelector('form[action="manage_rooms.php"]');
+      
+      // Handle add room form with AJAX
+      const addRoomForm = document.getElementById('addRoomForm');
       if (addRoomForm) {
         const defaultTypeId = '<?php echo $defaultTypeId; ?>';
         const typeSelectEl = document.getElementById('type_id');
         if (typeSelectEl && defaultTypeId && !typeSelectEl.value) {
           typeSelectEl.value = defaultTypeId;
         }
-        const validateAddRoom = () => {
+        
+        addRoomForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
           const roomNumberInput = document.getElementById('room_number');
           if (!roomNumberInput || !roomNumberInput.value.trim()) {
-            toast('กรุณากรอกหมายเลขห้อง');
+            showErrorToast('กรุณากรอกหมายเลขห้อง');
             roomNumberInput?.focus();
-            return null;
+            return;
           }
-          const typeSelect = document.getElementById('type_id');
-          if (!typeSelect || !typeSelect.value) {
-            toast('กรุณาเลือกประเภทห้อง');
-            typeSelect?.focus();
-            return null;
+          
+          try {
+            const formData = new FormData(addRoomForm);
+            const response = await fetch('../Manage/add_room.php', {
+              method: 'POST',
+              body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+              showSuccessToast(data.message);
+              
+              // ปิด modal ถ้ามี
+              const modal = addRoomForm.closest('[class*="modal"]');
+              if (modal) modal.remove();
+              document.querySelectorAll('.animate-ui-modal-overlay').forEach(el => el.remove());
+              
+              // รีข้อมูลฟอร์ม
+              addRoomForm.reset();
+              
+              // รีหมายเลขห้องถัดไป - ตั้งค่าใหม่หลังจาก reset()
+              const roomNumberInputAfterReset = document.getElementById('room_number');
+              if (roomNumberInputAfterReset && data.nextRoomNumber) {
+                roomNumberInputAfterReset.value = data.nextRoomNumber;
+              }
+              
+              // เพิ่มห้องใหม่ลงในตารางและการ์ด
+              if (data.room) {
+                addRoomToDisplay(data.room);
+              }
+            } else {
+              showErrorToast(data.message);
+            }
+          } catch (error) {
+            console.error('Error:', error);
+            showErrorToast('เกิดข้อผิดพลาดในการเพิ่มห้อง');
           }
-          const roomNumber = roomNumberInput.value.trim();
-          const typeText = typeSelect.options[typeSelect.selectedIndex]?.text || '';
-          return { roomNumber, typeText };
-        };
-
-        addRoomForm.addEventListener('submit', (e) => {
-          const vals = validateAddRoom();
-          if (!vals) { e.preventDefault(); return; }
-          toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} (สถานะกำหนดอัตโนมัติ)`);
-          console.log('[AddRoom] submit fired', vals);
         });
-        // เผื่อกรณีบางเบราว์เซอร์กดปุ่มแล้วไม่ได้เข้าฟอร์ม submit ให้ติดที่ปุ่มด้วย
-        const addRoomBtn = addRoomForm.querySelector('.animate-ui-add-btn');
-        if (addRoomBtn) {
-          addRoomBtn.addEventListener('click', (e) => {
-            // กัน event bubble ไปโดน handler กลางของ animate-ui ที่เปิด modal
-            e.stopImmediatePropagation();
-            const vals = validateAddRoom();
-            if (!vals) { e.preventDefault(); e.stopPropagation(); return; }
-            toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} (สถานะกำหนดอัตโนมัติ)`);
-            console.log('[AddRoom] button clicked', vals);
-          });
+      }
+      
+      // Function to add room to display
+      function addRoomToDisplay(room) {
+        // Remove empty state if exists
+        const emptyState = document.querySelector('.room-empty');
+        if (emptyState) {
+          emptyState.remove();
         }
-        const resetBtn = addRoomForm.querySelector('button[type="reset"]');
-        if (resetBtn) {
-          resetBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            addRoomForm.reset();
-            const roomNumberInput = document.getElementById('room_number');
-            if (roomNumberInput) roomNumberInput.value = '';
-            const fileInput = document.getElementById('room_image');
-            if (fileInput) fileInput.value = '';
-            if (typeSelectEl && defaultTypeId) typeSelectEl.value = defaultTypeId;
-            toast('ล้างข้อมูลแล้ว');
-          });
+        
+        // เพิ่มลงในการ์ดมุมมอง (grid view)
+        const roomsGrid = document.getElementById('roomsGrid');
+        if (roomsGrid) {
+          const cardHTML = `
+            <div class="room-card" data-room-id="${room.room_id}">
+              <div class="room-card-image">
+                ${room.room_image ? 
+                  `<img src="../Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
+                  `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
+                    <path d="M6 12V7a2 2 0 0 1 2-2h2" />
+                    <path d="M2 16v-2" />
+                    <path d="M22 16v-2" />
+                  </svg>`
+                }
+              </div>
+              <div class="room-card-content">
+                <h3 class="room-card-number">ห้อง ${room.room_number}</h3>
+                <div class="room-card-meta">
+                  ประเภท: ${room.type_name || '-'}<br>
+                  ราคา: ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท/เดือน
+                </div>
+                <div class="room-card-status vacant">
+                  ✓ ว่าง
+                </div>
+                <div class="room-card-actions">
+                  <button type="button" class="animate-ui-action-btn edit" data-room-id="${room.room_id}" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(${room.room_id})">แก้ไข</button>
+                  <button type="button" class="animate-ui-action-btn delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">ลบ</button>
+                </div>
+              </div>
+            </div>
+          `;
+          roomsGrid.insertAdjacentHTML('afterbegin', cardHTML);
+        }
+        
+        // เพิ่มลงในตารางมุมมอง (table view)
+        const roomsTable = document.getElementById('roomsTable');
+        if (roomsTable) {
+          const tableBody = roomsTable.querySelector('tbody');
+          if (tableBody) {
+            const rowHTML = `
+              <tr class="room-row" data-room-id="${room.room_id}">
+                <td>
+                  <div class="room-image-small">
+                    ${room.room_image ?
+                      `<img src="../Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
+                      `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
+                        <path d="M6 12V7a2 2 0 0 1 2-2h2" />
+                        <path d="M2 16v-2" />
+                        <path d="M22 16v-2" />
+                      </svg>`
+                    }
+                  </div>
+                </td>
+                <td style="font-weight:600;color:#f5f8ff;">ห้อง ${room.room_number}</td>
+                <td>${room.type_name || '-'}</td>
+                <td>${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท</td>
+                <td>
+                  <span class="room-card-status vacant">
+                    ✓ ว่าง
+                  </span>
+                </td>
+                <td>
+                  <div class="room-card-actions">
+                    <button type="button" class="animate-ui-action-btn edit" data-room-id="${room.room_id}" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(${room.room_id})">แก้ไข</button>
+                    <button type="button" class="animate-ui-action-btn delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">ลบ</button>
+                  </div>
+                </td>
+              </tr>
+            `;
+            tableBody.insertAdjacentHTML('afterbegin', rowHTML);
+          }
         }
       }
+
       
       // Close modal when clicking outside
       document.getElementById('editModal')?.addEventListener('click', function(e) {
@@ -1108,6 +1170,12 @@ try {
           try { localStorage.setItem('roomsView', 'grid'); } catch (e) {}
         }
       }
+
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
       
       // Restore saved view on page load
       document.addEventListener('DOMContentLoaded', () => {
@@ -1118,6 +1186,37 @@ try {
           }
         } catch (e) {}
       });
+
+      // Update next room number after delete
+      function updateNextRoomNumber() {
+        const roomNumberInput = document.getElementById('room_number');
+        if (!roomNumberInput) return;
+
+        // ดึงหมายเลขห้องทั้งหมดจากหน้า (card view และ table view)
+        const roomNumbers = [];
+        
+        // จากการ์ด
+        document.querySelectorAll('.room-card[data-room-id]').forEach(card => {
+          const numberText = card.querySelector('.room-card-number')?.textContent || '';
+          const match = numberText.match(/(\d+)/);
+          if (match) roomNumbers.push(parseInt(match[1]));
+        });
+        
+        // จากตาราง
+        document.querySelectorAll('tr[data-room-id]').forEach(row => {
+          const cells = row.querySelectorAll('td');
+          if (cells[1]) {
+            const match = cells[1].textContent.match(/(\d+)/);
+            if (match) roomNumbers.push(parseInt(match[1]));
+          }
+        });
+
+        // หา max room number
+        const maxRoomNumber = roomNumbers.length > 0 ? Math.max(...roomNumbers) : 0;
+        const nextRoomNumber = String(maxRoomNumber + 1).padStart(2, '0');
+        
+        roomNumberInput.value = nextRoomNumber;
+      }
 
       // Load More Rooms Function
       let visibleRooms = 5;

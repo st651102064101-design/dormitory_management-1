@@ -8,7 +8,23 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
-$tenants = $pdo->query("SELECT tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status FROM tenant ORDER BY (tnt_status = '1') DESC, tnt_name ASC")
+// รับค่า sort จาก query parameter
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'status_name';
+$orderBy = '(tnt_status = \'1\') DESC, tnt_name ASC';
+
+switch ($sortBy) {
+  case 'name_asc':
+    $orderBy = 'tnt_name ASC';
+    break;
+  case 'name_desc':
+    $orderBy = 'tnt_name DESC';
+    break;
+  case 'status_name':
+  default:
+    $orderBy = '(tnt_status = \'1\') DESC, tnt_name ASC';
+}
+
+$tenants = $pdo->query("SELECT tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status FROM tenant ORDER BY $orderBy")
                 ->fetchAll(PDO::FETCH_ASSOC);
 
 $statusMap = [
@@ -226,11 +242,16 @@ try {
           </section>
 
           <section class="manage-panel">
-            <div class="section-header">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>ผู้เช่าทั้งหมด</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">รายการผู้เช่าและสถานะ</p>
               </div>
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                <option value="status_name" <?php echo ($sortBy === 'status_name' ? 'selected' : ''); ?>>สถานะ และ ชื่อ</option>
+                <option value="name_asc" <?php echo ($sortBy === 'name_asc' ? 'selected' : ''); ?>>ชื่อ (ก-ฮ)</option>
+                <option value="name_desc" <?php echo ($sortBy === 'name_desc' ? 'selected' : ''); ?>>ชื่อ (ฮ-ก)</option>
+              </select>
             </div>
             <div class="report-table">
               <table class="table--compact" id="table-tenants">
@@ -372,6 +393,12 @@ try {
     <script src="../Assets/Javascript/main.js" defer></script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
     <script>
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
+
       function openTenantModal(data) {
         document.getElementById('tenantEditModal').classList.add('active');
         document.body.classList.add('modal-open');

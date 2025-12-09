@@ -8,6 +8,22 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// รับค่า sort จาก query parameter
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+$orderBy = 'e.exp_id DESC';
+
+switch ($sortBy) {
+  case 'oldest':
+    $orderBy = 'e.exp_id ASC';
+    break;
+  case 'room_number':
+    $orderBy = 'r.room_number ASC';
+    break;
+  case 'newest':
+  default:
+    $orderBy = 'e.exp_id DESC';
+}
+
 // ดึงข้อมูลค่าใช้จ่าย
 $expStmt = $pdo->query("
   SELECT e.*,
@@ -20,7 +36,7 @@ $expStmt = $pdo->query("
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
   LEFT JOIN room r ON c.room_id = r.room_id
   LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-  ORDER BY e.exp_id DESC
+  ORDER BY $orderBy
 ");
 $expenses = $expStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -433,12 +449,17 @@ try {
           </section>
 
           <section class="manage-panel">
-            <div class="section-header">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>รายการค่าใช้จ่ายทั้งหมด</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ประวัติการเรียกเก็บค่าใช้จ่ายแต่ละห้อง</p>
               </div>
-              <div style="display:flex;gap:0.5rem;align-items:center;">
+              <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+                <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                  <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
+                  <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
+                  <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
+                </select>
                 <label for="monthFilter" style="color:#94a3b8;font-size:0.9rem;font-weight:600;">กรองตามเดือน:</label>
                 <select id="monthFilter" style="padding:0.5rem 0.75rem;border-radius:8px;background:rgba(15,23,42,0.9);color:#e2e8f0;border:1px solid rgba(148,163,184,0.35);font-size:0.9rem;min-width:150px;">
                   <option value="">ทั้งหมด</option>
@@ -608,6 +629,12 @@ try {
     <script src="../Assets/Javascript/animate-ui.js"></script>
     <script src="../Assets/Javascript/main.js"></script>
     <script>
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
+
       // AJAX delete expense
       async function deleteExpense(expenseId) {
         if (!expenseId) return;

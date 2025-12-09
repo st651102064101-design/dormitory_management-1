@@ -8,8 +8,24 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// รับค่า sort จาก query parameter
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'start_date';
+$orderBy = 'c.ctr_start DESC, c.ctr_id DESC';
+
+switch ($sortBy) {
+  case 'room_number':
+    $orderBy = 'r.room_number ASC';
+    break;
+  case 'tenant_name':
+    $orderBy = 't.tnt_name ASC';
+    break;
+  case 'start_date':
+  default:
+    $orderBy = 'c.ctr_start DESC, c.ctr_id DESC';
+}
+
 // ดึงข้อมูลสัญญา
-$ctrStmt = $pdo->query("\n  SELECT c.*,\n         t.tnt_name, t.tnt_phone,\n         r.room_number, r.room_status,\n         rt.type_name\n  FROM contract c\n  LEFT JOIN tenant t ON c.tnt_id = t.tnt_id\n  LEFT JOIN room r ON c.room_id = r.room_id\n  LEFT JOIN roomtype rt ON r.type_id = rt.type_id\n  ORDER BY c.ctr_start DESC, c.ctr_id DESC\n");
+$ctrStmt = $pdo->query("\n  SELECT c.*,\n         t.tnt_name, t.tnt_phone,\n         r.room_number, r.room_status,\n         rt.type_name\n  FROM contract c\n  LEFT JOIN tenant t ON c.tnt_id = t.tnt_id\n  LEFT JOIN room r ON c.room_id = r.room_id\n  LEFT JOIN roomtype rt ON r.type_id = rt.type_id\n  ORDER BY $orderBy\n");
 $contracts = $ctrStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ดึงข้อมูลผู้เช่าและห้องสำหรับฟอร์มสร้างสัญญา
@@ -403,11 +419,16 @@ try {
           </section>
 
           <section class="manage-panel">
-            <div class="section-header">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>รายการสัญญาทั้งหมด</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">อัปเดตสถานะหรือพิมพ์เอกสารได้จากที่นี่</p>
               </div>
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                <option value="start_date" <?php echo ($sortBy === 'start_date' ? 'selected' : ''); ?>>วันที่เพิ่มล่าสุด</option>
+                <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
+                <option value="tenant_name" <?php echo ($sortBy === 'tenant_name' ? 'selected' : ''); ?>>ชื่อผู้เช่า</option>
+              </select>
             </div>
             <div class="report-table">
               <table class="table--compact" id="table-contracts">
@@ -476,6 +497,12 @@ try {
     </div>
 
     <script>
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
+
       // ปิดการทำงานของ modal ใน main.js
       document.addEventListener('DOMContentLoaded', () => {
         // ลบ modal overlay ที่ main.js สร้างขึ้น

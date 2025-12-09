@@ -7,8 +7,22 @@ if (empty($_SESSION['admin_username'])) {
 }
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
+
+// รับค่า sort จาก query parameter
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+$orderBy = 'ym DESC';
+
+switch ($sortBy) {
+  case 'oldest':
+    $orderBy = 'ym ASC';
+    break;
+  case 'newest':
+  default:
+    $orderBy = 'ym DESC';
+}
+
 // Sum of payments grouped by month
-$stmt = $pdo->query("SELECT DATE_FORMAT(p.pay_date, '%Y-%m') AS ym, SUM(p.pay_amount) AS total_received FROM payment p GROUP BY ym ORDER BY ym DESC");
+$stmt = $pdo->query("SELECT DATE_FORMAT(p.pay_date, '%Y-%m') AS ym, SUM(p.pay_amount) AS total_received FROM payment p GROUP BY ym ORDER BY $orderBy");
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ดึงค่าตั้งค่าระบบ
@@ -47,11 +61,15 @@ try {
           </header>
 
           <section style="margin:1rem;padding:1.25rem 1rem;border-radius:1rem;background:linear-gradient(180deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));color:#f5f8ff">
-            <div class="section-header">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>รายงานรายรับประจำเดือน</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">สรุปยอดการชำระเงินของผู้เช่า</p>
               </div>
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เดือนล่าสุด</option>
+                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เดือนเก่าสุด</option>
+              </select>
             </div>
 
             <!-- Card View -->
@@ -144,6 +162,12 @@ try {
           });
         }
       })();
+
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
     </script>
 
 

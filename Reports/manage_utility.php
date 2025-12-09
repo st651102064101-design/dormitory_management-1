@@ -8,6 +8,22 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// รับค่า sort จาก query parameter
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+$orderBy = 'u.utl_date DESC, u.utl_id DESC';
+
+switch ($sortBy) {
+  case 'oldest':
+    $orderBy = 'u.utl_date ASC, u.utl_id ASC';
+    break;
+  case 'room_number':
+    $orderBy = 'r.room_number ASC';
+    break;
+  case 'newest':
+  default:
+    $orderBy = 'u.utl_date DESC, u.utl_id DESC';
+}
+
 // ดึงข้อมูลมิเตอร์น้ำ-ไฟทั้งหมด
 $utilStmt = $pdo->query("
   SELECT u.*,
@@ -18,7 +34,7 @@ $utilStmt = $pdo->query("
   LEFT JOIN contract c ON u.ctr_id = c.ctr_id
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
   LEFT JOIN room r ON c.room_id = r.room_id
-  ORDER BY u.utl_date DESC, u.utl_id DESC
+  ORDER BY $orderBy
 ");
 $utilities = $utilStmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -57,11 +73,16 @@ try {
           </header>
 
           <section class="manage-panel">
-            <div class="section-header">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>ประวัติการอ่านมิเตอร์น้ำ-ไฟ</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">บันทึกการอ่านมิเตอร์ของแต่ละสัญญา</p>
               </div>
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>อ่านล่าสุด</option>
+                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>อ่านเก่าสุด</option>
+                <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
+              </select>
             </div>
             
             <?php if (empty($utilities)): ?>
@@ -258,6 +279,12 @@ try {
           });
         }
       })();
+
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
     </script>
   </body>
 </html>

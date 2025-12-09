@@ -9,8 +9,24 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// รับค่า sort จาก query parameter
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+$orderBy = 'news_id DESC';
+
+switch ($sortBy) {
+  case 'oldest':
+    $orderBy = 'news_id ASC';
+    break;
+  case 'title':
+    $orderBy = 'news_title ASC';
+    break;
+  case 'newest':
+  default:
+    $orderBy = 'news_id DESC';
+}
+
 // ดึงข้อมูลข่าว (เรียงตาม ID ใหม่สุดก่อน)
-$stmt = $pdo->query("SELECT * FROM news ORDER BY news_id DESC");
+$stmt = $pdo->query("SELECT * FROM news ORDER BY $orderBy");
 $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // นับจำนวนข่าว
@@ -335,11 +351,16 @@ try {
           </section>
 
           <section class="manage-panel">
-            <div class="section-header">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>รายการข่าวทั้งหมด</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ข่าวประชาสัมพันธ์และประกาศต่างๆ</p>
               </div>
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
+                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
+                <option value="title" <?php echo ($sortBy === 'title' ? 'selected' : ''); ?>>ชื่อข่าว (ก-ฮ)</option>
+              </select>
             </div>
             
             <?php if (empty($newsList)): ?>
@@ -827,5 +848,12 @@ try {
     </script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
     <script src="../Assets/Javascript/confirm-modal.js"></script>
+    <script>
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
+    </script>
   </body>
 </html>

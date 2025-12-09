@@ -8,6 +8,22 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// รับค่า sort จาก query parameter
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+$orderBy = 'b.bkg_date DESC';
+
+switch ($sortBy) {
+  case 'oldest':
+    $orderBy = 'b.bkg_date ASC';
+    break;
+  case 'room_number':
+    $orderBy = 'r.room_number ASC';
+    break;
+  case 'newest':
+  default:
+    $orderBy = 'b.bkg_date DESC';
+}
+
 // ดึงข้อมูลห้องที่ว่าง (room_status = '0')
 $stmt = $pdo->query("
     SELECT r.*, rt.type_name, rt.type_price 
@@ -25,7 +41,7 @@ $stmtBookings = $pdo->query("
   LEFT JOIN room r ON b.room_id = r.room_id
   LEFT JOIN roomtype rt ON r.type_id = rt.type_id
   WHERE b.bkg_status <> '0'
-  ORDER BY b.bkg_date DESC
+  ORDER BY $orderBy
 ");
 $bookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC);
 
@@ -627,10 +643,15 @@ try {
 
           <!-- ส่วนแสดงรายการจอง -->
           <section class="manage-panel">
-            <div class="section-header">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>รายการจองทั้งหมด</h1>
               </div>
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>จองล่าสุด</option>
+                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>จองเก่าสุด</option>
+                <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
+              </select>
             </div>
             <div class="report-table">
               <table class="table--compact" id="table-bookings">
@@ -1080,5 +1101,12 @@ try {
     </script>
     <script src="../Assets/Javascript/confirm-modal.js"></script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
+    <script>
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
+    </script>
   </body>
 </html>

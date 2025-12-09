@@ -7,11 +7,29 @@ if (empty($_SESSION['admin_username'])) {
 }
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
+
+// รับค่า sort จาก query parameter
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+$orderBy = 'c.ctr_start DESC';
+
+switch ($sortBy) {
+  case 'oldest':
+    $orderBy = 'c.ctr_start ASC';
+    break;
+  case 'room_number':
+    $orderBy = 'r.room_number ASC';
+    break;
+  case 'newest':
+  default:
+    $orderBy = 'c.ctr_start DESC';
+}
+
 // Report: current stays (contracts with ctr_status = '0')
 $stmt = $pdo->query("SELECT c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.tnt_id, t.tnt_name, r.room_number
 FROM contract c
 LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-LEFT JOIN room r ON c.room_id = r.room_id");
+LEFT JOIN room r ON c.room_id = r.room_id
+ORDER BY $orderBy");
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 function renderField(?string $value, string $fallback = '—'): string
@@ -56,10 +74,17 @@ try {
             include __DIR__ . '/../includes/page_header.php'; 
           ?>
           <section class="manage-panel">
-            <div class="section-header">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <p>&nbsp;</p>
               </div>
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เข้าพักล่าสุด</option>
+                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เข้าพักเก่าสุด</option>
+                <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
+              </select>
+              <div>
+            </div>
               <?php 
                 // Use booking field names that map to DB columns for the add form
                 // bkg_id is auto-incremented in the database so we don't include it in the add form
@@ -68,7 +93,9 @@ try {
                 $entityFields = 'room_id,bkg_date,bkg_checkin_date,bkg_status';
                 include __DIR__ . '/../includes/manage_toolbar.php'; 
               ?>
+              </div>
             </div>
+            
             <div class="report-table">
             <table class="table--compact" id="table-stay">
               <thead>
@@ -110,6 +137,12 @@ try {
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
+
       window.tenants = <?php echo json_encode($pdo->query("SELECT tnt_id, tnt_name FROM tenant")->fetchAll(PDO::FETCH_ASSOC)); ?>;
       // Expose only rooms that are available (not present in booking with status 1=จองแล้ว or 2=เข้าพักแล้ว)
       window.rooms = <?php echo json_encode($pdo->query("SELECT * FROM room WHERE room_status = 0 AND room_id NOT IN (SELECT room_id FROM booking WHERE bkg_status IN (1,2))")->fetchAll(PDO::FETCH_ASSOC)); ?>;
