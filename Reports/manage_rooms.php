@@ -77,7 +77,7 @@ $stmt = $pdo->query("
     SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.type_id, rt.type_name, rt.type_price
     FROM room r
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-    ORDER BY CAST(r.room_number AS UNSIGNED) ASC
+    ORDER BY r.room_id DESC
 ");
 $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -609,7 +609,7 @@ try {
               <!-- Grid View -->
               <div class="rooms-grid rooms-grid-view" id="roomsGrid">
                 <?php foreach ($rooms as $room): ?>
-                  <div class="room-card">
+                  <div class="room-card" data-room-id="<?php echo $room['room_id']; ?>">
                     <div class="room-card-image">
                       <?php if (!empty($room['room_image'])): ?>
                         <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
@@ -655,7 +655,7 @@ try {
                   </thead>
                   <tbody>
                     <?php foreach ($rooms as $index => $room): ?>
-                      <tr class="room-row <?php echo $index >= 5 ? 'hidden-row' : ''; ?>" data-index="<?php echo $index; ?>">
+                      <tr class="room-row <?php echo $index >= 5 ? 'hidden-row' : ''; ?>" data-index="<?php echo $index; ?>" data-room-id="<?php echo $room['room_id']; ?>">
                         <td>
                           <div class="room-image-small">
                             <?php if (!empty($room['room_image'])): ?>
@@ -772,7 +772,10 @@ try {
         
         const preview = document.getElementById('edit_image_preview');
         if (room.room_image) {
-          preview.innerHTML = '<div style="color:#22c55e;">✓ มีรูปภาพแล้ว (' + room.room_image + ')</div>';
+          preview.innerHTML = `<div style="margin-top:0.5rem;">
+            <img src="/Dormitory_Management/Assets/Images/Rooms/${room.room_image}" alt="Room Image" style="max-width:100%; height:auto; border-radius:8px; max-height:200px;">
+            <div style="color:#22c55e; margin-top:0.5rem;">✓ ${room.room_image}</div>
+          </div>`;
         } else {
           preview.innerHTML = '<div style="color:#94a3b8;">ไม่มีรูปภาพ</div>';
         }
@@ -786,6 +789,60 @@ try {
         document.getElementById('editForm').reset();
       }
       
+      // Handle Edit Form Submit via AJAX
+      const editForm = document.getElementById('editForm');
+      if (editForm) {
+        editForm.addEventListener('submit', async (e) => {
+          e.preventDefault();
+          
+          const roomNumber = document.getElementById('edit_room_number').value.trim();
+          if (!roomNumber) {
+            toast('กรุณากรอกหมายเลขห้อง');
+            return;
+          }
+          
+          const formData = new FormData(editForm);
+          
+          try {
+            const response = await fetch('../Manage/update_room.php', {
+              method: 'POST',
+              body: formData
+            });
+            
+            const data = await response.json();
+            
+            if (response.ok) {
+              toast(data.success || 'บันทึกสำเร็จ');
+              closeEditModal();
+            } else {
+              toast('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่ทราบสาเหตุ'));
+            }
+          } catch (error) {
+            toast('เกิดข้อผิดพลาด: ' + error.message, 3000);
+          }
+        });
+      }
+      
+      // Handle image preview for edit form
+      const editRoomImageInput = document.getElementById('edit_room_image');
+      if (editRoomImageInput) {
+        editRoomImageInput.addEventListener('change', (e) => {
+          const file = e.target.files[0];
+          const preview = document.getElementById('edit_image_preview');
+          
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              preview.innerHTML = `<div style="margin-top:0.5rem;">
+                <img src="${event.target.result}" alt="Preview" style="max-width:100%; height:auto; border-radius:8px; max-height:200px;">
+                <div style="color:#22c55e; margin-top:0.5rem;">✓ ${file.name}</div>
+              </div>`;
+            };
+            reader.readAsDataURL(file);
+          }
+        });
+      }
+      
       async function deleteRoom(roomId, roomNumber) {
         const confirmed = await showConfirmDialog(
           'ยืนยันการลบห้อง',
@@ -794,18 +851,39 @@ try {
         
         if (!confirmed) return;
         
-        const form = document.createElement('form');
-        form.method = 'POST';
-        form.action = '../Manage/delete_room.php';
-        
-        const idField = document.createElement('input');
-        idField.type = 'hidden';
-        idField.name = 'room_id';
-        idField.value = roomId;
-        
-        form.appendChild(idField);
-        document.body.appendChild(form);
-        form.submit();
+        try {
+          const formData = new FormData();
+          formData.append('room_id', roomId);
+          
+          const response = await fetch('../Manage/delete_room.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            // ลบแถว HTML ของห้องออก (card view)
+            const card = document.querySelector(`.room-card[data-room-id="${roomId}"]`);
+            if (card) {
+              card.remove();
+            }
+            
+            // ลบแถว HTML ของห้องออก (table view)
+            const row = document.querySelector(`tr[data-room-id="${roomId}"]`);
+            if (row) {
+              row.remove();
+            }
+            
+            // แสดง toast สำเร็จ
+            showSuccessToast(data.message);
+          } else {
+            showErrorToast(data.message);
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          showErrorToast('เกิดข้อผิดพลาดในการลบห้อง');
+        }
       }
 
       // Add new room type (inline prompt + AJAX)
@@ -920,9 +998,9 @@ try {
         btn.addEventListener('click', (evt) => invokeEdit(btn, evt), { capture: true });
       });
       // Toast helper for inline flows (fallbacks to alert if CSS/JS not ready)
-      const toast = (msg, duration = 2200) => {
+      const toast = (msg) => {
         if (typeof window.showToast === 'function') {
-          try { window.showToast(msg, duration); return; } catch (err) { console.warn(err); }
+          try { window.showToast('แจ้งเตือน', msg); return; } catch (err) { console.warn(err); }
         }
         const existing = document.querySelector('.animate-ui-toast');
         if (existing) existing.remove();
@@ -937,7 +1015,7 @@ try {
           }, 260);
         };
         el.addEventListener('click', hide);
-        setTimeout(hide, duration);
+        setTimeout(hide, 3000);
       };
       // Debug submit add-room form: alert values then continue submit
       const addRoomForm = document.querySelector('form[action="manage_rooms.php"]');
@@ -968,7 +1046,7 @@ try {
         addRoomForm.addEventListener('submit', (e) => {
           const vals = validateAddRoom();
           if (!vals) { e.preventDefault(); return; }
-          toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} (สถานะกำหนดอัตโนมัติ)`, 2600);
+          toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} (สถานะกำหนดอัตโนมัติ)`);
           console.log('[AddRoom] submit fired', vals);
         });
         // เผื่อกรณีบางเบราว์เซอร์กดปุ่มแล้วไม่ได้เข้าฟอร์ม submit ให้ติดที่ปุ่มด้วย
@@ -979,7 +1057,7 @@ try {
             e.stopImmediatePropagation();
             const vals = validateAddRoom();
             if (!vals) { e.preventDefault(); e.stopPropagation(); return; }
-            toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} (สถานะกำหนดอัตโนมัติ)`, 2600);
+            toast(`บันทึกห้อง ${vals.roomNumber} | ${vals.typeText} (สถานะกำหนดอัตโนมัติ)`);
             console.log('[AddRoom] button clicked', vals);
           });
         }
@@ -993,7 +1071,7 @@ try {
             const fileInput = document.getElementById('room_image');
             if (fileInput) fileInput.value = '';
             if (typeSelectEl && defaultTypeId) typeSelectEl.value = defaultTypeId;
-            toast('ล้างข้อมูลแล้ว', 1800);
+            toast('ล้างข้อมูลแล้ว');
           });
         }
       }
@@ -1073,5 +1151,23 @@ try {
     </script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
     <script src="../Assets/Javascript/confirm-modal.js"></script>
+    <script>
+      // Restore all details elements state on this page
+      (function() {
+        // Restore immediately
+        document.querySelectorAll('details').forEach(function(details) {
+          const id = details.id || details.querySelector('summary')?.textContent?.trim();
+          if (id) {
+            const key = 'details_' + id.replace(/[^a-zA-Z0-9]/g, '_');
+            const savedState = localStorage.getItem(key);
+            if (savedState === 'open') {
+              details.setAttribute('open', '');
+            } else if (savedState === 'closed') {
+              details.removeAttribute('open');
+            }
+          }
+        });
+      })();
+    </script>
   </body>
 </html>
