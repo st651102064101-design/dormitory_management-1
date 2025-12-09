@@ -115,6 +115,31 @@ try {
     fill: currentColor !important;
   }
 
+  /* Uniform icon sizing for nav, footer, and rails */
+  .app-nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 1.1rem;
+    line-height: 1;
+    margin-right: 0.4rem;
+    flex-shrink: 0;
+  }
+
+  /* Ensure icons stay square in collapsed rail just like user/logout */
+  aside.sidebar-collapsed .app-nav-icon,
+  .app-sidebar.collapsed .app-nav-icon {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    min-width: 2.25rem !important;
+    min-height: 2.25rem !important;
+    font-size: 1.1rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
   body.live-light .status-badge.time-fresh { background:#d1fae5 !important; color:#065f46 !important; }
   body.live-light .status-badge.time-warning { background:#fef3c7 !important; color:#92400e !important; }
   body.live-light .status-badge.time-danger { background:#fee2e2 !important; color:#b91c1c !important; }
@@ -133,7 +158,10 @@ try {
   /* Sidebar - ใช้ theme color */
   aside.app-sidebar {
     background: var(--theme-bg-color) !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
+  aside.app-sidebar::-webkit-scrollbar { display: none; }
   
   /* ปรับสีตัวหนังสือตามความสว่างของพื้นหลัง */
   <?php
@@ -524,14 +552,16 @@ try {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem 0.75rem !important;
+    padding: 0.6rem 0.85rem !important;
     margin: 0 !important;
     transition: all 0.3s ease;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
   }
   details summary .app-nav-icon {
-    flex-shrink: 0;
-    width: 1.25rem;
-    height: 1.25rem;
+    width: 1.8rem;
+    height: 1.8rem;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -598,8 +628,18 @@ try {
     display: flex;
     align-items: center;
     gap: 0.35rem;
-    padding-left: 0.5rem;
+    padding: 0.6rem 0.85rem;
+    margin: 0.1rem 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
     transition: all 0.3s ease;
+  }
+  /* Ensure dark-mode nav text is visible */
+  .app-nav a,
+  details summary,
+  .subitem {
+    color: #e2e8f0;
   }
   /* Tighten nav vertical spacing */
   .app-nav {
@@ -643,6 +683,18 @@ try {
     display: flex;
     align-items: center;
     justify-content: center;
+  }
+  /* Base link styling for main nav items */
+  .app-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.6rem 0.85rem;
+    margin: 0.1rem 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    transition: all 0.3s ease;
   }
   .group {
     display: flex;
@@ -727,11 +779,21 @@ try {
     margin: 0 !important;
     gap: 0 !important;
   }
+  aside.sidebar-collapsed details summary {
+    justify-content: center !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
   aside.sidebar-collapsed .subitem .app-nav-icon {
     width: auto !important;
     height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
+  }
+  aside.sidebar-collapsed .subitem .app-nav-icon,
+  aside.sidebar-collapsed details summary .app-nav-icon {
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
   aside.sidebar-collapsed .subitem .app-nav-label {
     display: none;
@@ -1125,5 +1187,45 @@ try {
       sidebar.classList.remove('collapsed');
     }
   });
+})();
+
+// Save and restore collapsible details state
+(function() {
+  // Function to restore state
+  function restoreDetailsState() {
+    document.querySelectorAll('details').forEach(function(details) {
+      const id = details.id || details.querySelector('summary')?.textContent?.trim();
+      if (id) {
+        const key = 'details_' + id.replace(/[^a-zA-Z0-9]/g, '_');
+        const savedState = localStorage.getItem(key);
+        if (savedState === 'open') {
+          details.setAttribute('open', '');
+          details.open = true; // Also set property
+        } else if (savedState === 'closed') {
+          details.removeAttribute('open');
+          details.open = false; // Also set property
+        }
+      }
+    });
+  }
+  
+  // Restore immediately
+  restoreDetailsState();
+  
+  // Also restore on DOMContentLoaded
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', restoreDetailsState);
+  }
+  
+  // Save collapsible state on toggle
+  document.addEventListener('toggle', function(e) {
+    if (e.target.tagName === 'DETAILS') {
+      const id = e.target.id || e.target.querySelector('summary')?.textContent?.trim();
+      if (id) {
+        const key = 'details_' + id.replace(/[^a-zA-Z0-9]/g, '_');
+        localStorage.setItem(key, e.target.open ? 'open' : 'closed');
+      }
+    }
+  }, true);
 })();
 </script>

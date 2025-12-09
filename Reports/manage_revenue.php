@@ -43,7 +43,7 @@ try {
               <button id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" style="background:transparent;border:0;color:#fff;padding:0.6rem 0.85rem;border-radius:6px;cursor:pointer;font-size:1.25rem">☰</button>
               <h2 style="margin:0;color:#fff;font-size:1.05rem">รายงานรายรับ</h2>
             </div>
-            <button id="toggle-view" aria-label="Toggle view" style="background:#334155;border:1px solid #475569;color:#fff;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;margin-right:1rem;">🃏 การ์ด</button>
+            <button id="toggle-view" aria-label="Toggle view" style="background:#334155;border:1px solid #475569;color:#fff;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;margin-right:1rem;">📊 ตาราง</button>
           </header>
 
           <section style="margin:1rem;padding:1.25rem 1rem;border-radius:1rem;background:linear-gradient(180deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));color:#f5f8ff">
@@ -123,23 +123,6 @@ try {
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script>
       (function() {
-        const sidebar = document.querySelector('.app-sidebar');
-        const toggleBtn = document.getElementById('sidebar-toggle');
-        
-        if (toggleBtn) {
-          toggleBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (window.innerWidth > 1024) {
-              sidebar.style.display = sidebar.style.display === 'none' ? 'flex' : 'none';
-              document.body.style.marginLeft = sidebar.style.display === 'none' ? '0' : '250px';
-            } else {
-              sidebar.classList.toggle('show');
-            }
-          });
-        }
-
         // View Toggle
         const viewToggle = document.getElementById('toggle-view');
         const cardView = document.getElementById('card-view');

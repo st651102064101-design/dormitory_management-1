@@ -17,56 +17,163 @@ $ctr_id = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
 
 // Page 1: List all contracts
 if ($ctr_id === 0) {
+    // Show only the latest contract per tenant to avoid duplicate tenant rows in the list
     $contracts = $pdo->query("
         SELECT c.ctr_id, c.ctr_start, c.ctr_end, t.tnt_name, r.room_number
         FROM contract c
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
         LEFT JOIN room r ON c.room_id = r.room_id
+        WHERE c.ctr_id IN (
+            SELECT MAX(c2.ctr_id) FROM contract c2 GROUP BY c2.tnt_id
+        )
         ORDER BY c.ctr_id DESC
     ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
+<?php $pageTitle = 'พิมพ์สัญญา'; ?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เลือกสัญญาเพื่อพิมพ์</title>
+    <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/main.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Tahoma, Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; min-height: 100vh; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .header { background: white; padding: 40px; border-radius: 12px; margin-bottom: 40px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); text-align: center; }
-        .header h1 { font-size: 32px; color: #333; margin-bottom: 10px; }
-        .header p { font-size: 16px; color: #666; }
-        .count { background: #f0f0f0; padding: 12px 20px; border-radius: 8px; margin-top: 20px; font-weight: bold; color: #3b82f6; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; }
-        .card { background: white; border-radius: 10px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); cursor: pointer; text-decoration: none; color: inherit; display: block; transition: all 0.3s ease; }
-        .card:hover { transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
-        .card-number { font-size: 24px; font-weight: bold; color: #3b82f6; margin-bottom: 15px; }
-        .card-info { border-top: 2px solid #e0e0e0; padding-top: 15px; }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
-        .label { color: #666; font-weight: bold; min-width: 80px; }
-        .value { color: #333; text-align: right; flex: 1; }
+        body { font-family: Tahoma, Arial, sans-serif; background: #f5f5f5; min-height: 100vh; }
+        .app-shell { display: flex; min-height: 100vh; }
+        .container { width: 100%; max-width: 100%; margin: 20px 0 0 0; padding: 0 24px 24px 24px; display: flex; flex-direction: column; gap: 16px; }
+        .header { background: rgba(255,255,255,0.04); padding: 24px; border-radius: 14px; margin-bottom: 20px; box-shadow: 0 18px 40px rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+        .header h1 { font-size: 28px; color: #e2e8f0; margin: 0; }
+        .header p { font-size: 15px; color: #cbd5e1; }
+        .count { background: rgba(96,165,250,0.12); padding: 10px 16px; border-radius: 10px; margin-top: 4px; font-weight: 700; color: #60a5fa; display: block; border: 1px solid rgba(96,165,250,0.3); }
+        .toolbar { display: flex; width: 100%; justify-content: flex-start; gap: 12px; margin: 4px 0 18px; flex-wrap: wrap; }
+        .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.12); transition: transform 0.15s ease, box-shadow 0.15s ease; background: #2563eb; color: #fff; }
+        .btn.secondary { background: #e5e7eb; color: #111827; }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.16); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
+        .card { background: rgba(255,255,255,0.04) !important; border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 12px 30px rgba(0,0,0,0.35); cursor: pointer; text-decoration: none; color: #e2e8f0; display: block; transition: all 0.2s ease; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.45); border-color: rgba(96,165,250,0.4); }
+        .card-number { font-size: 20px; font-weight: bold; color: #60a5fa; margin-bottom: 12px; }
+        .card-info { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #e2e8f0; }
+        .label { color: #94a3b8; font-weight: 600; min-width: 80px; }
+        .value { color: #f8fafc; text-align: right; flex: 1; }
+        .table-wrap { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 16px; box-shadow: 0 12px 30px rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); }
+        table { width: 100%; border-collapse: collapse; color: #e2e8f0; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: left; font-size: 14px; }
+        th { background: rgba(255,255,255,0.05); font-weight: 700; color: #f8fafc; }
+        tr:hover td { background: rgba(255,255,255,0.03); }
+        .hidden { display: none; }
     </style>
 </head>
-<body>
-    <div class="container">
-        <div class="header">
-            <h1>🖨️ พิมพ์สัญญา</h1>
-            <div class="count">📋 พบ <?php echo count($contracts); ?> สัญญา</div>
-        </div>
-        <div class="grid">
-            <?php foreach ($contracts as $c): ?>
-            <a href="print_contract.php?ctr_id=<?php echo (int)$c['ctr_id']; ?>" class="card">
-                <div class="card-number">📄 #<?php echo str_pad((string)$c['ctr_id'], 4, '0', STR_PAD_LEFT); ?></div>
-                <div class="card-info">
-                    <div class="info-row"><span class="label">ผู้เช่า:</span><span class="value"><?php echo htmlspecialchars($c['tnt_name'] ?? '-'); ?></span></div>
-                    <div class="info-row"><span class="label">ห้อง:</span><span class="value"><?php echo htmlspecialchars($c['room_number'] ?? '-'); ?></span></div>
-                    <div class="info-row"><span class="label">วันที่:</span><span class="value"><?php echo htmlspecialchars($c['ctr_start'] ?? '-'); ?></span></div>
+<body class="reports-page">
+    <div class="app-shell">
+        <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+        <main class="app-main">
+            <div class="container">
+                <div>
+                    <?php include __DIR__ . '/../includes/page_header.php'; ?>
                 </div>
-            </a>
-            <?php endforeach; ?>
-        </div>
+                <div class="toolbar">
+                    <button id="toggle-view" class="btn">ดูแบบตาราง</button>
+                </div>
+                <div class="grid">
+                    <?php foreach ($contracts as $c): ?>
+                    <a href="print_contract.php?ctr_id=<?php echo (int)$c['ctr_id']; ?>" class="card" target="_blank" rel="noopener">
+                        <div class="card-number">📄 #<?php echo str_pad((string)$c['ctr_id'], 4, '0', STR_PAD_LEFT); ?></div>
+                        <div class="card-info">
+                            <div class="info-row"><span class="label">ผู้เช่า:</span><span class="value"><?php echo htmlspecialchars($c['tnt_name'] ?? '-'); ?></span></div>
+                            <div class="info-row"><span class="label">ห้อง:</span><span class="value"><?php echo htmlspecialchars($c['room_number'] ?? '-'); ?></span></div>
+                            <div class="info-row"><span class="label">วันที่:</span><span class="value"><?php echo htmlspecialchars($c['ctr_start'] ?? '-'); ?></span></div>
+                        </div>
+                    </a>
+                    <?php endforeach; ?>
+                </div>
+                <div id="table-view" class="table-wrap hidden">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>ผู้เช่า</th>
+                                <th>ห้อง</th>
+                                <th>วันที่</th>
+                                <th>พิมพ์</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($contracts as $idx => $c): ?>
+                                <tr class="<?php echo $idx >= 5 ? 'hidden extra-row' : ''; ?>">
+                                    <td><?php echo str_pad((string)$c['ctr_id'], 4, '0', STR_PAD_LEFT); ?></td>
+                                    <td><?php echo htmlspecialchars($c['tnt_name'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars($c['room_number'] ?? '-'); ?></td>
+                                    <td><?php echo htmlspecialchars($c['ctr_start'] ?? '-'); ?></td>
+                                    <td><a href="print_contract.php?ctr_id=<?php echo (int)$c['ctr_id']; ?>" class="btn secondary" style="padding: 6px 10px; box-shadow: none;" target="_blank" rel="noopener">พิมพ์</a></td>
+                                </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <?php if (count($contracts) > 5): ?>
+                        <div style="margin-top: 12px; text-align: center;">
+                            <button id="read-more" class="btn secondary">Read more</button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <script>
+                    const toggleBtn = document.getElementById('toggle-view');
+                    const gridView = document.querySelector('.grid');
+                    const tableView = document.getElementById('table-view');
+                    const readMoreBtn = document.getElementById('read-more');
+
+                    function setViewCookie(mode) {
+                        document.cookie = 'contractView=' + mode + '; path=/; max-age=' + (60 * 60 * 24 * 30);
+                    }
+                    function getViewCookie() {
+                        const match = document.cookie.match(/(?:^|; )contractView=([^;]+)/);
+                        return match ? decodeURIComponent(match[1]) : null;
+                    }
+                    function showTable() {
+                        tableView.classList.remove('hidden');
+                        gridView.classList.add('hidden');
+                        toggleBtn.textContent = 'ดูแบบการ์ด';
+                        setViewCookie('table');
+                    }
+                    function showCard() {
+                        tableView.classList.add('hidden');
+                        gridView.classList.remove('hidden');
+                        toggleBtn.textContent = 'ดูแบบตาราง';
+                        setViewCookie('card');
+                    }
+
+                    if (toggleBtn && gridView && tableView) {
+                        const savedView = getViewCookie();
+                        if (savedView === 'table') {
+                            showTable();
+                        } else {
+                            showCard();
+                        }
+
+                        toggleBtn.addEventListener('click', () => {
+                            const showingTable = !tableView.classList.contains('hidden');
+                            if (showingTable) {
+                                showCard();
+                            } else {
+                                showTable();
+                            }
+                        });
+                    }
+
+                    if (readMoreBtn) {
+                        readMoreBtn.addEventListener('click', () => {
+                            document.querySelectorAll('.extra-row').forEach(row => row.classList.remove('hidden'));
+                            readMoreBtn.classList.add('hidden');
+                        });
+                    }
+                </script>
+                <script src="../Assets/Javascript/animate-ui.js" defer></script>
+                <script src="../Assets/Javascript/main.js" defer></script>
+            </div>
+        </main>
     </div>
 </body>
 </html>
@@ -182,9 +289,9 @@ function nameWithoutNickname($fullName) {
         .terms { font-size: 12px; margin-top: 10px; line-height: 1.5; }
         .terms ol { margin-left: 20px; }
         .terms li { margin-bottom: 4px; }
-        .signatures { margin-top: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 15px 30px; }
+        .signatures { margin-top: 25px; display: grid; grid-template-columns: 1fr; gap: 18px 0; }
         .signature-box { font-size: 12px; }
-        .signature-row { display: flex; align-items: center; gap: 8px; margin-bottom: calc(12px + 0.6pt); justify-content: center; }
+        .signature-row { display: flex; align-items: center; gap: 8px; margin-bottom: calc(12px + 0.6pt); justify-content: flex-start; }
         .signature-line { width: 240px; border-bottom: 1px dotted #000; min-height: 18px; }
         .signature-label { white-space: nowrap; }
         .signature-paren { white-space: nowrap; }
@@ -196,6 +303,7 @@ function nameWithoutNickname($fullName) {
         .underline-wide { min-width: 160px; }
         .underline-phone { min-width: 110px; }
         .underline-xl { min-width: 320px; }
+        .underline-address { display: inline-flex; align-items: flex-end; justify-content: flex-start; vertical-align: baseline; min-width: 320px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: left; line-height: 1.2; color: #0066cc; white-space: pre-line; }
         @media print { body { background: white; padding: 0; } .print-container { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 20mm 12.7mm 20mm 20.32mm; box-shadow: none; } }
     </style>
 </head>
@@ -313,18 +421,7 @@ function nameWithoutNickname($fullName) {
                     <span class="signature-paren">)</span>
                 </div>
             </div>
-            <div class="signature-box">
-                <div class="signature-row">
-                    <span class="signature-line"></span>
-                    <span class="signature-label">ผู้เช่า</span>
-                </div>
-                <div class="signature-row">
-                    <span class="signature-paren">(</span>
-                    <span class="signature-line" style="width: 220px;"></span>
-                    <span class="signature-paren">)</span>
-                </div>
-            </div>
-            <div class="signature-box owner" style="grid-column: 1 / span 2; max-width: 60%; margin: 0 auto;">
+            <div class="signature-box owner" style="max-width: 60%; margin: 0 auto;">
                 <div class="signature-row">
                     <span class="signature-line"></span>
                     <span class="signature-label">ผู้ให้เช่า</span>
@@ -338,12 +435,42 @@ function nameWithoutNickname($fullName) {
         </div>
     </div>
     <script>
-        // Auto-print when page loads, but allow time for page to render
-        window.addEventListener('load', function() {
-            setTimeout(function() {
-                window.print();
-            }, 500);
-        });
+        // Toggle card/table view on list page
+        const toggleBtn = document.getElementById('toggle-view');
+        const gridView = document.querySelector('.grid');
+        const tableView = document.getElementById('table-view');
+        const readMoreBtn = document.getElementById('read-more');
+
+        if (toggleBtn && gridView && tableView) {
+            toggleBtn.addEventListener('click', () => {
+                const showingTable = !tableView.classList.contains('hidden');
+                if (showingTable) {
+                    tableView.classList.add('hidden');
+                    gridView.classList.remove('hidden');
+                    toggleBtn.textContent = 'ดูแบบตาราง';
+                } else {
+                    tableView.classList.remove('hidden');
+                    gridView.classList.add('hidden');
+                    toggleBtn.textContent = 'ดูแบบการ์ด';
+                }
+            });
+        }
+
+        if (readMoreBtn) {
+            readMoreBtn.addEventListener('click', () => {
+                document.querySelectorAll('.extra-row').forEach(row => row.classList.remove('hidden'));
+                readMoreBtn.classList.add('hidden');
+            });
+        }
+
+        // Auto-print when page loads for single contract view only
+        if (!toggleBtn) {
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    window.print();
+                }, 500);
+            });
+        }
     </script>
 </body>
 </html>

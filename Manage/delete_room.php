@@ -2,13 +2,17 @@
 declare(strict_types=1);
 session_start();
 
+header('Content-Type: application/json');
+
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ../Login.php');
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'ไม่ได้รับอนุญาต']);
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../Reports/manage_rooms.php');
+    http_response_code(400);
+    echo json_encode(['success' => false, 'message' => 'Invalid request method']);
     exit;
 }
 
@@ -20,8 +24,7 @@ try {
     $room_id = isset($_POST['room_id']) ? (int)$_POST['room_id'] : 0;
 
     if ($room_id <= 0) {
-        $_SESSION['error'] = 'ข้อมูลไม่ถูกต้อง';
-        header('Location: ../Reports/manage_rooms.php');
+        echo json_encode(['success' => false, 'message' => 'ข้อมูลไม่ถูกต้อง']);
         exit;
     }
 
@@ -31,8 +34,7 @@ try {
     $room = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$room) {
-        $_SESSION['error'] = 'ไม่พบห้องพัก';
-        header('Location: ../Reports/manage_rooms.php');
+        echo json_encode(['success' => false, 'message' => 'ไม่พบห้องพัก']);
         exit;
     }
 
@@ -47,11 +49,13 @@ try {
     $delete = $pdo->prepare("DELETE FROM room WHERE room_id = ?");
     $delete->execute([$room_id]);
 
-    $_SESSION['success'] = 'ลบห้องพัก ห้อง ' . htmlspecialchars($room['room_number']) . ' เรียบร้อยแล้ว';
-    header('Location: ../Reports/manage_rooms.php');
+    echo json_encode([
+        'success' => true,
+        'message' => 'ลบห้องพัก ห้อง ' . htmlspecialchars($room['room_number']) . ' เรียบร้อยแล้ว'
+    ]);
     exit;
 } catch (PDOException $e) {
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
-    header('Location: ../Reports/manage_rooms.php');
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()]);
     exit;
 }

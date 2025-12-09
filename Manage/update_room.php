@@ -1,14 +1,17 @@
 <?php
 declare(strict_types=1);
 session_start();
+header('Content-Type: application/json');
 
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ../Login.php');
+    http_response_code(401);
+    echo json_encode(['error' => 'Unauthorized']);
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../Reports/manage_rooms.php');
+    http_response_code(405);
+    echo json_encode(['error' => 'Method not allowed']);
     exit;
 }
 
@@ -22,8 +25,8 @@ try {
     $type_id = isset($_POST['type_id']) ? (int)$_POST['type_id'] : 0;
 
     if ($room_id <= 0 || $room_number === '' || $type_id <= 0) {
-        $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
-        header('Location: ../Reports/manage_rooms.php');
+        http_response_code(400);
+        echo json_encode(['error' => 'กรุณากรอกข้อมูลให้ครบถ้วน']);
         exit;
     }
 
@@ -31,8 +34,8 @@ try {
     $check = $pdo->prepare("SELECT room_id FROM room WHERE room_number = ? AND room_id != ?");
     $check->execute([$room_number, $room_id]);
     if ($check->fetch()) {
-        $_SESSION['error'] = 'หมายเลขห้องนี้มีอยู่แล้ว';
-        header('Location: ../Reports/manage_rooms.php');
+        http_response_code(400);
+        echo json_encode(['error' => 'หมายเลขห้องนี้มีอยู่แล้ว']);
         exit;
     }
 
@@ -50,14 +53,14 @@ try {
         $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         
         if (!in_array($file['type'], $allowed)) {
-            $_SESSION['error'] = 'รูปแบบไฟล์ไม่ถูกต้อง';
-            header('Location: ../Reports/manage_rooms.php');
+            http_response_code(400);
+            echo json_encode(['error' => 'รูปแบบไฟล์ไม่ถูกต้อง']);
             exit;
         }
 
         // ลบรูปเก่า
         if ($room_image) {
-            $oldPath = __DIR__ . '/..' . str_replace('/Dormitory_Management', '', $room_image);
+            $oldPath = __DIR__ . '/../Assets/Images/Rooms/' . $room_image;
             if (file_exists($oldPath)) {
                 unlink($oldPath);
             }
@@ -79,11 +82,11 @@ try {
     $update = $pdo->prepare("UPDATE room SET room_number = ?, type_id = ?, room_image = ? WHERE room_id = ?");
     $update->execute([$room_number, $type_id, $room_image, $room_id]);
 
-    $_SESSION['success'] = 'แก้ไขห้องพัก ห้อง ' . htmlspecialchars($room_number) . ' เรียบร้อยแล้ว';
-    header('Location: ../Reports/manage_rooms.php');
+    http_response_code(200);
+    echo json_encode(['success' => 'แก้ไขห้องพัก ห้อง ' . htmlspecialchars($room_number) . ' เรียบร้อยแล้ว']);
     exit;
 } catch (PDOException $e) {
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
-    header('Location: ../Reports/manage_rooms.php');
+    http_response_code(500);
+    echo json_encode(['error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()]);
     exit;
 }
