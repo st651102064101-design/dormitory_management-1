@@ -1025,7 +1025,10 @@ try {
           <span class="chev" style="margin-left:auto">›</span>
         </summary>
         <a class="" href="dashboard.php"><span class="app-nav-icon" aria-hidden="true">📈</span><span class="app-nav-label">สรุป</span></a>
+        <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true">💧</span><span class="app-nav-label">สาธารณูปโภค</span></a>
         <a class="" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true">💵</span><span class="app-nav-label">รายรับ</span></a>
+        <a class="" href="report_rooms.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงานห้องพัก</span></a>
+        <a class="" href="print_contract.php"><span class="app-nav-icon" aria-hidden="true">🖨️</span><span class="app-nav-label">พิมพ์สัญญา</span></a>
       </details>
     </div>
   </nav>
@@ -1044,7 +1047,6 @@ try {
         <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true">👥</span><span class="app-nav-label">ผู้เช่า</span></a>
         <a class="" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true">📅</span><span class="app-nav-label">จองห้องพัก</span></a>
         <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">จัดการสัญญา</span></a>
-        <a class="" href="print_contract.php"><span class="app-nav-icon" aria-hidden="true">🖨️</span><span class="app-nav-label">พิมพ์สัญญา</span></a>
         <a class="" href="manage_expenses.php"><span class="app-nav-icon" aria-hidden="true">💰</span><span class="app-nav-label">ค่าใช้จ่าย</span></a>
         <a class="" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true">🛠️</span><span class="app-nav-label">แจ้งซ่อม</span></a>
       </details>

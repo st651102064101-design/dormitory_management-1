@@ -320,7 +320,14 @@ try {
             </div>
           </section>
 
-          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;">
+          <!-- Toggle button for contract form -->
+          <div style="margin:1.5rem 0;">
+            <button type="button" id="toggleContractFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleContractForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+              <span id="toggleContractFormIcon">▼</span> <span id="toggleContractFormText">ซ่อนฟอร์ม</span>
+            </button>
+          </div>
+
+          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addContractSection">
             <div class="section-header">
               <div>
                 <h1>ทำสัญญาใหม่</h1>
@@ -473,16 +480,21 @@ try {
                           </span>
                         </td>
                         <td class="crud-column">
-                          <div class="status-actions">
-                            <?php if ($status === '0'): ?>
-                              <button type="button" class="animate-ui-action-btn delete" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '2')">แจ้งยกเลิก</button>
-                              <button type="button" class="animate-ui-action-btn delete" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '1')">ยกเลิกทันที</button>
-                            <?php elseif ($status === '2'): ?>
-                              <button type="button" class="animate-ui-action-btn edit" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '0')">กลับเป็นปกติ</button>
-                              <button type="button" class="animate-ui-action-btn delete" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '1')">ยกเลิกสัญญา</button>
-                            <?php elseif ($status === '1'): ?>
-                              <button type="button" class="animate-ui-action-btn edit" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '0')">เปิดใช้งานใหม่</button>
-                            <?php endif; ?>
+                          <div class="status-actions" style="display:flex;flex-direction:column;gap:0.5rem;">
+                            <div style="display:flex;gap:0.5rem;">
+                              <a href="print_contract.php?ctr_id=<?php echo (int)$ctr['ctr_id']; ?>" target="_blank" style="flex:1;text-align:center;text-decoration:none;padding:0.75rem 1rem;font-size:0.9rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);cursor:pointer;line-height:1.4;" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">🖨️ พิมพ์</a>
+                            </div>
+                            <div class="status-actions" style="display:flex;gap:0.5rem;">
+                              <?php if ($status === '0'): ?>
+                                <button type="button" class="animate-ui-action-btn delete" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '2')" style="flex:1;">แจ้งยกเลิก</button>
+                                <button type="button" class="animate-ui-action-btn delete" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '1')" style="flex:1;">ยกเลิกทันที</button>
+                              <?php elseif ($status === '2'): ?>
+                                <button type="button" class="animate-ui-action-btn edit" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '0')" style="flex:1;">กลับเป็นปกติ</button>
+                                <button type="button" class="animate-ui-action-btn delete" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '1')" style="flex:1;">ยกเลิกสัญญา</button>
+                              <?php elseif ($status === '1'): ?>
+                                <button type="button" class="animate-ui-action-btn edit" onclick="updateContractStatus(<?php echo (int)$ctr['ctr_id']; ?>, '0')" style="flex:1;">เปิดใช้งานใหม่</button>
+                              <?php endif; ?>
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -503,8 +515,39 @@ try {
         window.location.href = url.toString();
       }
 
+      // Toggle contract form visibility
+      function toggleContractForm() {
+        const section = document.getElementById('addContractSection');
+        const icon = document.getElementById('toggleContractFormIcon');
+        const text = document.getElementById('toggleContractFormText');
+        const isHidden = section.style.display === 'none';
+        
+        if (isHidden) {
+          section.style.display = '';
+          icon.textContent = '▼';
+          text.textContent = 'ซ่อนฟอร์ม';
+          localStorage.setItem('contractFormVisible', 'true');
+        } else {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+          localStorage.setItem('contractFormVisible', 'false');
+        }
+      }
+
       // ปิดการทำงานของ modal ใน main.js
       document.addEventListener('DOMContentLoaded', () => {
+        // Restore form visibility from localStorage
+        const isFormVisible = localStorage.getItem('contractFormVisible') !== 'false';
+        const section = document.getElementById('addContractSection');
+        const icon = document.getElementById('toggleContractFormIcon');
+        const text = document.getElementById('toggleContractFormText');
+        if (!isFormVisible) {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+        }
+
         // ลบ modal overlay ที่ main.js สร้างขึ้น
         const mainModals = document.querySelectorAll('.animate-ui-modal-overlay');
         mainModals.forEach(modal => modal.remove());

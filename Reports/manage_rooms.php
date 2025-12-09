@@ -546,7 +546,14 @@ try {
             </div>
           </section>
 
-          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;">
+          <!-- Toggle button for room form -->
+          <div style="margin:1.5rem 0;">
+            <button type="button" id="toggleRoomFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleRoomForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+              <span id="toggleRoomFormIcon">▼</span> <span id="toggleRoomFormText">ซ่อนฟอร์ม</span>
+            </button>
+          </div>
+
+          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addRoomSection">
             <div class="section-header">
               <div>
                 <h1>เพิ่มห้องพัก</h1>
@@ -782,6 +789,26 @@ try {
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
+      // Toggle room form visibility
+      function toggleRoomForm() {
+        const section = document.getElementById('addRoomSection');
+        const icon = document.getElementById('toggleRoomFormIcon');
+        const text = document.getElementById('toggleRoomFormText');
+        const isHidden = section.style.display === 'none';
+        
+        if (isHidden) {
+          section.style.display = '';
+          icon.textContent = '▼';
+          text.textContent = 'ซ่อนฟอร์ม';
+          localStorage.setItem('roomFormVisible', 'true');
+        } else {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+          localStorage.setItem('roomFormVisible', 'false');
+        }
+      }
+
       // Hide animate-ui modal overlays for this page
       document.addEventListener('DOMContentLoaded', () => {
         const overlays = document.querySelectorAll('.animate-ui-modal-overlay');
@@ -789,6 +816,17 @@ try {
           el.style.display = 'none';
           el.remove();
         });
+
+        // Restore form visibility from localStorage
+        const isFormVisible = localStorage.getItem('roomFormVisible') !== 'false';
+        const section = document.getElementById('addRoomSection');
+        const icon = document.getElementById('toggleRoomFormIcon');
+        const text = document.getElementById('toggleRoomFormText');
+        if (!isFormVisible) {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+        }
       });
 
       const roomsData = <?php echo json_encode($rooms); ?>;

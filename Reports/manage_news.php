@@ -309,7 +309,14 @@ try {
             </div>
           </section>
 
-          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;">
+          <!-- Toggle button for news form -->
+          <div style="margin:1.5rem 0;">
+            <button type="button" id="toggleNewsFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleNewsForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+              <span id="toggleNewsFormIcon">▼</span> <span id="toggleNewsFormText">ซ่อนฟอร์ม</span>
+            </button>
+          </div>
+
+          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addNewsSection">
             <div class="section-header">
               <div>
                 <h1>เพิ่มข่าวประชาสัมพันธ์ใหม่</h1>
@@ -506,6 +513,40 @@ try {
             }
           }
         }, true);
+      });
+
+      // Toggle news form visibility
+      function toggleNewsForm() {
+        const section = document.getElementById('addNewsSection');
+        const icon = document.getElementById('toggleNewsFormIcon');
+        const text = document.getElementById('toggleNewsFormText');
+        const isHidden = section.style.display === 'none';
+        
+        if (isHidden) {
+          section.style.display = '';
+          icon.textContent = '▼';
+          text.textContent = 'ซ่อนฟอร์ม';
+          localStorage.setItem('newsFormVisible', 'true');
+        } else {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+          localStorage.setItem('newsFormVisible', 'false');
+        }
+      }
+
+      // AJAX submit สำหรับ editForm
+      document.addEventListener('DOMContentLoaded', function() {
+        // Restore form visibility from localStorage
+        const isFormVisible = localStorage.getItem('newsFormVisible') !== 'false';
+        const section = document.getElementById('addNewsSection');
+        const icon = document.getElementById('toggleNewsFormIcon');
+        const text = document.getElementById('toggleNewsFormText');
+        if (!isFormVisible) {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+        }
       });
 
       // AJAX submit สำหรับ editForm

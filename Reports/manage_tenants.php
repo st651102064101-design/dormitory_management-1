@@ -170,7 +170,14 @@ try {
             </div>
           </section>
 
-          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;">
+          <!-- Toggle button for tenant form -->
+          <div style="margin:1.5rem 0;">
+            <button type="button" id="toggleTenantFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleTenantForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+              <span id="toggleTenantFormIcon">▼</span> <span id="toggleTenantFormText">ซ่อนฟอร์ม</span>
+            </button>
+          </div>
+
+          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addTenantSection">
             <div class="section-header">
               <div>
                 <h1>เพิ่มผู้เช่าใหม่</h1>
@@ -426,7 +433,38 @@ try {
         if (form) form.reset();
       }
 
+      // Toggle tenant form visibility
+      function toggleTenantForm() {
+        const section = document.getElementById('addTenantSection');
+        const icon = document.getElementById('toggleTenantFormIcon');
+        const text = document.getElementById('toggleTenantFormText');
+        const isHidden = section.style.display === 'none';
+        
+        if (isHidden) {
+          section.style.display = '';
+          icon.textContent = '▼';
+          text.textContent = 'ซ่อนฟอร์ม';
+          localStorage.setItem('tenantFormVisible', 'true');
+        } else {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+          localStorage.setItem('tenantFormVisible', 'false');
+        }
+      }
+
       document.addEventListener('DOMContentLoaded', () => {
+        // Restore form visibility from localStorage
+        const isFormVisible = localStorage.getItem('tenantFormVisible') !== 'false';
+        const section = document.getElementById('addTenantSection');
+        const icon = document.getElementById('toggleTenantFormIcon');
+        const text = document.getElementById('toggleTenantFormText');
+        if (!isFormVisible) {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+        }
+
         // ทำให้ input tnt_id รับเฉพาะตัวเลข
         const tntIdInput = document.getElementById('tnt_id');
         if (tntIdInput) {

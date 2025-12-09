@@ -527,8 +527,15 @@ try {
             </div>
           </section>
 
+          <!-- Toggle button for available rooms -->
+          <div style="margin:1.5rem 0;">
+            <button type="button" id="toggleRoomsBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleAvailableRooms()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+              <span id="toggleRoomsIcon">▼</span> <span id="toggleRoomsText">ซ่อนห้องพักที่ว่าง</span>
+            </button>
+          </div>
+
           <!-- ส่วนแสดงห้องว่าง -->
-          <section class="manage-panel booking-section">
+          <section class="manage-panel booking-section" id="availableRoomsSection">
             <div class="section-header">
               <div>
                 <h1>ห้องพักที่ว่าง</h1>
@@ -784,8 +791,39 @@ try {
     <script src="../Assets/Javascript/animate-ui.js"></script>
     <script src="../Assets/Javascript/main.js"></script>
     <script>
+      // Toggle available rooms visibility
+      function toggleAvailableRooms() {
+        const section = document.getElementById('availableRoomsSection');
+        const icon = document.getElementById('toggleRoomsIcon');
+        const text = document.getElementById('toggleRoomsText');
+        const isHidden = section.style.display === 'none';
+        
+        if (isHidden) {
+          section.style.display = '';
+          icon.textContent = '▼';
+          text.textContent = 'ซ่อนห้องพักที่ว่าง';
+          localStorage.setItem('availableRoomsVisible', 'true');
+        } else {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงห้องพักที่ว่าง';
+          localStorage.setItem('availableRoomsVisible', 'false');
+        }
+      }
+
       // รอให้ DOM โหลดเสร็จ
       document.addEventListener('DOMContentLoaded', function() {
+        // Restore section visibility from localStorage
+        const isSectionVisible = localStorage.getItem('availableRoomsVisible') !== 'false';
+        const section = document.getElementById('availableRoomsSection');
+        const icon = document.getElementById('toggleRoomsIcon');
+        const text = document.getElementById('toggleRoomsText');
+        if (!isSectionVisible) {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงห้องพักที่ว่าง';
+        }
+
         console.log('Page loaded');
         const roomsGrid = document.getElementById('roomsGrid');
         const viewToggleButtons = document.querySelectorAll('.toggle-view-btn');
