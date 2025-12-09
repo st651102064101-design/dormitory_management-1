@@ -281,7 +281,14 @@ try {
             </div>
           </section>
 
-          <section class="manage-panel" style="color:#f8fafc;">
+          <!-- Toggle button for repair form -->
+          <div style="margin:1.5rem 0;">
+            <button type="button" id="toggleFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleRepairForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+              <span id="toggleFormIcon">▼</span> <span id="toggleFormText">ซ่อนฟอร์ม</span>
+            </button>
+          </div>
+
+          <section class="manage-panel" style="color:#f8fafc;" id="addRepairSection">
             <div class="section-header">
               <div>
                 <h1>เพิ่มการแจ้งซ่อม</h1>
@@ -712,6 +719,26 @@ try {
         url.searchParams.set('sort', sortValue);
         window.location.href = url.toString();
       }
+
+      // Toggle repair form visibility
+      function toggleRepairForm() {
+        const section = document.getElementById('addRepairSection');
+        const icon = document.getElementById('toggleFormIcon');
+        const text = document.getElementById('toggleFormText');
+        const isHidden = section.style.display === 'none';
+        
+        if (isHidden) {
+          section.style.display = '';
+          icon.textContent = '▼';
+          text.textContent = 'ซ่อนฟอร์ม';
+          localStorage.setItem('repairFormVisible', 'true');
+        } else {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+          localStorage.setItem('repairFormVisible', 'false');
+        }
+      }
       
       document.addEventListener('DOMContentLoaded', () => {
         // Load saved filter status from localStorage
@@ -719,6 +746,17 @@ try {
         
         // Apply saved filter or default
         filterByStatus(savedFilter);
+        
+        // Restore form visibility from localStorage
+        const isFormVisible = localStorage.getItem('repairFormVisible') !== 'false';
+        const section = document.getElementById('addRepairSection');
+        const icon = document.getElementById('toggleFormIcon');
+        const text = document.getElementById('toggleFormText');
+        if (!isFormVisible) {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+        }
         
         const imageInput = document.getElementById('repair_image');
         const imagePreview = document.getElementById('image_preview');
