@@ -1092,24 +1092,31 @@ try {
         );
         
         if (confirmed) {
-          const form = document.createElement('form');
-          form.method = 'POST';
-          form.action = '../Manage/update_booking_status.php';
+          const formData = new FormData();
+          formData.append('bkg_id', bookingId);
+          formData.append('bkg_status', newStatus);
           
-          const inputId = document.createElement('input');
-          inputId.type = 'hidden';
-          inputId.name = 'bkg_id';
-          inputId.value = bookingId;
-          
-          const inputStatus = document.createElement('input');
-          inputStatus.type = 'hidden';
-          inputStatus.name = 'bkg_status';
-          inputStatus.value = newStatus;
-          
-          form.appendChild(inputId);
-          form.appendChild(inputStatus);
-          document.body.appendChild(form);
-          form.submit();
+          fetch('../Manage/update_booking_status.php', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showToast('สำเร็จ', data.message, 'success');
+              // Reload after 1.5 seconds
+              setTimeout(() => location.reload(), 1500);
+            } else {
+              showToast('ผิดพลาด', data.error || 'ไม่สามารถอัปเดตได้', 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showToast('ผิดพลาด', 'เกิดข้อผิดพลาดในการส่งข้อมูล', 'error');
+          });
         }
       }
 
