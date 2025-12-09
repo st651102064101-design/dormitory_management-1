@@ -3,16 +3,28 @@ declare(strict_types=1);
 session_start();
 
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ../Login.php');
+    if ($_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    } else {
+        header('Location: ../Login.php');
+    }
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ../Reports/manage_booking.php');
+    if ($_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+    } else {
+        header('Location: ../Reports/manage_booking.php');
+    }
     exit;
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+
+$isAjax = $_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest';
 
 try {
     $pdo = connectDB();
@@ -21,8 +33,13 @@ try {
     $bkg_status = $_POST['bkg_status'] ?? null;
     
     if ($bkg_id === null || $bkg_status === null || $bkg_id === '' || $bkg_status === '') {
-        $_SESSION['error'] = 'ข้อมูลไม่ครบถ้วน';
-        header('Location: ../Reports/manage_booking.php');
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ข้อมูลไม่ครบถ้วน']);
+        } else {
+            $_SESSION['error'] = 'ข้อมูลไม่ครบถ้วน';
+            header('Location: ../Reports/manage_booking.php');
+        }
         exit;
     }
     
@@ -32,8 +49,13 @@ try {
     $booking = $stmt->fetch();
     
     if (!$booking) {
-        $_SESSION['error'] = 'ไม่พบข้อมูลการจอง';
-        header('Location: ../Reports/manage_booking.php');
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบข้อมูลการจอง']);
+        } else {
+            $_SESSION['error'] = 'ไม่พบข้อมูลการจอง';
+            header('Location: ../Reports/manage_booking.php');
+        }
         exit;
     }
     
@@ -68,15 +90,25 @@ try {
     // commit transaction
     $pdo->commit();
     
-    $_SESSION['success'] = $message ?? 'แก้ไขสถานะเรียบร้อยแล้ว';
-    header('Location: ../Reports/manage_booking.php');
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => $message ?? 'แก้ไขสถานะเรียบร้อยแล้ว']);
+    } else {
+        $_SESSION['success'] = $message ?? 'แก้ไขสถานะเรียบร้อยแล้ว';
+        header('Location: ../Reports/manage_booking.php');
+    }
     exit;
     
 } catch (PDOException $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
-    header('Location: ../Reports/manage_booking.php');
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()]);
+    } else {
+        $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+        header('Location: ../Reports/manage_booking.php');
+    }
     exit;
 }
