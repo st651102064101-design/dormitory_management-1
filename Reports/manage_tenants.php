@@ -146,6 +146,7 @@ try {
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <style>
       .tenant-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin-top:1rem; }
       .tenant-stat-card { background:linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95)); border-radius:16px; padding:1.25rem; border:1px solid rgba(255,255,255,0.08); color:#f5f8ff; box-shadow:0 15px 35px rgba(3,7,18,0.4); }
@@ -612,6 +613,7 @@ try {
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
       function changeSortBy(sortValue) {
         const url = new URL(window.location);
@@ -907,6 +909,32 @@ try {
 
         const savedFilter = localStorage.getItem('tenantStatusFilter') || 'all';
         applyTenantStatusFilter(savedFilter);
+
+        // Initialize enhanced table with Simple-DataTables
+        const tenantTableEl = document.querySelector('#table-tenants');
+        if (tenantTableEl && window.simpleDatatables) {
+          try {
+            const dt = new simpleDatatables.DataTable(tenantTableEl, {
+              searchable: true,
+              fixedHeight: false,
+              perPage: 10,
+              perPageSelect: [10, 25, 50, 100],
+              labels: {
+                placeholder: 'ค้นหา...',
+                perPage: '{select} แถวต่อหน้า',
+                noRows: 'ไม่มีข้อมูล',
+                info: 'แสดง {start}–{end} จาก {rows} รายการ'
+              },
+              columns: [
+                { select: 5, sortable: false } // จัดการ
+              ],
+            });
+            // save reference if needed later
+            window.__tenantDataTable = dt;
+          } catch (err) {
+            console.error('Failed to init data table', err);
+          }
+        }
 
         document.querySelectorAll('.btn-delete-tenant').forEach(btn => {
           btn.addEventListener('click', async () => {
