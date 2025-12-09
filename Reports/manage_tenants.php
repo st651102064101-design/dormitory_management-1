@@ -63,6 +63,68 @@ foreach ($tenants as $t) {
     }
 }
 
+// Default dropdown options (hardcoded list for Muang Phetchabun)
+$defaultEducations = [
+  'วิทยาลัยเทคนิคเพชรบูรณ์',
+  'โรงเรียนเพชรบูรณ์พิทยาลัย',
+  'วิทยาลัยอาชีวศึกษาเพชรบูรณ์',
+  'โรงเรียนบ้านหลวง',
+];
+
+$defaultFaculties = [
+  'วิศวกรรมไฟฟ้า',
+  'วิศวกรรมเครื่องกล',
+  'เทคโนโลยีสารสนเทศ',
+  'ศิลปศาสตร์',
+  'วิทยาศาสตร์',
+];
+
+// Load custom dropdown options from DB (persisted "other" values)
+$customOptions = [
+  'education' => [],
+  'faculty' => [],
+];
+
+try {
+    $customTable = 'tenant_custom_dropdowns';
+
+    // Ensure new table exists with a clear name
+    $pdo->exec("CREATE TABLE IF NOT EXISTS {$customTable} (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      type VARCHAR(50) NOT NULL,
+      value VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY type_value (type, value)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+
+    // Migrate data from the legacy table if it exists
+    $hasLegacy = $pdo->query("SHOW TABLES LIKE 'custom_options'")?->fetchColumn();
+    if ($hasLegacy) {
+        $pdo->exec("INSERT IGNORE INTO {$customTable} (type, value, created_at)
+          SELECT type, value, created_at FROM custom_options");
+    }
+
+    $stmtCustom = $pdo->prepare("SELECT type, value FROM {$customTable} WHERE type IN ('education','faculty') ORDER BY value ASC");
+    $stmtCustom->execute();
+    while ($row = $stmtCustom->fetch(PDO::FETCH_ASSOC)) {
+        $customOptions[$row['type']][] = $row['value'];
+    }
+} catch (PDOException $e) {
+    // swallow to avoid breaking page rendering; UI still works with defaults
+}
+
+// Remove duplicates that already exist in defaults (case-insensitive compare)
+$lowerDefaultsEdu = array_map(fn($v) => mb_strtolower($v, 'UTF-8'), $defaultEducations);
+$lowerDefaultsFaculty = array_map(fn($v) => mb_strtolower($v, 'UTF-8'), $defaultFaculties);
+
+$customEducations = array_values(array_filter($customOptions['education'], function ($val) use ($lowerDefaultsEdu) {
+  return !in_array(mb_strtolower($val, 'UTF-8'), $lowerDefaultsEdu, true);
+}));
+
+$customFaculties = array_values(array_filter($customOptions['faculty'], function ($val) use ($lowerDefaultsFaculty) {
+  return !in_array(mb_strtolower($val, 'UTF-8'), $lowerDefaultsFaculty, true);
+}));
+
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
@@ -239,7 +301,7 @@ try {
                 <div class="tenant-form-group">
                   <label for="tnt_age">อายุ</label>
                   <div style="display:flex; gap:0.5rem; align-items:center;">
-                    <select id="tnt_age_select" style="flex:0 0 40%; min-width:120px;">
+                    <select id="tnt_age_select" style="flex:1;">
                       <option value="">เลือกอายุ</option>
                       <option value="15">15</option>
                       <option value="18">18</option>
@@ -253,8 +315,8 @@ try {
                       <option value="50">50</option>
                       <option value="custom">กำหนดเอง</option>
                     </select>
-                    <div id="tnt_age_wrap" style="flex:1; display:none;">
-                      <input type="number" id="tnt_age" name="tnt_age" min="0" max="120" placeholder="กำหนดเอง" style="width:100%;" disabled />
+                    <div id="tnt_age_wrap" style="flex:0 0 auto; display:none;">
+                      <input type="number" id="tnt_age" name="tnt_age" min="0" max="120" placeholder="กำหนดเอง" style="width:120px;" disabled />
                     </div>
                   </div>
                 </div>
@@ -263,20 +325,61 @@ try {
                   <input type="text" id="tnt_phone" name="tnt_phone" maxlength="10" placeholder="เช่น 0812345678" />
                 </div>
                 <div class="tenant-form-group">	
-                  <label for="tnt_address">ที่อยู่</label>
+                  <label for="tnt_address">ที่อยู่ตามบัตรประชาชน</label>
                   <textarea id="tnt_address" name="tnt_address" rows="2"></textarea>
                 </div>
                 <div class="tenant-form-group">
                   <label for="tnt_education">สถานศึกษา</label>
-                  <input type="text" id="tnt_education" name="tnt_education" />
+                  <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <select id="tnt_education_select" style="flex:1;">
+                      <option value="">เลือกสถานศึกษา</option>
+                      <option value="วิทยาลัยเทคนิคเพชรบูรณ์">วิทยาลัยเทคนิคเพชรบูรณ์</option>
+                      <option value="โรงเรียนเพชรบูรณ์พิทยาลัย">โรงเรียนเพชรบูรณ์พิทยาลัย</option>
+                      <option value="วิทยาลัยอาชีวศึกษาเพชรบูรณ์">วิทยาลัยอาชีวศึกษาเพชรบูรณ์</option>
+                      <option value="โรงเรียนบ้านหลวง">โรงเรียนบ้านหลวง</option>
+                      <?php foreach ($customEducations as $edu): ?>
+                        <option value="<?php echo htmlspecialchars($edu, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($edu, ENT_QUOTES, 'UTF-8'); ?></option>
+                      <?php endforeach; ?>
+                      <option value="other">อื่น ๆ</option>
+                    </select>
+                    <div id="tnt_education_wrap" style="flex:0 0 auto; display:none;">
+                      <input type="text" id="tnt_education" name="tnt_education" placeholder="ระบุสถานศึกษา" style="width:200px;" disabled />
+                    </div>
+                  </div>
+                  <p style="margin:0.35rem 0 0; color:#94a3b8; font-size:0.9rem;"></p>
                 </div>
                 <div class="tenant-form-group">
                   <label for="tnt_faculty">คณะ</label>
-                  <input type="text" id="tnt_faculty" name="tnt_faculty" />
+                  <div style="display:flex; gap:0.5rem; align-items:center;">
+                    <select id="tnt_faculty_select" style="flex:1;">
+                      <option value="">เลือกคณะ</option>
+                      <option value="วิศวกรรมไฟฟ้า">วิศวกรรมไฟฟ้า</option>
+                      <option value="วิศวกรรมเครื่องกล">วิศวกรรมเครื่องกล</option>
+                      <option value="เทคโนโลยีสารสนเทศ">เทคโนโลยีสารสนเทศ</option>
+                      <option value="ศิลปศาสตร์">ศิลปศาสตร์</option>
+                      <option value="วิทยาศาสตร์">วิทยาศาสตร์</option>
+                      <?php foreach ($customFaculties as $faculty): ?>
+                        <option value="<?php echo htmlspecialchars($faculty, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($faculty, ENT_QUOTES, 'UTF-8'); ?></option>
+                      <?php endforeach; ?>
+                      <option value="other">อื่น ๆ</option>
+                    </select>
+                    <div id="tnt_faculty_wrap" style="flex:0 0 auto; display:none;">
+                      <input type="text" id="tnt_faculty" name="tnt_faculty" placeholder="ระบุคณะ" style="width:200px;" disabled />
+                    </div>
+                  </div>
+                  <p style="margin:0.35rem 0 0; color:#94a3b8; font-size:0.9rem;"></p>
                 </div>
                 <div class="tenant-form-group">
                   <label for="tnt_year">ชั้นปี</label>
-                  <input type="text" id="tnt_year" name="tnt_year" placeholder="เช่น ปี 1" />
+                  <select id="tnt_year" name="tnt_year">
+                    <option value="">เลือกชั้นปี</option>
+                    <option value="ปี 1">ปี 1</option>
+                    <option value="ปี 2">ปี 2</option>
+                    <option value="ปี 3">ปี 3</option>
+                    <option value="ปี 4">ปี 4</option>
+                    <option value="ปี 5">ปี 5</option>
+                    <option value="ปี 6">ปี 6</option>
+                  </select>
                 </div>
                 <div class="tenant-form-group">
                   <label for="tnt_vehicle">ทะเบียนรถ</label>
@@ -327,29 +430,25 @@ try {
               <table class="table--compact" id="table-tenants">
                 <thead>
                   <tr>
-                    <th>เลขบัตรประชาชน</th>
                     <th>ชื่อ-สกุล</th>
-                    <th>เบอร์โทร</th>
                     <th>สถานะ</th>
                     <th>สถานศึกษา</th>
-                    <th>ผู้ปกครอง</th>
-                    <th>ทะเบียนรถ</th>
                     <th class="crud-column">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php if (empty($tenants)): ?>
-                    <tr><td colspan="8" style="text-align:center; padding:1.5rem; color:#64748b;">ยังไม่มีข้อมูลผู้เช่า</td></tr>
+                    <tr><td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">ยังไม่มีข้อมูลผู้เช่า</td></tr>
                   <?php else: ?>
                     <?php foreach ($tenants as $t): ?>
                       <?php $statusKey = (string)($t['tnt_status'] ?? '0'); ?>
                       <tr data-status="<?php echo htmlspecialchars($statusKey); ?>">
-                        <td style="font-weight:600;color:#f5f8ff;"><?php echo htmlspecialchars($t['tnt_id']); ?></td>
                         <td>
-                          <div><?php echo htmlspecialchars($t['tnt_name'] ?? '-'); ?></div>
-                          <div class="expense-meta" style="color:#94a3b8;">อายุ: <?php echo htmlspecialchars((string)($t['tnt_age'] ?? '-')); ?></div>
+                          <div>เลขบัตรประชาชน: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars($t['tnt_id'] ?? '-'); ?></span></div>
+                          <div>ชื่อ-สกุล: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars($t['tnt_name'] ?? '-'); ?></span></div>
+                          <div>อายุ: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars((string)($t['tnt_age'] ?? '-')); ?></span></div>
+                          <div>เบอร์โทร: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars($t['tnt_phone'] ?? '-'); ?></span></div>
                         </td>
-                        <td><?php echo htmlspecialchars($t['tnt_phone'] ?? '-'); ?></td>
                         <td>
                           <?php
                             $badgeClass = 'status-inactive';
@@ -364,11 +463,6 @@ try {
                           <div><?php echo htmlspecialchars($t['tnt_education'] ?? '-'); ?></div>
                           <div class="expense-meta" style="color:#94a3b8;">คณะ: <?php echo htmlspecialchars($t['tnt_faculty'] ?? '-'); ?> | ปี: <?php echo htmlspecialchars($t['tnt_year'] ?? '-'); ?></div>
                         </td>
-                        <td>
-                          <div><?php echo htmlspecialchars($t['tnt_parent'] ?? '-'); ?></div>
-                          <div class="expense-meta" style="color:#94a3b8;">โทร: <?php echo htmlspecialchars($t['tnt_parentsphone'] ?? '-'); ?></div>
-                        </td>
-                        <td><?php echo htmlspecialchars($t['tnt_vehicle'] ?? '-'); ?></td>
                         <td class="crud-column">
                           <button type="button" class="animate-ui-action-btn edit btn-edit-tenant"
                             data-tnt-id="<?php echo htmlspecialchars($t['tnt_id']); ?>"
@@ -416,7 +510,7 @@ try {
             <div class="tenant-form-group">
               <label for="edit_tnt_age">อายุ</label>
               <div style="display:flex; gap:0.5rem; align-items:center;">
-                <select id="edit_tnt_age_select" style="flex:0 0 40%; min-width:120px;">
+                <select id="edit_tnt_age_select" style="flex:1;">
                   <option value="">เลือกอายุ</option>
                   <option value="15">15</option>
                   <option value="18">18</option>
@@ -430,8 +524,8 @@ try {
                   <option value="50">50</option>
                   <option value="custom">กำหนดเอง</option>
                 </select>
-                <div id="edit_tnt_age_wrap" style="flex:1; display:none;">
-                  <input type="number" id="edit_tnt_age" name="tnt_age" min="0" max="120" placeholder="กำหนดเอง" style="width:100%;" disabled />
+                <div id="edit_tnt_age_wrap" style="flex:0 0 auto; display:none;">
+                  <input type="number" id="edit_tnt_age" name="tnt_age" min="0" max="120" placeholder="กำหนดเอง" style="width:120px;" disabled />
                 </div>
               </div>
             </div>
@@ -440,20 +534,59 @@ try {
               <input type="text" id="edit_tnt_phone" name="tnt_phone" maxlength="10" />
             </div>
             <div class="tenant-form-group" style="grid-column:1 / -1;">
-              <label for="edit_tnt_address">ที่อยู่</label>
+              <label for="edit_tnt_address">ที่อยู่ตามบัตรประชาชน</label>
               <textarea id="edit_tnt_address" name="tnt_address" rows="2"></textarea>
             </div>
             <div class="tenant-form-group">
               <label for="edit_tnt_education">สถานศึกษา</label>
-              <input type="text" id="edit_tnt_education" name="tnt_education" />
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <select id="edit_tnt_education_select" style="flex:1;">
+                  <option value="">เลือกสถานศึกษา</option>
+                  <option value="วิทยาลัยเทคนิคเพชรบูรณ์">วิทยาลัยเทคนิคเพชรบูรณ์</option>
+                  <option value="โรงเรียนเพชรบูรณ์พิทยาลัย">โรงเรียนเพชรบูรณ์พิทยาลัย</option>
+                  <option value="วิทยาลัยอาชีวศึกษาเพชรบูรณ์">วิทยาลัยอาชีวศึกษาเพชรบูรณ์</option>
+                  <option value="โรงเรียนบ้านหลวง">โรงเรียนบ้านหลวง</option>
+                  <?php foreach ($customEducations as $edu): ?>
+                    <option value="<?php echo htmlspecialchars($edu, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($edu, ENT_QUOTES, 'UTF-8'); ?></option>
+                  <?php endforeach; ?>
+                  <option value="other">อื่น ๆ</option>
+                </select>
+                <div id="edit_tnt_education_wrap" style="flex:0 0 auto; display:none;">
+                  <input type="text" id="edit_tnt_education" name="tnt_education" placeholder="ระบุสถานศึกษา" style="width:200px;" disabled />
+                </div>
+              </div>
             </div>
             <div class="tenant-form-group">
               <label for="edit_tnt_faculty">คณะ</label>
-              <input type="text" id="edit_tnt_faculty" name="tnt_faculty" />
+              <div style="display:flex; gap:0.5rem; align-items:center;">
+                <select id="edit_tnt_faculty_select" style="flex:1;">
+                  <option value="">เลือกคณะ</option>
+                  <option value="วิศวกรรมไฟฟ้า">วิศวกรรมไฟฟ้า</option>
+                  <option value="วิศวกรรมเครื่องกล">วิศวกรรมเครื่องกล</option>
+                  <option value="เทคโนโลยีสารสนเทศ">เทคโนโลยีสารสนเทศ</option>
+                  <option value="ศิลปศาสตร์">ศิลปศาสตร์</option>
+                  <option value="วิทยาศาสตร์">วิทยาศาสตร์</option>
+                  <?php foreach ($customFaculties as $faculty): ?>
+                    <option value="<?php echo htmlspecialchars($faculty, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($faculty, ENT_QUOTES, 'UTF-8'); ?></option>
+                  <?php endforeach; ?>
+                  <option value="other">อื่น ๆ</option>
+                </select>
+                <div id="edit_tnt_faculty_wrap" style="flex:0 0 auto; display:none;">
+                  <input type="text" id="edit_tnt_faculty" name="tnt_faculty" placeholder="ระบุคณะ" style="width:200px;" disabled />
+                </div>
+              </div>
             </div>
             <div class="tenant-form-group">
               <label for="edit_tnt_year">ชั้นปี</label>
-              <input type="text" id="edit_tnt_year" name="tnt_year" />
+              <select id="edit_tnt_year" name="tnt_year">
+                <option value="">เลือกชั้นปี</option>
+                <option value="ปี 1">ปี 1</option>
+                <option value="ปี 2">ปี 2</option>
+                <option value="ปี 3">ปี 3</option>
+                <option value="ปี 4">ปี 4</option>
+                <option value="ปี 5">ปี 5</option>
+                <option value="ปี 6">ปี 6</option>
+              </select>
             </div>
             <div class="tenant-form-group">
               <label for="edit_tnt_vehicle">ทะเบียนรถ</label>
@@ -523,15 +656,18 @@ try {
 
         select.addEventListener('change', () => {
           if (select.value === 'custom') {
+            select.style.flex = '0 0 40%';
             input.disabled = false;
             input.value = '';
             input.focus();
             if (wrap) wrap.style.display = 'block';
           } else if (select.value === '') {
+            select.style.flex = '1';
             input.value = '';
             input.disabled = true;
             if (wrap) wrap.style.display = 'none';
           } else {
+            select.style.flex = '1';
             input.value = select.value;
             input.disabled = true;
             if (wrap) wrap.style.display = 'none';
@@ -539,10 +675,117 @@ try {
         });
 
         input.addEventListener('input', () => {
+          select.style.flex = '0 0 40%';
           select.value = 'custom';
           input.disabled = false;
           if (wrap) wrap.style.display = 'block';
         });
+      }
+
+      function setupSelectSync(selectId, inputId, wrapId, optionValue = 'other') {
+        const select = document.getElementById(selectId);
+        const input = document.getElementById(inputId);
+        const wrap = document.getElementById(wrapId);
+        if (!select || !input) return;
+
+        // Initialize based on current state
+        if (select.value === optionValue && input.value) {
+          input.disabled = false;
+          if (wrap) wrap.style.display = 'block';
+        }
+
+        select.addEventListener('change', () => {
+          if (select.value === optionValue) {
+            input.disabled = false;
+            input.value = '';
+            input.focus();
+            if (wrap) wrap.style.display = 'block';
+          } else {
+            input.value = '';
+            input.disabled = true;
+            if (wrap) wrap.style.display = 'none';
+          }
+        });
+
+        input.addEventListener('input', () => {
+          select.value = optionValue;
+        });
+      }
+
+      function applySelectValue(selectId, inputId, wrapId, value, optionValue = 'other') {
+        const select = document.getElementById(selectId);
+        const input = document.getElementById(inputId);
+        const wrap = document.getElementById(wrapId);
+        if (!select || !input) return;
+
+        const isOther = !Array.from(select.options).some(opt => opt.value === value && opt.value !== '');
+        
+        if (isOther && value) {
+          select.value = optionValue;
+          input.value = value;
+          input.disabled = false;
+          if (wrap) wrap.style.display = 'block';
+        } else if (value) {
+          select.value = value;
+          input.value = '';
+          input.disabled = true;
+          if (wrap) wrap.style.display = 'none';
+        } else {
+          select.value = '';
+          input.value = '';
+          input.disabled = true;
+          if (wrap) wrap.style.display = 'none';
+        }
+      }
+
+      function addSelectOptionIfNew(selectId, value, optionType = null) {
+        if (!value || value.trim() === '') return false;
+        
+        const select = document.getElementById(selectId);
+        if (!select) return false;
+
+        const trimmedValue = value.trim();
+        const exists = Array.from(select.options).some(opt => opt.value.toLowerCase() === trimmedValue.toLowerCase());
+        
+        if (exists) {
+          console.log('Option already exists:', trimmedValue);
+          return false;
+        }
+
+        const newOption = document.createElement('option');
+        newOption.value = trimmedValue;
+        newOption.textContent = trimmedValue;
+        
+        const otherOption = Array.from(select.options).find(opt => opt.value === 'other');
+        if (otherOption) {
+          select.insertBefore(newOption, otherOption);
+        } else {
+          select.appendChild(newOption);
+        }
+        
+        console.log('Added new option to', selectId, ':', trimmedValue);
+        
+        // Save to server if optionType is provided
+        if (optionType) {
+          const formData = new FormData();
+          formData.append('type', optionType);
+          formData.append('value', trimmedValue);
+          
+          fetch('../Manage/add_custom_option.php', {
+            method: 'POST',
+            body: formData
+          }).then(response => response.json())
+            .then(data => {
+              if (data.success) {
+                console.log('Custom option saved:', trimmedValue);
+              } else {
+                console.error('Failed to save option:', data.message);
+              }
+            })
+            .catch(err => console.error('Error saving option:', err));
+        }
+        
+        return true;
       }
 
       function applyTenantStatusFilter(filter) {
@@ -571,8 +814,8 @@ try {
         applyAgeSelection('edit_tnt_age_select', 'edit_tnt_age', 'edit_tnt_age_wrap', data.tntAge || '');
         setVal('edit_tnt_phone', data.tntPhone || '');
         setVal('edit_tnt_address', data.tntAddress || '');
-        setVal('edit_tnt_education', data.tntEducation || '');
-        setVal('edit_tnt_faculty', data.tntFaculty || '');
+        applySelectValue('edit_tnt_education_select', 'edit_tnt_education', 'edit_tnt_education_wrap', data.tntEducation || '');
+        applySelectValue('edit_tnt_faculty_select', 'edit_tnt_faculty', 'edit_tnt_faculty_wrap', data.tntFaculty || '');
         setVal('edit_tnt_year', data.tntYear || '');
         setVal('edit_tnt_vehicle', data.tntVehicle || '');
         setVal('edit_tnt_parent', data.tntParent || '');
@@ -630,6 +873,9 @@ try {
         setupAgeSync('tnt_age_select', 'tnt_age', 'tnt_age_wrap');
         applyAgeSelection('tnt_age_select', 'tnt_age', 'tnt_age_wrap', '');
 
+        setupSelectSync('tnt_education_select', 'tnt_education', 'tnt_education_wrap');
+        setupSelectSync('tnt_faculty_select', 'tnt_faculty', 'tnt_faculty_wrap');
+
         document.querySelectorAll('.btn-edit-tenant').forEach(btn => {
           btn.addEventListener('click', () => {
             openTenantModal({
@@ -649,6 +895,9 @@ try {
         });
 
         setupAgeSync('edit_tnt_age_select', 'edit_tnt_age', 'edit_tnt_age_wrap');
+
+        setupSelectSync('edit_tnt_education_select', 'edit_tnt_education', 'edit_tnt_education_wrap');
+        setupSelectSync('edit_tnt_faculty_select', 'edit_tnt_faculty', 'edit_tnt_faculty_wrap');
 
         document.querySelectorAll('.status-filter-btn').forEach(btn => {
           btn.addEventListener('click', () => {
@@ -713,6 +962,81 @@ try {
             e.preventDefault();
             showErrorToast('เลขบัตรประชาชนต้องมี 13 หลัก');
             id.focus();
+            return;
+          }
+
+          // Handle custom education value
+          const educationSelect = document.getElementById('tnt_education_select');
+          const educationInput = document.getElementById('tnt_education');
+          if (educationSelect && educationInput) {
+            if (educationSelect.value === 'other') {
+              const customValue = educationInput.value.trim();
+              if (customValue) {
+                // Add to dropdown and save to server
+                addSelectOptionIfNew('tnt_education_select', customValue, 'education');
+                educationInput.value = customValue;
+                educationInput.disabled = false;
+              }
+            } else if (educationSelect.value) {
+              educationInput.value = educationSelect.value;
+              educationInput.disabled = false;
+            }
+          }
+
+          // Handle custom faculty value
+          const facultySelect = document.getElementById('tnt_faculty_select');
+          const facultyInput = document.getElementById('tnt_faculty');
+          if (facultySelect && facultyInput) {
+            if (facultySelect.value === 'other') {
+              const customValue = facultyInput.value.trim();
+              if (customValue) {
+                // Add to dropdown and save to server
+                addSelectOptionIfNew('tnt_faculty_select', customValue, 'faculty');
+                facultyInput.value = customValue;
+                facultyInput.disabled = false;
+              }
+            } else if (facultySelect.value) {
+              facultyInput.value = facultySelect.value;
+              facultyInput.disabled = false;
+            }
+          }
+        });
+
+        document.getElementById('tenantEditForm')?.addEventListener('submit', (e) => {
+          // Handle custom education value in edit modal
+          const editEducationSelect = document.getElementById('edit_tnt_education_select');
+          const editEducationInput = document.getElementById('edit_tnt_education');
+          if (editEducationSelect && editEducationInput) {
+            if (editEducationSelect.value === 'other') {
+              const customValue = editEducationInput.value.trim();
+              if (customValue) {
+                addSelectOptionIfNew('edit_tnt_education_select', customValue, 'education');
+                addSelectOptionIfNew('tnt_education_select', customValue, 'education');
+                editEducationInput.value = customValue;
+                editEducationInput.disabled = false;
+              }
+            } else if (editEducationSelect.value) {
+              editEducationInput.value = editEducationSelect.value;
+              editEducationInput.disabled = false;
+            }
+          }
+
+          // Handle custom faculty value in edit modal
+          const editFacultySelect = document.getElementById('edit_tnt_faculty_select');
+          const editFacultyInput = document.getElementById('edit_tnt_faculty');
+          if (editFacultySelect && editFacultyInput) {
+            if (editFacultySelect.value === 'other') {
+              const customValue = editFacultyInput.value.trim();
+              if (customValue) {
+                addSelectOptionIfNew('edit_tnt_faculty_select', customValue, 'faculty');
+                addSelectOptionIfNew('tnt_faculty_select', customValue, 'faculty');
+                editFacultyInput.value = customValue;
+                editFacultyInput.disabled = false;
+              }
+            } else if (editFacultySelect.value) {
+              editFacultyInput.value = editFacultySelect.value;
+              editFacultyInput.disabled = false;
+            }
           }
         });
 
