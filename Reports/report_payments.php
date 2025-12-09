@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+ini_set('display_errors', '1');
+error_reporting(E_ALL);
+
 session_start();
 if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
@@ -96,6 +99,10 @@ $hasTnt = false;
 $hasRoom = true;  // แสดงคอลัมน์ห้องเสมอเพราะดึงจาก JOIN
 $hasNote = false;
 
+// รับค่าเดือน/ปี ที่เลือก
+$selectedMonth = isset($_GET['month']) ? $_GET['month'] : '';
+$selectedYear = isset($_GET['year']) ? $_GET['year'] : '';
+
 // mapping column ชื่อ → ภาษาไทย
 $columnLabels = [
   'pay_id'    => 'รหัส',
@@ -121,12 +128,21 @@ try {
   $hasRoom = true;  // แสดงเสมอ - ดึงจาก JOIN
   $hasNote = in_array('pay_note', $existingCols, true);
 
+  // สร้าง WHERE clause สำหรับกรองเดือน/ปี
+  $whereClause = '';
+  if ($selectedMonth && $selectedYear) {
+    $whereClause = "WHERE YEAR(p.pay_date) = " . (int)$selectedYear . " AND MONTH(p.pay_date) = " . (int)$selectedMonth;
+  } elseif ($selectedYear) {
+    $whereClause = "WHERE YEAR(p.pay_date) = " . (int)$selectedYear;
+  }
+
   $order = $hasPayDate ? 'ORDER BY p.pay_date DESC' : '';
   $sql = "SELECT p.*, e.exp_id, e.ctr_id as exp_ctr_id, c.room_id as contract_room_id, r.room_number 
           FROM payment p 
           LEFT JOIN expense e ON p.exp_id = e.exp_id
           LEFT JOIN contract c ON e.ctr_id = c.ctr_id
           LEFT JOIN room r ON c.room_id = r.room_id 
+          $whereClause
           $order";
   $stmt = $pdo->query($sql);
   $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -134,9 +150,14 @@ try {
   // Debug: แสดงข้อมูลแถวแรก
   if (!empty($rows)) {
     error_log("Sample row: " . print_r($rows[0], true));
+    // Debug output
+    echo "<!-- DEBUG: Found " . count($rows) . " payment records -->";
+  } else {
+    echo "<!-- DEBUG: No payment records found -->";
   }
 } catch (PDOException $e) {
   $errorMessage = $e->getMessage();
+  echo "<!-- DEBUG ERROR: " . htmlspecialchars($errorMessage) . " -->";
 }
 
 // สรุปสถานะและยอดรวม (หากมีคอลัมน์ที่เกี่ยวข้อง)
@@ -147,15 +168,23 @@ $summary = [
   'range' => null,
 ];
 try {
+  // สร้าง WHERE สำหรับ summary query
+  $summaryWhere = '';
+  if ($selectedMonth && $selectedYear) {
+    $summaryWhere = " WHERE YEAR(pay_date) = " . (int)$selectedYear . " AND MONTH(pay_date) = " . (int)$selectedMonth;
+  } elseif ($selectedYear) {
+    $summaryWhere = " WHERE YEAR(pay_date) = " . (int)$selectedYear;
+  }
+
   if ($hasPayStatus) {
-    $summary['pending'] = (int)($pdo->query("SELECT COUNT(*) FROM payment WHERE pay_status = 0")->fetchColumn());
-    $summary['verified'] = (int)($pdo->query("SELECT COUNT(*) FROM payment WHERE pay_status = 1")->fetchColumn());
+    $summary['pending'] = (int)($pdo->query("SELECT COUNT(*) FROM payment $summaryWhere" . ($summaryWhere ? " AND" : " WHERE") . " pay_status = 0")->fetchColumn());
+    $summary['verified'] = (int)($pdo->query("SELECT COUNT(*) FROM payment $summaryWhere" . ($summaryWhere ? " AND" : " WHERE") . " pay_status = 1")->fetchColumn());
   }
   if ($hasPayAmount) {
-    $summary['total'] = (float)($pdo->query("SELECT SUM(pay_amount) FROM payment")->fetchColumn());
+    $summary['total'] = (float)($pdo->query("SELECT SUM(pay_amount) FROM payment $summaryWhere")->fetchColumn());
   }
   if ($hasPayDate) {
-    $rangeStmt = $pdo->query("SELECT MIN(pay_date) as dmin, MAX(pay_date) as dmax FROM payment");
+    $rangeStmt = $pdo->query("SELECT MIN(pay_date) as dmin, MAX(pay_date) as dmax FROM payment $summaryWhere");
     $range = $rangeStmt->fetch(PDO::FETCH_ASSOC);
     if (!empty($range['dmin']) && !empty($range['dmax'])) {
       $d1 = new DateTime($range['dmin']);
@@ -174,416 +203,552 @@ $statusLabels = [
   '0' => 'รอตรวจสอบ',
   '1' => 'ตรวจสอบแล้ว',
 ];
+
+// ดึงรายการปีและเดือนที่มีในระบบ
+$availableYears = [];
+$availableMonths = [];
+try {
+  // ดึงปีที่มีข้อมูล
+  $yearsStmt = $pdo->query("SELECT DISTINCT YEAR(pay_date) as year FROM payment WHERE pay_date IS NOT NULL ORDER BY year DESC");
+  $availableYears = $yearsStmt->fetchAll(PDO::FETCH_COLUMN);
+  
+  // ดึงเดือนที่มีข้อมูล (ถ้าเลือกปีแล้ว)
+  if ($selectedYear) {
+    $monthsStmt = $pdo->query("SELECT DISTINCT MONTH(pay_date) as month FROM payment WHERE YEAR(pay_date) = " . (int)$selectedYear . " ORDER BY month ASC");
+    $availableMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
+  } else {
+    // ถ้าไม่เลือกปี แสดงทุกเดือนที่มีข้อมูล
+    $monthsStmt = $pdo->query("SELECT DISTINCT MONTH(pay_date) as month FROM payment WHERE pay_date IS NOT NULL ORDER BY month ASC");
+    $availableMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
+  }
+} catch (PDOException $e) {}
 ?>
 <!doctype html>
 <html lang="th">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายละเอียดใบแจ้งชำระเงิน</title>
+    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายงานการชำระเงิน</title>
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <style>
+      .reports-container {
+        width: 100%;
+        max-width: 100%;
+        padding: 0;
+      }
+      .reports-container .container {
+        max-width: 100%;
+        width: 100%;
+        padding: 1.5rem;
+      }
+      .payment-stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      .stat-card {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .stat-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      }
+      .stat-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      .stat-icon {
+        font-size: 2.5rem;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 12px;
+      }
+      .stat-label {
+        font-size: 0.9rem;
+        color: #cbd5e1;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+      }
+      .stat-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #f8fafc;
+        margin: 0.5rem 0;
+      }
+      .stat-subtitle {
+        font-size: 0.85rem;
+        color: #94a3b8;
+      }
+      .payments-table-container {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 2rem;
+      }
+      .table-header {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      }
+      .table-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #f8fafc;
+        margin: 0;
+      }
+      .payments-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .payments-table th,
+      .payments-table td {
+        padding: 1rem;
+        text-align: left;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+      .payments-table th {
+        background: rgba(255, 255, 255, 0.05);
+        color: #cbd5e1;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+      .payments-table td {
+        color: #e2e8f0;
+      }
+      .payments-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .payments-table tbody tr:last-child td {
+        border-bottom: none;
+      }
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+      .status-pending {
+        background: rgba(251, 191, 36, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+      }
+      .status-verified {
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        border: 1px solid rgba(34, 197, 94, 0.3);
+      }
+      .proof-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.6rem;
+        background: rgba(96, 165, 250, 0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(96, 165, 250, 0.3);
+        border-radius: 6px;
+        font-size: 0.8rem;
+        text-decoration: none;
+        transition: all 0.2s;
+        cursor: pointer;
+      }
+      .proof-badge:hover {
+        background: rgba(96, 165, 250, 0.25);
+        transform: scale(1.05);
+      }
+      /* Modal Styles */
+      .proof-modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 9999;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem;
+        animation: fadeIn 0.2s ease;
+      }
+      .proof-modal.active {
+        display: flex;
+      }
+      .proof-modal-content {
+        position: relative;
+        max-width: 90vw;
+        max-height: 90vh;
+        background: rgba(15, 23, 42, 0.95);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        animation: slideUp 0.3s ease;
+      }
+      .proof-modal-header {
+        padding: 1.5rem;
+        background: rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .proof-modal-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #f8fafc;
+        margin: 0;
+      }
+      .proof-modal-close {
+        width: 36px;
+        height: 36px;
+        border: none;
+        background: rgba(255, 255, 255, 0.1);
+        color: #f8fafc;
+        font-size: 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+      }
+      .proof-modal-close:hover {
+        background: rgba(239, 68, 68, 0.2);
+        color: #ef4444;
+        transform: rotate(90deg);
+      }
+      .proof-modal-body {
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        max-height: calc(90vh - 100px);
+        overflow: auto;
+      }
+      .proof-modal-body img {
+        max-width: 100%;
+        max-height: calc(90vh - 120px);
+        object-fit: contain;
+        border-radius: 8px;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .amount-cell {
+        font-weight: 700;
+        color: #22c55e;
+        font-size: 1.05rem;
+      }
+      .no-data {
+        text-align: center;
+        padding: 3rem;
+        color: #94a3b8;
+        font-size: 1.1rem;
+      }
+      .filter-section {
+        background: rgba(15, 23, 42, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+      }
+      .filter-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+      }
+      .filter-item label {
+        display: block;
+        color: #cbd5e1;
+        font-size: 0.85rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+      .filter-item select,
+      .filter-item input {
+        width: 100%;
+        padding: 0.75rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 8px;
+        color: #f8fafc;
+        font-size: 0.9rem;
+      }
+      .filter-item select:focus,
+      .filter-item input:focus {
+        outline: none;
+        border-color: #60a5fa;
+        background: rgba(255, 255, 255, 0.08);
+      }
+    </style>
   </head>
   <body class="reports-page">
     <div class="app-shell">
-      <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-      <main class="app-main">
-        <div>
-          <?php 
-            $pageTitle = 'รายละเอียดใบแจ้งชำระเงิน';
-            include __DIR__ . '/../includes/page_header.php'; 
-          ?>
+      <?php 
+      $currentPage = 'report_payments.php';
+      include __DIR__ . '/../includes/sidebar.php'; 
+      ?>
+      <div class="app-main">
+        <main class="reports-container">
+          <div class="container">
+            <?php 
+              $pageTitle = 'รายงานการชำระเงิน';
+              include __DIR__ . '/../includes/page_header.php'; 
+            ?>
 
-          <section class="manage-panel">
-            <div class="section-header">
-              <div>
-                <h1>ใบแจ้งชำระเงินทั้งหมด</h1>
-                <p style="color:#94a3b8;margin-top:0.25rem;">รายการชำระเงินทุกสถานะ พร้อมหลักฐานการชำระ</p>
-              </div>
+            <!-- ตัวกรองเดือน/ปี -->
+            <div class="filter-section">
+              <form method="GET" action="">
+                <div class="filter-grid">
+                  <div class="filter-item">
+                    <label for="filterMonth">เดือน</label>
+                    <select name="month" id="filterMonth">
+                      <option value="">ทุกเดือน</option>
+                      <?php
+                        $thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 
+                                       'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+                        foreach ($availableMonths as $m):
+                          $selected = ($selectedMonth == $m) ? 'selected' : '';
+                      ?>
+                        <option value="<?php echo $m; ?>" <?php echo $selected; ?>>
+                          <?php echo $thaiMonths[$m - 1]; ?>
+                        </option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                  <div class="filter-item">
+                    <label for="filterYear">ปี พ.ศ.</label>
+                    <select name="year" id="filterYear" onchange="this.form.submit()">
+                      <option value="">ทุกปี</option>
+                      <?php
+                        foreach ($availableYears as $dbYear):
+                          $thaiYear = (int)$dbYear + 543;
+                          $selected = ($selectedYear == $dbYear) ? 'selected' : '';
+                      ?>
+                        <option value="<?php echo $dbYear; ?>" <?php echo $selected; ?>>
+                          <?php echo $thaiYear; ?>
+                        </option>
+                      <?php endforeach; ?>
+                    </select>
+                  </div>
+                  <div class="filter-item" style="display:flex;align-items:flex-end;gap:0.5rem;">
+                    <button type="submit" style="flex:1;padding:0.75rem;background:#60a5fa;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#3b82f6'" onmouseout="this.style.background='#60a5fa'">
+                      🔍 กรองข้อมูล
+                    </button>
+                    <?php if ($selectedMonth || $selectedYear): ?>
+                      <a href="?" style="flex:1;padding:0.75rem;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-weight:600;text-align:center;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">
+                        ✕ ล้างตัวกรอง
+                      </a>
+                    <?php endif; ?>
+                  </div>
+                </div>
+              </form>
             </div>
 
-            <?php if ($summary['pending'] !== null || $summary['verified'] !== null || $summary['total'] !== null || $summary['range'] !== null): ?>
-            <div style="display:flex;flex-direction:column;gap:0.75rem;margin-bottom:1.25rem;">
-              <?php if ($summary['range'] !== null): ?>
-              <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:0.9rem 1rem;">
-                <div style="color:#cbd5e1;font-size:0.95rem;">ช่วงการชำระ</div>
-                <div style="font-size:1.4rem;font-weight:700;color:#e2e8f0;line-height:1.3;"><?php echo number_format($summary['range']['days']); ?> วัน</div>
-                <div style="color:#e2e8f0;margin-top:0.35rem;font-size:1.05rem;">
-                  <?php echo formatThaiDate($summary['range']['start']); ?> - <?php echo formatThaiDate($summary['range']['end']); ?>
+            <!-- สถิติภาพรวม -->
+            <div class="payment-stats-grid">
+              <div class="stat-card">
+                <div class="stat-card-header">
+                  <div class="stat-icon">📊</div>
+                  <div class="stat-label">ทั้งหมด</div>
                 </div>
-                <?php $agoStart = timeAgoThai($summary['range']['start']); $agoEnd = timeAgoThai($summary['range']['end']); ?>
-                <?php if ($agoStart || $agoEnd): ?>
-                  <div style="color:#94a3b8;font-size:0.95rem; margin-top:0.1rem;">
-                    (<?php echo $agoStart ? 'เริ่ม ' . htmlspecialchars($agoStart, ENT_QUOTES, 'UTF-8') : ''; ?><?php echo ($agoStart && $agoEnd) ? ' · ' : ''; ?><?php echo $agoEnd ? 'ล่าสุด ' . htmlspecialchars($agoEnd, ENT_QUOTES, 'UTF-8') : ''; ?>)
-                  </div>
-                <?php endif; ?>
+                <div class="stat-value"><?php echo number_format(count($rows)); ?></div>
+                <div class="stat-subtitle">รายการทั้งหมด</div>
+              </div>
+
+              <?php if ($hasPayStatus): ?>
+              <div class="stat-card">
+                <div class="stat-card-header">
+                  <div class="stat-icon">⏳</div>
+                  <div class="stat-label">รอตรวจสอบ</div>
+                </div>
+                <div class="stat-value" style="color:#fbbf24;"><?php echo number_format($summary['pending'] ?? 0); ?></div>
+                <div class="stat-subtitle">รอดำเนินการ</div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-card-header">
+                  <div class="stat-icon">✅</div>
+                  <div class="stat-label">ตรวจสอบแล้ว</div>
+                </div>
+                <div class="stat-value" style="color:#22c55e;"><?php echo number_format($summary['verified'] ?? 0); ?></div>
+                <div class="stat-subtitle">ยืนยันแล้ว</div>
               </div>
               <?php endif; ?>
 
-              <div style="display:grid;grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));gap:0.75rem;">
-                <?php if ($summary['pending'] !== null): ?>
-                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:0.9rem 1rem;">
-                  <div style="color:#cbd5e1;font-size:0.95rem;">รอตรวจสอบ</div>
-                  <div style="font-size:1.4rem;font-weight:700;color:#e2e8f0;line-height:1.3;"><?php echo number_format($summary['pending']); ?></div>
+              <?php if ($hasPayAmount && $summary['total'] !== null): ?>
+              <div class="stat-card">
+                <div class="stat-card-header">
+                  <div class="stat-icon">💰</div>
+                  <div class="stat-label">ยอดรวม</div>
                 </div>
-                <?php endif; ?>
-                <?php if ($summary['verified'] !== null): ?>
-                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:0.9rem 1rem;">
-                  <div style="color:#cbd5e1;font-size:0.95rem;">ตรวจสอบแล้ว</div>
-                  <div style="font-size:1.4rem;font-weight:700;color:#22c55e;line-height:1.3;"><?php echo number_format($summary['verified']); ?></div>
-                </div>
-                <?php endif; ?>
-                <?php if ($summary['total'] !== null): ?>
-                <div style="background:rgba(15,23,42,0.6);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:0.9rem 1rem;">
-                  <div style="color:#cbd5e1;font-size:0.95rem;">ยอดชำระรวม</div>
-                  <div style="font-size:1.4rem;font-weight:700;color:#e2e8f0;line-height:1.3;">฿<?php echo number_format($summary['total'], 2); ?></div>
-                </div>
-                <?php endif; ?>
+                <div class="stat-value" style="color:#60a5fa;">฿<?php echo number_format($summary['total'], 2); ?></div>
+                <div class="stat-subtitle">รายได้ทั้งหมด</div>
               </div>
+              <?php endif; ?>
             </div>
-            <?php endif; ?>
 
-            <?php if ($errorMessage): ?>
-              <div class="alert" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.35);color:#fecdd3;padding:0.85rem 1rem;border-radius:10px;">
-                ไม่สามารถโหลดข้อมูลได้: <?php echo htmlspecialchars($errorMessage, ENT_QUOTES, 'UTF-8'); ?>
+            <!-- ตารางรายการชำระเงิน -->
+            <div class="payments-table-container">
+              <div class="table-header">
+                <h2 class="table-title">รายการชำระเงินทั้งหมด</h2>
               </div>
-            <?php else: ?>
-              <div class="report-table" style="margin-top:0.75rem;overflow:auto;">
-                <table class="table--compact" id="table-payments">
+
+              <?php if ($errorMessage): ?>
+                <div class="no-data">
+                  ⚠️ เกิดข้อผิดพลาด: <?php echo htmlspecialchars($errorMessage); ?>
+                </div>
+              <?php elseif (empty($rows)): ?>
+                <div class="no-data">
+                  📭 ไม่มีข้อมูลการชำระเงิน
+                </div>
+              <?php else: ?>
+                <table class="payments-table">
                   <thead>
                     <tr>
-                      <?php if ($hasRoom): ?>
-                        <th><?php echo $columnLabels['room_id']; ?></th>
-                      <?php endif; ?>
-                      <?php if ($hasPayDate): ?>
-                        <th><?php echo $columnLabels['pay_date']; ?></th>
-                      <?php endif; ?>
-                      <?php if ($hasPayAmount): ?>
-                        <th><?php echo $columnLabels['pay_amount']; ?></th>
-                      <?php endif; ?>
-                      <?php if ($hasCtr): ?>
-                        <th><?php echo $columnLabels['ctr_id']; ?></th>
-                      <?php endif; ?>
-                      <?php if ($hasTnt): ?>
-                        <th><?php echo $columnLabels['tnt_id']; ?></th>
-                      <?php endif; ?>
-                      <?php if ($hasNote): ?>
-                        <th><?php echo $columnLabels['pay_note']; ?></th>
-                      <?php endif; ?>
-                      <?php if ($hasPayProof): ?>
-                        <th><?php echo $columnLabels['pay_proof']; ?></th>
-                      <?php endif; ?>
-                      <?php if ($hasPayStatus): ?>
-                        <th><?php echo $columnLabels['pay_status']; ?></th>
-                      <?php endif; ?>
+                      <th>รหัส</th>
+                      <th>ห้อง</th>
+                      <?php if ($hasPayDate): ?><th>วันที่ชำระ</th><?php endif; ?>
+                      <?php if ($hasPayAmount): ?><th style="text-align:right;">ยอดชำระ</th><?php endif; ?>
+                      <?php if ($hasPayStatus): ?><th style="text-align:center;">สถานะ</th><?php endif; ?>
+                      <?php if ($hasPayProof): ?><th style="text-align:center;">หลักฐาน</th><?php endif; ?>
                     </tr>
                   </thead>
                   <tbody>
-                  <?php foreach ($rows as $row): ?>
-                    <tr>
-                      <?php if ($hasRoom): ?>
+                    <?php foreach ($rows as $row): ?>
+                      <tr>
+                        <td><strong>#<?php echo htmlspecialchars((string)($row['pay_id'] ?? '')); ?></strong></td>
                         <td>
-                          <?php 
-                            $roomNum = $row['room_number'] ?? null;
-                            $roomId = $row['contract_room_id'] ?? $row['room_id'] ?? null;
-                            if ($roomNum && $roomId): ?>
-                              <a href="manage_expenses.php?room_id=<?php echo htmlspecialchars((string)$roomId, ENT_QUOTES, 'UTF-8'); ?>" style="color:#3b82f6;text-decoration:none;font-weight:600;transition:all 0.2s cubic-bezier(0.32, 0.72, 0, 1);" onmouseover="this.style.color='#60a5fa';this.style.textDecoration='underline'" onmouseout="this.style.color='#3b82f6';this.style.textDecoration='none'">
-                                <?php echo htmlspecialchars($roomNum, ENT_QUOTES, 'UTF-8'); ?>
-                              </a>
-                            <?php elseif ($roomNum): 
-                              echo htmlspecialchars($roomNum, ENT_QUOTES, 'UTF-8');
-                            else: 
-                              echo renderCell($roomId);
-                            endif; ?>
-                        </td>
-                      <?php endif; ?>
-                      <?php if ($hasPayDate): ?>
-                        <td>
-                          <div><?php echo formatThaiDate($row['pay_date'] ?? null); ?></div>
-                          <?php $ago = timeAgoThai($row['pay_date'] ?? null); ?>
-                          <?php if ($ago): ?>
-                            <div style="color:#94a3b8;font-size:0.9rem;">(<?php echo htmlspecialchars($ago, ENT_QUOTES, 'UTF-8'); ?>)</div>
-                          <?php endif; ?>
-                        </td>
-                      <?php endif; ?>
-                      <?php if ($hasPayAmount): ?>
-                        <?php $val = $row['pay_amount'] ?? null; ?>
-                        <td><?php echo is_numeric($val) ? number_format((float)$val, 2) : renderCell($val); ?></td>
-                      <?php endif; ?>
-                      <?php if ($hasCtr): ?>
-                        <td><?php echo renderCell($row['ctr_id'] ?? null); ?></td>
-                      <?php endif; ?>
-                      <?php if ($hasTnt): ?>
-                        <td><?php echo renderCell($row['tnt_id'] ?? null); ?></td>
-                      <?php endif; ?>
-                      <?php if ($hasNote): ?>
-                        <td><?php echo renderCell($row['pay_note'] ?? null); ?></td>
-                      <?php endif; ?>
-                      <?php if ($hasPayProof): ?>
-                        <?php $proofFile = $row['pay_proof'] ?? ''; ?>
-                        <?php $safeName = $proofFile ? basename((string)$proofFile) : ''; ?>
-                        <?php $proofPath = $safeName ? (__DIR__ . '/../Assets/Images/Payments/' . $safeName) : ''; ?>
-                        <?php $proofUrl = $safeName ? ('../Assets/Images/Payments/' . rawurlencode($safeName)) : ''; ?>
-                        <td>
-                          <?php if ($safeName && file_exists($proofPath)): ?>
-                            <button type="button" class="view-proof-btn" data-proof-url="<?php echo htmlspecialchars($proofUrl, ENT_QUOTES, 'UTF-8'); ?>" style="background:linear-gradient(135deg, #3b82f6, #2563eb);color:#fff;border:none;padding:0.4rem 0.8rem;border-radius:8px;cursor:pointer;font-size:0.9rem;font-weight:600;">
-                              📄 ดูหลักฐาน
-                            </button>
+                          <?php if (!empty($row['room_number'])): ?>
+                            <strong>ห้อง <?php echo htmlspecialchars((string)$row['room_number']); ?></strong>
                           <?php else: ?>
-                            —
+                            <span style="color:#94a3b8;">—</span>
                           <?php endif; ?>
                         </td>
-                      <?php endif; ?>
-                      <?php if ($hasPayStatus): ?>
-                        <?php $statusVal = (string)($row['pay_status'] ?? ''); ?>
-                        <td>
-                          <?php if ($statusVal === '1'): ?>
-                            <span class="tag tag-success">✓ ตรวจสอบแล้ว</span>
-                          <?php elseif ($statusVal === '0'): ?>
-                            <span class="tag tag-warning">⏳ รอตรวจสอบ</span>
-                          <?php else: ?>
-                            <span class="tag">ไม่ทราบสถานะ</span>
-                          <?php endif; ?>
-                        </td>
-                      <?php endif; ?>
-                    </tr>
-                  <?php endforeach; ?>
+                        <?php if ($hasPayDate): ?>
+                          <td>
+                            <?php 
+                              echo formatThaiDate($row['pay_date'] ?? null);
+                              $ago = timeAgoThai($row['pay_date'] ?? null);
+                              if ($ago) echo '<br><small style="color:#94a3b8;">' . $ago . '</small>';
+                            ?>
+                          </td>
+                        <?php endif; ?>
+                        <?php if ($hasPayAmount): ?>
+                          <td style="text-align:right;" class="amount-cell">
+                            ฿<?php echo number_format((float)($row['pay_amount'] ?? 0), 2); ?>
+                          </td>
+                        <?php endif; ?>
+                        <?php if ($hasPayStatus): ?>
+                          <td style="text-align:center;">
+                            <?php
+                              $status = $row['pay_status'] ?? '';
+                              if ($status === '0' || $status === 0):
+                            ?>
+                              <span class="status-badge status-pending">⏳ รอตรวจสอบ</span>
+                            <?php elseif ($status === '1' || $status === 1): ?>
+                              <span class="status-badge status-verified">✓ ตรวจสอบแล้ว</span>
+                            <?php else: ?>
+                              <span style="color:#94a3b8;">—</span>
+                            <?php endif; ?>
+                          </td>
+                        <?php endif; ?>
+                        <?php if ($hasPayProof): ?>
+                          <td style="text-align:center;">
+                            <?php if (!empty($row['pay_proof'])): ?>
+                              <button type="button" 
+                                      class="proof-badge" 
+                                      onclick="openProofModal('<?php echo htmlspecialchars((string)$row['pay_proof']); ?>', '<?php echo htmlspecialchars((string)$row['pay_id']); ?>')">
+                                📄 ดูหลักฐาน
+                              </button>
+                            <?php else: ?>
+                              <span style="color:#94a3b8;">—</span>
+                            <?php endif; ?>
+                          </td>
+                        <?php endif; ?>
+                      </tr>
+                    <?php endforeach; ?>
                   </tbody>
                 </table>
-              </div>
-            <?php endif; ?>
-          </section>
-        </div>
-      </main>
+              <?php endif; ?>
+            </div>
+
+          </div>
+        </main>
+      </div>
     </div>
 
-    <!-- Modal สำหรับดูหลักฐานการชำระเงิน -->
-    <div id="proofModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0);z-index:9999;padding:2rem;box-sizing:border-box;transition:background 0.45s cubic-bezier(0.32, 0.72, 0, 1);opacity:0;">
-      <div style="position:relative;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
-        <button id="closeProofModal" style="position:absolute;top:1rem;right:1rem;background:rgba(255,255,255,0.15);color:#fff;border:none;width:3rem;height:3rem;border-radius:50%;cursor:pointer;font-size:1.5rem;font-weight:600;transition:all 0.4s cubic-bezier(0.32, 0.72, 0, 1);backdrop-filter:blur(20px) saturate(180%);transform:scale(0.7);opacity:0;box-shadow:0 8px 32px rgba(0,0,0,0.3);" onmouseover="this.style.background='rgba(255,255,255,0.25)';this.style.transform='scale(1.05)'" onmouseout="this.style.background='rgba(255,255,255,0.15)';this.style.transform='scale(1)'">✕</button>
-        <div id="proofContent" style="max-width:90%;max-height:90%;overflow:auto;background:rgba(15,23,42,0.75);border-radius:20px;padding:1.5rem;backdrop-filter:blur(40px) saturate(180%);box-shadow:0 25px 50px -12px rgba(0,0,0,0.6),0 0 1px rgba(255,255,255,0.1) inset;transition:all 0.5s cubic-bezier(0.32, 0.72, 0, 1);transform:scale(0.85) translateY(40px);opacity:0;border:1px solid rgba(255,255,255,0.08);">
-          <img id="proofImage" src="" alt="หลักฐานการชำระเงิน" style="max-width:100%;height:auto;border-radius:12px;display:none;transition:opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1),transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);transform:scale(0.98);" />
-          <embed id="proofEmbed" src="" type="application/pdf" style="width:80vw;height:80vh;border-radius:12px;display:none;transition:opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);" />
-          <div id="proofError" style="display:none;color:#f87171;padding:2rem;text-align:center;font-size:1.1rem;transition:opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);">ไม่สามารถแสดงไฟล์ได้</div>
+    <!-- Proof Modal -->
+    <div id="proofModal" class="proof-modal" onclick="closeProofModal(event)">
+      <div class="proof-modal-content" onclick="event.stopPropagation()">
+        <div class="proof-modal-header">
+          <h3 class="proof-modal-title" id="proofModalTitle">หลักฐานการชำระเงิน</h3>
+          <button type="button" class="proof-modal-close" onclick="closeProofModal()">&times;</button>
+        </div>
+        <div class="proof-modal-body">
+          <img id="proofImage" src="" alt="หลักฐานการชำระเงิน">
         </div>
       </div>
     </div>
 
-    <script src="../Assets/Javascript/confirm-modal.js"></script>
-    <script src="../Assets/Javascript/toast-notification.js"></script>
-    <script src="../Assets/Javascript/animate-ui.js"></script>
-    <script src="../Assets/Javascript/main.js"></script>
+    <script src="../Assets/Javascript/animate-ui.js" defer></script>
+    <script src="../Assets/Javascript/main.js" defer></script>
     <script>
-      // Modal สำหรับดูหลักฐาน
-      const proofModal = document.getElementById('proofModal');
-      const closeProofModal = document.getElementById('closeProofModal');
-      const proofImage = document.getElementById('proofImage');
-      const proofEmbed = document.getElementById('proofEmbed');
-      const proofError = document.getElementById('proofError');
-
-      document.querySelectorAll('.view-proof-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-          const url = this.getAttribute('data-proof-url');
-          if (!url) return;
-
-          // ซ่อนทุกอย่างก่อน
-          proofImage.style.display = 'none';
-          proofImage.style.opacity = '0';
-          proofEmbed.style.display = 'none';
-          proofEmbed.style.opacity = '0';
-          proofError.style.display = 'none';
-          proofError.style.opacity = '0';
-
-          // แสดง modal
-          proofModal.style.display = 'block';
-          document.body.style.overflow = 'hidden';
-
-          // เริ่ม transition แบบ Apple
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              proofModal.style.opacity = '1';
-              proofModal.style.background = 'rgba(0,0,0,0.92)';
-              proofContent.style.transform = 'scale(1) translateY(0)';
-              proofContent.style.opacity = '1';
-              closeProofModal.style.transform = 'scale(1)';
-              closeProofModal.style.opacity = '1';
-            });
-          });
-
-          // ตรวจสอบประเภทไฟล์
-          const ext = url.split('.').pop().toLowerCase();
-          if (['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext)) {
-            proofImage.src = url;
-            proofImage.style.display = 'block';
-            setTimeout(() => { 
-              proofImage.style.opacity = '1';
-              proofImage.style.transform = 'scale(1)';
-            }, 400);
-            proofImage.onerror = function() {
-              proofImage.style.display = 'none';
-              proofError.style.display = 'block';
-              setTimeout(() => { proofError.style.opacity = '1'; }, 50);
-            };
-          } else if (ext === 'pdf') {
-            proofEmbed.src = url;
-            proofEmbed.style.display = 'block';
-            setTimeout(() => { proofEmbed.style.opacity = '1'; }, 400);
-          } else {
-            proofError.textContent = 'ไม่รองรับไฟล์นามสกุล .' + ext;
-            proofError.style.display = 'block';
-            setTimeout(() => { proofError.style.opacity = '1'; }, 400);
-          }
-        });
-      });
-
-      closeProofModal.addEventListener('click', function() {
-        // Fade out animation แบบ Apple - smooth และ graceful
-        proofImage.style.opacity = '0';
-        proofImage.style.transform = 'scale(0.98)';
-        proofEmbed.style.opacity = '0';
-        proofError.style.opacity = '0';
+      function openProofModal(filename, payId) {
+        const modal = document.getElementById('proofModal');
+        const image = document.getElementById('proofImage');
+        const title = document.getElementById('proofModalTitle');
         
-        setTimeout(() => {
-          proofModal.style.opacity = '0';
-          proofModal.style.background = 'rgba(0,0,0,0)';
-          proofContent.style.transform = 'scale(0.85) translateY(40px)';
-          proofContent.style.opacity = '0';
-          closeProofModal.style.transform = 'scale(0.7)';
-          closeProofModal.style.opacity = '0';
-        }, 50);
+        image.src = '../Assets/Images/Payments/' + filename;
+        title.textContent = 'หลักฐานการชำระเงิน #' + payId;
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
 
-        setTimeout(() => {
-          proofModal.style.display = 'none';
+      function closeProofModal(event) {
+        if (!event || event.target.id === 'proofModal') {
+          const modal = document.getElementById('proofModal');
+          modal.classList.remove('active');
           document.body.style.overflow = '';
-          proofImage.src = '';
-          proofEmbed.src = '';
-        }, 500);
-      });
-
-      // ปิด modal เมื่อกดพื้นหลัง
-      proofModal.addEventListener('click', function(e) {
-        if (e.target === proofModal) {
-          closeProofModal.click();
-        }
-      });
-
-      // ปิด modal เมื่อกด ESC
-      document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && proofModal.style.display === 'block') {
-          closeProofModal.click();
-        }
-      });
-
-      // ฟังก์ชันตรวจสอบและอัปเดตสถานะการชำระเงิน
-      async function updatePaymentStatus(payId, newStatus) {
-        try {
-          const formData = new FormData();
-          formData.append('pay_id', payId);
-          formData.append('pay_status', newStatus);
-
-          const response = await fetch('../Manage/update_payment_status.php', {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          });
-
-          const result = await response.json();
-          if (result.success) {
-            showSuccessToast(result.message || 'อัปเดตสถานะสำเร็จ');
-            setTimeout(() => location.reload(), 1500);
-          } else {
-            showErrorToast(result.error || 'เกิดข้อผิดพลาด');
-          }
-        } catch (error) {
-          console.error('Error:', error);
-          showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
         }
       }
 
-      // ปุ่มตรวจสอบ (เปลี่ยนสถานะเป็น 1)
-      console.log('กำลังตั้งค่า event listeners...');
-      const verifyBtns = document.querySelectorAll('.verify-payment-btn');
-      console.log('พบปุ่มตรวจสอบ:', verifyBtns.length, 'ปุ่ม');
-      
-      verifyBtns.forEach((btn, index) => {
-        console.log('กำลัง bind ปุ่มที่', index + 1, 'pay-id:', btn.getAttribute('data-pay-id'));
-        btn.addEventListener('click', async function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('คลิกปุ่มตรวจสอบ!!!');
-          const payId = this.getAttribute('data-pay-id');
-          console.log('Pay ID:', payId);
-          
-          if (!payId) {
-            alert('ไม่พบ Pay ID');
-            return;
-          }
-
-          // ตรวจสอบว่า showConfirmDialog มีหรือไม่
-          if (typeof showConfirmDialog !== 'function') {
-            alert('ฟังก์ชัน showConfirmDialog ไม่พบ');
-            // ใช้ confirm ธรรมดาแทน
-            if (confirm('คุณต้องการยืนยันว่าได้ตรวจสอบหลักฐานการชำระเงินนี้แล้ว?')) {
-              updatePaymentStatus(payId, '1');
-            }
-            return;
-          }
-
-          const confirmed = await showConfirmDialog(
-            'ยืนยันการตรวจสอบ',
-            'คุณต้องการยืนยันว่าได้ตรวจสอบหลักฐานการชำระเงินนี้แล้ว?',
-            'warning'
-          );
-
-          console.log('Confirmed:', confirmed);
-          if (confirmed) {
-            updatePaymentStatus(payId, '1');
-          }
-        });
-      });
-
-      // ปุ่มยกเลิก (เปลี่ยนสถานะกลับเป็น 0)
-      const revertBtns = document.querySelectorAll('.revert-status-btn');
-      console.log('พบปุ่มยกเลิก:', revertBtns.length, 'ปุ่ม');
-      
-      revertBtns.forEach((btn, index) => {
-        console.log('กำลัง bind ปุ่มยกเลิกที่', index + 1, 'pay-id:', btn.getAttribute('data-pay-id'));
-        btn.addEventListener('click', async function(e) {
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('คลิกปุ่มยกเลิก!!!');
-          const payId = this.getAttribute('data-pay-id');
-          console.log('Pay ID:', payId);
-          
-          if (!payId) {
-            alert('ไม่พบ Pay ID');
-            return;
-          }
-
-          // ตรวจสอบว่า showConfirmDialog มีหรือไม่
-          if (typeof showConfirmDialog !== 'function') {
-            alert('ฟังก์ชัน showConfirmDialog ไม่พบ');
-            // ใช้ confirm ธรรมดาแทน
-            if (confirm('คุณต้องการยกเลิกสถานะ "ตรวจสอบแล้ว" ของรายการนี้?')) {
-              updatePaymentStatus(payId, '0');
-            }
-            return;
-          }
-
-          const confirmed = await showConfirmDialog(
-            'ยกเลิกการตรวจสอบ',
-            'คุณต้องการยกเลิกสถานะ "ตรวจสอบแล้ว" ของรายการนี้?',
-            'delete'
-          );
-
-          console.log('Confirmed:', confirmed);
-          if (confirmed) {
-            updatePaymentStatus(payId, '0');
-          }
-        });
+      // Close modal with ESC key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          closeProofModal();
+        }
       });
     </script>
   </body>

@@ -411,7 +411,7 @@ try {
                         <div class="value"><?php echo $repair_completed; ?></div>
                     </div>
                     <div class="report-item">
-                        <label><a href="manage_repairs.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
+                        <label><a href="report_repairs.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
                     </div>
                 </div>
             </div>
