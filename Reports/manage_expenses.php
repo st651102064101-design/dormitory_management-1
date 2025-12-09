@@ -356,7 +356,14 @@ try {
             </div>
           </section>
 
-          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;">
+          <!-- Toggle button for expense form -->
+          <div style="margin:1.5rem 0;">
+            <button type="button" id="toggleExpenseFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleExpenseForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+              <span id="toggleExpenseFormIcon">▼</span> <span id="toggleExpenseFormText">ซ่อนฟอร์ม</span>
+            </button>
+          </div>
+
+          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addExpenseSection">
             <div class="section-header">
               <div>
                 <h1>บันทึกค่าใช้จ่ายใหม่</h1>
@@ -832,11 +839,53 @@ try {
         });
       }
 
+      // Toggle expense form visibility
+      function toggleExpenseForm() {
+        const section = document.getElementById('addExpenseSection');
+        const icon = document.getElementById('toggleExpenseFormIcon');
+        const text = document.getElementById('toggleExpenseFormText');
+        const isHidden = section.style.display === 'none';
+        
+        if (isHidden) {
+          section.style.display = '';
+          icon.textContent = '▼';
+          text.textContent = 'ซ่อนฟอร์ม';
+          localStorage.setItem('expenseFormVisible', 'true');
+        } else {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+          localStorage.setItem('expenseFormVisible', 'false');
+        }
+      }
+
       // Call setup when DOM is ready
       if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', setupStatusButtons);
+        document.addEventListener('DOMContentLoaded', function() {
+          // Restore form visibility from localStorage
+          const isFormVisible = localStorage.getItem('expenseFormVisible') !== 'false';
+          const section = document.getElementById('addExpenseSection');
+          const icon = document.getElementById('toggleExpenseFormIcon');
+          const text = document.getElementById('toggleExpenseFormText');
+          if (!isFormVisible) {
+            section.style.display = 'none';
+            icon.textContent = '▶';
+            text.textContent = 'แสดงฟอร์ม';
+          }
+        });
       } else {
         setupStatusButtons();
+        // Restore form visibility immediately
+        const isFormVisible = localStorage.getItem('expenseFormVisible') !== 'false';
+        const section = document.getElementById('addExpenseSection');
+        const icon = document.getElementById('toggleExpenseFormIcon');
+        const text = document.getElementById('toggleExpenseFormText');
+        if (!isFormVisible) {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+        }
       }
 
       (function setupExpenseCalculator() {
