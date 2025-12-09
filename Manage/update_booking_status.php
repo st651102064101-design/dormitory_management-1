@@ -40,23 +40,29 @@ try {
     // เริ่ม transaction
     $pdo->beginTransaction();
     
-    // อัพเดทสถานะการจอง
-    $stmt = $pdo->prepare("UPDATE booking SET bkg_status = ? WHERE bkg_id = ?");
-    $stmt->execute([$bkg_status, $bkg_id]);
-    
-    // อัพเดทสถานะห้อง
-    // ถ้ายกเลิกการจอง (status = 0) -> ห้องว่าง (room_status = 0)
-    // ถ้าเข้าพักแล้ว (status = 2) -> ห้องไม่ว่าง (room_status = 1)
+    // ถ้ายกเลิกการจอง (status = 0) -> ลบบันทึกการจองออกจาก DB
+    // ถ้าเข้าพักแล้ว (status = 2) -> เพียงปรับปรุงสถานะห้อง
     if ($bkg_status === '0') {
-        // ยกเลิก -> ห้องว่าง
+        // ยกเลิก -> ลบจากฐานข้อมูล และกำหนดห้องเป็นว่าง
+        $stmt = $pdo->prepare("DELETE FROM booking WHERE bkg_id = ?");
+        $stmt->execute([$bkg_id]);
+        
         $stmt = $pdo->prepare("UPDATE room SET room_status = '0' WHERE room_id = ?");
         $stmt->execute([$booking['room_id']]);
-        $message = 'ลบการจองเรียบร้อยแล้ว';
+        $message = 'ยกเลิกการจองเรียบร้อยแล้ว';
     } else if ($bkg_status === '2') {
-        // เข้าพักแล้ว -> ห้องไม่ว่าง
+        // เข้าพักแล้ว -> อัพเดทสถานะและห้องไม่ว่าง
+        $stmt = $pdo->prepare("UPDATE booking SET bkg_status = ? WHERE bkg_id = ?");
+        $stmt->execute([$bkg_status, $bkg_id]);
+        
         $stmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
         $stmt->execute([$booking['room_id']]);
         $message = 'แก้ไขสถานะเป็นเข้าพักแล้วเรียบร้อยแล้ว';
+    } else {
+        // สำหรับสถานะอื่นๆ เพียงอัพเดทสถานะ
+        $stmt = $pdo->prepare("UPDATE booking SET bkg_status = ? WHERE bkg_id = ?");
+        $stmt->execute([$bkg_status, $bkg_id]);
+        $message = 'แก้ไขสถานะเรียบร้อยแล้ว';
     }
     
     // commit transaction

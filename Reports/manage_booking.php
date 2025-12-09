@@ -132,6 +132,12 @@ try {
         gap: 1.5rem;
         margin-top: 1rem;
       }
+      /* Desktop: fix 5 cards per row when there is space */
+      @media (min-width: 1200px) {
+        .rooms-grid {
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+        }
+      }
       .rooms-grid.list-view { display: flex; flex-direction: column; gap: 1rem; }
       .view-toggle { display: inline-flex; gap: 0.5rem; margin-top: 1rem; }
       .view-toggle button {
@@ -544,7 +550,7 @@ try {
                     <div class="room-card-inner">
                       <div class="room-card-face front">
                         <div class="room-card-header">
-                          <span class="room-number">ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?></span>
+                          <span class="room-number">ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></span>
                           <span class="room-price-header">฿<?php echo number_format((int)$room['type_price']); ?> / เดือน</span>
                           <span class="room-status">ว่าง</span>
                         </div>
@@ -599,7 +605,7 @@ try {
                             <div class="room-info list-book-btn">
                               <button type="button" class="book-btn book-btn-front"
                                       data-room-id="<?php echo $room['room_id']; ?>"
-                                      data-room-number="<?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>"
+                                      data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
                                       data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
                                       data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
                                 จองห้องนี้
@@ -611,7 +617,7 @@ try {
 
                       <div class="room-card-face back">
                         <div>
-                          <div class="room-number" style="display:block;">ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?></div>
+                          <div class="room-number" style="display:block;">ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></div>
                           <div style="margin-top:0.25rem; color: rgba(255,255,255,0.75);">ประเภท: <strong><?php echo htmlspecialchars($room['type_name']); ?></strong></div>
                           <div style="margin-top:0.25rem; color: rgba(255,255,255,0.75);">ราคา: ฿<?php echo number_format((int)$room['type_price']); ?> / เดือน</div>
                         </div>
@@ -619,7 +625,7 @@ try {
                           <button type="button" class="book-btn" 
                                   style="flex:1;"
                                   data-room-id="<?php echo $room['room_id']; ?>"
-                                  data-room-number="<?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>"
+                                  data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
                                   data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
                                   data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
                             จองห้องนี้
@@ -678,7 +684,7 @@ try {
                     <?php foreach($bookings as $bkg): ?>
                       <tr>
                         <td><?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
-                        <td><?php echo !empty($bkg['room_number']) ? str_pad((string)$bkg['room_number'], 2, '0', STR_PAD_LEFT) : '-'; ?></td>
+                        <td><?php echo !empty($bkg['room_number']) ? htmlspecialchars((string)$bkg['room_number']) : '-'; ?></td>
                         <td><?php echo htmlspecialchars($bkg['type_name'] ?? '-'); ?></td>
                         <td><?php echo !empty($bkg['bkg_date']) ? date('d/m/Y', strtotime($bkg['bkg_date'])) : '-'; ?></td>
                         <td><?php echo !empty($bkg['bkg_checkin_date']) ? date('d/m/Y', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
@@ -864,7 +870,20 @@ try {
                 'X-Requested-With': 'XMLHttpRequest'
               }
             })
-            .then(response => response.json())
+            .then(async response => {
+              const raw = await response.text();
+              let result;
+              try {
+                result = JSON.parse(raw);
+              } catch (err) {
+                console.error('Invalid JSON response:', raw);
+                throw new Error('Invalid JSON');
+              }
+              if (!response.ok || !result) {
+                throw new Error(result?.error || 'จองไม่สำเร็จ');
+              }
+              return result;
+            })
             .then(result => {
               console.log('Booking response:', result);
               
@@ -933,6 +952,11 @@ try {
           }
         });
         
+        // จดจำจำนวนการ์ดที่แสดงไว้
+        try {
+          localStorage.setItem('bookingVisibleRooms', String(visibleRooms));
+        } catch (e) {}
+        
         // Update remaining count
         const remaining = totalRooms - visibleRooms;
         const remainingCountEl = document.getElementById('remainingCount');
@@ -945,6 +969,31 @@ try {
           loadMoreBtn.classList.add('hidden');
         }
       }
+
+      // Restore visible rooms on load
+      document.addEventListener('DOMContentLoaded', () => {
+        try {
+          const saved = parseInt(localStorage.getItem('bookingVisibleRooms') || '5', 10);
+          const target = isNaN(saved) ? 5 : Math.max(5, saved);
+          const hiddenRooms = document.querySelectorAll('.room-card.hidden-room');
+          const totalRooms = document.querySelectorAll('.room-card').length;
+          let toShow = Math.min(target - 5, hiddenRooms.length);
+          let shown = 0;
+          hiddenRooms.forEach(room => {
+            if (shown < toShow) {
+              room.classList.remove('hidden-room');
+              shown++;
+            }
+          });
+          visibleRooms = Math.min(target, totalRooms);
+
+          const remaining = totalRooms - visibleRooms;
+          const remainingCountEl = document.getElementById('remainingCount');
+          const loadMoreBtn = document.getElementById('loadMoreBtn');
+          if (remainingCountEl) remainingCountEl.textContent = Math.max(remaining, 0);
+          if (remaining <= 0 && loadMoreBtn) loadMoreBtn.classList.add('hidden');
+        } catch (e) {}
+      });
 
 
       

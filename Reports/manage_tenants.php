@@ -315,7 +315,7 @@ try {
                   <?php endif; ?>
                 </tbody>
               </table>
-              <p class="table-note">สถานะ 1 = พักอยู่, 0 = ย้ายออก</p>
+              <p class="table-note"></p>
             </div>
           </section>
         </div>

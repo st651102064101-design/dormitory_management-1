@@ -274,37 +274,37 @@ function nameWithoutNickname($fullName) {
     <title>พิมพ์สัญญา</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cordia New', Tahoma, serif; font-size: 14px; line-height: 1.6; background: #f5f5f5; padding: 20px; }
-        @page { size: A4; margin: 0; }
-        .print-container { width: 210mm; min-height: 297mm; height: auto; padding: 20mm 12.7mm 20mm 20.32mm; background: white; margin: 20px auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #000; }
-        .header h1 { font-size: 18px; margin-bottom: 5px; }
-        .header p { font-size: 13px; margin: 2px 0; }
-        .section { margin-bottom: 18px; }
-        .section-title { font-size: 13px; font-weight: bold; margin-bottom: 10px; padding: 5px; background: #f0f0f0; }
-        .row { display: flex; margin-bottom: 8px; gap: 15px; }
-        .col { flex: 1; }
-        .form-field { border-bottom: 1px solid #000; padding: 2px 5px; font-size: 12px; min-height: 16px; }
-        .label { font-size: 11px; font-weight: bold; display: block; margin-bottom: 2px; }
-        .terms { font-size: 12px; margin-top: 10px; line-height: 1.5; }
+        body { font-family: 'Cordia New', Tahoma, serif; font-size: 14px; line-height: 1.6; background: #f5f5f5; padding: 20px; font-weight: normal; -webkit-font-smoothing: antialiased; }
+        @page { size: A4; margin: 0; font-family: 'Cordia New', Tahoma, serif; }
+        .print-container { width: 210mm; min-height: 297mm; height: auto; padding: 20mm 12.7mm 20mm 20.32mm; background: white; margin: 20px auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
+        .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #000; font-family: 'Cordia New', Tahoma, serif; }
+        .header h1 { font-size: 18px; margin-bottom: 5px; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
+        .header p { font-size: 13px; margin: 2px 0; font-family: 'Cordia New', Tahoma, serif; }
+        .section { margin-bottom: 18px; font-family: 'Cordia New', Tahoma, serif; }
+        .section-title { font-size: 13px; font-weight: normal; margin-bottom: 10px; padding: 5px; background: #f0f0f0; font-family: 'Cordia New', Tahoma, serif; }
+        .row { display: flex; margin-bottom: 8px; gap: 15px; font-family: 'Cordia New', Tahoma, serif; }
+        .col { flex: 1; font-family: 'Cordia New', Tahoma, serif; }
+        .form-field { border-bottom: 1px solid #000; padding: 2px 5px; font-size: 12px; min-height: 16px; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
+        .label { font-size: 11px; font-weight: normal; display: block; margin-bottom: 2px; font-family: 'Cordia New', Tahoma, serif; }
+        .terms { font-size: 12px; margin-top: 10px; line-height: 1.5; font-family: 'Cordia New', Tahoma, serif; }
         .terms ol { margin-left: 20px; }
-        .terms li { margin-bottom: 4px; }
-        .signatures { margin-top: 25px; display: grid; grid-template-columns: 1fr; gap: 18px 0; }
-        .signature-box { font-size: 12px; }
-        .signature-row { display: flex; align-items: center; gap: 8px; margin-bottom: calc(12px + 0.6pt); justify-content: flex-start; }
+        .terms li { margin-bottom: 4px; font-family: 'Cordia New', Tahoma, serif; }
+        .signatures { margin-top: 25px; display: grid; grid-template-columns: 1fr; gap: 18px 0; font-family: 'Cordia New', Tahoma, serif; }
+        .signature-box { font-size: 12px; font-family: 'Cordia New', Tahoma, serif; }
+        .signature-row { display: flex; align-items: center; gap: 8px; margin-bottom: calc(12px + 0.6pt); justify-content: flex-start; font-family: 'Cordia New', Tahoma, serif; }
         .signature-line { width: 240px; border-bottom: 1px dotted #000; min-height: 18px; }
-        .signature-label { white-space: nowrap; }
-        .signature-paren { white-space: nowrap; }
-        .clause-line { margin-bottom: 10px; }
-        .underline { display: inline-flex; align-items: flex-end; justify-content: center; vertical-align: baseline; min-width: 40px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: center; line-height: 1; color: #0066cc; }
+        .signature-label { white-space: nowrap; font-family: 'Cordia New', Tahoma, serif; }
+        .signature-paren { white-space: nowrap; font-family: 'Cordia New', Tahoma, serif; }
+        .clause-line { margin-bottom: 10px; font-family: 'Cordia New', Tahoma, serif; }
+        .underline { display: inline-flex; align-items: flex-end; justify-content: center; vertical-align: baseline; min-width: 40px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: center; line-height: 1; color: #0066cc; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
         .underline-long { min-width: 120px; }
         .underline-mid { min-width: 90px; }
         .underline-short { min-width: 50px; }
         .underline-wide { min-width: 160px; }
         .underline-phone { min-width: 110px; }
         .underline-xl { min-width: 320px; }
-        .underline-address { display: inline-flex; align-items: flex-end; justify-content: flex-start; vertical-align: baseline; min-width: 320px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: left; line-height: 1.2; color: #0066cc; white-space: pre-line; }
-        @media print { body { background: white; padding: 0; } .print-container { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 20mm 12.7mm 20mm 20.32mm; box-shadow: none; } }
+        .underline-address { display: inline-flex; align-items: flex-end; justify-content: flex-start; vertical-align: baseline; min-width: 320px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: left; line-height: 1.2; color: #0066cc; white-space: pre-line; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
+        @media print { body { background: white; padding: 0; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; } .print-container { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 20mm 12.7mm 20mm 20.32mm; box-shadow: none; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; } }
     </style>
 </head>
 <body>

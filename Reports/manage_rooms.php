@@ -9,10 +9,17 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
-// ซิงก์สถานะห้องอัตโนมัติจากสัญญา (ctr_status 0/2 = มีผู้เช่า, 1 = ยกเลิก)
+// ซิงก์สถานะห้องอัตโนมัติจากสัญญาและการจอง
+// room_status: 0 = ว่าง, 1 = ไม่ว่าง (มีจอง หรือ มีสัญญา)
 try {
+  // ตั้งค่าห้องทั้งหมดเป็นว่าง (0) ก่อน
   $pdo->exec("UPDATE room SET room_status = '0'");
+  
+  // ปรับสถานะเป็น ไม่ว่าง (1) สำหรับห้องที่มีสัญญาที่ใช้งาน (ctr_status 0/2 = มีผู้เช่า)
   $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (SELECT 1 FROM contract c WHERE c.room_id = room.room_id AND c.ctr_status IN ('0','2'))");
+  
+  // ปรับสถานะเป็น ไม่ว่าง (1) สำหรับห้องที่มีการจองที่ยังไม่ยกเลิก (bkg_status 1/2 = จองแล้ว หรือ เข้าพักแล้ว)
+  $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (SELECT 1 FROM booking b WHERE b.room_id = room.room_id AND b.bkg_status IN ('1','2'))");
 } catch (PDOException $e) {
   // ถ้าซิงก์ไม่สำเร็จ ให้ไปต่อแต่แสดงสถานะตามข้อมูลเดิม
 }
@@ -46,6 +53,42 @@ $stmt = $pdo->query("
     $orderBy
 ");
 $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// ดึงข้อมูลเหตุผลที่ห้องไม่ว่าง (มีการเช่าหรือการจอง)
+$occupationReasons = [];
+try {
+  // ดึงข้อมูลจากสัญญา (เช่า)
+  $contractStmt = $pdo->query("
+    SELECT DISTINCT c.room_id, CONCAT('มีการเช่าอยู่') as reason
+    FROM contract c
+    WHERE c.ctr_status IN ('0','2')
+  ");
+  $contractRooms = $contractStmt->fetchAll(PDO::FETCH_ASSOC);
+  foreach ($contractRooms as $row) {
+    $occupationReasons[$row['room_id']] = $row['reason'];
+  }
+  
+  // ดึงข้อมูลจากการจอง (หากห้องยังไม่มีในรายการเช่า)
+  $bookingStmt = $pdo->query("
+    SELECT DISTINCT b.room_id, CONCAT('มีการจองอยู่') as reason
+    FROM booking b
+    WHERE b.bkg_status IN ('1','2')
+  ");
+  $bookingRooms = $bookingStmt->fetchAll(PDO::FETCH_ASSOC);
+  foreach ($bookingRooms as $row) {
+    if (!isset($occupationReasons[$row['room_id']])) {
+      $occupationReasons[$row['room_id']] = $row['reason'];
+    }
+  }
+} catch (PDOException $e) {
+  // ถ้าดึงไม่สำเร็จ ให้ไปต่อโดยไม่มีเหตุผล
+}
+
+// เพิ่มเหตุผลเข้าไปในข้อมูลห้อง
+foreach ($rooms as &$room) {
+  $room['occupation_reason'] = $occupationReasons[$room['room_id']] ?? null;
+}
+unset($room);
 
 // หาหมายเลขห้องถัดไป (padding 2 หลัก)
 $maxRoomNumber = 0;
@@ -390,7 +433,7 @@ try {
       .rooms-table td {
         padding: 0.65rem 1rem;
         color: #cbd5e1;
-        border-bottom: 1px solid rgba(255,255,255,0.1);
+        border-bottom: none;
         font-size: 0.9rem;
       }
       .rooms-table tbody tr {
@@ -533,8 +576,12 @@ try {
                   </div>
                    <div>
                      <label style="display:block;">สถานะห้อง</label>
-                     <div style="padding:0.9rem 0.85rem; border-radius:10px; border:1px dashed rgba(255,255,255,0.25); color:#cbd5e1;">
-                       ระบบจะปรับสถานะอัตโนมัติ เมื่อมีการจอง/ทำสัญญา (ว่าง = 0, ไม่ว่าง = 1)
+                     <div style="padding:0.9rem 0.85rem; border-radius:10px; border:1px dashed rgba(255,255,255,0.25); color:#cbd5e1; font-size:0.9rem; line-height:1.5;">
+                       <strong>ระบบจะปรับสถานะอัตโนมัติ</strong><br>
+                       <span style="display:block; margin-top:0.4rem;">
+                         <span style="color:#22c55e;">✓ ว่าง (0)</span> - ไม่มีใครจอง หรือเช่า<br>
+                         <span style="color:#ef4444;">✗ ไม่ว่าง (1)</span> - มีคนจองอยู่ หรือ มีคนเช่าอยู่
+                       </span>
                      </div>
                    </div>
                 </div>
@@ -603,6 +650,11 @@ try {
                       </div>
                       <div class="room-card-status <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
                         <?php echo $room['room_status'] === '0' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
+                        <?php if ($room['room_status'] !== '0' && !empty($room['occupation_reason'])): ?>
+                          <div style="font-size: 0.75rem; margin-top: 0.4rem; color: #fbbf24; font-weight: normal;">
+                            <?php echo htmlspecialchars($room['occupation_reason']); ?>
+                          </div>
+                        <?php endif; ?>
                       </div>
                       <div class="room-card-actions">
                         <button type="button" class="animate-ui-action-btn edit" data-room-id="<?php echo $room['room_id']; ?>" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(<?php echo $room['room_id']; ?>)">แก้ไข</button>
@@ -620,8 +672,6 @@ try {
                     <tr>
                       <th>รูปภาพ</th>
                       <th>หมายเลขห้อง</th>
-                      <th>ประเภท</th>
-                      <th>ราคา/เดือน</th>
                       <th>สถานะ</th>
                       <th>จัดการ</th>
                     </tr>
@@ -643,13 +693,22 @@ try {
                             <?php endif; ?>
                           </div>
                         </td>
-                        <td style="font-weight:600;color:#f5f8ff;">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></td>
-                        <td><?php echo htmlspecialchars($room['type_name'] ?? '-'); ?></td>
-                        <td><?php echo number_format($room['type_price'] ?? 0); ?> บาท</td>
+                        <td style="font-weight:600;color:#f5f8ff;">
+                          ห้อง <?php echo htmlspecialchars($room['room_number']); ?><br>
+                          <span style="font-size:0.85rem;color:#cbd5e1;font-weight:normal;">
+                            <?php echo number_format($room['type_price'] ?? 0); ?> บาท<br>
+                            ประเภท: <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?>
+                          </span>
+                        </td>
                         <td>
                           <span class="room-card-status <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
                             <?php echo $room['room_status'] === '0' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
                           </span>
+                          <?php if ($room['room_status'] !== '0' && !empty($room['occupation_reason'])): ?>
+                            <div style="font-size: 0.85rem; margin-top: 0.3rem; color: #fbbf24;">
+                              <?php echo htmlspecialchars($room['occupation_reason']); ?>
+                            </div>
+                          <?php endif; ?>
                         </td>
                         <td>
                           <div class="room-card-actions">
@@ -1116,9 +1175,13 @@ try {
                     }
                   </div>
                 </td>
-                <td style="font-weight:600;color:#f5f8ff;">ห้อง ${room.room_number}</td>
-                <td>${room.type_name || '-'}</td>
-                <td>${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท</td>
+                <td style="font-weight:600;color:#f5f8ff;">
+                  ห้อง ${room.room_number}<br>
+                  <span style="font-size:0.85rem;color:#cbd5e1;font-weight:normal;">
+                    ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท<br>
+                    ประเภท: ${room.type_name || '-'}
+                  </span>
+                </td>
                 <td>
                   <span class="room-card-status vacant">
                     ✓ ว่าง
@@ -1235,6 +1298,11 @@ try {
           }
         });
         
+        // บันทึกจำนวนห้องที่โหลดแล้ว
+        try { 
+          localStorage.setItem('visibleRoomsCount', visibleRooms); 
+        } catch (e) {}
+        
         // Update remaining count
         const remaining = totalRooms - visibleRooms;
         const remainingCountEl = document.getElementById('remainingCount');
@@ -1247,6 +1315,39 @@ try {
           loadMoreBtn.classList.add('hidden');
         }
       }
+      
+      // Restore visible rooms count on page load
+      document.addEventListener('DOMContentLoaded', () => {
+        try {
+          const savedVisibleCount = localStorage.getItem('visibleRoomsCount');
+          if (savedVisibleCount) {
+            const targetCount = parseInt(savedVisibleCount);
+            const hiddenRows = document.querySelectorAll('.room-row.hidden-row');
+            const totalRooms = document.querySelectorAll('.room-row').length;
+            let shownCount = 0;
+            
+            hiddenRows.forEach((row) => {
+              if (shownCount < (targetCount - 5)) {
+                row.classList.remove('hidden-row');
+                shownCount++;
+              }
+            });
+            
+            visibleRooms = targetCount;
+            
+            // Update remaining count
+            const remaining = totalRooms - visibleRooms;
+            const remainingCountEl = document.getElementById('remainingCount');
+            const loadMoreBtn = document.getElementById('loadMoreBtn');
+            
+            if (remaining > 0) {
+              remainingCountEl.textContent = remaining;
+            } else {
+              loadMoreBtn?.classList.add('hidden');
+            }
+          }
+        } catch (e) {}
+      });
     </script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
     <script src="../Assets/Javascript/confirm-modal.js"></script>

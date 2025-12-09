@@ -115,7 +115,7 @@ try {
 
                     <!-- ห้อง/ผู้เช่า -->
                     <div style="background:#0f172a;padding:1rem;border-radius:6px;">
-                      <div style="font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:0.3rem;">ห้อง <?php echo str_pad((string)($util['room_number'] ?? '0'), 2, '0', STR_PAD_LEFT); ?></div>
+                      <div style="font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:0.3rem;">ห้อง <?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></div>
                       <div style="font-size:0.9rem;color:#cbd5e1;"><?php echo htmlspecialchars($util['tnt_name'] ?? '-'); ?></div>
                     </div>
 
@@ -199,7 +199,7 @@ try {
                     <tr style="border-bottom:1px solid #334155;background:#1e293b;">
                       <td style="padding:0.75rem;color:#fff;">#<?php echo str_pad((string)($util['utl_id'] ?? '0'), 4, '0', STR_PAD_LEFT); ?></td>
                       <td style="padding:0.75rem;">
-                        <div style="color:#fff;font-weight:600;">ห้อง <?php echo str_pad((string)($util['room_number'] ?? '0'), 2, '0', STR_PAD_LEFT); ?></div>
+                        <div style="color:#fff;font-weight:600;">ห้อง <?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></div>
                         <div style="color:#94a3b8;font-size:0.875rem;"><?php echo htmlspecialchars($util['tnt_name'] ?? '-'); ?></div>
                       </td>
                       <td style="padding:0.75rem;color:#fff;"><?php echo $readDate; ?></td>

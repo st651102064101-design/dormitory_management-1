@@ -372,7 +372,7 @@ try {
                     <?php foreach ($activeContracts as $ctr): ?>
                       <option value="<?php echo (int)$ctr['ctr_id']; ?>" 
                               data-room-price="<?php echo (int)($ctr['type_price'] ?? 0); ?>">
-                        ห้อง <?php echo str_pad((string)($ctr['room_number'] ?? '0'), 2, '0', STR_PAD_LEFT); ?> - 
+                        ห้อง <?php echo htmlspecialchars((string)($ctr['room_number'] ?? '-')); ?> - 
                         <?php echo htmlspecialchars($ctr['tnt_name'] ?? 'ไม่ระบุ'); ?>
                       </option>
                     <?php endforeach; ?>
@@ -523,7 +523,7 @@ try {
                         <td>#<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?></td>
                         <td>
                           <div class="expense-table-room">
-                            <span>ห้อง <?php echo str_pad((string)($exp['room_number'] ?? '0'), 2, '0', STR_PAD_LEFT); ?></span>
+                            <span>ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?></span>
                             <span class="expense-meta"><?php echo htmlspecialchars($exp['tnt_name'] ?? '-'); ?></span>
                           </div>
                         </td>

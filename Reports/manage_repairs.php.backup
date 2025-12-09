@@ -37,14 +37,16 @@ $repairStmt = $pdo->query("SELECT r.*, c.ctr_id, t.tnt_name, rm.room_number
   ORDER BY $orderBy");
 $repairs = $repairStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// รายการสัญญาสำหรับเลือกห้อง/ผู้เช่า (แสดงแค่สัญญาที่ใช้งาน และไม่มีการซ่อมในสถานะ 0 หรือ 1)
+// รายการสัญญาสำหรับเลือกห้อง/ผู้เช่า (แสดงแค่ที่ซ่อมเสร็จแล้ว หรือ ไม่มีการซ่อมอยู่)
 $contracts = $pdo->query("
-  SELECT c.ctr_id, c.ctr_status, t.tnt_name, rm.room_number
+  SELECT c.ctr_id, c.ctr_status, t.tnt_name, rm.room_number,
+         MAX(r.repair_status) as latest_repair_status
   FROM contract c
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
   LEFT JOIN room rm ON c.room_id = rm.room_id
-  WHERE c.ctr_status = '0'
-    AND c.ctr_id NOT IN (SELECT DISTINCT ctr_id FROM repair WHERE repair_status IN ('0', '1'))
+  LEFT JOIN repair r ON c.ctr_id = r.ctr_id
+  GROUP BY c.ctr_id
+  HAVING latest_repair_status IS NULL OR latest_repair_status = '2'
   ORDER BY rm.room_number
 ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -52,26 +54,22 @@ $statusMap = [
   '0' => 'รอซ่อม',
   '1' => 'กำลังซ่อม',
   '2' => 'ซ่อมเสร็จแล้ว',
-  '3' => 'ยกเลิก',
 ];
 $statusColors = [
   '0' => '#f97316',
   '1' => '#60a5fa',
   '2' => '#22c55e',
-  '3' => '#ef4444',
 ];
 
 $stats = [
   'pending' => 0,
   'inprogress' => 0,
   'done' => 0,
-  'cancelled' => 0,
 ];
 foreach ($repairs as $r) {
   if (($r['repair_status'] ?? '') === '0') $stats['pending']++;
   elseif (($r['repair_status'] ?? '') === '1') $stats['inprogress']++;
   elseif (($r['repair_status'] ?? '') === '2') $stats['done']++;
-  elseif (($r['repair_status'] ?? '') === '3') $stats['cancelled']++;
 }
 
 function relativeTimeInfo(?string $dateTimeStr): array {
@@ -230,10 +228,10 @@ try {
         box-shadow: 0 4px 12px rgba(0,0,0,0.2);
       }
       
-      /* Active state - brighter and more prominent */
-      .status-filter-btn.active {
-        font-weight: 600;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+      /* Active state */
+      .status-filter-btn[data-status="all"]:first-of-type {
+        opacity: 1 !important;
+        transform: scale(1.05) !important;
       }
     </style>
   </head>
@@ -288,7 +286,7 @@ try {
                 <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">เลือกห้อง/ผู้เช่า ระบุวันที่และรายละเอียดงานซ่อม</p>
               </div>
             </div>
-            <form action="../Manage/process_repair.php" method="post" id="repairForm" enctype="multipart/form-data">
+            <form action="../Manage/process_repair.php" method="post" id="repairForm">
               <div class="repair-form">
                 <div>
                   <label for="ctr_id">สัญญา / ห้องพัก <span style="color:#f87171;">*</span></label>
@@ -297,6 +295,7 @@ try {
                     <?php foreach ($contracts as $ctr): ?>
                       <option value="<?php echo (int)$ctr['ctr_id']; ?>">
                         ห้อง <?php echo htmlspecialchars((string)($ctr['room_number'] ?? '-')); ?> - <?php echo htmlspecialchars($ctr['tnt_name'] ?? 'ไม่ระบุ'); ?>
+                        <?php if (($ctr['ctr_status'] ?? '') !== '0') echo ' (ไม่ใช้งาน)'; ?>
                       </option>
                     <?php endforeach; ?>
                   </select>
@@ -308,7 +307,7 @@ try {
                 </div>
                 <div>
                   <label for="repair_time">เวลาแจ้ง</label>
-                  <input type="text" id="repair_time" name="repair_time" readonly style="background:rgba(148,163,184,0.1); cursor:not-allowed; font-weight:600; font-size:1.1rem;" value="<?php echo date('H:i:s'); ?>" />
+                  <input type="text" id="repair_time" name="repair_time" readonly style="background:rgba(148,163,184,0.1); cursor:not-allowed;" value="<?php echo date('H:i:s'); ?>" />
                   <input type="hidden" id="repair_time_hidden" name="repair_time_hidden" value="<?php echo date('H:i:s'); ?>" />
                 </div>
                 <input type="hidden" name="repair_status" value="0" />
@@ -345,16 +344,16 @@ try {
             
             <!-- Status Filter Buttons -->
             <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-              <button type="button" class="status-filter-btn" data-status="all" onclick="filterByStatus('all')" style="background:rgba(96,165,250,0.3);border:1.5px solid rgba(96,165,250,0.6);color:#60a5fa;font-weight:500;">
+              <button type="button" class="status-filter-btn" data-status="all" onclick="filterByStatus('all')" style="background:rgba(96,165,250,0.2);border:1px solid rgba(96,165,250,0.4);color:#60a5fa;">
                 ทั้งหมด <span style="margin-left:0.4rem;font-weight:600;">(<span class="count-all"><?php echo count($repairs); ?></span>)</span>
               </button>
-              <button type="button" class="status-filter-btn" data-status="0" onclick="filterByStatus('0')" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);color:#f97316;">
+              <button type="button" class="status-filter-btn" data-status="0" onclick="filterByStatus('0')" style="background:rgba(249,115,22,0.2);border:1px solid rgba(249,115,22,0.4);color:#f97316;">
                 รอซ่อม <span style="margin-left:0.4rem;font-weight:600;">(<span class="count-0"><?php echo $stats['pending']; ?></span>)</span>
               </button>
-              <button type="button" class="status-filter-btn" data-status="1" onclick="filterByStatus('1')" style="background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);color:#60a5fa;">
+              <button type="button" class="status-filter-btn" data-status="1" onclick="filterByStatus('1')" style="background:rgba(96,165,250,0.2);border:1px solid rgba(96,165,250,0.4);color:#60a5fa;">
                 กำลังซ่อม <span style="margin-left:0.4rem;font-weight:600;">(<span class="count-1"><?php echo $stats['inprogress']; ?></span>)</span>
               </button>
-              <button type="button" class="status-filter-btn" data-status="2" onclick="filterByStatus('2')" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#22c55e;">
+              <button type="button" class="status-filter-btn" data-status="2" onclick="filterByStatus('2')" style="background:rgba(34,197,94,0.2);border:1px solid rgba(34,197,94,0.4);color:#22c55e;">
                 ซ่อมเสร็จแล้ว <span style="margin-left:0.4rem;font-weight:600;">(<span class="count-2"><?php echo $stats['done']; ?></span>)</span>
               </button>
             </div>
@@ -399,19 +398,7 @@ try {
                         <td>
                           <div style="display:flex; flex-direction:column; gap:0.2rem;">
                             <span class="time-badge relative-time <?php echo htmlspecialchars($timeInfo['class']); ?>" 
-                                  data-timestamp="<?php 
-                                    if ($repairDateTime) {
-                                      try {
-                                        $tz = new DateTimeZone('Asia/Bangkok');
-                                        $dt = new DateTime($repairDateTime, $tz);
-                                        echo $dt->getTimestamp();
-                                      } catch (Exception $e) {
-                                        echo (new DateTime('now', new DateTimeZone('Asia/Bangkok')))->getTimestamp();
-                                      }
-                                    } else {
-                                      echo (new DateTime('now', new DateTimeZone('Asia/Bangkok')))->getTimestamp();
-                                    }
-                                  ?>">
+                                  data-datetime="<?php echo htmlspecialchars($repairDateTime); ?>">
                               <?php echo htmlspecialchars($timeInfo['label']); ?>
                             </span>
                             <span style="color:#64748b; font-size:0.75rem;">
@@ -452,10 +439,8 @@ try {
                           <div class="crud-actions" data-repair-id="<?php echo (int)$r['repair_id']; ?>">
                             <?php if ($status === '0'): ?>
                               <button type="button" class="animate-ui-action-btn edit repair-primary" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '1')">ทำการซ่อม</button>
-                              <button type="button" class="animate-ui-action-btn delete" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '3')" style="margin-left:0.4rem;">ยกเลิก</button>
                             <?php elseif ($status === '1'): ?>
                               <button type="button" class="animate-ui-action-btn edit" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '2')">ซ่อมเสร็จแล้ว</button>
-                              <button type="button" class="animate-ui-action-btn delete" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '3')" style="margin-left:0.4rem;">ยกเลิก</button>
                             <?php else: ?>
                               <span style="color:#22c55e; font-weight:600;">ซ่อมเสร็จแล้ว</span>
                             <?php endif; ?>
@@ -472,228 +457,390 @@ try {
       </main>
     </div>
 
-    <script src="../Assets/Javascript/confirm-modal.js" defer></script>
-    <script src="../Assets/Javascript/toast-notification.js" defer></script>
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
-      // Get server time (Bangkok timezone) for accurate relative time calculation
-      const serverTimeMs = <?php echo (new DateTime('now', new DateTimeZone('Asia/Bangkok')))->getTimestamp() * 1000; ?>;
-      const clientTimeAtPageLoadMs = new Date().getTime();
-      const timeDiffMs = serverTimeMs - clientTimeAtPageLoadMs;
-      
-      function getServerTime() {
-        return new Date(new Date().getTime() + timeDiffMs);
-      }
-      
-      // Update relative time in real-time
-      function updateRelativeTime() {
-        const timeElements = document.querySelectorAll('[data-timestamp]');
-        timeElements.forEach(element => {
-          const timestamp = parseInt(element.getAttribute('data-timestamp'));
-          if (isNaN(timestamp)) return;
-          
-          const targetDateMs = timestamp * 1000;
-          const nowMs = getServerTime().getTime();
-          const diffMs = nowMs - targetDateMs;
-          const diffSecs = Math.floor(diffMs / 1000);
-          const diffMins = Math.floor(diffSecs / 60);
-          const diffHours = Math.floor(diffSecs / 3600);
-          const diffDays = Math.floor(diffSecs / 86400);
-          
-          let label = '';
-          let className = 'time-fresh';
-          
-          if (diffSecs < 60) {
-            label = Math.max(1, diffSecs) + ' วินาทีที่แล้ว';
-            className = 'time-fresh';
-          } else if (diffMins < 60) {
-            label = diffMins + ' นาทีที่แล้ว';
-            className = 'time-fresh';
-          } else if (diffHours < 24) {
-            label = diffHours + ' ชม.ที่แล้ว';
-            className = 'time-fresh';
-          } else if (diffDays === 1) {
-            label = 'เมื่อวาน';
-            className = 'time-warning';
-          } else if (diffDays === 2) {
-            label = 'เมื่อวานซืน';
-            className = 'time-warning';
-          } else if (diffDays < 4) {
-            label = diffDays + ' วันที่แล้ว';
-            className = 'time-warning';
-          } else if (diffDays < 30) {
-            label = diffDays + ' วันที่แล้ว';
-            className = 'time-danger';
-          } else if (diffDays < 365) {
-            const months = Math.floor(diffDays / 30);
-            label = months + ' เดือนที่แล้ว';
-            className = 'time-danger';
-          } else {
-            const years = Math.floor(diffDays / 365);
-            label = years + ' ปีที่แล้ว';
-            className = 'time-danger';
-          }
-          
-          element.textContent = label;
-          element.className = 'time-badge relative-time ' + className;
-        });
-      }
-      
-      // Update current time display
-      function updateCurrentTime() {
+      // อัปเดตวันที่และเวลาลิงค์ทุกวินาที
+      function updateRepairTime() {
+        const now = new Date();
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        const day = String(now.getDate()).padStart(2, '0');
+        const month = String(now.getMonth() + 1).padStart(2, '0');
+        const year = now.getFullYear();
+        const yearBE = year + 543; // เปลี่ยนเป็นปีพุทธศักราช
+        
         const timeInput = document.getElementById('repair_time');
         const timeHidden = document.getElementById('repair_time_hidden');
-        if (timeInput) {
-          const now = getServerTime();
-          const hours = String(now.getHours()).padStart(2, '0');
-          const minutes = String(now.getMinutes()).padStart(2, '0');
-          const seconds = String(now.getSeconds()).padStart(2, '0');
-          const timeStr = `${hours}:${minutes}:${seconds}`;
-          timeInput.value = timeStr;
-          if (timeHidden) {
-            timeHidden.value = timeStr;
-          }
+        const dateDisplay = document.getElementById('repair_date');
+        const dateHidden = document.getElementById('repair_date_hidden');
+        
+        if (timeInput) timeInput.value = `${hours}:${minutes}:${seconds}`;
+        if (timeHidden) timeHidden.value = `${hours}:${minutes}:${seconds}`;
+        if (dateDisplay) dateDisplay.value = `${day}/${month}/${yearBE}`;
+        // ใช้เวลาท้องถิ่น (ค.ศ.) สำหรับเก็บฐานข้อมูล
+        if (dateHidden) dateHidden.value = `${year}-${month}-${day}`;
+      }
+      
+      // อัปเดตทันทีและทุก 1 วินาที
+      updateRepairTime();
+      setInterval(updateRepairTime, 1000);
+
+      // ฟังก์ชันคำนวณเวลาสัมพัทธ์
+      function getRelativeTime(dateTimeStr) {
+        if (!dateTimeStr) return { label: '-', class: '' };
+        
+        const target = new Date(dateTimeStr);
+        const now = new Date();
+        const diff = Math.floor((now - target) / 1000); // วินาที
+        
+        if (diff < 0) return { label: 'เร็วๆ นี้', class: 'time-neutral' };
+        
+        if (diff < 60) {
+          return { label: `${Math.max(1, diff)} วินาทีที่แล้ว`, class: 'time-fresh' };
         }
-      }
-      
-      // Update every 100ms for smooth time display
-      setInterval(updateCurrentTime, 100);
-      setInterval(updateRelativeTime, 500);
-      
-      // Initial update
-      document.addEventListener('DOMContentLoaded', () => {
-        updateCurrentTime();
-        updateRelativeTime();
-      });
-      
-      function getStatusFromBadge(badge) {
-        const style = badge.getAttribute('style');
-        if (style.includes('#f97316')) return '0';
-        if (style.includes('#60a5fa')) return '1';
-        if (style.includes('#22c55e')) return '2';
-        return '';
-      }
-      
-      
-      let currentFilter = 'all';
-      
-      // Update repair status
-      function updateRepairStatus(repairId, newStatus) {
-        // Show confirmation if cancelling
-        if (newStatus === '3') {
-          showConfirmDialog('ยืนยันการยกเลิก', 'คุณต้องการยกเลิกการแจ้งซ่อมนี้หรือไม่?', 'warning').then(confirmed => {
-            if (confirmed) {
-              performUpdateRepairStatus(repairId, newStatus);
-            }
-          });
-        } else {
-          performUpdateRepairStatus(repairId, newStatus);
+        if (diff < 3600) {
+          const min = Math.floor(diff / 60);
+          return { label: `${min} นาทีที่แล้ว`, class: 'time-fresh' };
         }
+        if (diff < 86400) {
+          const hrs = Math.floor(diff / 3600);
+          return { label: `${hrs} ชม.ที่แล้ว`, class: 'time-fresh' };
+        }
+        
+        const days = Math.floor(diff / 86400);
+        if (days === 1) return { label: 'เมื่อวาน', class: 'time-warning' };
+        if (days === 2) return { label: 'เมื่อวานซืน', class: 'time-warning' };
+        if (days < 4) return { label: `${days} วันที่แล้ว`, class: 'time-warning' };
+        if (days < 30) return { label: `${days} วันที่แล้ว`, class: 'time-danger' };
+        
+        const months = Math.floor(days / 30);
+        if (months < 12) return { label: `${months} เดือนที่แล้ว`, class: 'time-danger' };
+        
+        const years = Math.floor(days / 365);
+        return { label: `${years} ปีที่แล้ว`, class: 'time-danger' };
       }
-      
-      function performUpdateRepairStatus(repairId, newStatus) {
-        // If cancelling, delete the repair and its image
-        if (newStatus === '3') {
+
+      // อัพเดทเวลาสัมพัทธ์ในตาราง
+      function updateRelativeTimes() {
+        document.querySelectorAll('.relative-time').forEach(badge => {
+          const datetime = badge.getAttribute('data-datetime');
+          if (!datetime) return;
+          
+          const timeInfo = getRelativeTime(datetime);
+          badge.textContent = timeInfo.label;
+          
+          // อัพเดท class
+          badge.className = 'time-badge relative-time ' + timeInfo.class;
+        });
+      }
+
+      async function updateRepairStatus(repairId, status) {
+        if (!repairId) return;
+        
+        // ตั้งข้อความตามสถานะใหม่
+        const statusMessages = {
+          '1': 'ทำการซ่อม',
+          '2': 'ซ่อมเสร็จแล้ว',
+        };
+        const statusText = statusMessages[status] || 'อัปเดตสถานะ';
+        
+        const confirmed = await showConfirmDialog(
+          'ยืนยันการเปลี่ยนสถานะ',
+          `คุณต้องการเปลี่ยนสถานะเป็น <strong>"${statusText}"</strong> หรือไม่?`,
+          'warning'
+        );
+        
+        if (!confirmed) return;
+        
+        try {
           const formData = new FormData();
           formData.append('repair_id', repairId);
+          formData.append('repair_status', status);
           
-          fetch('../Manage/delete_repair.php', {
+          const response = await fetch('../Manage/update_repair_status_ajax.php', {
             method: 'POST',
             body: formData,
             headers: {
               'X-Requested-With': 'XMLHttpRequest'
             }
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              const row = document.querySelector(`tr[data-repair-id="${repairId}"]`);
-              if (row) {
-                row.remove();
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            showSuccessToast(result.message);
+            
+            // โหลดข้อมูลซ่อมใหม่เพื่อรีเฟรชตาราง
+            setTimeout(() => {
+              loadRepairList();
+            }, 500);
+          } else {
+            showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        }
+      }
+
+      // แสดง toast notification ด้านล่างขวา (ปิดอัตโนมัติหลัง 3 วินาที)
+
+
+      // โหลด dropdown สัญญาใหม่
+      function loadContractOptions() {
+        fetch(window.location.href)
+          .then(response => response.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // ดึง options ใหม่จาก HTML ที่โหลดมา
+            const newSelect = doc.querySelector('#ctr_id');
+            const currentSelect = document.getElementById('ctr_id');
+            
+            if (newSelect && currentSelect) {
+              // เก็บค่าเดิม
+              const oldValue = currentSelect.value;
+              
+              // แทนที่ options ทั้งหมด
+              currentSelect.innerHTML = newSelect.innerHTML;
+              
+              // ถ้าค่าเดิมยังมีอยู่ ให้เลือกกลับ (แต่หลังเพิ่มการซ่อมแล้วน่าจะหายไป)
+              if (oldValue && currentSelect.querySelector(`option[value="${oldValue}"]`)) {
+                currentSelect.value = oldValue;
+              } else {
+                currentSelect.value = '';
               }
-              showToast('สำเร็จ', 'ยกเลิกการแจ้งซ่อมและลบรูปภาพแล้ว', 'success');
-              // Re-apply filter to check if empty message should show
-              filterByStatus(currentFilter);
-            } else {
-              showToast('ผิดพลาด', data.error || 'ไม่สามารถลบได้', 'error');
             }
           })
           .catch(error => {
-            console.error('Error:', error);
-            showToast('ผิดพลาด', 'เกิดข้อผิดพลาดในการลบ', 'error');
+            console.error('Error loading contract options:', error);
           });
-          return;
-        }
+      }
+
+      // โหลดข้อมูลรายการแจ้งซ่อมใหม่
+      function loadRepairList() {
+        fetch(window.location.href)
+          .then(response => response.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            
+            // อัพเดทตาราง
+            const newTable = doc.querySelector('#table-repairs tbody');
+            const currentTable = document.querySelector('#table-repairs tbody');
+            if (newTable && currentTable) {
+              currentTable.innerHTML = newTable.innerHTML;
+              
+              // อัพเดทเวลาสัมพัทธ์สำหรับแถวใหม่
+              updateRelativeTimes();
+            }
+            
+            // อัพเดทสถิติ
+            const statsCards = doc.querySelectorAll('.repair-stat-card .stat-number');
+            const currentStats = document.querySelectorAll('.repair-stat-card .stat-number');
+            if (statsCards.length === currentStats.length) {
+              statsCards.forEach((stat, i) => {
+                if (currentStats[i]) {
+                  currentStats[i].textContent = stat.textContent;
+                }
+              });
+            }
+          })
+          .catch(error => {
+            console.error('Error loading repair list:', error);
+          });
+      }
+
+      // บันทึกการแจ้งซ่อมด้วย AJAX
+      function submitRepairForm(e) {
+        e.preventDefault();
         
-        // For other status updates
-        const formData = new FormData();
-        formData.append('repair_id', repairId);
-        formData.append('repair_status', newStatus);
+        const form = document.getElementById('repairForm');
+        const formData = new FormData(form);
+        const submitBtn = form.querySelector('button[type="submit"]');
         
-        fetch('../Manage/update_repair_status_ajax.php', {
+        // Disable button
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'กำลังบันทึก...';
+        
+        fetch('../Manage/process_repair.php', {
           method: 'POST',
-          body: formData,
           headers: {
             'X-Requested-With': 'XMLHttpRequest'
-          }
+          },
+          body: formData
         })
         .then(response => response.json())
         .then(data => {
           if (data.success) {
-            showToast('สำเร็จ', data.message, 'success');
-            setTimeout(() => location.reload(), 1500);
+            // แสดง toast notification
+            showSuccessToast(data.message || 'บันทึกการแจ้งซ่อมเรียบร้อยแล้ว');
+            
+            // รีเซ็ตฟอร์ม
+            form.reset();
+            document.getElementById('ctr_id').value = '';
+            document.getElementById('repair_desc').value = '';
+            
+            // โหลดข้อมูลใหม่แบบ AJAX (ไม่ reload หน้า)
+            loadRepairList();
+            
+            // โหลด dropdown สัญญาใหม่
+            loadContractOptions();
           } else {
-            showToast('ผิดพลาด', data.error || 'ไม่สามารถอัปเดตสถานะได้', 'error');
+            throw new Error(data.message || 'เกิดข้อผิดพลาด');
           }
         })
         .catch(error => {
-          console.error('Error:', error);
-          showToast('ผิดพลาด', 'เกิดข้อผิดพลาดในการส่งข้อมูล', 'error');
+          // แสดง toast notification error
+          showErrorToast(error.message || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+        })
+        .finally(() => {
+          // Enable button
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'บันทึกการแจ้งซ่อม';
         });
       }
+
+      // ฟังก์ชันสำหรับตรวจจับและปรับสีการ์ดตาม theme
+      function updateCardTheme() {
+        const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim();
+        const bodyBg = getComputedStyle(document.body).backgroundColor;
+        
+        // ตรวจสอบว่าเป็นสีขาวหรือสีอ่อน
+        const isLightTheme = themeColor === '#fff' || themeColor === '#ffffff' || 
+                             themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
+                             bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
+        
+        const cards = document.querySelectorAll('.repair-stat-card');
+        cards.forEach(card => {
+          if (isLightTheme) {
+            // โหมดสีขาว
+            card.style.background = '#ffffff';
+            card.style.color = '#111827';
+            card.style.border = '1px solid #e5e7eb';
+            card.style.boxShadow = '0 2px 8px rgba(0,0,0,0.08)';
+            
+            const h3 = card.querySelector('h3');
+            if (h3) h3.style.color = '#6b7280';
+          } else {
+            // โหมดมืด (เดิม)
+            card.style.background = '#0f172a';
+            card.style.color = '#e2e8f0';
+            card.style.border = '1px solid rgba(148,163,184,0.2)';
+            card.style.boxShadow = '0 12px 30px rgba(0,0,0,0.2)';
+            
+            const h3 = card.querySelector('h3');
+            if (h3) h3.style.color = '#cbd5e1';
+          }
+        });
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        updateRepairTime();
+        setInterval(updateRepairTime, 1000); // อัปเดตฟอร์มทุกวินาที
+        
+        updateRelativeTimes();
+        setInterval(updateRelativeTimes, 1000); // อัปเดตเวลาสัมพัทธ์ทุกวินาที
+        
+        // เพิ่ม event listener สำหรับ form
+        const repairForm = document.getElementById('repairForm');
+        if (repairForm) {
+          repairForm.addEventListener('submit', submitRepairForm);
+        }
+        
+        // ตรวจจับและปรับสีการ์ดตาม theme
+        updateCardTheme();
+        
+        // ตรวจสอบการเปลี่ยน theme color (ใช้ MutationObserver)
+        const observer = new MutationObserver(() => {
+          updateCardTheme();
+        });
+        observer.observe(document.documentElement, { 
+          attributes: true, 
+          attributeFilter: ['style'] 
+        });
+        observer.observe(document.body, { 
+          attributes: true, 
+          attributeFilter: ['style'] 
+        });
+      });
+    </script>
+    <script src="../Assets/Javascript/toast-notification.js"></script>
+    <script src="../Assets/Javascript/confirm-modal.js"></script>
+    <script>
+      // Initialize filter buttons (set "ทั้งหมด" as active)
+      document.addEventListener('DOMContentLoaded', () => {
+        const allBtn = document.querySelector('.status-filter-btn[data-status="all"]');
+        if (allBtn) {
+          allBtn.style.opacity = '1';
+          allBtn.style.transform = 'scale(1.05)';
+        }
+        // Set other buttons to inactive state
+        document.querySelectorAll('.status-filter-btn[data-status!="all"]').forEach(btn => {
+          btn.style.opacity = '0.6';
+          btn.style.transform = 'scale(1)';
+        });
+      });
+      
+      function changeSortBy(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      }
+      
+      // Filter by status
+      let currentFilter = 'all';
       
       function filterByStatus(status) {
         currentFilter = status;
-        // Save filter status to localStorage
-        localStorage.setItem('repairFilterStatus', status);
-        
         const table = document.getElementById('table-repairs');
-        if (!table) return;
         const rows = table.querySelectorAll('tbody tr');
         let visibleCount = 0;
         
+        // Update button styles
         document.querySelectorAll('.status-filter-btn').forEach(btn => {
           const btnStatus = btn.getAttribute('data-status');
           if (btnStatus === status) {
-            btn.classList.add('active');
             btn.style.opacity = '1';
             btn.style.transform = 'scale(1.05)';
           } else {
-            btn.classList.remove('active');
-            btn.style.opacity = '0.5';
+            btn.style.opacity = '0.6';
             btn.style.transform = 'scale(1)';
           }
         });
         
+        // Filter rows
         rows.forEach(row => {
-          if (!row.getAttribute('data-repair-id')) return;
+          // Skip rows without data-repair-id (empty state)
+          if (!row.getAttribute('data-repair-id')) {
+            return;
+          }
+          
           if (status === 'all') {
             row.style.display = '';
             visibleCount++;
           } else {
+            // Find status badge in the row
             const statusBadge = row.querySelector('.status-badge');
-            if (statusBadge && getStatusFromBadge(statusBadge) === status) {
-              row.style.display = '';
-              visibleCount++;
-            } else {
-              row.style.display = 'none';
+            if (statusBadge) {
+              const rowStatus = getStatusFromBadge(statusBadge);
+              if (rowStatus === status) {
+                row.style.display = '';
+                visibleCount++;
+              } else {
+                row.style.display = 'none';
+              }
             }
           }
         });
         
+        // Show/hide empty message if needed
         const tbody = table.querySelector('tbody');
         let emptyMsg = tbody.querySelector('.empty-filter-message');
+        
         if (visibleCount === 0) {
           if (!emptyMsg) {
             emptyMsg = document.createElement('tr');
@@ -707,63 +854,67 @@ try {
         }
       }
       
-      function changeSortBy(sortValue) {
-        const url = new URL(window.location);
-        url.searchParams.set('sort', sortValue);
-        window.location.href = url.toString();
+      // Helper function to get status from badge styling
+      function getStatusFromBadge(badge) {
+        const style = badge.getAttribute('style');
+        if (style.includes('#f97316')) return '0'; // รอซ่อม (orange)
+        if (style.includes('#60a5fa')) return '1'; // กำลังซ่อม (blue)
+        if (style.includes('#22c55e')) return '2'; // ซ่อมเสร็จแล้ว (green)
+        return '';
       }
       
+      // Initialize on DOM ready
       document.addEventListener('DOMContentLoaded', () => {
-        // Load saved filter status from localStorage
-        const savedFilter = localStorage.getItem('repairFilterStatus') || 'all';
+        // Initialize filter buttons (set "ทั้งหมด" as active)
+        const allBtn = document.querySelector('.status-filter-btn[data-status="all"]');
+        if (allBtn) {
+          allBtn.style.opacity = '1';
+          allBtn.style.transform = 'scale(1.05)';
+        }
+        // Set other buttons to inactive state
+        document.querySelectorAll('.status-filter-btn[data-status!="all"]').forEach(btn => {
+          btn.style.opacity = '0.6';
+          btn.style.transform = 'scale(1)';
+        });
         
-        // Apply saved filter or default
-        filterByStatus(savedFilter);
-        
+        // Image preview handler
         const imageInput = document.getElementById('repair_image');
         const imagePreview = document.getElementById('image_preview');
+        
         if (imageInput) {
           imageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             imagePreview.innerHTML = '';
+            
             if (file) {
+              // ตรวจสอบขนาดไฟล์
               if (file.size > 5 * 1024 * 1024) {
                 imagePreview.innerHTML = '<div style="color:#ef4444; font-size:0.85rem;">❌ ไฟล์ใหญ่เกินไป (ไม่เกิน 5MB)</div>';
                 imageInput.value = '';
                 return;
               }
+              
+              // ตรวจสอบประเภทไฟล์
               if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                imagePreview.innerHTML = '<div style="color:#ef4444; font-size:0.85rem;">❌ ประเภทไฟล์ไม่ถูกต้อง</div>';
+                imagePreview.innerHTML = '<div style="color:#ef4444; font-size:0.85rem;">❌ ประเภทไฟล์ไม่ถูกต้อง (สนับสนุน JPG, PNG, WebP)</div>';
                 imageInput.value = '';
                 return;
               }
+              
+              // แสดง preview
               const reader = new FileReader();
               reader.onload = (event) => {
-                imagePreview.innerHTML = `<div style="display:flex; flex-direction:column; gap:0.5rem;"><img src="${event.target.result}" alt="Preview" style="max-width:200px; max-height:200px; border-radius:8px; object-fit:contain;" /><div style="color:#22c55e; font-size:0.85rem;">✓ ${file.name}</div></div>`;
+                imagePreview.innerHTML = `
+                  <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                    <img src="${event.target.result}" alt="Preview" style="max-width:200px; max-height:200px; border-radius:8px; object-fit:contain;" />
+                    <div style="color:#22c55e; font-size:0.85rem;">✓ ${file.name}</div>
+                  </div>
+                `;
               };
               reader.readAsDataURL(file);
             }
           });
         }
       });
-
-      // Sync hidden fields on form submit
-      document.getElementById('repairForm').addEventListener('submit', function(e) {
-        const ctr_id = document.getElementById('ctr_id').value;
-        const repair_desc = document.getElementById('repair_desc').value.trim();
-        
-        console.log('Form submitting with:', {
-          ctr_id: ctr_id,
-          repair_desc: repair_desc,
-          repair_time: document.getElementById('repair_time_hidden').value
-        });
-        
-        if (!ctr_id || !repair_desc) {
-          console.warn('Form validation failed: ctr_id=' + ctr_id + ', desc=' + repair_desc);
-        }
-        
-        updateCurrentTime(); // Ensure latest time is in hidden fields
-      });
-    </script>
   </body>
 </html>

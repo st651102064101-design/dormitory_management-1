@@ -38,6 +38,16 @@ try {
         exit;
     }
 
+    // ตรวจสอบว่ามีสัญญาที่ยังไม่เสร็จ
+    $stmtContract = $pdo->prepare("SELECT COUNT(*) as count FROM contract WHERE room_id = ? AND ctr_status IN ('0', '2')");
+    $stmtContract->execute([$room_id]);
+    $contractResult = $stmtContract->fetch(PDO::FETCH_ASSOC);
+    
+    if ($contractResult['count'] > 0) {
+        echo json_encode(['success' => false, 'message' => 'ไม่สามารถลบได้ - มีผู้เช่าอยู่ในห้องนี้']);
+        exit;
+    }
+
     // ลบรูปภาพ
     if ($room['room_image']) {
         $imagePath = __DIR__ . '/..' . str_replace('/Dormitory_Management', '', $room['room_image']);

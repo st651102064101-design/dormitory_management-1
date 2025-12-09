@@ -355,7 +355,7 @@ try {
                       <optgroup label="ห้องว่าง">
                         <?php foreach ($availableRooms as $room): ?>
                           <option value="<?php echo (int)$room['room_id']; ?>" data-room-status="0">
-                            ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>
+                            ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?>
                           </option>
                         <?php endforeach; ?>
                       </optgroup>
@@ -365,7 +365,7 @@ try {
                       <optgroup label="ห้องไม่ว่าง">
                         <?php foreach ($occupiedRooms as $room): ?>
                           <option value="<?php echo (int)$room['room_id']; ?>" data-room-status="1">
-                            ห้อง <?php echo str_pad((string)$room['room_number'], 2, '0', STR_PAD_LEFT); ?>
+                            ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?>
                           </option>
                         <?php endforeach; ?>
                       </optgroup>
@@ -457,7 +457,7 @@ try {
                           <div class="contract-room-meta">โทร <?php echo htmlspecialchars($ctr['tnt_phone'] ?? '-'); ?></div>
                         </td>
                         <td>
-                          <div class="contract-table-room">ห้อง <?php echo str_pad((string)($ctr['room_number'] ?? 0), 2, '0', STR_PAD_LEFT); ?></div>
+                          <div class="contract-table-room">ห้อง <?php echo htmlspecialchars((string)($ctr['room_number'] ?? '-')); ?></div>
                           <div class="contract-room-meta">ประเภท: <?php echo htmlspecialchars($ctr['type_name'] ?? '-'); ?></div>
                         </td>
                         <td>
