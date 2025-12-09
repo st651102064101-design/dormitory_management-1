@@ -1031,6 +1031,7 @@ try {
         <a class="" href="report_payments.php"><span class="app-nav-icon" aria-hidden="true">💳</span><span class="app-nav-label">รายงาน ชำระเงิน</span></a>
         <a class="" href="report_invoice.php"><span class="app-nav-icon" aria-hidden="true">📄</span><span class="app-nav-label">รายงาน ใบแจ้ง</span></a>
         <a class="" href="report_repairs.php"><span class="app-nav-icon" aria-hidden="true">🔧</span><span class="app-nav-label">รายงาน แจ้งซ่อม</span></a>
+        <a class="" href="report_news.php"><span class="app-nav-icon" aria-hidden="true">📰</span><span class="app-nav-label">รายงาน ข่าวสาร</span></a>
         <a class="" href="print_contract.php"><span class="app-nav-icon" aria-hidden="true">🖨️</span><span class="app-nav-label">พิมพ์สัญญา</span></a>
       </details>
     </div>
