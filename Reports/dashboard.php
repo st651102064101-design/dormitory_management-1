@@ -390,7 +390,7 @@ try {
                         <div class="value"><?php echo $news_count; ?></div>
                     </div>
                     <div class="report-item">
-                        <label><a href="manage_news.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
+                        <label><a href="report_news.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
                     </div>
                 </div>
             </div>
