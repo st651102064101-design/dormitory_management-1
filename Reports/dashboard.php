@@ -379,6 +379,9 @@ try {
                         <label>จองอยู่</label>
                         <div class="value"><?php echo $booking_pending; ?></div>
                     </div>
+                    <div class="report-item">
+                        <label><a href="report_booking.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
+                    </div>
                 </div>
             </div>
 

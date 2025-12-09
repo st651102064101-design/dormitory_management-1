@@ -165,6 +165,11 @@ document.addEventListener('DOMContentLoaded', () => {
     document.body.addEventListener('click', (event) => {
         const target = event.target;
 
+        // Skip global modal/delete handling for tenant-specific buttons
+        if (target.closest('.btn-edit-tenant') || target.closest('.btn-delete-tenant')) {
+            return;
+        }
+
         // Edit button
         if (target.closest('.animate-ui-action-btn.edit')) {
             const button = target.closest('.animate-ui-action-btn.edit');
