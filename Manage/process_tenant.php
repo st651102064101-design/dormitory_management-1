@@ -28,7 +28,7 @@ try {
     $tnt_vehicle = trim($_POST['tnt_vehicle'] ?? '') ?: null;
     $tnt_parent = trim($_POST['tnt_parent'] ?? '') ?: null;
     $tnt_parentsphone = trim($_POST['tnt_parentsphone'] ?? '') ?: null;
-    $tnt_status = ($_POST['tnt_status'] ?? '1') === '0' ? '0' : '1';
+    $tnt_status = '2'; // ตั้งค่าเริ่มต้นเป็นรอการเข้าพักโดยอัตโนมัติ
 
     error_log("DEBUG tenant: tnt_id='$tnt_id' (len=" . strlen($tnt_id) . "), tnt_name='$tnt_name'");
 

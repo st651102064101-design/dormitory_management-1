@@ -8,27 +8,48 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
-// รับค่า status filter
+// รับค่าเดือน/ปี ที่เลือก (รูปแบบ YYYY-MM)
+$selectedMonth = isset($_GET['month']) ? $_GET['month'] : '';
 $selectedStatus = isset($_GET['status']) ? $_GET['status'] : '';
 
-// Query with status filter
+// ดึงรายการเดือนที่มีในระบบ (format เป็น YYYY-MM)
+$availableMonths = [];
+$monthNames = [
+  '01' => 'มกราคม', '02' => 'กุมภาพันธ์', '03' => 'มีนาคม', '04' => 'เมษายน',
+  '05' => 'พฤษภาคม', '06' => 'มิถุนายน', '07' => 'กรกฎาคม', '08' => 'สิงหาคม',
+  '09' => 'กันยายน', '10' => 'ตุลาคม', '11' => 'พฤศจิกายน', '12' => 'ธันวาคม'
+];
+try {
+  $monthsStmt = $pdo->query("SELECT DISTINCT DATE_FORMAT(bkg_date, '%Y-%m') as month_key FROM booking WHERE bkg_date IS NOT NULL ORDER BY month_key DESC");
+  $availableMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {}
+
+// Query booking data
 $whereClause = '';
-if ($selectedStatus !== '') {
-  $whereClause = 'WHERE c.ctr_status = ' . $pdo->quote($selectedStatus);
+if ($selectedMonth || $selectedStatus !== '') {
+  $conditions = [];
+  if ($selectedMonth) {
+    $conditions[] = "DATE_FORMAT(b.bkg_date, '%Y-%m') = " . $pdo->quote($selectedMonth);
+  }
+  if ($selectedStatus !== '') {
+    $conditions[] = "b.bkg_status = " . $pdo->quote($selectedStatus);
+  }
+  $whereClause = 'WHERE ' . implode(' AND ', $conditions);
 }
 
 try {
-  $stmt = $pdo->query("SELECT c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.tnt_id, t.tnt_name, r.room_number, c.room_id
-FROM contract c
-LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-LEFT JOIN room r ON c.room_id = r.room_id
-$whereClause
-ORDER BY c.ctr_start DESC");
+  $stmt = $pdo->query("SELECT b.*, rm.room_number FROM booking b LEFT JOIN room rm ON b.room_id = rm.room_id $whereClause ORDER BY b.bkg_date DESC");
   $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
-  error_log('Contract query error: ' . $e->getMessage());
+  error_log('Booking query error: ' . $e->getMessage());
   $rows = [];
 }
+
+$statusLabels = [
+  '0' => 'รอการเข้าพัก',
+  '1' => 'จองแล้ว',
+  '2' => 'ยืนยันแล้ว',
+];
 
 function renderField(?string $value, string $fallback = '—'): string
 {
@@ -69,12 +90,6 @@ function getRelativeTime(?string $datetime): string
   }
 }
 
-$statusLabels = [
-  '0' => 'รอเข้าพัก',
-  '1' => 'กำลังเข้าพัก',
-  '2' => 'ยกเลิก/สิ้นสุด',
-];
-
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
@@ -87,18 +102,18 @@ try {
 } catch (PDOException $e) {}
 
 // คำนวณสถิติ
-$totalContracts = count($rows);
+$totalBookings = count($rows);
 try {
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM contract WHERE ctr_status = 0");
-  $contractsPending = $stmt->fetch()['total'] ?? 0;
+  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 0");
+  $bookingPending = $stmt->fetch()['total'] ?? 0;
   
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM contract WHERE ctr_status = 1");
-  $contractsActive = $stmt->fetch()['total'] ?? 0;
+  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 1");
+  $bookingConfirmed = $stmt->fetch()['total'] ?? 0;
   
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM contract WHERE ctr_status = 2");
-  $contractsCancelled = $stmt->fetch()['total'] ?? 0;
+  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 2");
+  $bookingCompleted = $stmt->fetch()['total'] ?? 0;
 } catch (PDOException $e) {
-  $contractsPending = $contractsActive = $contractsCancelled = 0;
+  $bookingPending = $bookingConfirmed = $bookingCompleted = 0;
 }
 ?>
 <!doctype html>
@@ -106,14 +121,14 @@ try {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายงานข้อมูลการเข้าพัก</title>
+    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายงานการจอง</title>
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <style>
       .reports-container { width: 100%; max-width: 100%; padding: 0; }
       .reports-container .container { max-width: 100%; width: 100%; padding: 1.5rem; }
-      .stay-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
+      .reservation-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
       .stat-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); transition: transform 0.2s, box-shadow 0.2s; }
       .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
       .stat-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
@@ -127,22 +142,22 @@ try {
       .status-btn { padding: 0.75rem 1.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #94a3b8; cursor: pointer; transition: all 0.2s; font-weight: 600; text-decoration: none; display: inline-block; }
       .status-btn.active { background: #60a5fa; border-color: #60a5fa; color: #fff; }
       .status-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; }
-      .stay-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-      .stay-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; transition: all 0.2s; }
-      .stay-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
-      .stay-time-badge { display: inline-block; background: #a7f3d0; color: #0f172a; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; }
-      .stay-date { color: #94a3b8; font-size: 0.8rem; margin-bottom: 15px; }
-      .stay-info { color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin: 15px 0; }
-      .stay-status { padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block; margin-top: 10px; }
+      .reservation-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
+      .reservation-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; transition: all 0.2s; }
+      .reservation-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
+      .reservation-time-badge { display: inline-block; background: #a7f3d0; color: #0f172a; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; }
+      .reservation-date { color: #94a3b8; font-size: 0.8rem; margin-bottom: 15px; }
+      .reservation-info { color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin: 15px 0; }
+      .reservation-status { padding: 0.4rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block; margin-top: 10px; }
       .status-pending { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
-      .status-active { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-      .status-cancelled { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
-      .stay-table { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; }
-      .stay-table table { width: 100%; border-collapse: collapse; }
-      .stay-table th, .stay-table td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-      .stay-table th { background: rgba(255, 255, 255, 0.05); color: #cbd5e1; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
-      .stay-table td { color: #e2e8f0; font-size: 0.95rem; }
-      .stay-table tr:hover { background: rgba(255, 255, 255, 0.02); }
+      .status-confirmed { background: rgba(96, 165, 250, 0.15); color: #60a5fa; }
+      .status-completed { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+      .reservation-table { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; }
+      .reservation-table table { width: 100%; border-collapse: collapse; }
+      .reservation-table th, .reservation-table td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+      .reservation-table th { background: rgba(255, 255, 255, 0.05); color: #cbd5e1; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+      .reservation-table td { color: #e2e8f0; font-size: 0.95rem; }
+      .reservation-table tr:hover { background: rgba(255, 255, 255, 0.02); }
       .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
       .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
       .empty-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
@@ -154,33 +169,33 @@ try {
       <main class="app-main">
         <div class="reports-container">
           <div class="container">
-            <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#f8fafc;">📊 รายงานข้อมูลการเข้าพัก</h1>
+            <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#f8fafc;">📝 รายงานการจอง</h1>
             
             <!-- Stat Cards -->
-            <div class="stay-stats-grid">
+            <div class="reservation-stats-grid">
               <div class="stat-card">
                 <div class="stat-icon">⏳</div>
-                <div class="stat-label">รอเข้าพัก</div>
-                <div class="stat-value"><?php echo $contractsPending; ?></div>
+                <div class="stat-label">รอการเข้าพัก</div>
+                <div class="stat-value"><?php echo $bookingPending; ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">🏠</div>
-                <div class="stat-label">กำลังเข้าพัก</div>
-                <div class="stat-value"><?php echo $contractsActive; ?></div>
+                <div class="stat-icon">📌</div>
+                <div class="stat-label">จองแล้ว</div>
+                <div class="stat-value"><?php echo $bookingConfirmed; ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">❌</div>
-                <div class="stat-label">ยกเลิก/สิ้นสุด</div>
-                <div class="stat-value"><?php echo $contractsCancelled; ?></div>
+                <div class="stat-icon">✅</div>
+                <div class="stat-label">ยืนยันแล้ว</div>
+                <div class="stat-value"><?php echo $bookingCompleted; ?></div>
               </div>
             </div>
 
             <!-- ปุ่มสถานะ -->
             <div class="status-buttons">
-              <a href="manage_stay.php" class="status-btn <?php echo !isset($_GET['status']) ? 'active' : ''; ?>">ทั้งหมด</a>
-              <a href="manage_stay.php?status=0" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '0' ? 'active' : ''; ?>">รอเข้าพัก</a>
-              <a href="manage_stay.php?status=1" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '1' ? 'active' : ''; ?>">กำลังเข้าพัก</a>
-              <a href="manage_stay.php?status=2" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '2' ? 'active' : ''; ?>">ยกเลิก/สิ้นสุด</a>
+              <a href="report_reservations.php" class="status-btn <?php echo !isset($_GET['status']) ? 'active' : ''; ?>">ทั้งหมด</a>
+              <a href="report_reservations.php?status=0" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '0' ? 'active' : ''; ?>">รอการเข้าพัก</a>
+              <a href="report_reservations.php?status=1" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '1' ? 'active' : ''; ?>">จองแล้ว</a>
+              <a href="report_reservations.php?status=2" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '2' ? 'active' : ''; ?>">ยืนยันแล้ว</a>
             </div>
 
             <!-- ปุ่มเปลี่ยนมุมมอง -->
@@ -190,69 +205,65 @@ try {
             </div>
 
             <!-- Card View -->
-            <div id="card-view" class="stay-cards">
+            <div id="card-view" class="reservation-cards">
 <?php if (count($rows) > 0): ?>
 <?php foreach ($rows as $r): 
-  $statusClass = match($r['ctr_status']) {
+  $statusClass = match($r['bkg_status']) {
     '0' => 'status-pending',
-    '1' => 'status-active',
-    '2' => 'status-cancelled',
+    '1' => 'status-confirmed',
+    '2' => 'status-completed',
     default => 'status-pending'
   };
-  $statusLabel = $statusLabels[$r['ctr_status']] ?? 'ไม่ทราบ';
+  $statusLabel = $statusLabels[$r['bkg_status']] ?? 'ไม่ทราบ';
 ?>
-              <div class="stay-card">
-                <div class="stay-time-badge"><?php echo getRelativeTime($r['ctr_start']); ?></div>
-                <div class="stay-date">📅 เริ่ม: <?php echo getRelativeTime($r['ctr_start']); ?></div>
-                <div class="stay-info">
-                  <div><strong>ผู้เช่า:</strong> <?php echo renderField($r['tnt_name'], 'ไม่ระบุ'); ?></div>
+              <div class="reservation-card">
+                <div class="reservation-time-badge"><?php echo getRelativeTime($r['bkg_date']); ?></div>
+                <div class="reservation-date">📅 จอง: <?php echo getRelativeTime($r['bkg_date']); ?></div>
+                <div class="reservation-info">
                   <div><strong>ห้องพัก:</strong> <?php echo renderField($r['room_number'], 'ไม่ระบุ'); ?></div>
-                  <div><strong>สิ้นสุด:</strong> <?php echo getRelativeTime($r['ctr_end']); ?></div>
-                  <div><strong>มัดจำ:</strong> <?php echo number_format((int)($r['ctr_deposit'] ?? 0)); ?> บาท</div>
-                  <div><strong>รหัส:</strong> #<?php echo renderField((string)$r['ctr_id'], 'ไม่ระบุ'); ?></div>
+                  <div><strong>เข้าพัก:</strong> <?php echo getRelativeTime($r['bkg_checkin_date']); ?></div>
+                  <div><strong>รหัส:</strong> #<?php echo renderField((string)$r['bkg_id'], 'ไม่ระบุ'); ?></div>
                 </div>
-                <span class="stay-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span>
+                <span class="reservation-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span>
               </div>
 <?php endforeach; ?>
 <?php else: ?>
               <div class="empty-state">
                 <div class="empty-icon">📭</div>
-                <div class="empty-text">ไม่มีข้อมูลการเข้าพัก</div>
+                <div class="empty-text">ไม่มีข้อมูลการจอง</div>
               </div>
 <?php endif; ?>
             </div>
 
             <!-- Table View -->
-            <div id="table-view" class="stay-table" style="display:none;">
+            <div id="table-view" class="reservation-table" style="display:none;">
 <?php if (count($rows) > 0): ?>
               <table>
                 <thead>
                   <tr>
-                    <th>รหัสสัญญา</th>
-                    <th>ผู้เช่า</th>
-                    <th>ห้อง</th>
-                    <th>ช่วงเข้าพัก</th>
-                    <th>มัดจำ</th>
+                    <th>รหัส</th>
+                    <th>ห้องพัก</th>
+                    <th>วันที่จอง</th>
+                    <th>วันเข้าพัก</th>
                     <th>สถานะ</th>
                   </tr>
                 </thead>
                 <tbody>
 <?php foreach ($rows as $r): 
-  $statusClass = match($r['ctr_status']) {
+  $statusClass = match($r['bkg_status']) {
     '0' => 'status-pending',
-    '1' => 'status-active',
-    '2' => 'status-cancelled',
+    '1' => 'status-confirmed',
+    '2' => 'status-completed',
     default => 'status-pending'
   };
-  $statusLabel = $statusLabels[$r['ctr_status']] ?? 'ไม่ทราบ';
+  $statusLabel = $statusLabels[$r['bkg_status']] ?? 'ไม่ทราบ';
 ?>
                   <tr>
-                    <td>#<?php echo renderField((string)$r['ctr_id'], '—'); ?></td>
-                    <td><?php echo renderField($r['tnt_name'], '—'); ?></td>
-                    <td><?php echo renderField($r['room_number'], '—'); ?></td>
-                    <td><?php echo renderField($r['ctr_start'], '—'); ?> → <?php echo renderField($r['ctr_end'], '—'); ?></td>
-                    <td><?php echo number_format((int)($r['ctr_deposit'] ?? 0)); ?></td>
-                    <td><span class="stay-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
+                    <td>#<?php echo renderField((string)$r['bkg_id'], '—'); ?></td>
+                    <td><strong><?php echo renderField($r['room_number'], '—'); ?></strong></td>
+                    <td><?php echo renderField($r['bkg_date'], '—'); ?></td>
+                    <td><?php echo renderField($r['bkg_checkin_date'], '—'); ?></td>
+                    <td><span class="reservation-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
                   </tr>
 <?php endforeach; ?>
                 </tbody>
@@ -260,7 +271,7 @@ try {
 <?php else: ?>
               <div class="empty-state">
                 <div class="empty-icon">📭</div>
-                <div class="empty-text">ไม่มีข้อมูลการเข้าพัก</div>
+                <div class="empty-text">ไม่มีข้อมูลการจอง</div>
               </div>
 <?php endif; ?>
             </div>
@@ -268,6 +279,7 @@ try {
         </div>
       </main>
     </div>
+
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
@@ -285,18 +297,18 @@ try {
           cardView.style.display = 'grid';
           tableView.style.display = 'none';
           buttons[0].classList.add('active');
-          localStorage.setItem('stayViewMode', 'card');
+          localStorage.setItem('reservationViewMode', 'card');
         } else {
           cardView.style.display = 'none';
           tableView.style.display = 'block';
           buttons[1].classList.add('active');
-          localStorage.setItem('stayViewMode', 'table');
+          localStorage.setItem('reservationViewMode', 'table');
         }
       }
 
       window.addEventListener('load', function() {
         // Restore saved view
-        const savedView = localStorage.getItem('stayViewMode') || 'card';
+        const savedView = localStorage.getItem('reservationViewMode') || 'card';
         switchView(savedView);
       });
     </script>

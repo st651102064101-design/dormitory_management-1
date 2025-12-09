@@ -29,7 +29,6 @@ try {
     $tnt_vehicle = trim($_POST['tnt_vehicle'] ?? '') ?: null;
     $tnt_parent = trim($_POST['tnt_parent'] ?? '') ?: null;
     $tnt_parentsphone = trim($_POST['tnt_parentsphone'] ?? '') ?: null;
-    $tnt_status = ($_POST['tnt_status'] ?? '1') === '0' ? '0' : '1';
 
     if ($tnt_id_original === '' || $tnt_id === '' || !preg_match('/^\d{13}$/', $tnt_id) || $tnt_name === '') {
         $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วนและระบุเลขบัตร 13 หลัก';
@@ -37,7 +36,7 @@ try {
         exit;
     }
 
-    $update = $pdo->prepare('UPDATE tenant SET tnt_name = ?, tnt_age = ?, tnt_address = ?, tnt_phone = ?, tnt_education = ?, tnt_faculty = ?, tnt_year = ?, tnt_vehicle = ?, tnt_parent = ?, tnt_parentsphone = ?, tnt_status = ? WHERE tnt_id = ?');
+    $update = $pdo->prepare('UPDATE tenant SET tnt_name = ?, tnt_age = ?, tnt_address = ?, tnt_phone = ?, tnt_education = ?, tnt_faculty = ?, tnt_year = ?, tnt_vehicle = ?, tnt_parent = ?, tnt_parentsphone = ? WHERE tnt_id = ?');
     $update->execute([
         $tnt_name,
         $tnt_age,
@@ -49,7 +48,6 @@ try {
         $tnt_vehicle,
         $tnt_parent,
         $tnt_parentsphone,
-        $tnt_status,
         $tnt_id_original,
     ]);
 

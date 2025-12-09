@@ -1025,6 +1025,8 @@ try {
           <span class="chev" style="margin-left:auto">›</span>
         </summary>
         <a class="" href="dashboard.php"><span class="app-nav-icon" aria-hidden="true">📈</span><span class="app-nav-label">สรุป</span></a>
+        <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">รายงาน การจอง</span></a>
+        <a class="" href="report_booking.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงาน การเข้าพัก</span></a>
         <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true">💧</span><span class="app-nav-label">รายงาน สาธารณูปโภค</span></a>
         <a class="" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true">💵</span><span class="app-nav-label">รายงาน รายรับ</span></a>
         <a class="" href="report_rooms.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงาน ห้องพัก</span></a>
