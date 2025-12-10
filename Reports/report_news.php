@@ -121,12 +121,12 @@ try {
       .view-toggle-btn.active { background: #60a5fa; border-color: #60a5fa; color: #fff; }
       .view-toggle-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; }
       .news-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-      .news-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; transition: all 0.2s; }
+      .news-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; transition: all 0.2s; display: flex; flex-direction: column; }
       .news-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
-      .news-time-badge { display: inline-block; background: #a7f3d0; color: #0f172a; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; }
-      .news-date { color: #94a3b8; font-size: 0.8rem; margin-bottom: 15px; }
-      .news-title { font-size: 1.2rem; font-weight: 600; color: #fff; margin: 10px 0; }
-      .news-content { color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin: 15px 0; }
+      .news-time-badge { display: inline-block; background: #a7f3d0; color: #0f172a; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; margin-left: 0.5rem; width: fit-content; }
+      .news-date { color: #94a3b8; font-size: 0.8rem; margin-bottom: 15px; padding-left: 0.5rem; }
+      .news-title { font-size: 1.2rem; font-weight: 600; color: #fff; margin: 10px 0; padding-left: 0.5rem; }
+      .news-content { color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin: 15px 0; padding-left: 0.5rem; }
       .news-table { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; }
       .news-table table { width: 100%; border-collapse: collapse; }
       .news-table th, .news-table td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }

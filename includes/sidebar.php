@@ -1403,6 +1403,7 @@ try {
         <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true">📰</span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
         <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true">🛏️</span><span class="app-nav-label">ห้องพัก</span></a>
         <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">จัดการสัญญา</span></a>
+        <a class="" href="qr_codes.php"><span class="app-nav-icon" aria-hidden="true">📱</span><span class="app-nav-label">QR Code ผู้เช่า</span></a>
         <a class="" href="manage_expenses.php"><span class="app-nav-icon" aria-hidden="true">💰</span><span class="app-nav-label">ค่าใช้จ่าย</span></a>
         <a class="" href="manage_payments.php"><span class="app-nav-icon" aria-hidden="true">💳</span><span class="app-nav-label">การชำระเงิน</span></a>
         <a class="" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true">🛠️</span><span class="app-nav-label">แจ้งซ่อม</span></a>
