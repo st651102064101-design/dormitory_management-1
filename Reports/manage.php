@@ -33,9 +33,13 @@ try {
 $roomCount = safeCount($pdo, "SELECT COUNT(*) FROM room");
 $tenantCount = safeCount($pdo, "SELECT COUNT(*) FROM tenant");
 $contractCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status = 'active'");
+$contractTotalCount = safeCount($pdo, "SELECT COUNT(*) FROM contract");
 $bookingCount = safeCount($pdo, "SELECT COUNT(*) FROM booking WHERE bkg_status = 'pending'");
 $repairCount = safeCount($pdo, "SELECT COUNT(*) FROM repair WHERE rpr_status = 'pending'");
 $newsCount = safeCount($pdo, "SELECT COUNT(*) FROM news");
+$paymentPendingCount = safeCount($pdo, "SELECT COUNT(*) FROM payment WHERE pay_status = 'pending'");
+$utilityCount = safeCount($pdo, "SELECT COUNT(*) FROM utility");
+$qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status = 'active' AND access_token IS NOT NULL AND access_token != ''");
 ?>
 <!doctype html>
 <html lang="th">
@@ -178,7 +182,27 @@ $newsCount = safeCount($pdo, "SELECT COUNT(*) FROM news");
                 <div class="manage-card-desc">จัดการสัญญาเช่า ต่อสัญญา และสิ้นสุดสัญญา</div>
                 <div class="manage-card-count">
                   <span>✅</span>
-                  <span><?php echo number_format($contractCount); ?> สัญญาที่ใช้งาน</span>
+                  <span><?php echo number_format($contractCount); ?> สัญญาที่ใช้งาน (ทั้งหมด <?php echo number_format($contractTotalCount); ?>)</span>
+                </div>
+              </a>
+
+              <a href="manage_payments.php" class="manage-card">
+                <span class="manage-card-icon">💳</span>
+                <div class="manage-card-title">การชำระเงิน</div>
+                <div class="manage-card-desc">จัดการการชำระค่าเช่า ตรวจสอบ อนุมัติ</div>
+                <div class="manage-card-count">
+                  <span>⏳</span>
+                  <span><?php echo number_format($paymentPendingCount); ?> รอตรวจสอบ</span>
+                </div>
+              </a>
+
+              <a href="manage_utility.php" class="manage-card">
+                <span class="manage-card-icon">💡</span>
+                <div class="manage-card-title">บิลค่าน้ำค่าไฟ</div>
+                <div class="manage-card-desc">จัดการบันทึกมิเตอร์ น้ำ ไฟ รายเดือน</div>
+                <div class="manage-card-count">
+                  <span>📊</span>
+                  <span><?php echo number_format($utilityCount); ?> รายการ</span>
                 </div>
               </a>
 
@@ -209,6 +233,16 @@ $newsCount = safeCount($pdo, "SELECT COUNT(*) FROM news");
                 <div class="manage-card-count">
                   <span>⚙️</span>
                   <span>การตั้งค่า</span>
+                </div>
+              </a>
+
+              <a href="qr_codes.php" class="manage-card">
+                <span class="manage-card-icon">📱</span>
+                <div class="manage-card-title">QR Code ผู้เช่า</div>
+                <div class="manage-card-desc">สร้าง QR Code สำหรับผู้เช่าเข้าระบบ</div>
+                <div class="manage-card-count">
+                  <span>🔗</span>
+                  <span><?php echo number_format($qrCodeCount); ?> ห้องที่มี QR</span>
                 </div>
               </a>
             </div>
