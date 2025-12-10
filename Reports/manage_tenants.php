@@ -42,7 +42,7 @@ $statusMap = [
 ];
 
 $stats = [
-  'total' => count($tenants),
+  'total' => 0,
   'active' => 0,
   'pending' => 0,
   'booking' => 0,
@@ -51,8 +51,10 @@ $stats = [
 ];
 foreach ($tenants as $t) {
     if (($t['tnt_status'] ?? '0') === '1') {
+        $stats['total']++;
         $stats['active']++;
     } elseif (($t['tnt_status'] ?? '0') === '2') {
+        $stats['total']++;
         $stats['pending']++;
     } elseif (($t['tnt_status'] ?? '0') === '3') {
         $stats['booking']++;

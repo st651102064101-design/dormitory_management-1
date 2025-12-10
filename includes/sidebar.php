@@ -1353,10 +1353,10 @@ try {
   }
 </script>
 <aside class="app-sidebar">
-  <div class="">
-    <div class="team-avatar">
+  <div class="" >
+    <div class="team-avatar" >
       <!-- Project logo from database -->
-      <img src="/Dormitory_Management/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="team-avatar-img" />
+      <img src="/Dormitory_Management/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="team-avatar-img"  />
     </div>
     <div class="team-meta">
       <div class="name"><?php echo htmlspecialchars($siteName); ?></div>
@@ -1373,8 +1373,8 @@ try {
           </a>
           <span class="chev" style="font-size: 1.5rem;">›</span>
         </summary>
-        <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">รายงานการจอง</span></a>
-        <a class="" href="report_booking.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงานการเข้าพัก</span></a>
+        <!-- รายงานการจองถูกปิดใช้งานชั่วคราว -->
+        <!-- รายงานการเข้าพักถูกปิดใช้งานชั่วคราว -->
         <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true">💧</span><span class="app-nav-label" style="font-size: 0.8rem;">รายงานสาธารณูปโภค</span></a>
         <a class="" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true">💵</span><span class="app-nav-label">รายงานรายรับ</span></a>
         <a class="" href="report_rooms.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงานห้องพัก</span></a>
@@ -1399,11 +1399,12 @@ try {
         </summary>
         <!-- manage_stay.php removed; link intentionally omitted -->
         <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true">👥</span><span class="app-nav-label">ผู้เช่า</span></a>
+        <a class="" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true">📋</span><span class="app-nav-label">การจองห้อง</span></a>
         <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true">📰</span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
         <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true">🛏️</span><span class="app-nav-label">ห้องพัก</span></a>
-        <a class="" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true">📅</span><span class="app-nav-label">จองห้องพัก</span></a>
         <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">จัดการสัญญา</span></a>
         <a class="" href="manage_expenses.php"><span class="app-nav-icon" aria-hidden="true">💰</span><span class="app-nav-label">ค่าใช้จ่าย</span></a>
+        <a class="" href="manage_payments.php"><span class="app-nav-icon" aria-hidden="true">💳</span><span class="app-nav-label">การชำระเงิน</span></a>
         <a class="" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true">🛠️</span><span class="app-nav-label">แจ้งซ่อม</span></a>
         <a class="" href="system_settings.php"><span class="app-nav-icon" aria-hidden="true">🎨</span><span class="app-nav-label">ตั้งค่าระบบ</span></a>
       </details>

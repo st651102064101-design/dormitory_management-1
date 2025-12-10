@@ -34,29 +34,71 @@ $stmt = $pdo->query("
 ");
 $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ดึงข้อมูลการจองทั้งหมด
+// ดึงข้อมูลผู้เช่าทั้งหมด (นับทุกสถานะที่มีอยู่)
+$stmtAllTenants = $pdo->query("
+  SELECT COUNT(*) as total_tenants
+  FROM tenant
+");
+$allTenantsResult = $stmtAllTenants->fetch(PDO::FETCH_ASSOC);
+$totalTenants = (int)($allTenantsResult['total_tenants'] ?? 0);
+
+// ดึงข้อมูลผู้เช่าที่เลือกได้ (ดึงทั้งหมดตามชื่อ)
+$stmtTenants = $pdo->query("
+  SELECT tnt_id, tnt_name, tnt_phone 
+  FROM tenant 
+  ORDER BY tnt_name ASC
+");
+$selectableTenants = $stmtTenants->fetchAll(PDO::FETCH_ASSOC);
+
+// ดึงข้อมูลการจองทั้งหมด (รวมยกเลิก)
 $stmtBookings = $pdo->query("
   SELECT b.*, r.room_number, rt.type_name, rt.type_price
   FROM booking b
   LEFT JOIN room r ON b.room_id = r.room_id
   LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-  WHERE b.bkg_status <> '0'
+  ORDER BY $orderBy
+");
+$bookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC);
+
+// Auto-cancel bookings that reached check-in date without confirmation
+// วันที่เข้าพักถ้าน้อยกว่า/เท่ากับวันนี้ และยังไม่ได้เข้าพัก (status='1') ให้ยกเลิก (status='0')
+try {
+  $today = date('Y-m-d');
+  $autoCancelStmt = $pdo->prepare("
+    UPDATE booking 
+    SET bkg_status = '0', bkg_notes = CONCAT(COALESCE(bkg_notes, ''), '\nระบบยกเลิกอัตโนมัติ: ถึงวันที่เข้าพักแล้วไม่มีการยืนยัน')
+    WHERE bkg_status = '1' 
+    AND DATE(bkg_checkin_date) <= ?
+    AND bkg_status NOT IN ('2', '0')
+  ");
+  $autoCancelStmt->execute([$today]);
+} catch (PDOException $e) {
+  // Log error but don't stop page load
+  error_log("Auto-cancel booking error: " . $e->getMessage());
+}
+
+// Re-fetch bookings after auto-cancellation (show all statuses including cancelled)
+$stmtBookings = $pdo->query("
+  SELECT b.*, r.room_number, rt.type_name, rt.type_price, t.tnt_name
+  FROM booking b
+  LEFT JOIN room r ON b.room_id = r.room_id
+  LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+  LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
   ORDER BY $orderBy
 ");
 $bookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC);
 
 // คำนวณสถิติ
 $stats = [
-  'total' => 0,
-  'booked' => 0,
+  'total' => $totalTenants,
+  'reserved' => 0,
   'checkedin' => 0,
 ];
 foreach ($bookings as $bkg) {
   $status = (string)($bkg['bkg_status'] ?? '');
   if ($status !== '0') {
-    $stats['total']++;
     if ($status === '1') {
-      $stats['booked']++;
+      $stats['reserved']++;
     } elseif ($status === '2') {
       $stats['checkedin']++;
     }
@@ -91,6 +133,120 @@ try {
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <script>
+      // Ultra-early fallbacks so buttons always work
+      window.__directSidebarToggle = function(event) {
+        if (event) event.preventDefault();
+        const sidebar = document.querySelector('.app-sidebar');
+        if (!sidebar) return false;
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+          sidebar.classList.toggle('mobile-open');
+          const expanded = sidebar.classList.contains('mobile-open').toString();
+          document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', expanded));
+        } else {
+          const collapsed = sidebar.classList.toggle('collapsed');
+          try { localStorage.setItem('sidebarCollapsed', collapsed.toString()); } catch (e) {}
+          document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', (!collapsed).toString()));
+        }
+        return false;
+      };
+
+      window.__setBookingView = function(mode, event) {
+        if (event) event.preventDefault();
+        const roomsGrid = document.getElementById('roomsGrid');
+        const roomsTable = document.getElementById('roomsTable');
+        if (!roomsGrid) return false;
+        const normalized = mode === 'list' ? 'list' : 'grid';
+        
+        if (normalized === 'list') {
+          roomsGrid.style.display = 'none';
+          if (roomsTable) roomsTable.style.display = 'block';
+        } else {
+          roomsGrid.style.display = 'grid';
+          if (roomsTable) roomsTable.style.display = 'none';
+        }
+        
+        document.querySelectorAll('.toggle-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === normalized));
+        try { localStorage.setItem('bookingViewMode', normalized); } catch (e) {}
+        return false;
+      };
+
+      window.__openBookingModal = function(btn, event) {
+        if (event) event.preventDefault();
+        if (!btn) return false;
+        const idEl = document.getElementById('modal_room_id');
+        const numEl = document.getElementById('modal_room_number');
+        const typeEl = document.getElementById('modal_room_type');
+        const priceEl = document.getElementById('modal_room_price');
+        if (idEl) idEl.value = btn.dataset.roomId;
+        if (numEl) numEl.value = 'ห้อง ' + btn.dataset.roomNumber;
+        if (typeEl) typeEl.value = btn.dataset.roomType;
+        if (priceEl) priceEl.value = '฿' + btn.dataset.roomPrice;
+        const bookingModal = document.getElementById('bookingModal');
+        if (bookingModal) {
+          bookingModal.classList.add('active');
+          document.body.classList.add('modal-open');
+        }
+        return false;
+      };
+
+      // Define global functions early (before DOM elements try to call them)
+      window.toggleAvailableRooms = function() {
+        const section = document.getElementById('availableRoomsSection');
+        const icon = document.getElementById('toggleRoomsIcon');
+        const text = document.getElementById('toggleRoomsText');
+        const isHidden = section.style.display === 'none';
+        
+        if (isHidden) {
+          section.style.display = '';
+          icon.textContent = '▼';
+          text.textContent = 'ซ่อนห้องพักที่ว่าง';
+          localStorage.setItem('availableRoomsVisible', 'true');
+        } else {
+          section.style.display = 'none';
+          icon.textContent = '▶';
+          text.textContent = 'แสดงห้องพักที่ว่าง';
+          localStorage.setItem('availableRoomsVisible', 'false');
+        }
+      };
+
+      window.loadMoreRooms = function() {
+        const hiddenRooms = document.querySelectorAll('.room-card.hidden-room');
+        const totalRooms = document.querySelectorAll('.room-card').length;
+        let showCount = 0;
+        
+        hiddenRooms.forEach((room, index) => {
+          if (showCount < 5) {
+            room.classList.remove('hidden-room');
+            showCount++;
+          }
+        });
+        
+        try {
+          localStorage.setItem('bookingVisibleRooms', String(Math.min(5 + showCount, totalRooms)));
+        } catch (e) {}
+        
+        const remaining = totalRooms - Math.min(5 + showCount, totalRooms);
+        const remainingCountEl = document.getElementById('remainingCount');
+        const loadMoreBtn = document.getElementById('loadMoreBtn');
+        
+        if (remaining > 0 && remainingCountEl) {
+          remainingCountEl.textContent = remaining;
+        } else if (loadMoreBtn) {
+          loadMoreBtn.classList.add('hidden');
+        }
+      };
+
+      window.closeBookingModal = function() {
+        const modal = document.getElementById('bookingModal');
+        const form = document.getElementById('bookingForm');
+        
+        if (modal) modal.classList.remove('active');
+        document.body.classList.remove('modal-open');
+        if (form) form.reset();
+      };
+    </script>
     <style>
       .booking-stats {
         display: grid;
@@ -133,10 +289,10 @@ try {
         gap: 1.5rem;
         margin-top: 1rem;
       }
-      /* Desktop: fix 4 cards per row when there is space */
-      @media (min-width: 1200px) {
+      /* Desktop: fix 3 cards per row */
+      @media (min-width: 1024px) {
         .rooms-grid {
-          grid-template-columns: repeat(4, minmax(0, 1fr));
+          grid-template-columns: repeat(3, minmax(0, 1fr));
         }
       }
       .rooms-grid.list-view { display: flex; flex-direction: column; gap: 1rem; }
@@ -272,6 +428,45 @@ try {
       .rooms-grid.list-view .room-face-details { width: auto; gap: 0.2rem; }
       .room-number { font-size: 1.5rem; font-weight: bold; color: #f5f8ff; }
       .room-status { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: #4caf50; color: white; }
+      
+      /* Table badges and styles */
+      .price-badge { 
+        color: #60a5fa; 
+        background: rgba(96, 165, 250, 0.1); 
+        padding: 0.25rem 0.75rem; 
+        border-radius: 6px; 
+        display: inline-block; 
+        font-weight: 600; 
+      }
+      .status-badge { 
+        padding: 0.35rem 0.75rem; 
+        border-radius: 8px; 
+        font-size: 0.85rem; 
+        font-weight: 500; 
+        display: inline-block; 
+      }
+      .status-available { 
+        background: rgba(34, 197, 94, 0.15); 
+        color: #22c55e; 
+      }
+      .btn-sm { 
+        padding: 0.5rem 1rem; 
+        font-size: 0.9rem; 
+      }
+      .btn-primary { 
+        background: #007AFF; 
+        color: white; 
+        border: none; 
+        border-radius: 6px; 
+        cursor: pointer; 
+        transition: all 0.2s; 
+      }
+      .btn-primary:hover { 
+        background: #0A66DB; 
+        transform: translateY(-2px); 
+        box-shadow: 0 4px 8px rgba(0, 122, 255, 0.3); 
+      }
+      
       .room-info { margin: 0.2rem 0; color: rgba(255,255,255,0.75); font-size: 0.9rem; }
       .room-info-item { display: flex; justify-content: space-between; padding: 0.1rem 0; font-size: 0.9rem; }
       .room-price { font-size: 1.25rem; font-weight: bold; color: #60a5fa; margin: 0.75rem 0; }
@@ -335,8 +530,25 @@ try {
         border-radius: 16px;
         max-width: 520px;
         width: min(520px, 95vw);
+        max-height: 90vh;
         overflow-y: auto;
+        overflow-x: hidden;
         color: #f5f8ff;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.2) transparent;
+      }
+      .booking-modal-content::-webkit-scrollbar {
+        width: 8px;
+      }
+      .booking-modal-content::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .booking-modal-content::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.2);
+        border-radius: 4px;
+      }
+      .booking-modal-content::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,0.4);
       }
       .booking-modal-content h2 { margin-top: 0; color: #fff; letter-spacing: 0.02em; }
       .booking-form-group { margin-bottom: 1.5rem; }
@@ -351,6 +563,34 @@ try {
         background: rgba(12, 17, 29, 0.85);
         color: #f5f5f5;
         transition: border-color 0.2s ease, box-shadow 0.2s ease;
+      }
+      .booking-form-group .tenant-select {
+        max-height: 280px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255,255,255,0.3) rgba(0,0,0,0.2);
+      }
+      .booking-form-group .tenant-select::-webkit-scrollbar {
+        width: 8px;
+      }
+      .booking-form-group .tenant-select::-webkit-scrollbar-track {
+        background: rgba(0,0,0,0.2);
+        border-radius: 4px;
+      }
+      .booking-form-group .tenant-select::-webkit-scrollbar-thumb {
+        background: rgba(255,255,255,0.3);
+        border-radius: 4px;
+      }
+      .booking-form-group .tenant-select::-webkit-scrollbar-thumb:hover {
+        background: rgba(255,255,255,0.5);
+      }
+      .booking-form-group .tenant-select option {
+        padding: 8px 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+      }
+      .booking-form-group .tenant-select option:hover {
+        background: rgba(96, 165, 250, 0.2);
       }
       .booking-form-group input[readonly] {
         background: rgba(255,255,255,0.05);
@@ -510,19 +750,19 @@ try {
                 </div>
               </div>
               <div class="booking-stat-card">
-                <h3>พักอยู่</h3>
-                <div class="stat-value"><?php echo number_format($stats['booked']); ?></div>
+                <h3>จองแล้ว</h3>
+                <div class="stat-value"><?php echo number_format($stats['reserved']); ?></div>
                 <div class="stat-chip">
                   <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;"></span>
                   สถานะ = 1
                 </div>
               </div>
               <div class="booking-stat-card">
-                <h3>ย้ายออก</h3>
+                <h3>พักอยู่</h3>
                 <div class="stat-value"><?php echo number_format($stats['checkedin']); ?></div>
                 <div class="stat-chip">
                   <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;"></span>
-                  สถานะ = 0
+                  สถานะ = 2
                 </div>
               </div>
             </div>
@@ -542,9 +782,13 @@ try {
                 <h1>ห้องพักที่ว่าง</h1>
               </div>
               <div class="view-toggle">
-                <button type="button" class="toggle-view-btn active" data-view="grid">Grid</button>
-                <button type="button" class="toggle-view-btn" data-view="list">List</button>
+                <button type="button" class="toggle-view-btn active" data-view="grid" onclick="return window.__setBookingView ? window.__setBookingView('grid', event) : true;">Grid</button>
+                <button type="button" class="toggle-view-btn" data-view="list" onclick="return window.__setBookingView ? window.__setBookingView('list', event) : true;">List</button>
               </div>
+            </div>
+
+            <div style="margin:0.75rem 0 0; padding:0.9rem 1rem; border-radius:10px; border:1px solid rgba(34,197,94,0.35); background: rgba(34,197,94,0.12); color:#e0f2fe;">
+              กรุณาชำระค่ามัดจำ 2,000 บาท ก่อนยืนยันการจอง ระบบจะหักออกจากบิลแรกให้อัตโนมัติ
             </div>
             
             <?php if (empty($availableRooms)): ?>
@@ -612,6 +856,7 @@ try {
                                 </style>
                             <div class="room-info list-book-btn">
                               <button type="button" class="book-btn book-btn-front"
+                                      onclick="return window.__openBookingModal ? window.__openBookingModal(this, event) : true;"
                                       data-room-id="<?php echo $room['room_id']; ?>"
                                       data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
                                       data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
@@ -631,6 +876,7 @@ try {
                         </div>
                         <div style="margin-top:auto; width:100%; display:flex; gap:0.5rem;">
                           <button type="button" class="book-btn" 
+                                  onclick="return window.__openBookingModal ? window.__openBookingModal(this, event) : true;"
                                   style="flex:1;"
                                   data-room-id="<?php echo $room['room_id']; ?>"
                                   data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
@@ -652,6 +898,49 @@ try {
                 </button>
               </div>
               <?php endif; ?>
+
+              <!-- Table view for available rooms -->
+              <div class="report-table" id="roomsTable" style="display:none; margin-top: 2rem;">
+                <table class="table--compact" id="table-available-rooms">
+                  <thead>
+                    <tr>
+                      <th>หมายเลขห้อง</th>
+                      <th>ประเภทห้อง</th>
+                      <th>ราคา/เดือน</th>
+                      <th>สถานะ</th>
+                      <th>การดำเนินการ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <?php foreach($availableRooms as $room): ?>
+                    <tr>
+                      <td data-label="หมายเลขห้อง">
+                        <strong>ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></strong>
+                      </td>
+                      <td data-label="ประเภทห้อง">
+                        <?php echo htmlspecialchars($room['type_name']); ?>
+                      </td>
+                      <td data-label="ราคา/เดือน">
+                        <strong class="price-badge">฿<?php echo number_format((int)$room['type_price']); ?></strong>
+                      </td>
+                      <td data-label="สถานะ">
+                        <span class="status-badge status-available">ว่าง</span>
+                      </td>
+                      <td data-label="การดำเนินการ">
+                        <button type="button" class="btn btn-primary btn-sm"
+                                onclick="return window.__openBookingModal ? window.__openBookingModal(this, event) : true;"
+                                data-room-id="<?php echo $room['room_id']; ?>"
+                                data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
+                                data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
+                                data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
+                          จองห้อง
+                        </button>
+                      </td>
+                    </tr>
+                    <?php endforeach; ?>
+                  </tbody>
+                </table>
+              </div>
             <?php endif; ?>
           </section>
 
@@ -674,6 +963,7 @@ try {
                     <th>รหัสการจอง</th>
                     <th>หมายเลขห้อง</th>
                     <th>ประเภทห้อง</th>
+                    <th>ผู้จอง</th>
                     <th>วันที่จอง</th>
                     <th>วันที่เข้าพัก</th>
                     <th>สถานะ</th>
@@ -684,7 +974,7 @@ try {
                 <tbody>
                   <?php if (empty($bookings)): ?>
                     <tr>
-                      <td colspan="8" style="text-align: center; padding: 2rem; color: #666;">
+                      <td colspan="9" style="text-align: center; padding: 2rem; color: #666;">
                         ยังไม่มีรายการจองในระบบ
                       </td>
                     </tr>
@@ -694,6 +984,7 @@ try {
                         <td><?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
                         <td><?php echo !empty($bkg['room_number']) ? htmlspecialchars((string)$bkg['room_number']) : '-'; ?></td>
                         <td><?php echo htmlspecialchars($bkg['type_name'] ?? '-'); ?></td>
+                        <td><?php echo htmlspecialchars($bkg['tnt_name'] ?? '-'); ?></td>
                         <td><?php echo !empty($bkg['bkg_date']) ? date('d/m/Y', strtotime($bkg['bkg_date'])) : '-'; ?></td>
                         <td><?php echo !empty($bkg['bkg_checkin_date']) ? date('d/m/Y', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
                         <td>
@@ -743,7 +1034,10 @@ try {
     <!-- Booking Modal -->
     <div class="booking-modal" id="bookingModal">
       <div class="booking-modal-content">
-        <h2>จองห้องพัก</h2>
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
+          <h2 style="margin:0;">จองห้องพัก</h2>
+          <button type="button" aria-label="ปิดหน้าต่าง" onclick="closeBookingModal()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#e2e8f0;width:36px;height:36px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;">×</button>
+        </div>
         <form id="bookingForm" method="POST" action="../Manage/process_booking.php">
           <input type="hidden" name="room_id" id="modal_room_id">
           
@@ -760,6 +1054,18 @@ try {
           <div class="booking-form-group">
             <label>ราคา/เดือน:</label>
             <input type="text" id="modal_room_price" readonly>
+          </div>
+
+          <div class="booking-form-group">
+            <label>ผู้เช่า: <span style="color: red;">*</span> <small style="color: #94a3b8; font-weight: normal;">(ทั้งหมด <?php echo count($selectableTenants); ?> คน)</small></label>
+            <select name="tnt_id" id="modal_tenant_id" class="tenant-select" size="8" required style="width: 100%; padding: 0.8rem 0.9rem; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; font-size: 1rem; background: rgba(12, 17, 29, 0.85); color: #f5f5f5; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
+              <option value="">-- เลือกผู้เช่า --</option>
+              <?php foreach($selectableTenants as $tenant): ?>
+                <option value="<?php echo $tenant['tnt_id']; ?>">
+                  <?php echo htmlspecialchars($tenant['tnt_name']); ?> (<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '-'); ?>)
+                </option>
+              <?php endforeach; ?>
+            </select>
           </div>
           
           <div class="booking-form-group">
@@ -779,6 +1085,10 @@ try {
             </div>
             <div style="margin-top:0.35rem; color:#cbd5e1; font-size:0.9rem;">จะหักออกจากยอดบิลวันเข้าพักอัตโนมัติ</div>
           </div>
+
+          <div style="margin: -0.25rem 0 0.75rem 0; color:#f8fafc; font-weight:600; font-size:0.95rem; background: rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.35); padding:0.65rem 0.8rem; border-radius:10px;">
+            กรุณาชำระค่ามัดจำ 2,000 บาท ก่อนยืนยันการจอง
+          </div>
           
           <div class="booking-form-actions">
             <button type="submit" class="btn-submit">ยืนยันการจอง</button>
@@ -793,27 +1103,292 @@ try {
     <script src="../Assets/Javascript/main.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
-      // Toggle available rooms visibility
-      function toggleAvailableRooms() {
-        const section = document.getElementById('availableRoomsSection');
-        const icon = document.getElementById('toggleRoomsIcon');
-        const text = document.getElementById('toggleRoomsText');
-        const isHidden = section.style.display === 'none';
+      // Fallback handlers (keep UI usable even if other scripts fail)
+      (() => {
+        const SIDEBAR_KEY = 'sidebarCollapsed';
+        const VIEW_KEY = 'bookingViewMode';
+        const isMobile = () => window.innerWidth < 768;
+
+        const toggleSidebar = (btn) => {
+          const sidebar = document.querySelector('.app-sidebar');
+          if (!sidebar) return;
+          if (isMobile()) {
+            sidebar.classList.toggle('mobile-open');
+            if (btn) {
+              btn.setAttribute('aria-expanded', sidebar.classList.contains('mobile-open').toString());
+            }
+          } else {
+            const collapsed = sidebar.classList.toggle('collapsed');
+            try { localStorage.setItem(SIDEBAR_KEY, collapsed.toString()); } catch (e) {}
+            document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', (!collapsed).toString()));
+          }
+        };
+
+        const applyViewMode = (mode) => {
+          const roomsGrid = document.getElementById('roomsGrid');
+          if (!roomsGrid) return;
+          roomsGrid.classList.toggle('list-view', mode === 'list');
+          document.querySelectorAll('.toggle-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === mode));
+          try { localStorage.setItem(VIEW_KEY, mode); } catch (e) {}
+        };
+
+        // Global delegation for sidebar + view toggle + book buttons
+        document.addEventListener('click', (e) => {
+          const sidebarBtn = e.target.closest('#sidebar-toggle, [data-sidebar-toggle]');
+          if (sidebarBtn) {
+            e.preventDefault();
+            toggleSidebar(sidebarBtn);
+            return;
+          }
+
+          const viewBtn = e.target.closest('.toggle-view-btn');
+          if (viewBtn) {
+            e.preventDefault();
+            applyViewMode(viewBtn.dataset.view === 'list' ? 'list' : 'grid');
+            return;
+          }
+
+          const bookBtn = e.target.closest('.book-btn');
+          if (bookBtn) {
+            e.preventDefault();
+            const roomId = bookBtn.dataset.roomId;
+            const roomNumber = bookBtn.dataset.roomNumber;
+            const roomType = bookBtn.dataset.roomType;
+            const roomPrice = bookBtn.dataset.roomPrice;
+            const idEl = document.getElementById('modal_room_id');
+            const numEl = document.getElementById('modal_room_number');
+            const typeEl = document.getElementById('modal_room_type');
+            const priceEl = document.getElementById('modal_room_price');
+            if (idEl) idEl.value = roomId;
+            if (numEl) numEl.value = 'ห้อง ' + roomNumber;
+            if (typeEl) typeEl.value = roomType;
+            if (priceEl) priceEl.value = '฿' + roomPrice;
+            const bookingModal = document.getElementById('bookingModal');
+            if (bookingModal) {
+              bookingModal.classList.add('active');
+              document.body.classList.add('modal-open');
+            }
+            return;
+          }
+        }, { passive: false });
+
+        // Restore states after DOM ready
+        document.addEventListener('DOMContentLoaded', () => {
+          // Restore sidebar collapsed state (desktop only)
+          if (!isMobile()) {
+            try {
+              const stored = localStorage.getItem(SIDEBAR_KEY);
+              const sidebar = document.querySelector('.app-sidebar');
+              if (sidebar) {
+                sidebar.classList.toggle('collapsed', stored === 'true');
+                document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', (stored !== 'true').toString()));
+              }
+            } catch (e) {}
+          }
+
+          // Restore view mode
+          try {
+            const savedView = localStorage.getItem(VIEW_KEY) || 'grid';
+            applyViewMode(savedView === 'list' ? 'list' : 'grid');
+          } catch (e) {}
+        });
+      })();
+    </script>
+    <script>
+      // Final safety net: explicit bindings after everything loads
+      document.addEventListener('DOMContentLoaded', () => {
+        const safeGet = (key) => {
+          try { return localStorage.getItem(key); } catch (err) { return null; }
+        };
+        const safeSet = (key, value) => {
+          try { localStorage.setItem(key, value); } catch (err) {}
+        };
+        const isMobile = () => window.innerWidth < 768;
+
+        // Sidebar toggle
+        const handleSidebarToggle = (event) => {
+          if (event) event.preventDefault();
+          const sidebar = document.querySelector('.app-sidebar');
+          if (!sidebar) return false;
+          if (isMobile()) {
+            sidebar.classList.toggle('mobile-open');
+            const expanded = sidebar.classList.contains('mobile-open').toString();
+            document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', expanded));
+          } else {
+            const collapsed = sidebar.classList.toggle('collapsed');
+            safeSet('sidebarCollapsed', collapsed.toString());
+            document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', (!collapsed).toString()));
+          }
+          return false;
+        };
+
+        const restoreSidebar = () => {
+          if (isMobile()) return;
+          const sidebar = document.querySelector('.app-sidebar');
+          if (!sidebar) return;
+          const stored = safeGet('sidebarCollapsed');
+          const shouldCollapse = stored === 'true';
+          sidebar.classList.toggle('collapsed', shouldCollapse);
+          document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', (!shouldCollapse).toString()));
+        };
+
+        document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(btn => {
+          btn.onclick = handleSidebarToggle;
+        });
+
+        // View toggle buttons
+        const roomsGrid = document.getElementById('roomsGrid');
+        const applyView = (mode) => {
+          if (!roomsGrid) return;
+          const normalized = mode === 'list' ? 'list' : 'grid';
+          roomsGrid.classList.toggle('list-view', normalized === 'list');
+          document.querySelectorAll('.toggle-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === normalized));
+          safeSet('bookingViewMode', normalized);
+        };
+        document.querySelectorAll('.toggle-view-btn').forEach(btn => {
+          btn.onclick = (e) => {
+            if (e) e.preventDefault();
+            applyView(btn.dataset.view === 'list' ? 'list' : 'grid');
+            return false;
+          };
+        });
+
+        // Book buttons
+        const openBookingFromButton = (btn) => {
+          if (!btn) return;
+          const roomId = btn.dataset.roomId;
+          const roomNumber = btn.dataset.roomNumber;
+          const roomType = btn.dataset.roomType;
+          const roomPrice = btn.dataset.roomPrice;
+          const idEl = document.getElementById('modal_room_id');
+          const numEl = document.getElementById('modal_room_number');
+          const typeEl = document.getElementById('modal_room_type');
+          const priceEl = document.getElementById('modal_room_price');
+          if (idEl) idEl.value = roomId;
+          if (numEl) numEl.value = 'ห้อง ' + roomNumber;
+          if (typeEl) typeEl.value = roomType;
+          if (priceEl) priceEl.value = '฿' + roomPrice;
+          const bookingModal = document.getElementById('bookingModal');
+          if (bookingModal) {
+            bookingModal.classList.add('active');
+            document.body.classList.add('modal-open');
+          }
+        };
+
+        document.querySelectorAll('.book-btn').forEach(btn => {
+          btn.onclick = (e) => {
+            if (e) e.preventDefault();
+            openBookingFromButton(btn);
+            return false;
+          };
+        });
+
+        restoreSidebar();
+        applyView(safeGet('bookingViewMode') || 'grid');
+      });
+    </script>
+    <script>
+      // Additional global functions
+      window.changeSortBy = function(sortValue) {
+        const url = new URL(window.location);
+        url.searchParams.set('sort', sortValue);
+        window.location.href = url.toString();
+      };
+
+      window.updateBookingStatus = async function(bookingId, newStatus) {
+        const statusText = newStatus === '2' ? 'เข้าพัก' : 'ยกเลิก';
+        const confirmed = await showConfirmDialog(
+          `ยืนยันการ${statusText}การจอง`,
+          `คุณต้องการเปลี่ยนสถานะการจองนี้เป็น <strong>"${statusText}"</strong> หรือไม่?`
+        );
         
-        if (isHidden) {
-          section.style.display = '';
-          icon.textContent = '▼';
-          text.textContent = 'ซ่อนห้องพักที่ว่าง';
-          localStorage.setItem('availableRoomsVisible', 'true');
-        } else {
-          section.style.display = 'none';
-          icon.textContent = '▶';
-          text.textContent = 'แสดงห้องพักที่ว่าง';
-          localStorage.setItem('availableRoomsVisible', 'false');
+        if (confirmed) {
+          const formData = new FormData();
+          formData.append('bkg_id', bookingId);
+          formData.append('bkg_status', newStatus);
+          
+          fetch('../Manage/update_booking_status.php', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showToast('สำเร็จ', data.message, 'success');
+              setTimeout(() => location.reload(), 1500);
+            } else {
+              showToast('ผิดพลาด', data.error || 'ไม่สามารถอัปเดตได้', 'error');
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            showToast('ผิดพลาด', 'เกิดข้อผิดพลาดในการส่งข้อมูล', 'error');
+          });
         }
-      }
+      };
+
+      // Helper function to bind event listeners
+      window.bindEventListeners = function() {
+        // Bind toggle view buttons
+        const viewToggleButtons = document.querySelectorAll('.toggle-view-btn');
+        const roomsGrid = document.getElementById('roomsGrid');
+        const VIEW_KEY = 'bookingViewMode';
+
+        const applyViewMode = (mode) => {
+          if (!roomsGrid) return;
+          if (mode === 'list') {
+            roomsGrid.classList.add('list-view');
+          } else {
+            roomsGrid.classList.remove('list-view');
+          }
+          viewToggleButtons.forEach(b => {
+            b.classList.toggle('active', b.dataset.view === mode);
+          });
+        };
+
+        viewToggleButtons.forEach(btn => {
+          btn.removeEventListener('click', btn._clickHandler);
+          btn._clickHandler = function() {
+            const mode = this.dataset.view === 'list' ? 'list' : 'grid';
+            applyViewMode(mode);
+            localStorage.setItem(VIEW_KEY, mode);
+          };
+          btn.addEventListener('click', btn._clickHandler);
+        });
+
+        // Bind book buttons
+        document.querySelectorAll('.book-btn').forEach(btn => {
+          btn.removeEventListener('click', btn._clickHandler);
+          btn._clickHandler = function(e) {
+            e.preventDefault();
+            
+            const roomId = this.dataset.roomId;
+            const roomNumber = this.dataset.roomNumber;
+            const roomType = this.dataset.roomType;
+            const roomPrice = this.dataset.roomPrice;
+            
+            document.getElementById('modal_room_id').value = roomId;
+            document.getElementById('modal_room_number').value = 'ห้อง ' + roomNumber;
+            document.getElementById('modal_room_type').value = roomType;
+            document.getElementById('modal_room_price').value = '฿' + roomPrice;
+            
+            const bookingModal = document.getElementById('bookingModal');
+            if (bookingModal) {
+              bookingModal.classList.add('active');
+              document.body.classList.add('modal-open');
+            }
+          };
+          btn.addEventListener('click', btn._clickHandler);
+        });
+      };
 
       // รอให้ DOM โหลดเสร็จ
+      let visibleRooms = 5;
+      const ROOMS_PER_LOAD = 5;
+
       document.addEventListener('DOMContentLoaded', function() {
         // Restore section visibility from localStorage
         const isSectionVisible = localStorage.getItem('availableRoomsVisible') !== 'false';
@@ -851,72 +1426,47 @@ try {
           }
         }
 
-        console.log('Page loaded');
-        const roomsGrid = document.getElementById('roomsGrid');
-        const viewToggleButtons = document.querySelectorAll('.toggle-view-btn');
-        const VIEW_KEY = 'bookingViewMode';
-
-        const applyViewMode = (mode) => {
-          if (!roomsGrid) return;
-          if (mode === 'list') {
-            roomsGrid.classList.add('list-view');
-          } else {
-            roomsGrid.classList.remove('list-view');
-          }
-          viewToggleButtons.forEach(b => {
-            b.classList.toggle('active', b.dataset.view === mode);
+        // Restore visible rooms on load
+        try {
+          const saved = parseInt(localStorage.getItem('bookingVisibleRooms') || '5', 10);
+          const target = isNaN(saved) ? 5 : Math.max(5, saved);
+          const hiddenRooms = document.querySelectorAll('.room-card.hidden-room');
+          const totalRooms = document.querySelectorAll('.room-card').length;
+          let toShow = Math.min(target - 5, hiddenRooms.length);
+          let shown = 0;
+          hiddenRooms.forEach(room => {
+            if (shown < toShow) {
+              room.classList.remove('hidden-room');
+              shown++;
+            }
           });
-        };
+          visibleRooms = Math.min(target, totalRooms);
 
-        const savedView = localStorage.getItem(VIEW_KEY) || 'grid';
-        applyViewMode(savedView);
+          const remaining = totalRooms - visibleRooms;
+          const remainingCountEl = document.getElementById('remainingCount');
+          const loadMoreBtn = document.getElementById('loadMoreBtn');
+          if (remainingCountEl) remainingCountEl.textContent = Math.max(remaining, 0);
+          if (remaining <= 0 && loadMoreBtn) loadMoreBtn.classList.add('hidden');
+        } catch (e) {}
 
-        viewToggleButtons.forEach(btn => {
-          btn.addEventListener('click', () => {
-            const mode = btn.dataset.view === 'list' ? 'list' : 'grid';
-            applyViewMode(mode);
-            localStorage.setItem(VIEW_KEY, mode);
-          });
-        });
+        // Bind all event listeners
+        if (window.bindEventListeners) {
+          window.bindEventListeners();
+        }
         
-        // เปิด modal สำหรับจองห้อง
-        document.querySelectorAll('.book-btn').forEach(btn => {
-          btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            console.log('Book button clicked');
-            
-            const roomId = this.dataset.roomId;
-            const roomNumber = this.dataset.roomNumber;
-            const roomType = this.dataset.roomType;
-            const roomPrice = this.dataset.roomPrice;
-            
-            console.log('Room data:', {roomId, roomNumber, roomType, roomPrice});
-            
-            document.getElementById('modal_room_id').value = roomId;
-            document.getElementById('modal_room_number').value = 'ห้อง ' + roomNumber;
-            document.getElementById('modal_room_type').value = roomType;
-            document.getElementById('modal_room_price').value = '฿' + roomPrice;
-            
-            document.getElementById('bookingModal').classList.add('active');
-            document.body.classList.add('modal-open');
-          });
-        });
-        
-        // ปิด modal เมื่อคลิกนอก content (เฉพาะที่ background เท่านั้น)
+        // Modal click to close
         const modal = document.getElementById('bookingModal');
         if (modal) {
           modal.addEventListener('click', function(e) {
-            // ตรวจสอบว่าคลิกที่ background (ไม่ใช่ content)
             if (e.target === this) {
-              closeBookingModal();
+              window.closeBookingModal();
             }
           });
         }
         
-        // ป้องกันการปิด modal เมื่อกดปุ่ม submit
+        // Booking form submission
         const bookingForm = document.getElementById('bookingForm');
         if (bookingForm) {
-          // ใส่ค่ามัดจำคงที่ 2000 ไปกับฟอร์ม (field เดิมไม่มีให้กรอก)
           const depositField = document.createElement('input');
           depositField.type = 'hidden';
           depositField.name = 'bkg_deposit';
@@ -954,14 +1504,13 @@ try {
               
               if (result.success) {
                 const bookedRoomId = formData.get('room_id');
-                closeBookingModal();
+                window.closeBookingModal();
                 if (typeof showSuccessToast === 'function') {
                   showSuccessToast(result.message || 'จองห้องพักสำเร็จ');
                 }
                 
-                // รีเฟรชข้อมูลโดยไม่รีโหลดหน้า พร้อม animation
                 setTimeout(() => {
-                  refreshBookingData(bookedRoomId);
+                  window.location.reload();
                 }, 500);
               } else {
                 if (typeof showErrorToast === 'function') {
@@ -978,18 +1527,16 @@ try {
           });
         }
         
-        // ตั้งค่า default date: วันที่จอง = วันนี้และปิดการเลือก, วันที่เข้าพัก = วันนี้ขึ้นไป พร้อมเปิด picker ให้ง่าย
+        // Set date defaults
         const today = new Date().toISOString().split('T')[0];
         const dateInputs = document.querySelectorAll('input[type="date"]');
         dateInputs.forEach(input => {
           input.min = today;
           if (!input.value) input.value = today;
-          // สำหรับวันที่จอง (bkg_date) ไม่ต้องให้เลือกเอง
           if (input.id === 'bkg_date') {
             input.readOnly = true;
             return;
           }
-          // เปิด native picker ทันทีเมื่อคลิก/โฟกัส (ถ้าซัพพอร์ต showPicker)
           const openPicker = () => {
             if (typeof input.showPicker === 'function') {
               try { input.showPicker(); } catch (e) {}
@@ -998,215 +1545,24 @@ try {
           input.addEventListener('focus', openPicker);
           input.addEventListener('click', openPicker);
         });
-      });
-      
-      // Load More Rooms Function
-      let visibleRooms = 5;
-      const ROOMS_PER_LOAD = 5;
-      
-      function loadMoreRooms() {
-        const hiddenRooms = document.querySelectorAll('.room-card.hidden-room');
-        const totalRooms = document.querySelectorAll('.room-card').length;
-        let showCount = 0;
-        
-        hiddenRooms.forEach((room, index) => {
-          if (showCount < ROOMS_PER_LOAD) {
-            room.classList.remove('hidden-room');
-            showCount++;
-            visibleRooms++;
-          }
-        });
-        
-        // จดจำจำนวนการ์ดที่แสดงไว้
-        try {
-          localStorage.setItem('bookingVisibleRooms', String(visibleRooms));
-        } catch (e) {}
-        
-        // Update remaining count
-        const remaining = totalRooms - visibleRooms;
-        const remainingCountEl = document.getElementById('remainingCount');
-        const loadMoreBtn = document.getElementById('loadMoreBtn');
-        
-        if (remaining > 0) {
-          remainingCountEl.textContent = remaining;
-        } else {
-          // Hide button when all rooms are shown
-          loadMoreBtn.classList.add('hidden');
-        }
-      }
 
-      // Restore visible rooms on load
-      document.addEventListener('DOMContentLoaded', () => {
-        try {
-          const saved = parseInt(localStorage.getItem('bookingVisibleRooms') || '5', 10);
-          const target = isNaN(saved) ? 5 : Math.max(5, saved);
-          const hiddenRooms = document.querySelectorAll('.room-card.hidden-room');
-          const totalRooms = document.querySelectorAll('.room-card').length;
-          let toShow = Math.min(target - 5, hiddenRooms.length);
-          let shown = 0;
-          hiddenRooms.forEach(room => {
-            if (shown < toShow) {
-              room.classList.remove('hidden-room');
-              shown++;
-            }
-          });
-          visibleRooms = Math.min(target, totalRooms);
-
-          const remaining = totalRooms - visibleRooms;
-          const remainingCountEl = document.getElementById('remainingCount');
-          const loadMoreBtn = document.getElementById('loadMoreBtn');
-          if (remainingCountEl) remainingCountEl.textContent = Math.max(remaining, 0);
-          if (remaining <= 0 && loadMoreBtn) loadMoreBtn.classList.add('hidden');
-        } catch (e) {}
-      });
-
-
-      
-      // ฟังก์ชันรีเฟรชข้อมูล
-      function refreshBookingData(bookedRoomId = null) {
-        fetch(window.location.href)
-          .then(response => response.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            // อัพเดทสถิติ
-            const statCards = document.querySelectorAll('.booking-stat-card .stat-value');
-            const newStats = doc.querySelectorAll('.booking-stat-card .stat-value');
-            
-            if (statCards.length === newStats.length) {
-              statCards.forEach((card, index) => {
-                card.textContent = newStats[index].textContent;
-              });
-            }
-            
-            // อัพเดทตารางการจอง (รายการจองทั้งหมด)
-            const newBookingTable = doc.querySelector('#table-bookings tbody');
-            const currentBookingTable = document.querySelector('#table-bookings tbody');
-            if (newBookingTable && currentBookingTable) {
-              currentBookingTable.innerHTML = newBookingTable.innerHTML;
-            }
-            
-            // อัพเดทรายการห้องว่าง with animation
-            const newRoomsGrid = doc.querySelector('#roomsGrid');
-            const currentRoomsGrid = document.querySelector('#roomsGrid');
-            if (newRoomsGrid && currentRoomsGrid) {
-              // ถ้ามีห้องที่ถูกจอง ให้ทำ animation ก่อน
-              if (bookedRoomId) {
-                const bookedCard = currentRoomsGrid.querySelector(`[data-room-id="${bookedRoomId}"]`)?.closest('.room-card');
-                if (bookedCard) {
-                  bookedCard.classList.add('removing');
-                  // รอ animation เสร็จก่อนอัพเดท DOM
-                  setTimeout(() => {
-                    updateRoomsGrid(newRoomsGrid, currentRoomsGrid);
-                  }, 600); // ตรงกับเวลาใน CSS transition
-                  return;
-                }
-              }
-              // ถ้าไม่มี animation ให้อัพเดทเลย
-              updateRoomsGrid(newRoomsGrid, currentRoomsGrid);
-            }
-          })
-          .catch(error => {
-            console.error('Error refreshing data:', error);
-          });
-      }
-      
-      // ฟังก์ชันช่วยอัพเดท rooms grid
-      function updateRoomsGrid(newRoomsGrid, currentRoomsGrid) {
-        currentRoomsGrid.innerHTML = newRoomsGrid.innerHTML;
-        
-        // ต้องผูก event listener ใหม่อีกครั้ง
-        document.querySelectorAll('.book-btn').forEach(btn => {
-          btn.addEventListener('click', function(e) {
-            e.preventDefault();
-            const roomId = this.dataset.roomId;
-            const roomNumber = this.dataset.roomNumber;
-            const roomType = this.dataset.roomType;
-            const roomPrice = this.dataset.roomPrice;
-            
-            document.getElementById('modal_room_id').value = roomId;
-            document.getElementById('modal_room_number').value = 'ห้อง ' + roomNumber;
-            document.getElementById('modal_room_type').value = roomType;
-            document.getElementById('modal_room_price').value = '฿' + roomPrice;
-            
-            document.getElementById('bookingModal').classList.add('active');
-            document.body.classList.add('modal-open');
-          });
-        });
-      }
-      
-      // ปิด modal
-      function closeBookingModal() {
-        const modal = document.getElementById('bookingModal');
-        const form = document.getElementById('bookingForm');
-        
-        modal.classList.remove('active');
-        document.body.classList.remove('modal-open');
-        if (form) {
-          form.reset();
-        }
-      }
-      
-      // อัพเดทสถานะการจอง
-      async function updateBookingStatus(bookingId, newStatus) {
-        const statusText = newStatus === '2' ? 'เข้าพัก' : 'ยกเลิก';
-        const confirmed = await showConfirmDialog(
-          `ยืนยันการ${statusText}การจอง`,
-          `คุณต้องการเปลี่ยนสถานะการจองนี้เป็น <strong>"${statusText}"</strong> หรือไม่?`
-        );
-        
-        if (confirmed) {
-          const formData = new FormData();
-          formData.append('bkg_id', bookingId);
-          formData.append('bkg_status', newStatus);
+        // Theme detection
+        function updateCardTheme() {
+          const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim();
+          const bodyBg = getComputedStyle(document.body).backgroundColor;
           
-          fetch('../Manage/update_booking_status.php', {
-            method: 'POST',
-            body: formData,
-            headers: {
-              'X-Requested-With': 'XMLHttpRequest'
-            }
-          })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              showToast('สำเร็จ', data.message, 'success');
-              // Reload after 1.5 seconds
-              setTimeout(() => location.reload(), 1500);
-            } else {
-              showToast('ผิดพลาด', data.error || 'ไม่สามารถอัปเดตได้', 'error');
-            }
-          })
-          .catch(error => {
-            console.error('Error:', error);
-            showToast('ผิดพลาด', 'เกิดข้อผิดพลาดในการส่งข้อมูล', 'error');
-          });
+          const isLightTheme = themeColor === '#fff' || themeColor === '#ffffff' || 
+                               themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
+                               bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
+          
+          if (isLightTheme) {
+            document.body.classList.add('live-light');
+          } else {
+            document.body.classList.remove('live-light');
+          }
         }
-      }
 
-      // ฟังก์ชันสำหรับตรวจจับและปรับสีการ์ดตาม theme
-      function updateCardTheme() {
-        const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim();
-        const bodyBg = getComputedStyle(document.body).backgroundColor;
-        
-        // ตรวจสอบว่าเป็นสีขาวหรือสีอ่อน
-        const isLightTheme = themeColor === '#fff' || themeColor === '#ffffff' || 
-                             themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
-                             bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
-        
-        if (isLightTheme) {
-          document.body.classList.add('live-light');
-        } else {
-          document.body.classList.remove('live-light');
-        }
-      }
-
-      // เรียกใช้เมื่อโหลดหน้า
-      document.addEventListener('DOMContentLoaded', () => {
         updateCardTheme();
-        
-        // ตรวจสอบการเปลี่ยน theme color (ใช้ MutationObserver)
         const themeObserver = new MutationObserver(() => {
           updateCardTheme();
         });
@@ -1222,12 +1578,5 @@ try {
     </script>
     <script src="../Assets/Javascript/confirm-modal.js"></script>
     <script src="../Assets/Javascript/toast-notification.js"></script>
-    <script>
-      function changeSortBy(sortValue) {
-        const url = new URL(window.location);
-        url.searchParams.set('sort', sortValue);
-        window.location.href = url.toString();
-      }
-    </script>
   </body>
 </html>

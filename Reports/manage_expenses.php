@@ -8,6 +8,54 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// --- อัตโนมัติสร้างรายการค่าใช้จ่ายใหม่เมื่อถึงเดือนใหม่ ---
+$today = new DateTime();
+$currentMonth = $today->format('Y-m');
+// ดึงสัญญาที่ยังไม่หมดอายุ
+$contractsStmt = $pdo->query("SELECT ctr_id, ctr_start, ctr_end FROM contract WHERE ctr_status = '0'");
+$contracts = $contractsStmt ? $contractsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
+foreach ($contracts as $contract) {
+  $ctr_id = (int)$contract['ctr_id'];
+  $ctr_start = (new DateTime($contract['ctr_start']))->format('Y-m');
+  $ctr_end = (new DateTime($contract['ctr_end']))->format('Y-m');
+  // ตรวจสอบเดือนล่าสุดที่บันทึก
+  $lastExpStmt = $pdo->prepare("SELECT MAX(DATE_FORMAT(exp_month, '%Y-%m')) AS last_month FROM expense WHERE ctr_id = ?");
+  $lastExpStmt->execute([$ctr_id]);
+  $lastMonth = $lastExpStmt->fetchColumn();
+  // ถ้าไม่มีเลย ให้เริ่มจาก ctr_start
+  $nextMonth = $lastMonth ? (new DateTime($lastMonth . '-01'))->modify('+1 month')->format('Y-m') : $ctr_start;
+  // ถ้า nextMonth <= currentMonth และ nextMonth <= ctr_end ให้สร้างรายการใหม่
+  while ($nextMonth <= $currentMonth && $nextMonth <= $ctr_end) {
+    // ตรวจสอบว่ามีรายการแล้วหรือยัง
+    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM expense WHERE ctr_id = ? AND DATE_FORMAT(exp_month, '%Y-%m') = ?");
+    $checkStmt->execute([$ctr_id, $nextMonth]);
+    if ((int)$checkStmt->fetchColumn() === 0) {
+      // ดึงราคาห้อง
+      $roomStmt = $pdo->prepare("SELECT r.room_id, rt.type_price FROM contract c LEFT JOIN room r ON c.room_id = r.room_id LEFT JOIN roomtype rt ON r.type_id = rt.type_id WHERE c.ctr_id = ?");
+      $roomStmt->execute([$ctr_id]);
+      $room = $roomStmt->fetch(PDO::FETCH_ASSOC);
+      $room_price = (int)($room['type_price'] ?? 0);
+      // ดึงเรตไฟ/น้ำ ล่าสุด
+      $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY rate_id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+      $rate_elec = (int)($rateRow['rate_elec'] ?? 7);
+      $rate_water = (int)($rateRow['rate_water'] ?? 20);
+      // สร้างรายการใหม่ (หน่วยไฟ/น้ำ = 0)
+      $insert = $pdo->prepare("INSERT INTO expense (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id) VALUES (?, 0, 0, ?, ?, ?, 0, 0, ?, '0', ?)");
+      $exp_total = $room_price;
+      $insert->execute([
+        $nextMonth . '-01',
+        $rate_elec,
+        $rate_water,
+        $room_price,
+        $exp_total,
+        $ctr_id
+      ]);
+    }
+    // ไปเดือนถัดไป
+    $nextMonth = (new DateTime($nextMonth . '-01'))->modify('+1 month')->format('Y-m');
+  }
+}
+// --- END อัตโนมัติ ---
 // ดึง theme color จากการตั้งค่าระบบ
 $settingsStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
 $themeColor = '#0f172a'; // ค่า default (dark mode)
@@ -92,26 +140,42 @@ if (empty($waterRates)) {
 $statusMap = [
   '0' => 'ยังไม่ชำระ',
   '1' => 'ชำระแล้ว',
+  '2' => 'รอตรวจสอบ',
+  '3' => 'ชำระยังไม่ครบ',
 ];
 $statusColors = [
   '0' => '#ef4444',
   '1' => '#22c55e',
+  '2' => '#ff9800',
+  '3' => '#f59e0b',
 ];
 
 // คำนวณสถิติ
 $stats = [
   'unpaid' => 0,
   'paid' => 0,
+  'pending' => 0,
+  'partial' => 0,
   'total_unpaid' => 0,
   'total_paid' => 0,
+  'total_pending' => 0,
+  'total_partial' => 0,
 ];
 foreach ($expenses as $exp) {
-    if ($exp['exp_status'] === '0') {
+    $expStatus = (string)($exp['exp_status'] ?? '0');
+    $expTotal = (int)($exp['exp_total'] ?? 0);
+    if ($expStatus === '0') {
         $stats['unpaid']++;
-        $stats['total_unpaid'] += (int)($exp['exp_total'] ?? 0);
-    } else {
+        $stats['total_unpaid'] += $expTotal;
+    } elseif ($expStatus === '1') {
         $stats['paid']++;
-        $stats['total_paid'] += (int)($exp['exp_total'] ?? 0);
+        $stats['total_paid'] += $expTotal;
+    } elseif ($expStatus === '2') {
+        $stats['pending']++;
+        $stats['total_pending'] += $expTotal;
+    } elseif ($expStatus === '3') {
+        $stats['partial']++;
+        $stats['total_partial'] += $expTotal;
     }
 }
 
@@ -402,6 +466,11 @@ try {
             <div class="section-header">
               <div>
                 <p style="color:#94a3b8;margin-top:0.2rem;">สรุปยอดค่าใช้จ่ายและสถานะการชำระเงิน</p>
+                <div style="margin-top:0.5rem;padding:0.75rem 1.25rem;background:rgba(56,189,248,0.12);border-radius:8px;color:#0369a1;font-size:1rem;">
+                  <strong>ระบบจะเพิ่มรายการค่าใช้จ่ายใหม่ให้อัตโนมัติทุกเดือน</strong> สำหรับสัญญาที่กำลังใช้งาน โดยไม่ต้องบันทึกเอง<br>
+                  เมื่อถึงเดือนใหม่ ระบบจะสร้างรายการค่าใช้จ่ายของแต่ละห้องพักตามสัญญา จนถึงเดือนสุดท้ายของสัญญา โดยใช้ราคาห้องและอัตราค่าน้ำ/ไฟล่าสุด (หน่วยน้ำ/ไฟเริ่มต้นเป็น 0)<br>
+                  ผู้ดูแลสามารถแก้ไขรายละเอียดแต่ละรายการได้ภายหลังตามจริง
+                </div>
               </div>
             </div>
             <div class="expense-stats">

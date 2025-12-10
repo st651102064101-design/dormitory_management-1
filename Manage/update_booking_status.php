@@ -43,8 +43,8 @@ try {
         exit;
     }
     
-    // ดึงข้อมูลการจอง
-    $stmt = $pdo->prepare("SELECT room_id, bkg_status FROM booking WHERE bkg_id = ?");
+    // ดึงข้อมูลการจอง (รวม tnt_id)
+    $stmt = $pdo->prepare("SELECT room_id, bkg_status, tnt_id FROM booking WHERE bkg_id = ?");
     $stmt->execute([$bkg_id]);
     $booking = $stmt->fetch();
     
@@ -62,15 +62,22 @@ try {
     // เริ่ม transaction
     $pdo->beginTransaction();
     
-    // ถ้ายกเลิกการจอง (status = 0) -> ลบบันทึกการจองออกจาก DB
+    // ถ้ายกเลิกการจอง (status = 0) -> เปลี่ยนสถานะเป็นยกเลิก
     // ถ้าเข้าพักแล้ว (status = 2) -> เพียงปรับปรุงสถานะห้อง
     if ($bkg_status === '0') {
-        // ยกเลิก -> ลบจากฐานข้อมูล และกำหนดห้องเป็นว่าง
-        $stmt = $pdo->prepare("DELETE FROM booking WHERE bkg_id = ?");
+        // ยกเลิก -> อัพเดทสถานะเป็นยกเลิก และกำหนดห้องเป็นว่าง
+        $stmt = $pdo->prepare("UPDATE booking SET bkg_status = '0' WHERE bkg_id = ?");
         $stmt->execute([$bkg_id]);
         
         $stmt = $pdo->prepare("UPDATE room SET room_status = '0' WHERE room_id = ?");
         $stmt->execute([$booking['room_id']]);
+        
+        // อัพเดทสถานะผู้เช่าเป็น '4' (ยกเลิกจองห้อง)
+        if (!empty($booking['tnt_id'])) {
+            $stmt = $pdo->prepare("UPDATE tenant SET tnt_status = '4' WHERE tnt_id = ?");
+            $stmt->execute([$booking['tnt_id']]);
+        }
+        
         $message = 'ยกเลิกการจองเรียบร้อยแล้ว';
     } else if ($bkg_status === '2') {
         // เข้าพักแล้ว -> อัพเดทสถานะและห้องไม่ว่าง
@@ -79,6 +86,13 @@ try {
         
         $stmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
         $stmt->execute([$booking['room_id']]);
+        
+        // อัพเดทสถานะผู้เช่าเป็น '1' (กำลังเช่า)
+        if (!empty($booking['tnt_id'])) {
+            $stmt = $pdo->prepare("UPDATE tenant SET tnt_status = '1' WHERE tnt_id = ?");
+            $stmt->execute([$booking['tnt_id']]);
+        }
+        
         $message = 'แก้ไขสถานะเป็นเข้าพักแล้วเรียบร้อยแล้ว';
     } else {
         // สำหรับสถานะอื่นๆ เพียงอัพเดทสถานะ

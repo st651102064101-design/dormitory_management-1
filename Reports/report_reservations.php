@@ -5,6 +5,10 @@ if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
     exit;
 }
+// ปิดหน้ารายงานการจองชั่วคราว
+$_SESSION['error'] = 'หน้ารายงานการจองถูกปิดใช้งานชั่วคราว';
+header('Location: dashboard.php');
+exit;
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
@@ -34,25 +38,46 @@ try {
   $availableMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {}
 
-// Query booking data
-$whereClause = '';
-if ($selectedMonth || $selectedStatus !== '') {
-  $conditions = [];
-  if ($selectedMonth) {
-    $conditions[] = "DATE_FORMAT(b.bkg_date, '%Y-%m') = " . $pdo->quote($selectedMonth);
-  }
-  if ($selectedStatus !== '') {
-    $conditions[] = "b.bkg_status = " . $pdo->quote($selectedStatus);
-  }
-  $whereClause = 'WHERE ' . implode(' AND ', $conditions);
-}
-
+// Query booking data - get all records first
+// เชื่อมความสัมพันธ์: booking -> room -> contract -> tenant
 try {
-  $stmt = $pdo->query("SELECT b.*, rm.room_number FROM booking b LEFT JOIN room rm ON b.room_id = rm.room_id $whereClause ORDER BY b.bkg_date DESC");
-  $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $query = "SELECT b.*, rm.room_number, 
+            COALESCE(t.tnt_name, 'ยังไม่มีผู้เช่า') as tnt_name,
+            COALESCE(t.tnt_status, '') as tnt_status,
+            t.tnt_id
+            FROM booking b 
+            LEFT JOIN room rm ON b.room_id = rm.room_id 
+            LEFT JOIN contract c ON rm.room_id = c.room_id AND c.ctr_status IN ('0', '1')
+            LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+            ORDER BY b.bkg_date DESC";
+  $stmt = $pdo->query($query);
+  $allRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
   error_log('Booking query error: ' . $e->getMessage());
-  $rows = [];
+  $allRows = [];
+}
+
+// Filter results based on selections
+$rows = [];
+foreach ($allRows as $row) {
+  $includeRow = true;
+  
+  if (!empty($selectedMonth)) {
+    $bookingMonth = date('Y-m', strtotime($row['bkg_date']));
+    if ($bookingMonth !== $selectedMonth) {
+      $includeRow = false;
+    }
+  }
+  
+  if ($includeRow && !empty($selectedStatus)) {
+    if ((string)$row['bkg_status'] !== $selectedStatus) {
+      $includeRow = false;
+    }
+  }
+  
+  if ($includeRow) {
+    $rows[] = $row;
+  }
 }
 
 $statusLabels = [
@@ -114,7 +139,8 @@ try {
 // คำนวณสถิติ
 $totalBookings = count($rows);
 try {
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 0");
+  // รอการเข้าพัก - นับจาก tenant ที่มี tnt_status = 2
+  $stmt = $pdo->query("SELECT COUNT(*) as total FROM tenant WHERE tnt_status = 2");
   $bookingPending = $stmt->fetch()['total'] ?? 0;
   
   $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 1");
@@ -293,10 +319,12 @@ try {
                 <thead>
                   <tr>
                     <th>รหัส</th>
+                    <th>ผู้เช่า</th>
                     <th>ห้องพัก</th>
                     <th>วันที่จอง</th>
                     <th>วันเข้าพัก</th>
-                    <th>สถานะ</th>
+                    <th>สถานะการเข้าพัก</th>
+                    <th>สถานะการจอง</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -308,12 +336,25 @@ try {
     default => 'status-pending'
   };
   $statusLabel = $statusLabels[$r['bkg_status']] ?? 'ไม่ทราบ';
+  
+  // สถานะผู้เช่า
+  $tenantStatusLabels = [
+    '0' => 'ย้ายออก',
+    '1' => 'พักอยู่',
+    '2' => 'รอการเข้าพัก',
+    '3' => 'จองห้อง',
+    '4' => 'ยกเลิกจองห้อง'
+  ];
+  $tenantStatus = $tenantStatusLabels[$r['tnt_status'] ?? ''] ?? 'ไม่ทราบ';
+  $tenantStatusClass = ($r['tnt_status'] === '2') ? 'status-pending' : 'status-confirmed';
 ?>
                   <tr>
                     <td>#<?php echo renderField((string)$r['bkg_id'], '—'); ?></td>
+                    <td><?php echo renderField($r['tnt_name'] ?? '', '—'); ?></td>
                     <td><strong><?php echo renderField($r['room_number'], '—'); ?></strong></td>
                     <td><?php echo renderField($r['bkg_date'], '—'); ?></td>
                     <td><?php echo renderField($r['bkg_checkin_date'], '—'); ?></td>
+                    <td><span class="reservation-status <?php echo $tenantStatusClass; ?>"><?php echo $tenantStatus; ?></span></td>
                     <td><span class="reservation-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
                   </tr>
 <?php endforeach; ?>

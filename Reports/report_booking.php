@@ -5,6 +5,10 @@ if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
     exit;
 }
+// ปิดหน้ารายงานการจองชั่วคราว
+$_SESSION['error'] = 'หน้ารายงานการจองถูกปิดใช้งานชั่วคราว';
+header('Location: dashboard.php');
+exit;
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
@@ -111,7 +115,8 @@ try {
   $stmt = $pdo->query("SELECT COUNT(*) as total FROM contract");
   $allContractsCount = $stmt->fetch()['total'] ?? 0;
   
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM contract WHERE ctr_status = 0");
+  // ดึง "รอการเข้าพัก" จากจำนวนผู้เช่า (tnt_status = 2)
+  $stmt = $pdo->query("SELECT COUNT(*) as total FROM tenant WHERE tnt_status = 2");
   $contractsPending = $stmt->fetch()['total'] ?? 0;
   
   $stmt = $pdo->query("SELECT COUNT(*) as total FROM contract WHERE ctr_status = 1");

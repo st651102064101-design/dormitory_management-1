@@ -1,4 +1,13 @@
 <?php
+declare(strict_types=1);
+session_start();
+if (empty($_SESSION['admin_username'])) {
+  header('Location: ../Login.php');
+  exit;
+}
+
+$error = '';
+
 require_once '../ConnectDB.php';
 
 // Initialize database connection
@@ -16,15 +25,16 @@ if ($settingsStmt) {
 
 // Get all contracts with related data
 try {
+    // ดึงทุกสถานะ (รวม null/อื่น ๆ) เพื่อให้เห็นข้อมูลแน่ ๆ
     $stmt = $conn->prepare("SELECT c.*, 
-        t.tnt_name, t.tnt_phone,
-        r.room_number, r.room_status,
-        rt.type_name
-        FROM contract c
-        LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        LEFT JOIN room r ON c.room_id = r.room_id
-        LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-        ORDER BY c.ctr_start DESC");
+      t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_status,
+      r.room_number, r.room_status,
+      rt.type_name
+      FROM contract c
+      LEFT JOIN tenant t ON t.tnt_id = c.tnt_id
+      LEFT JOIN room r ON c.room_id = r.room_id
+      LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+      ORDER BY c.ctr_start DESC");
     $stmt->execute();
     $contracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     error_log("DEBUG: Contracts found: " . count($contracts));
@@ -33,15 +43,23 @@ try {
     }
 } catch(Exception $e) {
     $contracts = [];
-    $error = "ข้อผิดพลาดในการดึงข้อมูล: " . $e->getMessage();
+      $error = "ข้อผิดพลาดในการดึงข้อมูล: " . $e->getMessage();
     error_log("ERROR: Contract query error: " . $e->getMessage());
 }
 
-// Count contracts by status
+// Count contracts by status and tenants by status
 $statusCounts = [
     '0' => 0,
     '1' => 0,
     '2' => 0
+];
+
+// นับจำนวนผู้เช่าตามสถานะ
+// (0=ย้ายออก, 1=พักอยู่, 2=รอการเข้าพัก, 3=จองห้อง, 4=ยกเลิกจองห้อง)
+$tenantStatusCounts = [
+    '0' => 0,  // ผู้เช่ารอเข้าพัก (tnt_status = 2)
+    '1' => 0,  // ผู้เช่าที่พักอยู่ (tnt_status = 1)
+    '2' => 0   // ผู้เช่าที่ย้ายออก (tnt_status = 0)
 ];
 
 foreach($contracts as $contract) {
@@ -51,6 +69,26 @@ foreach($contracts as $contract) {
     if(isset($statusCounts[$status])) {
         $statusCounts[$status]++;
     }
+}
+
+// ดึงจำนวนผู้เช่าตามสถานะ
+try {
+    // รอเข้าพัก (tnt_status = 2)
+    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM tenant WHERE tnt_status = 2");
+    $stmt->execute();
+    $tenantStatusCounts['0'] = $stmt->fetch()['total'] ?? 0;
+    
+    // กำลังพักอยู่ (tnt_status = 1)
+    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM tenant WHERE tnt_status = 1");
+    $stmt->execute();
+    $tenantStatusCounts['1'] = $stmt->fetch()['total'] ?? 0;
+    
+    // ย้ายออก (tnt_status = 0)
+    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM tenant WHERE tnt_status = 0");
+    $stmt->execute();
+    $tenantStatusCounts['2'] = $stmt->fetch()['total'] ?? 0;
+} catch(Exception $e) {
+    error_log("ERROR: Tenant status count error: " . $e->getMessage());
 }
 
 $statusLabels = [
@@ -64,6 +102,18 @@ $statusColors = [
     '1' => '#f44336',
     '2' => '#FF9800'
 ];
+
+// Debug counters to ensure data is actually loaded
+$ctrCount = count($contracts);
+$ctrStatusBuckets = ['0' => 0, '1' => 0, '2' => 0, 'other' => 0];
+foreach ($contracts as $c) {
+  $k = (string)($c['ctr_status'] ?? 'other');
+  if (isset($ctrStatusBuckets[$k])) {
+    $ctrStatusBuckets[$k]++;
+  } else {
+    $ctrStatusBuckets['other']++;
+  }
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -74,7 +124,6 @@ $statusColors = [
     <link rel="stylesheet" href="../Assets/Css/main.css">
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css">
     <style>
       :root {
         --theme-bg-color: <?php echo $themeColor; ?>;
@@ -153,18 +202,25 @@ $statusColors = [
         background: rgba(0,0,0,0.08) !important;
       }
       .form-toggle-btn {
-        padding: 0.6rem 1.2rem;
-        background: var(--primary-color);
-        color: white;
-        border: none;
-        border-radius: 4px;
+        padding: 0.65rem 1.3rem;
+        background: #22c55e;
+        color: #0f172a;
+        border: 1px solid #16a34a;
+        border-radius: 8px;
         cursor: pointer;
         font-size: 1rem;
         margin-bottom: 1.5rem;
-        transition: background 0.3s ease;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(34,197,94,0.35);
+        position: relative;
+        z-index: 9999;
+        pointer-events: auto;
+        touch-action: manipulation;
       }
       .form-toggle-btn:hover {
-        background: var(--primary-hover);
+        background: #16a34a;
+        color: #e2fbe9;
+        transform: translateY(-1px);
       }
       .contract-form {
         display: block;
@@ -284,17 +340,22 @@ $statusColors = [
         width: 100%;
         display: table !important;
         overflow-x: auto;
+        border-collapse: collapse !important;
+        table-layout: auto !important;
+        color: #e2e8f0 !important;
+        margin-bottom: 2rem;
       }
-      .report-table thead {
-        display: table-header-group;
+      .report-table thead { 
+        display: table-header-group !important; 
+        background: #0a1929 !important;
       }
-      .report-table tbody {
-        display: table-row-group;
-        max-height: none;
-        overflow: visible;
+      .report-table tbody { 
+        display: table-row-group !important; 
+        max-height: none !important; 
+        overflow: visible !important;
       }
-      .report-table tr {
-        display: table-row;
+      .report-table tr { 
+        display: table-row !important; 
       }
       .report-table th,
       .report-table td {
@@ -302,6 +363,25 @@ $statusColors = [
         padding: 0.75rem;
         text-align: left;
         border-bottom: 1px solid rgba(255,255,255,0.1);
+        color: #e2e8f0 !important;
+        background: transparent !important;
+        vertical-align: middle;
+      }
+      .report-table th {
+        background: rgba(10,25,41,0.8) !important;
+        color: #cbd5e1 !important;
+        font-weight: 600;
+      }
+      .report-table tbody tr { 
+        height: auto !important;
+      }
+      .report-table tbody tr:hover {
+        background: rgba(30,41,59,0.4) !important;
+      }
+      /* force visible in case of rogue styles */
+      .report-table, .report-table * {
+        opacity: 1 !important;
+        visibility: visible !important;
       }
       .status-badge {
         display: inline-block;
@@ -312,6 +392,63 @@ $statusColors = [
         text-align: center;
       }
     </style>
+    <script>
+      // Define a global sidebar toggle early so the header button responds immediately
+      window.__directSidebarToggle = function(event) {
+        if (event) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+        const sidebar = document.querySelector('.app-sidebar');
+        if (!sidebar) return false;
+        if (window.innerWidth <= 1024) {
+          sidebar.classList.toggle('mobile-open');
+          document.body.classList.toggle('sidebar-open');
+        } else {
+          sidebar.classList.toggle('collapsed');
+        }
+        return false;
+      };
+
+      // Define contract form toggle early
+      window.__toggleContractForm = function(e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        var form = document.getElementById('contractForm');
+        var btn = document.getElementById('toggleFormBtn');
+        var icon = document.getElementById('toggleFormIcon');
+        var text = document.getElementById('toggleFormText');
+        if (!form || !btn) {
+          console.log('Form or button not found yet');
+          return false;
+        }
+        var isHidden = form.classList.contains('hide');
+        if (isHidden) {
+          form.classList.remove('hide');
+          icon.textContent = '▼';
+          text.textContent = 'ซ่อนฟอร์ม';
+          btn.classList.add('open');
+        } else {
+          form.classList.add('hide');
+          icon.textContent = '▶';
+          text.textContent = 'แสดงฟอร์ม';
+          btn.classList.remove('open');
+        }
+        if (btn) {
+          btn.setAttribute('aria-expanded', (!isHidden).toString());
+        }
+        try { 
+          var newState = isHidden ? 'true' : 'false';
+          localStorage.setItem('contractFormVisible', newState);
+          console.log('contractFormVisible saved:', newState);
+        } catch(ex) {
+          console.error('localStorage error:', ex);
+        }
+        return false;
+      };
+    </script>
 </head>
 <body>
     <div style="display: flex;">
@@ -321,39 +458,123 @@ $statusColors = [
             <div class="manage-panel">
               <?php include '../includes/page_header.php'; ?>
 
+                <?php if (!empty($_SESSION['error'])): ?>
+                  <div style="margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px;">
+                    <?php echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['error']); ?>
+                  </div>
+                <?php endif; ?>
+                <?php if (!empty($_SESSION['success'])): ?>
+                  <div style="margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; background: #ecfdf3; color: #166534; border: 1px solid #bbf7d0; border-radius: 6px;">
+                    <?php echo htmlspecialchars($_SESSION['success'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['success']); ?>
+                  </div>
+                <?php endif; ?>
+                <?php if (!empty($error)): ?>
+                  <div style="margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; border-radius: 6px;">
+                    <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
+                  </div>
+                <?php endif; ?>
+                <div style="margin: 0.5rem 0 1rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.95rem;">
+                  สัญญาที่พบ: <strong><?php echo $ctrCount; ?></strong> รายการ (แสดงทุกสถานะ) |
+                  ปกติ: <?php echo $ctrStatusBuckets['0']; ?> | ยกเลิกแล้ว: <?php echo $ctrStatusBuckets['1']; ?> | แจ้งยกเลิก: <?php echo $ctrStatusBuckets['2']; ?> | อื่นๆ: <?php echo $ctrStatusBuckets['other']; ?>
+                </div>
+
                 <!-- Statistics -->
                 <div class="contract-stats">
                     <div class="contract-stat-card">
-                        <div class="stat-value" style="color: #4CAF50;"><?php echo $statusCounts['0']; ?></div>
-                        <div class="stat-label">สัญญาปกติ</div>
-                        <div class="stat-chip">
-                            <span style="display: inline-block; width: 8px; height: 8px; background: #4CAF50; border-radius: 50%;"></span>
-                            ยังมีผลบังคับใช้
-                        </div>
-                    </div>
-                    <div class="contract-stat-card">
-                        <div class="stat-value" style="color: #FF9800;"><?php echo $statusCounts['2']; ?></div>
-                        <div class="stat-label">สัญญาแจ้งยกเลิก</div>
+                        <div class="stat-value" style="color: #FF9800;"><?php echo $tenantStatusCounts['0']; ?></div>
+                        <div class="stat-label">รอเข้าพัก</div>
                         <div class="stat-chip">
                             <span style="display: inline-block; width: 8px; height: 8px; background: #FF9800; border-radius: 50%;"></span>
-                            ได้แจ้งยกเลิก
+                            รอการเข้าพัก
                         </div>
                     </div>
                     <div class="contract-stat-card">
-                        <div class="stat-value" style="color: #f44336;"><?php echo $statusCounts['1']; ?></div>
-                        <div class="stat-label">สัญญาที่ยกเลิก</div>
+                        <div class="stat-value" style="color: #4CAF50;"><?php echo $tenantStatusCounts['1']; ?></div>
+                        <div class="stat-label">กำลังพักอยู่</div>
+                        <div class="stat-chip">
+                            <span style="display: inline-block; width: 8px; height: 8px; background: #4CAF50; border-radius: 50%;"></span>
+                            พักอยู่
+                        </div>
+                    </div>
+                    <div class="contract-stat-card">
+                        <div class="stat-value" style="color: #f44336;"><?php echo $tenantStatusCounts['2']; ?></div>
+                        <div class="stat-label">ย้ายออก</div>
                         <div class="stat-chip">
                             <span style="display: inline-block; width: 8px; height: 8px; background: #f44336; border-radius: 50%;"></span>
-                            ยกเลิกแล้ว
+                            ออกไปแล้ว
                         </div>
                     </div>
                 </div>
 
+                <style>
+                  .form-toggle-btn {
+                    padding: 0.8rem 1.5rem;
+                    cursor: pointer;
+                    font-size: 1rem;
+                    background: #1e293b;
+                    border: 1px solid #334155;
+                    color: #cbd5e1;
+                    border-radius: 8px;
+                    transition: all 0.2s;
+                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    margin-bottom: 20px;
+                    white-space: nowrap;
+                  }
+                  .form-toggle-btn:hover {
+                    background: #334155;
+                    border-color: #475569;
+                  }
+                  .form-toggle-btn.open {
+                    border-color: #475569;
+                  }
+                </style>
                 <!-- Add Contract Form Toggle -->
-                <button class="form-toggle-btn" id="toggleFormBtn">+ เพิ่มสัญญาใหม่</button>
+                <button class="form-toggle-btn" id="toggleFormBtn" type="button" onclick="window.__toggleContractForm(event); return false;"><span id="toggleFormIcon">▶</span> <span id="toggleFormText">แสดงฟอร์ม</span></button>
+                <script>
+                  // Bind click immediately after button is created
+                  (function(){
+                    var btn = document.getElementById('toggleFormBtn');
+                    if (btn) {
+                      btn.onclick = function(e) {
+                        window.__toggleContractForm(e);
+                        return false;
+                      };
+                    }
+                  })();
+                  
+                  // Restore form state on DOMContentLoaded
+                  document.addEventListener('DOMContentLoaded', function(){
+                    setTimeout(function(){
+                      var saved = localStorage.getItem('contractFormVisible');
+                      var form = document.getElementById('contractForm');
+                      var btn = document.getElementById('toggleFormBtn');
+                      var icon = document.getElementById('toggleFormIcon');
+                      var text = document.getElementById('toggleFormText');
+                      console.log('DOMContentLoaded - Checking localStorage:', saved);
+                      console.log('Form element exists:', !!form);
+                      console.log('Button element exists:', !!btn);
+                      
+                      if (saved === 'true' && form && btn && icon && text) {
+                        form.classList.remove('hide');
+                        icon.textContent = '▼';
+                        text.textContent = 'ซ่อนฟอร์ม';
+                        btn.classList.add('open');
+                        console.log('✓ Form opened from localStorage');
+                      } else if (saved === 'false' && form && btn && icon && text) {
+                        form.classList.add('hide');
+                        icon.textContent = '▶';
+                        text.textContent = 'แสดงฟอร์ม';
+                        btn.classList.remove('open');
+                        console.log('✓ Form closed from localStorage');
+                      } else {
+                        console.log('! Could not restore state - saved:', saved);
+                      }
+                    }, 100);
+                  });
+                </script>
 
                 <!-- Add Contract Form -->
-                <form class="contract-form" id="contractForm" action="../Manage/process_contract.php" method="POST" onsubmit="return validateForm()">
+                <form class="contract-form hide" id="contractForm" action="../Manage/process_contract.php" method="POST" data-allow-submit>
                     <h3 style="margin-top: 0;">เพิ่มสัญญาเช่าใหม่</h3>
                     <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin: 0 0 1rem 0;">
                         📝 เลือกเฉพาะผู้เช่าและห้องพัก - วันที่และเงินประกันจะถูกกำหนดอัตโนมัติ
@@ -411,10 +632,10 @@ $statusColors = [
                             </select>
                         </div>
                         <div class="form-group" style="display: none;">
-                            <input type="date" id="ctr_start" name="ctr_start" value="<?php echo date('Y-m-d'); ?>" required>
+                          <input type="date" id="ctr_start" name="ctr_start" value="<?php echo date('Y-m-d'); ?>" required>
                         </div>
                         <div class="form-group" style="display: none;">
-                            <input type="date" id="ctr_end" name="ctr_end" required>
+                          <input type="date" id="ctr_end" name="ctr_end" value="<?php echo date('Y-m-d', strtotime('+6 months')); ?>" required>
                         </div>
                         <div class="form-group" style="display: none;">
                             <input type="number" id="ctr_deposit" name="ctr_deposit" value="2000">
@@ -432,61 +653,67 @@ $statusColors = [
                         </div>
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn-submit">บันทึกสัญญา</button>
-                        <button type="button" class="btn-cancel" onclick="document.getElementById('contractForm').classList.add('hide'); document.getElementById('toggleFormBtn').textContent = '+ เพิ่มสัญญาใหม่';">ยกเลิก</button>
+                        <button type="submit" class="btn-submit" data-allow-submit>บันทึกสัญญา</button>
+                        <button type="button" class="btn-cancel" onclick="window.__toggleContractForm && window.__toggleContractForm(event);">ยกเลิก</button>
                     </div>
                 </form>
 
-                <!-- Table Section -->
                 <div style="display: block !important; width: 100%;">
                     <h3>รายชื่อสัญญา</h3>
-                    <!-- Debug: Total contracts: <?php echo count($contracts); ?> -->
-                    <table id="table-contracts" class="report-table" style="margin-bottom: 2rem;">
+                    <div style="margin:0.25rem 0 0.75rem; padding:0.5rem 0.75rem; background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:6px; color:rgba(255,255,255,0.9);">
+                      สัญญาทั้งหมดที่แสดง: <strong><?php echo $ctrCount; ?></strong> รายการ (ทุกสถานะ)
+                    </div>
+                    <div class="report-table">
+                    <table id="table-contracts" style="margin-bottom: 2rem; width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr>
-                                <th>เลขที่สัญญา</th>
-                                <th>ผู้เช่า</th>
-                                <th>ห้องพัก</th>
-                                <th>วันเริ่มสัญญา</th>
-                                <th>วันสิ้นสุด</th>
-                                <th>สถานะ</th>
-                                <th>จัดการ</th>
+                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">เลขที่สัญญา</th>
+                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">ผู้เช่า</th>
+                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">ห้องพัก</th>
+                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">วันเริ่มสัญญา</th>
+                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">วันสิ้นสุด</th>
+                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">สถานะ</th>
+                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">จัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <?php foreach($contracts as $contract): 
-                                $status = $contract['ctr_status'] ?? '0';
-                                $statusLabel = $statusLabels[$status] ?? 'ไม่ระบุ';
-                                $statusColor = $statusColors[$status] ?? '#999';
-                            ?>
-                            <tr>
-                                <td><?php echo htmlspecialchars($contract['ctr_id'] ?? ''); ?></td>
-                                <td><?php echo htmlspecialchars($contract['tnt_name'] ?? 'N/A'); ?></td>
-                                <td><?php echo htmlspecialchars($contract['room_number'] ?? 'N/A'); ?></td>
-                                <td><?php echo isset($contract['ctr_start']) ? date('d/m/Y', strtotime($contract['ctr_start'])) : ''; ?></td>
-                                <td><?php echo isset($contract['ctr_end']) ? date('d/m/Y', strtotime($contract['ctr_end'])) : ''; ?></td>
-                                <td>
-                                    <span class="status-badge" style="background-color: <?php echo $statusColor; ?>; color: white;">
-                                        <?php echo $statusLabel; ?>
-                                    </span>
-                                </td>
-                                <td>
-                                    <?php if (($contract['ctr_status'] ?? '0') === '2'): ?>
-                                        <form method="POST" action="../Manage/update_contract_status.php" style="margin:0;">
-                                            <input type="hidden" name="ctr_id" value="<?php echo htmlspecialchars($contract['ctr_id'] ?? ''); ?>">
-                                            <input type="hidden" name="ctr_status" value="1">
-                                            <button type="submit" class="quick-date-btn" style="background:#f44336; color:white; border-color:#f44336;">ยกเลิกสัญญา</button>
-                                        </form>
-                                    <?php elseif (($contract['ctr_status'] ?? '0') === '1'): ?>
-                                        <span style="color: rgba(255,255,255,0.7);">ยกเลิกแล้ว</span>
-                                    <?php else: ?>
-                                        <span style="color: rgba(255,255,255,0.7);">-</span>
-                                    <?php endif; ?>
-                                </td>
+                          <?php 
+                            if (count($contracts) > 0) {
+                              foreach($contracts as $contract) {
+                                // Cast to string before htmlspecialchars to avoid PHP 8 type errors on ints
+                                $ctr_id = isset($contract['ctr_id']) ? htmlspecialchars((string)$contract['ctr_id'], ENT_QUOTES, 'UTF-8') : 'N/A';
+                                $tnt_name = isset($contract['tnt_name']) ? htmlspecialchars((string)$contract['tnt_name'], ENT_QUOTES, 'UTF-8') : 'N/A';
+                                $room_number = isset($contract['room_number']) ? htmlspecialchars((string)$contract['room_number'], ENT_QUOTES, 'UTF-8') : 'N/A';
+                                $ctr_start = (isset($contract['ctr_start']) && !empty($contract['ctr_start'])) ? date('d/m/Y', strtotime($contract['ctr_start'])) : '-';
+                                $ctr_end = (isset($contract['ctr_end']) && !empty($contract['ctr_end'])) ? date('d/m/Y', strtotime($contract['ctr_end'])) : '-';
+                                $s = isset($contract['ctr_status']) ? (string)$contract['ctr_status'] : '0';
+                                $lbl = isset($statusLabels[$s]) ? $statusLabels[$s] : 'N/A';
+                                $col = isset($statusColors[$s]) ? $statusColors[$s] : '#999';
+                          ?>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $ctr_id; ?></td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $tnt_name; ?></td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $room_number; ?></td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $ctr_start; ?></td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $ctr_end; ?></td>
+                              <td style="padding: 0.75rem;">
+                                <span class="status-badge" style="background-color: <?php echo $col; ?>; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.85rem;">
+                                  <?php echo $lbl; ?>
+                                </span>
+                              </td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;">-</td>
                             </tr>
-                            <?php endforeach; ?>
+                          <?php
+                              }
+                            } else {
+                          ?>
+                            <tr>
+                              <td colspan="7" style="text-align:center; padding:1.25rem; color:#fbbf24; background: rgba(251,191,36,0.1); border: 1px dashed rgba(251,191,36,0.35);">ไม่มีข้อมูล</td>
+                            </tr>
+                          <?php } ?>
                         </tbody>
                     </table>
+                    </div>
                 </div>
             </div>
         </main>
@@ -494,44 +721,98 @@ $statusColors = [
 
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4"></script>
     <script>
-        // Form toggle
-        const toggleBtn = document.getElementById('toggleFormBtn');
-        const contractForm = document.getElementById('contractForm');
-        const formVisibleKey = 'contractFormVisible';
-
-        toggleBtn.addEventListener('click', function() {
-            contractForm.classList.toggle('hide');
-            const isHidden = contractForm.classList.contains('hide');
-            localStorage.setItem(formVisibleKey, !isHidden);
-            toggleBtn.textContent = isHidden ? '+ เพิ่มสัญญาใหม่' : '- ซ่อนฟอร์ม';
+        // Fallback sidebar toggle (in case animate-ui.js fails on this page)
+        document.addEventListener('DOMContentLoaded', function() {
+          const sidebar = document.querySelector('.app-sidebar');
+          const sidebarToggleBtn = document.getElementById('sidebar-toggle');
+          if (!sidebar || !sidebarToggleBtn) return;
+          const toggleSidebar = function(e) {
+            if (e) {
+              e.preventDefault();
+              e.stopPropagation();
+            }
+            if (window.innerWidth <= 1024) {
+              sidebar.classList.toggle('mobile-open');
+              document.body.classList.toggle('sidebar-open');
+            } else {
+              sidebar.classList.toggle('collapsed');
+            }
+            return false;
+          };
+          sidebarToggleBtn.addEventListener('click', toggleSidebar);
+          window.__directSidebarToggle = toggleSidebar;
         });
 
-        // Restore form visibility from localStorage
-        if(localStorage.getItem(formVisibleKey) === 'false') {
-            contractForm.classList.add('hide');
-            toggleBtn.textContent = '+ เพิ่มสัญญาใหม่';
-        } else {
-            toggleBtn.textContent = '- ซ่อนฟอร์ม';
-        }
+        // Ensure table rows are visible even if any CSS override hides them
+        const forceTableVisible = () => {
+          const table = document.getElementById('table-contracts');
+          console.log('forceTableVisible called - table found:', !!table);
+          if (!table) return;
+          
+          const tbody = table.querySelector('tbody');
+          console.log('tbody found:', !!tbody);
+          if (!tbody) return;
+
+          const rows = tbody.querySelectorAll('tr');
+          console.log('tbody rows count:', rows.length);
+
+          table.style.display = 'table';
+          table.style.visibility = 'visible';
+          table.style.opacity = '1';
+          tbody.style.display = 'table-row-group';
+          tbody.style.visibility = 'visible';
+          tbody.style.opacity = '1';
+
+          rows.forEach((row, idx) => {
+            row.style.display = 'table-row';
+            row.style.visibility = 'visible';
+            row.style.opacity = '1';
+            row.style.color = '#e2e8f0';
+            console.log('Row ' + idx + ' style applied');
+          });
+          console.log('Contract table rows (server rendered):', rows.length);
+        };
+
+        // run immediately and after DOM ready
+        console.log('Running forceTableVisible immediately...');
+        forceTableVisible();
+        document.addEventListener('DOMContentLoaded', () => {
+          console.log('DOMContentLoaded - running forceTableVisible');
+          forceTableVisible();
+        });
+        setTimeout(() => {
+          console.log('setTimeout 300ms - running forceTableVisible');
+          forceTableVisible();
+        }, 300);
+        setTimeout(() => {
+          console.log('setTimeout 800ms - running forceTableVisible');
+          forceTableVisible();
+        }, 800);
 
         // Auto-calculate dates
+        function formatDateDisplay(dateObj) {
+          const d = dateObj.getDate().toString().padStart(2, '0');
+          const m = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+          const y = dateObj.getFullYear();
+          return `${d}/${m}/${y}`;
+        }
+
         function calculateDates() {
-            const today = new Date();
-            const durationSelect = document.getElementById('contract_duration');
-            const months = parseInt(durationSelect.value, 10) || 6;
+          const today = new Date();
+          const durationSelect = document.getElementById('contract_duration');
+          const months = parseInt(durationSelect.value, 10) || 6;
 
-            const endDate = new Date(today);
-            endDate.setMonth(endDate.getMonth() + months);
+          const endDate = new Date(today);
+          endDate.setMonth(endDate.getMonth() + months);
 
-            document.getElementById('ctr_start').value = today.toISOString().split('T')[0];
-            document.getElementById('ctr_end').value = endDate.toISOString().split('T')[0];
+          document.getElementById('ctr_start').value = today.toISOString().split('T')[0];
+          document.getElementById('ctr_end').value = endDate.toISOString().split('T')[0];
 
-            const endDisplay = document.getElementById('end_date_display');
-            if (endDisplay) {
-                endDisplay.textContent = `${months} เดือนจากวันนี้`;
-            }
+          const endDisplay = document.getElementById('end_date_display');
+          if (endDisplay) {
+            endDisplay.textContent = `${months} เดือนจากวันนี้ (${formatDateDisplay(endDate)})`;
+          }
         }
         
         // Calculate on page load
@@ -540,6 +821,29 @@ $statusColors = [
         // Recalculate when duration changes
         const durationSelect = document.getElementById('contract_duration');
         durationSelect.addEventListener('change', calculateDates);
+
+        // Guard form submission: ensure dates/deposit set and prevent double submit
+        const submitBtn = document.querySelector('#contractForm .btn-submit');
+        document.getElementById('contractForm').addEventListener('submit', function(e) {
+          if (!validateForm()) {
+            e.preventDefault();
+            if (submitBtn) {
+              submitBtn.disabled = false;
+              submitBtn.textContent = 'บันทึกสัญญา';
+            }
+            return;
+          }
+
+          calculateDates();
+          const depositInput = document.getElementById('ctr_deposit');
+          if (depositInput && !depositInput.value) {
+            depositInput.value = '2000';
+          }
+          if (submitBtn) {
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'กำลังบันทึก...';
+          }
+        });
         
         // Form validation
         function validateForm() {
@@ -558,35 +862,6 @@ $statusColors = [
             return true;
         }
 
-        // Initialize DataTable with better error handling
-        document.addEventListener('DOMContentLoaded', function() {
-            const tableElement = document.getElementById("table-contracts");
-            console.log('Table element found:', tableElement);
-            console.log('Table rows:', tableElement ? tableElement.querySelectorAll('tbody tr').length : 'N/A');
-            
-            if(tableElement && tableElement.querySelectorAll('tbody tr').length > 0) {
-                try {
-                    const dataTable = new simpleDatatables.DataTable("#table-contracts", {
-                        searchable: true,
-                        sortable: true,
-                        perPageSelect: [10, 25, 50, 100],
-                        perPage: 10,
-                        labels: {
-                            placeholder: "ค้นหา...",
-                            perPage: "แสดง {pti} รายการต่อหน้า",
-                            noRows: "ไม่พบข้อมูล",
-                            info: "แสดง {start} ถึง {end} จาก {rows} รายการ",
-                        }
-                    });
-                    console.log('DataTable initialized successfully');
-                } catch(e) {
-                    console.error('DataTable initialization error:', e);
-                }
-            } else {
-                console.log('No data rows found or table element missing');
-            }
-        });
-        
         // Light theme detection - apply class to html element if theme color is light
         function applyThemeClass() {
           const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim().toLowerCase();

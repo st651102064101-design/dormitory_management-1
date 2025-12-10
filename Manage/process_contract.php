@@ -22,6 +22,15 @@ try {
     $ctr_start = $_POST['ctr_start'] ?? '';
     $ctr_end = $_POST['ctr_end'] ?? '';
     $ctr_deposit = $_POST['ctr_deposit'] ?? '';
+    $contractDuration = isset($_POST['contract_duration']) ? max(1, min(36, (int)$_POST['contract_duration'])) : 6;
+
+    // Fallbacks if JS didn't populate dates
+    if ($ctr_start === '') {
+        $ctr_start = date('Y-m-d');
+    }
+    if ($ctr_end === '') {
+        $ctr_end = date('Y-m-d', strtotime("+{$contractDuration} months", strtotime($ctr_start)));
+    }
 
     if ($tnt_id === '' || $room_id <= 0 || $ctr_start === '' || $ctr_end === '') {
         $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
