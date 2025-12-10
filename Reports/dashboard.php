@@ -301,6 +301,17 @@ try {
     </style>
 </head>
 <body class="reports-page">
+    <script>
+        // Define toggle function early so it's available immediately
+        window.__directSidebarToggle = function(event) {
+            if (event) event.preventDefault();
+            const sidebar = document.querySelector('.app-sidebar');
+            if (sidebar) {
+                sidebar.classList.toggle('collapsed');
+            }
+            return false;
+        };
+    </script>
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         <main class="app-main">

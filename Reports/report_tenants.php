@@ -43,9 +43,11 @@ try {
 // สถิติ
 $stats = [
     'total' => count($tenants),
-    'staying' => 0,      // tnt_status = 1
-    'waiting' => 0,      // tnt_status = 2
-    'moved_out' => 0,    // tnt_status = 0
+    'staying' => 0,        // tnt_status = 1
+    'waiting' => 0,        // tnt_status = 2
+    'moved_out' => 0,      // tnt_status = 0
+    'booking' => 0,        // tnt_status = 3
+    'cancel_booking' => 0, // tnt_status = 4
     'with_contract' => 0
 ];
 
@@ -54,6 +56,8 @@ foreach ($tenants as $t) {
     if ($status === '1') $stats['staying']++;
     elseif ($status === '2') $stats['waiting']++;
     elseif ($status === '0') $stats['moved_out']++;
+    elseif ($status === '3') $stats['booking']++;
+    elseif ($status === '4') $stats['cancel_booking']++;
     if (!empty($t['ctr_id'])) $stats['with_contract']++;
 }
 
@@ -695,8 +699,10 @@ $statusMap = [
                             </div>
                             <select class="filter-select" id="statusFilter">
                                 <option value="">ทุกสถานะ</option>
-                                <option value="1">🏠 พักอยู่</option>
+                                <option value="3">📝 จองห้อง</option>
                                 <option value="2">⏳ รอเข้าพัก</option>
+                                <option value="1">🏠 พักอยู่</option>
+                                <option value="4">❌ ยกเลิกจอง</option>
                                 <option value="0">🚪 ย้ายออก</option>
                             </select>
                             <div class="view-toggle">
@@ -732,6 +738,16 @@ $statusMap = [
                         <div class="stat-icon">🚪</div>
                         <div class="stat-value"><?php echo number_format($stats['moved_out']); ?></div>
                         <div class="stat-label">ย้ายออกแล้ว</div>
+                    </div>
+                    <div class="stat-card" style="--stat-color: #3b82f6;">
+                        <div class="stat-icon">📝</div>
+                        <div class="stat-value"><?php echo number_format($stats['booking']); ?></div>
+                        <div class="stat-label">จองห้อง</div>
+                    </div>
+                    <div class="stat-card" style="--stat-color: #6b7280;">
+                        <div class="stat-icon">❌</div>
+                        <div class="stat-value"><?php echo number_format($stats['cancel_booking']); ?></div>
+                        <div class="stat-label">ยกเลิกจอง</div>
                     </div>
                 </div>
 
