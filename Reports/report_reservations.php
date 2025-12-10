@@ -5,10 +5,6 @@ if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
     exit;
 }
-// ปิดหน้ารายงานการจองชั่วคราว
-$_SESSION['error'] = 'หน้ารายงานการจองถูกปิดใช้งานชั่วคราว';
-header('Location: dashboard.php');
-exit;
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
@@ -81,9 +77,9 @@ foreach ($allRows as $row) {
 }
 
 $statusLabels = [
-  '0' => 'รอการเข้าพัก',
+  '0' => 'ยกเลิก',
   '1' => 'จองแล้ว',
-  '2' => 'ยืนยันแล้ว',
+  '2' => 'เข้าพักแล้ว',
 ];
 
 function renderField(?string $value, string $fallback = '—'): string
@@ -139,17 +135,19 @@ try {
 // คำนวณสถิติ
 $totalBookings = count($rows);
 try {
-  // รอการเข้าพัก - นับจาก tenant ที่มี tnt_status = 2
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM tenant WHERE tnt_status = 2");
-  $bookingPending = $stmt->fetch()['total'] ?? 0;
+  // ยกเลิก
+  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = '0'");
+  $bookingCancelled = $stmt->fetch()['total'] ?? 0;
   
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 1");
+  // จองแล้ว
+  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = '1'");
   $bookingConfirmed = $stmt->fetch()['total'] ?? 0;
   
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 2");
+  // เข้าพักแล้ว
+  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = '2'");
   $bookingCompleted = $stmt->fetch()['total'] ?? 0;
 } catch (PDOException $e) {
-  $bookingPending = $bookingConfirmed = $bookingCompleted = 0;
+  $bookingCancelled = $bookingConfirmed = $bookingCompleted = 0;
 }
 ?>
 <!doctype html>
@@ -251,28 +249,28 @@ try {
             <!-- Stat Cards -->
             <div class="reservation-stats-grid">
               <div class="stat-card">
-                <div class="stat-icon">⏳</div>
-                <div class="stat-label">รอการเข้าพัก</div>
-                <div class="stat-value"><?php echo $bookingPending; ?></div>
-              </div>
-              <div class="stat-card">
                 <div class="stat-icon">📌</div>
                 <div class="stat-label">จองแล้ว</div>
                 <div class="stat-value"><?php echo $bookingConfirmed; ?></div>
               </div>
               <div class="stat-card">
                 <div class="stat-icon">✅</div>
-                <div class="stat-label">ยืนยันแล้ว</div>
+                <div class="stat-label">เข้าพักแล้ว</div>
                 <div class="stat-value"><?php echo $bookingCompleted; ?></div>
+              </div>
+              <div class="stat-card">
+                <div class="stat-icon">❌</div>
+                <div class="stat-label">ยกเลิก</div>
+                <div class="stat-value"><?php echo $bookingCancelled; ?></div>
               </div>
             </div>
 
             <!-- ปุ่มสถานะ -->
             <div class="status-buttons">
               <a href="report_reservations.php" class="status-btn <?php echo !isset($_GET['status']) ? 'active' : ''; ?>">ทั้งหมด</a>
-              <a href="report_reservations.php?status=0" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '0' ? 'active' : ''; ?>">รอการเข้าพัก</a>
               <a href="report_reservations.php?status=1" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '1' ? 'active' : ''; ?>">จองแล้ว</a>
-              <a href="report_reservations.php?status=2" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '2' ? 'active' : ''; ?>">ยืนยันแล้ว</a>
+              <a href="report_reservations.php?status=2" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '2' ? 'active' : ''; ?>">เข้าพักแล้ว</a>
+              <a href="report_reservations.php?status=0" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '0' ? 'active' : ''; ?>">ยกเลิก</a>
             </div>
 
             <!-- ปุ่มเปลี่ยนมุมมอง -->
