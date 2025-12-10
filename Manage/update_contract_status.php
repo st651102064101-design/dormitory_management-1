@@ -32,7 +32,7 @@ try {
         exit;
     }
 
-    $stmt = $pdo->prepare('SELECT room_id, ctr_status FROM contract WHERE ctr_id = ?');
+    $stmt = $pdo->prepare('SELECT room_id, ctr_status, tnt_id FROM contract WHERE ctr_id = ?');
     $stmt->execute([$ctr_id]);
     $contract = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$contract) {
@@ -75,11 +75,20 @@ try {
     $updateCtr->execute([$ctr_status, $ctr_id]);
 
     $room_id = (int)$contract['room_id'];
+    $tnt_id = $contract['tnt_id'] ?? '';
     if ($room_id > 0) {
-        if ($ctr_status === '1') { // ยกเลิกแล้ว
+        if ($ctr_status === '1') { // ยกเลิกสัญญา
             $pdo->prepare("UPDATE room SET room_status = '0' WHERE room_id = ?")->execute([$room_id]);
-        } elseif ($ctr_status === '0' || $ctr_status === '2') { // ปกติ หรือ รอแจ้งยกเลิก
+            if ($tnt_id !== '') {
+                // ผู้เช่า = ย้ายออก (0)
+                $pdo->prepare("UPDATE tenant SET tnt_status = '0' WHERE tnt_id = ?")->execute([$tnt_id]);
+            }
+        } elseif ($ctr_status === '0' || $ctr_status === '2') { // ปกติ หรือ แจ้งยกเลิก
             $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?")->execute([$room_id]);
+            if ($tnt_id !== '') {
+                // ผู้เช่า = พักอยู่ (1)
+                $pdo->prepare("UPDATE tenant SET tnt_status = '1' WHERE tnt_id = ?")->execute([$tnt_id]);
+            }
         }
     }
 

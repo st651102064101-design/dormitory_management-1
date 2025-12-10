@@ -14,7 +14,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // ===== Sidebar Toggle (Open/Collapse) with Persistence =====
     const sidebar = document.querySelector('.app-sidebar');
     const toggleButtons = Array.from(document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]'));
-    const SIDEBAR_KEY = 'animateui.sidebar.collapsed';
+    const SIDEBAR_KEY = 'sidebarCollapsed';
 
     console.log('Sidebar toggle setup:', { 
         sidebar: !!sidebar, 
@@ -37,7 +37,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Load saved state on page load
     try {
         const stored = localStorage.getItem(SIDEBAR_KEY);
-        applySidebarState(!isMobile() && stored === 'true');
+        applySidebarState(stored === 'true');
+        console.log('Sidebar state loaded:', stored);
     } catch (e) {
         console.warn('Failed to load sidebar state:', e);
     }
