@@ -52,3 +52,10 @@ function getTenantPortalUrl($token = '') {
     }
     return $url;
 }
+
+
+
+
+
+
+// 
