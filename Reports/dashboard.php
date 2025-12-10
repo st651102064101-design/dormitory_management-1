@@ -454,11 +454,11 @@ try {
                 <div class="report-grid">
                     <div class="report-item">
                         <label>ห้องว่าง</label>
-                        <div class="value"><?php echo $room_available; ?></div>
+                        <div class="value"><?php echo $room_occupied; ?></div>
                     </div>
                     <div class="report-item">
                         <label>ห้องไม่ว่าง</label>
-                        <div class="value"><?php echo $room_occupied; ?></div>
+                        <div class="value"><?php echo $room_available; ?></div>
                     </div>
                     <div class="report-item">
                         <label><a href="manage_rooms.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>

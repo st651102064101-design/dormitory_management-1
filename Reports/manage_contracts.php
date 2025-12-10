@@ -124,6 +124,9 @@ foreach ($contracts as $c) {
     <link rel="stylesheet" href="../Assets/Css/main.css">
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css">
+    <!-- DataTable Modern -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
       :root {
         --theme-bg-color: <?php echo $themeColor; ?>;
@@ -876,6 +879,28 @@ foreach ($contracts as $c) {
         }
         applyThemeClass();
         window.addEventListener('storage', applyThemeClass);
+    </script>
+    
+    <!-- DataTable Initialization -->
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const contractsTable = document.getElementById('table-contracts');
+        if (contractsTable && typeof simpleDatatables !== 'undefined') {
+          new simpleDatatables.DataTable(contractsTable, {
+            searchable: true,
+            fixedHeight: false,
+            perPage: 10,
+            perPageSelect: [5, 10, 25, 50, 100],
+            labels: {
+              placeholder: 'ค้นหาสัญญา...',
+              perPage: 'รายการต่อหน้า',
+              noRows: 'ไม่พบข้อมูลสัญญา',
+              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+            }
+          });
+        }
+      });
     </script>
 </body>
 </html>
