@@ -238,7 +238,6 @@ if ($filterStatus !== '') {
         <div class="page-title">
             <h2>🏠 รายงานข้อมูลห้องพัก</h2>
             <p>รายละเอียดห้องพักทั้งหมด <?php echo count($rooms); ?> ห้อง</p>
-            <p style="font-size:0.8rem;color:#f59e0b;">Debug: <?php echo $debugInfo; ?></p>
         </div>
         
         <form class="filters" method="get">

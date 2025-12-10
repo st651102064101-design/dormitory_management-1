@@ -13,9 +13,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-$rate_id = isset($_POST['rate_id']) ? (int)$_POST['rate_id'] : 0;
-if ($rate_id <= 0) {
-    echo json_encode(['success' => false, 'message' => 'ระบุเรตไม่ถูกต้อง']);
+$rate_id = isset($_POST['rate_id']) ? (int)$_POST['rate_id'] : null;
+
+if (!$rate_id) {
+    echo json_encode(['success' => false, 'message' => 'ไม่พบ rate_id']);
     exit;
 }
 
@@ -23,10 +24,24 @@ try {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
 
-    $stmt = $pdo->prepare('DELETE FROM rate WHERE rate_id = ?');
+    // ตรวจสอบว่าไม่ใช่ record ล่าสุด (ไม่ให้ลบ record ที่ใช้งานอยู่)
+    $latestStmt = $pdo->query("SELECT rate_id FROM rate ORDER BY effective_date DESC, rate_id DESC LIMIT 1");
+    $latest = $latestStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($latest && (int)$latest['rate_id'] === $rate_id) {
+        echo json_encode(['success' => false, 'message' => 'ไม่สามารถลบอัตราที่ใช้งานอยู่ได้']);
+        exit;
+    }
+
+    // ลบ
+    $stmt = $pdo->prepare("DELETE FROM rate WHERE rate_id = ?");
     $stmt->execute([$rate_id]);
 
-    echo json_encode(['success' => true]);
+    if ($stmt->rowCount() > 0) {
+        echo json_encode(['success' => true, 'message' => 'ลบสำเร็จ']);
+    } else {
+        echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูลที่ต้องการลบ']);
+    }
 } catch (PDOException $e) {
     echo json_encode(['success' => false, 'message' => $e->getMessage()]);
 }

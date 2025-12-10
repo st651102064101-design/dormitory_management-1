@@ -268,6 +268,77 @@ try {
         exit;
     }
 
+    // จัดการ Background Filename (เลือกจาก dropdown)
+    if (!empty($_POST['bg_filename'])) {
+        $bgFilename = trim($_POST['bg_filename']);
+        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $bgPath = $uploadsDir . $bgFilename;
+
+        // ตรวจสอบว่าไฟล์มีอยู่จริง
+        if (!file_exists($bgPath)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบไฟล์รูป']);
+            exit;
+        }
+
+        // ตรวจสอบนามสกุลไฟล์
+        $ext = strtolower(pathinfo($bgFilename, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG, PNG และ WebP']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['bg_filename', $bgFilename, $bgFilename]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกภาพพื้นหลังสำเร็จ', 'filename' => $bgFilename]);
+        exit;
+    }
+
+    // จัดการ Background Upload
+    if (!empty($_FILES['bg'])) {
+        $file = $_FILES['bg'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        $maxSize = 10 * 1024 * 1024; // 10MB
+
+        if (!in_array($file['type'], $allowedTypes)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG, PNG และ WebP']);
+            exit;
+        }
+
+        if ($file['size'] > $maxSize) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ขนาดไฟล์ไม่ควรเกิน 10MB']);
+            exit;
+        }
+
+        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        if (!is_dir($uploadsDir)) {
+            mkdir($uploadsDir, 0755, true);
+        }
+
+        // สร้างชื่อไฟล์ใหม่
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'bg_' . date('Ymd_His') . '.' . $ext;
+        $filepath = $uploadsDir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['bg_filename', $filename, $filename]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'อัพโหลดภาพพื้นหลังสำเร็จ', 'filename' => $filename]);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัพโหลดไฟล์']);
+            exit;
+        }
+    }
+
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'error' => 'ไม่มีข้อมูลที่จะบันทึก']);
     exit;

@@ -1375,7 +1375,7 @@ try {
         </summary>
         <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true">📋</span><span class="app-nav-label">รายงานการจอง</span></a>
         <a class="" href="manage_stay.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงานการเข้าพัก</span></a>
-        <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true">💧</span><span class="app-nav-label" style="font-size: 0.8rem;">รายงานสาธารณูปโภค</span></a>
+        <a class="" href="report_utility.php"><span class="app-nav-icon" aria-hidden="true">💧</span><span class="app-nav-label" style="font-size: 0.8rem;">รายงานสาธารณูปโภค</span></a>
         <a class="" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true">💵</span><span class="app-nav-label">รายงานรายรับ</span></a>
         <a class="" href="report_rooms.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงานห้องพัก</span></a>
         <a class="" href="report_payments.php"><span class="app-nav-icon" aria-hidden="true">💳</span><span class="app-nav-label">รายงานชำระเงิน</span></a>
@@ -1400,6 +1400,7 @@ try {
         <!-- manage_stay.php removed; link intentionally omitted -->
         <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true">👥</span><span class="app-nav-label">ผู้เช่า</span></a>
         <a class="" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true">📋</span><span class="app-nav-label">การจองห้อง</span></a>
+        <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span></a>
         <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true">📰</span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
         <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true">🛏️</span><span class="app-nav-label">ห้องพัก</span></a>
         <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">จัดการสัญญา</span></a>
@@ -1627,10 +1628,18 @@ try {
 })();
 
 // Global sidebar toggle (ทำงานทุกหน้า)
-(function() {
+// รอจน DOM โหลดเสร็จก่อนหาปุ่ม (เพราะ page_header.php อาจโหลดทีหลัง sidebar.php)
+function initSidebarToggle() {
   const sidebar = document.querySelector('.app-sidebar');
   const toggleBtn = document.getElementById('sidebar-toggle');
-  if (!sidebar || !toggleBtn) return;
+  
+  // ถ้ายังไม่มีปุ่ม รอสักครู่แล้วลองใหม่
+  if (!toggleBtn) {
+    setTimeout(initSidebarToggle, 50);
+    return;
+  }
+  
+  if (!sidebar) return;
 
   // โหลดสถานะจาก localStorage (desktop เท่านั้น)
   if (window.innerWidth > 1024 && localStorage.getItem('sidebarCollapsed') === 'true') {
@@ -1663,5 +1672,12 @@ try {
       }
     }
   });
-})();
+}
+
+// เริ่มต้นเมื่อ DOM พร้อมหรือถ้าพร้อมแล้ว
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSidebarToggle);
+} else {
+  initSidebarToggle();
+}
 </script>

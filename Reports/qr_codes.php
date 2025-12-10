@@ -85,15 +85,26 @@ $baseUrl = getTenantPortalUrl();
         }
         .qr-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 1.5rem;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.25rem;
+            align-items: start;
+        }
+        @media (max-width: 1400px) {
+            .qr-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (max-width: 1100px) {
+            .qr-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 700px) {
+            .qr-grid { grid-template-columns: 1fr; }
         }
         .qr-card {
             background: rgba(30, 41, 59, 0.8);
             border: 1px solid rgba(255,255,255,0.1);
             border-radius: 16px;
-            padding: 1.5rem;
+            padding: 1.25rem;
             text-align: center;
+            height: fit-content;
         }
         .room-badge {
             display: inline-block;

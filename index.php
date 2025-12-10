@@ -11,12 +11,14 @@ $pdo = connectDB();
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $themeColor = '#1e40af';
+$bgFilename = 'bg.jpg';
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'bg_filename')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
+        if ($row['setting_key'] === 'bg_filename') $bgFilename = $row['setting_value'];
     }
 } catch (PDOException $e) {}
 
@@ -143,7 +145,11 @@ try {
         .hero {
             padding: 8rem 2rem 4rem;
             text-align: center;
-            background: linear-gradient(135deg, rgba(30, 64, 175, 0.2) 0%, rgba(15, 23, 42, 0.8) 100%);
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.85) 100%),
+                        url('Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>');
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
         }
         
         .hero h2 {

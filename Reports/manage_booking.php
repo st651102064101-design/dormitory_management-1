@@ -961,33 +961,24 @@ try {
               <table class="table--compact" id="table-bookings">
                 <thead>
                   <tr>
-                    <th>รหัสการจอง</th>
-                    <th>หมายเลขห้อง</th>
-                    <th>ประเภทห้อง</th>
-                    <th>ผู้จอง</th>
+                    <th>รหัส</th>
+                    <th>ผู้เช่า</th>
+                    <th>ห้องพัก</th>
                     <th>วันที่จอง</th>
-                    <th>วันที่เข้าพัก</th>
+                    <th>วันเข้าพัก</th>
                     <th>สถานะ</th>
-                    <th>ราคา</th>
                     <th class="crud-column">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  <?php if (empty($bookings)): ?>
-                    <tr>
-                      <td colspan="9" style="text-align: center; padding: 2rem; color: #666;">
-                        ยังไม่มีรายการจองในระบบ
-                      </td>
-                    </tr>
-                  <?php else: ?>
+                  <?php if (!empty($bookings)): ?>
                     <?php foreach($bookings as $bkg): ?>
                       <tr>
-                        <td><?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
+                        <td>#<?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
+                        <td><?php echo htmlspecialchars($bkg['tnt_name'] ?? 'ยังไม่มีผู้เช่า'); ?></td>
                         <td><?php echo !empty($bkg['room_number']) ? htmlspecialchars((string)$bkg['room_number']) : '-'; ?></td>
-                        <td><?php echo htmlspecialchars($bkg['type_name'] ?? '-'); ?></td>
-                        <td><?php echo htmlspecialchars($bkg['tnt_name'] ?? '-'); ?></td>
-                        <td><?php echo !empty($bkg['bkg_date']) ? date('d/m/Y', strtotime($bkg['bkg_date'])) : '-'; ?></td>
-                        <td><?php echo !empty($bkg['bkg_checkin_date']) ? date('d/m/Y', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
+                        <td><?php echo !empty($bkg['bkg_date']) ? date('Y-m-d', strtotime($bkg['bkg_date'])) : '-'; ?></td>
+                        <td><?php echo !empty($bkg['bkg_checkin_date']) ? date('Y-m-d', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
                         <td>
                           <span style="
                             padding: 0.25rem 0.75rem;
@@ -999,10 +990,9 @@ try {
                             ?>;
                             color: white;
                           ">
-                            <?php echo $statusMap[$bkg['bkg_status']] ?? 'ไม่ระบุ'; ?>
+                            <?php echo $statusMap[$bkg['bkg_status']] ?? 'ไม่ทราบ'; ?>
                           </span>
                         </td>
-                        <td>฿<?php echo number_format((int)($bkg['type_price'] ?? 0)); ?></td>
                         <td class="crud-column">
                           <?php if ($bkg['bkg_status'] === '1'): ?>
                             <button type="button" 
@@ -1402,30 +1392,65 @@ try {
           text.textContent = 'แสดงห้องพักที่ว่าง';
         }
 
-        // Initialize DataTable
-        const bookingTableEl = document.querySelector('#table-bookings');
-        if (bookingTableEl && window.simpleDatatables) {
-          try {
-            const dt = new simpleDatatables.DataTable(bookingTableEl, {
-              searchable: true,
-              fixedHeight: false,
-              perPage: 5,
-              perPageSelect: [5, 10, 25, 50, 100],
-              labels: {
-                placeholder: 'ค้นหา...',
-                perPage: '{select} แถวต่อหน้า',
-                noRows: 'ไม่มีข้อมูล',
-                info: 'แสดง {start}–{end} จาก {rows} รายการ'
-              },
-              columns: [
-                { select: 7, sortable: false }
-              ]
-            });
-            window.__bookingDataTable = dt;
-          } catch (err) {
-            console.error('Failed to init booking table', err);
+        // Initialize DataTable with retry for deferred script
+        function initDataTable() {
+          const bookingTableEl = document.querySelector('#table-bookings');
+          const availableRoomsTableEl = document.querySelector('#table-available-rooms');
+          
+          if (window.simpleDatatables) {
+            // DataTable สำหรับรายการจอง
+            if (bookingTableEl) {
+              try {
+                const dt = new simpleDatatables.DataTable(bookingTableEl, {
+                  searchable: true,
+                  fixedHeight: false,
+                  perPage: 10,
+                  perPageSelect: [5, 10, 25, 50, 100],
+                  labels: {
+                    placeholder: 'ค้นหาการจอง...',
+                    perPage: '{select} รายการต่อหน้า',
+                    noRows: 'ไม่มีข้อมูล',
+                    info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+                  },
+                  columns: [
+                    { select: 6, sortable: false }
+                  ]
+                });
+                window.__bookingDataTable = dt;
+              } catch (err) {
+                console.error('Failed to init booking table', err);
+              }
+            }
+            
+            // DataTable สำหรับห้องพักที่ว่าง
+            if (availableRoomsTableEl) {
+              try {
+                const dt2 = new simpleDatatables.DataTable(availableRoomsTableEl, {
+                  searchable: true,
+                  fixedHeight: false,
+                  perPage: 10,
+                  perPageSelect: [5, 10, 25, 50, 100],
+                  labels: {
+                    placeholder: 'ค้นหาห้องว่าง...',
+                    perPage: '{select} รายการต่อหน้า',
+                    noRows: 'ไม่มีห้องว่าง',
+                    info: 'แสดง {start} ถึง {end} จาก {rows} ห้อง'
+                  },
+                  columns: [
+                    { select: 4, sortable: false }
+                  ]
+                });
+                window.__availableRoomsDataTable = dt2;
+              } catch (err) {
+                console.error('Failed to init available rooms table', err);
+              }
+            }
+          } else {
+            // Retry after 100ms if simpleDatatables not loaded yet
+            setTimeout(initDataTable, 100);
           }
         }
+        initDataTable();
 
         // Restore visible rooms on load
         try {

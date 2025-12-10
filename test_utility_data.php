@@ -98,6 +98,6 @@ $utilities = $utilStmt->fetchAll(PDO::FETCH_ASSOC);
         </ul>
     <?php endif; ?>
     
-    <p><a href="Reports/manage_utility.php" style="color: #3b82f6;">← กลับไปยัง manage_utility.php</a></p>
+    <p><a href="Reports/report_utility.php" style="color: #3b82f6;">← กลับไปยัง report_utility.php</a></p>
 </body>
 </html>

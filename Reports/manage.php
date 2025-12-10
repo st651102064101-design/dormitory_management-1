@@ -196,7 +196,7 @@ $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status =
                 </div>
               </a>
 
-              <a href="manage_utility.php" class="manage-card">
+              <a href="report_utility.php" class="manage-card">
                 <span class="manage-card-icon">💡</span>
                 <div class="manage-card-title">บิลค่าน้ำค่าไฟ</div>
                 <div class="manage-card-desc">จัดการบันทึกมิเตอร์ น้ำ ไฟ รายเดือน</div>

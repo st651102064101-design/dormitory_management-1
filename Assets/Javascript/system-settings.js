@@ -647,4 +647,149 @@ document.addEventListener('DOMContentLoaded', () => {
       backupBtn.textContent = '💾 สำรองข้อมูล';
     }
   });
+
+  // ============================================================
+  // Background Image Management
+  // ============================================================
+  const bgForm = document.getElementById('bgForm');
+  const bgSelect = document.getElementById('bgSelect');
+  const bgInput = document.getElementById('bgInput');
+  const newBgPreview = document.getElementById('newBgPreview');
+  const bgSelectPreview = document.getElementById('bgSelectPreview');
+  const bgStatus = document.getElementById('bgStatus');
+
+  // Preview เมื่อเลือกจาก dropdown
+  if (bgSelect) {
+    bgSelect.addEventListener('change', function() {
+      if (this.value) {
+        bgSelectPreview.innerHTML = `
+          <img src="../Assets/Images/${this.value}" alt="Preview" style="max-width: 280px; max-height: 160px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); object-fit: cover;" />
+          <button type="button" id="setBgBtn" style="display: block; margin-top: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.85rem; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">✓ ใช้ภาพนี้</button>
+        `;
+        
+        // Event listener for setBgBtn
+        const setBgBtn = document.getElementById('setBgBtn');
+        if (setBgBtn) {
+          setBgBtn.addEventListener('click', async function() {
+            const selectedFile = bgSelect.value;
+            if (!selectedFile) return;
+            
+            try {
+              const formData = new FormData();
+              formData.append('bg_filename', selectedFile);
+
+              const response = await fetch('../Manage/save_system_settings.php', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                  'X-Requested-With': 'XMLHttpRequest'
+                }
+              });
+
+              const result = await response.json();
+              if (result.success) {
+                showSuccessToast('เปลี่ยนภาพพื้นหลังสำเร็จ');
+                bgStatus.textContent = '✓ บันทึกแล้ว';
+                bgStatus.style.display = 'inline-block';
+                
+                // Update preview
+                const bgPreviewImg = document.querySelector('#bgPreview img');
+                if (bgPreviewImg) {
+                  bgPreviewImg.src = '../Assets/Images/' + selectedFile + '?t=' + new Date().getTime();
+                }
+                bgSelectPreview.innerHTML = '';
+              } else {
+                showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+              }
+            } catch (error) {
+              showErrorToast('เกิดข้อผิดพลาด');
+            }
+          });
+        }
+      } else {
+        bgSelectPreview.innerHTML = '';
+      }
+    });
+  }
+
+  // Preview เมื่อเลือกไฟล์ใหม่
+  if (bgInput) {
+    bgInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          newBgPreview.innerHTML = `
+            <p style="color: #86efac; font-size: 0.9rem; margin-bottom: 0.5rem;">📷 ${file.name}</p>
+            <img src="${e.target.result}" alt="New Background" style="max-width: 280px; max-height: 160px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); object-fit: cover;" />
+          `;
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+  }
+
+  // Submit form สำหรับอัพโหลดภาพพื้นหลังใหม่
+  if (bgForm) {
+    bgForm.addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      const file = bgInput?.files[0];
+      if (!file) {
+        showErrorToast('กรุณาเลือกไฟล์รูปภาพ');
+        return;
+      }
+
+      const submitBtn = bgForm.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ กำลังอัพโหลด...';
+
+      try {
+        const formData = new FormData();
+        formData.append('bg', file);
+
+        const response = await fetch('../Manage/save_system_settings.php', {
+          method: 'POST',
+          body: formData,
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+          }
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          showSuccessToast('อัพโหลดภาพพื้นหลังสำเร็จ');
+          bgStatus.textContent = '✓ บันทึกแล้ว';
+          bgStatus.style.display = 'inline-block';
+          
+          // Update preview
+          const timestamp = new Date().getTime();
+          const bgPreviewImg = document.querySelector('#bgPreview img');
+          if (bgPreviewImg && result.filename) {
+            bgPreviewImg.src = '../Assets/Images/' + result.filename + '?t=' + timestamp;
+          }
+          
+          // Clear input and preview
+          bgInput.value = '';
+          newBgPreview.innerHTML = '';
+          
+          // Refresh dropdown
+          if (result.filename) {
+            const option = document.createElement('option');
+            option.value = result.filename;
+            option.textContent = result.filename;
+            bgSelect.appendChild(option);
+          }
+        } else {
+          showErrorToast(result.error || 'เกิดข้อผิดพลาด');
+        }
+      } catch (error) {
+        showErrorToast('เกิดข้อผิดพลาด: ' + error.message);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '💾 บันทึกภาพพื้นหลัง';
+      }
+    });
+  }
 });

@@ -478,7 +478,7 @@ try {
                         <div class="value"><?php echo $avg_elec; ?></div>
                     </div>
                     <div class="report-item">
-                        <label><a href="manage_utility.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
+                        <label><a href="report_utility.php" style="color: #007bff; text-decoration: none;">ดูรายละเอียด →</a></label>
                     </div>
                 </div>
             </div>
