@@ -565,6 +565,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         gap: 10px;
       }
 
+      .theme-menu {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        opacity: 0;
+        visibility: hidden;
+        transform: translateY(20px);
+        transition: all 0.3s ease;
+      }
+
+      .theme-switcher:hover .theme-menu,
+      .theme-menu.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .theme-menu-item {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 16px;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 12px;
+        color: #94a3b8;
+        font-size: 14px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+      }
+
+      .theme-menu-item:hover {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: rgba(59, 130, 246, 0.5);
+        color: #fff;
+        transform: translateX(-5px);
+      }
+
+      .theme-menu-item.active {
+        background: rgba(59, 130, 246, 0.3);
+        border-color: #3b82f6;
+        color: #fff;
+      }
+
+      .theme-menu-item .theme-icon {
+        font-size: 18px;
+        width: 24px;
+        text-align: center;
+      }
+
       .theme-switcher-btn {
         width: 60px;
         height: 60px;
@@ -584,11 +636,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         animation: btnPulse 2s ease-in-out infinite;
       }
 
-      .theme-switcher-btn:hover {
-        transform: scale(1.1) rotate(15deg);
-        box-shadow: 
-          0 15px 40px rgba(59, 130, 246, 0.5),
-          0 0 80px rgba(139, 92, 246, 0.3);
+      .theme-switcher:hover .theme-switcher-btn {
+        animation: none;
+        transform: scale(1.1);
       }
 
       @keyframes btnPulse {
@@ -597,6 +647,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
       .theme-indicator {
+        position: fixed;
+        bottom: 100px;
+        right: 30px;
         background: rgba(15, 23, 42, 0.9);
         backdrop-filter: blur(10px);
         padding: 8px 16px;
@@ -607,6 +660,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         opacity: 0;
         transform: translateX(20px);
         transition: all 0.3s ease;
+        pointer-events: none;
       }
 
       .theme-indicator.show {
@@ -1090,6 +1144,455 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         display: none !important;
       }
 
+      /* ============================================
+         THEME 5: DARK MINIMAL
+         ============================================ */
+      body.theme-dark {
+        background: #0a0a0a;
+        overflow: auto;
+      }
+
+      body.theme-dark .bg-animation,
+      body.theme-dark .cyber-grid,
+      body.theme-dark .orb,
+      body.theme-dark .particles,
+      body.theme-dark .glow-lines {
+        display: none !important;
+      }
+
+      body.theme-dark .login-container {
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      body.theme-dark .login-card {
+        background: #141414;
+        border: 1px solid #2a2a2a;
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        backdrop-filter: none;
+        animation: none;
+        transform: none !important;
+      }
+
+      body.theme-dark .login-card::before {
+        display: none;
+      }
+
+      body.theme-dark .login-card:hover {
+        transform: none !important;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5) !important;
+        border-color: #3a3a3a;
+      }
+
+      body.theme-dark .login-icon {
+        width: 72px;
+        height: 72px;
+        background: #1f1f1f;
+        border: 1px solid #2a2a2a;
+        border-radius: 16px;
+        box-shadow: none;
+        animation: none;
+      }
+
+      body.theme-dark .login-title {
+        background: none;
+        -webkit-background-clip: unset;
+        -webkit-text-fill-color: #ffffff;
+        color: #ffffff;
+        text-shadow: none;
+        font-weight: 600;
+      }
+
+      body.theme-dark .login-subtitle {
+        color: #666666;
+      }
+
+      body.theme-dark .neon-glow {
+        text-shadow: none;
+        filter: none;
+      }
+
+      body.theme-dark .form-group label {
+        color: #888888;
+        font-weight: 500;
+      }
+
+      body.theme-dark .form-input {
+        background: #1a1a1a;
+        border: 1px solid #2a2a2a;
+        color: #ffffff;
+        border-radius: 10px;
+      }
+
+      body.theme-dark .form-input::placeholder {
+        color: #555555;
+      }
+
+      body.theme-dark .form-input:focus {
+        border-color: #ffffff;
+        box-shadow: none;
+        background: #1f1f1f;
+      }
+
+      body.theme-dark .input-wrapper svg {
+        color: #555555;
+      }
+
+      body.theme-dark .input-wrapper:focus-within svg {
+        color: #ffffff;
+      }
+
+      body.theme-dark .error-message {
+        background: rgba(239, 68, 68, 0.1);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #ef4444;
+        animation: none;
+      }
+
+      body.theme-dark .submit-btn {
+        background: #ffffff;
+        color: #000000;
+        border-radius: 10px;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: normal;
+        animation: none;
+      }
+
+      body.theme-dark .submit-btn:hover {
+        background: #f0f0f0;
+        transform: none;
+        box-shadow: none;
+      }
+
+      body.theme-dark .submit-btn::before {
+        display: none;
+      }
+
+      body.theme-dark .login-footer {
+        color: #444444;
+      }
+
+      body.theme-dark .theme-switcher-btn {
+        background: #1f1f1f;
+        border: 1px solid #2a2a2a;
+        box-shadow: none;
+        animation: none;
+      }
+
+      body.theme-dark .theme-switcher-btn:hover {
+        background: #2a2a2a;
+        box-shadow: none;
+      }
+
+      body.theme-dark .card-glare {
+        display: none !important;
+      }
+
+      body.theme-dark .theme-indicator {
+        background: #1a1a1a;
+        border-color: #2a2a2a;
+        color: #888888;
+      }
+
+      /* ============================================
+         THEME 6: LIGHT / WHITE
+         ============================================ */
+      body.theme-light {
+        background: #f5f5f7;
+        overflow: auto;
+      }
+
+      body.theme-light .bg-animation,
+      body.theme-light .cyber-grid,
+      body.theme-light .orb,
+      body.theme-light .particles,
+      body.theme-light .glow-lines {
+        display: none !important;
+      }
+
+      body.theme-light .login-container {
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      body.theme-light .login-card {
+        background: #ffffff;
+        border: 1px solid #e5e5e5;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        backdrop-filter: none;
+        animation: none;
+        transform: none !important;
+      }
+
+      body.theme-light .login-card::before {
+        display: none;
+      }
+
+      body.theme-light .login-card:hover {
+        transform: none !important;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.1) !important;
+      }
+
+      body.theme-light .login-icon {
+        width: 72px;
+        height: 72px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 18px;
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        animation: none;
+      }
+
+      body.theme-light .login-title {
+        background: none;
+        -webkit-background-clip: unset;
+        -webkit-text-fill-color: #1a1a1a;
+        color: #1a1a1a;
+        text-shadow: none;
+        font-weight: 700;
+      }
+
+      body.theme-light .login-subtitle {
+        color: #666666;
+      }
+
+      body.theme-light .neon-glow {
+        text-shadow: none;
+        filter: none;
+      }
+
+      body.theme-light .form-group label {
+        color: #333333;
+        font-weight: 600;
+      }
+
+      body.theme-light .form-input {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        color: #1a1a1a;
+        border-radius: 12px;
+      }
+
+      body.theme-light .form-input::placeholder {
+        color: #adb5bd;
+      }
+
+      body.theme-light .form-input:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+        background: #ffffff;
+      }
+
+      body.theme-light .input-wrapper svg {
+        color: #adb5bd;
+      }
+
+      body.theme-light .input-wrapper:focus-within svg {
+        color: #667eea;
+      }
+
+      body.theme-light .error-message {
+        background: #fef2f2;
+        border: 1px solid #fecaca;
+        color: #dc2626;
+        animation: none;
+      }
+
+      body.theme-light .submit-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #ffffff;
+        border-radius: 12px;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: normal;
+        animation: none;
+      }
+
+      body.theme-light .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+      }
+
+      body.theme-light .submit-btn::before {
+        display: none;
+      }
+
+      body.theme-light .login-footer {
+        color: #999999;
+      }
+
+      body.theme-light .theme-switcher-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        animation: none;
+      }
+
+      body.theme-light .theme-switcher-btn:hover {
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.4);
+      }
+
+      body.theme-light .card-glare {
+        display: none !important;
+      }
+
+      body.theme-light .theme-indicator {
+        background: #ffffff;
+        border-color: #e5e5e5;
+        color: #666666;
+      }
+
+      /* ============================================
+         THEME 7: HOMEPAGE STYLE (Match index.php)
+         ============================================ */
+      body.theme-homepage {
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        overflow: auto;
+      }
+
+      body.theme-homepage .bg-animation,
+      body.theme-homepage .cyber-grid,
+      body.theme-homepage .orb,
+      body.theme-homepage .particles,
+      body.theme-homepage .glow-lines {
+        display: none !important;
+      }
+
+      body.theme-homepage .login-container {
+        min-height: 100vh;
+        padding: 2rem;
+      }
+
+      body.theme-homepage .login-card {
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(10px);
+        border: 1px solid #334155;
+        border-radius: 16px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        animation: none;
+        transform: none !important;
+      }
+
+      body.theme-homepage .login-card::before {
+        display: none;
+      }
+
+      body.theme-homepage .login-card:hover {
+        transform: translateY(-5px) !important;
+        border-color: #3b82f6;
+        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4) !important;
+      }
+
+      body.theme-homepage .login-icon {
+        width: 70px;
+        height: 70px;
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        animation: none;
+      }
+
+      body.theme-homepage .login-title {
+        font-size: 2rem;
+        background: linear-gradient(90deg, #60a5fa, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-shadow: none;
+      }
+
+      body.theme-homepage .login-subtitle {
+        color: #94a3b8;
+      }
+
+      body.theme-homepage .neon-glow {
+        text-shadow: none;
+        filter: none;
+      }
+
+      body.theme-homepage .form-group label {
+        color: #94a3b8;
+        font-weight: 500;
+        text-transform: none;
+        letter-spacing: normal;
+      }
+
+      body.theme-homepage .form-input {
+        background: #1e293b;
+        border: 1px solid #334155;
+        color: #fff;
+        border-radius: 10px;
+      }
+
+      body.theme-homepage .form-input::placeholder {
+        color: #64748b;
+      }
+
+      body.theme-homepage .form-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        background: #1e293b;
+      }
+
+      body.theme-homepage .input-wrapper svg {
+        color: #64748b;
+      }
+
+      body.theme-homepage .input-wrapper:focus-within svg {
+        color: #3b82f6;
+      }
+
+      body.theme-homepage .error-message {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+        color: #f87171;
+        animation: none;
+      }
+
+      body.theme-homepage .submit-btn {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: #ffffff;
+        border-radius: 10px;
+        font-weight: 600;
+        text-transform: none;
+        letter-spacing: normal;
+        animation: none;
+      }
+
+      body.theme-homepage .submit-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+      }
+
+      body.theme-homepage .submit-btn::before {
+        display: none;
+      }
+
+      body.theme-homepage .login-footer {
+        color: #64748b;
+      }
+
+      body.theme-homepage .theme-switcher-btn {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+        animation: none;
+      }
+
+      body.theme-homepage .theme-switcher-btn:hover {
+        box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4);
+      }
+
+      body.theme-homepage .card-glare {
+        display: none !important;
+      }
+
+      body.theme-homepage .theme-indicator {
+        background: rgba(15, 23, 42, 0.95);
+        border-color: #334155;
+        color: #94a3b8;
+      }
+
       /* Theme transition */
       body, .login-card, .login-icon, .submit-btn, .orb, .particle, .glow-line, .bg-animation::before {
         transition: all 0.5s ease;
@@ -1199,10 +1702,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <!-- Theme Switcher Button -->
-    <div class="theme-switcher">
-      <div class="theme-indicator" id="themeIndicator">🌌 Cyber Neon</div>
-      <button class="theme-switcher-btn" id="themeSwitchBtn" title="เปลี่ยนธีม">🌌</button>
+    <div class="theme-switcher" id="themeSwitcher">
+      <div class="theme-menu" id="themeMenu">
+        <div class="theme-menu-item" data-theme="homepage">
+          <span class="theme-icon">🏠</span>
+          <span>Homepage</span>
+        </div>
+        <div class="theme-menu-item" data-theme="cyber">
+          <span class="theme-icon">🌌</span>
+          <span>Cyber Neon</span>
+        </div>
+        <div class="theme-menu-item" data-theme="aurora">
+          <span class="theme-icon">🌈</span>
+          <span>Aurora Borealis</span>
+        </div>
+        <div class="theme-menu-item" data-theme="holo">
+          <span class="theme-icon">✨</span>
+          <span>Holographic</span>
+        </div>
+        <div class="theme-menu-item" data-theme="classic">
+          <span class="theme-icon">🎨</span>
+          <span>Classic</span>
+        </div>
+        <div class="theme-menu-item" data-theme="dark">
+          <span class="theme-icon">🌑</span>
+          <span>Dark</span>
+        </div>
+        <div class="theme-menu-item" data-theme="light">
+          <span class="theme-icon">☀️</span>
+          <span>Light</span>
+        </div>
+      </div>
+      <button class="theme-switcher-btn" id="themeSwitchBtn" title="เปลี่ยนธีม">🏠</button>
     </div>
+    <div class="theme-indicator" id="themeIndicator">🏠 Homepage</div>
 
     <?php if (!empty($login_success)): ?>
       <script>
@@ -1350,24 +1883,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       // THEME SWITCHER
       // ============================================
       const themes = [
-        { name: 'default', label: '🌌 Cyber Neon', icon: '🌌' },
+        { name: 'homepage', label: '🏠 Homepage', icon: '🏠' },
+        { name: 'cyber', label: '🌌 Cyber Neon', icon: '🌌' },
         { name: 'aurora', label: '🌈 Aurora Borealis', icon: '🌈' },
         { name: 'holo', label: '✨ Holographic', icon: '✨' },
-        { name: 'classic', label: '🎨 Classic', icon: '🎨' }
+        { name: 'classic', label: '🎨 Classic', icon: '🎨' },
+        { name: 'dark', label: '🌑 Dark', icon: '🌑' },
+        { name: 'light', label: '☀️ Light', icon: '☀️' }
       ];
       
       let currentTheme = 0;
       
-      // Load saved theme
+      // Load saved theme or apply default (homepage)
       const savedTheme = localStorage.getItem('loginTheme');
       if (savedTheme) {
         const index = themes.findIndex(t => t.name === savedTheme);
         if (index !== -1) {
           currentTheme = index;
-          if (themes[currentTheme].name !== 'default') {
-            document.body.classList.add('theme-' + themes[currentTheme].name);
-          }
         }
+      }
+      // Apply theme class (homepage is default)
+      if (themes[currentTheme].name !== 'cyber') {
+        document.body.classList.add('theme-' + themes[currentTheme].name);
       }
       
       // Update indicator
@@ -1379,38 +1916,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           indicator.classList.remove('show');
         }, 2000);
       }
-      
-      // Theme switch handler
-      document.getElementById('themeSwitchBtn').addEventListener('click', function() {
-        // Remove current theme
-        document.body.classList.remove('theme-aurora', 'theme-holo', 'theme-classic');
+
+      // Apply theme function
+      function applyTheme(themeName) {
+        // Remove all theme classes
+        document.body.classList.remove('theme-homepage', 'theme-cyber', 'theme-aurora', 'theme-holo', 'theme-classic', 'theme-dark', 'theme-light');
         
-        // Next theme
-        currentTheme = (currentTheme + 1) % themes.length;
-        
-        // Apply new theme
-        if (themes[currentTheme].name !== 'default') {
-          document.body.classList.add('theme-' + themes[currentTheme].name);
+        // Find theme index
+        const index = themes.findIndex(t => t.name === themeName);
+        if (index !== -1) {
+          currentTheme = index;
+          
+          // Apply new theme (cyber neon has no class - it's the base CSS)
+          if (themeName !== 'cyber') {
+            document.body.classList.add('theme-' + themeName);
+          }
+          
+          // Save preference
+          localStorage.setItem('loginTheme', themeName);
+          
+          // Update button icon
+          document.getElementById('themeSwitchBtn').textContent = themes[currentTheme].icon;
+          
+          // Update active state in menu
+          document.querySelectorAll('.theme-menu-item').forEach(item => {
+            item.classList.remove('active');
+            if (item.dataset.theme === themeName) {
+              item.classList.add('active');
+            }
+          });
+          
+          // Show indicator
+          updateIndicator();
         }
-        
-        // Save preference
-        localStorage.setItem('loginTheme', themes[currentTheme].name);
-        
-        // Update button icon
-        this.textContent = themes[currentTheme].icon;
-        
-        // Show indicator
-        updateIndicator();
-        
-        // Button animation
-        this.style.transform = 'scale(1.2) rotate(360deg)';
-        setTimeout(() => {
-          this.style.transform = '';
-        }, 300);
+      }
+
+      // Menu item click handlers
+      document.querySelectorAll('.theme-menu-item').forEach(item => {
+        item.addEventListener('click', function() {
+          const themeName = this.dataset.theme;
+          applyTheme(themeName);
+        });
+      });
+      
+      // Theme switch button - toggle menu on mobile or cycle through on click
+      document.getElementById('themeSwitchBtn').addEventListener('click', function(e) {
+        // On mobile, just toggle menu visibility
+        const menu = document.getElementById('themeMenu');
+        if (window.innerWidth <= 768) {
+          menu.classList.toggle('show');
+        } else {
+          // On desktop, cycle through themes
+          currentTheme = (currentTheme + 1) % themes.length;
+          applyTheme(themes[currentTheme].name);
+        }
       });
 
-      // Initialize button icon
+      // Initialize - set active menu item and button icon
       document.getElementById('themeSwitchBtn').textContent = themes[currentTheme].icon;
+      document.querySelectorAll('.theme-menu-item').forEach(item => {
+        if (item.dataset.theme === themes[currentTheme].name) {
+          item.classList.add('active');
+        }
+      });
     </script>
   </body>
 </html>
