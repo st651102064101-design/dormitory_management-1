@@ -12,6 +12,16 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// ดึง theme color จากการตั้งค่าระบบ
+$settingsStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
+$themeColor = '#0f172a'; // ค่า default (dark mode)
+if ($settingsStmt) {
+    $theme = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+    if ($theme && !empty($theme['setting_value'])) {
+        $themeColor = htmlspecialchars($theme['setting_value'], ENT_QUOTES, 'UTF-8');
+    }
+}
+
 // รับค่า sort จาก query parameter
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 $orderBy = 'r.repair_date DESC, r.repair_id DESC';
@@ -137,6 +147,10 @@ try {
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <style>
+      :root {
+        --theme-bg-color: <?php echo $themeColor; ?>;
+      }
+      
       /* Disable animate-ui modal overlays on this page */
       .animate-ui-modal, .animate-ui-modal-overlay { display:none !important; visibility:hidden !important; opacity:0 !important; }
       .repair-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem; margin-top:1rem; }
@@ -145,54 +159,91 @@ try {
       .repair-stat-card { 
         padding:1rem; 
         border-radius:12px; 
-        background: #0f172a; 
-        color:#e2e8f0; 
+        background: var(--bg-secondary, #0f172a);
+        color: var(--text-secondary, #e2e8f0);
         border:1px solid rgba(148,163,184,0.2); 
         box-shadow:0 12px 30px rgba(0,0,0,0.2);
         transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
       }
-      .repair-stat-card h3 { margin:0; font-size:0.95rem; color:#cbd5e1; transition: color 0.35s ease; }
+      .repair-stat-card h3 { margin:0; font-size:0.95rem; color: var(--text-tertiary, #cbd5e1); transition: color 0.35s ease; }
       .repair-stat-card .stat-number { font-size:1.8rem; font-weight:700; margin-top:0.35rem; }
       
-      /* Light mode override (when theme color is light/white) - detect by lightness of --theme-bg-color */
-      @supports (color: light-dark(white, black)) {
-        /* For browsers that support light-dark() */
+      /* Light mode override - detect when theme is light (#ffffff or similar light colors) */
+      @media (prefers-color-scheme: light) {
+        .repair-stat-card {
+          background:#f3f4f6 !important;
+          color:#1f2937 !important;
+          border:1px solid #e5e7eb !important;
+          box-shadow:0 2px 8px rgba(0,0,0,0.06) !important;
+        }
+        .repair-stat-card h3 {
+          color:#6b7280 !important;
+        }
       }
       
-      /* Manual light theme detection - when --theme-bg-color is white or light colors */
-      /* We'll use specific selectors for white theme */
+      /* JavaScript-detected light theme class */
+      html.light-theme .repair-stat-card {
+        background:#f3f4f6 !important;
+        color:#1f2937 !important;
+        border:1px solid #e5e7eb !important;
+        box-shadow:0 2px 8px rgba(0,0,0,0.06) !important;
+      }
+      
+      html.light-theme .repair-stat-card h3 {
+        color:#6b7280 !important;
+      }
+      
+      /* Fallback: Also use detection by CSS variable value */
+      /* This will work if --theme-bg-color contains light color text */
       html[style*="--theme-bg-color: #fff"] .repair-stat-card,
       html[style*="--theme-bg-color: #FFF"] .repair-stat-card,
-      html[style*="--theme-bg-color: rgb(255, 255, 255)"] .repair-stat-card,
       html[style*="--theme-bg-color: #ffffff"] .repair-stat-card,
       html[style*="--theme-bg-color: #FFFFFF"] .repair-stat-card,
-      body[style*="background: #fff"] ~ * .repair-stat-card,
-      body[style*="background: #FFF"] ~ * .repair-stat-card,
-      body[style*="background: #ffffff"] ~ * .repair-stat-card,
-      body[style*="background: #FFFFFF"] ~ * .repair-stat-card,
-      body[style*="background: rgb(255, 255, 255)"] ~ * .repair-stat-card {
-        background:#ffffff !important; 
-        color:#111827 !important; 
+      html[style*="--theme-bg-color: rgb(255, 255, 255)"] .repair-stat-card {
+        background:#f3f4f6 !important; 
+        color:#1f2937 !important; 
         border:1px solid #e5e7eb !important; 
-        box-shadow:0 2px 8px rgba(0,0,0,0.08) !important;
+        box-shadow:0 2px 8px rgba(0,0,0,0.06) !important;
       }
       
       html[style*="--theme-bg-color: #fff"] .repair-stat-card h3,
       html[style*="--theme-bg-color: #FFF"] .repair-stat-card h3,
-      html[style*="--theme-bg-color: rgb(255, 255, 255)"] .repair-stat-card h3,
       html[style*="--theme-bg-color: #ffffff"] .repair-stat-card h3,
       html[style*="--theme-bg-color: #FFFFFF"] .repair-stat-card h3,
-      body[style*="background: #fff"] ~ * .repair-stat-card h3,
-      body[style*="background: #FFF"] ~ * .repair-stat-card h3,
-      body[style*="background: #ffffff"] ~ * .repair-stat-card h3,
-      body[style*="background: #FFFFFF"] ~ * .repair-stat-card h3,
-      body[style*="background: rgb(255, 255, 255)"] ~ * .repair-stat-card h3 {
+      html[style*="--theme-bg-color: rgb(255, 255, 255)"] .repair-stat-card h3 {
         color:#6b7280 !important;
       }
       .repair-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin-top:1rem; }
       .repair-form label { font-weight:600; color:#cbd5e1; margin-bottom:0.35rem; display:block; }
       .repair-form input, .repair-form select, .repair-form textarea { width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid rgba(148,163,184,0.35); background:#0b162a; color:#e2e8f0; }
       .repair-form textarea { min-height:110px; resize:vertical; }
+      
+      /* Light theme overrides for form inputs */
+      @media (prefers-color-scheme: light) {
+        .repair-form input,
+        .repair-form select,
+        .repair-form textarea {
+          background: #ffffff !important;
+          color: #1f2937 !important;
+          border: 1px solid #e5e7eb !important;
+        }
+        .repair-form label {
+          color: #374151 !important;
+        }
+      }
+      
+      /* JavaScript-detected light theme class */
+      html.light-theme .repair-form input,
+      html.light-theme .repair-form select,
+      html.light-theme .repair-form textarea {
+        background: #ffffff !important;
+        color: #1f2937 !important;
+        border: 1px solid #e5e7eb !important;
+      }
+      
+      html.light-theme .repair-form label {
+        color: #374151 !important;
+      }
       .repair-form-actions { grid-column:1 / -1; display:flex; gap:0.75rem; }
       .status-badge { display:inline-flex; align-items:center; justify-content:center; min-width:90px; padding:0.25rem 0.75rem; border-radius:999px; font-weight:600; color:#fff; }
       .crud-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
@@ -829,6 +880,21 @@ try {
         
         updateCurrentTime(); // Ensure latest time is in hidden fields
       });
+      
+      // Light theme detection - apply class to html element if theme color is light
+      function applyThemeClass() {
+        const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim().toLowerCase();
+        // ตรวจสอบว่า theme color เป็นสีขาวหรือสีอ่อนเบา (light colors)
+        const isLight = /^(#fff|#ffffff|rgb\(25[0-5],\s*25[0-5],\s*25[0-5]\)|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))$/i.test(themeColor.trim());
+        if (isLight) {
+          document.documentElement.classList.add('light-theme');
+        } else {
+          document.documentElement.classList.remove('light-theme');
+        }
+        console.log('Theme color:', themeColor, 'Is light:', isLight);
+      }
+      applyThemeClass();
+      window.addEventListener('storage', applyThemeClass);
     </script>
   </body>
 </html>

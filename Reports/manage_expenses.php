@@ -8,6 +8,16 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// ดึง theme color จากการตั้งค่าระบบ
+$settingsStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
+$themeColor = '#0f172a'; // ค่า default (dark mode)
+if ($settingsStmt) {
+    $theme = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+    if ($theme && !empty($theme['setting_value'])) {
+        $themeColor = htmlspecialchars($theme['setting_value'], ENT_QUOTES, 'UTF-8');
+    }
+}
+
 // รับค่า sort จาก query parameter
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 $orderBy = 'e.exp_id DESC';
@@ -128,6 +138,10 @@ try {
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <style>
+      :root {
+        --theme-bg-color: <?php echo $themeColor; ?>;
+      }
+      
       .expense-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -156,6 +170,38 @@ try {
         font-size: 1.1rem;
         color: rgba(255,255,255,0.6);
         margin-top: 0.5rem;
+      }
+      
+      /* Light theme overrides for expense stat cards */
+      @media (prefers-color-scheme: light) {
+        .expense-stat-card {
+          background: linear-gradient(135deg, rgba(243,244,246,0.95), rgba(229,231,235,0.85)) !important;
+          border: 1px solid rgba(0,0,0,0.1) !important;
+          color: #374151 !important;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+        }
+        .expense-stat-card h3 {
+          color: rgba(0,0,0,0.7) !important;
+        }
+        .expense-stat-card .stat-money {
+          color: rgba(0,0,0,0.6) !important;
+        }
+      }
+      
+      /* JavaScript-detected light theme class */
+      html.light-theme .expense-stat-card {
+        background: linear-gradient(135deg, rgba(243,244,246,0.95), rgba(229,231,235,0.85)) !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+        color: #374151 !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+      }
+      
+      html.light-theme .expense-stat-card h3 {
+        color: rgba(0,0,0,0.7) !important;
+      }
+      
+      html.light-theme .expense-stat-card .stat-money {
+        color: rgba(0,0,0,0.6) !important;
       }
       .expense-form {
         display: grid;
@@ -193,18 +239,38 @@ try {
         box-shadow: 0 0 0 2px rgba(96,165,250,0.25);
       }
       
-      /* Light mode inputs - will be applied via JavaScript */
-      .light-mode-input {
+      /* Light theme overrides for form inputs */
+      @media (prefers-color-scheme: light) {
+        .expense-form-group input,
+        .expense-form-group select {
+          background: #ffffff !important;
+          color: #1f2937 !important;
+          border: 1px solid #e5e7eb !important;
+        }
+        .expense-form-group input::placeholder,
+        .expense-form-group select::placeholder {
+          color: #9ca3af !important;
+        }
+        .expense-form-group label {
+          color: #374151 !important;
+        }
+      }
+      
+      /* JavaScript-detected light theme class */
+      html.light-theme .expense-form-group input,
+      html.light-theme .expense-form-group select {
         background: #ffffff !important;
-        color: #111827 !important;
-        border: 1px solid #d1d5db !important;
+        color: #1f2937 !important;
+        border: 1px solid #e5e7eb !important;
       }
-      .light-mode-input::placeholder {
-        color: #6b7280 !important;
+      
+      html.light-theme .expense-form-group input::placeholder,
+      html.light-theme .expense-form-group select::placeholder {
+        color: #9ca3af !important;
       }
-      .light-mode-input:focus {
-        border-color: #2563eb !important;
-        box-shadow: 0 0 0 2px rgba(37,99,235,0.25) !important;
+      
+      html.light-theme .expense-form-group label {
+        color: #374151 !important;
       }
       .add-type-row { display:flex; align-items:center; gap:0.5rem; justify-content:space-between; }
       .add-type-btn {
@@ -1488,6 +1554,20 @@ try {
         }
         
         updateSelectTheme();
+        
+        // Light theme detection - apply class to html element if theme color is light
+        function applyThemeClass() {
+          const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim().toLowerCase();
+          // ตรวจสอบว่า theme color เป็นสีขาวหรือสีอ่อนเบา (light colors)
+          const isLight = /^(#fff|#ffffff|rgb\(25[0-5],\s*25[0-5],\s*25[0-5]\)|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))$/i.test(themeColor.trim());
+          if (isLight) {
+            document.documentElement.classList.add('light-theme');
+          } else {
+            document.documentElement.classList.remove('light-theme');
+          }
+          console.log('Theme color:', themeColor, 'Is light:', isLight);
+        }
+        applyThemeClass();
         
         const themeObserver = new MutationObserver(updateSelectTheme);
         themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });

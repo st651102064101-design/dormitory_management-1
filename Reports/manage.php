@@ -128,7 +128,6 @@ $newsCount = safeCount($pdo, "SELECT COUNT(*) FROM news");
 
           <section class="manage-panel">
             <div class="page-header">
-              <h1>⚙️ จัดการระบบหอพัก</h1>
               <p>เลือกเมนูที่ต้องการจัดการ</p>
             </div>
 

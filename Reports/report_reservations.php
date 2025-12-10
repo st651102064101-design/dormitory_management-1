@@ -8,6 +8,16 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// ดึง theme color จากการตั้งค่าระบบ
+$settingsStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
+$themeColor = '#0f172a'; // ค่า default (dark mode)
+if ($settingsStmt) {
+    $theme = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+    if ($theme && !empty($theme['setting_value'])) {
+        $themeColor = htmlspecialchars($theme['setting_value'], ENT_QUOTES, 'UTF-8');
+    }
+}
+
 // รับค่าเดือน/ปี ที่เลือก (รูปแบบ YYYY-MM)
 $selectedMonth = isset($_GET['month']) ? $_GET['month'] : '';
 $selectedStatus = isset($_GET['status']) ? $_GET['status'] : '';
@@ -126,6 +136,10 @@ try {
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <style>
+      :root {
+        --theme-bg-color: <?php echo $themeColor; ?>;
+      }
+      
       .reports-container { width: 100%; max-width: 100%; padding: 0; }
       .reports-container .container { max-width: 100%; width: 100%; padding: 1.5rem; }
       .reservation-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
@@ -134,6 +148,43 @@ try {
       .stat-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
       .stat-label { font-size: 0.85rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
       .stat-value { font-size: 2rem; font-weight: 700; color: #f8fafc; margin: 0.5rem 0; }
+      
+      /* Light theme overrides for stat cards */
+      @media (prefers-color-scheme: light) {
+        .stat-card {
+          background: rgba(243, 244, 246, 0.8) !important;
+          border: 1px solid rgba(0, 0, 0, 0.1) !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+        }
+        .stat-card:hover {
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+        }
+        .stat-label {
+          color: rgba(0, 0, 0, 0.7) !important;
+        }
+        .stat-value {
+          color: #1f2937 !important;
+        }
+      }
+      
+      /* JavaScript-detected light theme class */
+      html.light-theme .stat-card {
+        background: rgba(243, 244, 246, 0.8) !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+      }
+      
+      html.light-theme .stat-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12) !important;
+      }
+      
+      html.light-theme .stat-label {
+        color: rgba(0, 0, 0, 0.7) !important;
+      }
+      
+      html.light-theme .stat-value {
+        color: #1f2937 !important;
+      }
       .view-toggle { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
       .view-toggle-btn { padding: 0.75rem 1.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #94a3b8; cursor: pointer; transition: all 0.2s; font-weight: 600; }
       .view-toggle-btn.active { background: #60a5fa; border-color: #60a5fa; color: #fff; }
@@ -310,6 +361,20 @@ try {
         // Restore saved view
         const savedView = localStorage.getItem('reservationViewMode') || 'card';
         switchView(savedView);
+        
+        // Light theme detection - apply class to html element if theme color is light
+        function applyThemeClass() {
+          const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim().toLowerCase();
+          // ตรวจสอบว่า theme color เป็นสีขาวหรือสีอ่อนเบา (light colors)
+          const isLight = /^(#fff|#ffffff|rgb\(25[0-5],\s*25[0-5],\s*25[0-5]\)|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))$/i.test(themeColor.trim());
+          if (isLight) {
+            document.documentElement.classList.add('light-theme');
+          } else {
+            document.documentElement.classList.remove('light-theme');
+          }
+          console.log('Theme color:', themeColor, 'Is light:', isLight);
+        }
+        applyThemeClass();
       });
     </script>
   </body>

@@ -124,8 +124,57 @@ try {
     height: 1.8rem;
     font-size: 1.1rem;
     line-height: 1;
-    margin-right: 0.4rem;
     flex-shrink: 0;
+    text-align: center;
+  }
+  
+  /* Dashboard and Manage summary styling */
+  #nav-dashboard > summary,
+  #nav-management > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.6rem 0.85rem;
+    margin: 0.1rem 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    list-style: none;
+  }
+  
+  #nav-dashboard > summary .summary-link,
+  #nav-management > summary .summary-link {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 1;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  
+  #nav-dashboard > summary .summary-link:hover,
+  #nav-management > summary .summary-link:hover {
+    opacity: 0.8;
+  }
+  
+  /* Dashboard and Manage icons - ensure consistent sizing */
+  #nav-dashboard .summary-link .app-nav-icon,
+  #nav-management .summary-link .app-nav-icon {
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin: 0;
+  }
+  
+  /* Add margin only when sidebar is NOT collapsed */
+  aside.app-sidebar:not(.collapsed) .app-nav-icon {
+    margin-right: 0.4rem;
   }
 
   /* Ensure icons stay square in collapsed rail just like user/logout */
@@ -138,6 +187,9 @@ try {
     font-size: 1.1rem !important;
     margin: 0 !important;
     padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
   }
 
   body.live-light .status-badge.time-fresh { background:#d1fae5 !important; color:#065f46 !important; }
@@ -551,26 +603,31 @@ try {
   details summary {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.6rem 0.85rem !important;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    padding: 0.6rem 2.5rem 0.6rem 0.85rem !important;
     margin: 0 !important;
     transition: all 0.3s ease;
     background: transparent;
     border: 1px solid transparent;
     border-radius: 12px;
     cursor: pointer;
+    position: relative;
+    width: 100%;
+    min-height: 2.25rem;
   }
   
   /* ลิงก์ภายใน summary */
   details summary .summary-link {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    justify-content: flex-start;
+    gap: 0.35rem;
     text-decoration: none;
     color: inherit;
-    flex: 1;
     padding: 0;
     margin: 0;
+    flex: 1;
   }
   
   details summary .summary-link:hover {
@@ -582,8 +639,8 @@ try {
   details summary .summary-text {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    flex: 1;
+    justify-content: flex-start;
+    gap: 0.35rem;
   }
   
   details summary .app-nav-icon {
@@ -592,24 +649,142 @@ try {
     display: flex;
     align-items: center;
     justify-content: center;
+    flex-shrink: 0;
     transition: all 0.3s ease;
   }
-  details summary .chev {
-    transition: transform 0.3s ease;
-    cursor: pointer;
-    padding: 0.25rem;
-    border-radius: 4px;
-  }
   
-  details summary .chev:hover {
-    background: rgba(255, 255, 255, 0.1);
+  /* Override for dashboard and management icons - force perfect centering (only when sidebar is open) */
+  aside.app-sidebar:not(.collapsed) details summary .app-nav-icon {
+    width: 1.8rem !important;
+    height: 1.8rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    font-size: 1.1rem !important;
+    flex-shrink: 0 !important;
+  }
+  details summary .chev {
+    cursor: pointer;
+    padding: 0.5rem 0.65rem;
+    position: absolute;
+    right: 0.35rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    min-height: 2rem;
   }
   
   details summary .summary-label {
     transition: opacity 0.3s ease, transform 0.3s ease;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    flex: 1;
   }
   details[open] summary .chev {
     transform: rotate(90deg);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease;
+  }
+  
+  summary .chev {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease;
+  }
+  
+  /* Hide all dropdown items by default - completely invisible */
+  details > a {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  /* Show dropdown items only when details[open] */
+  details[open] > a {
+    display: block !important;
+    opacity: 1;
+    pointer-events: auto;
+    animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    animation-fill-mode: both;
+  }
+  
+  /* Staggered animations for each dropdown item */
+  details[open] > a:nth-child(2) {
+    animation-delay: 0.05s;
+  }
+  
+  details[open] > a:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+  
+  details[open] > a:nth-child(4) {
+    animation-delay: 0.15s;
+  }
+  
+  details[open] > a:nth-child(5) {
+    animation-delay: 0.2s;
+  }
+  
+  details[open] > a:nth-child(6) {
+    animation-delay: 0.25s;
+  }
+  
+  details[open] > a:nth-child(7) {
+    animation-delay: 0.3s;
+  }
+  
+  details[open] > a:nth-child(8) {
+    animation-delay: 0.35s;
+  }
+  
+  details[open] > a:nth-child(9) {
+    animation-delay: 0.4s;
+  }
+  
+  details[open] > a:nth-child(10) {
+    animation-delay: 0.45s;
+  }
+  
+  details[open] > a:nth-child(11) {
+    animation-delay: 0.5s;
+  }
+  
+  details[open] > a:nth-child(12) {
+    animation-delay: 0.55s;
+  }
+  
+  /* Animation keyframes for smooth slide-in */
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Animation keyframes for closing */
+  @keyframes slideUp {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+  
+  /* Closing animation - hide items immediately */
+  details:not([open]) > a {
+    display: none !important;
   }
   .team-switcher {
     width: 100%;
@@ -694,6 +869,7 @@ try {
     margin: 0 !important;
     padding: 0 !important;
     flex: 0 0 auto !important;
+    width: 100% !important;
   }
   .app-sidebar nav + nav {
     margin-top: 0rem !important;
@@ -718,7 +894,6 @@ try {
     align-items: center;
   }
   /* Center the gear (manage) and palette (system settings) icons */
-  .app-nav-icon--management,
   a[href="system_settings.php"] .app-nav-icon {
     width: 2.5rem;
     height: 2.5rem;
@@ -729,6 +904,8 @@ try {
     margin: 0;
     line-height: 1;
     flex-shrink: 0;
+    text-align: center;
+    font-size: 1.25rem;
   }
   .subitem .app-nav-icon {
     flex-shrink: 0;
@@ -774,6 +951,10 @@ try {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
+    text-align: center !important;
+  }
+  aside.sidebar-collapsed * {
+    text-align: center !important;
   }
   aside.sidebar-collapsed .team-switcher {
     width: auto !important;
@@ -816,10 +997,18 @@ try {
     display: none !important;
   }
   aside.sidebar-collapsed .group {
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  aside.sidebar-collapsed details {
+    width: 100% !important;
+  }
+  
+  /* Make details 100% width */
+  details {
+    width: 100% !important;
   }
   aside.sidebar-collapsed .subitem {
     display: flex !important;
@@ -831,24 +1020,130 @@ try {
     margin: 0 !important;
     gap: 0 !important;
   }
-  aside.sidebar-collapsed details summary {
-    justify-content: center !important;
-    padding-left: 0 !important;
-    padding-right: 0 !important;
-  }
   aside.sidebar-collapsed .subitem .app-nav-icon {
     width: auto !important;
     height: auto !important;
     margin: 0 !important;
     padding: 0 !important;
   }
-  aside.sidebar-collapsed .subitem .app-nav-icon,
-  aside.sidebar-collapsed details summary .app-nav-icon {
+  aside.sidebar-collapsed .subitem .app-nav-icon {
     margin-left: auto !important;
     margin-right: auto !important;
   }
   aside.sidebar-collapsed .subitem .app-nav-label {
     display: none;
+  }
+  
+  /* Hide dropdown content when sidebar is collapsed */
+  aside.sidebar-collapsed details[open] > :not(summary) {
+    display: none !important;
+  }
+  
+  /* Hide all labels when sidebar is collapsed */
+  aside.sidebar-collapsed .app-nav-label,
+  aside.sidebar-collapsed .summary-label {
+    display: none !important;
+  }
+  
+  .app-sidebar.collapsed .app-nav-label,
+  .app-sidebar.collapsed .summary-label {
+    display: none !important;
+  }
+  
+  /* Show dropdown items as icon-only in vertical column when sidebar is collapsed */
+  aside.sidebar-collapsed details,
+  .app-sidebar.collapsed details {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  aside.sidebar-collapsed details > a,
+  .app-sidebar.collapsed details > a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.6rem 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    animation: none !important;
+  }
+  
+  aside.sidebar-collapsed details > a .app-nav-icon,
+  .app-sidebar.collapsed details > a .app-nav-icon {
+    width: 2rem !important;
+    height: 2rem !important;
+    font-size: 1.2rem !important;
+    margin: 0 !important;
+  }
+  
+  aside.sidebar-collapsed details > a .app-nav-label,
+  .app-sidebar.collapsed details > a .app-nav-label {
+    display: none !important;
+  }
+  
+  /* Reset summary styling when sidebar is collapsed */
+  aside.sidebar-collapsed details summary {
+    padding: 0.75rem 0 !important;
+    width: 100% !important;
+    display: block !important;
+    position: relative !important;
+    min-height: 3rem !important;
+  }
+  aside.sidebar-collapsed details summary .summary-link {
+    display: block !important;
+    width: 100% !important;
+    position: relative !important;
+    height: 2.5rem !important;
+  }
+  aside.sidebar-collapsed details summary .app-nav-icon {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 1.5rem !important;
+  }
+  .app-sidebar.collapsed details summary {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    padding: 0.75rem 0.5rem !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5rem !important;
+    min-height: 3rem !important;
+  }
+  .app-sidebar.collapsed details summary .summary-link {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 !important;
+    height: auto !important;
+    position: static !important;
+  }
+  .app-sidebar.collapsed details summary .app-nav-icon {
+    width: 2rem !important;
+    height: 2rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    font-size: 1.2rem !important;
+  }
+  .app-sidebar.collapsed details summary .chev {
+    display: none !important;
   }
   
   /* Mobile Responsive */
@@ -1068,25 +1363,25 @@ try {
     </div>
   </div>
 
-  <nav class="app-nav" aria-label="Main navigation">
-    <div class="group">
+  <nav class="app-nav" aria-label="Main navigation" >
+    <div class="group" >
       <details id="nav-dashboard" open>
         <summary>
-          <a href="dashboard.php" class="summary-link" onclick="event.stopPropagation();">
+          <a href="dashboard.php" class="summary-link">
             <span class="app-nav-icon" aria-hidden="true">📊</span>
             <span class="summary-label">แดชบอร์ด</span>
           </a>
-          <span class="chev" style="margin-left:auto">›</span>
+          <span class="chev" style="font-size: 1.5rem;">›</span>
         </summary>
-        <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">รายงาน การจอง</span></a>
-        <a class="" href="report_booking.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงาน การเข้าพัก</span></a>
-        <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true">💧</span><span class="app-nav-label">รายงาน สาธารณูปโภค</span></a>
-        <a class="" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true">💵</span><span class="app-nav-label">รายงาน รายรับ</span></a>
-        <a class="" href="report_rooms.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงาน ห้องพัก</span></a>
-        <a class="" href="report_payments.php"><span class="app-nav-icon" aria-hidden="true">💳</span><span class="app-nav-label">รายงาน ชำระเงิน</span></a>
-        <a class="" href="report_invoice.php"><span class="app-nav-icon" aria-hidden="true">📄</span><span class="app-nav-label">รายงาน ใบแจ้ง</span></a>
-        <a class="" href="report_repairs.php"><span class="app-nav-icon" aria-hidden="true">🔧</span><span class="app-nav-label">รายงาน แจ้งซ่อม</span></a>
-        <a class="" href="report_news.php"><span class="app-nav-icon" aria-hidden="true">📰</span><span class="app-nav-label">รายงาน ข่าวสาร</span></a>
+        <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">รายงานการจอง</span></a>
+        <a class="" href="report_booking.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงานการเข้าพัก</span></a>
+        <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true">💧</span><span class="app-nav-label" style="font-size: 0.8rem;">รายงานสาธารณูปโภค</span></a>
+        <a class="" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true">💵</span><span class="app-nav-label">รายงานรายรับ</span></a>
+        <a class="" href="report_rooms.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงานห้องพัก</span></a>
+        <a class="" href="report_payments.php"><span class="app-nav-icon" aria-hidden="true">💳</span><span class="app-nav-label">รายงานชำระเงิน</span></a>
+        <a class="" href="report_invoice.php"><span class="app-nav-icon" aria-hidden="true">📄</span><span class="app-nav-label">รายงานใบแจ้ง</span></a>
+        <a class="" href="report_repairs.php"><span class="app-nav-icon" aria-hidden="true">🔧</span><span class="app-nav-label">รายงานแจ้งซ่อม</span></a>
+        <a class="" href="report_news.php"><span class="app-nav-icon" aria-hidden="true">📰</span><span class="app-nav-label">รายงานข่าวสาร</span></a>
         <a class="" href="print_contract.php"><span class="app-nav-icon" aria-hidden="true">🖨️</span><span class="app-nav-label">พิมพ์สัญญา</span></a>
       </details>
     </div>
@@ -1096,16 +1391,16 @@ try {
     <div class="group">
       <details id="nav-management" open>
         <summary>
-          <a href="manage.php" class="summary-link" onclick="event.stopPropagation();">
+          <a href="manage.php" class="summary-link">
             <span class="app-nav-icon app-nav-icon--management" aria-hidden="true">⚙️</span>
             <span class="summary-label">จัดการ</span>
           </a>
-          <span class="chev chev-toggle" data-target="nav-management" style="margin-left:auto;cursor:pointer;">›</span>
+          <span class="chev chev-toggle" data-target="nav-management" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
         <!-- manage_stay.php removed; link intentionally omitted -->
+        <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true">👥</span><span class="app-nav-label">ผู้เช่า</span></a>
         <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true">📰</span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
         <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true">🛏️</span><span class="app-nav-label">ห้องพัก</span></a>
-        <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true">👥</span><span class="app-nav-label">ผู้เช่า</span></a>
         <a class="" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true">📅</span><span class="app-nav-label">จองห้องพัก</span></a>
         <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true">📝</span><span class="app-nav-label">จัดการสัญญา</span></a>
         <a class="" href="manage_expenses.php"><span class="app-nav-icon" aria-hidden="true">💰</span><span class="app-nav-label">ค่าใช้จ่าย</span></a>
@@ -1168,40 +1463,13 @@ try {
 <script>
 (function() {
   const sidebar = document.querySelector('.app-sidebar');
-  const toggleBtn = document.getElementById('sidebar-toggle');
-  
-  // Toggle sidebar collapse on desktop
-  if (toggleBtn) {
-    toggleBtn.addEventListener('click', function(e) {
-      e.preventDefault();
-      e.stopPropagation();
-      
-      // On desktop: toggle collapsed state
-      if (window.innerWidth > 1024) {
-        // Force browser reflow to ensure transitions work
-        sidebar.style.transition = 'none';
-        void sidebar.offsetHeight; // Trigger reflow
-        sidebar.style.transition = '';
-        
-        sidebar.classList.toggle('collapsed');
-        
-        // Save state to localStorage
-        localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-        
-        console.log('Sidebar toggled:', sidebar.classList.contains('collapsed') ? 'collapsed' : 'expanded');
-      } 
-      // On mobile: toggle mobile-open
-      else {
-        sidebar.classList.toggle('mobile-open');
-        document.body.classList.toggle('sidebar-open');
-      }
-    });
-  }
   
   // Restore sidebar state on page load (desktop only)
+  // Note: Sidebar toggle handler is now managed by animate-ui.js
   const savedState = localStorage.getItem('sidebarCollapsed');
   if (savedState === 'true' && window.innerWidth > 1024) {
     sidebar.classList.add('collapsed');
+    console.log('Sidebar state restored from localStorage');
   }
   
   // Set active menu item based on current page
@@ -1230,6 +1498,7 @@ try {
   });
   
   // Close sidebar when clicking overlay
+  const toggleBtn = document.getElementById('sidebar-toggle');
   document.addEventListener('click', function(e) {
       if (window.innerWidth <= 1024 && 
         sidebar.classList.contains('mobile-open') && 
@@ -1307,22 +1576,51 @@ try {
   }
 })();
 
-// Chevron toggle for dropdowns (separate from link navigation)
+// Chevron toggle for dropdowns with animation (separate from link navigation)
 (function() {
   document.addEventListener('click', function(e) {
-    const chev = e.target.closest('.chev-toggle');
+    const chev = e.target.closest('.chev, .chev-toggle');
     if (!chev) return;
 
     e.preventDefault();
     e.stopPropagation();
 
-    const id = chev.getAttribute('data-target');
-    const details = id ? document.getElementById(id) : chev.closest('details');
+    const details = chev.closest('details');
     if (!details) return;
 
-    details.open = !details.open;
+    const isOpening = !details.open;
+    
+    if (isOpening) {
+      // Opening: set open then trigger animation
+      details.open = true;
+      
+      // Force reflow to trigger animation
+      void details.offsetHeight;
+      
+      const items = details.querySelectorAll(':scope > a');
+      items.forEach((item, index) => {
+        item.style.animation = 'none';
+        void item.offsetHeight;
+        item.style.animation = '';
+        item.style.animationDelay = (0.05 * (index + 1)) + 's';
+      });
+    } else {
+      // Closing: animate out then close
+      const items = details.querySelectorAll(':scope > a');
+      
+      items.forEach((item, index) => {
+        item.style.animation = 'slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+        item.style.animationDelay = (0.03 * (items.length - index - 1)) + 's';
+      });
+      
+      // Close after animation completes
+      setTimeout(() => {
+        details.open = false;
+      }, 300 + (items.length * 30));
+    }
+
     const key = 'sidebar_details_' + details.id;
-    localStorage.setItem(key, details.open ? 'open' : 'closed');
+    localStorage.setItem(key, isOpening ? 'open' : 'closed');
   });
 })();
 

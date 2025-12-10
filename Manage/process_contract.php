@@ -65,6 +65,10 @@ try {
     $updateRoom = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
     $updateRoom->execute([$room_id]);
 
+    // ผู้เช่าที่มีสัญญาใหม่ให้เป็นสถานะมีสัญญา/พักอาศัย (1)
+    $updateTenant = $pdo->prepare("UPDATE tenant SET tnt_status = '1' WHERE tnt_id = ?");
+    $updateTenant->execute([$tnt_id]);
+
     $pdo->commit();
 
     // ตรวจสอบว่าเป็น AJAX request หรือไม่
