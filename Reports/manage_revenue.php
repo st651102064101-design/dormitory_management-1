@@ -46,6 +46,9 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <!-- DataTable Modern -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -106,7 +109,7 @@ try {
 
             <!-- Table View -->
             <div id="table-view" style="display:none;margin-top:1.5rem;overflow-x:auto;">
-              <table class="table--compact" style="width:100%;border-collapse:collapse;">
+              <table id="table-revenue" class="table--compact" style="width:100%;border-collapse:collapse;">
                 <thead>
                   <tr style="text-align:left;border-bottom:2px solid #475569;background:#0f172a;">
                     <th style="padding:0.75rem;color:#94a3b8;">เดือน</th>
@@ -168,6 +171,28 @@ try {
         url.searchParams.set('sort', sortValue);
         window.location.href = url.toString();
       }
+    </script>
+    
+    <!-- DataTable Initialization -->
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const revenueTable = document.getElementById('table-revenue');
+        if (revenueTable && typeof simpleDatatables !== 'undefined') {
+          new simpleDatatables.DataTable(revenueTable, {
+            searchable: true,
+            fixedHeight: false,
+            perPage: 10,
+            perPageSelect: [5, 10, 25, 50],
+            labels: {
+              placeholder: 'ค้นหาเดือน...',
+              perPage: 'รายการต่อหน้า',
+              noRows: 'ไม่พบข้อมูลรายรับ',
+              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+            }
+          });
+        }
+      });
     </script>
 
 

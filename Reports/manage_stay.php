@@ -112,6 +112,7 @@ try {
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
       .reports-container { width: 100%; max-width: 100%; padding: 0; }
       .reports-container .container { max-width: 100%; width: 100%; padding: 1.5rem; }

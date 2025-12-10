@@ -112,6 +112,9 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <!-- DataTable Modern -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
       .reports-container {
         width: 100%;
@@ -553,7 +556,7 @@ try {
 
             <!-- Table View -->
             <div id="table-view" class="invoice-table" style="display:none;overflow-x:auto;">
-              <table>
+              <table id="table-invoice">
                 <thead>
                   <tr>
                     <th>วันที่</th>
@@ -645,6 +648,28 @@ try {
           localStorage.setItem('invoiceViewMode', 'table');
         }
       }
+    </script>
+    
+    <!-- DataTable Initialization -->
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const invoiceTable = document.getElementById('table-invoice');
+        if (invoiceTable && typeof simpleDatatables !== 'undefined') {
+          new simpleDatatables.DataTable(invoiceTable, {
+            searchable: true,
+            fixedHeight: false,
+            perPage: 10,
+            perPageSelect: [5, 10, 25, 50, 100],
+            labels: {
+              placeholder: 'ค้นหาใบแจ้งค่าใช้จ่าย...',
+              perPage: 'รายการต่อหน้า',
+              noRows: 'ไม่พบข้อมูลใบแจ้งค่าใช้จ่าย',
+              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+            }
+          });
+        }
+      });
     </script>
   </body>
 </html>

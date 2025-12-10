@@ -104,6 +104,9 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <!-- DataTable Modern -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
       .reports-container { width: 100%; max-width: 100%; padding: 0; }
       .reports-container .container { max-width: 100%; width: 100%; padding: 1.5rem; }
@@ -233,7 +236,7 @@ try {
             <!-- Table View -->
             <div id="table-view" class="news-table" style="display: none;">
 <?php if (count($rows) > 0): ?>
-              <table>
+              <table id="table-news-report">
                 <thead>
                   <tr>
                     <th style="width: 120px;">วันที่</th>
@@ -290,6 +293,28 @@ try {
           localStorage.setItem('newsViewMode', 'table');
         }
       }
+    </script>
+    
+    <!-- DataTable Initialization -->
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const newsTable = document.getElementById('table-news-report');
+        if (newsTable && typeof simpleDatatables !== 'undefined') {
+          new simpleDatatables.DataTable(newsTable, {
+            searchable: true,
+            fixedHeight: false,
+            perPage: 10,
+            perPageSelect: [5, 10, 25, 50],
+            labels: {
+              placeholder: 'ค้นหาข่าว...',
+              perPage: 'รายการต่อหน้า',
+              noRows: 'ไม่พบข้อมูลข่าว',
+              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+            }
+          });
+        }
+      });
     </script>
   </body>
 </html>

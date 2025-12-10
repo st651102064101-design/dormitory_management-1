@@ -149,6 +149,7 @@ try {
     <link rel="stylesheet" href="../Assets/Css/main.css" />
     <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
       .tenant-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin-top:1rem; }
       .tenant-stat-card { background:linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95)); border-radius:16px; padding:1.25rem; border:1px solid rgba(255,255,255,0.08); color:#f5f8ff; box-shadow:0 15px 35px rgba(3,7,18,0.4); }

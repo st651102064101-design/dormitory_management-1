@@ -38,6 +38,9 @@ if ($ctr_id === 0) {
     <title>เลือกสัญญาเพื่อพิมพ์</title>
     <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/main.css">
+    <!-- DataTable Modern -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css">
+    <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/datatable-modern.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Tahoma, Arial, sans-serif; background: #f5f5f5; min-height: 100vh; }
@@ -91,7 +94,7 @@ if ($ctr_id === 0) {
                     <?php endforeach; ?>
                 </div>
                 <div id="table-view" class="table-wrap hidden">
-                    <table>
+                    <table id="table-print-contracts">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -103,7 +106,7 @@ if ($ctr_id === 0) {
                         </thead>
                         <tbody>
                             <?php foreach ($contracts as $idx => $c): ?>
-                                <tr class="<?php echo $idx >= 5 ? 'hidden extra-row' : ''; ?>">
+                                <tr>
                                     <td><?php echo str_pad((string)$c['ctr_id'], 4, '0', STR_PAD_LEFT); ?></td>
                                     <td><?php echo htmlspecialchars($c['tnt_name'] ?? '-'); ?></td>
                                     <td><?php echo htmlspecialchars($c['room_number'] ?? '-'); ?></td>
@@ -113,17 +116,11 @@ if ($ctr_id === 0) {
                             <?php endforeach; ?>
                         </tbody>
                     </table>
-                    <?php if (count($contracts) > 5): ?>
-                        <div style="margin-top: 12px; text-align: center;">
-                            <button id="read-more" class="btn secondary">Read more</button>
-                        </div>
-                    <?php endif; ?>
                 </div>
                 <script>
                     const toggleBtn = document.getElementById('toggle-view');
                     const gridView = document.querySelector('.grid');
                     const tableView = document.getElementById('table-view');
-                    const readMoreBtn = document.getElementById('read-more');
 
                     function setViewCookie(mode) {
                         document.cookie = 'contractView=' + mode + '; path=/; max-age=' + (60 * 60 * 24 * 30);
@@ -162,16 +159,31 @@ if ($ctr_id === 0) {
                             }
                         });
                     }
-
-                    if (readMoreBtn) {
-                        readMoreBtn.addEventListener('click', () => {
-                            document.querySelectorAll('.extra-row').forEach(row => row.classList.remove('hidden'));
-                            readMoreBtn.classList.add('hidden');
-                        });
-                    }
                 </script>
                 <script src="../Assets/Javascript/animate-ui.js" defer></script>
                 <script src="../Assets/Javascript/main.js" defer></script>
+                
+                <!-- DataTable Initialization -->
+                <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
+                <script>
+                  document.addEventListener('DOMContentLoaded', function() {
+                    const contractsTable = document.getElementById('table-print-contracts');
+                    if (contractsTable && typeof simpleDatatables !== 'undefined') {
+                      new simpleDatatables.DataTable(contractsTable, {
+                        searchable: true,
+                        fixedHeight: false,
+                        perPage: 10,
+                        perPageSelect: [5, 10, 25, 50],
+                        labels: {
+                          placeholder: 'ค้นหาสัญญา...',
+                          perPage: 'รายการต่อหน้า',
+                          noRows: 'ไม่พบข้อมูลสัญญา',
+                          info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+                        }
+                      });
+                    }
+                  });
+                </script>
             </div>
         </main>
     </div>

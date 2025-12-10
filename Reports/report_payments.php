@@ -232,6 +232,9 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <!-- DataTable Modern -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
       .reports-container {
         width: 100%;
@@ -634,7 +637,7 @@ try {
                   📭 ไม่มีข้อมูลการชำระเงิน
                 </div>
               <?php else: ?>
-                <table class="payments-table">
+                <table id="table-payments-report" class="payments-table">
                   <thead>
                     <tr>
                       <th>รหัส</th>
@@ -748,6 +751,28 @@ try {
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
           closeProofModal();
+        }
+      });
+    </script>
+    
+    <!-- DataTable Initialization -->
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const paymentsTable = document.getElementById('table-payments-report');
+        if (paymentsTable && typeof simpleDatatables !== 'undefined') {
+          new simpleDatatables.DataTable(paymentsTable, {
+            searchable: true,
+            fixedHeight: false,
+            perPage: 10,
+            perPageSelect: [5, 10, 25, 50, 100],
+            labels: {
+              placeholder: 'ค้นหาการชำระเงิน...',
+              perPage: 'รายการต่อหน้า',
+              noRows: 'ไม่พบข้อมูลการชำระเงิน',
+              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+            }
+          });
         }
       });
     </script>

@@ -58,6 +58,9 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <!-- DataTable Modern -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -169,7 +172,7 @@ try {
               <!-- Table View -->
               <div id="table-view" style="display:none;margin-top:1.5rem;">
                 <div style="overflow-x:auto;border:1px solid #334155;border-radius:8px;background:#0f172a;">
-                  <table style="width:100%;border-collapse:collapse;min-width:1400px;">
+                  <table id="table-utility" style="width:100%;border-collapse:collapse;min-width:1400px;">
                     <thead>
                       <tr style="background:#0f172a;">
                         <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">รหัส</th>
@@ -298,6 +301,28 @@ try {
         url.searchParams.set('sort', sortValue);
         window.location.href = url.toString();
       }
+    </script>
+    
+    <!-- DataTable Initialization -->
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const utilityTable = document.getElementById('table-utility');
+        if (utilityTable && typeof simpleDatatables !== 'undefined') {
+          new simpleDatatables.DataTable(utilityTable, {
+            searchable: true,
+            fixedHeight: false,
+            perPage: 10,
+            perPageSelect: [5, 10, 25, 50, 100],
+            labels: {
+              placeholder: 'ค้นหามิเตอร์...',
+              perPage: 'รายการต่อหน้า',
+              noRows: 'ไม่พบข้อมูลมิเตอร์',
+              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+            }
+          });
+        }
+      });
     </script>
   </body>
 </html>

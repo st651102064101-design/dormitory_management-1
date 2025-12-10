@@ -159,6 +159,9 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <!-- DataTable Modern -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
       :root {
         --theme-bg-color: <?php echo $themeColor; ?>;
@@ -313,7 +316,7 @@ try {
             <!-- Table View -->
             <div id="table-view" class="reservation-table" style="display:none;">
 <?php if (count($rows) > 0): ?>
-              <table>
+              <table id="table-reservations">
                 <thead>
                   <tr>
                     <th>รหัส</th>
@@ -414,6 +417,28 @@ try {
           console.log('Theme color:', themeColor, 'Is light:', isLight);
         }
         applyThemeClass();
+      });
+    </script>
+    
+    <!-- DataTable Initialization -->
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        const reservationsTable = document.getElementById('table-reservations');
+        if (reservationsTable && typeof simpleDatatables !== 'undefined') {
+          new simpleDatatables.DataTable(reservationsTable, {
+            searchable: true,
+            fixedHeight: false,
+            perPage: 10,
+            perPageSelect: [5, 10, 25, 50, 100],
+            labels: {
+              placeholder: 'ค้นหาการจอง...',
+              perPage: 'รายการต่อหน้า',
+              noRows: 'ไม่พบข้อมูลการจอง',
+              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+            }
+          });
+        }
       });
     </script>
   </body>
