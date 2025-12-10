@@ -83,8 +83,8 @@ try {
     $stmt->execute();
     $tenantStatusCounts['1'] = $stmt->fetch()['total'] ?? 0;
     
-    // ย้ายออก (tnt_status = 0)
-    $stmt = $conn->prepare("SELECT COUNT(*) as total FROM tenant WHERE tnt_status = 0");
+    // ย้ายออก (tnt_status = 0) - เฉพาะที่มีสัญญา
+    $stmt = $conn->prepare("SELECT COUNT(DISTINCT t.tnt_id) as total FROM tenant t INNER JOIN contract c ON t.tnt_id = c.tnt_id WHERE t.tnt_status = 0");
     $stmt->execute();
     $tenantStatusCounts['2'] = $stmt->fetch()['total'] ?? 0;
 } catch(Exception $e) {

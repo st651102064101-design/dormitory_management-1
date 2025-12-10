@@ -32,14 +32,14 @@ try {
 // ดึงสถิติต่างๆ
 $roomCount = safeCount($pdo, "SELECT COUNT(*) FROM room");
 $tenantCount = safeCount($pdo, "SELECT COUNT(*) FROM tenant");
-$contractCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status = 'active'");
+$contractCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status = '0'");
 $contractTotalCount = safeCount($pdo, "SELECT COUNT(*) FROM contract");
-$bookingCount = safeCount($pdo, "SELECT COUNT(*) FROM booking WHERE bkg_status = 'pending'");
-$repairCount = safeCount($pdo, "SELECT COUNT(*) FROM repair WHERE rpr_status = 'pending'");
+$bookingCount = safeCount($pdo, "SELECT COUNT(*) FROM booking WHERE bkg_status = '1'");
+$repairCount = safeCount($pdo, "SELECT COUNT(*) FROM repair WHERE repair_status = '0'");
 $newsCount = safeCount($pdo, "SELECT COUNT(*) FROM news");
-$paymentPendingCount = safeCount($pdo, "SELECT COUNT(*) FROM payment WHERE pay_status = 'pending'");
+$paymentPendingCount = safeCount($pdo, "SELECT COUNT(*) FROM payment WHERE pay_status = '0'");
 $utilityCount = safeCount($pdo, "SELECT COUNT(*) FROM utility");
-$qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status = 'active' AND access_token IS NOT NULL AND access_token != ''");
+$qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status IN ('0', '2')");
 ?>
 <!doctype html>
 <html lang="th">
@@ -171,8 +171,8 @@ $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status =
                 <div class="manage-card-title">จองห้องพัก</div>
                 <div class="manage-card-desc">จัดการการจองห้องพัก อนุมัติ ยกเลิก</div>
                 <div class="manage-card-count">
-                  <span>⏳</span>
-                  <span><?php echo number_format($bookingCount); ?> รอดำเนินการ</span>
+                  <span>✅</span>
+                  <span><?php echo number_format($bookingCount); ?> จองแล้ว</span>
                 </div>
               </a>
 

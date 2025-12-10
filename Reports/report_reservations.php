@@ -246,6 +246,7 @@ try {
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main">
         <div class="reports-container">
+          <?php include __DIR__ . '/../includes/page_header.php'; ?>
           <div class="container">
             <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#f8fafc;">📝 รายงานการจอง</h1>
             
@@ -376,6 +377,21 @@ try {
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
+      // Ultra-early sidebar toggle fallback
+      window.__directSidebarToggle = function(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        const sidebar = document.querySelector('.app-sidebar');
+        if (!sidebar) return false;
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+          sidebar.classList.toggle('mobile-open');
+        } else {
+          sidebar.classList.toggle('collapsed');
+          try { localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed')); } catch(e) {}
+        }
+        return false;
+      };
+
       function switchView(view) {
         const cardView = document.getElementById('card-view');
         const tableView = document.getElementById('table-view');

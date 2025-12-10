@@ -1373,6 +1373,7 @@ try {
           </a>
           <span class="chev" style="font-size: 1.5rem;">›</span>
         </summary>
+        <a class="" href="report_tenants.php"><span class="app-nav-icon" aria-hidden="true">👥</span><span class="app-nav-label">รายงานผู้เช่า</span></a>
         <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true">📋</span><span class="app-nav-label">รายงานการจอง</span></a>
         <a class="" href="manage_stay.php"><span class="app-nav-icon" aria-hidden="true">🏠</span><span class="app-nav-label">รายงานการเข้าพัก</span></a>
         <a class="" href="report_utility.php"><span class="app-nav-icon" aria-hidden="true">💧</span><span class="app-nav-label" style="font-size: 0.8rem;">รายงานสาธารณูปโภค</span></a>
