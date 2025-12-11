@@ -339,6 +339,42 @@ try {
         }
     }
 
+    // บันทึกเบอร์โทร
+    if (!empty($_POST['contact_phone'])) {
+        $phone = trim($_POST['contact_phone']);
+        // ตรวจสอบความถูกต้องของเบอร์โทร
+        if (preg_match('/^[0-9\-\+\s()]{8,20}$/', $phone)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['contact_phone', $phone, $phone]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'บันทึกเบอร์โทรสำเร็จ']);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รูปแบบเบอร์โทรไม่ถูกต้อง']);
+            exit;
+        }
+    }
+
+    // บันทึกอีเมล
+    if (!empty($_POST['contact_email'])) {
+        $email = trim($_POST['contact_email']);
+        // ตรวจสอบความถูกต้องของอีเมล
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['contact_email', $email, $email]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'บันทึกอีเมลสำเร็จ']);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รูปแบบอีเมลไม่ถูกต้อง']);
+            exit;
+        }
+    }
+
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'error' => 'ไม่มีข้อมูลที่จะบันทึก']);
     exit;
