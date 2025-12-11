@@ -1,0 +1,1058 @@
+/**
+ * Apple Settings JavaScript
+ * จัดการ interactions สำหรับหน้า Settings แบบ Apple Style
+ */
+
+class AppleSettings {
+  constructor() {
+    this.init();
+  }
+
+  init() {
+    this.initSheets();
+    this.initToggles();
+    this.initForms();
+    this.initImageUploads();
+    this.initThemeSelector();
+    this.initColorPicker();
+  }
+
+  // ===== Sheet Modal Management =====
+  initSheets() {
+    // Open sheet when clicking on settings row
+    document.querySelectorAll('[data-sheet]').forEach(row => {
+      row.addEventListener('click', (e) => {
+        e.preventDefault();
+        const sheetId = row.dataset.sheet;
+        this.openSheet(sheetId);
+      });
+    });
+
+    // Close sheet when clicking overlay
+    document.querySelectorAll('.apple-sheet-overlay').forEach(overlay => {
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+          this.closeSheet(overlay.id);
+        }
+      });
+    });
+
+    // Close button
+    document.querySelectorAll('[data-close-sheet]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const sheetId = btn.dataset.closeSheet;
+        this.closeSheet(sheetId);
+      });
+    });
+
+    // Handle swipe down to close
+    document.querySelectorAll('.apple-sheet').forEach(sheet => {
+      let startY = 0;
+      let currentY = 0;
+
+      sheet.addEventListener('touchstart', (e) => {
+        if (sheet.scrollTop === 0) {
+          startY = e.touches[0].clientY;
+        }
+      });
+
+      sheet.addEventListener('touchmove', (e) => {
+        if (sheet.scrollTop === 0) {
+          currentY = e.touches[0].clientY;
+          const diff = currentY - startY;
+          if (diff > 0) {
+            sheet.style.transform = `translateY(${diff}px)`;
+          }
+        }
+      });
+
+      sheet.addEventListener('touchend', () => {
+        const diff = currentY - startY;
+        if (diff > 100) {
+          const overlay = sheet.closest('.apple-sheet-overlay');
+          if (overlay) {
+            this.closeSheet(overlay.id);
+          }
+        }
+        sheet.style.transform = '';
+        startY = 0;
+        currentY = 0;
+      });
+    });
+  }
+
+  openSheet(sheetId) {
+    const overlay = document.getElementById(sheetId);
+    if (overlay) {
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+  }
+
+  closeSheet(sheetId) {
+    const overlay = document.getElementById(sheetId);
+    if (overlay) {
+      overlay.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+  }
+
+  // ===== Toggle Switches =====
+  initToggles() {
+    document.querySelectorAll('.apple-toggle').forEach(toggle => {
+      // Restore state from data-value attribute
+      const value = toggle.getAttribute('data-value');
+      if (value === '1') {
+        toggle.classList.add('active');
+      }
+      
+      toggle.addEventListener('click', () => {
+        toggle.classList.toggle('active');
+        
+        // Handle background image toggle
+        if (toggle.id === 'bgImageToggle') {
+          const isChecked = toggle.classList.contains('active') ? '1' : '0';
+          this.saveBgImageToggle(isChecked);
+        }
+      });
+    });
+  }
+
+  async saveBgImageToggle(value) {
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `use_bg_image=${encodeURIComponent(value)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast(value === '1' ? 'เปิดใช้ภาพพื้นหลัง' : 'ปิดใช้ภาพพื้นหลัง', 'success');
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  // ===== Form Handling =====
+  initForms() {
+    // Site Name Form
+    const siteNameForm = document.getElementById('siteNameForm');
+    if (siteNameForm) {
+      siteNameForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveSiteName();
+      });
+    }
+
+    // Phone Form
+    const phoneForm = document.getElementById('phoneForm');
+    if (phoneForm) {
+      phoneForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.savePhone();
+      });
+    }
+
+    // Email Form
+    const emailForm = document.getElementById('emailForm');
+    if (emailForm) {
+      emailForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveEmail();
+      });
+    }
+
+    // Font Size Change
+    const fontSizeSelect = document.getElementById('fontSize');
+    if (fontSizeSelect) {
+      fontSizeSelect.addEventListener('change', () => {
+        this.saveFontSize();
+      });
+    }
+  }
+
+  async saveSiteName() {
+    const siteName = document.getElementById('siteName')?.value.trim();
+    if (!siteName) {
+      this.showToast('กรุณากรอกชื่อหอพัก', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `site_name=${encodeURIComponent(siteName)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกชื่อหอพักสำเร็จ', 'success');
+        this.closeSheet('sheet-sitename');
+        // Update display
+        const displayEl = document.querySelector('[data-display="sitename"]');
+        if (displayEl) displayEl.textContent = siteName;
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async savePhone() {
+    const phone = document.getElementById('contactPhone')?.value.trim();
+    if (!phone || !/^[0-9\-\+\s()]{8,20}$/.test(phone)) {
+      this.showToast('รูปแบบเบอร์โทรไม่ถูกต้อง', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `contact_phone=${encodeURIComponent(phone)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกเบอร์โทรสำเร็จ', 'success');
+        this.closeSheet('sheet-phone');
+        const displayEl = document.querySelector('[data-display="phone"]');
+        if (displayEl) displayEl.textContent = phone;
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async saveEmail() {
+    const email = document.getElementById('contactEmail')?.value.trim();
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      this.showToast('รูปแบบอีเมลไม่ถูกต้อง', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `contact_email=${encodeURIComponent(email)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกอีเมลสำเร็จ', 'success');
+        this.closeSheet('sheet-email');
+        const displayEl = document.querySelector('[data-display="email"]');
+        if (displayEl) displayEl.textContent = email;
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async saveFontSize() {
+    const fontSize = document.getElementById('fontSize')?.value;
+    
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `font_size=${encodeURIComponent(fontSize)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกขนาดตัวอักษรสำเร็จ', 'success');
+        // Update preview
+        const preview = document.querySelector('.font-size-preview');
+        if (preview) {
+          preview.style.fontSize = `calc(1rem * ${fontSize})`;
+        }
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  // ===== Image Upload =====
+  initImageUploads() {
+    // Logo upload
+    const logoInput = document.getElementById('logoInput');
+    if (logoInput) {
+      logoInput.addEventListener('change', (e) => {
+        this.handleLogoUpload(e.target.files[0]);
+      });
+    }
+
+    // Background upload
+    const bgInput = document.getElementById('bgInput');
+    if (bgInput) {
+      bgInput.addEventListener('change', (e) => {
+        this.handleBgUpload(e.target.files[0]);
+      });
+    }
+
+    // Old logo select
+    const oldLogoSelect = document.getElementById('oldLogoSelect');
+    if (oldLogoSelect) {
+      oldLogoSelect.addEventListener('change', (e) => {
+        this.previewOldLogo(e.target.value);
+      });
+    }
+
+    // Background select
+    const bgSelect = document.getElementById('bgSelect');
+    if (bgSelect) {
+      bgSelect.addEventListener('change', (e) => {
+        this.previewBgSelect(e.target.value);
+      });
+    }
+  }
+
+  async handleLogoUpload(file) {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('logo', file);
+
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('อัพโหลด Logo สำเร็จ', 'success');
+        // Update preview
+        const preview = document.getElementById('logoPreviewImg');
+        if (preview) {
+          preview.src = `../Assets/Images/${result.filename}?t=${Date.now()}`;
+        }
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async handleBgUpload(file) {
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append('bg', file);
+
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('อัพโหลดภาพพื้นหลังสำเร็จ', 'success');
+        // Update preview
+        const preview = document.getElementById('bgPreviewImg');
+        if (preview) {
+          preview.src = `../Assets/Images/${result.filename}?t=${Date.now()}`;
+        }
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  previewOldLogo(filename) {
+    const previewContainer = document.getElementById('oldLogoPreview');
+    if (!previewContainer) return;
+
+    if (filename) {
+      previewContainer.innerHTML = `
+        <img src="../Assets/Images/${filename}" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 12px;">
+        <button type="button" class="apple-button primary" style="width: auto; padding: 10px 16px;" onclick="appleSettings.useOldLogo('${filename}')">
+          ใช้รูปนี้
+        </button>
+      `;
+    } else {
+      previewContainer.innerHTML = '';
+    }
+  }
+
+  async useOldLogo(filename) {
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `load_old_logo=${encodeURIComponent(filename)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('เปลี่ยน Logo สำเร็จ', 'success');
+        const preview = document.getElementById('logoPreviewImg');
+        if (preview) {
+          preview.src = `../Assets/Images/${filename}?t=${Date.now()}`;
+        }
+        this.closeSheet('sheet-logo');
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  previewBgSelect(filename) {
+    const previewContainer = document.getElementById('bgSelectPreview');
+    if (!previewContainer) return;
+
+    if (filename) {
+      previewContainer.innerHTML = `
+        <img src="../Assets/Images/${filename}" alt="Preview" style="max-width: 200px; max-height: 120px; border-radius: 12px; object-fit: cover;">
+        <button type="button" class="apple-button primary" style="width: auto; padding: 10px 16px; margin-top: 8px;" onclick="appleSettings.useBgImage('${filename}')">
+          ใช้ภาพนี้
+        </button>
+      `;
+    } else {
+      previewContainer.innerHTML = '';
+    }
+  }
+
+  async useBgImage(filename) {
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `bg_filename=${encodeURIComponent(filename)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('เปลี่ยนภาพพื้นหลังสำเร็จ', 'success');
+        const preview = document.getElementById('bgPreviewImg');
+        if (preview) {
+          preview.src = `../Assets/Images/${filename}?t=${Date.now()}`;
+        }
+        this.closeSheet('sheet-background');
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  // ===== Theme Selector =====
+  initThemeSelector() {
+    document.querySelectorAll('.apple-theme-option').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('.apple-theme-option').forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+        const theme = option.dataset.theme;
+        this.savePublicTheme(theme);
+      });
+    });
+  }
+
+  async savePublicTheme(theme) {
+    try {
+      const response = await fetch('../Manage/save_public_theme.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `theme=${encodeURIComponent(theme)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกธีมสำเร็จ', 'success');
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  // ===== Color Picker =====
+  initColorPicker() {
+    document.querySelectorAll('.apple-color-option').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('.apple-color-option').forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+        const color = option.dataset.color;
+        
+        // Update color input and display
+        const colorInput = document.getElementById('themeColor');
+        const hexDisplay = document.getElementById('colorHexDisplay');
+        if (colorInput) colorInput.value = color;
+        if (hexDisplay) hexDisplay.textContent = color;
+        
+        this.saveThemeColor(color);
+      });
+    });
+
+    // Custom color picker
+    const colorInput = document.getElementById('themeColor');
+    if (colorInput) {
+      colorInput.addEventListener('change', (e) => {
+        const color = e.target.value;
+        const hexDisplay = document.getElementById('colorHexDisplay');
+        if (hexDisplay) hexDisplay.textContent = color;
+        
+        // Remove active from preset colors
+        document.querySelectorAll('.apple-color-option').forEach(opt => opt.classList.remove('active'));
+        
+        this.saveThemeColor(color);
+      });
+    }
+  }
+
+  async saveThemeColor(color) {
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `theme_color=${encodeURIComponent(color)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกสีพื้นหลังสำเร็จ', 'success');
+        // Update theme color immediately
+        document.body.setAttribute('data-theme-color', color);
+        document.documentElement.style.setProperty('--theme-bg-color', color);
+        
+        // Update active state of color options
+        document.querySelectorAll('.apple-color-option').forEach(opt => {
+          opt.classList.toggle('active', opt.dataset.color === color);
+        });
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  // ===== Utility Rates =====
+  async saveUtilityRates() {
+    const waterRate = document.getElementById('waterRate')?.value;
+    const electricRate = document.getElementById('electricRate')?.value;
+    const effectiveDate = document.getElementById('effectiveDate')?.value;
+
+    if (!waterRate || !electricRate || !effectiveDate) {
+      this.showToast('กรุณากรอกข้อมูลให้ครบ', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('../Manage/add_rate.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `rate_water=${waterRate}&rate_elec=${electricRate}&effective_date=${effectiveDate}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Update UI without reload - Apple style
+        this.updateRateUI(result.rate_water, result.rate_elec, result.rate_id);
+        this.showToast('บันทึกอัตราค่าน้ำค่าไฟสำเร็จ', 'success');
+        
+        // Reset date to today for next entry
+        const dateInput = document.getElementById('effectiveDate');
+        if (dateInput) {
+          const today = new Date();
+          dateInput.value = today.toISOString().split('T')[0];
+        }
+      } else {
+        throw new Error(result.message || result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async deleteRate(rateId) {
+    const confirmed = await this.showConfirm('ต้องการลบอัตรานี้หรือไม่?', 'ลบอัตรา');
+    if (!confirmed) return;
+
+    try {
+      const response = await fetch('../Manage/delete_rate.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `rate_id=${rateId}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Remove row with animation - Apple style
+        const row = document.getElementById(`rate-row-${rateId}`);
+        if (row) {
+          row.style.transition = 'all 0.3s ease';
+          row.style.transform = 'translateX(100%)';
+          row.style.opacity = '0';
+          
+          setTimeout(() => {
+            row.style.height = row.offsetHeight + 'px';
+            row.style.overflow = 'hidden';
+            
+            requestAnimationFrame(() => {
+              row.style.height = '0';
+              row.style.padding = '0';
+              row.style.margin = '0';
+              
+              setTimeout(() => row.remove(), 200);
+            });
+          }, 200);
+        }
+        
+        this.showToast('ลบอัตราสำเร็จ', 'success');
+      } else {
+        throw new Error(result.message || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  // Use existing rate as current
+  async useRate(rateId) {
+    const confirmed = await this.showConfirm('ต้องการใช้อัตรานี้เป็นอัตราปัจจุบันหรือไม่?', 'เปลี่ยนอัตรา');
+    if (!confirmed) return;
+
+    // Get rate data from the row
+    const row = document.getElementById(`rate-row-${rateId}`);
+    const waterRate = row?.dataset.water;
+    const elecRate = row?.dataset.elec;
+
+    try {
+      const response = await fetch('../Manage/add_rate.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `use_rate_id=${rateId}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Update UI without reload - Apple style
+        this.updateRateUI(result.rate_water, result.rate_elec, rateId);
+        this.showToast('เปลี่ยนอัตราสำเร็จ', 'success');
+      } else {
+        throw new Error(result.message || result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  // Update rate UI without page reload
+  updateRateUI(waterRate, elecRate, newActiveRateId) {
+    const today = new Date();
+    const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear() + 543}`;
+    
+    // Update main display
+    const currentWater = document.getElementById('currentWaterRate');
+    const currentElec = document.getElementById('currentElecRate');
+    const currentDateLabel = document.getElementById('currentRateDateLabel');
+    
+    if (currentWater) {
+      currentWater.style.transform = 'scale(1.1)';
+      currentWater.textContent = `฿${Number(waterRate).toLocaleString()}`;
+      setTimeout(() => currentWater.style.transform = 'scale(1)', 200);
+    }
+    if (currentElec) {
+      currentElec.style.transform = 'scale(1.1)';
+      currentElec.textContent = `฿${Number(elecRate).toLocaleString()}`;
+      setTimeout(() => currentElec.style.transform = 'scale(1)', 200);
+    }
+    if (currentDateLabel) {
+      currentDateLabel.textContent = `เริ่มใช้: ${dateStr}`;
+    }
+    
+    // Update sheet display
+    const sheetWater = document.getElementById('sheetWaterRate');
+    const sheetElec = document.getElementById('sheetElecRate');
+    const sheetDateLabel = document.getElementById('sheetRateDateLabel');
+    
+    if (sheetWater) sheetWater.textContent = `฿${Number(waterRate).toLocaleString()}`;
+    if (sheetElec) sheetElec.textContent = `฿${Number(elecRate).toLocaleString()}`;
+    if (sheetDateLabel) sheetDateLabel.textContent = `📌 อัตราปัจจุบัน (ใช้ตั้งแต่ ${dateStr})`;
+    
+    // Update input fields
+    const waterInput = document.getElementById('waterRate');
+    const elecInput = document.getElementById('electricRate');
+    if (waterInput) waterInput.value = waterRate;
+    if (elecInput) elecInput.value = elecRate;
+    
+    // Update table: remove old active state and update status column
+    document.querySelectorAll('.apple-rate-table tbody tr').forEach(tr => {
+      const wasActive = tr.classList.contains('current-rate');
+      tr.classList.remove('current-rate');
+      
+      // Get status cell (4th column)
+      const statusCell = tr.querySelectorAll('td')[3];
+      
+      // If this row was active, update status to "ยังไม่ถูกใช้"
+      if (wasActive && statusCell) {
+        statusCell.innerHTML = `<span style="font-size: 11px; color: var(--apple-text-secondary);">ยังไม่ถูกใช้</span>`;
+      }
+      
+      // Show use/delete buttons for previously active row
+      const actionCell = tr.querySelector('td:last-child');
+      if (wasActive && actionCell) {
+        const rId = tr.dataset.rateId;
+        if (rId) {
+          actionCell.innerHTML = `
+            <button type="button" class="apple-use-btn" onclick="useRate(${rId})" title="ใช้อัตรานี้">ใช้</button>
+            <button type="button" class="apple-delete-btn" onclick="deleteRate(${rId})">ลบ</button>
+          `;
+        }
+      }
+    });
+    
+    // Add new row at top for the new rate
+    const tbody = document.querySelector('.apple-rate-table tbody');
+    if (tbody) {
+      // Use real rate_id if provided, otherwise use timestamp
+      const rateId = newActiveRateId || Date.now();
+      
+      const newRow = document.createElement('tr');
+      newRow.id = `rate-row-${rateId}`;
+      newRow.className = 'current-rate';
+      newRow.dataset.rateId = rateId;
+      newRow.dataset.water = waterRate;
+      newRow.dataset.elec = elecRate;
+      newRow.innerHTML = `
+        <td>${dateStr}</td>
+        <td style="text-align: center; color: var(--apple-blue); font-weight: 600;">฿${Number(waterRate).toLocaleString()}</td>
+        <td style="text-align: center; color: var(--apple-orange); font-weight: 600;">฿${Number(elecRate).toLocaleString()}</td>
+        <td style="text-align: center;">
+          <span class="apple-badge green rate-active-badge" style="font-size: 10px;">✓ ใช้งานอยู่</span>
+        </td>
+        <td style="text-align: right; white-space: nowrap;"></td>
+      `;
+      
+      // Insert at top with animation
+      newRow.style.opacity = '0';
+      newRow.style.transform = 'translateY(-20px)';
+      newRow.style.backgroundColor = 'rgba(52, 199, 89, 0.2)';
+      tbody.insertBefore(newRow, tbody.firstChild);
+      
+      requestAnimationFrame(() => {
+        newRow.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+        newRow.style.opacity = '1';
+        newRow.style.transform = 'translateY(0)';
+        
+        // Remove highlight after animation
+        setTimeout(() => {
+          newRow.style.backgroundColor = '';
+        }, 600);
+      });
+    }
+  }
+
+  // Show rate usage details
+  showRateUsage(usageData) {
+    const usage = typeof usageData === 'string' ? JSON.parse(usageData) : usageData;
+    const modal = document.getElementById('rateUsageModal');
+    const content = document.getElementById('rateUsageContent');
+    
+    if (modal && content) {
+      content.innerHTML = `
+        <div style="background: var(--apple-bg); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-around; text-align: center;">
+            <div>
+              <div style="font-size: 24px; color: var(--apple-blue); font-weight: 700;">💧 ฿${usage.rate_water}</div>
+              <div style="font-size: 12px; color: var(--apple-text-secondary);">ค่าน้ำ/หน่วย</div>
+            </div>
+            <div>
+              <div style="font-size: 24px; color: var(--apple-orange); font-weight: 700;">⚡ ฿${usage.rate_elec}</div>
+              <div style="font-size: 12px; color: var(--apple-text-secondary);">ค่าไฟ/หน่วย</div>
+            </div>
+          </div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+          <div style="background: rgba(0, 122, 255, 0.1); padding: 12px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 28px; font-weight: 700; color: var(--apple-blue);">${usage.expense_count}</div>
+            <div style="font-size: 12px; color: var(--apple-text-secondary);">บิลที่ใช้อัตรานี้</div>
+          </div>
+          <div style="background: rgba(52, 199, 89, 0.1); padding: 12px; border-radius: 10px; text-align: center;">
+            <div style="font-size: 28px; font-weight: 700; color: var(--apple-green);">${usage.room_count}</div>
+            <div style="font-size: 12px; color: var(--apple-text-secondary);">ห้องที่เกี่ยวข้อง</div>
+          </div>
+        </div>
+        
+        ${usage.rooms ? `
+        <div style="background: var(--apple-bg); border-radius: 12px; padding: 12px;">
+          <div style="font-size: 13px; font-weight: 600; color: var(--apple-text-secondary); margin-bottom: 8px;">🚪 ห้องที่ใช้อัตรานี้:</div>
+          <div style="font-size: 15px; color: var(--apple-text);">${usage.rooms}</div>
+        </div>
+        ` : ''}
+        
+        <p style="font-size: 12px; color: var(--apple-red); margin-top: 12px; text-align: center;">
+          ⚠️ ไม่สามารถลบอัตรานี้ได้ เพราะมีบิลใช้งานอยู่
+        </p>
+      `;
+      modal.style.display = 'flex';
+    }
+  }
+
+  closeRateUsageModal() {
+    const modal = document.getElementById('rateUsageModal');
+    if (modal) modal.style.display = 'none';
+  }
+
+  // ===== Database Backup =====
+  async backupDatabase() {
+    const btn = document.getElementById('backupBtn');
+    const originalText = btn.innerHTML;
+    btn.innerHTML = '⏳ กำลังสำรองข้อมูล...';
+    btn.disabled = true;
+
+    try {
+      const response = await fetch('../Manage/backup_database.php', {
+        method: 'POST'
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('สำรองข้อมูลสำเร็จ', 'success');
+        
+        // Show download area
+        const downloadArea = document.getElementById('backupDownloadArea');
+        const downloadLink = document.getElementById('backupDownloadLink');
+        if (downloadArea && downloadLink && result.file) {
+          downloadLink.href = result.file;
+          downloadLink.setAttribute('download', result.filename);
+          downloadArea.style.display = 'block';
+        }
+        
+        // Refresh backup list
+        setTimeout(() => {
+          location.reload();
+        }, 1500);
+      } else {
+        throw new Error(result.error || result.message || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+
+  // Download existing backup
+  downloadBackup(filename) {
+    const link = document.createElement('a');
+    link.href = '../backups/' + filename;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
+
+  // ===== Apple-style Confirm Dialog =====
+  showConfirm(message, title = 'ยืนยัน') {
+    return new Promise((resolve) => {
+      // Remove existing confirm dialog
+      const existingDialog = document.querySelector('.apple-confirm-overlay');
+      if (existingDialog) existingDialog.remove();
+
+      const overlay = document.createElement('div');
+      overlay.className = 'apple-confirm-overlay';
+      overlay.innerHTML = `
+        <div class="apple-confirm-dialog">
+          <div class="apple-confirm-content">
+            <h3 class="apple-confirm-title">${title}</h3>
+            <p class="apple-confirm-message">${message}</p>
+          </div>
+          <div class="apple-confirm-actions">
+            <button class="apple-confirm-btn cancel">ยกเลิก</button>
+            <button class="apple-confirm-btn confirm">ตกลง</button>
+          </div>
+        </div>
+      `;
+
+      document.body.appendChild(overlay);
+
+      // Trigger animation
+      requestAnimationFrame(() => {
+        overlay.classList.add('show');
+      });
+
+      const closeDialog = (result) => {
+        overlay.classList.remove('show');
+        setTimeout(() => overlay.remove(), 200);
+        resolve(result);
+      };
+
+      // Cancel button
+      overlay.querySelector('.cancel').addEventListener('click', () => closeDialog(false));
+      
+      // Confirm button
+      overlay.querySelector('.confirm').addEventListener('click', () => closeDialog(true));
+      
+      // Click overlay to cancel
+      overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) closeDialog(false);
+      });
+      
+      // ESC key to cancel
+      const escHandler = (e) => {
+        if (e.key === 'Escape') {
+          document.removeEventListener('keydown', escHandler);
+          closeDialog(false);
+        }
+      };
+      document.addEventListener('keydown', escHandler);
+    });
+  }
+
+  // ===== Toast Notification =====
+  showToast(message, type = 'info') {
+    // Remove existing toast
+    const existingToast = document.querySelector('.apple-toast');
+    if (existingToast) {
+      existingToast.remove();
+    }
+
+    const toast = document.createElement('div');
+    toast.className = 'apple-toast';
+    
+    let icon = 'ℹ️';
+    if (type === 'success') icon = '✓';
+    if (type === 'error') icon = '✗';
+
+    toast.innerHTML = `
+      <span class="apple-toast-icon">${icon}</span>
+      ${message}
+    `;
+
+    document.body.appendChild(toast);
+
+    // Trigger animation
+    requestAnimationFrame(() => {
+      toast.classList.add('show');
+    });
+
+    // Remove after delay
+    setTimeout(() => {
+      toast.classList.remove('show');
+      setTimeout(() => toast.remove(), 300);
+    }, 2000);
+  }
+}
+
+// Initialize
+let appleSettings;
+document.addEventListener('DOMContentLoaded', () => {
+  appleSettings = new AppleSettings();
+  
+  // Initialize sidebar toggle for Apple Settings page
+  initSidebarToggle();
+});
+
+// ===== Sidebar Toggle =====
+function initSidebarToggle() {
+  const toggleBtn = document.getElementById('apple-menu-btn');
+  const sidebar = document.querySelector('.app-sidebar');
+  
+  if (!toggleBtn) {
+    console.log('Toggle button not found');
+    return;
+  }
+  if (!sidebar) {
+    console.log('Sidebar not found');
+    return;
+  }
+  
+  // Create overlay for sidebar
+  let overlay = document.querySelector('.sidebar-overlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+  }
+  
+  // Close sidebar when clicking overlay
+  overlay.addEventListener('click', closeSidebar);
+  
+  toggleBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const isOpen = sidebar.classList.contains('mobile-open') || document.body.classList.contains('sidebar-open');
+    if (isOpen) {
+      closeSidebar();
+    } else {
+      openSidebar();
+    }
+  });
+  
+  function openSidebar() {
+    sidebar.classList.add('mobile-open');
+    document.body.classList.add('sidebar-open');
+    overlay.classList.add('active');
+    toggleBtn.classList.add('active');
+  }
+  
+  function closeSidebar() {
+    sidebar.classList.remove('mobile-open');
+    document.body.classList.remove('sidebar-open');
+    overlay.classList.remove('active');
+    toggleBtn.classList.remove('active');
+  }
+  
+  // Close sidebar on escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && (sidebar.classList.contains('mobile-open') || document.body.classList.contains('sidebar-open'))) {
+      closeSidebar();
+    }
+  });
+}
+
+// Global functions for inline onclick handlers
+function saveUtilityRates() {
+  appleSettings.saveUtilityRates();
+}
+
+function deleteRate(rateId) {
+  appleSettings.deleteRate(rateId);
+}
+
+function useRate(rateId) {
+  appleSettings.useRate(rateId);
+}
+
+function showRateUsage(usageData) {
+  appleSettings.showRateUsage(usageData);
+}
+
+function closeRateUsageModal() {
+  appleSettings.closeRateUsageModal();
+}
+
+function backupDatabase() {
+  appleSettings.backupDatabase();
+}
+
+function downloadBackup(filename) {
+  appleSettings.downloadBackup(filename);
+}

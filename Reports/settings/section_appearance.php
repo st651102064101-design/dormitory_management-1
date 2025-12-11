@@ -1,0 +1,158 @@
+<!-- Section: Appearance Settings -->
+<div class="apple-section-group">
+  <h2 class="apple-section-title">การแสดงผล</h2>
+  <div class="apple-section-card">
+    <!-- Public Theme -->
+    <div class="apple-settings-row" data-sheet="sheet-public-theme">
+      <div class="apple-row-icon indigo">🌐</div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">ธีมหน้าสาธารณะ</p>
+        <p class="apple-row-sublabel">ธีมสำหรับผู้เยี่ยมชม</p>
+      </div>
+      <span class="apple-row-value"><?php 
+        $themeNames = ['dark' => 'มืด', 'light' => 'สว่าง', 'auto' => 'อัตโนมัติ'];
+        echo $themeNames[$publicTheme] ?? 'มืด';
+      ?></span>
+      <span class="apple-row-chevron">›</span>
+    </div>
+    
+    <!-- Use Background Image -->
+    <div class="apple-settings-row">
+      <div class="apple-row-icon blue">🖼️</div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">ใช้ภาพพื้นหลัง</p>
+        <p class="apple-row-sublabel">แสดงภาพพื้นหลังบนหน้าแรก</p>
+      </div>
+      <div class="apple-toggle" id="bgImageToggle" data-setting="use_bg_image" data-value="<?php echo htmlspecialchars($useBgImage); ?>"></div>
+    </div>
+    
+    <!-- System Theme Color -->
+    <div class="apple-settings-row" data-sheet="sheet-theme-color">
+      <div class="apple-row-icon pink">🎨</div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">สีพื้นหลังระบบ</p>
+      </div>
+      <div style="width: 24px; height: 24px; border-radius: 6px; background: <?php echo htmlspecialchars($themeColor); ?>; border: 2px solid rgba(0,0,0,0.1); margin-right: 8px;"></div>
+      <span class="apple-row-chevron">›</span>
+    </div>
+    
+    <!-- Font Size -->
+    <div class="apple-settings-row" data-sheet="sheet-font-size">
+      <div class="apple-row-icon gray">📝</div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">ขนาดตัวอักษร</p>
+      </div>
+      <span class="apple-row-value"><?php 
+        $fontSizeNames = ['0.9' => 'เล็ก', '1' => 'ปกติ', '1.1' => 'ใหญ่', '1.25' => 'ใหญ่มาก'];
+        echo $fontSizeNames[$fontSize] ?? 'ปกติ';
+      ?></span>
+      <span class="apple-row-chevron">›</span>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Public Theme -->
+<div class="apple-sheet-overlay" id="sheet-public-theme">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-public-theme">เสร็จ</button>
+      <h3 class="apple-sheet-title">ธีมหน้าสาธารณะ</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <p style="font-size: 13px; color: var(--apple-text-secondary); margin-bottom: 16px;">
+        เลือกธีมสำหรับหน้าแรก, หน้าจองห้อง และหน้าข่าวสาร
+      </p>
+      <div class="apple-theme-grid">
+        <div class="apple-theme-option <?php echo $publicTheme === 'dark' ? 'active' : ''; ?>" data-theme="dark">
+          <div class="apple-theme-preview dark"></div>
+          <span class="apple-theme-name">🌙 มืด</span>
+        </div>
+        <div class="apple-theme-option <?php echo $publicTheme === 'light' ? 'active' : ''; ?>" data-theme="light">
+          <div class="apple-theme-preview light"></div>
+          <span class="apple-theme-name">☀️ สว่าง</span>
+        </div>
+        <div class="apple-theme-option <?php echo $publicTheme === 'auto' ? 'active' : ''; ?>" data-theme="auto">
+          <div class="apple-theme-preview auto"></div>
+          <span class="apple-theme-name">🔄 อัตโนมัติ</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Theme Color -->
+<div class="apple-sheet-overlay" id="sheet-theme-color">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-theme-color">เสร็จ</button>
+      <h3 class="apple-sheet-title">สีพื้นหลังระบบ</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <p style="font-size: 13px; color: var(--apple-text-secondary); margin-bottom: 16px;">
+        เลือกสีพื้นหลังสำหรับระบบจัดการ สีจะเปลี่ยนทันที
+      </p>
+      
+      <!-- Dark Colors -->
+      <label class="apple-input-label">สีเข้ม</label>
+      <div class="apple-color-grid" style="margin-bottom: 20px;">
+        <div class="apple-color-option <?php echo $themeColor === '#0f172a' ? 'active' : ''; ?>" data-color="#0f172a" style="background: #0f172a;" title="Navy Dark"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#1e293b' ? 'active' : ''; ?>" data-color="#1e293b" style="background: #1e293b;" title="Slate"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#1e3a5f' ? 'active' : ''; ?>" data-color="#1e3a5f" style="background: #1e3a5f;" title="Navy Blue"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#1e1e1e' ? 'active' : ''; ?>" data-color="#1e1e1e" style="background: #1e1e1e;" title="Dark Gray"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#2d3748' ? 'active' : ''; ?>" data-color="#2d3748" style="background: #2d3748;" title="Cool Gray"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#000000' ? 'active' : ''; ?>" data-color="#000000" style="background: #000000;" title="Pure Black"></div>
+      </div>
+      
+      <!-- Light Colors -->
+      <label class="apple-input-label">สีสว่าง</label>
+      <div class="apple-color-grid" style="margin-bottom: 20px;">
+        <div class="apple-color-option <?php echo $themeColor === '#ffffff' ? 'active' : ''; ?>" data-color="#ffffff" style="background: #ffffff; border: 1px solid #ddd;" title="White"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#f2f2f7' ? 'active' : ''; ?>" data-color="#f2f2f7" style="background: #f2f2f7; border: 1px solid #ddd;" title="Apple Gray"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#f8fafc' ? 'active' : ''; ?>" data-color="#f8fafc" style="background: #f8fafc; border: 1px solid #ddd;" title="Snow"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#f1f5f9' ? 'active' : ''; ?>" data-color="#f1f5f9" style="background: #f1f5f9; border: 1px solid #ddd;" title="Light Slate"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#e2e8f0' ? 'active' : ''; ?>" data-color="#e2e8f0" style="background: #e2e8f0; border: 1px solid #ddd;" title="Silver"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#fef3c7' ? 'active' : ''; ?>" data-color="#fef3c7" style="background: #fef3c7; border: 1px solid #ddd;" title="Cream"></div>
+      </div>
+      
+      <!-- Custom Color -->
+      <div class="apple-input-group" style="margin-top: 20px;">
+        <label class="apple-input-label">สีที่กำหนดเอง</label>
+        <div style="display: flex; gap: 12px; align-items: center;">
+          <input type="color" id="themeColor" value="<?php echo htmlspecialchars($themeColor); ?>" style="width: 60px; height: 44px; border: none; border-radius: 10px; cursor: pointer;">
+          <span id="colorHexDisplay" style="font-size: 17px; color: var(--apple-text);"><?php echo htmlspecialchars($themeColor); ?></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Font Size -->
+<div class="apple-sheet-overlay" id="sheet-font-size">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-font-size">เสร็จ</button>
+      <h3 class="apple-sheet-title">ขนาดตัวอักษร</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <div class="apple-input-group">
+        <label class="apple-input-label">เลือกขนาด</label>
+        <select id="fontSize" class="apple-input">
+          <option value="0.9" <?php echo $fontSize === '0.9' ? 'selected' : ''; ?>>เล็ก (0.9)</option>
+          <option value="1" <?php echo $fontSize === '1' ? 'selected' : ''; ?>>ปกติ (1.0)</option>
+          <option value="1.1" <?php echo $fontSize === '1.1' ? 'selected' : ''; ?>>ใหญ่ (1.1)</option>
+          <option value="1.25" <?php echo $fontSize === '1.25' ? 'selected' : ''; ?>>ใหญ่มาก (1.25)</option>
+        </select>
+      </div>
+      
+      <div class="font-size-preview" style="padding: 16px; background: var(--apple-card); border-radius: 12px; text-align: center; font-size: calc(1rem * <?php echo htmlspecialchars($fontSize); ?>); color: var(--apple-text);">
+        ตัวอย่างข้อความ - Example Text
+      </div>
+    </div>
+  </div>
+</div>

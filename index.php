@@ -15,8 +15,9 @@ $bgFilename = 'bg.jpg';
 $contactPhone = '0895656083';
 $contactEmail = 'test@gmail.com';
 $publicTheme = 'dark';
+$useBgImage = '0';
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
@@ -25,6 +26,7 @@ try {
         if ($row['setting_key'] === 'contact_phone') $contactPhone = $row['setting_value'];
         if ($row['setting_key'] === 'contact_email') $contactEmail = $row['setting_value'];
         if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
+        if ($row['setting_key'] === 'use_bg_image') $useBgImage = $row['setting_value'];
     }
 } catch (PDOException $e) {}
 
@@ -83,11 +85,22 @@ try {
             --text-secondary: #94a3b8;
             --border-color: rgba(255, 255, 255, 0.1);
             --glass-bg: rgba(255, 255, 255, 0.03);
+            <?php if (!empty($useBgImage) && $useBgImage === '1' && !empty($bgFilename)): ?>
+            --bg-image: url('Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>');
+            <?php else: ?>
+            --bg-image: none;
+            <?php endif; ?>
         }
         
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: var(--bg-dark);
+            <?php if (!empty($useBgImage) && $useBgImage === '1' && !empty($bgFilename)): ?>
+            background-image: var(--bg-image);
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+            <?php endif; ?>
             min-height: 100vh;
             color: var(--text-primary);
             overflow-x: hidden;

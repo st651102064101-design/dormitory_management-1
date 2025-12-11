@@ -375,6 +375,24 @@ try {
         }
     }
 
+    // จัดการ Use Background Image Toggle
+    if (isset($_POST['use_bg_image'])) {
+        $useBgImage = trim($_POST['use_bg_image']);
+        
+        if (!in_array($useBgImage, ['0', '1'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ค่าไม่ถูกต้อง']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['use_bg_image', $useBgImage, $useBgImage]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกการตั้งค่ารูปพื้นหลังสำเร็จ']);
+        exit;
+    }
+
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'error' => 'ไม่มีข้อมูลที่จะบันทึก']);
     exit;

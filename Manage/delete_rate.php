@@ -33,6 +33,29 @@ try {
         exit;
     }
 
+    // ดึงข้อมูลอัตราที่จะลบ
+    $rateStmt = $pdo->prepare("SELECT rate_water, rate_elec FROM rate WHERE rate_id = ?");
+    $rateStmt->execute([$rate_id]);
+    $rateData = $rateStmt->fetch(PDO::FETCH_ASSOC);
+    
+    if (!$rateData) {
+        echo json_encode(['success' => false, 'message' => 'ไม่พบข้อมูลอัตรา']);
+        exit;
+    }
+
+    // ตรวจสอบว่ามี expense ใช้อัตรานี้หรือไม่
+    $usageStmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM expense WHERE rate_water = ? AND rate_elec = ?");
+    $usageStmt->execute([$rateData['rate_water'], $rateData['rate_elec']]);
+    $usageCount = (int)$usageStmt->fetchColumn();
+    
+    if ($usageCount > 0) {
+        echo json_encode([
+            'success' => false, 
+            'message' => "ไม่สามารถลบได้ เพราะมีบิลค่าใช้จ่าย {$usageCount} รายการใช้อัตรานี้อยู่"
+        ]);
+        exit;
+    }
+
     // ลบ
     $stmt = $pdo->prepare("DELETE FROM rate WHERE rate_id = ?");
     $stmt->execute([$rate_id]);
