@@ -1947,7 +1947,29 @@ try {
         }
     </style>
 </head>
-<body class="<?php echo $publicTheme === 'light' ? 'theme-light' : ''; ?>">
+<?php
+// กำหนด theme class
+$themeClass = '';
+if ($publicTheme === 'light') {
+    $themeClass = 'theme-light';
+} elseif ($publicTheme === 'auto') {
+    // Auto mode: ใช้ JavaScript ในการตรวจสอบเวลา
+    $themeClass = ''; // จะถูกกำหนดโดย JavaScript
+}
+?>
+<body class="<?php echo $themeClass; ?>" data-theme-mode="<?php echo $publicTheme; ?>">
+    <?php if ($publicTheme === 'auto'): ?>
+    <script>
+      // Auto theme: ตรวจสอบเวลา (6:00-18:00 = light, 18:00-6:00 = dark)
+      (function() {
+        const hour = new Date().getHours();
+        const isDay = hour >= 6 && hour < 18;
+        if (isDay) {
+          document.body.classList.add('theme-light');
+        }
+      })();
+    </script>
+    <?php endif; ?>
     <!-- Animated Background -->
     <div class="bg-animation">
         <div class="bg-gradient"></div>
@@ -2210,7 +2232,7 @@ try {
     <section class="section location-section" id="location">
         <div class="section-title">
             <span class="label">📍 ที่ตั้ง</span>
-            <h2>ที่อยู่หอพัก</h2>
+            <h2>ทีตั้งหอพัก</h2>
             <p>เข้าชมสภาพแวดล้อมและที่ตั้งหอพักของเรา</p>
         </div>
 

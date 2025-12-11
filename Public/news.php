@@ -765,7 +765,27 @@ try {
         }
     </style>
 </head>
-<body class="<?php echo $publicTheme === 'light' ? 'theme-light' : ''; ?>">
+<?php
+// กำหนด theme class
+$themeClass = '';
+if ($publicTheme === 'light') {
+    $themeClass = 'theme-light';
+} elseif ($publicTheme === 'auto') {
+    $themeClass = '';
+}
+?>
+<body class="<?php echo $themeClass; ?>" data-theme-mode="<?php echo $publicTheme; ?>">
+    <?php if ($publicTheme === 'auto'): ?>
+    <script>
+      (function() {
+        const hour = new Date().getHours();
+        const isDay = hour >= 6 && hour < 18;
+        if (isDay) {
+          document.body.classList.add('theme-light');
+        }
+      })();
+    </script>
+    <?php endif; ?>
     <!-- Animated Background -->
     <div class="bg-animation">
         <div class="bg-gradient"></div>

@@ -17,7 +17,7 @@ if (!isset($_SESSION['admin_id'])) {
 $theme = $_POST['theme'] ?? '';
 
 // ตรวจสอบค่าที่อนุญาต
-$allowedThemes = ['dark', 'light'];
+$allowedThemes = ['dark', 'light', 'auto'];
 if (!in_array($theme, $allowedThemes)) {
     echo json_encode(['success' => false, 'message' => 'ธีมไม่ถูกต้อง']);
     exit;
