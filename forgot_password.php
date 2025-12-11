@@ -11,13 +11,15 @@ $step = 1; // 1 = ใส่ username, 2 = ตั้งรหัสใหม่, 
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $themeColor = '#1e40af';
+$publicTheme = 'dark';
 try {
     $pdo = connectDB();
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'public_theme')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
+        if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
     }
 } catch (PDOException $e) {}
 
@@ -368,7 +370,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         transform: translateY(-50%);
         width: 20px;
         height: 20px;
-        color: #64748b;
+        color: #000000;
         transition: all 0.3s ease;
       }
 
@@ -713,28 +715,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         align-items: center;
         gap: 10px;
         padding: 10px 16px;
-        background: rgba(15, 23, 42, 0.95);
+        background: #ffffff;
         backdrop-filter: blur(10px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        border: 1px solid #e5e7eb;
         border-radius: 12px;
-        color: #94a3b8;
+        color: #374151;
         font-size: 14px;
         cursor: pointer;
         transition: all 0.3s ease;
         white-space: nowrap;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       }
 
       .theme-menu-item:hover {
-        background: rgba(251, 146, 60, 0.2);
-        border-color: rgba(251, 146, 60, 0.5);
-        color: #fff;
+        background: #f3f4f6;
+        border-color: #f97316;
+        color: #f97316;
         transform: translateX(-5px);
       }
 
       .theme-menu-item.active {
-        background: rgba(251, 146, 60, 0.3);
+        background: #fff7ed;
         border-color: #f97316;
-        color: #fff;
+        color: #f97316;
       }
 
       .theme-menu-item .theme-icon {
@@ -768,33 +771,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 
-          0 10px 30px rgba(249, 115, 22, 0.4),
-          0 0 60px rgba(251, 146, 60, 0.2);
+        box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
         transition: all 0.3s ease;
-        animation: btnPulse 2s ease-in-out infinite;
+        animation: none;
       }
 
       .theme-switcher-btn svg {
         width: 28px;
         height: 28px;
-        stroke: white;
+        stroke: #ffffff;
         transition: all 0.3s ease;
       }
 
       .theme-switcher:hover .theme-switcher-btn svg {
         transform: scale(1.1) rotate(180deg);
-        filter: drop-shadow(0 0 8px rgba(255,255,255,0.5));
+        filter: none;
+        stroke: #f97316;
       }
 
       .theme-switcher:hover .theme-switcher-btn {
         animation: none;
         transform: scale(1.1);
+        background: #ffffff;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
       }
 
       @keyframes btnPulse {
-        0%, 100% { box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4), 0 0 60px rgba(251, 146, 60, 0.2); }
-        50% { box-shadow: 0 10px 40px rgba(249, 115, 22, 0.6), 0 0 80px rgba(251, 146, 60, 0.4); }
+        0%, 100% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.2); }
+        50% { box-shadow: 0 0 30px rgba(249, 115, 22, 0.3); }
       }
 
       .theme-indicator {
@@ -1135,14 +1139,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       /* Theme: Light */
       body.theme-light {
         background: linear-gradient(135deg, #f8fafc, #e2e8f0, #cbd5e1);
+        color: #333333 !important;
+      }
+      
+      body.theme-light label,
+      body.theme-light input,
+      body.theme-light a,
+      body.theme-light p,
+      body.theme-light span:not(.btn-text):not(.btn-loading span),
+      body.theme-light h1,
+      body.theme-light h2,
+      body.theme-light h3,
+      body.theme-light h4,
+      body.theme-light h5,
+      body.theme-light h6 {
+        color: #333333 !important;
+        -webkit-text-fill-color: #333333 !important;
+      }
+      
+      /* Ensure button text stays white */
+      body.theme-light .btn-primary,
+      body.theme-light .btn-primary span,
+      body.theme-light .submit-btn,
+      body.theme-light .submit-btn span {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
       }
       body.theme-light .bg-animation::before {
         background: radial-gradient(ellipse at 20% 50%, rgba(249, 115, 22, 0.08), transparent 50%),
                     radial-gradient(ellipse at 80% 50%, rgba(251, 146, 60, 0.08), transparent 50%);
       }
       body.theme-light .particle {
-        background: rgba(249, 115, 22, 0.2);
-        box-shadow: 0 0 10px rgba(249, 115, 22, 0.3);
+        background: rgba(249, 115, 22, 0.8);
+        box-shadow: 0 0 10px rgba(249, 115, 22, 0.8);
       }
       body.theme-light .card {
         background: rgba(255, 255, 255, 0.9);
@@ -1157,35 +1186,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         color: #334155;
       }
       body.theme-light .icon-box {
-        background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(251, 146, 60, 0.1));
+        background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
         border-color: rgba(249, 115, 22, 0.3);
+        box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3);
       }
       body.theme-light .icon-box svg {
-        stroke: #f97316;
+        stroke: #ffffff;
       }
       body.theme-light .form-label {
-        color: #475569;
+        color: #1f2937;
       }
       body.theme-light .form-input {
-        background: rgba(241, 245, 249, 0.8);
-        border-color: rgba(148, 163, 184, 0.5);
-        color: #334155;
+        background: #ffffff;
+        border-color: #d1d5db;
+        color: #1f2937 !important;
       }
       body.theme-light .form-input::placeholder {
-        color: #94a3b8;
+        color: #6b7280 !important;
+        opacity: 1;
       }
       body.theme-light .form-input:focus {
         border-color: #f97316;
         box-shadow: 0 0 20px rgba(249, 115, 22, 0.2);
       }
       body.theme-light .input-wrapper svg {
-        stroke: #94a3b8;
+        stroke: #1f2937;
+        color: #1f2937;
       }
       body.theme-light .input-wrapper:focus-within svg {
         stroke: #f97316;
+        color: #f97316;
       }
       body.theme-light .btn-primary {
         background: linear-gradient(135deg, #f97316, #ea580c);
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
       }
       body.theme-light .btn-primary:hover {
         background: linear-gradient(135deg, #fb923c, #f97316);
@@ -1213,8 +1248,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         border-color: #f97316;
       }
       body.theme-light .theme-menu {
-        background: rgba(255, 255, 255, 0.95);
-        border-color: rgba(148, 163, 184, 0.3);
+        background: transparent;
+        border: none;
       }
       body.theme-light .theme-menu-item {
         color: #334155;
@@ -1230,7 +1265,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
     </style>
   </head>
-  <body>
+  <body class="<?php echo $publicTheme === 'light' ? 'theme-light' : ''; ?>">
     <!-- Background Animation -->
     <div class="bg-animation"></div>
     

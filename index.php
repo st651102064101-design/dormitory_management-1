@@ -1593,8 +1593,11 @@ try {
         }
         /* Hero section */
         body.theme-light .hero-stats .stat-box {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: transparent;
+            border: none;
+        }
+        body.theme-light .hero-stats .stat-box::after {
+            display: none !important;
         }
         body.theme-light .hero-stats .stat-box .number {
             color: #1e293b;
@@ -1602,6 +1605,18 @@ try {
         body.theme-light .hero-stats .stat-box .label {
             color: #64748b;
         }
+        body.theme-light .scroll-indicator {
+            color: #1e293b;
+        }
+        
+        body.theme-light .scroll-indicator .mouse {
+            border: 2px solid #1e293b;
+        }
+        
+        body.theme-light .scroll-indicator .mouse::before {
+            background: #1e293b;
+        }
+        
         /* Buttons - keep visible */
         body.theme-light .btn-primary {
             color: #fff;
@@ -1671,7 +1686,8 @@ try {
             color: #1e293b !important;
             -webkit-text-fill-color: #1e293b !important;
             background: transparent !important;
-            border: 2px solid #1e293b !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         
         /* Room status badge - white text */
@@ -1717,6 +1733,13 @@ try {
             color: #1e293b !important;
             -webkit-text-fill-color: #1e293b !important;
             background: transparent !important;
+        }
+        /* Google Maps button - white text */
+        body.theme-light .google-maps-btn,
+        body.theme-light .google-maps-btn * {
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+            stroke: #fff !important;
         }
         /* Force site name to dark */
         body.theme-light .logo h1 {
