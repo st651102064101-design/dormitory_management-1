@@ -849,10 +849,10 @@ $totalContracts = count($contracts);
             </head>
             <body>
                 <div class="print-card">
-                    <div class="room-badge">🏠 ห้อง \${roomNumber}</div>
-                    <div class="tenant-name">👤 \${tenantName}</div>
+                    <div class="room-badge">ห้อง \${roomNumber}</div>
+                    <div class="tenant-name">\${tenantName}</div>
                     <img src="\${imageUrl}" class="qr-image" alt="QR Code">
-                    <div class="instructions">📱 สแกน QR Code เพื่อเข้าสู่ระบบผู้เช่า</div>
+                    <div class="instructions">สแกน QR Code เพื่อเข้าสู่ระบบผู้เช่า</div>
                 </div>
                 <script>
                     window.onload = function() {

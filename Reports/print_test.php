@@ -32,14 +32,14 @@ if ($ctr_id <= 0) {
 </head>
 <body>
     <div class="header">
-        <h1>🖨️ พิมพ์สัญญา</h1>
+        <h1>พิมพ์สัญญา</h1>
         <div class="count">พบ <?php echo count($contracts); ?> สัญญา</div>
     </div>
     
     <div class="grid">
         <?php foreach ($contracts as $c): ?>
         <a href="?ctr_id=<?php echo $c['ctr_id']; ?>" class="card">
-            <div class="card-num">📄 #<?php echo str_pad((string)$c['ctr_id'], 4, '0', STR_PAD_LEFT); ?></div>
+            <div class="card-num"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>#<?php echo str_pad((string)$c['ctr_id'], 4, '0', STR_PAD_LEFT); ?></div>
             <div class="card-info">
                 <div class="info-row"><strong>ผู้เช่า:</strong> <?php echo htmlspecialchars($c['tnt_name'] ?? '-'); ?></div>
                 <div class="info-row"><strong>ห้อง:</strong> <?php echo htmlspecialchars($c['room_number'] ?? '-'); ?></div>

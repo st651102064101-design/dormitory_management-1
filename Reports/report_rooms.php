@@ -260,7 +260,7 @@ $pageTitle = 'รายงานห้องพัก';
           <div class="report-grid">
             <div class="report-card">
               <div class="report-card-header">
-                <div class="report-card-icon">🏠</div>
+                <div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                 <div class="report-card-title">ห้องพักทั้งหมด</div>
               </div>
               <div class="report-card-value"><?php echo number_format($totalRooms); ?></div>
@@ -269,7 +269,7 @@ $pageTitle = 'รายงานห้องพัก';
 
             <div class="report-card">
               <div class="report-card-header">
-                <div class="report-card-icon">✅</div>
+                <div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/></svg></div>
                 <div class="report-card-title">ห้องว่าง</div>
               </div>
               <div class="report-card-value" style="color:#22c55e;"><?php echo number_format($vacant); ?></div>
@@ -281,7 +281,7 @@ $pageTitle = 'รายงานห้องพัก';
 
             <div class="report-card">
               <div class="report-card-header">
-                <div class="report-card-icon">🔒</div>
+                <div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div>
                 <div class="report-card-title">ห้องไม่ว่าง</div>
               </div>
               <div class="report-card-value" style="color:#ef4444;"><?php echo number_format($occupied); ?></div>
@@ -293,7 +293,7 @@ $pageTitle = 'รายงานห้องพัก';
 
             <div class="report-card">
               <div class="report-card-header">
-                <div class="report-card-icon">📊</div>
+                <div class="report-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
                 <div class="report-card-title">อัตราการเข้าพัก</div>
               </div>
               <div class="report-card-value" style="color:#60a5fa;"><?php echo number_format($occupancyRate, 1); ?>%</div>

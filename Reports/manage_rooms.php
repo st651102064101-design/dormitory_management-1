@@ -894,7 +894,7 @@ try {
             
             <?php if (empty($rooms)): ?>
               <div class="room-empty">
-                <div class="room-empty-icon">🛏️</div>
+                <div class="room-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:56px;height:56px;"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></div>
                 <h3>ยังไม่มีห้องพัก</h3>
                 <p>เริ่มต้นเพิ่มห้องพัก</p>
               </div>

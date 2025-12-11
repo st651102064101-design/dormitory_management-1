@@ -937,7 +937,7 @@ class AppleSettings {
     
     if (sheetWater) sheetWater.textContent = `฿${Number(waterRate).toLocaleString()}`;
     if (sheetElec) sheetElec.textContent = `฿${Number(elecRate).toLocaleString()}`;
-    if (sheetDateLabel) sheetDateLabel.textContent = `📌 อัตราปัจจุบัน (ใช้ตั้งแต่ ${dateStr})`;
+    if (sheetDateLabel) sheetDateLabel.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>อัตราปัจจุบัน (ใช้ตั้งแต่ ${dateStr})`;
     
     // Update input fields
     const waterInput = document.getElementById('waterRate');
@@ -1023,11 +1023,11 @@ class AppleSettings {
         <div style="background: var(--apple-bg); border-radius: 12px; padding: 16px; margin-bottom: 12px;">
           <div style="display: flex; justify-content: space-around; text-align: center;">
             <div>
-              <div style="font-size: 24px; color: var(--apple-blue); font-weight: 700;">💧 ฿${usage.rate_water}</div>
+              <div style="font-size: 24px; color: var(--apple-blue); font-weight: 700;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;margin-right:4px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>฿${usage.rate_water}</div>
               <div style="font-size: 12px; color: var(--apple-text-secondary);">ค่าน้ำ/หน่วย</div>
             </div>
             <div>
-              <div style="font-size: 24px; color: var(--apple-orange); font-weight: 700;">⚡ ฿${usage.rate_elec}</div>
+              <div style="font-size: 24px; color: var(--apple-orange); font-weight: 700;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;margin-right:4px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>฿${usage.rate_elec}</div>
               <div style="font-size: 12px; color: var(--apple-text-secondary);">ค่าไฟ/หน่วย</div>
             </div>
           </div>
@@ -1046,13 +1046,13 @@ class AppleSettings {
         
         ${usage.rooms ? `
         <div style="background: var(--apple-bg); border-radius: 12px; padding: 12px;">
-          <div style="font-size: 13px; font-weight: 600; color: var(--apple-text-secondary); margin-bottom: 8px;">🚪 ห้องที่ใช้อัตรานี้:</div>
+          <div style="font-size: 13px; font-weight: 600; color: var(--apple-text-secondary); margin-bottom: 8px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M18 8h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-2"/><path d="M4 8h2a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4"/><rect x="8" y="2" width="8" height="20" rx="1"/><circle cx="12" cy="14" r="1"/></svg>ห้องที่ใช้อัตรานี้:</div>
           <div style="font-size: 15px; color: var(--apple-text);">${usage.rooms}</div>
         </div>
         ` : ''}
         
         <p style="font-size: 12px; color: var(--apple-red); margin-top: 12px; text-align: center;">
-          ⚠️ ไม่สามารถลบอัตรานี้ได้ เพราะมีบิลใช้งานอยู่
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>ไม่สามารถลบอัตรานี้ได้ เพราะมีบิลใช้งานอยู่
         </p>
       `;
       modal.style.display = 'flex';
@@ -1068,7 +1068,7 @@ class AppleSettings {
   async backupDatabase() {
     const btn = document.getElementById('backupBtn');
     const originalText = btn.innerHTML;
-    btn.innerHTML = '⏳ กำลังสำรองข้อมูล...';
+    btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;animation:spin 1s linear infinite;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>กำลังสำรองข้อมูล...';
     btn.disabled = true;
 
     try {
@@ -1182,9 +1182,9 @@ class AppleSettings {
     const toast = document.createElement('div');
     toast.className = 'apple-toast';
     
-    let icon = 'ℹ️';
-    if (type === 'success') icon = '✓';
-    if (type === 'error') icon = '✗';
+    let icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+    if (type === 'success') icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"/></svg>';
+    if (type === 'error') icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
     toast.innerHTML = `
       <span class="apple-toast-icon">${icon}</span>
