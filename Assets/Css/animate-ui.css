@@ -1,6 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+
 :root {
     color-scheme: dark light;
-    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: 'Prompt', system-ui, sans-serif;
 }
 
 /* Make sizing include padding/border so width:100% doesn't overflow */

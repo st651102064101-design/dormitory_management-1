@@ -21,6 +21,7 @@ if ($settingsStmt) {
 // รับค่า filter จาก query parameter
 $filterStatus = isset($_GET['status']) ? $_GET['status'] : '';
 $filterMonth = isset($_GET['month']) ? $_GET['month'] : '';
+$filterRoom = isset($_GET['room']) ? $_GET['room'] : '';
 
 // สร้าง WHERE clause
 $whereConditions = [];
@@ -34,6 +35,11 @@ if ($filterStatus !== '') {
 if ($filterMonth !== '') {
     $whereConditions[] = "DATE_FORMAT(p.pay_date, '%Y-%m') = ?";
     $whereParams[] = $filterMonth;
+}
+
+if ($filterRoom !== '') {
+    $whereConditions[] = "r.room_number = ?";
+    $whereParams[] = $filterRoom;
 }
 
 $whereClause = '';
@@ -121,6 +127,26 @@ $availableMonths = $pdo->query("
     WHERE pay_date IS NOT NULL
     ORDER BY month_key DESC
 ")->fetchAll(PDO::FETCH_COLUMN);
+
+// ดึงสรุปการชำระเงินแยกตามห้อง
+$roomPaymentSummary = $pdo->query("
+    SELECT 
+        r.room_id,
+        r.room_number,
+        t.tnt_name,
+        COUNT(p.pay_id) as payment_count,
+        SUM(CASE WHEN p.pay_status = '1' THEN p.pay_amount ELSE 0 END) as total_verified,
+        SUM(CASE WHEN p.pay_status = '0' THEN p.pay_amount ELSE 0 END) as total_pending,
+        MAX(p.pay_date) as last_payment_date
+    FROM room r
+    LEFT JOIN contract c ON r.room_id = c.room_id AND c.ctr_status = '0'
+    LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+    LEFT JOIN expense e ON c.ctr_id = e.ctr_id
+    LEFT JOIN payment p ON e.exp_id = p.exp_id
+    WHERE c.ctr_id IS NOT NULL
+    GROUP BY r.room_id, r.room_number, t.tnt_name
+    ORDER BY r.room_number ASC
+")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!doctype html>
 <html lang="th">
@@ -195,6 +221,110 @@ $availableMonths = $pdo->query("
         color: rgba(255,255,255,0.6);
         margin-top: 0.5rem;
       }
+
+      /* Room Payment Summary */
+      .room-summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .room-card {
+        background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
+        border-radius: 14px;
+        padding: 1.25rem;
+        border: 1px solid rgba(255,255,255,0.08);
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+      .room-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        border-color: rgba(59,130,246,0.3);
+      }
+      .room-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+      }
+      .room-number {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #60a5fa;
+      }
+      .payment-count {
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.3rem 0.7rem;
+        background: rgba(34,197,94,0.15);
+        color: #22c55e;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 600;
+      }
+      .room-card-body {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      .room-tenant {
+        font-size: 0.95rem;
+        color: rgba(255,255,255,0.8);
+      }
+      .room-stats {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+      }
+      .room-stat {
+        flex: 1;
+      }
+      .room-stat-label {
+        font-size: 0.75rem;
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 0.2rem;
+      }
+      .room-stat-value {
+        font-size: 1rem;
+        font-weight: 600;
+      }
+      .room-stat-value.verified { color: #22c55e; }
+      .room-stat-value.pending { color: #fbbf24; }
+      .room-last-payment {
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.5);
+        margin-top: 0.5rem;
+      }
+
+      /* Light theme overrides */
+      @media (prefers-color-scheme: light) {
+        .room-card {
+          background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(243,244,246,0.95)) !important;
+          border: 1px solid rgba(0,0,0,0.1) !important;
+        }
+        .room-card:hover {
+          border-color: rgba(59,130,246,0.5) !important;
+        }
+        .room-number { color: #2563eb !important; }
+        .room-tenant { color: #374151 !important; }
+        .room-stat-label { color: #6b7280 !important; }
+        .room-last-payment { color: #9ca3af !important; }
+      }
+      html.light-theme .room-card {
+        background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(243,244,246,0.95)) !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
+      }
+      html.light-theme .room-card:hover {
+        border-color: rgba(59,130,246,0.5) !important;
+      }
+      html.light-theme .room-number { color: #2563eb !important; }
+      html.light-theme .room-tenant { color: #374151 !important; }
+      html.light-theme .room-stat-label { color: #6b7280 !important; }
+      html.light-theme .room-last-payment { color: #9ca3af !important; }
 
       /* Light theme overrides */
       @media (prefers-color-scheme: light) {
@@ -507,6 +637,61 @@ $availableMonths = $pdo->query("
             </div>
           </section>
 
+          <!-- Room Payment Summary -->
+          <section class="manage-panel">
+            <div class="section-header">
+              <div>
+                <h2 style="margin:0;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  สรุปการชำระเงินแยกตามห้อง
+                </h2>
+                <p style="color:#94a3b8;margin-top:0.2rem;">แสดงจำนวนครั้งและยอดชำระของแต่ละห้อง (เฉพาะห้องที่มีผู้เช่า)</p>
+              </div>
+            </div>
+            <?php if (empty($roomPaymentSummary)): ?>
+              <p style="text-align:center;color:#64748b;padding:2rem;">ยังไม่มีข้อมูลการชำระเงิน</p>
+            <?php else: ?>
+              <div class="room-summary-grid">
+                <?php foreach ($roomPaymentSummary as $room): ?>
+                  <div class="room-card" onclick="filterByRoom('<?php echo htmlspecialchars($room['room_number']); ?>')">
+                    <div class="room-card-header">
+                      <span class="room-number">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        ห้อง <?php echo htmlspecialchars($room['room_number']); ?>
+                      </span>
+                      <span class="payment-count">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        <?php echo (int)$room['payment_count']; ?> ครั้ง
+                      </span>
+                    </div>
+                    <div class="room-card-body">
+                      <div class="room-tenant">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <?php echo htmlspecialchars($room['tnt_name'] ?? 'ไม่ระบุ'); ?>
+                      </div>
+                      <div class="room-stats">
+                        <div class="room-stat">
+                          <div class="room-stat-label">ยอดที่ตรวจสอบแล้ว</div>
+                          <div class="room-stat-value verified">฿<?php echo number_format((int)($room['total_verified'] ?? 0)); ?></div>
+                        </div>
+                        <div class="room-stat">
+                          <div class="room-stat-label">รอตรวจสอบ</div>
+                          <div class="room-stat-value pending">฿<?php echo number_format((int)($room['total_pending'] ?? 0)); ?></div>
+                        </div>
+                      </div>
+                      <?php if (!empty($room['last_payment_date'])): ?>
+                        <div class="room-last-payment">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                          ชำระล่าสุด: <?php echo date('d/m/Y', strtotime($room['last_payment_date'])); ?>
+                        </div>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              </div>
+            <?php endif; ?>
+          </section>
+
           <!-- Toggle button for payment form -->
           <div style="margin:1.5rem 0;">
             <button type="button" id="togglePaymentFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="togglePaymentForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
@@ -578,6 +763,17 @@ $availableMonths = $pdo->query("
           <section class="manage-panel">
             <div class="filter-section">
               <div class="filter-group">
+                <label>กรองตามห้อง</label>
+                <select id="filterRoom" onchange="applyFilters()">
+                  <option value="">ทุกห้อง</option>
+                  <?php foreach ($roomPaymentSummary as $room): ?>
+                    <option value="<?php echo htmlspecialchars($room['room_number']); ?>" <?php echo $filterRoom === $room['room_number'] ? 'selected' : ''; ?>>
+                      ห้อง <?php echo htmlspecialchars($room['room_number']); ?>
+                    </option>
+                  <?php endforeach; ?>
+                </select>
+              </div>
+              <div class="filter-group">
                 <label>กรองตามสถานะ</label>
                 <select id="filterStatus" onchange="applyFilters()">
                   <option value="">ทั้งหมด</option>
@@ -605,6 +801,13 @@ $availableMonths = $pdo->query("
                 <button type="button" onclick="clearFilters()" style="padding:0.5rem 1rem;background:rgba(148,163,184,0.2);border:1px solid rgba(148,163,184,0.3);color:#94a3b8;border-radius:8px;cursor:pointer;font-size:0.9rem;">🔄 ล้างตัวกรอง</button>
               </div>
             </div>
+            <?php if ($filterRoom !== ''): ?>
+              <div style="margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;display:flex;align-items:center;gap:0.5rem;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                กำลังแสดงเฉพาะห้อง <strong><?php echo htmlspecialchars($filterRoom); ?></strong>
+                <a href="?<?php echo http_build_query(array_filter(['status' => $filterStatus, 'month' => $filterMonth])); ?>" style="margin-left:auto;color:#f87171;text-decoration:none;">✕ ยกเลิก</a>
+              </div>
+            <?php endif; ?>
           </section>
 
           <!-- Payments Table -->
@@ -612,7 +815,7 @@ $availableMonths = $pdo->query("
             <div class="section-header">
               <div>
                 <h2 style="margin:0;">📋 รายการการชำระเงิน</h2>
-                <p style="color:#94a3b8;margin-top:0.2rem;">พบ <?php echo count($payments); ?> รายการ</p>
+                <p style="color:#94a3b8;margin-top:0.2rem;">พบ <?php echo count($payments); ?> รายการ<?php echo $filterRoom !== '' ? ' (ห้อง ' . htmlspecialchars($filterRoom) . ')' : ''; ?></p>
               </div>
             </div>
             <div style="overflow-x:auto;">
@@ -767,11 +970,13 @@ $availableMonths = $pdo->query("
 
       // Apply filters
       function applyFilters() {
+        const room = document.getElementById('filterRoom').value;
         const status = document.getElementById('filterStatus').value;
         const month = document.getElementById('filterMonth').value;
         
         let url = window.location.pathname + '?';
         const params = [];
+        if (room !== '') params.push('room=' + encodeURIComponent(room));
         if (status !== '') params.push('status=' + status);
         if (month !== '') params.push('month=' + month);
         
@@ -807,6 +1012,30 @@ $availableMonths = $pdo->query("
       // Close modal on overlay click
       document.getElementById('proofModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeProofModal();
+      });
+
+      // Filter by room - redirect with room parameter and scroll anchor
+      function filterByRoom(roomNumber) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('room', roomNumber);
+        // Clear other filters when clicking room card
+        url.searchParams.delete('status');
+        url.searchParams.delete('month');
+        url.hash = 'paymentsTable';
+        window.location.href = url.toString();
+      }
+
+      // Auto scroll to table if room filter is active
+      document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('room') && urlParams.get('room') !== '') {
+          setTimeout(function() {
+            const table = document.getElementById('paymentsTable');
+            if (table) {
+              table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+          }, 100);
+        }
       });
 
       // Update payment status
