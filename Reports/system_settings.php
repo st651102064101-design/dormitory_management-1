@@ -28,10 +28,11 @@ $logoFilename = 'Logo.jpg';
 $bgFilename = 'bg.jpg';
 $contactPhone = '0895656083';
 $contactEmail = 'test@gmail.com';
+$publicTheme = 'dark';
 
 // ดึงค่าตั้งค่าระบบจาก database
 try {
-    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email')");
+    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme')");
     $rawSettings = $settingsStmt->fetchAll(PDO::FETCH_ASSOC);
     $settings = [];
     foreach ($rawSettings as $setting) {
@@ -46,6 +47,7 @@ try {
     $bgFilename = $settings['bg_filename'] ?? $bgFilename;
     $contactPhone = $settings['contact_phone'] ?? $contactPhone;
     $contactEmail = $settings['contact_email'] ?? $contactEmail;
+    $publicTheme = $settings['public_theme'] ?? $publicTheme;
 
     // ถ้า table ว่าง ให้ insert default
     $checkStmt = $pdo->query("SELECT COUNT(*) as cnt FROM system_settings");
@@ -340,6 +342,102 @@ try {
       }
       .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
       .logo-card { margin-right: 1.5rem; }
+
+      /* Theme Selector Styles */
+      .theme-selector {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+      .theme-option {
+        position: relative;
+        cursor: pointer;
+        border: 2px solid rgba(255,255,255,0.1);
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        background: rgba(0,0,0,0.2);
+      }
+      .theme-option:hover {
+        border-color: rgba(96,165,250,0.5);
+        background: rgba(96,165,250,0.05);
+      }
+      .theme-option.active {
+        border-color: #22c55e;
+        background: rgba(34,197,94,0.1);
+        box-shadow: 0 0 20px rgba(34,197,94,0.2);
+      }
+      .theme-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .theme-preview {
+        width: 100%;
+        height: 80px;
+        border-radius: 8px;
+        margin-bottom: 0.75rem;
+        overflow: hidden;
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      .dark-preview {
+        background: linear-gradient(135deg, #0f172a, #1e293b);
+      }
+      .dark-preview .preview-header {
+        height: 20px;
+        background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+      }
+      .dark-preview .preview-content {
+        padding: 8px;
+        display: flex;
+        gap: 6px;
+      }
+      .dark-preview .preview-card {
+        flex: 1;
+        height: 40px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 4px;
+      }
+      .light-preview {
+        background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      }
+      .light-preview .preview-header {
+        height: 20px;
+        background: linear-gradient(135deg, #3b82f6, #60a5fa);
+      }
+      .light-preview .preview-content {
+        padding: 8px;
+        display: flex;
+        gap: 6px;
+      }
+      .light-preview .preview-card {
+        flex: 1;
+        height: 40px;
+        background: rgba(0,0,0,0.08);
+        border-radius: 4px;
+      }
+      .theme-name {
+        display: block;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #f5f8ff;
+        margin-bottom: 0.25rem;
+      }
+      .theme-desc {
+        display: block;
+        font-size: 0.75rem;
+        color: #94a3b8;
+      }
+      .theme-option.active .theme-name {
+        color: #22c55e;
+      }
+      @media (max-width: 480px) {
+        .theme-selector {
+          grid-template-columns: 1fr;
+        }
+      }
+
       @media (max-width: 768px) {
         .reports-page .manage-panel { margin-right: 0.5rem; margin-left: 0.5rem; max-width: calc(100% - 1rem); }
         .settings-card { margin-right: 0.5rem; }
@@ -523,6 +621,42 @@ try {
                     <div class="status-badge" id="emailStatus"></div>
                   </form>
                 </div>
+              </div>
+
+              <!-- Public Theme Settings -->
+              <div class="settings-card">
+                <h3><span>🌐</span> ธีมหน้าสาธารณะ</h3>
+                <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1.25rem;">เลือกธีมสำหรับหน้าแรก, หน้าจองห้อง, หน้าข่าวสาร และหน้าห้องพัก</p>
+                <form id="publicThemeForm">
+                  <div class="theme-selector">
+                    <label class="theme-option <?php echo $publicTheme === 'dark' ? 'active' : ''; ?>" data-theme="dark">
+                      <input type="radio" name="public_theme" value="dark" <?php echo $publicTheme === 'dark' ? 'checked' : ''; ?> />
+                      <div class="theme-preview dark-preview">
+                        <div class="preview-header"></div>
+                        <div class="preview-content">
+                          <div class="preview-card"></div>
+                          <div class="preview-card"></div>
+                        </div>
+                      </div>
+                      <span class="theme-name">🌙 ธีมมืด</span>
+                      <span class="theme-desc">สีเข้ม สวยงาม ล้ำสมัย</span>
+                    </label>
+                    <label class="theme-option <?php echo $publicTheme === 'light' ? 'active' : ''; ?>" data-theme="light">
+                      <input type="radio" name="public_theme" value="light" <?php echo $publicTheme === 'light' ? 'checked' : ''; ?> />
+                      <div class="theme-preview light-preview">
+                        <div class="preview-header"></div>
+                        <div class="preview-content">
+                          <div class="preview-card"></div>
+                          <div class="preview-card"></div>
+                        </div>
+                      </div>
+                      <span class="theme-name">☀️ ธีมสว่าง</span>
+                      <span class="theme-desc">สีขาว สะอาดตา อ่านง่าย</span>
+                    </label>
+                  </div>
+                  <button type="submit" class="btn-save" style="margin-top: 1rem;">💾 บันทึกธีม</button>
+                  <div class="status-badge" id="publicThemeStatus"></div>
+                </form>
               </div>
 
               <!-- Theme Color Settings -->
@@ -783,6 +917,59 @@ try {
       }
       
       setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    });
+
+    // Handle Public Theme Form
+    document.getElementById('publicThemeForm')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const theme = document.querySelector('input[name="public_theme"]:checked')?.value;
+      const statusEl = document.getElementById('publicThemeStatus');
+      
+      if (!theme) {
+        showErrorToast('กรุณาเลือกธีม');
+        return;
+      }
+      
+      try {
+        const response = await fetch('../Manage/save_public_theme.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `theme=${encodeURIComponent(theme)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          statusEl.textContent = '✓ ' + result.message;
+          statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
+          statusEl.style.color = '#22c55e';
+          statusEl.style.display = 'block';
+          showSuccessToast(result.message);
+          
+          // Update active state
+          document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+          document.querySelector(`.theme-option[data-theme="${theme}"]`)?.classList.add('active');
+        } else {
+          throw new Error(result.error || 'เกิดข้อผิดพลาด');
+        }
+      } catch (error) {
+        statusEl.textContent = '✗ ' + error.message;
+        statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+        statusEl.style.color = '#ef4444';
+        statusEl.style.display = 'block';
+        showErrorToast(error.message);
+      }
+      
+      setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    });
+
+    // Theme option click handler
+    document.querySelectorAll('.theme-option').forEach(option => {
+      option.addEventListener('click', function() {
+        document.querySelectorAll('.theme-option').forEach(opt => opt.classList.remove('active'));
+        this.classList.add('active');
+        this.querySelector('input[type="radio"]').checked = true;
+      });
     });
 
     // Update example calculation on input change

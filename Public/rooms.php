@@ -11,12 +11,14 @@ $pdo = connectDB();
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $themeColor = '#1e40af';
+$publicTheme = 'dark';
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'public_theme')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
+        if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
     }
 } catch (PDOException $e) { echo "Settings Error: " . $e->getMessage(); }
 
@@ -743,9 +745,268 @@ $occupiedCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '1')
                 grid-template-columns: 1fr;
             }
         }
+
+        /* ===== LIGHT THEME ===== */
+        body.theme-light {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        }
+        body.theme-light .bg-animation {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        }
+        body.theme-light .bg-gradient {
+            background: radial-gradient(ellipse at 30% 20%, rgba(59, 130, 246, 0.08), transparent 50%),
+                        radial-gradient(ellipse at 70% 60%, rgba(139, 92, 246, 0.06), transparent 50%);
+        }
+        body.theme-light .grid-lines {
+            background-image: linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+        }
+        body.theme-light .floating-orb {
+            opacity: 0.15;
+        }
+        body.theme-light .particle {
+            background: rgba(59, 130, 246, 0.3);
+        }
+        body.theme-light .header {
+            background: rgba(255, 255, 255, 0.9);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        body.theme-light .logo-text {
+            color: #1e293b;
+        }
+        body.theme-light .nav-links a {
+            color: #475569;
+        }
+        body.theme-light .page-title h2 {
+            color: #1e293b;
+        }
+        body.theme-light .page-title p {
+            color: #64748b;
+        }
+        body.theme-light .stats-bar {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        body.theme-light .stat-item span:first-child {
+            color: #64748b;
+        }
+        body.theme-light .filters select {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(148, 163, 184, 0.3);
+            color: #1e293b;
+        }
+        body.theme-light .room-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        body.theme-light .room-card:hover {
+            border-color: var(--primary);
+        }
+        body.theme-light .room-card-body {
+            background: #fff;
+        }
+        body.theme-light .room-features li {
+            color: #475569;
+        }
+        body.theme-light .footer {
+            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+            border-top: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        body.theme-light .footer-links a {
+            color: #64748b;
+        }
+        body.theme-light .footer-copyright {
+            color: #94a3b8;
+        }
+        /* Room card texts */
+        body.theme-light .room-number {
+            color: #1e293b;
+        }
+        body.theme-light .room-type {
+            color: #64748b;
+        }
+        body.theme-light .room-price {
+            color: #1e293b;
+        }
+        body.theme-light .room-price span {
+            color: #64748b;
+        }
+        body.theme-light .room-card-header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        }
+        body.theme-light .room-card-header .room-number,
+        body.theme-light .room-card-header .room-type {
+            color: #fff;
+        }
+        body.theme-light .room-detail {
+            color: #475569;
+        }
+        body.theme-light .room-detail-value {
+            color: #1e293b;
+        }
+        body.theme-light,
+        body.theme-light p,
+        body.theme-light span,
+        body.theme-light div,
+        body.theme-light li {
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+        }
+        /* Force all text to dark */
+        body.theme-light .logo-text,
+        body.theme-light .nav-links a,
+        body.theme-light h1,
+        body.theme-light h2,
+        body.theme-light h3,
+        body.theme-light h4 {
+            color: #1e293b !important;
+        }
+        body.theme-light .page-title p {
+            color: #475569 !important;
+        }
+        body.theme-light .nav-links a {
+            color: #475569 !important;
+        }
+        body.theme-light .nav-links a:hover {
+            color: var(--primary) !important;
+        }
+        body.theme-light .btn-primary,
+        body.theme-light .btn-login,
+        body.theme-light .btn-book {
+            color: #fff !important;
+        }
+        /* AGGRESSIVE: Force ALL text to dark black in light theme */
+        body.theme-light {
+            color: #1e293b !important;
+        }
+        
+        /* ============================================= */
+        /* ULTIMATE LIGHT THEME - ALL TEXT BLACK        */
+        /* ============================================= */
+        body.theme-light,
+        body.theme-light *,
+        body.theme-light *::before,
+        body.theme-light *::after {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+            text-shadow: none !important;
+            opacity: 1 !important;
+        }
+        
+        /* Remove all gradient text effects */
+        body.theme-light h1,
+        body.theme-light h2,
+        body.theme-light h3,
+        body.theme-light h4,
+        body.theme-light h5,
+        body.theme-light h6,
+        body.theme-light p,
+        body.theme-light span,
+        body.theme-light a,
+        body.theme-light div,
+        body.theme-light li,
+        body.theme-light label,
+        body.theme-light .gradient-text,
+        body.theme-light .logo h1,
+        body.theme-light .nav-links a {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+            text-shadow: none !important;
+        }
+        
+        /* ============ EXCEPTIONS - WHITE TEXT ============ */
+        body.theme-light .btn-primary,
+        body.theme-light .btn-primary *,
+        body.theme-light .btn-login,
+        body.theme-light .btn-login *,
+        body.theme-light button[type="submit"],
+        body.theme-light button[type="submit"] *,
+        body.theme-light .room-status-badge {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+            background: transparent !important;
+            border: 2px solid #1e293b !important;
+        }
+        
+        /* Room card header - dark text on light background */
+        body.theme-light .room-card-header {
+            background: linear-gradient(135deg, #e0e7ff, #c7d2fe) !important;
+        }
+        body.theme-light .room-card-header,
+        body.theme-light .room-card-header .room-number,
+        body.theme-light .room-card-header .room-type,
+        body.theme-light .room-card-header * {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+        }
+        /* Room book button - dark text */
+        body.theme-light .btn-book,
+        body.theme-light .btn-book *,
+        body.theme-light a.btn-book,
+        body.theme-light a.btn-book * {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+            background: transparent !important;
+        }
+        
+        /* ============ SECONDARY BUTTON - DARK TEXT ============ */
+        body.theme-light .btn-secondary,
+        body.theme-light .btn-secondary *,
+        body.theme-light a.btn-secondary,
+        body.theme-light a.btn-secondary * {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            stroke: #1e293b !important;
+        }
+        body.theme-light .btn-secondary {
+            border: 2px solid #1e293b !important;
+        }
+        
+        /* Force site name to dark */
+        body.theme-light .logo h1 {
+            color: #1e293b !important;
+            background: transparent !important;
+            background-clip: unset !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: #1e293b !important;
+            text-shadow: none !important;
+        }
+        /* Force gradient text to dark */
+        body.theme-light .gradient-text {
+            color: #1e293b !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+            -webkit-text-fill-color: unset !important;
+            text-shadow: none !important;
+        }
+        body.theme-light h1,
+        body.theme-light h2,
+        body.theme-light h3,
+        body.theme-light h4 {
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            -webkit-text-fill-color: unset !important;
+            background-clip: unset !important;
+        }
+        /* Except buttons and header - keep white text */
+        body.theme-light .btn-primary,
+        body.theme-light .btn-login,
+        body.theme-light .btn-book,
+        body.theme-light button[type="submit"],
+        body.theme-light a[class*="btn"],
+        body.theme-light .room-card-header .room-number,
+        body.theme-light .room-card-header .room-type,
+        body.theme-light .room-status-badge {
+            color: #fff !important;
+        }
     </style>
 </head>
-<body>
+<body class="<?php echo $publicTheme === 'light' ? 'theme-light' : ''; ?>">
     <!-- Animated Background -->
     <div class="bg-animation">
         <div class="bg-gradient"></div>
