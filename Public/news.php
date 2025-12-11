@@ -37,11 +37,12 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ข่าวประชาสัมพันธ์ - <?php echo htmlspecialchars($siteName); ?></title>
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Prompt', system-ui, sans-serif;
             background: #0a0a0f;
             min-height: 100vh;
             color: #fff;

@@ -69,6 +69,7 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($siteName); ?> - หอพักคุณภาพ</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23667eea;stop-opacity:1' /><stop offset='100%' style='stop-color:%23764ba2;stop-opacity:1' /></linearGradient><style>.house { animation: draw 1s ease-in-out forwards; stroke-dasharray: 200; } @keyframes draw { to { stroke-dashoffset: 0; } }</style></defs><rect width='100' height='100' fill='white'/><g class='house' fill='none' stroke='url(%23grad)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M20 60 L50 25 L80 60 Z'/><rect x='25' y='60' width='50' height='35' rx='3'/><rect x='35' y='70' width='12' height='15'/><rect x='53' y='70' width='12' height='15'/><rect x='44' y='80' width='12' height='15'/></g></svg>" />
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -93,7 +94,7 @@ try {
         }
         
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Prompt', system-ui, sans-serif;
             background: var(--bg-dark);
             <?php if (!empty($useBgImage) && $useBgImage === '1' && !empty($bgFilename)): ?>
             background-image: var(--bg-image);
