@@ -6,12 +6,12 @@
     <div class="apple-settings-row" data-sheet="sheet-rates" style="padding: 16px;">
       <div style="display: flex; gap: 20px; width: 100%;">
         <div style="flex: 1; text-align: center;">
-          <div style="font-size: 28px;">💧</div>
+          <div style="font-size: 28px; color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
           <div id="currentWaterRate" style="font-size: 24px; font-weight: 700; color: var(--apple-blue);">฿<?php echo number_format($waterRate); ?></div>
           <div style="font-size: 12px; color: var(--apple-text-secondary);">บาท/หน่วย</div>
         </div>
         <div style="flex: 1; text-align: center;">
-          <div style="font-size: 28px;">⚡</div>
+          <div style="font-size: 28px; color: #f59e0b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
           <div id="currentElecRate" style="font-size: 24px; font-weight: 700; color: var(--apple-orange);">฿<?php echo number_format($electricRate); ?></div>
           <div style="font-size: 12px; color: var(--apple-text-secondary);">บาท/หน่วย</div>
         </div>
@@ -20,7 +20,7 @@
     
     <!-- Manage Rates -->
     <div class="apple-settings-row" data-sheet="sheet-rates">
-      <div class="apple-row-icon yellow">💡</div>
+      <div class="apple-row-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label">จัดการอัตราค่าน้ำค่าไฟ</p>
         <p class="apple-row-sublabel" id="currentRateDateLabel">เริ่มใช้: <?php echo date('d/m/Y', strtotime($currentRateDate)); ?></p>
@@ -43,12 +43,12 @@
       <!-- Current Rate -->
       <div class="apple-rate-display">
         <div class="apple-rate-item">
-          <div class="apple-rate-icon">💧</div>
+          <div class="apple-rate-icon" style="color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
           <div class="apple-rate-value" id="sheetWaterRate">฿<?php echo number_format($waterRate); ?></div>
           <div class="apple-rate-unit">บาท/หน่วย</div>
         </div>
         <div class="apple-rate-item">
-          <div class="apple-rate-icon">⚡</div>
+          <div class="apple-rate-icon" style="color: #f59e0b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
           <div class="apple-rate-value" id="sheetElecRate">฿<?php echo number_format($electricRate); ?></div>
           <div class="apple-rate-unit">บาท/หน่วย</div>
         </div>

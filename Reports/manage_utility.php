@@ -12,6 +12,7 @@ $pdo = connectDB();
 $showMode = $_GET['show'] ?? 'all';
 
 // ดึงข้อมูลห้องทั้งหมด (รวม ctr_id สำหรับบันทึก utility)
+// เฉพาะสัญญา active (ctr_status = '0') เท่านั้น - สัญญาที่ยกเลิกแล้ว (1) ไม่ควรจดมิเตอร์ได้
 $rooms = [];
 try {
     if ($showMode === 'occupied') {
@@ -19,17 +20,17 @@ try {
         $stmt = $pdo->query("
             SELECT r.room_id, r.room_number, r.room_status, c.ctr_id, t.tnt_name
             FROM room r
-            JOIN contract c ON r.room_id = c.room_id AND c.ctr_status IN ('0','1','2')
+            JOIN contract c ON r.room_id = c.room_id AND c.ctr_status = '0'
             JOIN tenant t ON c.tnt_id = t.tnt_id
             ORDER BY CAST(r.room_number AS UNSIGNED) ASC
         ");
     } else {
-        // ทุกห้อง - LEFT JOIN เพื่อให้ห้องว่างก็แสดงด้วย
+        // ทุกห้อง - LEFT JOIN เพื่อให้ห้องว่างก็แสดงด้วย (แต่ ctr_id จะ NULL ถ้าไม่มีสัญญา active)
         $stmt = $pdo->query("
             SELECT r.room_id, r.room_number, r.room_status, 
                    c.ctr_id, COALESCE(t.tnt_name, '') as tnt_name
             FROM room r
-            LEFT JOIN contract c ON r.room_id = c.room_id AND c.ctr_status IN ('0','1','2')
+            LEFT JOIN contract c ON r.room_id = c.room_id AND c.ctr_status = '0'
             LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
             ORDER BY CAST(r.room_number AS UNSIGNED) ASC
         ");
@@ -151,12 +152,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_meter'])) {
             ]);
         }
         
+        // ===== อัพเดต expense table ด้วย =====
+        // คำนวณหน่วยที่ใช้
+        $waterUsed = $waterMeter - $waterOld;
+        $elecUsed = $electricMeter - $electricOld;
+        
+        // ดึงเดือน/ปีจาก meter_date
+        $expMonth = date('Y-m-01', strtotime($meterDate)); // วันที่ 1 ของเดือน
+        
+        // อัพเดต expense ถ้ามี record อยู่แล้ว - ใช้ rate ล่าสุดจากตัวแปร $waterRate และ $electricRate
+        $updateExpStmt = $pdo->prepare("
+            UPDATE expense 
+            SET exp_elec_unit = ?,
+                exp_water_unit = ?,
+                rate_elec = ?,
+                rate_water = ?,
+                exp_elec_chg = ? * ?,
+                exp_water = ? * ?,
+                exp_total = room_price + (? * ?) + (? * ?)
+            WHERE ctr_id = ? 
+            AND MONTH(exp_month) = MONTH(?) 
+            AND YEAR(exp_month) = YEAR(?)
+        ");
+        $updateExpStmt->execute([
+            $elecUsed, $waterUsed, 
+            $electricRate, $waterRate,
+            $elecUsed, $electricRate,
+            $waterUsed, $waterRate,
+            $elecUsed, $electricRate, $waterUsed, $waterRate,
+            $ctrId, $expMonth, $expMonth
+        ]);
+        
         // ใช้ค่าจาก POST สำหรับ redirect
         $redirectMonth = $_POST['redirect_month'] ?? $selectedMonth;
         $redirectYear = $_POST['redirect_year'] ?? $selectedYear;
         $redirectShow = $_POST['redirect_show'] ?? $showMode;
         
-        $_SESSION['success'] = "บันทึกมิเตอร์ห้อง {$_POST['room_number']} สำเร็จ!";
+        $_SESSION['success'] = "บันทึกมิเตอร์ห้อง {$_POST['room_number']} และอัพเดตค่าใช้จ่ายสำเร็จ!";
         header("Location: manage_utility.php?month=$redirectMonth&year=$redirectYear&show=$redirectShow");
         exit;
     } catch (PDOException $e) {
@@ -520,13 +552,13 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
             <div class="utility-container">
                 <?php if (isset($_SESSION['success'])): ?>
                 <div class="success-toast" id="successToast">
-                    ✓ <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> <?php echo $_SESSION['success']; unset($_SESSION['success']); ?>
                 </div>
                 <script>setTimeout(() => document.getElementById('successToast')?.remove(), 3000);</script>
                 <?php endif; ?>
 
                 <div class="page-header">
-                    <h1 class="page-title">📝 จดมิเตอร์น้ำ-ไฟ</h1>
+                    <h1 class="page-title"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg> จดมิเตอร์น้ำ-ไฟ</h1>
                     <form class="month-selector" method="get">
                         <input type="hidden" name="show" value="<?php echo htmlspecialchars($showMode); ?>">
                         <select name="month" onchange="this.form.submit()">
@@ -550,38 +582,38 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
                 <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;">
                     <a href="?month=<?php echo $selectedMonth; ?>&year=<?php echo $selectedYear; ?>&show=all" 
                        class="mode-btn <?php echo $showMode === 'all' ? 'active' : ''; ?>">
-                        🏠 ทุกห้อง
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> ทุกห้อง
                     </a>
                     <a href="?month=<?php echo $selectedMonth; ?>&year=<?php echo $selectedYear; ?>&show=occupied" 
                        class="mode-btn <?php echo $showMode === 'occupied' ? 'active' : ''; ?>">
-                        👥 เฉพาะห้องมีผู้เช่า
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg> เฉพาะห้องมีผู้เช่า
                     </a>
                     
                     <div class="view-toggle">
                         <button type="button" class="view-btn active" id="gridViewBtn" onclick="switchView('grid')">
-                            📦 การ์ด
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> การ์ด
                         </button>
                         <button type="button" class="view-btn" id="tableViewBtn" onclick="switchView('table')">
-                            📋 ตาราง
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M3 9h18"/><path d="M3 15h18"/><path d="M9 3v18"/></svg> ตาราง
                         </button>
                     </div>
                 </div>
 
                 <div class="rate-info">
                     <div class="rate-item">
-                        💧 <span>ค่าน้ำ:</span> <strong><?php echo number_format($waterRate); ?> บาท/หน่วย</strong>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg> <span>ค่าน้ำ:</span> <strong><?php echo number_format($waterRate); ?> บาท/หน่วย</strong>
                     </div>
                     <div class="rate-item">
-                        ⚡ <span>ค่าไฟ:</span> <strong><?php echo number_format($electricRate); ?> บาท/หน่วย</strong>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> <span>ค่าไฟ:</span> <strong><?php echo number_format($electricRate); ?> บาท/หน่วย</strong>
                     </div>
                     <div class="rate-item">
-                        📅 <span>เดือน:</span> <strong><?php echo $thaiMonths[(int)$selectedMonth] . ' ' . ((int)$selectedYear + 543); ?></strong>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> <span>เดือน:</span> <strong><?php echo $thaiMonths[(int)$selectedMonth] . ' ' . ((int)$selectedYear + 543); ?></strong>
                     </div>
                 </div>
 
                 <?php if (empty($rooms)): ?>
                 <div style="text-align: center; padding: 3rem; color: #94a3b8; background: rgba(30,41,59,0.5); border-radius: 16px;">
-                    <div style="font-size: 4rem; margin-bottom: 1rem;">🏠</div>
+                    <div style="margin-bottom: 1rem;"><svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                     <?php if ($showMode === 'occupied'): ?>
                     <p style="font-size: 1.1rem; margin-bottom: 1rem;">ไม่มีห้องที่มีผู้เช่าในขณะนี้</p>
                     <a href="?month=<?php echo $selectedMonth; ?>&year=<?php echo $selectedYear; ?>&show=all" 
@@ -621,11 +653,11 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
                     <div class="room-card <?php echo $hasData ? 'has-data' : ''; ?> <?php echo !$ctrId ? 'no-contract' : ''; ?>">
                         <div class="room-header">
                             <div>
-                                <div class="room-number">🏠 ห้อง <?php echo htmlspecialchars($room['room_number']); ?></div>
-                                <div class="tenant-name">👤 <?php echo htmlspecialchars($room['tnt_name'] ?: 'ว่าง'); ?></div>
+                                <div class="room-number"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> ห้อง <?php echo htmlspecialchars($room['room_number']); ?></div>
+                                <div class="tenant-name"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> <?php echo htmlspecialchars($room['tnt_name'] ?: 'ว่าง'); ?></div>
                             </div>
                             <?php if ($hasData): ?>
-                            <span class="status-saved">✓ บันทึกแล้ว</span>
+                            <span class="status-saved"><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> บันทึกแล้ว</span>
                             <?php endif; ?>
                         </div>
                         
@@ -642,7 +674,7 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
                             
                             <div class="meter-row">
                                 <div class="meter-group">
-                                    <label>💧 มิเตอร์น้ำ (ใหม่)</label>
+                                    <label><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg> มิเตอร์น้ำ (ใหม่)</label>
                                     <input type="number" name="water_meter" 
                                            value="<?php echo $hasData ? $reading['utl_water_end'] : ''; ?>" 
                                            placeholder="เลขมิเตอร์" min="0" required
@@ -650,7 +682,7 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
                                     <div class="old-reading">เดิม: <?php echo number_format($waterOld); ?></div>
                                 </div>
                                 <div class="meter-group">
-                                    <label>⚡ มิเตอร์ไฟ (ใหม่)</label>
+                                    <label><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> มิเตอร์ไฟ (ใหม่)</label>
                                     <input type="number" name="electric_meter" 
                                            value="<?php echo $hasData ? $reading['utl_elec_end'] : ''; ?>" 
                                            placeholder="เลขมิเตอร์" min="0" required
@@ -676,7 +708,7 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
                             </div>
                             
                             <button type="button" class="btn-save" onclick="this.closest('form').submit();">
-                                <?php echo $hasData ? '✓ อัพเดท' : '💾 บันทึก'; ?>
+                                <?php if ($hasData): ?><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg> อัพเดท<?php else: ?><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> บันทึก<?php endif; ?>
                             </button>
                         </form>
                         <?php else: ?>
@@ -695,14 +727,14 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
                             <tr>
                                 <th>ห้อง</th>
                                 <th>ผู้เช่า</th>
-                                <th>💧 น้ำเดิม</th>
-                                <th>💧 น้ำใหม่</th>
-                                <th>💧 ใช้ไป</th>
-                                <th>💧 ค่าน้ำ</th>
-                                <th>⚡ ไฟเดิม</th>
-                                <th>⚡ ไฟใหม่</th>
-                                <th>⚡ ใช้ไป</th>
-                                <th>⚡ ค่าไฟ</th>
+                                <th><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg> น้ำเดิม</th>
+                                <th><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg> น้ำใหม่</th>
+                                <th><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg> ใช้ไป</th>
+                                <th><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg> ค่าน้ำ</th>
+                                <th><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> ไฟเดิม</th>
+                                <th><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> ไฟใหม่</th>
+                                <th><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> ใช้ไป</th>
+                                <th><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> ค่าไฟ</th>
                                 <th>สถานะ</th>
                                 <th>จัดการ</th>
                             </tr>
@@ -772,7 +804,7 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
                                     <?php if (!$ctrId): ?>
                                     <span class="status-badge empty">ว่าง</span>
                                     <?php elseif ($hasData): ?>
-                                    <span class="status-badge saved">✓ บันทึกแล้ว</span>
+                                    <span class="status-badge saved"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle"><polyline points="20 6 9 17 4 12"/></svg> บันทึกแล้ว</span>
                                     <?php else: ?>
                                     <span class="status-badge pending">รอบันทึก</span>
                                     <?php endif; ?>

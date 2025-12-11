@@ -257,6 +257,63 @@ $contractStatusMap = [
             border-radius: 12px;
         }
         
+        .menu-icon svg {
+            width: 28px;
+            height: 28px;
+            stroke: #3b82f6;
+            stroke-width: 2;
+            fill: none;
+            transition: all 0.3s ease;
+        }
+        
+        .menu-item:hover .menu-icon svg {
+            transform: scale(1.1);
+            stroke: #60a5fa;
+        }
+        
+        .menu-icon.green { background: rgba(34, 197, 94, 0.2); }
+        .menu-icon.green svg { stroke: #22c55e; }
+        .menu-icon.orange { background: rgba(249, 115, 22, 0.2); }
+        .menu-icon.orange svg { stroke: #f97316; }
+        .menu-icon.red { background: rgba(239, 68, 68, 0.2); }
+        .menu-icon.red svg { stroke: #ef4444; }
+        .menu-icon.purple { background: rgba(168, 85, 247, 0.2); }
+        .menu-icon.purple svg { stroke: #a855f7; }
+        .menu-icon.teal { background: rgba(20, 184, 166, 0.2); }
+        .menu-icon.teal svg { stroke: #14b8a6; }
+        .menu-icon.yellow { background: rgba(234, 179, 8, 0.2); }
+        .menu-icon.yellow svg { stroke: #eab308; }
+        
+        .nav-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        
+        .section-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .section-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: #94a3b8;
+            stroke-width: 2;
+            fill: none;
+        }
+        
+        .alert-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: white;
+            stroke-width: 2;
+            fill: none;
+        }
+        
         .menu-label {
             font-size: 0.9rem;
             font-weight: 500;
@@ -425,14 +482,14 @@ $contractStatusMap = [
                 <?php echo htmlspecialchars($contract['room_number']); ?>
                 <span>ห้องพัก</span>
             </div>
-            <div class="tenant-name">👤 <?php echo htmlspecialchars($contract['tnt_name']); ?></div>
+            <div class="tenant-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;vertical-align:middle;margin-right:4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> <?php echo htmlspecialchars($contract['tnt_name']); ?></div>
             <div class="room-type"><?php echo htmlspecialchars($contract['type_name'] ?? 'ไม่ระบุประเภท'); ?> - <?php echo number_format($contract['type_price'] ?? 0); ?> บาท/เดือน</div>
         </div>
         
         <!-- Alert for unpaid bill -->
         <?php if ($latestExpense && $latestExpense['exp_status'] === '0'): ?>
         <div class="alert-unpaid">
-            <div class="alert-icon">💳</div>
+            <div class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
             <div class="alert-content">
                 <h3>มีบิลค้างชำระ</h3>
                 <p>ยอดรวม <?php echo number_format($latestExpense['exp_total']); ?> บาท</p>
@@ -441,54 +498,54 @@ $contractStatusMap = [
         <?php endif; ?>
         
         <!-- Menu Grid -->
-        <div class="section-title">📋 บริการ</div>
+        <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> บริการ</div>
         <div class="menu-grid">
             <a href="profile.php?token=<?php echo urlencode($token); ?>" class="menu-item">
-                <div class="menu-icon">👤</div>
+                <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                 <div class="menu-label">ข้อมูลส่วนตัว</div>
             </a>
             <a href="repair.php?token=<?php echo urlencode($token); ?>" class="menu-item">
-                <div class="menu-icon">🔧</div>
+                <div class="menu-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
                 <div class="menu-label">แจ้งซ่อม</div>
             </a>
             <a href="payment.php?token=<?php echo urlencode($token); ?>" class="menu-item">
-                <div class="menu-icon">💰</div>
+                <div class="menu-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
                 <div class="menu-label">แจ้งชำระเงิน</div>
             </a>
             <a href="termination.php?token=<?php echo urlencode($token); ?>" class="menu-item">
-                <div class="menu-icon">📄</div>
+                <div class="menu-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
                 <div class="menu-label">แจ้งยกเลิกสัญญา</div>
             </a>
         </div>
         
         <!-- Reports Menu -->
-        <div class="section-title">📊 รายงาน</div>
+        <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span> รายงาน</div>
         <div class="menu-grid">
             <a href="report_room.php?token=<?php echo urlencode($token); ?>" class="menu-item">
-                <div class="menu-icon">🏠</div>
+                <div class="menu-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                 <div class="menu-label">ข้อมูลห้องพัก</div>
             </a>
             <a href="report_news.php?token=<?php echo urlencode($token); ?>" class="menu-item">
-                <div class="menu-icon">📰</div>
+                <div class="menu-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="18" y2="14"/></svg></div>
                 <div class="menu-label">ข่าวประชาสัมพันธ์</div>
             </a>
             <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="menu-item">
-                <div class="menu-icon">🧾</div>
+                <div class="menu-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
                 <div class="menu-label">บิลค่าใช้จ่าย</div>
             </a>
             <a href="report_contract.php?token=<?php echo urlencode($token); ?>" class="menu-item">
-                <div class="menu-icon">📋</div>
+                <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="12" y1="11" x2="12" y2="17"/><line x1="9" y1="14" x2="15" y2="14"/></svg></div>
                 <div class="menu-label">สัญญาเช่า</div>
             </a>
             <a href="report_utility.php?token=<?php echo urlencode($token); ?>" class="menu-item">
-                <div class="menu-icon">💡</div>
+                <div class="menu-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14"/></svg></div>
                 <div class="menu-label">ค่าน้ำ-ค่าไฟ</div>
             </a>
         </div>
         
         <!-- Latest Repair Status -->
         <?php if ($latestRepair): ?>
-        <div class="section-title">🔧 สถานะแจ้งซ่อมล่าสุด</div>
+        <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span> สถานะแจ้งซ่อมล่าสุด</div>
         <div class="info-card">
             <div class="info-card-header">
                 <div class="info-card-title">
@@ -507,10 +564,10 @@ $contractStatusMap = [
         
         <!-- Latest News -->
         <?php if (!empty($latestNews)): ?>
-        <div class="section-title">📰 ข่าวล่าสุด</div>
+        <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="18" y2="14"/></svg></span> ข่าวล่าสุด</div>
         <?php foreach ($latestNews as $news): ?>
         <div class="news-item">
-            <div class="news-date">📅 <?php echo $news['news_date'] ?? '-'; ?></div>
+            <div class="news-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <?php echo $news['news_date'] ?? '-'; ?></div>
             <div class="news-title"><?php echo htmlspecialchars($news['news_title'] ?? '-'); ?></div>
         </div>
         <?php endforeach; ?>
@@ -522,19 +579,19 @@ $contractStatusMap = [
     <nav class="bottom-nav">
         <div class="bottom-nav-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="nav-item active">
-                <div class="nav-icon">🏠</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                 หน้าหลัก
             </a>
             <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="nav-item">
-                <div class="nav-icon">🧾</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
                 บิล
             </a>
             <a href="repair.php?token=<?php echo urlencode($token); ?>" class="nav-item">
-                <div class="nav-icon">🔧</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
                 แจ้งซ่อม
             </a>
             <a href="profile.php?token=<?php echo urlencode($token); ?>" class="nav-item">
-                <div class="nav-icon">👤</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                 โปรไฟล์
             </a>
         </div>

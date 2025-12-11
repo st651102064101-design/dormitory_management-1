@@ -111,6 +111,7 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
@@ -318,22 +319,28 @@ try {
         <div class="reports-container">
           <?php include __DIR__ . '/../includes/page_header.php'; ?>
           <div class="container">
-            <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#f8fafc;">📊 รายงานข้อมูลการเข้าพัก</h1>
+            <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#f8fafc;display:flex;align-items:center;"><span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #3b82f6, #1d4ed8);margin-right:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>รายงานข้อมูลการเข้าพัก</h1>
             
             <!-- Stat Cards -->
             <div class="stay-stats-grid">
               <div class="stat-card">
-                <div class="stat-icon">🏠</div>
+                <div class="lottie-icon blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </div>
                 <div class="stat-label">กำลังเข้าพัก</div>
                 <div class="stat-value"><?php echo $contractsActive; ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">❌</div>
+                <div class="lottie-icon red">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
                 <div class="stat-label">ยกเลิกสัญญา</div>
                 <div class="stat-value"><?php echo $contractsCancelled; ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">⚠️</div>
+                <div class="lottie-icon yellow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                </div>
                 <div class="stat-label">แจ้งยกเลิก</div>
                 <div class="stat-value"><?php echo $contractsPendingCancel; ?></div>
               </div>
@@ -348,8 +355,8 @@ try {
 
             <!-- ปุ่มเปลี่ยนมุมมอง -->
             <div class="view-toggle">
-              <button type="button" class="view-toggle-btn active" onclick="switchView('card')">📇 มุมมองการ์ด</button>
-              <button type="button" class="view-toggle-btn" onclick="switchView('table')">📋 มุมมองตาราง</button>
+              <button type="button" class="view-toggle-btn active" onclick="switchView('card')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>มุมมองการ์ด</button>
+              <button type="button" class="view-toggle-btn" onclick="switchView('table')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>มุมมองตาราง</button>
             </div>
 
             <!-- Card View -->
@@ -366,7 +373,7 @@ try {
 ?>
               <div class="stay-card">
                 <div class="stay-time-badge"><?php echo getRelativeTime($r['ctr_start']); ?></div>
-                <div class="stay-date">📅 เริ่ม: <?php echo getRelativeTime($r['ctr_start']); ?></div>
+                <div class="stay-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>เริ่ม: <?php echo getRelativeTime($r['ctr_start']); ?></div>
                 <div class="stay-info">
                   <div><strong>ผู้เช่า:</strong> <?php echo renderField($r['tnt_name'], 'ไม่ระบุ'); ?></div>
                   <div><strong>ห้องพัก:</strong> <?php echo renderField($r['room_number'], 'ไม่ระบุ'); ?></div>
@@ -379,7 +386,7 @@ try {
 <?php endforeach; ?>
 <?php else: ?>
               <div class="empty-state">
-                <div class="empty-icon">📭</div>
+                <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
                 <div class="empty-text">ไม่มีข้อมูลการเข้าพัก</div>
               </div>
 <?php endif; ?>
@@ -422,7 +429,7 @@ try {
               </table>
 <?php else: ?>
               <div class="empty-state">
-                <div class="empty-icon">📭</div>
+                <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
                 <div class="empty-text">ไม่มีข้อมูลการเข้าพัก</div>
               </div>
 <?php endif; ?>

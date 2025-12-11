@@ -4,7 +4,7 @@
   <div class="apple-section-card">
     <!-- System Info -->
     <div class="apple-settings-row" data-sheet="sheet-system-info">
-      <div class="apple-row-icon blue">ℹ️</div>
+      <div class="apple-row-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label">ข้อมูลระบบ</p>
         <p class="apple-row-sublabel">PHP, Database, สถานะ</p>
@@ -14,7 +14,7 @@
     
     <!-- Backup -->
     <div class="apple-settings-row" data-sheet="sheet-backup">
-      <div class="apple-row-icon green">💾</div>
+      <div class="apple-row-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label">สำรองข้อมูล</p>
         <p class="apple-row-sublabel">Backup ฐานข้อมูล</p>
@@ -85,7 +85,7 @@
     </div>
     <div class="apple-sheet-body">
       <div style="text-align: center; padding: 30px 0;">
-        <div style="font-size: 64px; margin-bottom: 16px;">💾</div>
+        <div style="font-size: 64px; margin-bottom: 16px; color: #22c55e;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="64" height="64"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
         <h4 style="font-size: 20px; font-weight: 600; color: var(--apple-text); margin: 0 0 8px;">สำรองฐานข้อมูล</h4>
         <p style="font-size: 15px; color: var(--apple-text-secondary); margin: 0 0 24px;">
           สร้างไฟล์ Backup เพื่อป้องกันการสูญเสียข้อมูล

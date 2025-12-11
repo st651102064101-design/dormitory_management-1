@@ -234,6 +234,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         .nav-item.active, .nav-item:hover { color: #3b82f6; }
         .nav-icon { font-size: 1.3rem; margin-bottom: 0.25rem; }
+        .nav-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .section-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .section-icon svg {
+            width: 16px;
+            height: 16px;
+            stroke: #94a3b8;
+            stroke-width: 2;
+            fill: none;
+        }
+        .profile-avatar svg {
+            width: 48px;
+            height: 48px;
+            stroke: white;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .alert-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+        }
+        .btn-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: white;
+            stroke-width: 2;
+            fill: none;
+        }
     </style>
 </head>
 <body>
@@ -246,28 +292,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     <div class="container">
         <div class="profile-card">
-            <div class="profile-avatar">👤</div>
+            <div class="profile-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
             <div class="profile-name"><?php echo htmlspecialchars($contract['tnt_name']); ?></div>
             <div class="profile-room">ห้อง <?php echo htmlspecialchars($contract['room_number']); ?></div>
         </div>
         
         <?php if ($success): ?>
         <div class="alert alert-success">
-            <span>✅</span>
+            <span class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
             <span><?php echo htmlspecialchars($success); ?></span>
         </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
         <div class="alert alert-error">
-            <span>❌</span>
+            <span class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
             <span><?php echo htmlspecialchars($error); ?></span>
         </div>
         <?php endif; ?>
         
         <form method="POST">
             <div class="form-section">
-                <div class="section-title">📋 ข้อมูลพื้นฐาน (แก้ไขไม่ได้)</div>
+                <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> ข้อมูลพื้นฐาน (แก้ไขไม่ได้)</div>
                 <div class="form-group">
                     <label>เลขบัตรประชาชน</label>
                     <input type="text" value="<?php echo htmlspecialchars($contract['tnt_id']); ?>" disabled>
@@ -295,7 +341,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             
             <div class="form-section">
-                <div class="section-title">✏️ ข้อมูลที่แก้ไขได้</div>
+                <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span> ข้อมูลที่แก้ไขได้</div>
                 <div class="form-group">
                     <label>เบอร์โทรศัพท์</label>
                     <input type="tel" name="tnt_phone" value="<?php echo htmlspecialchars($contract['tnt_phone'] ?? ''); ?>" placeholder="0812345678">
@@ -311,7 +357,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             
             <div class="form-section">
-                <div class="section-title">👨‍👩‍👧 ข้อมูลผู้ปกครอง</div>
+                <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span> ข้อมูลผู้ปกครอง</div>
                 <div class="form-group">
                     <label>ชื่อผู้ปกครอง</label>
                     <input type="text" name="tnt_parent" value="<?php echo htmlspecialchars($contract['tnt_parent'] ?? ''); ?>" placeholder="ชื่อ-นามสกุล ผู้ปกครอง">
@@ -322,26 +368,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
             
-            <button type="submit" class="btn-save">💾 บันทึกการแก้ไข</button>
+            <button type="submit" class="btn-save"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span> บันทึกการแก้ไข</button>
         </form>
     </div>
     
     <nav class="bottom-nav">
         <div class="bottom-nav-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="nav-item">
-                <div class="nav-icon">🏠</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                 หน้าหลัก
             </a>
             <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="nav-item">
-                <div class="nav-icon">🧾</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
                 บิล
             </a>
             <a href="repair.php?token=<?php echo urlencode($token); ?>" class="nav-item">
-                <div class="nav-icon">🔧</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
                 แจ้งซ่อม
             </a>
             <a href="profile.php?token=<?php echo urlencode($token); ?>" class="nav-item active">
-                <div class="nav-icon">👤</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                 โปรไฟล์
             </a>
         </div>

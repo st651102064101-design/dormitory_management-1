@@ -62,11 +62,11 @@ foreach ($tenants as $t) {
 }
 
 $statusMap = [
-    '0' => ['label' => 'ย้ายออก', 'color' => '#ef4444', 'bg' => 'rgba(239,68,68,0.15)', 'icon' => '🚪'],
-    '1' => ['label' => 'พักอยู่', 'color' => '#22c55e', 'bg' => 'rgba(34,197,94,0.15)', 'icon' => '🏠'],
-    '2' => ['label' => 'รอเข้าพัก', 'color' => '#f59e0b', 'bg' => 'rgba(245,158,11,0.15)', 'icon' => '⏳'],
-    '3' => ['label' => 'จองห้อง', 'color' => '#3b82f6', 'bg' => 'rgba(59,130,246,0.15)', 'icon' => '📝'],
-    '4' => ['label' => 'ยกเลิกจอง', 'color' => '#6b7280', 'bg' => 'rgba(107,114,128,0.15)', 'icon' => '❌']
+    '0' => ['label' => 'ย้ายออก', 'color' => '#ef4444', 'bg' => 'rgba(239,68,68,0.15)'],
+    '1' => ['label' => 'พักอยู่', 'color' => '#22c55e', 'bg' => 'rgba(34,197,94,0.15)'],
+    '2' => ['label' => 'รอเข้าพัก', 'color' => '#f59e0b', 'bg' => 'rgba(245,158,11,0.15)'],
+    '3' => ['label' => 'จองห้อง', 'color' => '#3b82f6', 'bg' => 'rgba(59,130,246,0.15)'],
+    '4' => ['label' => 'ยกเลิกจอง', 'color' => '#6b7280', 'bg' => 'rgba(107,114,128,0.15)']
 ];
 ?>
 <!DOCTYPE html>
@@ -78,6 +78,7 @@ $statusMap = [
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
@@ -687,7 +688,7 @@ $statusMap = [
                 <div class="page-header">
                     <div class="page-header-content">
                         <div class="page-title">
-                            <div class="page-title-icon">👥</div>
+                            <div class="page-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
                             <div>
                                 <h1>รายงานผู้เช่า</h1>
                                 <p>ข้อมูลผู้เช่าทั้งหมด <?php echo number_format($stats['total']); ?> คน</p>
@@ -699,11 +700,11 @@ $statusMap = [
                             </div>
                             <select class="filter-select" id="statusFilter">
                                 <option value="">ทุกสถานะ</option>
-                                <option value="3">📝 จองห้อง</option>
-                                <option value="2">⏳ รอเข้าพัก</option>
-                                <option value="1">🏠 พักอยู่</option>
-                                <option value="4">❌ ยกเลิกจอง</option>
-                                <option value="0">🚪 ย้ายออก</option>
+                                <option value="3">จองห้อง</option>
+                                <option value="2">รอเข้าพัก</option>
+                                <option value="1">พักอยู่</option>
+                                <option value="4">ยกเลิกจอง</option>
+                                <option value="0">ย้ายออก</option>
                             </select>
                             <div class="view-toggle">
                                 <button class="view-btn active" data-view="grid" onclick="switchView('grid')">
@@ -720,32 +721,44 @@ $statusMap = [
                 <!-- Stats Cards -->
                 <div class="stats-grid">
                     <div class="stat-card blue">
-                        <div class="stat-icon">👥</div>
+                        <div class="lottie-icon blue">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
                         <div class="stat-value"><?php echo number_format($stats['total']); ?></div>
                         <div class="stat-label">ผู้เช่าทั้งหมด</div>
                     </div>
                     <div class="stat-card green">
-                        <div class="stat-icon">🏠</div>
+                        <div class="lottie-icon green">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        </div>
                         <div class="stat-value"><?php echo number_format($stats['staying']); ?></div>
                         <div class="stat-label">กำลังพักอยู่</div>
                     </div>
                     <div class="stat-card orange">
-                        <div class="stat-icon">⏳</div>
+                        <div class="lottie-icon orange">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
                         <div class="stat-value"><?php echo number_format($stats['waiting']); ?></div>
                         <div class="stat-label">รอเข้าพัก</div>
                     </div>
                     <div class="stat-card red">
-                        <div class="stat-icon">🚪</div>
+                        <div class="lottie-icon red">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/><circle cx="15" cy="12" r="1"/></svg>
+                        </div>
                         <div class="stat-value"><?php echo number_format($stats['moved_out']); ?></div>
                         <div class="stat-label">ย้ายออกแล้ว</div>
                     </div>
                     <div class="stat-card" style="--stat-color: #3b82f6;">
-                        <div class="stat-icon">📝</div>
+                        <div class="lottie-icon indigo">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
+                        </div>
                         <div class="stat-value"><?php echo number_format($stats['booking']); ?></div>
                         <div class="stat-label">จองห้อง</div>
                     </div>
                     <div class="stat-card" style="--stat-color: #6b7280;">
-                        <div class="stat-icon">❌</div>
+                        <div class="lottie-icon gray">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                        </div>
                         <div class="stat-value"><?php echo number_format($stats['cancel_booking']); ?></div>
                         <div class="stat-label">ยกเลิกจอง</div>
                     </div>
@@ -757,7 +770,7 @@ $statusMap = [
                     <div class="tenants-grid" id="gridView">
                         <?php if (empty($tenants)): ?>
                             <div class="empty-state" style="grid-column: 1/-1;">
-                                <div class="empty-state-icon">👥</div>
+                                <div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
                                 <h3>ไม่พบข้อมูลผู้เช่า</h3>
                                 <p>ยังไม่มีข้อมูลผู้เช่าในระบบ</p>
                             </div>
@@ -777,28 +790,28 @@ $statusMap = [
                                 </div>
                                 <div class="tenant-card-body">
                                     <div class="tenant-detail">
-                                        <div class="tenant-detail-icon">📱</div>
+                                        <div class="tenant-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
                                         <div class="tenant-detail-content">
                                             <div class="tenant-detail-label">เบอร์โทร</div>
                                             <div class="tenant-detail-value"><?php echo htmlspecialchars($tenant['tnt_phone'] ?? '-'); ?></div>
                                         </div>
                                     </div>
                                     <div class="tenant-detail">
-                                        <div class="tenant-detail-icon">🎂</div>
+                                        <div class="tenant-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
                                         <div class="tenant-detail-content">
                                             <div class="tenant-detail-label">อายุ</div>
                                             <div class="tenant-detail-value"><?php echo $tenant['tnt_age'] ? $tenant['tnt_age'] . ' ปี' : '-'; ?></div>
                                         </div>
                                     </div>
                                     <div class="tenant-detail">
-                                        <div class="tenant-detail-icon">🏢</div>
+                                        <div class="tenant-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                                         <div class="tenant-detail-content">
                                             <div class="tenant-detail-label">ห้องพัก</div>
                                             <div class="tenant-detail-value"><?php echo $tenant['room_number'] ? 'ห้อง ' . htmlspecialchars($tenant['room_number']) : 'ยังไม่มีห้อง'; ?></div>
                                         </div>
                                     </div>
                                     <div class="tenant-detail">
-                                        <div class="tenant-detail-icon">📅</div>
+                                        <div class="tenant-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
                                         <div class="tenant-detail-content">
                                             <div class="tenant-detail-label">สัญญาถึง</div>
                                             <div class="tenant-detail-value"><?php echo $tenant['ctr_end'] ? date('d/m/Y', strtotime($tenant['ctr_end'])) : '-'; ?></div>
@@ -807,10 +820,10 @@ $statusMap = [
                                 </div>
                                 <div class="tenant-card-footer">
                                     <span class="status-badge" style="background: <?php echo $statusInfo['bg']; ?>; color: <?php echo $statusInfo['color']; ?>;">
-                                        <?php echo $statusInfo['icon']; ?> <?php echo $statusInfo['label']; ?>
+                                        <?php echo $statusInfo['label']; ?>
                                     </span>
                                     <?php if ($tenant['room_number']): ?>
-                                        <span class="room-badge">🚪 <?php echo htmlspecialchars($tenant['room_number']); ?></span>
+                                        <span class="room-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><?php echo htmlspecialchars($tenant['room_number']); ?></span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -852,14 +865,14 @@ $statusMap = [
                                     <td><?php echo $tenant['tnt_age'] ? $tenant['tnt_age'] . ' ปี' : '-'; ?></td>
                                     <td>
                                         <?php if ($tenant['room_number']): ?>
-                                            <span class="room-badge">🚪 <?php echo htmlspecialchars($tenant['room_number']); ?></span>
+                                            <span class="room-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><?php echo htmlspecialchars($tenant['room_number']); ?></span>
                                         <?php else: ?>
                                             <span style="color: var(--text-secondary);">-</span>
                                         <?php endif; ?>
                                     </td>
                                     <td>
                                         <span class="status-badge" style="background: <?php echo $statusInfo['bg']; ?>; color: <?php echo $statusInfo['color']; ?>;">
-                                            <?php echo $statusInfo['icon']; ?> <?php echo $statusInfo['label']; ?>
+                                            <?php echo $statusInfo['label']; ?>
                                         </span>
                                     </td>
                                     <td><?php echo $tenant['ctr_end'] ? date('d/m/Y', strtotime($tenant['ctr_end'])) : '-'; ?></td>

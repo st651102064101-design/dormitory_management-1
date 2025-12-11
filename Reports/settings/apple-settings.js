@@ -416,10 +416,53 @@ class AppleSettings {
       const result = await response.json();
       if (result.success) {
         this.showToast('เปลี่ยน Logo สำเร็จ', 'success');
+        
+        const newTimestamp = Date.now();
+        const newSrc = `../Assets/Images/${filename}?t=${newTimestamp}`;
+        
+        // Update preview image in sheet
         const preview = document.getElementById('logoPreviewImg');
         if (preview) {
-          preview.src = `../Assets/Images/${filename}?t=${Date.now()}`;
+          preview.src = newSrc;
         }
+        
+        // Update filename text next to preview
+        const infoP = document.querySelector('.apple-image-preview .apple-image-info p');
+        if (infoP) {
+          infoP.textContent = filename;
+        }
+        
+        // Update logo in settings row
+        const logoRowImg = document.getElementById('logoRowImg');
+        if (logoRowImg) {
+          logoRowImg.src = newSrc;
+        }
+        
+        // Update sidebar logo (team-avatar-img class)
+        const sidebarLogo = document.querySelector('.team-avatar-img');
+        if (sidebarLogo) {
+          sidebarLogo.src = `/Dormitory_Management/Assets/Images/${filename}?t=${newTimestamp}`;
+        }
+        
+        // Update any other logo images on page
+        document.querySelectorAll('img[alt="Logo"]').forEach(img => {
+          if (img.id !== 'logoPreviewImg' && !img.classList.contains('team-avatar-img')) {
+            img.src = newSrc;
+          }
+        });
+        
+        // Clear the select dropdown
+        const selectEl = document.getElementById('oldLogoSelect');
+        if (selectEl) {
+          selectEl.value = '';
+        }
+        
+        // Clear the preview area below select
+        const oldLogoPreview = document.getElementById('oldLogoPreview');
+        if (oldLogoPreview) {
+          oldLogoPreview.innerHTML = '';
+        }
+        
         this.closeSheet('sheet-logo');
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
@@ -456,10 +499,40 @@ class AppleSettings {
       const result = await response.json();
       if (result.success) {
         this.showToast('เปลี่ยนภาพพื้นหลังสำเร็จ', 'success');
+        
+        const newTimestamp = Date.now();
+        const newSrc = `../Assets/Images/${filename}?t=${newTimestamp}`;
+        
+        // Update preview image in sheet
         const preview = document.getElementById('bgPreviewImg');
         if (preview) {
-          preview.src = `../Assets/Images/${filename}?t=${Date.now()}`;
+          preview.src = newSrc;
         }
+        
+        // Update background image in settings row
+        const bgRowImg = document.getElementById('bgRowImg');
+        if (bgRowImg) {
+          bgRowImg.src = newSrc;
+        }
+        
+        // Update filename text next to preview
+        const bgInfoP = document.querySelector('#sheet-background .apple-image-preview .apple-image-info p');
+        if (bgInfoP) {
+          bgInfoP.textContent = filename;
+        }
+        
+        // Clear the select dropdown
+        const selectEl = document.getElementById('bgSelectDropdown');
+        if (selectEl) {
+          selectEl.value = '';
+        }
+        
+        // Clear the preview area below select
+        const bgSelectPreview = document.getElementById('bgSelectPreview');
+        if (bgSelectPreview) {
+          bgSelectPreview.innerHTML = '';
+        }
+        
         this.closeSheet('sheet-background');
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');

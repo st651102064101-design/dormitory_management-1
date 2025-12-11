@@ -552,7 +552,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         left: 0;
         right: 0;
         bottom: 0;
-        background: rgba(255, 255, 255, 0.98);
+        background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
         backdrop-filter: blur(10px);
         border-radius: 24px;
         display: flex;
@@ -569,7 +569,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       .success-content {
         text-align: center;
-        color: #1f2937;
+        color: #f5f8ff;
       }
 
       .success-icon {

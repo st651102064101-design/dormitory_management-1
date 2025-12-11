@@ -112,6 +112,7 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
@@ -436,22 +437,30 @@ try {
             ?>
             <div class="invoice-stats-grid">
               <div class="stat-card">
-                <div class="stat-icon">📄</div>
+                <div class="lottie-icon blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                </div>
                 <div class="stat-label">ใบแจ้งทั้งหมด</div>
                 <div class="stat-value"><?php echo number_format($totalInvoices); ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">⏳</div>
+                <div class="lottie-icon orange">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
                 <div class="stat-label">รอตรวจสอบ</div>
                 <div class="stat-value" style="color:#fbbf24;"><?php echo number_format($pendingCount); ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">✅</div>
+                <div class="lottie-icon green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
                 <div class="stat-label">ตรวจสอบแล้ว</div>
                 <div class="stat-value" style="color:#22c55e;"><?php echo number_format($verifiedCount); ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">💰</div>
+                <div class="lottie-icon yellow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                </div>
                 <div class="stat-label">ยอดรวมทั้งหมด</div>
                 <div class="stat-value" style="color:#60a5fa;">฿<?php echo number_format($totalAmount); ?></div>
               </div>

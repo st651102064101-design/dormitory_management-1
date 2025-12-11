@@ -4,23 +4,23 @@
   <div class="apple-section-card">
     <!-- Logo -->
     <div class="apple-settings-row" data-sheet="sheet-logo">
-      <div class="apple-row-icon orange">🎨</div>
+      <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label">โลโก้</p>
         <p class="apple-row-sublabel">รูปโลโก้ที่แสดงในระบบ</p>
       </div>
-      <img src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; margin-right: 8px;">
+      <img id="logoRowImg" src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; margin-right: 8px;">
       <span class="apple-row-chevron">›</span>
     </div>
     
     <!-- Background -->
     <div class="apple-settings-row" data-sheet="sheet-background">
-      <div class="apple-row-icon purple">🖼️</div>
+      <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label">ภาพพื้นหลัง</p>
         <p class="apple-row-sublabel">ภาพ Hero หน้าแรก</p>
       </div>
-      <img src="../Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>" alt="BG" style="width: 50px; height: 30px; border-radius: 6px; object-fit: cover; margin-right: 8px;">
+      <img id="bgRowImg" src="../Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>" alt="BG" style="width: 50px; height: 30px; border-radius: 6px; object-fit: cover; margin-right: 8px;">
       <span class="apple-row-chevron">›</span>
     </div>
   </div>
@@ -61,7 +61,7 @@
       <div class="apple-input-group">
         <label class="apple-input-label">อัพโหลดรูปใหม่</label>
         <div class="apple-upload-area" onclick="document.getElementById('logoInput').click()">
-          <div class="apple-upload-icon">📸</div>
+          <div class="apple-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
           <p class="apple-upload-text">คลิกเพื่อเลือกรูป</p>
           <p class="apple-upload-hint">รองรับ JPG, PNG</p>
           <input type="file" id="logoInput" accept="image/jpeg,image/png">
@@ -106,7 +106,7 @@
       <div class="apple-input-group">
         <label class="apple-input-label">อัพโหลดรูปใหม่</label>
         <div class="apple-upload-area" onclick="document.getElementById('bgInput').click()">
-          <div class="apple-upload-icon">🖼️</div>
+          <div class="apple-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
           <p class="apple-upload-text">คลิกเพื่อเลือกรูป</p>
           <p class="apple-upload-hint">รองรับ JPG, PNG, WebP</p>
           <input type="file" id="bgInput" accept="image/jpeg,image/png,image/webp">
