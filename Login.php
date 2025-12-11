@@ -5,9 +5,26 @@ require_once __DIR__ . '/ConnectDB.php';
 
 $login_error = '';
 $old_username = '';
- $login_success = false;
+$login_success = false;
+
+// ดึงค่าตั้งค่าระบบ
+$siteName = 'Sangthian Dormitory';
+$logoFilename = 'Logo.jpg';
+$themeColor = '#1e40af';
+try {
+    $pdo = connectDB();
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
+    while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
+        if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
+        if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+        if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
+    }
+} catch (PDOException $e) {}
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  // Check if it's an AJAX request
+  $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+  
   $old_username = trim((string)($_POST['username'] ?? ''));
   $password = (string)($_POST['password'] ?? '');
 
@@ -42,6 +59,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $login_error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';
     }
   }
+  
+  // If AJAX request, return JSON response
+  if ($isAjax) {
+    header('Content-Type: application/json');
+    echo json_encode([
+      'success' => $login_success,
+      'error' => $login_error,
+      'redirect' => $login_success ? 'Reports/manage.php' : ''
+    ]);
+    exit;
+  }
+  
+  // If login success and not AJAX, redirect
+  if ($login_success) {
+    header('Location: Reports/manage.php');
+    exit;
+  }
+  // If not AJAX and login failed, show error without reload (page stays as is)
 }
 
 ?>
@@ -50,7 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Login | Dormitory Management</title>
+    <title>Login | <?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?></title>
+    <link rel="icon" type="image/jpeg" href="Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="Assets/Css/animate-ui.css" />
     <style>
       * {
@@ -198,6 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           inset 0 1px 0 rgba(255, 255, 255, 0.1);
         animation: cardAppear 0.8s ease-out;
         transform-style: preserve-3d;
+        -webkit-transform-style: preserve-3d;
         will-change: transform, box-shadow;
         transition: transform 0.1s ease-out, box-shadow 0.3s ease;
       }
@@ -240,6 +277,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         50% { background-position: 100% 50%; }
       }
 
+      /* Animated SVG Icons */
+      .animated-icon {
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: iconDraw 0.8s ease forwards;
+      }
+
+      @keyframes iconDraw {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+
       /* Logo/Icon */
       .login-icon {
         width: 80px;
@@ -250,11 +300,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 40px;
         box-shadow: 
           0 10px 30px rgba(59, 130, 246, 0.4),
           0 0 60px rgba(139, 92, 246, 0.3);
         animation: iconPulse 2s ease-in-out infinite;
+      }
+
+      .login-icon svg {
+        width: 40px;
+        height: 40px;
+        stroke: #fff;
+        stroke-width: 2;
+        fill: none;
+        stroke-dasharray: 150;
+        stroke-dashoffset: 150;
+        animation: iconDraw 1s ease forwards 0.3s;
       }
 
       @keyframes iconPulse {
@@ -318,7 +378,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         width: 20px;
         height: 20px;
         color: #64748b;
-        transition: color 0.3s ease;
+        transition: all 0.3s ease;
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: iconDraw 0.6s ease forwards;
+      }
+
+      .input-wrapper svg:nth-of-type(1) {
+        animation-delay: 0.2s;
+      }
+
+      .input-wrapper:focus-within svg {
+        transform: translateY(-50%) scale(1.1);
+        filter: drop-shadow(0 0 8px currentColor);
       }
 
       .form-input {
@@ -363,6 +435,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         align-items: center;
         gap: 10px;
         animation: shake 0.5s ease;
+      }
+
+      .error-message .error-icon {
+        flex-shrink: 0;
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: iconDraw 0.6s ease forwards, errorPulse 1.5s ease-in-out infinite;
+      }
+
+      @keyframes errorPulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.6; }
       }
 
       @keyframes shake {
@@ -438,6 +522,130 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         to { transform: rotate(360deg); }
       }
 
+      /* Button States */
+      .submit-btn .btn-text,
+      .submit-btn .btn-loading {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+      }
+
+      .submit-btn .spinner {
+        animation: spin 1s linear infinite;
+      }
+
+      .submit-btn.loading .btn-text {
+        display: none;
+      }
+
+      .submit-btn.loading .btn-loading {
+        display: inline-flex !important;
+      }
+
+      /* Success Overlay */
+      .login-success-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(15, 23, 42, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 200;
+        opacity: 0;
+        animation: fadeIn 0.3s ease forwards;
+      }
+
+      @keyframes fadeIn {
+        to { opacity: 1; }
+      }
+
+      .success-content {
+        text-align: center;
+        color: #fff;
+      }
+
+      .success-icon {
+        color: #22c55e;
+        margin-bottom: 20px;
+        animation: successBounce 0.5s ease;
+      }
+
+      .success-icon circle {
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: drawCircle 0.5s ease forwards;
+      }
+
+      .success-icon path {
+        stroke-dasharray: 50;
+        stroke-dashoffset: 50;
+        animation: drawCheck 0.3s ease 0.4s forwards;
+      }
+
+      @keyframes drawCircle {
+        to { stroke-dashoffset: 0; }
+      }
+
+      @keyframes drawCheck {
+        to { stroke-dashoffset: 0; }
+      }
+
+      @keyframes successBounce {
+        0% { transform: scale(0); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+      }
+
+      .success-content p {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        background: linear-gradient(135deg, #22c55e, #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      .redirect-text {
+        color: #94a3b8;
+        font-size: 14px;
+      }
+
+      /* Error shake animation */
+      .login-card.shake {
+        animation: shake 0.5s ease;
+      }
+
+      @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-10px); }
+        40% { transform: translateX(10px); }
+        60% { transform: translateX(-10px); }
+        80% { transform: translateX(10px); }
+      }
+
+      /* Dynamic error message */
+      .error-message.show {
+        animation: slideDown 0.3s ease;
+      }
+
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
       /* Success Animation */
       .login-card.success {
         animation: successPulse 0.5s ease;
@@ -468,6 +676,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       .login-footer a:hover {
         color: #60a5fa;
+      }
+
+      .forgot-password-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: rgba(251, 146, 60, 0.1);
+        border: 1px solid rgba(251, 146, 60, 0.3);
+        border-radius: 10px;
+        color: #fb923c !important;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 0.75rem;
+        margin-right: 0.5rem;
+        transition: all 0.3s ease;
+      }
+
+      .forgot-password-btn:hover {
+        background: rgba(251, 146, 60, 0.2);
+        border-color: rgba(251, 146, 60, 0.5);
+        transform: translateY(-2px);
+        color: #fdba74 !important;
+        box-shadow: 0 5px 20px rgba(251, 146, 60, 0.3);
+      }
+
+      .forgot-password-btn svg {
+        transition: transform 0.3s ease;
+      }
+
+      .forgot-password-btn:hover svg {
+        transform: rotate(180deg);
+      }
+
+      .back-home-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.5rem;
+        background: rgba(59, 130, 246, 0.1);
+        border: 1px solid rgba(59, 130, 246, 0.3);
+        border-radius: 10px;
+        color: #60a5fa !important;
+        font-size: 0.9rem;
+        font-weight: 500;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .back-home-btn:hover {
+        background: rgba(59, 130, 246, 0.2);
+        border-color: rgba(59, 130, 246, 0.5);
+        transform: translateY(-2px);
+        color: #93c5fd !important;
+        box-shadow: 0 5px 20px rgba(59, 130, 246, 0.3);
+      }
+
+      .back-icon {
+        width: 18px;
+        height: 18px;
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: iconDraw 0.8s ease forwards;
+        transition: all 0.3s ease;
+      }
+
+      @keyframes iconDraw {
+        to {
+          stroke-dashoffset: 0;
+        }
+      }
+
+      .back-home-btn:hover .back-icon {
+        transform: scale(1.2);
+        filter: drop-shadow(0 0 8px currentColor);
       }
 
       /* Responsive */
@@ -612,9 +895,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
       .theme-menu-item .theme-icon {
-        font-size: 18px;
         width: 24px;
-        text-align: center;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .theme-menu-item .theme-icon svg {
+        width: 18px;
+        height: 18px;
+        stroke: currentColor;
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: iconDraw 0.5s ease forwards;
+        transition: all 0.3s ease;
+      }
+
+      .theme-menu-item:hover .theme-icon svg {
+        transform: scale(1.2);
+        filter: drop-shadow(0 0 6px currentColor);
       }
 
       .theme-switcher-btn {
@@ -625,7 +925,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         cursor: pointer;
         background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
         color: white;
-        font-size: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -634,6 +933,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           0 0 60px rgba(139, 92, 246, 0.2);
         transition: all 0.3s ease;
         animation: btnPulse 2s ease-in-out infinite;
+      }
+
+      .theme-switcher-btn svg {
+        width: 28px;
+        height: 28px;
+        stroke: white;
+        stroke-dasharray: 100;
+        stroke-dashoffset: 100;
+        animation: iconDraw 0.8s ease forwards;
+        transition: all 0.3s ease;
+      }
+
+      .theme-switcher:hover .theme-switcher-btn svg {
+        transform: scale(1.1) rotate(10deg);
+        filter: drop-shadow(0 0 8px rgba(255,255,255,0.5));
       }
 
       .theme-switcher:hover .theme-switcher-btn {
@@ -1444,58 +1758,206 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
       /* ============================================
-         THEME 7: HOMEPAGE STYLE (Match index.php)
+         THEME 7: HOMEPAGE STYLE (Match index.php 100%)
          ============================================ */
       body.theme-homepage {
-        background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+        background: #0a0a0f;
         overflow: auto;
+      }
+
+      /* Homepage Background - Animated Gradient */
+      body.theme-homepage::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: 
+          radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 60%);
+        animation: homepageBgPulse 20s ease-in-out infinite;
+        z-index: 0;
+        pointer-events: none;
+      }
+
+      @keyframes homepageBgPulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.1); }
       }
 
       body.theme-homepage .bg-animation,
       body.theme-homepage .cyber-grid,
-      body.theme-homepage .orb,
-      body.theme-homepage .particles,
       body.theme-homepage .glow-lines {
         display: none !important;
+      }
+
+      /* Show orbs with homepage style */
+      body.theme-homepage .orb {
+        display: block !important;
+        filter: blur(80px);
+        animation: homepageFloat 20s ease-in-out infinite;
+      }
+
+      body.theme-homepage .orb-1 {
+        width: 500px;
+        height: 500px;
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.2)) !important;
+        top: -200px;
+        right: -100px;
+        animation-delay: 0s;
+      }
+
+      body.theme-homepage .orb-2 {
+        width: 400px;
+        height: 400px;
+        background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(59, 130, 246, 0.2)) !important;
+        bottom: -150px;
+        left: -100px;
+        animation-delay: 5s;
+      }
+
+      body.theme-homepage .orb-3 {
+        width: 300px;
+        height: 300px;
+        background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.15)) !important;
+        top: 40%;
+        left: 60%;
+        animation-delay: 10s;
+      }
+
+      @keyframes homepageFloat {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        25% { transform: translate(50px, -50px) rotate(5deg); }
+        50% { transform: translate(0, -100px) rotate(0deg); }
+        75% { transform: translate(-50px, -50px) rotate(-5deg); }
+      }
+
+      /* Show particles with homepage style */
+      body.theme-homepage .particles {
+        display: block !important;
+      }
+
+      body.theme-homepage .particle {
+        background: rgba(96, 165, 250, 0.6) !important;
+        box-shadow: 0 0 10px rgba(96, 165, 250, 0.8) !important;
+        animation: homepageRise 15s infinite !important;
+      }
+
+      @keyframes homepageRise {
+        0% { bottom: -10px; opacity: 0; transform: scale(0); }
+        10% { opacity: 1; transform: scale(1); }
+        90% { opacity: 1; }
+        100% { bottom: 100vh; opacity: 0; transform: scale(0.5); }
       }
 
       body.theme-homepage .login-container {
         min-height: 100vh;
         padding: 2rem;
+        position: relative;
+        z-index: 10;
       }
 
       body.theme-homepage .login-card {
-        background: rgba(15, 23, 42, 0.95);
-        backdrop-filter: blur(10px);
-        border: 1px solid #334155;
-        border-radius: 16px;
-        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        animation: none;
-        transform: none !important;
+        background: rgba(15, 23, 42, 0.8);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 24px;
+        box-shadow: 
+          0 25px 50px -12px rgba(0, 0, 0, 0.5),
+          0 0 0 1px rgba(255, 255, 255, 0.05),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        animation: homepageCardAppear 0.8s ease-out;
+        transform-style: preserve-3d;
+        -webkit-transform-style: preserve-3d;
+        will-change: transform, box-shadow;
+        transition: transform 0.1s ease-out, box-shadow 0.3s ease;
+      }
+
+      @keyframes homepageCardAppear {
+        from { 
+          opacity: 0; 
+          transform: translateY(30px) scale(0.95); 
+        }
+        to { 
+          opacity: 1; 
+          transform: translateY(0) scale(1); 
+        }
       }
 
       body.theme-homepage .login-card::before {
-        display: none;
+        content: '';
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        background: linear-gradient(135deg, 
+          rgba(59, 130, 246, 0.5), 
+          rgba(139, 92, 246, 0.5), 
+          rgba(6, 182, 212, 0.5));
+        background-size: 200% 200%;
+        border-radius: 26px;
+        z-index: -1;
+        animation: homepageGlow 4s ease infinite;
+        opacity: 0.5;
+        filter: blur(10px);
+      }
+
+      @keyframes homepageGlow {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
       }
 
       body.theme-homepage .login-card:hover {
-        transform: translateY(-5px) !important;
-        border-color: #3b82f6;
-        box-shadow: 0 15px 50px rgba(0, 0, 0, 0.4) !important;
+        transform: rotateX(0deg) rotateY(0deg) scale3d(1.02, 1.02, 1.02);
+        box-shadow: 
+          0 30px 60px -12px rgba(0, 0, 0, 0.6),
+          0 0 0 1px rgba(255, 255, 255, 0.1),
+          inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+      }
+
+      body.theme-homepage .login-card:hover::before {
+        opacity: 0.8;
+      }
+
+      /* Glare effect for Homepage theme */
+      body.theme-homepage .card-glare {
+        display: block !important;
       }
 
       body.theme-homepage .login-icon {
-        width: 70px;
-        height: 70px;
-        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        border-radius: 14px;
-        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
-        animation: none;
+        width: 80px;
+        height: 80px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 20px;
+        box-shadow: 
+          0 10px 30px rgba(102, 126, 234, 0.4),
+          0 0 60px rgba(118, 75, 162, 0.3);
+        animation: homepageIconPulse 3s ease-in-out infinite;
+      }
+
+      @keyframes homepageIconPulse {
+        0%, 100% { 
+          box-shadow: 
+            0 10px 30px rgba(102, 126, 234, 0.4),
+            0 0 60px rgba(118, 75, 162, 0.3);
+          transform: scale(1);
+        }
+        50% { 
+          box-shadow: 
+            0 15px 40px rgba(102, 126, 234, 0.6),
+            0 0 80px rgba(118, 75, 162, 0.5);
+          transform: scale(1.05);
+        }
       }
 
       body.theme-homepage .login-title {
         font-size: 2rem;
-        background: linear-gradient(90deg, #60a5fa, #a78bfa);
+        font-weight: 700;
+        background: linear-gradient(135deg, #fff 0%, #94a3b8 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         background-clip: text;
@@ -1504,6 +1966,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       body.theme-homepage .login-subtitle {
         color: #94a3b8;
+        font-size: 0.95rem;
       }
 
       body.theme-homepage .neon-glow {
@@ -1513,16 +1976,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       body.theme-homepage .form-group label {
         color: #94a3b8;
-        font-weight: 500;
-        text-transform: none;
-        letter-spacing: normal;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.8rem;
       }
 
       body.theme-homepage .form-input {
-        background: #1e293b;
-        border: 1px solid #334155;
+        background: rgba(30, 41, 59, 0.5);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         color: #fff;
-        border-radius: 10px;
+        border-radius: 12px;
+        padding: 16px 16px 16px 50px;
+        transition: all 0.3s ease;
       }
 
       body.theme-homepage .form-input::placeholder {
@@ -1530,57 +1996,127 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
       body.theme-homepage .form-input:focus {
-        border-color: #3b82f6;
-        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-        background: #1e293b;
+        border-color: #667eea;
+        box-shadow: 
+          0 0 0 4px rgba(102, 126, 234, 0.15),
+          0 0 30px rgba(102, 126, 234, 0.2);
+        background: rgba(30, 41, 59, 0.8);
       }
 
       body.theme-homepage .input-wrapper svg {
         color: #64748b;
+        transition: color 0.3s ease;
       }
 
       body.theme-homepage .input-wrapper:focus-within svg {
-        color: #3b82f6;
+        color: #667eea;
       }
 
       body.theme-homepage .error-message {
-        background: rgba(239, 68, 68, 0.15);
+        background: rgba(239, 68, 68, 0.1);
         border: 1px solid rgba(239, 68, 68, 0.3);
         color: #f87171;
-        animation: none;
+        border-radius: 12px;
+        animation: homepageShake 0.5s ease;
+      }
+
+      @keyframes homepageShake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-5px); }
+        40% { transform: translateX(5px); }
+        60% { transform: translateX(-5px); }
+        80% { transform: translateX(5px); }
       }
 
       body.theme-homepage .submit-btn {
-        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: #ffffff;
-        border-radius: 10px;
+        border-radius: 12px;
         font-weight: 600;
         text-transform: none;
         letter-spacing: normal;
-        animation: none;
-      }
-
-      body.theme-homepage .submit-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(59, 130, 246, 0.3);
+        padding: 16px;
+        font-size: 1rem;
+        border: none;
+        cursor: pointer;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.3s ease;
       }
 
       body.theme-homepage .submit-btn::before {
-        display: none;
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+        transition: left 0.5s ease;
+      }
+
+      body.theme-homepage .submit-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 
+          0 15px 35px rgba(102, 126, 234, 0.4),
+          0 5px 15px rgba(0, 0, 0, 0.3);
+      }
+
+      body.theme-homepage .submit-btn:hover::before {
+        left: 100%;
+      }
+
+      body.theme-homepage .submit-btn:active {
+        transform: translateY(-1px);
       }
 
       body.theme-homepage .login-footer {
         color: #64748b;
+        margin-top: 1.5rem;
+      }
+
+      body.theme-homepage .login-footer a {
+        color: #667eea;
+        text-decoration: none;
+        transition: color 0.3s ease;
+      }
+
+      body.theme-homepage .login-footer a:hover {
+        color: #764ba2;
+      }
+
+      body.theme-homepage .back-home-btn {
+        background: rgba(102, 126, 234, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        color: #667eea !important;
+      }
+
+      body.theme-homepage .back-home-btn:hover {
+        background: rgba(102, 126, 234, 0.2);
+        border-color: rgba(102, 126, 234, 0.5);
+        color: #a78bfa !important;
+        box-shadow: 0 5px 20px rgba(102, 126, 234, 0.3);
+      }
+
+      body.theme-homepage .back-icon {
+        stroke: #667eea;
+      }
+
+      body.theme-homepage .back-home-btn:hover .back-icon {
+        stroke: #a78bfa;
       }
 
       body.theme-homepage .theme-switcher-btn {
-        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        box-shadow: 0 8px 24px rgba(59, 130, 246, 0.3);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 8px 24px rgba(102, 126, 234, 0.4);
         animation: none;
+        border: none;
+        transition: all 0.3s ease;
       }
 
       body.theme-homepage .theme-switcher-btn:hover {
-        box-shadow: 0 12px 32px rgba(59, 130, 246, 0.4);
+        transform: scale(1.1) rotate(10deg);
+        box-shadow: 0 12px 32px rgba(102, 126, 234, 0.5);
       }
 
       body.theme-homepage .card-glare {
@@ -1588,9 +2124,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
       body.theme-homepage .theme-indicator {
-        background: rgba(15, 23, 42, 0.95);
-        border-color: #334155;
-        color: #94a3b8;
+        background: rgba(15, 23, 42, 0.9);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(102, 126, 234, 0.3);
+        color: #fff;
+        border-radius: 12px;
       }
 
       /* Theme transition */
@@ -1635,16 +2173,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <!-- Login Container -->
     <div class="login-container">
       <div class="login-card <?php echo $login_success ? 'success' : ''; ?>" id="loginCard">
-        <div class="login-icon">🏠</div>
+        <div class="login-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
+            <circle cx="12" cy="16" r="1"/>
+          </svg>
+        </div>
         <h1 class="login-title neon-glow">เข้าสู่ระบบ</h1>
-        <p class="login-subtitle">Dormitory Management System</p>
+        <p class="login-subtitle"><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?></p>
         
         <?php if ($login_error !== ''): ?>
           <div class="error-message">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <circle cx="12" cy="12" r="10"></circle>
-              <line x1="12" y1="8" x2="12" y2="12"></line>
-              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            <svg class="animated-icon error-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
             <?php echo htmlspecialchars($login_error, ENT_QUOTES, 'UTF-8'); ?>
           </div>
@@ -1664,9 +2208,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 autocomplete="username"
                 required
               />
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                <circle cx="12" cy="7" r="4"></circle>
+              <svg class="animated-icon input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                <circle cx="12" cy="7" r="4"/>
               </svg>
             </div>
           </div>
@@ -1683,20 +2227,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 autocomplete="current-password"
                 required
               />
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              <svg class="animated-icon input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0110 0v4"/>
               </svg>
             </div>
           </div>
           
           <button type="submit" class="submit-btn" id="submitBtn">
-            เข้าสู่ระบบ
+            <span class="btn-text">เข้าสู่ระบบ</span>
+            <span class="btn-loading" style="display: none;">
+              <svg class="spinner" viewBox="0 0 24 24" width="20" height="20">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round" stroke-dasharray="30 70"/>
+              </svg>
+              กำลังเข้าสู่ระบบ...
+            </span>
           </button>
         </form>
         
+        <!-- Success overlay -->
+        <div class="login-success-overlay" id="successOverlay" style="display: none;">
+          <div class="success-content">
+            <svg class="success-icon" viewBox="0 0 24 24" width="60" height="60" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <path d="M8 12l3 3 5-6"/>
+            </svg>
+            <p>เข้าสู่ระบบสำเร็จ!</p>
+            <span class="redirect-text">กำลังนำคุณไปยังหน้าจัดการ...</span>
+          </div>
+        </div>
+        
         <div class="login-footer">
-          <p>© 2025 Dormitory Management System</p>
+          <a href="forgot_password.php" class="forgot-password-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+            </svg>
+            ลืมรหัสผ่าน?
+          </a>
+          <a href="index.php" class="back-home-btn">
+            <svg class="back-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+            กลับหน้าหลัก
+          </a>
+          <p>© <?php echo date('Y'); ?> <?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - สงวนลิขสิทธิ์</p>
         </div>
       </div>
     </div>
@@ -1705,37 +2280,69 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="theme-switcher" id="themeSwitcher">
       <div class="theme-menu" id="themeMenu">
         <div class="theme-menu-item" data-theme="homepage">
-          <span class="theme-icon">🏠</span>
+          <span class="theme-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+            </svg>
+          </span>
           <span>Homepage</span>
         </div>
         <div class="theme-menu-item" data-theme="cyber">
-          <span class="theme-icon">🌌</span>
+          <span class="theme-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/>
+            </svg>
+          </span>
           <span>Cyber Neon</span>
         </div>
         <div class="theme-menu-item" data-theme="aurora">
-          <span class="theme-icon">🌈</span>
+          <span class="theme-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M17.5 19H9a7 7 0 110-14h8.5"/><path d="M21 12h-3"/><path d="M21 16h-5"/><path d="M21 8h-5"/>
+            </svg>
+          </span>
           <span>Aurora Borealis</span>
         </div>
         <div class="theme-menu-item" data-theme="holo">
-          <span class="theme-icon">✨</span>
+          <span class="theme-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+            </svg>
+          </span>
           <span>Holographic</span>
         </div>
         <div class="theme-menu-item" data-theme="classic">
-          <span class="theme-icon">🎨</span>
+          <span class="theme-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="13.5" cy="6.5" r="2.5"/><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+            </svg>
+          </span>
           <span>Classic</span>
         </div>
         <div class="theme-menu-item" data-theme="dark">
-          <span class="theme-icon">🌑</span>
+          <span class="theme-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/>
+            </svg>
+          </span>
           <span>Dark</span>
         </div>
         <div class="theme-menu-item" data-theme="light">
-          <span class="theme-icon">☀️</span>
+          <span class="theme-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+            </svg>
+          </span>
           <span>Light</span>
         </div>
       </div>
-      <button class="theme-switcher-btn" id="themeSwitchBtn" title="เปลี่ยนธีม">🏠</button>
+      <button class="theme-switcher-btn" id="themeSwitchBtn" title="เปลี่ยนธีม">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      </button>
     </div>
-    <div class="theme-indicator" id="themeIndicator">🏠 Homepage</div>
+    <div class="theme-indicator" id="themeIndicator">Homepage</div>
 
     <?php if (!empty($login_success)): ?>
       <script>
@@ -1770,16 +2377,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         });
       });
 
-      // 3D Tilt Effect - Card follows mouse movement
+      // ============================================
+      // ✨ ELEGANT 3D PARALLAX SYSTEM - Monochrome Style
+      // ============================================
       const card = document.getElementById('loginCard');
       const container = document.querySelector('.login-container');
       
-      // Settings
-      const maxTilt = 15; // Maximum tilt angle
-      const glareOpacity = 0.3; // Glare effect opacity
-      const perspective = 1000; // Perspective distance
+      // Elegant Settings
+      const maxTilt = 12; // Subtle tilt angle
+      const glareOpacity = 0.25;
+      const perspective = 1200;
+      const accentColor = { r: 99, g: 102, b: 241 }; // Indigo - #6366f1
       
-      // Create glare element
+      // Create elegant glare element
       const glare = document.createElement('div');
       glare.className = 'card-glare';
       glare.style.cssText = `
@@ -1790,106 +2400,203 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         height: 100%;
         border-radius: 24px;
         pointer-events: none;
-        background: linear-gradient(
-          135deg,
-          rgba(255, 255, 255, 0) 0%,
-          rgba(255, 255, 255, 0.1) 50%,
-          rgba(255, 255, 255, 0) 100%
-        );
         opacity: 0;
-        transition: opacity 0.3s ease;
+        transition: opacity 0.4s ease;
         z-index: 100;
       `;
       card.appendChild(glare);
       
+      // Create subtle border glow
+      const borderGlow = document.createElement('div');
+      borderGlow.className = 'border-glow';
+      borderGlow.style.cssText = `
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        border-radius: 26px;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.5), rgba(99, 102, 241, 0.1), rgba(99, 102, 241, 0.5));
+        background-size: 200% 200%;
+        filter: blur(10px);
+      `;
+      card.appendChild(borderGlow);
+      
       // Set card styles for 3D effect
       card.style.transformStyle = 'preserve-3d';
+      card.style.willChange = 'transform';
       container.style.perspective = perspective + 'px';
       
-      // Mouse move handler
-      card.addEventListener('mousemove', function(e) {
-        const rect = card.getBoundingClientRect();
-        const centerX = rect.left + rect.width / 2;
-        const centerY = rect.top + rect.height / 2;
+      // Smooth interpolation values
+      let currentTiltX = 0;
+      let currentTiltY = 0;
+      let targetTiltX = 0;
+      let targetTiltY = 0;
+      let isHovering = false;
+      let animationFrame = null;
+      
+      // Add elegant animation CSS
+      if (!document.getElementById('elegantAnimations')) {
+        const styleSheet = document.createElement('style');
+        styleSheet.id = 'elegantAnimations';
+        styleSheet.textContent = `
+          @keyframes shimmer {
+            0% { background-position: 200% 50%; }
+            100% { background-position: -200% 50%; }
+          }
+          
+          @keyframes breathe {
+            0%, 100% { opacity: 0.3; filter: blur(10px); }
+            50% { opacity: 0.5; filter: blur(15px); }
+          }
+          
+          .border-glow.active {
+            animation: breathe 3s ease-in-out infinite, shimmer 4s linear infinite;
+          }
+        `;
+        document.head.appendChild(styleSheet);
+      }
+      
+      // Smooth animation loop
+      function smoothUpdate() {
+        const smoothness = isHovering ? 0.12 : 0.06;
         
-        // Calculate mouse position relative to card center (-1 to 1)
-        const mouseX = (e.clientX - centerX) / (rect.width / 2);
-        const mouseY = (e.clientY - centerY) / (rect.height / 2);
+        currentTiltX += (targetTiltX - currentTiltX) * smoothness;
+        currentTiltY += (targetTiltY - currentTiltY) * smoothness;
         
-        // Calculate tilt angles
-        const tiltX = -mouseY * maxTilt; // Tilt on X axis (up/down)
-        const tiltY = mouseX * maxTilt;  // Tilt on Y axis (left/right)
-        
-        // Apply transform
+        // Apply smooth transform
+        const scale = isHovering ? 1.02 : 1;
         card.style.transform = `
-          rotateX(${tiltX}deg) 
-          rotateY(${tiltY}deg) 
-          scale3d(1.02, 1.02, 1.02)
+          rotateX(${currentTiltX}deg) 
+          rotateY(${currentTiltY}deg)
+          scale3d(${scale}, ${scale}, ${scale})
         `;
         
-        // Update glare position
-        const glareX = 50 + mouseX * 30;
-        const glareY = 50 + mouseY * 30;
-        glare.style.background = `
-          radial-gradient(
-            circle at ${glareX}% ${glareY}%,
-            rgba(255, 255, 255, ${glareOpacity}) 0%,
-            rgba(255, 255, 255, 0.1) 30%,
-            transparent 60%
-          )
-        `;
-        glare.style.opacity = '1';
-      });
+        animationFrame = requestAnimationFrame(smoothUpdate);
+      }
+      smoothUpdate();
       
-      // Mouse leave handler - reset card
-      card.addEventListener('mouseleave', function() {
-        card.style.transform = 'rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-        card.style.transition = 'transform 0.5s ease-out';
-        glare.style.opacity = '0';
-      });
+      // Elegant parallax function
+      function applyCardParallax(cardElement, glareElement) {
+        cardElement.addEventListener('mousemove', function(e) {
+          const rect = cardElement.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          
+          // Calculate mouse position relative to card center (-1 to 1)
+          const mouseX = (e.clientX - centerX) / (rect.width / 2);
+          const mouseY = (e.clientY - centerY) / (rect.height / 2);
+          
+          // Clamp values
+          const clampedX = Math.max(-1, Math.min(1, mouseX));
+          const clampedY = Math.max(-1, Math.min(1, mouseY));
+          
+          // Set target tilt angles
+          targetTiltX = -clampedY * maxTilt;
+          targetTiltY = clampedX * maxTilt;
+          
+          // Elegant single-point glare
+          const glareX = 50 + clampedX * 35;
+          const glareY = 50 + clampedY * 35;
+          const glareSize = 60 + Math.abs(clampedX * clampedY) * 20;
+          
+          glareElement.style.background = `
+            radial-gradient(
+              ellipse ${glareSize}% ${glareSize}% at ${glareX}% ${glareY}%,
+              rgba(255, 255, 255, ${glareOpacity}) 0%,
+              rgba(255, 255, 255, 0.08) 40%,
+              transparent 70%
+            )
+          `;
+          
+          // Dynamic shadow - single color scheme
+          const shadowX = clampedX * 25;
+          const shadowY = clampedY * 25;
+          const intensity = Math.sqrt(clampedX * clampedX + clampedY * clampedY);
+          
+          const r = accentColor.r;
+          const g = accentColor.g;
+          const b = accentColor.b;
+          
+          cardElement.style.boxShadow = `
+            ${shadowX}px ${shadowY}px 40px rgba(0, 0, 0, ${0.25 + intensity * 0.1}),
+            ${shadowX * 0.5}px ${shadowY * 0.5}px 20px rgba(${r}, ${g}, ${b}, ${0.15 + intensity * 0.1}),
+            0 0 ${40 + intensity * 20}px rgba(${r}, ${g}, ${b}, ${0.08 + intensity * 0.05}),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1)
+          `;
+          
+          // Update border glow position
+          const angle = Math.atan2(clampedY, clampedX) * 180 / Math.PI;
+          borderGlow.style.background = `
+            linear-gradient(${angle + 135}deg, 
+              rgba(${r}, ${g}, ${b}, ${0.4 + intensity * 0.2}), 
+              rgba(${r}, ${g}, ${b}, 0.05), 
+              rgba(${r}, ${g}, ${b}, ${0.4 + intensity * 0.2})
+            )
+          `;
+          borderGlow.style.backgroundSize = '200% 200%';
+        });
+        
+        // Mouse enter
+        cardElement.addEventListener('mouseenter', function() {
+          isHovering = true;
+          glareElement.style.opacity = '1';
+          borderGlow.style.opacity = '1';
+          borderGlow.classList.add('active');
+        });
+        
+        // Mouse leave - elegant reset
+        cardElement.addEventListener('mouseleave', function() {
+          isHovering = false;
+          targetTiltX = 0;
+          targetTiltY = 0;
+          
+          glareElement.style.opacity = '0';
+          borderGlow.style.opacity = '0';
+          borderGlow.classList.remove('active');
+          
+          // Reset to elegant default shadow
+          const r = accentColor.r;
+          const g = accentColor.g;
+          const b = accentColor.b;
+          
+          cardElement.style.boxShadow = `
+            0 25px 50px -12px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.05),
+            0 0 40px rgba(${r}, ${g}, ${b}, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1)
+          `;
+        });
+      }
       
-      // Mouse enter handler
-      card.addEventListener('mouseenter', function() {
-        card.style.transition = 'transform 0.1s ease-out';
-      });
-
-      // Smooth shadow effect based on tilt
-      card.addEventListener('mousemove', function(e) {
-        const rect = card.getBoundingClientRect();
-        const mouseX = (e.clientX - rect.left) / rect.width - 0.5;
-        const mouseY = (e.clientY - rect.top) / rect.height - 0.5;
-        
-        // Dynamic shadow based on mouse position
-        const shadowX = mouseX * 30;
-        const shadowY = mouseY * 30;
-        
-        card.style.boxShadow = `
-          ${shadowX}px ${shadowY}px 40px rgba(0, 0, 0, 0.3),
-          ${shadowX * 0.5}px ${shadowY * 0.5}px 20px rgba(59, 130, 246, 0.2),
-          0 0 60px rgba(139, 92, 246, 0.15),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1)
-        `;
-      });
-
-      card.addEventListener('mouseleave', function() {
-        card.style.boxShadow = `
-          0 25px 50px -12px rgba(0, 0, 0, 0.5),
-          0 0 0 1px rgba(255, 255, 255, 0.05),
-          inset 0 1px 0 rgba(255, 255, 255, 0.1)
-        `;
-      });
+      // Apply elegant parallax effect
+      applyCardParallax(card, glare);
 
       // ============================================
       // THEME SWITCHER
       // ============================================
+      const themeSvgIcons = {
+        homepage: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>',
+        cyber: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>',
+        aurora: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.5 19H9a7 7 0 110-14h8.5"/><path d="M21 12h-3"/><path d="M21 16h-5"/><path d="M21 8h-5"/></svg>',
+        holo: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>',
+        classic: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="13.5" cy="6.5" r="2.5"/><path d="M17 3a2.83 2.83 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>',
+        dark: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>',
+        light: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>'
+      };
+
       const themes = [
-        { name: 'homepage', label: '🏠 Homepage', icon: '🏠' },
-        { name: 'cyber', label: '🌌 Cyber Neon', icon: '🌌' },
-        { name: 'aurora', label: '🌈 Aurora Borealis', icon: '🌈' },
-        { name: 'holo', label: '✨ Holographic', icon: '✨' },
-        { name: 'classic', label: '🎨 Classic', icon: '🎨' },
-        { name: 'dark', label: '🌑 Dark', icon: '🌑' },
-        { name: 'light', label: '☀️ Light', icon: '☀️' }
+        { name: 'homepage', label: 'Homepage' },
+        { name: 'cyber', label: 'Cyber Neon' },
+        { name: 'aurora', label: 'Aurora Borealis' },
+        { name: 'holo', label: 'Holographic' },
+        { name: 'classic', label: 'Classic' },
+        { name: 'dark', label: 'Dark' },
+        { name: 'light', label: 'Light' }
       ];
       
       let currentTheme = 0;
@@ -1935,8 +2642,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           // Save preference
           localStorage.setItem('loginTheme', themeName);
           
-          // Update button icon
-          document.getElementById('themeSwitchBtn').textContent = themes[currentTheme].icon;
+          // Update button icon with SVG
+          document.getElementById('themeSwitchBtn').innerHTML = themeSvgIcons[themeName];
           
           // Update active state in menu
           document.querySelectorAll('.theme-menu-item').forEach(item => {
@@ -1972,13 +2679,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
       });
 
-      // Initialize - set active menu item and button icon
-      document.getElementById('themeSwitchBtn').textContent = themes[currentTheme].icon;
+      // Initialize - set active menu item and button icon with SVG
+      document.getElementById('themeSwitchBtn').innerHTML = themeSvgIcons[themes[currentTheme].name];
       document.querySelectorAll('.theme-menu-item').forEach(item => {
         if (item.dataset.theme === themes[currentTheme].name) {
           item.classList.add('active');
         }
       });
+
+      // ============================================
+      // AJAX LOGIN HANDLER
+      // ============================================
+      const loginForm = document.getElementById('loginForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const loginCard = document.getElementById('loginCard');
+      const successOverlay = document.getElementById('successOverlay');
+      
+      // Get or create error message element
+      let errorMessageEl = document.querySelector('.error-message');
+      
+      loginForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Get form data
+        const formData = new FormData(loginForm);
+        const username = formData.get('username').trim();
+        const password = formData.get('password');
+        
+        // Validate
+        if (!username || !password) {
+          showError('กรุณากรอกข้อมูลให้ครบ');
+          return;
+        }
+        
+        // Set loading state
+        submitBtn.classList.add('loading');
+        submitBtn.disabled = true;
+        
+        // Hide existing error
+        if (errorMessageEl) {
+          errorMessageEl.style.display = 'none';
+        }
+        
+        try {
+          const response = await fetch('Login.php', {
+            method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            // Show success overlay
+            successOverlay.style.display = 'flex';
+            loginCard.classList.add('success');
+            
+            // Redirect after animation
+            setTimeout(() => {
+              window.location.href = result.redirect;
+            }, 1500);
+          } else {
+            // Show error
+            showError(result.error || 'เกิดข้อผิดพลาด กรุณาลองใหม่');
+            loginCard.classList.add('shake');
+            setTimeout(() => loginCard.classList.remove('shake'), 500);
+            
+            // Reset button
+            submitBtn.classList.remove('loading');
+            submitBtn.disabled = false;
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          showError('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+          
+          // Reset button
+          submitBtn.classList.remove('loading');
+          submitBtn.disabled = false;
+        }
+      });
+      
+      function showError(message) {
+        if (!errorMessageEl) {
+          // Create error element if doesn't exist
+          errorMessageEl = document.createElement('div');
+          errorMessageEl.className = 'error-message';
+          errorMessageEl.innerHTML = `
+            <svg class="animated-icon error-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span class="error-text"></span>
+          `;
+          loginForm.parentNode.insertBefore(errorMessageEl, loginForm);
+        }
+        
+        // Update message
+        const errorText = errorMessageEl.querySelector('.error-text');
+        if (errorText) {
+          errorText.textContent = message;
+        } else {
+          errorMessageEl.innerHTML = `
+            <svg class="animated-icon error-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            ${message}
+          `;
+        }
+        
+        errorMessageEl.style.display = 'flex';
+        errorMessageEl.classList.add('show');
+      }
     </script>
   </body>
 </html>

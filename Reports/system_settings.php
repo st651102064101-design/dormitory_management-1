@@ -26,10 +26,12 @@ $themeColor = '#0f172a';
 $fontSize = '1';
 $logoFilename = 'Logo.jpg';
 $bgFilename = 'bg.jpg';
+$contactPhone = '0895656083';
+$contactEmail = 'test@gmail.com';
 
 // ดึงค่าตั้งค่าระบบจาก database
 try {
-    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename')");
+    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email')");
     $rawSettings = $settingsStmt->fetchAll(PDO::FETCH_ASSOC);
     $settings = [];
     foreach ($rawSettings as $setting) {
@@ -42,6 +44,8 @@ try {
     $fontSize = $settings['font_size'] ?? $fontSize;
     $logoFilename = $settings['logo_filename'] ?? $logoFilename;
     $bgFilename = $settings['bg_filename'] ?? $bgFilename;
+    $contactPhone = $settings['contact_phone'] ?? $contactPhone;
+    $contactEmail = $settings['contact_email'] ?? $contactEmail;
 
     // ถ้า table ว่าง ให้ insert default
     $checkStmt = $pdo->query("SELECT COUNT(*) as cnt FROM system_settings");
@@ -52,6 +56,8 @@ try {
         $insertStmt->execute(['font_size', $fontSize]);
         $insertStmt->execute(['logo_filename', $logoFilename]);
         $insertStmt->execute(['bg_filename', $bgFilename]);
+        $insertStmt->execute(['contact_phone', $contactPhone]);
+        $insertStmt->execute(['contact_email', $contactEmail]);
     }
 } catch (PDOException $e) {
     // Use default values if query fails
@@ -114,7 +120,7 @@ try {
         gap: 1.5rem;
         margin-top: 1rem;
         padding-right: 0.75rem;
-        align-items: start;
+        align-items: stretch;
         max-width: 100%;
         overflow-x: hidden;
       }
@@ -165,7 +171,8 @@ try {
         padding: 1.75rem;
         color: #f5f8ff;
         box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-        height: fit-content;
+        display: flex;
+        flex-direction: column;
       }
       .settings-card h3 {
         margin: 0 0 1.2rem 0;
@@ -492,6 +499,32 @@ try {
                 </form>
               </div>
 
+              <!-- Contact Information Settings -->
+              <div class="settings-card">
+                <h3><span>📞</span> ข้อมูลติดต่อ</h3>
+                <div style="display: grid; gap: 1.5rem;">
+                  <form id="phoneForm">
+                    <div class="form-group">
+                      <label>เบอร์โทรศัพท์</label>
+                      <input type="tel" id="contactPhone" name="contact_phone" value="<?php echo htmlspecialchars($contactPhone); ?>" pattern="[0-9\-\+\s()]{8,20}" maxlength="20" required />
+                      <small style="color: #94a3b8;">เช่น 0895656083 หรือ 089-565-6083</small>
+                    </div>
+                    <button type="submit" class="btn-save">💾 บันทึกเบอร์โทร</button>
+                    <div class="status-badge" id="phoneStatus"></div>
+                  </form>
+
+                  <form id="emailForm">
+                    <div class="form-group">
+                      <label>อีเมลติดต่อ</label>
+                      <input type="email" id="contactEmail" name="contact_email" value="<?php echo htmlspecialchars($contactEmail); ?>" maxlength="100" required />
+                      <small style="color: #94a3b8;">เช่น test@gmail.com</small>
+                    </div>
+                    <button type="submit" class="btn-save">💾 บันทึกอีเมล</button>
+                    <div class="status-badge" id="emailStatus"></div>
+                  </form>
+                </div>
+              </div>
+
               <!-- Theme Color Settings -->
               <div class="settings-card">
                 <h3><span>🎨</span> สีพื้นหลังระบบ</h3>
@@ -672,6 +705,86 @@ try {
     <script src="../Assets/Javascript/system-settings.js"></script>
     <script src="../Assets/Javascript/animate-ui.js"></script>
     <script>
+    // Handle Phone Form
+    document.getElementById('phoneForm')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const phone = document.getElementById('contactPhone').value.trim();
+      const statusEl = document.getElementById('phoneStatus');
+      
+      if (!phone || !/^[0-9\-\+\s()]{8,20}$/.test(phone)) {
+        showErrorToast('รูปแบบเบอร์โทรไม่ถูกต้อง');
+        return;
+      }
+      
+      try {
+        const response = await fetch('../Manage/save_system_settings.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `contact_phone=${encodeURIComponent(phone)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          statusEl.textContent = '✓ ' + result.message;
+          statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
+          statusEl.style.color = '#22c55e';
+          statusEl.style.display = 'block';
+          showSuccessToast(result.message);
+        } else {
+          throw new Error(result.error || 'เกิดข้อผิดพลาด');
+        }
+      } catch (error) {
+        statusEl.textContent = '✗ ' + error.message;
+        statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+        statusEl.style.color = '#ef4444';
+        statusEl.style.display = 'block';
+        showErrorToast(error.message);
+      }
+      
+      setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    });
+
+    // Handle Email Form
+    document.getElementById('emailForm')?.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      const email = document.getElementById('contactEmail').value.trim();
+      const statusEl = document.getElementById('emailStatus');
+      
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        showErrorToast('รูปแบบอีเมลไม่ถูกต้อง');
+        return;
+      }
+      
+      try {
+        const response = await fetch('../Manage/save_system_settings.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `contact_email=${encodeURIComponent(email)}`
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+          statusEl.textContent = '✓ ' + result.message;
+          statusEl.style.background = 'rgba(34, 197, 94, 0.2)';
+          statusEl.style.color = '#22c55e';
+          statusEl.style.display = 'block';
+          showSuccessToast(result.message);
+        } else {
+          throw new Error(result.error || 'เกิดข้อผิดพลาด');
+        }
+      } catch (error) {
+        statusEl.textContent = '✗ ' + error.message;
+        statusEl.style.background = 'rgba(239, 68, 68, 0.2)';
+        statusEl.style.color = '#ef4444';
+        statusEl.style.display = 'block';
+        showErrorToast(error.message);
+      }
+      
+      setTimeout(() => { statusEl.style.display = 'none'; }, 3000);
+    });
+
     // Update example calculation on input change
     document.getElementById('waterRate')?.addEventListener('input', function() {
       document.getElementById('waterExample').textContent = '= ฿' + (parseInt(this.value) * 10).toLocaleString();
