@@ -98,6 +98,24 @@ $expStmt = $pdo->query("
 ");
 $expenses = $expStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// ดึงข้อมูล payment สำหรับแต่ละ expense (เฉพาะที่อนุมัติแล้ว pay_status = '1')
+$paymentsByExp = [];
+$paymentStmt = $pdo->query("
+  SELECT exp_id, pay_id, pay_date, pay_amount, pay_status
+  FROM payment
+  WHERE pay_status = '1'
+  ORDER BY pay_date ASC
+");
+while ($pay = $paymentStmt->fetch(PDO::FETCH_ASSOC)) {
+    $expId = (int)$pay['exp_id'];
+    if (!isset($paymentsByExp[$expId])) {
+        $paymentsByExp[$expId] = ['total_paid' => 0, 'count' => 0, 'payments' => []];
+    }
+    $paymentsByExp[$expId]['total_paid'] += (int)$pay['pay_amount'];
+    $paymentsByExp[$expId]['count']++;
+    $paymentsByExp[$expId]['payments'][] = $pay;
+}
+
 // ดึงสัญญาที่ใช้งานอยู่สำหรับฟอร์ม
 $activeContracts = $pdo->query("
   SELECT c.ctr_id, c.room_id,
@@ -562,7 +580,7 @@ try {
                 </div>
                 
                 <div class="calc-preview" id="calcPreview" style="display:none;">
-                  <h4>💰 สรุปค่าใช้จ่าย</h4>
+                  <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>สรุปค่าใช้จ่าย</h4>
                   <div class="calc-row">
                     <span>ค่าห้องพัก:</span>
                     <span id="preview_room">฿0</span>
@@ -705,17 +723,31 @@ try {
                         </td>
                         <td class="crud-column">
                           <?php
-                            // ดึงข้อมูล payments ที่เกี่ยวข้องกับ expense นี้
-                            $payStmt = $pdo->prepare("SELECT COUNT(*) as cnt, SUM(CASE WHEN pay_status = '1' THEN pay_amount ELSE 0 END) as paid_amount FROM payment WHERE exp_id = ?");
-                            $payStmt->execute([(int)$exp['exp_id']]);
-                            $payInfo = $payStmt->fetch(PDO::FETCH_ASSOC);
-                            $totalPayments = (int)($payInfo['cnt'] ?? 0);
-                            $paidAmount = (int)($payInfo['paid_amount'] ?? 0);
-                            $remainAmount = (int)($exp['exp_total'] ?? 0) - $paidAmount;
+                            // ใช้ข้อมูล payment ที่ดึงมาแล้ว
+                            $expId = (int)$exp['exp_id'];
+                            $payData = $paymentsByExp[$expId] ?? ['total_paid' => 0, 'count' => 0, 'payments' => []];
+                            $paidAmount = $payData['total_paid'];
+                            $paymentCount = $payData['count'];
+                            $expTotal = (int)($exp['exp_total'] ?? 0);
+                            $remainAmount = $expTotal - $paidAmount;
                           ?>
-                          <div style="font-size:0.9rem;">
-                            <div>ชำระแล้ว: <strong style="color:#22c55e;">฿<?php echo number_format($paidAmount); ?></strong></div>
-                            <div style="color:#94a3b8;margin-top:0.25rem;">ค้างชำระ: <strong style="color:#ef4444;">฿<?php echo number_format($remainAmount); ?></strong></div>
+                          <div style="font-size:0.85rem;line-height:1.6;">
+                            <div style="display:flex;align-items:center;gap:0.35rem;">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                              ชำระแล้ว: <strong style="color:#22c55e;">฿<?php echo number_format($paidAmount); ?></strong>
+                            </div>
+                            <div style="color:#94a3b8;margin-top:0.2rem;display:flex;align-items:center;gap:0.35rem;">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                              ค้างชำระ: <strong style="color:<?php echo $remainAmount > 0 ? '#ef4444' : '#22c55e'; ?>;">฿<?php echo number_format($remainAmount); ?></strong>
+                            </div>
+                            <?php if ($paymentCount > 0): ?>
+                            <div style="margin-top:0.35rem;padding:0.35rem 0.5rem;background:rgba(34,197,94,0.1);border-radius:6px;display:inline-flex;align-items:center;gap:0.3rem;">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                              <span style="color:#22c55e;font-size:0.8rem;"><?php echo $paymentCount; ?> ครั้ง</span>
+                            </div>
+                            <?php else: ?>
+                            <div style="margin-top:0.35rem;color:#64748b;font-size:0.8rem;">ยังไม่มีการชำระ</div>
+                            <?php endif; ?>
                           </div>
                         </td>
                       </tr>

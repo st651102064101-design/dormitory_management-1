@@ -1,4 +1,7 @@
 <?php
+// ตั้ง timezone เป็นประเทศไทย
+date_default_timezone_set('Asia/Bangkok');
+
 // สั้น ๆ: คืนค่า PDO connection
 function connectDB(){
 	$host = 'localhost:3306';

@@ -104,6 +104,7 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
@@ -197,12 +198,16 @@ try {
             <!-- สถิติภาพรวม -->
             <div class="news-stats-grid">
               <div class="stat-card">
-                <div class="stat-icon">📰</div>
+                <div class="lottie-icon cyan">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                </div>
                 <div class="stat-label">ข่าวทั้งหมด</div>
                 <div class="stat-value"><?php echo $allNewsCount; ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">📋</div>
+                <div class="lottie-icon indigo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                </div>
                 <div class="stat-label">ในช่วงเวลาที่เลือก</div>
                 <div class="stat-value"><?php echo $totalNews; ?></div>
               </div>
@@ -210,8 +215,8 @@ try {
 
             <!-- ปุ่มเปลี่ยนมุมมอง -->
             <div class="view-toggle">
-              <button class="view-toggle-btn active" onclick="switchView('card')">📇 มุมมองการ์ด</button>
-              <button class="view-toggle-btn" onclick="switchView('table')">📋 มุมมองตาราง</button>
+              <button class="view-toggle-btn active" onclick="switchView('card')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>มุมมองการ์ด</button>
+              <button class="view-toggle-btn" onclick="switchView('table')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>มุมมองตาราง</button>
             </div>
 
             <!-- Card View -->
@@ -220,14 +225,14 @@ try {
 <?php foreach ($rows as $r): ?>
               <div class="news-card">
                 <div class="news-time-badge"><?php echo getRelativeTime($r['news_date']); ?></div>
-                <div class="news-date">📅 <?php echo renderField($r['news_date'], 'ยังไม่ระบุ'); ?></div>
+                <div class="news-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg><?php echo renderField($r['news_date'], 'ยังไม่ระบุ'); ?></div>
                 <div class="news-title"><?php echo renderField($r['news_title'], 'ไม่มีหัวข้อ'); ?></div>
                 <div class="news-content"><?php echo renderField($r['news_details'], 'ไม่มีรายละเอียด'); ?></div>
               </div>
 <?php endforeach; ?>
 <?php else: ?>
               <div class="empty-state" style="grid-column: 1 / -1;">
-                <div class="empty-state-icon">📭</div>
+                <div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg></div>
                 <p>ไม่มีข่าวประชาสัมพันธ์ในช่วงเวลานี้</p>
               </div>
 <?php endif; ?>
@@ -256,7 +261,7 @@ try {
               </table>
 <?php else: ?>
               <div class="empty-state">
-                <div class="empty-state-icon">📭</div>
+                <div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg></div>
                 <p>ไม่มีข่าวประชาสัมพันธ์ในช่วงเวลานี้</p>
               </div>
 <?php endif; ?>

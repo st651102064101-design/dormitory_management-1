@@ -159,6 +159,7 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
@@ -239,6 +240,8 @@ try {
       .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
       .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
       .empty-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+      .page-title-icon { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 10px; background: linear-gradient(135deg, #3b82f6, #1d4ed8); margin-right: 12px; vertical-align: middle; }
+      .page-title-icon svg { width: 22px; height: 22px; stroke: #fff; }
     </style>
   </head>
   <body class="reports-page">
@@ -248,22 +251,28 @@ try {
         <div class="reports-container">
           <?php include __DIR__ . '/../includes/page_header.php'; ?>
           <div class="container">
-            <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#f8fafc;">📝 รายงานการจอง</h1>
+            <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#f8fafc;display:flex;align-items:center;"><span class="page-title-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> รายงานการจอง</h1>
             
             <!-- Stat Cards -->
             <div class="reservation-stats-grid">
               <div class="stat-card">
-                <div class="stat-icon">📌</div>
+                <div class="lottie-icon indigo">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+                </div>
                 <div class="stat-label">จองแล้ว</div>
                 <div class="stat-value"><?php echo $bookingConfirmed; ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">✅</div>
+                <div class="lottie-icon green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                </div>
                 <div class="stat-label">เข้าพักแล้ว</div>
                 <div class="stat-value"><?php echo $bookingCompleted; ?></div>
               </div>
               <div class="stat-card">
-                <div class="stat-icon">❌</div>
+                <div class="lottie-icon red">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                </div>
                 <div class="stat-label">ยกเลิก</div>
                 <div class="stat-value"><?php echo $bookingCancelled; ?></div>
               </div>
@@ -279,8 +288,8 @@ try {
 
             <!-- ปุ่มเปลี่ยนมุมมอง -->
             <div class="view-toggle">
-              <button type="button" class="view-toggle-btn active" onclick="switchView('card')">📇 มุมมองการ์ด</button>
-              <button type="button" class="view-toggle-btn" onclick="switchView('table')">📋 มุมมองตาราง</button>
+              <button type="button" class="view-toggle-btn active" onclick="switchView('card')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>มุมมองการ์ด</button>
+              <button type="button" class="view-toggle-btn" onclick="switchView('table')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>มุมมองตาราง</button>
             </div>
 
             <!-- Card View -->
@@ -297,7 +306,7 @@ try {
 ?>
               <div class="reservation-card">
                 <div class="reservation-time-badge"><?php echo getRelativeTime($r['bkg_date']); ?></div>
-                <div class="reservation-date">📅 จอง: <?php echo getRelativeTime($r['bkg_date']); ?></div>
+                <div class="reservation-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>จอง: <?php echo getRelativeTime($r['bkg_date']); ?></div>
                 <div class="reservation-info">
                   <div><strong>ห้องพัก:</strong> <?php echo renderField($r['room_number'], 'ไม่ระบุ'); ?></div>
                   <div><strong>เข้าพัก:</strong> <?php echo getRelativeTime($r['bkg_checkin_date']); ?></div>
@@ -308,7 +317,7 @@ try {
 <?php endforeach; ?>
 <?php else: ?>
               <div class="empty-state">
-                <div class="empty-icon">📭</div>
+                <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div>
                 <div class="empty-text">ไม่มีข้อมูลการจอง</div>
               </div>
 <?php endif; ?>
@@ -364,7 +373,7 @@ try {
               </table>
 <?php else: ?>
               <div class="empty-state">
-                <div class="empty-icon">📭</div>
+                <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg></div>
                 <div class="empty-text">ไม่มีข้อมูลการจอง</div>
               </div>
 <?php endif; ?>

@@ -232,6 +232,7 @@ try {
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
@@ -583,7 +584,9 @@ try {
             <div class="payment-stats-grid">
               <div class="stat-card">
                 <div class="stat-card-header">
-                  <div class="stat-icon">📊</div>
+                  <div class="lottie-icon purple">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                  </div>
                   <div class="stat-label">ทั้งหมด</div>
                 </div>
                 <div class="stat-value"><?php echo number_format(count($rows)); ?></div>
@@ -593,7 +596,9 @@ try {
               <?php if ($hasPayStatus): ?>
               <div class="stat-card">
                 <div class="stat-card-header">
-                  <div class="stat-icon">⏳</div>
+                  <div class="lottie-icon orange">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  </div>
                   <div class="stat-label">รอตรวจสอบ</div>
                 </div>
                 <div class="stat-value" style="color:#fbbf24;"><?php echo number_format($summary['pending'] ?? 0); ?></div>
@@ -602,7 +607,9 @@ try {
 
               <div class="stat-card">
                 <div class="stat-card-header">
-                  <div class="stat-icon">✅</div>
+                  <div class="lottie-icon green">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                  </div>
                   <div class="stat-label">ตรวจสอบแล้ว</div>
                 </div>
                 <div class="stat-value" style="color:#22c55e;"><?php echo number_format($summary['verified'] ?? 0); ?></div>
@@ -613,7 +620,9 @@ try {
               <?php if ($hasPayAmount && $summary['total'] !== null): ?>
               <div class="stat-card">
                 <div class="stat-card-header">
-                  <div class="stat-icon">💰</div>
+                  <div class="lottie-icon yellow">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                  </div>
                   <div class="stat-label">ยอดรวม</div>
                 </div>
                 <div class="stat-value" style="color:#60a5fa;">฿<?php echo number_format($summary['total'], 2); ?></div>
@@ -630,11 +639,11 @@ try {
 
               <?php if ($errorMessage): ?>
                 <div class="no-data">
-                  ⚠️ เกิดข้อผิดพลาด: <?php echo htmlspecialchars($errorMessage); ?>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>เกิดข้อผิดพลาด: <?php echo htmlspecialchars($errorMessage); ?>
                 </div>
               <?php elseif (empty($rows)): ?>
                 <div class="no-data">
-                  📭 ไม่มีข้อมูลการชำระเงิน
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>ไม่มีข้อมูลการชำระเงิน
                 </div>
               <?php else: ?>
                 <table id="table-payments-report" class="payments-table">

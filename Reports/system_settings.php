@@ -32,6 +32,7 @@ include __DIR__ . '/settings/settings_data.php';
   <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>">
   <link rel="stylesheet" href="../Assets/Css/animate-ui.css">
   <link rel="stylesheet" href="../Assets/Css/main.css">
+  <link rel="stylesheet" href="../Assets/Css/lottie-icons.css">
   <link rel="stylesheet" href="settings/apple-settings.css">
 </head>
 <body class="reports-page apple-settings-page" data-theme-color="<?php echo htmlspecialchars($themeColor); ?>">
@@ -70,17 +71,23 @@ include __DIR__ . '/settings/settings_data.php';
         <!-- Stats -->
         <div class="apple-stats-grid">
           <div class="apple-stat-card">
-            <div class="apple-stat-icon blue">🏠</div>
+            <div class="lottie-icon blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </div>
             <div class="apple-stat-value"><?php echo number_format($totalRooms); ?></div>
             <div class="apple-stat-label">ห้องพัก</div>
           </div>
           <div class="apple-stat-card">
-            <div class="apple-stat-icon green">👥</div>
+            <div class="lottie-icon green">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </div>
             <div class="apple-stat-value"><?php echo number_format($totalTenants); ?></div>
             <div class="apple-stat-label">ผู้เช่า</div>
           </div>
           <div class="apple-stat-card">
-            <div class="apple-stat-icon orange">📋</div>
+            <div class="lottie-icon orange">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>
+            </div>
             <div class="apple-stat-value"><?php echo number_format($totalBookings); ?></div>
             <div class="apple-stat-label">รอจอง</div>
           </div>

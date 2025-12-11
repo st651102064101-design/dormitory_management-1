@@ -72,7 +72,7 @@ try {
               <button id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" style="background:transparent;border:0;color:#fff;padding:0.6rem 0.85rem;border-radius:6px;cursor:pointer;font-size:1.25rem">☰</button>
               <h2 style="margin:0;color:#fff;font-size:1.05rem">จัดการมิเตอร์น้ำ-ไฟ</h2>
             </div>
-            <button id="toggle-view" aria-label="Toggle view" style="background:#334155;border:1px solid #475569;color:#fff;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;margin-right:1rem;">🃏 การ์ด</button>
+            <button id="toggle-view" aria-label="Toggle view" style="background:#334155;border:1px solid #475569;color:#fff;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;margin-right:1rem;display:inline-flex;align-items:center;gap:0.4rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด</button>
           </header>
 
           <section class="manage-panel">
@@ -90,7 +90,7 @@ try {
             
             <?php if (empty($utilities)): ?>
               <div style="text-align:center;padding:3rem 1rem;color:#64748b;">
-                <div style="font-size:3rem;margin-bottom:1rem;">📊</div>
+                <div style="margin-bottom:1rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
                 <h3>ยังไม่มีข้อมูลมิเตอร์</h3>
                 <p>เริ่มต้นบันทึกการอ่านมิเตอร์ของห้องพัก</p>
               </div>
@@ -125,7 +125,7 @@ try {
                     <!-- น้ำ -->
                     <div>
                       <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
-                        <span style="font-size:1.25rem;">💧</span>
+                        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg, #22c55e, #16a34a);"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span>
                         <div style="font-size:1rem;font-weight:700;color:#22c55e;">น้ำ</div>
                       </div>
                       <div style="background:#0f172a;padding:1rem;border-radius:6px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
@@ -147,7 +147,7 @@ try {
                     <!-- ไฟ -->
                     <div>
                       <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
-                        <span style="font-size:1.25rem;">⚡</span>
+                        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg, #f59e0b, #d97706);"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
                         <div style="font-size:1rem;font-weight:700;color:#3b82f6;">ไฟ</div>
                       </div>
                       <div style="background:#0f172a;padding:1rem;border-radius:6px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
@@ -178,8 +178,8 @@ try {
                         <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">รหัส</th>
                         <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">ห้อง/ผู้เช่า</th>
                         <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">วันที่อ่าน</th>
-                        <th colspan="3" style="padding:0.75rem;color:#22c55e;text-align:center;font-weight:700;border-bottom:1px solid #475569;border-right:3px solid #475569;font-size:1.1rem;">💧 น้ำ</th>
-                        <th colspan="3" style="padding:0.75rem;color:#3b82f6;text-align:center;font-weight:700;border-bottom:1px solid #475569;font-size:1.1rem;">⚡ ไฟ</th>
+                        <th colspan="3" style="padding:0.75rem;color:#22c55e;text-align:center;font-weight:700;border-bottom:1px solid #475569;border-right:3px solid #475569;font-size:1.1rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>น้ำ</th>
+                        <th colspan="3" style="padding:0.75rem;color:#3b82f6;text-align:center;font-weight:700;border-bottom:1px solid #475569;font-size:1.1rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>ไฟ</th>
                       </tr>
                       <tr style="background:#0f172a;">
                         <th style="padding:0.75rem;color:#22c55e;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">เริ่มต้น</th>
@@ -276,11 +276,11 @@ try {
           if (isCardView) {
             cardView.style.display = 'grid';
             tableView.style.display = 'none';
-            viewToggle.textContent = '📊 ตาราง';
+            viewToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>ตาราง';
           } else {
             cardView.style.display = 'none';
             tableView.style.display = 'block';
-            viewToggle.textContent = '🃏 การ์ด';
+            viewToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด';
           }
         }
 

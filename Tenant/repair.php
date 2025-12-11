@@ -322,6 +322,72 @@ $repairStatusMap = [
         }
         .nav-item.active, .nav-item:hover { color: #3b82f6; }
         .nav-icon { font-size: 1.3rem; margin-bottom: 0.25rem; }
+        .nav-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .section-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .section-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .alert-icon svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
+        .file-upload-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: #64748b;
+            stroke-width: 2;
+            fill: none;
+        }
+        .btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 8px;
+        }
+        .btn-icon svg {
+            width: 18px;
+            height: 18px;
+            stroke: white;
+            stroke-width: 2;
+            fill: none;
+        }
+        .empty-state-icon svg {
+            width: 48px;
+            height: 48px;
+            stroke: #64748b;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .date-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .date-icon svg {
+            width: 12px;
+            height: 12px;
+            stroke: #64748b;
+            stroke-width: 2;
+            fill: none;
+            margin-right: 4px;
+        }
         #preview-container { display: none; margin-top: 0.5rem; }
         #preview-container img { max-width: 100%; max-height: 150px; border-radius: 8px; }
     </style>
@@ -330,27 +396,27 @@ $repairStatusMap = [
     <header class="header">
         <div class="header-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="back-btn">←</a>
-            <h1 class="header-title">🔧 แจ้งซ่อม</h1>
+            <h1 class="header-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span> แจ้งซ่อม</h1>
         </div>
     </header>
     
     <div class="container">
         <?php if ($success): ?>
         <div class="alert alert-success">
-            <span>✅</span>
+            <span class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
             <span><?php echo htmlspecialchars($success); ?></span>
         </div>
         <?php endif; ?>
         
         <?php if ($error): ?>
         <div class="alert alert-error">
-            <span>❌</span>
+            <span class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
             <span><?php echo htmlspecialchars($error); ?></span>
         </div>
         <?php endif; ?>
         
         <div class="form-section">
-            <div class="section-title">📝 แจ้งซ่อมใหม่</div>
+            <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span> แจ้งซ่อมใหม่</div>
             <form method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>รายละเอียดอุปกรณ์ที่ต้องการซ่อม *</label>
@@ -360,23 +426,23 @@ $repairStatusMap = [
                     <label>รูปภาพประกอบ (ถ้ามี)</label>
                     <div class="file-upload" onclick="document.getElementById('repair_image').click()">
                         <input type="file" name="repair_image" id="repair_image" accept="image/jpeg,image/png,image/webp" onchange="previewImage(this)">
-                        <div class="file-upload-icon">📷</div>
+                        <div class="file-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
                         <div class="file-upload-text">แตะเพื่อเลือกรูปภาพ</div>
                     </div>
                     <div id="preview-container">
                         <img id="preview-image" src="" alt="Preview">
                     </div>
                 </div>
-                <button type="submit" class="btn-submit">📤 ส่งแจ้งซ่อม</button>
+                <button type="submit" class="btn-submit"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span> ส่งแจ้งซ่อม</button>
             </form>
         </div>
         
         <div class="repair-history">
-            <div class="section-title">📋 ประวัติการแจ้งซ่อม</div>
+            <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> ประวัติการแจ้งซ่อม</div>
             
             <?php if (empty($repairs)): ?>
             <div class="empty-state">
-                <div class="empty-state-icon">📭</div>
+                <div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 12H16c-.7 2-2 3-4 3s-3.3-1-4-3H2.5"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.4-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.8 1.1z"/></svg></div>
                 <p>ยังไม่มีประวัติการแจ้งซ่อม</p>
             </div>
             <?php else: ?>
@@ -384,9 +450,9 @@ $repairStatusMap = [
             <div class="repair-item">
                 <div class="repair-header">
                     <div class="repair-date">
-                        📅 <?php echo $repair['repair_date'] ?? '-'; ?>
+                        <span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <?php echo $repair['repair_date'] ?? '-'; ?>
                         <?php if ($repair['repair_time']): ?>
-                        ⏰ <?php echo substr($repair['repair_time'], 0, 5); ?>
+                        <span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> <?php echo substr($repair['repair_time'], 0, 5); ?>
                         <?php endif; ?>
                     </div>
                     <span class="repair-status" style="background: <?php echo $repairStatusMap[$repair['repair_status'] ?? '0']['bg']; ?>; color: <?php echo $repairStatusMap[$repair['repair_status'] ?? '0']['color']; ?>">
@@ -408,19 +474,19 @@ $repairStatusMap = [
     <nav class="bottom-nav">
         <div class="bottom-nav-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="nav-item">
-                <div class="nav-icon">🏠</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                 หน้าหลัก
             </a>
             <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="nav-item">
-                <div class="nav-icon">🧾</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
                 บิล
             </a>
             <a href="repair.php?token=<?php echo urlencode($token); ?>" class="nav-item active">
-                <div class="nav-icon">🔧</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
                 แจ้งซ่อม
             </a>
             <a href="profile.php?token=<?php echo urlencode($token); ?>" class="nav-item">
-                <div class="nav-icon">👤</div>
+                <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                 โปรไฟล์
             </a>
         </div>
