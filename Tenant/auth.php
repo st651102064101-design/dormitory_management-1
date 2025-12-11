@@ -65,11 +65,15 @@ function checkTenantAuth(): array {
 function getSystemSettings(PDO $pdo): array {
     $settings = [
         'site_name' => 'Sangthian Dormitory',
-        'logo_filename' => 'Logo.jpg'
+        'logo_filename' => 'Logo.jpg',
+        'bank_name' => '',
+        'bank_account_name' => '',
+        'bank_account_number' => '',
+        'promptpay_number' => ''
     ];
     
     try {
-        $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+        $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number')");
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $settings[$row['setting_key']] = $row['setting_value'];
         }

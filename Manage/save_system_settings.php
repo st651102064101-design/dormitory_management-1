@@ -393,6 +393,50 @@ try {
         exit;
     }
 
+    // บันทึกชื่อธนาคาร
+    if (isset($_POST['bank_name'])) {
+        $bankName = trim($_POST['bank_name']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['bank_name', $bankName, $bankName]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกชื่อธนาคารสำเร็จ']);
+        exit;
+    }
+
+    // บันทึกชื่อบัญชี
+    if (isset($_POST['bank_account_name'])) {
+        $bankAccountName = trim($_POST['bank_account_name']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['bank_account_name', $bankAccountName, $bankAccountName]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกชื่อบัญชีสำเร็จ']);
+        exit;
+    }
+
+    // บันทึกเลขบัญชี
+    if (isset($_POST['bank_account_number'])) {
+        $bankAccountNumber = trim($_POST['bank_account_number']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['bank_account_number', $bankAccountNumber, $bankAccountNumber]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกเลขบัญชีสำเร็จ']);
+        exit;
+    }
+
+    // บันทึกพร้อมเพย์
+    if (isset($_POST['promptpay_number'])) {
+        $promptpayNumber = trim($_POST['promptpay_number']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['promptpay_number', $promptpayNumber, $promptpayNumber]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกพร้อมเพย์สำเร็จ']);
+        exit;
+    }
+
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'error' => 'ไม่มีข้อมูลที่จะบันทึก']);
     exit;

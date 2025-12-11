@@ -26,9 +26,15 @@ $contactEmail = 'test@gmail.com';
 $publicTheme = 'dark';
 $useBgImage = '0';
 
+// ข้อมูลบัญชีธนาคาร
+$bankName = '';
+$bankAccountName = '';
+$bankAccountNumber = '';
+$promptpayNumber = '';
+
 // ดึงค่าตั้งค่าระบบจาก database
 try {
-    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image')");
+    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number')");
     $rawSettings = $settingsStmt->fetchAll(PDO::FETCH_ASSOC);
     $settings = [];
     foreach ($rawSettings as $setting) {
@@ -45,6 +51,12 @@ try {
     $contactEmail = $settings['contact_email'] ?? $contactEmail;
     $publicTheme = $settings['public_theme'] ?? $publicTheme;
     $useBgImage = $settings['use_bg_image'] ?? $useBgImage;
+    
+    // ข้อมูลบัญชีธนาคาร
+    $bankName = $settings['bank_name'] ?? $bankName;
+    $bankAccountName = $settings['bank_account_name'] ?? $bankAccountName;
+    $bankAccountNumber = $settings['bank_account_number'] ?? $bankAccountNumber;
+    $promptpayNumber = $settings['promptpay_number'] ?? $promptpayNumber;
 
     // ถ้า table ว่าง ให้ insert default
     $checkStmt = $pdo->query("SELECT COUNT(*) as cnt FROM system_settings");

@@ -166,6 +166,42 @@ class AppleSettings {
       });
     }
 
+    // Bank Name Form
+    const bankNameForm = document.getElementById('bankNameForm');
+    if (bankNameForm) {
+      bankNameForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveBankName();
+      });
+    }
+
+    // Bank Account Name Form
+    const bankAccountNameForm = document.getElementById('bankAccountNameForm');
+    if (bankAccountNameForm) {
+      bankAccountNameForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveBankAccountName();
+      });
+    }
+
+    // Bank Account Number Form
+    const bankAccountNumberForm = document.getElementById('bankAccountNumberForm');
+    if (bankAccountNumberForm) {
+      bankAccountNumberForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveBankAccountNumber();
+      });
+    }
+
+    // PromptPay Form
+    const promptpayForm = document.getElementById('promptpayForm');
+    if (promptpayForm) {
+      promptpayForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.savePromptpay();
+      });
+    }
+
     // Font Size Change
     const fontSizeSelect = document.getElementById('fontSize');
     if (fontSizeSelect) {
@@ -252,6 +288,103 @@ class AppleSettings {
         this.closeSheet('sheet-email');
         const displayEl = document.querySelector('[data-display="email"]');
         if (displayEl) displayEl.textContent = email;
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  // ===== Bank Information Forms =====
+  async saveBankName() {
+    const bankName = document.getElementById('bankName')?.value;
+    
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `bank_name=${encodeURIComponent(bankName)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกชื่อธนาคารสำเร็จ', 'success');
+        this.closeSheet('sheet-bankname');
+        const displayEl = document.querySelector('[data-display="bankname"]');
+        if (displayEl) displayEl.textContent = bankName || 'ไม่ระบุ';
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async saveBankAccountName() {
+    const bankAccountName = document.getElementById('bankAccountName')?.value.trim();
+    
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `bank_account_name=${encodeURIComponent(bankAccountName)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกชื่อบัญชีสำเร็จ', 'success');
+        this.closeSheet('sheet-bankaccountname');
+        const displayEl = document.querySelector('[data-display="bankaccountname"]');
+        if (displayEl) displayEl.textContent = bankAccountName || 'ไม่ระบุ';
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async saveBankAccountNumber() {
+    const bankAccountNumber = document.getElementById('bankAccountNumber')?.value.trim();
+    
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `bank_account_number=${encodeURIComponent(bankAccountNumber)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกเลขบัญชีสำเร็จ', 'success');
+        this.closeSheet('sheet-bankaccountnumber');
+        const displayEl = document.querySelector('[data-display="bankaccountnumber"]');
+        if (displayEl) displayEl.textContent = bankAccountNumber || 'ไม่ระบุ';
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async savePromptpay() {
+    const promptpayNumber = document.getElementById('promptpayNumber')?.value.trim();
+    
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `promptpay_number=${encodeURIComponent(promptpayNumber)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกพร้อมเพย์สำเร็จ', 'success');
+        this.closeSheet('sheet-promptpay');
+        const displayEl = document.querySelector('[data-display="promptpay"]');
+        if (displayEl) displayEl.textContent = promptpayNumber || 'ไม่ระบุ';
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
       }

@@ -122,6 +122,15 @@ try {
     border-right: 1px solid #e5e7eb !important;
   }
 
+  body.live-light .sidebar-header {
+    background: #f9fafb !important;
+  }
+
+  body.live-light .sidebar-footer {
+    background: #f9fafb !important;
+    border-top: 1px solid #e5e7eb !important;
+  }
+
   body.live-light, body.live-light * {
     color: #111827 !important;
   }
@@ -324,6 +333,15 @@ try {
   aside.app-sidebar {
     background: #f9fafb !important;
     border-right: 1px solid #e5e7eb !important;
+  }
+  
+  .sidebar-header {
+    background: #f9fafb !important;
+  }
+  
+  .sidebar-footer {
+    background: #f9fafb !important;
+    border-top: 1px solid #e5e7eb !important;
   }
   
   /* ตัวหนังสือทั้งหมดเป็นสีดำ */
@@ -939,6 +957,42 @@ try {
     flex-direction: column;
     align-items: stretch;
     gap: 0.25rem;
+    height: 100vh;
+    overflow: hidden;
+  }
+  /* Header: Logo & Name - Fixed at top */
+  .app-sidebar .sidebar-header {
+    flex-shrink: 0;
+    padding: 0.5rem;
+    text-align: center;
+  }
+  /* Navigation area should scroll if content is too long */
+  .app-sidebar .sidebar-nav-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0; /* Important for flex scroll */
+  }
+  /* Scrollbar styling for nav area */
+  .app-sidebar .sidebar-nav-area::-webkit-scrollbar {
+    width: 4px;
+  }
+  .app-sidebar .sidebar-nav-area::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .app-sidebar .sidebar-nav-area::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+  }
+  .app-sidebar .sidebar-nav-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
+  }
+  /* Footer stays at bottom, never scrolls */
+  .sidebar-footer {
+    flex-shrink: 0;
+    background: var(--theme-bg-color, #1e293b);
+    padding: 0.75rem 0.5rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
   }
   .app-sidebar nav {
     margin: 0 !important;
@@ -1255,9 +1309,31 @@ try {
       will-change: transform;
       box-shadow: 4px 0 24px rgba(0,0,0,0.6) !important;
       padding: 1.25rem 0.75rem !important;
-      overflow: auto !important;
+      overflow: hidden !important;
       flex-shrink: 0 !important;
       margin: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+    }
+    
+    /* Mobile: header stays at top */
+    .app-sidebar .sidebar-header {
+      flex-shrink: 0 !important;
+      background: #0b162a !important;
+    }
+    
+    /* Mobile: nav area scrolls, footer stays */
+    .app-sidebar .sidebar-nav-area {
+      flex: 1 !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      min-height: 0 !important;
+    }
+    
+    .app-sidebar .sidebar-footer {
+      flex-shrink: 0 !important;
+      position: relative !important;
+      background: #0b162a !important;
     }
     
     /* Show team avatar/logo on mobile/tablet */
@@ -1453,7 +1529,8 @@ try {
   }
 </script>
 <aside class="app-sidebar">
-  <div class="" >
+  <!-- Header: Logo & Name - Fixed at top -->
+  <div class="sidebar-header">
     <div class="team-avatar" >
       <!-- Project logo from database -->
       <img src="/Dormitory_Management/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="team-avatar-img"  />
@@ -1463,6 +1540,8 @@ try {
     </div>
   </div>
 
+  <!-- Navigation area - Scrollable -->
+  <div class="sidebar-nav-area">
   <nav class="app-nav" aria-label="Main navigation" >
     <div class="group" >
       <details id="nav-dashboard" open>
@@ -1513,8 +1592,7 @@ try {
       </details>
     </div>
   </nav>
-
-  <div style="height:0.2rem"></div>
+  </div><!-- end sidebar-nav-area -->
 
   <div class="sidebar-footer">
     <div class="user-row">

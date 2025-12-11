@@ -433,6 +433,102 @@ $paymentStatusMap = [
             text-align: center;
             color: #34d399;
         }
+        /* Bank Info Styles */
+        .bank-info-section {
+            background: linear-gradient(135deg, rgba(30, 41, 59, 0.9) 0%, rgba(51, 65, 85, 0.9) 100%);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .bank-info-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.85rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .bank-info-item:last-child {
+            border-bottom: none;
+        }
+        .bank-info-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .bank-info-icon.bank {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+        }
+        .bank-info-icon.account {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+        .bank-info-icon.number {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+        .bank-info-icon.promptpay {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        .bank-info-icon svg {
+            width: 22px;
+            height: 22px;
+            stroke: white;
+            stroke-width: 2;
+            fill: none;
+        }
+        .bank-info-content {
+            flex: 1;
+        }
+        .bank-info-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-bottom: 2px;
+        }
+        .bank-info-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        .copy-text {
+            cursor: pointer;
+            transition: color 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .copy-text:hover {
+            color: #3b82f6;
+        }
+        .copy-text:active {
+            transform: scale(0.98);
+        }
+        .copy-icon {
+            font-size: 0.9rem;
+            opacity: 0.6;
+        }
+        .copy-toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(16, 185, 129, 0.95);
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 30px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            z-index: 1000;
+            animation: toastIn 0.3s ease, toastOut 0.3s ease 1.5s forwards;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+        @keyframes toastOut {
+            from { opacity: 1; transform: translateX(-50%) translateY(0); }
+            to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+        }
     </style>
 </head>
 <body>
@@ -455,6 +551,53 @@ $paymentStatusMap = [
         <div class="alert alert-error">
             <span class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
             <span><?php echo htmlspecialchars($error); ?></span>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Bank Information Section -->
+        <?php if (!empty($settings['bank_name']) || !empty($settings['promptpay_number'])): ?>
+        <div class="form-section bank-info-section">
+            <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ข้อมูลการชำระเงิน</div>
+            
+            <?php if (!empty($settings['bank_name'])): ?>
+            <div class="bank-info-item">
+                <div class="bank-info-icon bank"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/></svg></div>
+                <div class="bank-info-content">
+                    <div class="bank-info-label">ธนาคาร</div>
+                    <div class="bank-info-value"><?php echo htmlspecialchars($settings['bank_name']); ?></div>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($settings['bank_account_name'])): ?>
+            <div class="bank-info-item">
+                <div class="bank-info-icon account"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
+                <div class="bank-info-content">
+                    <div class="bank-info-label">ชื่อบัญชี</div>
+                    <div class="bank-info-value"><?php echo htmlspecialchars($settings['bank_account_name']); ?></div>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($settings['bank_account_number'])): ?>
+            <div class="bank-info-item">
+                <div class="bank-info-icon number"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg></div>
+                <div class="bank-info-content">
+                    <div class="bank-info-label">เลขบัญชี</div>
+                    <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['bank_account_number']); ?>')"><?php echo htmlspecialchars($settings['bank_account_number']); ?> <span class="copy-icon">📋</span></div>
+                </div>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($settings['promptpay_number'])): ?>
+            <div class="bank-info-item">
+                <div class="bank-info-icon promptpay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+                <div class="bank-info-content">
+                    <div class="bank-info-label">พร้อมเพย์</div>
+                    <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['promptpay_number']); ?>')"><?php echo htmlspecialchars($settings['promptpay_number']); ?> <span class="copy-icon">📋</span></div>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
         
@@ -584,6 +727,36 @@ $paymentStatusMap = [
     function checkFormValid() {
         const hasProof = document.getElementById('pay_proof').files.length > 0;
         document.getElementById('submitBtn').disabled = !(selectedBill && hasProof);
+    }
+    
+    function copyToClipboard(text) {
+        navigator.clipboard.writeText(text).then(() => {
+            showCopyToast('คัดลอกแล้ว ✓');
+        }).catch(() => {
+            // Fallback for older browsers
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            showCopyToast('คัดลอกแล้ว ✓');
+        });
+    }
+    
+    function showCopyToast(message) {
+        // Remove existing toast
+        const existingToast = document.querySelector('.copy-toast');
+        if (existingToast) existingToast.remove();
+        
+        const toast = document.createElement('div');
+        toast.className = 'copy-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+        
+        setTimeout(() => {
+            toast.remove();
+        }, 2000);
     }
     </script>
 </body>
