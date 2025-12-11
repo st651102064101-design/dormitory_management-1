@@ -47,19 +47,33 @@ try {
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
+$themeColor = '#0f172a';
+$isLightTheme = false;
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+        if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
+    }
+    
+    // คำนวณ brightness ของสี theme
+    $hex = str_replace('#', '', $themeColor);
+    if (strlen($hex) === 6) {
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+        $isLightTheme = ($brightness > 155);
     }
 } catch (PDOException $e) {}
 
 $baseUrl = getTenantPortalUrl();
 $totalContracts = count($contracts);
+$lightThemeClass = $isLightTheme ? 'live-light' : '';
 ?>
 <!DOCTYPE html>
-<html lang="th">
+<html lang="th" class="<?php echo $lightThemeClass; ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -898,7 +912,7 @@ $totalContracts = count($contracts);
         }
     </style>
 </head>
-<body class="reports-page qr-page">
+<body class="reports-page qr-page <?php echo $lightThemeClass; ?>">
     <div class="particles no-print">
         <?php for ($i = 0; $i < 20; $i++): ?>
         <div class="particle" style="left: <?php echo rand(0, 100); ?>%; animation-delay: <?php echo rand(0, 15); ?>s; animation-duration: <?php echo rand(12, 20); ?>s;"></div>
@@ -1186,11 +1200,28 @@ $totalContracts = count($contracts);
         printWindow.document.close();
     }
     
-    // Ensure body also has light-theme class
+    // Watch for live-light class changes on body (from sidebar theme system)
     document.addEventListener('DOMContentLoaded', function() {
-        if (document.documentElement.classList.contains('light-theme')) {
-            document.body.classList.add('light-theme');
-        }
+        // Check if body has live-light class (set by system-settings.js)
+        const checkLightTheme = () => {
+            if (document.body.classList.contains('live-light')) {
+                document.documentElement.classList.add('live-light');
+            }
+        };
+        
+        // Initial check
+        checkLightTheme();
+        
+        // Watch for changes
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                if (mutation.attributeName === 'class') {
+                    checkLightTheme();
+                }
+            });
+        });
+        
+        observer.observe(document.body, { attributes: true });
     });
     </script>
 </body>
