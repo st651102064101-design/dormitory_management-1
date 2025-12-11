@@ -2662,14 +2662,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Remove all theme classes
         document.body.classList.remove('theme-homepage', 'theme-cyber', 'theme-aurora', 'theme-holo', 'theme-classic', 'theme-dark', 'theme-light');
         
+        // Map dark to homepage
+        let actualTheme = themeName;
+        if (themeName === 'dark') {
+          actualTheme = 'homepage';
+        }
+        
         // Find theme index
         const index = themes.findIndex(t => t.name === themeName);
         if (index !== -1) {
           currentTheme = index;
           
           // Apply new theme (cyber neon has no class - it's the base CSS)
-          if (themeName !== 'cyber') {
-            document.body.classList.add('theme-' + themeName);
+          if (actualTheme !== 'cyber') {
+            document.body.classList.add('theme-' + actualTheme);
           }
           
           // Save preference

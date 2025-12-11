@@ -1226,9 +1226,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         background: linear-gradient(135deg, #fb923c, #f97316);
         box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
       }
+      body.theme-light .step-dot {
+        background: rgba(148, 163, 184, 0.5);
+      }
       body.theme-light .step-dot.active {
         background: #f97316;
         box-shadow: 0 0 15px rgba(249, 115, 22, 0.5);
+      }
+      body.theme-light .step-dot.completed {
+        background: #22c55e;
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.5);
       }
       body.theme-light .back-link {
         color: #64748b;
@@ -1618,6 +1625,205 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
       // ============================================
+      // ✨ ELEGANT 3D PARALLAX SYSTEM
+      // ============================================
+      const card = document.getElementById('mainCard');
+      const container = document.querySelector('.container');
+      
+      // Elegant Settings
+      const maxTilt = 10;
+      const glareOpacity = 0.2;
+      const perspective = 1200;
+      const accentColor = { r: 249, g: 115, b: 22 }; // Orange - #f97316
+      
+      // Create elegant glare element
+      const glare = document.createElement('div');
+      glare.className = 'card-glare';
+      glare.style.cssText = `
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 24px;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        z-index: 100;
+      `;
+      card.appendChild(glare);
+      
+      // Create subtle border glow
+      const borderGlow = document.createElement('div');
+      borderGlow.className = 'border-glow';
+      borderGlow.style.cssText = `
+        position: absolute;
+        top: -2px;
+        left: -2px;
+        right: -2px;
+        bottom: -2px;
+        border-radius: 26px;
+        pointer-events: none;
+        z-index: -1;
+        opacity: 0;
+        transition: opacity 0.4s ease;
+        background: linear-gradient(135deg, rgba(249, 115, 22, 0.5), rgba(249, 115, 22, 0.1), rgba(249, 115, 22, 0.5));
+        background-size: 200% 200%;
+        filter: blur(10px);
+      `;
+      card.appendChild(borderGlow);
+      
+      // Set card styles for 3D effect
+      card.style.transformStyle = 'preserve-3d';
+      card.style.willChange = 'transform';
+      container.style.perspective = perspective + 'px';
+      
+      // Smooth interpolation values
+      let currentTiltX = 0;
+      let currentTiltY = 0;
+      let targetTiltX = 0;
+      let targetTiltY = 0;
+      let isHovering = false;
+      let animationFrame = null;
+      
+      // Add elegant animation CSS
+      if (!document.getElementById('elegantAnimations')) {
+        const styleSheet = document.createElement('style');
+        styleSheet.id = 'elegantAnimations';
+        styleSheet.textContent = `
+          @keyframes shimmer {
+            0% { background-position: 200% 50%; }
+            100% { background-position: -200% 50%; }
+          }
+          
+          @keyframes breathe {
+            0%, 100% { opacity: 0.3; filter: blur(10px); }
+            50% { opacity: 0.5; filter: blur(15px); }
+          }
+          
+          .border-glow.active {
+            animation: breathe 3s ease-in-out infinite, shimmer 4s linear infinite;
+          }
+        `;
+        document.head.appendChild(styleSheet);
+      }
+      
+      // Smooth animation loop
+      function smoothUpdate() {
+        const smoothness = isHovering ? 0.12 : 0.06;
+        
+        currentTiltX += (targetTiltX - currentTiltX) * smoothness;
+        currentTiltY += (targetTiltY - currentTiltY) * smoothness;
+        
+        // Apply smooth transform
+        const scale = isHovering ? 1.02 : 1;
+        card.style.transform = `
+          rotateX(${currentTiltX}deg) 
+          rotateY(${currentTiltY}deg)
+          scale3d(${scale}, ${scale}, ${scale})
+        `;
+        
+        animationFrame = requestAnimationFrame(smoothUpdate);
+      }
+      smoothUpdate();
+      
+      // Elegant parallax function
+      function applyCardParallax(cardElement, glareElement) {
+        cardElement.addEventListener('mousemove', function(e) {
+          const rect = cardElement.getBoundingClientRect();
+          const centerX = rect.left + rect.width / 2;
+          const centerY = rect.top + rect.height / 2;
+          
+          // Calculate mouse position relative to card center (-1 to 1)
+          const mouseX = (e.clientX - centerX) / (rect.width / 2);
+          const mouseY = (e.clientY - centerY) / (rect.height / 2);
+          
+          // Clamp values
+          const clampedX = Math.max(-1, Math.min(1, mouseX));
+          const clampedY = Math.max(-1, Math.min(1, mouseY));
+          
+          // Set target tilt angles
+          targetTiltX = -clampedY * maxTilt;
+          targetTiltY = clampedX * maxTilt;
+          
+          // Elegant single-point glare
+          const glareX = 50 + clampedX * 35;
+          const glareY = 50 + clampedY * 35;
+          const glareSize = 60 + Math.abs(clampedX * clampedY) * 20;
+          
+          glareElement.style.background = `
+            radial-gradient(
+              ellipse ${glareSize}% ${glareSize}% at ${glareX}% ${glareY}%,
+              rgba(255, 255, 255, ${glareOpacity}) 0%,
+              rgba(255, 255, 255, 0.08) 40%,
+              transparent 70%
+            )
+          `;
+          
+          // Dynamic shadow
+          const shadowX = clampedX * 25;
+          const shadowY = clampedY * 25;
+          const intensity = Math.sqrt(clampedX * clampedX + clampedY * clampedY);
+          
+          const r = accentColor.r;
+          const g = accentColor.g;
+          const b = accentColor.b;
+          
+          cardElement.style.boxShadow = `
+            ${shadowX}px ${shadowY}px 40px rgba(0, 0, 0, ${0.25 + intensity * 0.1}),
+            ${shadowX * 0.5}px ${shadowY * 0.5}px 20px rgba(${r}, ${g}, ${b}, ${0.15 + intensity * 0.1}),
+            0 0 ${40 + intensity * 20}px rgba(${r}, ${g}, ${b}, ${0.08 + intensity * 0.05}),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1)
+          `;
+          
+          // Update border glow position
+          const angle = Math.atan2(clampedY, clampedX) * 180 / Math.PI;
+          borderGlow.style.background = `
+            linear-gradient(${angle + 135}deg, 
+              rgba(${r}, ${g}, ${b}, ${0.4 + intensity * 0.2}), 
+              rgba(${r}, ${g}, ${b}, 0.05), 
+              rgba(${r}, ${g}, ${b}, ${0.4 + intensity * 0.2})
+            )
+          `;
+          borderGlow.style.backgroundSize = '200% 200%';
+        });
+        
+        // Mouse enter
+        cardElement.addEventListener('mouseenter', function() {
+          isHovering = true;
+          glareElement.style.opacity = '1';
+          borderGlow.style.opacity = '1';
+          borderGlow.classList.add('active');
+        });
+        
+        // Mouse leave - elegant reset
+        cardElement.addEventListener('mouseleave', function() {
+          isHovering = false;
+          targetTiltX = 0;
+          targetTiltY = 0;
+          
+          glareElement.style.opacity = '0';
+          borderGlow.style.opacity = '0';
+          borderGlow.classList.remove('active');
+          
+          // Reset to elegant default shadow
+          const r = accentColor.r;
+          const g = accentColor.g;
+          const b = accentColor.b;
+          
+          cardElement.style.boxShadow = `
+            0 25px 50px -12px rgba(0, 0, 0, 0.4),
+            0 0 0 1px rgba(255, 255, 255, 0.05),
+            0 0 40px rgba(${r}, ${g}, ${b}, 0.08),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1)
+          `;
+        });
+      }
+      
+      // Apply elegant parallax effect
+      applyCardParallax(card, glare);
+
+      // ============================================
       // THEME SWITCHER
       // ============================================
       const themeSvgIcons = {
@@ -1669,14 +1875,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         // Remove all theme classes
         document.body.classList.remove('theme-default', 'theme-cyber', 'theme-aurora', 'theme-purple', 'theme-dark', 'theme-light');
         
+        // Map dark to default (orange theme)
+        let actualTheme = themeName;
+        if (themeName === 'dark') {
+          actualTheme = 'default';
+        }
+        
         // Find theme index
         const index = themes.findIndex(t => t.name === themeName);
         if (index !== -1) {
           currentTheme = index;
           
           // Apply new theme (default has no class)
-          if (themeName !== 'default') {
-            document.body.classList.add('theme-' + themeName);
+          if (actualTheme !== 'default') {
+            document.body.classList.add('theme-' + actualTheme);
           }
           
           // Save preference
