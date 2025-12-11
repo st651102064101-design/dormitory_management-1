@@ -612,11 +612,11 @@ try {
         .section-title .label {
             display: inline-block;
             padding: 0.4rem 1rem;
-            background: var(--glass-bg);
-            border: 1px solid var(--border-color);
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 50px;
             font-size: 0.85rem;
-            color: var(--primary);
+            color: #ffffff;
             margin-bottom: 1rem;
             text-transform: uppercase;
             letter-spacing: 2px;
@@ -632,6 +632,15 @@ try {
             display: inline-flex;
             align-items: center;
             gap: 0.75rem;
+        }
+
+        .section-title h2 {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+            background: linear-gradient(135deg, #fff, #94a3b8);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .section-icon {
@@ -2246,7 +2255,7 @@ if ($publicTheme === 'light') {
     <section class="section location-section" id="location">
         <div class="section-title">
             <span class="label">📍 ที่ตั้ง</span>
-            <h2>ทีตั้งหอพัก</h2>
+            <h2>ที่ตั้งหอพัก</h2>
             <p>เข้าชมสภาพแวดล้อมและที่ตั้งหอพักของเรา</p>
         </div>
 
