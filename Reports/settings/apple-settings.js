@@ -273,11 +273,23 @@ class AppleSettings {
       const result = await response.json();
       if (result.success) {
         this.showToast('บันทึกขนาดตัวอักษรสำเร็จ', 'success');
+        
+        // Apply font size to entire page immediately via CSS variables
+        document.documentElement.style.setProperty('--font-scale', fontSize);
+        document.documentElement.style.setProperty('--admin-font-scale', fontSize);
+        
         // Update preview
         const preview = document.querySelector('.font-size-preview');
         if (preview) {
           preview.style.fontSize = `calc(1rem * ${fontSize})`;
         }
+        
+        // ====== Global Sync ======
+        // Store in localStorage for ALL admin pages to pick up
+        localStorage.setItem('adminFontScale', fontSize);
+        
+        // Dispatch storage event manually for same-page listeners (storage event only fires on OTHER tabs)
+        // Other pages will get notified via 'storage' event automatically
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
       }
@@ -537,6 +549,19 @@ class AppleSettings {
         document.body.setAttribute('data-theme-color', color);
         document.documentElement.style.setProperty('--theme-bg-color', color);
         
+        // ===== Check if light or dark color =====
+        const isLightColor = this.isLightColor(color);
+        
+        if (isLightColor) {
+          // Light mode - add live-light class
+          document.body.classList.add('live-light');
+          document.body.classList.remove('live-dark');
+        } else {
+          // Dark mode - remove live-light class
+          document.body.classList.remove('live-light');
+          document.body.classList.add('live-dark');
+        }
+        
         // Update active state of color options
         document.querySelectorAll('.apple-color-option').forEach(opt => {
           opt.classList.toggle('active', opt.dataset.color === color);
@@ -547,6 +572,21 @@ class AppleSettings {
     } catch (error) {
       this.showToast(error.message, 'error');
     }
+  }
+  
+  // Helper function to determine if a color is light or dark
+  isLightColor(hexColor) {
+    // Convert hex to RGB
+    const hex = hexColor.replace('#', '');
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+    
+    // Calculate luminance (perceived brightness)
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return true if light (luminance > 0.5)
+    return luminance > 0.5;
   }
 
   // ===== Utility Rates =====

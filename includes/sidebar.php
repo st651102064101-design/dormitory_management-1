@@ -29,9 +29,24 @@ try {
   :root {
     --theme-bg-color: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>;
     --font-scale: <?php echo htmlspecialchars($fontSize, ENT_QUOTES, 'UTF-8'); ?>;
+    --admin-font-scale: <?php echo htmlspecialchars($fontSize, ENT_QUOTES, 'UTF-8'); ?>;
   }
 
-  html { font-size: calc(16px * var(--font-scale, 1)); }
+  /* Font scaling for admin pages */
+  html { 
+    font-size: calc(16px * var(--font-scale, 1)); 
+  }
+  
+  body {
+    font-size: calc(14px * var(--admin-font-scale, 1));
+  }
+  
+  /* Scale all text elements */
+  .app-main, .app-main *, .manage-panel, .manage-panel *,
+  .card, .card *, .panel, .panel *, .stat-card, .stat-card *,
+  .report-section, .report-section *, table, table * {
+    font-size: inherit;
+  }
   
   /* พื้นหลังหลัก - ใช้ theme color */
   html, body, .app-shell, .app-main, .reports-page {
@@ -44,7 +59,8 @@ try {
   .report-section, .report-item, .chart-container, .settings-card,
   input, select, textarea, button {
     transition: background-color 0.35s ease, color 0.35s ease,
-                border-color 0.35s ease, box-shadow 0.35s ease;
+                border-color 0.35s ease, box-shadow 0.35s ease,
+                font-size 0.2s ease;
   }
 
   @keyframes themeFadeIn {
@@ -56,7 +72,42 @@ try {
     animation: themeFadeIn 0.45s ease;
   }
 
-  /* Live light mode (no reload) */
+  /* ===== Live DARK mode (no reload) - เมื่อเลือกสีเข้ม ===== */
+  body.live-dark,
+  body.live-dark .app-shell,
+  body.live-dark .app-main,
+  body.live-dark.reports-page,
+  body.live-dark .reports-page {
+    background: var(--theme-bg-color) !important;
+    color: #f1f5f9 !important;
+  }
+  
+  body.live-dark, body.live-dark * {
+    color: #f1f5f9 !important;
+  }
+  
+  body.live-dark .settings-card,
+  body.live-dark .manage-panel,
+  body.live-dark .card,
+  body.live-dark .panel {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+  }
+  
+  body.live-dark input,
+  body.live-dark select,
+  body.live-dark textarea {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    color: #f1f5f9 !important;
+  }
+  
+  /* Exception: Color picker in Live-dark mode */
+  body.live-dark .apple-color-option {
+    background: unset !important;
+  }
+
+  /* ===== Live LIGHT mode (no reload) - เมื่อเลือกสีสว่าง ===== */
   body.live-light,
   body.live-light .app-shell,
   body.live-light .app-main,
@@ -104,6 +155,12 @@ try {
     background: #ffffff !important;
     color: #111827 !important;
     border: 1px solid #e5e7eb !important;
+  }
+  
+  /* Exception: Color picker in Live-light mode */
+  body.live-light .apple-color-option,
+  .apple-color-option {
+    background: unset !important;
   }
 
   /* User icon always white */
@@ -266,6 +323,12 @@ try {
   .manage-panel *,
   .settings-card * {
     color: #111827 !important;
+  }
+  
+  /* ===== Exception: Color picker options - ไม่ force สี ===== */
+  .apple-color-option,
+  .apple-color-grid .apple-color-option {
+    background: inherit !important;
   }
   
   /* Cards และ Panels สีขาว/เทาอ่อน */
@@ -1347,6 +1410,24 @@ try {
     }
   }</style>
 <script>
+  // ====== Global Admin Font Scale Sync ======
+  // โหลด font scale จาก localStorage ทันทีก่อน DOM render
+  (function() {
+    const savedScale = localStorage.getItem('adminFontScale');
+    if (savedScale && !isNaN(parseFloat(savedScale))) {
+      document.documentElement.style.setProperty('--font-scale', savedScale);
+      document.documentElement.style.setProperty('--admin-font-scale', savedScale);
+    }
+    
+    // Listen สำหรับ font scale change จากหน้าอื่น (เช่น Settings)
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'adminFontScale' && e.newValue) {
+        document.documentElement.style.setProperty('--font-scale', e.newValue);
+        document.documentElement.style.setProperty('--admin-font-scale', e.newValue);
+      }
+    });
+  })();
+  
   // Force reset collapsed on mobile IMMEDIATELY before CSS applies
   if (window.innerWidth <= 1024) {
      document.write('<style>.app-sidebar.collapsed { all: revert !important; width: 240px !important; } .app-sidebar.collapsed .app-nav-label, .app-sidebar.collapsed .summary-label, .app-sidebar.collapsed .chev { all: revert !important; } .app-sidebar.collapsed .team-avatar { width: 120px !important; height: 120px !important; padding: 0 !important; margin: 0 auto !important; } .app-sidebar.collapsed .team-avatar-img { width: 120px !important; height: 120px !important; object-fit: cover !important; } .app-sidebar.collapsed .team-meta { display: block !important; text-align: center !important; padding-top: 0.75rem !important; }</style>');

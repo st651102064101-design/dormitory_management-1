@@ -99,23 +99,23 @@
       <!-- Dark Colors -->
       <label class="apple-input-label">สีเข้ม</label>
       <div class="apple-color-grid" style="margin-bottom: 20px;">
-        <div class="apple-color-option <?php echo $themeColor === '#0f172a' ? 'active' : ''; ?>" data-color="#0f172a" style="background: #0f172a;" title="Navy Dark"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#1e293b' ? 'active' : ''; ?>" data-color="#1e293b" style="background: #1e293b;" title="Slate"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#1e3a5f' ? 'active' : ''; ?>" data-color="#1e3a5f" style="background: #1e3a5f;" title="Navy Blue"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#1e1e1e' ? 'active' : ''; ?>" data-color="#1e1e1e" style="background: #1e1e1e;" title="Dark Gray"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#2d3748' ? 'active' : ''; ?>" data-color="#2d3748" style="background: #2d3748;" title="Cool Gray"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#000000' ? 'active' : ''; ?>" data-color="#000000" style="background: #000000;" title="Pure Black"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#0f172a' ? 'active' : ''; ?>" data-color="#0f172a" style="background: #0f172a !important;" title="Navy Dark"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#1e293b' ? 'active' : ''; ?>" data-color="#1e293b" style="background: #1e293b !important;" title="Slate"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#1e3a5f' ? 'active' : ''; ?>" data-color="#1e3a5f" style="background: #1e3a5f !important;" title="Navy Blue"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#1e1e1e' ? 'active' : ''; ?>" data-color="#1e1e1e" style="background: #1e1e1e !important;" title="Dark Gray"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#2d3748' ? 'active' : ''; ?>" data-color="#2d3748" style="background: #2d3748 !important;" title="Cool Gray"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#000000' ? 'active' : ''; ?>" data-color="#000000" style="background: #000000 !important;" title="Pure Black"></div>
       </div>
       
       <!-- Light Colors -->
       <label class="apple-input-label">สีสว่าง</label>
       <div class="apple-color-grid" style="margin-bottom: 20px;">
-        <div class="apple-color-option <?php echo $themeColor === '#ffffff' ? 'active' : ''; ?>" data-color="#ffffff" style="background: #ffffff; border: 1px solid #ddd;" title="White"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#f2f2f7' ? 'active' : ''; ?>" data-color="#f2f2f7" style="background: #f2f2f7; border: 1px solid #ddd;" title="Apple Gray"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#f8fafc' ? 'active' : ''; ?>" data-color="#f8fafc" style="background: #f8fafc; border: 1px solid #ddd;" title="Snow"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#f1f5f9' ? 'active' : ''; ?>" data-color="#f1f5f9" style="background: #f1f5f9; border: 1px solid #ddd;" title="Light Slate"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#e2e8f0' ? 'active' : ''; ?>" data-color="#e2e8f0" style="background: #e2e8f0; border: 1px solid #ddd;" title="Silver"></div>
-        <div class="apple-color-option <?php echo $themeColor === '#fef3c7' ? 'active' : ''; ?>" data-color="#fef3c7" style="background: #fef3c7; border: 1px solid #ddd;" title="Cream"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#ffffff' ? 'active' : ''; ?>" data-color="#ffffff" style="background: #ffffff !important; border: 1px solid #ddd;" title="White"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#f2f2f7' ? 'active' : ''; ?>" data-color="#f2f2f7" style="background: #f2f2f7 !important; border: 1px solid #ddd;" title="Apple Gray"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#f8fafc' ? 'active' : ''; ?>" data-color="#f8fafc" style="background: #f8fafc !important; border: 1px solid #ddd;" title="Snow"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#f1f5f9' ? 'active' : ''; ?>" data-color="#f1f5f9" style="background: #f1f5f9 !important; border: 1px solid #ddd;" title="Light Slate"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#e2e8f0' ? 'active' : ''; ?>" data-color="#e2e8f0" style="background: #e2e8f0 !important; border: 1px solid #ddd;" title="Silver"></div>
+        <div class="apple-color-option <?php echo $themeColor === '#fef3c7' ? 'active' : ''; ?>" data-color="#fef3c7" style="background: #fef3c7 !important; border: 1px solid #ddd;" title="Cream"></div>
       </div>
       
       <!-- Custom Color -->

@@ -106,8 +106,8 @@ $totalTenants = 0;
 $totalBookings = 0;
 try {
     $totalRooms = (int)$pdo->query("SELECT COUNT(*) FROM room")->fetchColumn();
-    $totalTenants = (int)$pdo->query("SELECT COUNT(*) FROM tenant WHERE tenant_status = 'active'")->fetchColumn();
-    $totalBookings = (int)$pdo->query("SELECT COUNT(*) FROM booking WHERE status = 'pending'")->fetchColumn();
+    $totalTenants = (int)$pdo->query("SELECT COUNT(*) FROM tenant")->fetchColumn(); // นับทั้งหมด
+    $totalBookings = (int)$pdo->query("SELECT COUNT(*) FROM booking WHERE bkg_status = 1")->fetchColumn();
 } catch (PDOException $e) {}
 
 // ดึงรายการรูปภาพจากโฟลเดอร์

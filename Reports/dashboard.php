@@ -25,11 +25,11 @@ try {
     $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
     $isLight = $brightness > 155;
     
-    // 1. รายงานข้อมูลการเข้าพัก
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 2");
+    // 1. รายงานข้อมูลการเข้าพัก (รอจอง = bkg_status 1 จองแล้ว/รอเข้าพัก)
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 1");
     $booking_count = $stmt->fetch()['total'] ?? 0;
     
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 1");
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 2");
     $booking_pending = $stmt->fetch()['total'] ?? 0;
     
     // 2. รายงานข้อมูลข่าวประชาสัมพันธ์
@@ -81,8 +81,8 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM contract WHERE ctr_status = 1");
     $contract_cancelled = $stmt->fetch()['total'] ?? 0;
     
-    // ดึงข้อมูล Tenant
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM tenant WHERE tnt_status = 1");
+    // ดึงข้อมูล Tenant (นับทั้งหมด)
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM tenant");
     $tenant_active = $stmt->fetch()['total'] ?? 0;
     
     // ดึงค่าตั้งค่าระบบ
