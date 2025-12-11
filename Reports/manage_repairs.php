@@ -1558,13 +1558,13 @@ try {
               </div>
               <select id="sortSelect" class="sort-select" onchange="changeSortBy(this.value)">
                 <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>
-                  📅 แจ้งล่าสุด
+                  ▼ แจ้งล่าสุด
                 </option>
                 <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>
-                  📆 แจ้งเก่าสุด
+                  ▲ แจ้งเก่าสุด
                 </option>
                 <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>
-                  🏠 หมายเลขห้อง
+                  # หมายเลขห้อง
                 </option>
               </select>
             </div>
@@ -2252,7 +2252,7 @@ try {
               perPage: 5,
               perPageSelect: [5, 10, 25, 50, 100],
               labels: {
-                placeholder: '🔍 ค้นหา...',
+                placeholder: 'ค้นหา...',
                 perPage: '{select} แถวต่อหน้า',
                 noRows: 'ไม่มีข้อมูล',
                 info: 'แสดง {start}–{end} จาก {rows} รายการ'

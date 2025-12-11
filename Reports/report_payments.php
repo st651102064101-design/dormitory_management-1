@@ -567,8 +567,9 @@ try {
                     </select>
                   </div>
                   <div class="filter-item" style="display:flex;align-items:flex-end;gap:0.5rem;">
-                    <button type="submit" style="flex:1;padding:0.75rem;background:#60a5fa;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='#3b82f6'" onmouseout="this.style.background='#60a5fa'">
-                      🔍 กรองข้อมูล
+                    <button type="submit" style="flex:1;padding:0.75rem;background:#60a5fa;color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;" onmouseover="this.style.background='#3b82f6'" onmouseout="this.style.background='#60a5fa'">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      กรองข้อมูล
                     </button>
                     <?php if ($selectedMonth || $selectedYear): ?>
                       <a href="?" style="flex:1;padding:0.75rem;background:rgba(239,68,68,0.15);color:#ef4444;border:1px solid rgba(239,68,68,0.3);border-radius:8px;font-weight:600;text-align:center;text-decoration:none;transition:all 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.25)'" onmouseout="this.style.background='rgba(239,68,68,0.15)'">
@@ -688,7 +689,7 @@ try {
                               $status = $row['pay_status'] ?? '';
                               if ($status === '0' || $status === 0):
                             ?>
-                              <span class="status-badge status-pending">⏳ รอตรวจสอบ</span>
+                              <span class="status-badge status-pending"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>รอตรวจสอบ</span>
                             <?php elseif ($status === '1' || $status === 1): ?>
                               <span class="status-badge status-verified">✓ ตรวจสอบแล้ว</span>
                             <?php else: ?>
@@ -701,8 +702,10 @@ try {
                             <?php if (!empty($row['pay_proof'])): ?>
                               <button type="button" 
                                       class="proof-badge" 
-                                      onclick="openProofModal('<?php echo htmlspecialchars((string)$row['pay_proof']); ?>', '<?php echo htmlspecialchars((string)$row['pay_id']); ?>')">
-                                📄 ดูหลักฐาน
+                                      onclick="openProofModal('<?php echo htmlspecialchars((string)$row['pay_proof']); ?>', '<?php echo htmlspecialchars((string)$row['pay_id']); ?>')"
+                                      style="display:inline-flex;align-items:center;gap:4px;">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                                ดูหลักฐาน
                               </button>
                             <?php else: ?>
                               <span style="color:#94a3b8;">—</span>

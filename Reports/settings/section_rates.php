@@ -55,26 +55,26 @@
       </div>
       
       <p id="sheetRateDateLabel" style="font-size: 13px; color: var(--apple-text-secondary); text-align: center; margin-bottom: 20px;">
-        📌 อัตราปัจจุบัน (ใช้ตั้งแต่ <?php echo date('d/m/Y', strtotime($currentRateDate)); ?>)
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>อัตราปัจจุบัน (ใช้ตั้งแต่ <?php echo date('d/m/Y', strtotime($currentRateDate)); ?>)
       </p>
       
       <!-- Add New Rate -->
       <div style="background: rgba(0, 122, 255, 0.05); padding: 16px; border-radius: 14px; margin-bottom: 20px;">
-        <h4 style="font-size: 15px; font-weight: 600; color: var(--apple-blue); margin: 0 0 16px;">➕ เพิ่มอัตราใหม่</h4>
+        <h4 style="font-size: 15px; font-weight: 600; color: var(--apple-blue); margin: 0 0 16px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>เพิ่มอัตราใหม่</h4>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
           <div class="apple-input-group" style="margin-bottom: 0;">
-            <label class="apple-input-label">💧 ค่าน้ำ</label>
+            <label class="apple-input-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>ค่าน้ำ</label>
             <input type="number" id="waterRate" class="apple-input" value="<?php echo $waterRate; ?>" min="0" step="1">
           </div>
           <div class="apple-input-group" style="margin-bottom: 0;">
-            <label class="apple-input-label">⚡ ค่าไฟ</label>
+            <label class="apple-input-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>ค่าไฟ</label>
             <input type="number" id="electricRate" class="apple-input" value="<?php echo $electricRate; ?>" min="0" step="1">
           </div>
         </div>
         
         <div class="apple-input-group" style="margin-bottom: 12px;">
-          <label class="apple-input-label">📅 วันที่เริ่มใช้</label>
+          <label class="apple-input-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>วันที่เริ่มใช้</label>
           <input type="date" id="effectiveDate" class="apple-input" value="<?php echo date('Y-m-d'); ?>">
         </div>
         
@@ -82,15 +82,15 @@
       </div>
       
       <!-- Rate History -->
-      <h4 style="font-size: 13px; font-weight: 600; color: var(--apple-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;">📋 ประวัติอัตรา</h4>
+      <h4 style="font-size: 13px; font-weight: 600; color: var(--apple-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><rect x="9" y="2" width="6" height="4" rx="1"/><rect x="4" y="4" width="16" height="18" rx="2"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>ประวัติอัตรา</h4>
       
       <div style="background: var(--apple-card); border-radius: 14px; overflow: hidden;">
         <table class="apple-rate-table">
           <thead>
             <tr>
               <th>วันที่</th>
-              <th style="text-align: center;">💧</th>
-              <th style="text-align: center;">⚡</th>
+              <th style="text-align: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></th>
+              <th style="text-align: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></th>
               <th style="text-align: center;">สถานะ</th>
               <th></th>
             </tr>
@@ -119,7 +119,7 @@
                 <?php elseif ($isUsed): ?>
                 <div class="rate-usage-info" onclick="showRateUsage('<?php echo htmlspecialchars(json_encode($usage)); ?>')" style="cursor: pointer;">
                   <span class="apple-badge blue" style="font-size: 10px;" title="ใช้ใน <?php echo (int)$usage['expense_count']; ?> บิล, <?php echo (int)$usage['room_count']; ?> ห้อง">
-                    📊 <?php echo (int)$usage['expense_count']; ?> บิล
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;vertical-align:-1px;margin-right:2px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><?php echo (int)$usage['expense_count']; ?> บิล
                   </span>
                 </div>
                 <?php else: ?>
@@ -144,7 +144,7 @@
       </div>
       
       <p style="font-size: 12px; color: var(--apple-text-secondary); margin-top: 12px; text-align: center;">
-        💡 คลิกที่ "📊 x บิล" เพื่อดูรายละเอียดห้องที่ใช้อัตรานี้
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>คลิกที่ "x บิล" เพื่อดูรายละเอียดห้องที่ใช้อัตรานี้
       </p>
     </div>
   </div>
@@ -153,7 +153,7 @@
 <!-- Modal: Rate Usage Info -->
 <div id="rateUsageModal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 10001; justify-content: center; align-items: center;">
   <div style="background: var(--apple-card); border-radius: 16px; padding: 24px; max-width: 400px; width: 90%; margin: 20px;">
-    <h4 style="margin: 0 0 16px; color: var(--apple-text); font-size: 18px;">📊 รายละเอียดการใช้อัตรานี้</h4>
+    <h4 style="margin: 0 0 16px; color: var(--apple-text); font-size: 18px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>รายละเอียดการใช้อัตรานี้</h4>
     <div id="rateUsageContent"></div>
     <button type="button" class="apple-button" style="width: 100%; margin-top: 16px;" onclick="closeRateUsageModal()">ปิด</button>
   </div>

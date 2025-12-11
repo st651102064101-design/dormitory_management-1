@@ -12,15 +12,15 @@ try {
     $pdo = connectDB();
     
     $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'font_size')");
-    $settings = [];
+    $sidebarSettings = [];
     foreach ($settingsStmt->fetchAll(PDO::FETCH_ASSOC) as $setting) {
-        $settings[$setting['setting_key']] = $setting['setting_value'];
+        $sidebarSettings[$setting['setting_key']] = $setting['setting_value'];
     }
     
-    $siteName = $settings['site_name'] ?? $siteName;
-    $logoFilename = $settings['logo_filename'] ?? $logoFilename;
-    $themeColor = $settings['theme_color'] ?? $themeColor;
-    $fontSize = $settings['font_size'] ?? $fontSize;
+    $siteName = $sidebarSettings['site_name'] ?? $siteName;
+    $logoFilename = $sidebarSettings['logo_filename'] ?? $logoFilename;
+    $themeColor = $sidebarSettings['theme_color'] ?? $themeColor;
+    $fontSize = $sidebarSettings['font_size'] ?? $fontSize;
 } catch (Exception $e) {
     // ใช้ค่า default ถ้า database error
 }

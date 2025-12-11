@@ -1832,7 +1832,7 @@ try {
             <div class="system-settings-container">
               <!-- Logo Settings -->
               <div class="settings-card">
-                <h3><span>🎨</span> จัดการ Logo</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg></span> จัดการ Logo</h3>
                 <form id="logoForm" enctype="multipart/form-data">
                   <div class="form-group">
                     <label>รูป Logo ปัจจุบัน</label>
@@ -1840,7 +1840,7 @@ try {
                       <img src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" style="max-width: 200px; max-height: 200px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" />
                     </div>
                     <a href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" download class="btn-save" style="display:inline-flex; align-items:center; gap:0.5rem; background: rgba(96,165,250,0.5); box-shadow:none; padding:0.6rem 1rem;">
-                      📥 ดาวน์โหลดรูปปัจจุบัน
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>ดาวน์โหลดรูปปัจจุบัน
                     </a>
                   </div>
 
@@ -1873,20 +1873,20 @@ try {
                   <div class="form-group">
                     <label>อัพโหลด Logo ใหม่ (JPG, PNG)</label>
                     <div class="logo-upload-area" onclick="document.getElementById('logoInput').click()">
-                      <div style="font-size: 2rem; margin-bottom: 0.5rem;">📸</div>
+                      <div style="font-size: 2rem; margin-bottom: 0.5rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:32px;height:32px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
                       <p>คลิกหรือลากไฟล์มาที่นี่</p>
                       <input type="file" id="logoInput" name="logo" accept="image/jpeg,image/png" />
                     </div>
                     <div id="newLogoPreview" style="margin-top: 1rem;"></div>
                   </div>
-                  <button type="submit" class="btn-save">💾 บันทึก Logo</button>
+                  <button type="submit" class="btn-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>บันทึก Logo</button>
                   <div class="status-badge" id="logoStatus"></div>
                 </form>
               </div>
 
               <!-- Background Image Settings -->
               <div class="settings-card">
-                <h3><span>🖼️</span> จัดการภาพพื้นหลัง (หน้าแรก)</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></span> จัดการภาพพื้นหลัง (หน้าแรก)</h3>
                 <form id="bgForm" enctype="multipart/form-data">
                   <div class="form-group">
                     <label>ภาพพื้นหลังปัจจุบัน</label>
@@ -1921,34 +1921,34 @@ try {
                   <div class="form-group">
                     <label>อัพโหลดภาพพื้นหลังใหม่ (JPG, PNG, WebP)</label>
                     <div class="logo-upload-area" onclick="document.getElementById('bgInput').click()">
-                      <div style="font-size: 2rem; margin-bottom: 0.5rem;">🖼️</div>
+                      <div style="font-size: 2rem; margin-bottom: 0.5rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:32px;height:32px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
                       <p>คลิกหรือลากไฟล์มาที่นี่</p>
                       <input type="file" id="bgInput" name="bg" accept="image/jpeg,image/png,image/webp" />
                     </div>
                     <div id="newBgPreview" style="margin-top: 1rem;"></div>
                   </div>
-                  <button type="submit" class="btn-save">💾 บันทึกภาพพื้นหลัง</button>
+                  <button type="submit" class="btn-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>บันทึกภาพพื้นหลัง</button>
                   <div class="status-badge" id="bgStatus"></div>
                 </form>
               </div>
               
               <!-- Site Name Settings -->
               <div class="settings-card">
-                <h3><span>🏢</span> ชื่อสถานที่</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><path d="M3 9v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V9"/><path d="M3 9l9-7 9 7"/><rect x="9" y="13" width="6" height="9"/></svg></span> ชื่อสถานที่</h3>
                 <form id="siteNameForm">
                   <div class="form-group">
                     <label>ชื่อหอพัก</label>
                     <input type="text" id="siteName" name="site_name" value="<?php echo htmlspecialchars($siteName); ?>" maxlength="100" required />
                     <small style="color: #94a3b8;">ชื่อที่จะแสดงในระบบ</small>
                   </div>
-                  <button type="submit" class="btn-save">💾 บันทึกชื่อ</button>
+                  <button type="submit" class="btn-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>บันทึกชื่อ</button>
                   <div class="status-badge" id="siteNameStatus"></div>
                 </form>
               </div>
 
               <!-- Contact Information Settings -->
               <div class="settings-card">
-                <h3><span>📞</span> ข้อมูลติดต่อ</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg></span> ข้อมูลติดต่อ</h3>
                 <div style="display: grid; gap: 1.5rem;">
                   <form id="phoneForm">
                     <div class="form-group">
@@ -1956,7 +1956,7 @@ try {
                       <input type="tel" id="contactPhone" name="contact_phone" value="<?php echo htmlspecialchars($contactPhone); ?>" pattern="[0-9\-\+\s()]{8,20}" maxlength="20" required />
                       <small style="color: #94a3b8;">เช่น 0895656083 หรือ 089-565-6083</small>
                     </div>
-                    <button type="submit" class="btn-save">💾 บันทึกเบอร์โทร</button>
+                    <button type="submit" class="btn-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>บันทึกเบอร์โทร</button>
                     <div class="status-badge" id="phoneStatus"></div>
                   </form>
 
@@ -1966,7 +1966,7 @@ try {
                       <input type="email" id="contactEmail" name="contact_email" value="<?php echo htmlspecialchars($contactEmail); ?>" maxlength="100" required />
                       <small style="color: #94a3b8;">เช่น test@gmail.com</small>
                     </div>
-                    <button type="submit" class="btn-save">💾 บันทึกอีเมล</button>
+                    <button type="submit" class="btn-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>บันทึกอีเมล</button>
                     <div class="status-badge" id="emailStatus"></div>
                   </form>
                 </div>
@@ -1974,7 +1974,7 @@ try {
 
               <!-- Public Theme Settings -->
               <div class="settings-card">
-                <h3><span>🌐</span> ธีมหน้าสาธารณะ</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span> ธีมหน้าสาธารณะ</h3>
                 <p style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 1.25rem;">เลือกธีมสำหรับหน้าแรก, หน้าจองห้อง, หน้าข่าวสาร และหน้าห้องพัก</p>
                 <form id="publicThemeForm">
                   <div class="theme-selector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
@@ -1987,7 +1987,7 @@ try {
                           <div class="preview-card"></div>
                         </div>
                       </div>
-                      <span class="theme-name">🌙 ธีมมืด</span>
+                      <span class="theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>ธีมมืด</span>
                       <span class="theme-desc">สีเข้ม สวยงาม ล้ำสมัย</span>
                     </label>
                     <label class="theme-option <?php echo $publicTheme === 'light' ? 'active' : ''; ?>" data-theme="light">
@@ -1999,7 +1999,7 @@ try {
                           <div class="preview-card"></div>
                         </div>
                       </div>
-                      <span class="theme-name">☀️ ธีมสว่าง</span>
+                      <span class="theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>ธีมสว่าง</span>
                       <span class="theme-desc">สีขาว สะอาดตา อ่านง่าย</span>
                     </label>
                     <label class="theme-option <?php echo $publicTheme === 'auto' ? 'active' : ''; ?>" data-theme="auto">
@@ -2011,18 +2011,18 @@ try {
                           <div class="preview-card" style="background: linear-gradient(90deg, #1e3a5f 50%, #fff 50%);"></div>
                         </div>
                       </div>
-                      <span class="theme-name">🔄 อัตโนมัติ</span>
+                      <span class="theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>อัตโนมัติ</span>
                       <span class="theme-desc">ปรับตามเวลา กลางวัน/กลางคืน</span>
                     </label>
                   </div>
-                  <button type="submit" class="btn-save" style="margin-top: 1rem;">💾 บันทึกธีม</button>
+                  <button type="submit" class="btn-save" style="margin-top: 1rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>บันทึกธีม</button>
                   <div class="status-badge" id="publicThemeStatus"></div>
                 </form>
               </div>
 
               <!-- Theme Color Settings -->
               <div class="settings-card">
-                <h3><span>🎨</span> สีพื้นหลังระบบ</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2z"/></svg></span> สีพื้นหลังระบบ</h3>
                 <form id="themeColorForm">
                   <div class="form-group">
                     <label>เลือกสี</label>
@@ -2035,12 +2035,12 @@ try {
                     <small style="color: #94a3b8; margin-top: 0.5rem;">เลือกสีสำหรับพื้นหลังระบบ</small>
                   </div>
                   <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 1rem;">
-                    <button type="button" class="quick-color" data-color="#0f172a" title="Dark Blue">🌙 Dark</button>
-                    <button type="button" class="quick-color" data-color="#ffffff" title="White">☀️ White</button>
-                    <button type="button" class="quick-color" data-color="#1e293b" title="Slate">⚪ Slate</button>
+                    <button type="button" class="quick-color" data-color="#0f172a" title="Dark Blue">Dark</button>
+                    <button type="button" class="quick-color" data-color="#ffffff" title="White">White</button>
+                    <button type="button" class="quick-color" data-color="#1e293b" title="Slate">Slate</button>
                   </div>
                   <small style="color: #f97316; margin-top: 0.75rem; display: block; padding: 0.5rem; background: rgba(249, 115, 22, 0.1); border-radius: 4px;">
-                    💡 หากเปลี่ยนไป Dark Mode ไม่สำเร็จ โปรดรีเฟรชหน้า (Cmd+R หรือ F5)
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>หากเปลี่ยนไป Dark Mode ไม่สำเร็จ โปรดรีเฟรชหน้า (Cmd+R หรือ F5)
                   </small>
                   <div class="status-badge" id="colorStatus"></div>
                 </form>
@@ -2048,7 +2048,7 @@ try {
 
               <!-- Font Size Settings -->
               <div class="settings-card">
-                <h3><span>📝</span> ขนาดข้อความ</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></span> ขนาดข้อความ</h3>
                 <form id="fontSizeForm">
                   <div class="form-group">
                     <label>ขนาด</label>
@@ -2068,19 +2068,19 @@ try {
 
               <!-- Utility Rates Settings -->
               <div class="settings-card utility-rates-card">
-                <h3><span>💡</span> อัตราค่าน้ำค่าไฟ</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M12 2a7 7 0 0 1 4 12.75V17a2 2 0 0 1-2 2h-4a2 2 0 0 1-2-2v-2.25A7 7 0 0 1 12 2z"/></svg></span> อัตราค่าน้ำค่าไฟ</h3>
                 
                 <!-- Current Rate Display -->
                 <div style="background: rgba(34, 197, 94, 0.1); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
-                  <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.75rem;">📌 อัตราปัจจุบัน (ใช้ตั้งแต่ <?php echo date('d/m/Y', strtotime($currentRateDate)); ?>)</div>
+                  <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.75rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>อัตราปัจจุบัน (ใช้ตั้งแต่ <?php echo date('d/m/Y', strtotime($currentRateDate)); ?>)</div>
                   <div style="display: flex; gap: 2rem; flex-wrap: wrap;">
                     <div style="text-align: center;">
-                      <div style="font-size: 2rem; color: #60a5fa;">💧</div>
+                      <div style="font-size: 2rem; color: #60a5fa;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;height:28px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
                       <div style="font-size: 1.5rem; font-weight: 700; color: #22c55e;">฿<?php echo number_format($waterRate); ?></div>
                       <div style="font-size: 0.8rem; color: #94a3b8;">บาท/หน่วย</div>
                     </div>
                     <div style="text-align: center;">
-                      <div style="font-size: 2rem; color: #fbbf24;">⚡</div>
+                      <div style="font-size: 2rem; color: #fbbf24;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;height:28px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
                       <div style="font-size: 1.5rem; font-weight: 700; color: #22c55e;">฿<?php echo number_format($electricRate); ?></div>
                       <div style="font-size: 0.8rem; color: #94a3b8;">บาท/หน่วย</div>
                     </div>
@@ -2089,37 +2089,37 @@ try {
                 
                 <!-- Add New Rate Form -->
                 <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 1.25rem; margin-bottom: 1.5rem;">
-                  <div style="font-size: 0.9rem; font-weight: 600; color: #60a5fa; margin-bottom: 1rem;">➕ เพิ่มอัตราใหม่</div>
+                  <div style="font-size: 0.9rem; font-weight: 600; color: #60a5fa; margin-bottom: 1rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>เพิ่มอัตราใหม่</div>
                   <form id="utilityRatesForm">
                     <div class="rate-form-grid">
                       <div class="form-group" style="margin-bottom: 0;">
-                        <label>💧 ค่าน้ำ (บาท/หน่วย)</label>
+                        <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>ค่าน้ำ (บาท/หน่วย)</label>
                         <input type="number" id="waterRate" name="water_rate" value="<?php echo $waterRate; ?>" min="0" step="1" required />
                       </div>
                       <div class="form-group" style="margin-bottom: 0;">
-                        <label>⚡ ค่าไฟ (บาท/หน่วย)</label>
+                        <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>ค่าไฟ (บาท/หน่วย)</label>
                         <input type="number" id="electricRate" name="electric_rate" value="<?php echo $electricRate; ?>" min="0" step="1" required />
                       </div>
                       <div class="form-group" style="margin-bottom: 0;">
-                        <label>📅 วันที่เริ่มใช้</label>
+                        <label><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>วันที่เริ่มใช้</label>
                         <input type="date" id="effectiveDate" name="effective_date" value="<?php echo date('Y-m-d'); ?>" required />
                       </div>
                     </div>
-                    <button type="button" class="btn-save" onclick="saveUtilityRates()" style="margin-top: 0;">💾 บันทึกอัตราใหม่</button>
+                    <button type="button" class="btn-save" onclick="saveUtilityRates()" style="margin-top: 0;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>บันทึกอัตราใหม่</button>
                     <div class="status-badge" id="rateStatus" style="margin-top: 0.5rem; display: none;"></div>
                   </form>
                 </div>
                 
                 <!-- Rate History -->
                 <div>
-                  <div style="font-size: 0.9rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.75rem;">📋 ประวัติอัตราค่าน้ำค่าไฟ</div>
+                  <div style="font-size: 0.9rem; font-weight: 600; color: #94a3b8; margin-bottom: 0.75rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><rect x="9" y="2" width="6" height="4" rx="1"/><rect x="4" y="4" width="16" height="18" rx="2"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>ประวัติอัตราค่าน้ำค่าไฟ</div>
                   <div style="max-height: 250px; overflow-y: auto; border-radius: 8px;">
                     <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;">
                       <thead>
                         <tr style="background: rgba(15, 23, 42, 0.8); position: sticky; top: 0;">
                           <th style="padding: 0.6rem; text-align: left; color: #94a3b8; font-weight: 600;">วันที่เริ่มใช้</th>
-                          <th style="padding: 0.6rem; text-align: center; color: #60a5fa;">💧 ค่าน้ำ</th>
-                          <th style="padding: 0.6rem; text-align: center; color: #fbbf24;">⚡ ค่าไฟ</th>
+                          <th style="padding: 0.6rem; text-align: center; color: #60a5fa;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>ค่าน้ำ</th>
+                          <th style="padding: 0.6rem; text-align: center; color: #fbbf24;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>ค่าไฟ</th>
                           <th style="padding: 0.6rem; text-align: center; color: #94a3b8;">จัดการ</th>
                         </tr>
                       </thead>
@@ -2141,7 +2141,7 @@ try {
                           <td style="padding: 0.6rem; text-align: center; color: #fbbf24; font-weight: 600;">฿<?php echo number_format($r['rate_elec']); ?></td>
                           <td style="padding: 0.6rem; text-align: center;">
                             <?php if ($i !== 0): ?>
-                            <button type="button" onclick="deleteRate(<?php echo $r['rate_id']; ?>)" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">🗑️ ลบ</button>
+                            <button type="button" onclick="deleteRate(<?php echo $r['rate_id']; ?>)" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; border: none; padding: 0.3rem 0.6rem; border-radius: 4px; cursor: pointer; font-size: 0.75rem;display:inline-flex;align-items:center;gap:3px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>ลบ</button>
                             <?php else: ?>
                             <span style="color: #64748b; font-size: 0.75rem;">-</span>
                             <?php endif; ?>
@@ -2157,7 +2157,7 @@ try {
 
               <!-- System Info -->
               <div class="settings-card">
-                <h3><span>ℹ️</span> ข้อมูลระบบ</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></span> ข้อมูลระบบ</h3>
                 <div style="display: flex; flex-direction: column; gap: 0.75rem;">
                   <div>
                     <div style="color: #94a3b8; font-size: 0.9rem;">เวอร์ชัน PHP</div>
@@ -2180,12 +2180,12 @@ try {
 
               <!-- Database Backup -->
               <div class="settings-card">
-                <h3><span>💾</span> สำรองข้อมูล</h3>
+                <h3><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span> สำรองข้อมูล</h3>
                 <form id="backupForm">
                   <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 1rem;">
                     สำรองฐานข้อมูลของคุณเพื่อป้องกันการสูญเสียข้อมูล
                   </p>
-                  <button type="button" class="btn-save" id="backupBtn" style="margin-bottom: 0.5rem;">💾 สำรองข้อมูล</button>
+                  <button type="button" class="btn-save" id="backupBtn" style="margin-bottom: 0.5rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>สำรองข้อมูล</button>
                   <div class="status-badge" id="backupStatus"></div>
                 </form>
               </div>

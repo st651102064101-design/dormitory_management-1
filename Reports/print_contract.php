@@ -84,7 +84,7 @@ if ($ctr_id === 0) {
                 <div class="grid">
                     <?php foreach ($contracts as $c): ?>
                     <a href="print_contract.php?ctr_id=<?php echo (int)$c['ctr_id']; ?>" class="card" target="_blank" rel="noopener">
-                        <div class="card-number">📄 #<?php echo str_pad((string)$c['ctr_id'], 4, '0', STR_PAD_LEFT); ?></div>
+                        <div class="card-number"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>#<?php echo str_pad((string)$c['ctr_id'], 4, '0', STR_PAD_LEFT); ?></div>
                         <div class="card-info">
                             <div class="info-row"><span class="label">ผู้เช่า:</span><span class="value"><?php echo htmlspecialchars($c['tnt_name'] ?? '-'); ?></span></div>
                             <div class="info-row"><span class="label">ห้อง:</span><span class="value"><?php echo htmlspecialchars($c['room_number'] ?? '-'); ?></span></div>

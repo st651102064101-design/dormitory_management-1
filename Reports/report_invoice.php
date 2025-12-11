@@ -415,8 +415,9 @@ try {
                     </select>
                   </div>
                   <div class="filter-item" style="display:flex;align-items:flex-end;gap:0.5rem;">
-                    <button type="button" class="filter-btn" onclick="document.getElementById('filterForm').submit();" style="flex:1;min-height:2.5rem;width:100%;cursor:pointer;">
-                      🔍 กรองข้อมูล
+                    <button type="button" class="filter-btn" onclick="document.getElementById('filterForm').submit();" style="flex:1;min-height:2.5rem;width:100%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      กรองข้อมูล
                     </button>
                     <?php if ($selectedMonth): ?>
                       <a href="report_invoice.php" class="clear-btn" style="flex:1;min-height:2.5rem;width:100%;display:flex;align-items:center;justify-content:center;">
@@ -471,19 +472,28 @@ try {
               <!-- ปุ่มสถานะด้านซ้าย -->
               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
                 <a href="report_invoice.php<?php echo $selectedMonth ? '?month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo (!isset($_GET['status'])) ? '#60a5fa' : 'rgba(255,255,255,0.05)'; ?>;color:<?php echo (!isset($_GET['status'])) ? '#fff' : '#94a3b8'; ?>;">
-                  📋 ทั้งหมด
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                  ทั้งหมด
                 </a>
                 <a href="report_invoice.php?status=0<?php echo $selectedMonth ? '&month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo $selectedStatus === '0' ? '#60a5fa' : 'rgba(255,255,255,0.05)'; ?>;color:<?php echo $selectedStatus === '0' ? '#fff' : '#94a3b8'; ?>;">
-                  ⏳ รอการตรวจสอบ
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  รอการตรวจสอบ
                 </a>
                 <a href="report_invoice.php?status=1<?php echo $selectedMonth ? '&month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo $selectedStatus === '1' ? '#60a5fa' : 'rgba(255,255,255,0.05)'; ?>;color:<?php echo $selectedStatus === '1' ? '#fff' : '#94a3b8'; ?>;">
-                  ✅ ตรวจสอบแล้ว
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"/></svg>
+                  ตรวจสอบแล้ว
                 </a>
               </div>
               <!-- ปุ่มสลับมุมมองด้านขวา -->
               <div class="view-toggle">
-                <button class="view-toggle-btn active" onclick="switchView('card')">🃏 การ์ด</button>
-                <button class="view-toggle-btn" onclick="switchView('table')">📊 ตาราง</button>
+                <button class="view-toggle-btn active" onclick="switchView('card')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+                  การ์ด
+                </button>
+                <button class="view-toggle-btn" onclick="switchView('table')">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+                  ตาราง
+                </button>
               </div>
             </div>
 
@@ -538,19 +548,19 @@ try {
 
                 <div class="invoice-charges">
                   <div class="charge-item">
-                    <div class="charge-label">⚡ ค่าไฟ</div>
+                    <div class="charge-label">ค่าไฟ</div>
                     <div class="charge-value" style="color:#3b82f6;">฿<?php echo renderNumber($r['exp_elec_chg']); ?></div>
                   </div>
                   <div class="charge-item">
-                    <div class="charge-label">💧 ค่าน้ำ</div>
+                    <div class="charge-label">ค่าน้ำ</div>
                     <div class="charge-value" style="color:#22c55e;">฿<?php echo renderNumber($r['exp_water']); ?></div>
                   </div>
                   <div class="charge-item">
-                    <div class="charge-label">🏠 ค่าห้อง</div>
+                    <div class="charge-label">ค่าห้อง</div>
                     <div class="charge-value" style="color:#f59e0b;">฿<?php echo renderNumber($r['room_price']); ?></div>
                   </div>
                   <div class="charge-item">
-                    <div class="charge-label">📋 อื่นๆ</div>
+                    <div class="charge-label">อื่นๆ</div>
                     <div class="charge-value" style="color:#8b5cf6;">฿<?php echo renderNumber($r['exp_other'] ?? 0); ?></div>
                   </div>
                 </div>
@@ -605,11 +615,11 @@ try {
                     <td><?php echo renderField($r['tnt_name'], '-'); ?></td>
                     <td><strong><?php echo renderField($r['room_number'], '-'); ?></strong></td>
                     <td style="text-align:right;font-weight:600;">
-                      <div style="font-size:0.85rem;color:#94a3b8;">⚡฿<?php echo renderNumber($r['exp_elec_chg']); ?></div>
-                      <div style="font-size:0.85rem;color:#94a3b8;">💧฿<?php echo renderNumber($r['exp_water']); ?></div>
-                      <div style="font-size:0.85rem;color:#94a3b8;">🏠฿<?php echo renderNumber($r['room_price']); ?></div>
+                      <div style="font-size:0.85rem;color:#94a3b8;">ไฟ ฿<?php echo renderNumber($r['exp_elec_chg']); ?></div>
+                      <div style="font-size:0.85rem;color:#94a3b8;">น้ำ ฿<?php echo renderNumber($r['exp_water']); ?></div>
+                      <div style="font-size:0.85rem;color:#94a3b8;">ห้อง ฿<?php echo renderNumber($r['room_price']); ?></div>
                       <?php if ((int)($r['exp_other'] ?? 0) > 0): ?>
-                      <div style="font-size:0.85rem;color:#94a3b8;">📋฿<?php echo renderNumber($r['exp_other']); ?></div>
+                      <div style="font-size:0.85rem;color:#94a3b8;">อื่นๆ ฿<?php echo renderNumber($r['exp_other']); ?></div>
                       <?php endif; ?>
                     </td>
                     <td style="text-align:right;font-weight:700;font-size:1.1rem;">฿<?php echo renderNumber($r['exp_total']); ?></td>
