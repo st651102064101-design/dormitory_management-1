@@ -142,365 +142,629 @@ try {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
+      /* ===== Apple-Style Modern Design ===== */
+      
+      /* Stats Cards - Glassmorphism */
       .rooms-stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 1.25rem;
         margin-top: 1rem;
       }
+      
       .room-stat-card {
-        background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
-        border-radius: 16px;
-        padding: 1.25rem;
+        background: rgba(255,255,255,0.03);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 1.5rem;
         border: 1px solid rgba(255,255,255,0.08);
-        color: #f5f8ff;
-        box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
+      
+      .room-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      
+      .room-stat-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(255,255,255,0.15);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      }
+      
+      .room-stat-card:hover::before {
+        opacity: 1;
+      }
+      
       .room-stat-card h3 {
         margin: 0;
-        font-size: 0.95rem;
-        color: rgba(255,255,255,0.7);
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: rgba(255,255,255,0.5);
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
       }
+      
       .room-stat-card .stat-value {
-        font-size: 2.5rem;
+        font-size: 3rem;
         font-weight: 700;
         margin-top: 0.5rem;
-        color: #60a5fa;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        line-height: 1.1;
       }
+      
+      .room-stat-card:nth-child(2) .stat-value {
+        background: linear-gradient(135deg, #34d399, #10b981);
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+      
+      .room-stat-card:nth-child(3) .stat-value {
+        background: linear-gradient(135deg, #f87171, #ef4444);
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+      
+      /* Room Cards Grid */
       .rooms-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 1rem;
-        margin-top: 1rem;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.25rem;
+        margin-top: 1.25rem;
       }
+      
       .room-card {
-        background: linear-gradient(135deg, rgba(30,41,59,0.6), rgba(15,23,42,0.8));
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 12px;
+        background: rgba(255,255,255,0.02);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 20px;
         overflow: hidden;
-        transition: all 0.3s ease;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         cursor: pointer;
+        position: relative;
       }
+      
+      .room-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+        padding: 1px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      
       .room-card:hover {
-        border-color: rgba(96,165,250,0.4);
-        box-shadow: 0 8px 24px rgba(96,165,250,0.15);
-        transform: translateY(-2px);
+        transform: translateY(-6px) scale(1.01);
+        border-color: rgba(96,165,250,0.3);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.25), 0 0 0 1px rgba(96,165,250,0.1);
       }
+      
+      .room-card:hover::after {
+        opacity: 1;
+      }
+      
       .room-card-image {
         width: 100%;
-        height: 140px;
-        background: linear-gradient(135deg, #1e293b, #0f172a);
+        height: 160px;
+        background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.9));
         display: flex;
         align-items: center;
         justify-content: center;
-        color: rgba(255,255,255,0.4);
-        font-size: 3rem;
+        color: rgba(255,255,255,0.2);
+        font-size: 3.5rem;
         overflow: hidden;
+        position: relative;
       }
+      
+      .room-card-image::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.6));
+        z-index: 1;
+      }
+      
       .room-card-image img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
+      
+      .room-card:hover .room-card-image img {
+        transform: scale(1.08);
+      }
+      
       .room-card-content {
-        padding: 1rem;
+        padding: 1.25rem;
+        position: relative;
       }
+      
       .room-card-number {
-        font-size: 1.4rem;
+        font-size: 1.5rem;
         font-weight: 700;
-        color: #f5f8ff;
-        margin: 0 0 0.5rem 0;
+        color: #f8fafc;
+        margin: 0 0 0.25rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
       }
+      
       .room-card-meta {
-        font-size: 0.85rem;
-        color: #cbd5e1;
-        margin-bottom: 0.75rem;
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.5);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
       }
+      
+      .room-card-meta svg {
+        width: 14px;
+        height: 14px;
+        opacity: 0.6;
+      }
+      
       .room-card-status {
-        display: inline-block;
-        padding: 0.35rem 0.75rem;
-        border-radius: 6px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.9rem;
+        border-radius: 100px;
         font-size: 0.75rem;
         font-weight: 600;
-        margin-bottom: 0.75rem;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
       }
+      
       .room-card-status.vacant {
-        background: rgba(34,197,94,0.2);
-        color: #22c55e;
+        background: rgba(34,197,94,0.15);
+        color: #4ade80;
+        border: 1px solid rgba(34,197,94,0.2);
       }
+      
       .room-card-status.occupied {
-        background: rgba(239,68,68,0.2);
-        color: #ef4444;
+        background: rgba(239,68,68,0.15);
+        color: #f87171;
+        border: 1px solid rgba(239,68,68,0.2);
       }
+      
+      .room-card-status svg {
+        width: 12px;
+        height: 12px;
+      }
+      
       .room-card-actions {
         display: flex;
         gap: 0.5rem;
       }
+      
+      .room-card-actions .btn {
+        flex: 1;
+        padding: 0.6rem 1rem;
+        border-radius: 10px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        transition: all 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.4rem;
+      }
+      
+      .room-card-actions .btn-edit {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+      }
+      
+      .room-card-actions .btn-edit:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(37,99,235,0.35);
+      }
+      
+      .room-card-actions .btn-delete {
+        background: rgba(239,68,68,0.1);
+        color: #f87171;
+        border: 1px solid rgba(239,68,68,0.2);
+      }
+      
+      .room-card-actions .btn-delete:hover {
+        background: rgba(239,68,68,0.2);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(239,68,68,0.2);
+      }
+      
+      /* Empty State */
       .room-empty {
         text-align: center;
-        padding: 3rem 1rem;
-        color: #64748b;
+        padding: 4rem 2rem;
+        color: rgba(255,255,255,0.4);
       }
+      
       .room-empty-icon {
-        font-size: 4rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
+        font-size: 5rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.3;
       }
+      
+      /* Form Styles */
       .room-form {
         display: grid;
-        gap: 1rem;
+        gap: 1.25rem;
         margin-top: 1.5rem;
       }
+      
       .room-form-group label {
-        color: rgba(255,255,255,0.8);
+        color: rgba(255,255,255,0.7);
         font-weight: 600;
+        font-size: 0.9rem;
         display: block;
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.5rem;
       }
+      
       .room-form-group input,
       .room-form-group select {
         width: 100%;
-        padding: 0.75rem 0.85rem;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.15);
-        background: rgba(8,12,24,0.85);
+        padding: 0.9rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(0,0,0,0.3);
         color: #f5f8ff;
         font-family: inherit;
+        font-size: 1rem;
+        transition: all 0.25s ease;
       }
+      
+      .room-form-group input:focus,
+      .room-form-group select:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
+        background: rgba(0,0,0,0.4);
+      }
+      
       .add-type-row { display:flex; align-items:center; gap:0.5rem; }
+      
       .add-type-btn {
-        padding: 0.65rem 0.9rem;
-        border-radius: 10px;
-        border: 1px dashed rgba(96,165,250,0.6);
-        background: rgba(15,23,42,0.7);
+        padding: 0.9rem 1.1rem;
+        border-radius: 12px;
+        border: 1px dashed rgba(96,165,250,0.4);
+        background: rgba(59,130,246,0.08);
         color: #60a5fa;
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
-        transition: background 0.2s ease, border-color 0.2s ease;
+        transition: all 0.25s ease;
       }
+      
       .add-type-btn:hover {
-        background: rgba(37,99,235,0.15);
-        border-color: rgba(96,165,250,0.95);
+        background: rgba(59,130,246,0.15);
+        border-color: rgba(96,165,250,0.6);
+        transform: translateY(-1px);
       }
+      
       .delete-type-btn {
-        border-color: rgba(248,113,113,0.6);
-        color: #fca5a5;
+        border-color: rgba(248,113,113,0.4);
+        color: #f87171;
+        background: rgba(239,68,68,0.08);
       }
+      
       .delete-type-btn:hover {
-        background: rgba(248,113,113,0.15);
-        border-color: rgba(248,113,113,0.9);
+        background: rgba(239,68,68,0.15);
+        border-color: rgba(248,113,113,0.6);
       }
-      .room-form-group input:focus,
-      .room-form-group select:focus {
-        outline: none;
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
-      }
+      
       .room-form-actions {
         display: flex;
         gap: 0.75rem;
         margin-top: 1rem;
       }
       
-      /* Edit Modal Styles */
+      /* Modal Styles - Apple Sheet */
       .booking-modal {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
         display: none;
         justify-content: center;
         align-items: center;
         z-index: 10000;
         padding: 1rem;
       }
+      
       .booking-modal-content {
-        background: linear-gradient(135deg, rgba(15,23,42,0.98), rgba(2,6,23,0.98));
-        border-radius: 16px;
+        background: rgba(20,25,35,0.95);
+        backdrop-filter: blur(40px);
+        -webkit-backdrop-filter: blur(40px);
+        border-radius: 24px;
         padding: 2rem;
         width: 100%;
+        max-width: 480px;
         max-height: 90vh;
         overflow-y: auto;
-        border: 1px solid rgba(96,165,250,0.3);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 25px 80px rgba(0,0,0,0.5);
+        animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
       }
+      
+      @keyframes modalSlideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px) scale(0.97);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      
       .booking-modal-content h2 {
         margin: 0 0 1.5rem 0;
-        color: #f5f8ff;
+        color: #f8fafc;
         font-size: 1.5rem;
+        font-weight: 700;
       }
+      
       .booking-form-group {
         margin-bottom: 1.25rem;
       }
+      
       .booking-form-group label {
         display: block;
-        color: rgba(255,255,255,0.85);
+        color: rgba(255,255,255,0.7);
         font-weight: 600;
+        font-size: 0.9rem;
         margin-bottom: 0.5rem;
       }
+      
       .booking-form-group input,
       .booking-form-group select,
       .booking-form-group textarea {
         width: 100%;
-        padding: 0.75rem 0.85rem;
-        border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.2);
-        background: rgba(8,12,24,0.9);
+        padding: 0.9rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(0,0,0,0.3);
         color: #f5f8ff;
         font-family: inherit;
-        font-size: 0.95rem;
+        font-size: 1rem;
+        transition: all 0.25s ease;
       }
+      
       .booking-form-group input:focus,
       .booking-form-group select:focus,
       .booking-form-group textarea:focus {
         outline: none;
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
       }
+      
       .booking-form-actions {
         display: flex;
         gap: 0.75rem;
-        margin-top: 1.5rem;
-      }
-      .btn-submit {
-        flex: 1;
-        padding: 0.85rem 1.5rem;
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        color: white;
-        border: none;
-        border-radius: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .btn-submit:hover {
-        background: linear-gradient(135deg, #1d4ed8, #1e40af);
-        box-shadow: 0 4px 12px rgba(37,99,235,0.4);
-        transform: translateY(-1px);
-      }
-      .btn-cancel {
-        flex: 1;
-        padding: 0.85rem 1.5rem;
-        background: rgba(100,116,139,0.2);
-        color: #cbd5e1;
-        border: 1px solid rgba(148,163,184,0.3);
-        border-radius: 10px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-      .btn-cancel:hover {
-        background: rgba(100,116,139,0.3);
-        border-color: rgba(148,163,184,0.5);
+        margin-top: 1.75rem;
       }
       
-      /* View Toggle Button */
+      .btn-submit {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+        border: none;
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      
+      .btn-submit:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        box-shadow: 0 10px 30px rgba(37,99,235,0.4);
+        transform: translateY(-2px);
+      }
+      
+      .btn-cancel {
+        flex: 1;
+        padding: 1rem 1.5rem;
+        background: rgba(100,116,139,0.15);
+        color: #94a3b8;
+        border: 1px solid rgba(148,163,184,0.2);
+        border-radius: 14px;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      
+      .btn-cancel:hover {
+        background: rgba(100,116,139,0.25);
+        border-color: rgba(148,163,184,0.4);
+      }
+      
+      /* View Toggle */
       .view-toggle-btn {
-        padding: 0.6rem 1.2rem;
-        background: rgba(37,99,235,0.15);
-        color: #60a5fa;
-        border: 1px solid rgba(96,165,250,0.3);
-        border-radius: 8px;
+        padding: 0.7rem 1.3rem;
+        background: rgba(255,255,255,0.05);
+        color: #94a3b8;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.25s ease;
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
       }
+      
       .view-toggle-btn:hover {
-        background: rgba(37,99,235,0.25);
-        border-color: rgba(96,165,250,0.5);
+        background: rgba(255,255,255,0.1);
+        color: #f8fafc;
+        border-color: rgba(255,255,255,0.2);
       }
       
-      /* Table View Styles */
+      /* Table View */
       .rooms-table {
         width: 100%;
         border-collapse: collapse;
         margin-top: 1rem;
       }
+      
       .rooms-table thead {
-        background: rgba(15,23,42,0.6);
+        background: rgba(255,255,255,0.03);
       }
+      
       .rooms-table th {
-        padding: 1rem;
+        padding: 1rem 1.25rem;
         text-align: left;
-        color: #f5f8ff;
+        color: rgba(255,255,255,0.5);
         font-weight: 600;
-        border-bottom: 2px solid rgba(96,165,250,0.3);
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
       }
+      
       .rooms-table td {
-        padding: 0.65rem 1rem;
-        color: #cbd5e1;
-        border-bottom: none;
-        font-size: 0.9rem;
+        padding: 1rem 1.25rem;
+        color: #e2e8f0;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        font-size: 0.95rem;
       }
+      
       .rooms-table tbody tr {
-        transition: background 0.2s ease;
+        transition: all 0.2s ease;
       }
+      
       .rooms-table tbody tr:hover {
-        background: rgba(30,41,59,0.5);
+        background: rgba(255,255,255,0.03);
       }
+      
       .rooms-table tbody tr.hidden-row {
         display: none;
       }
+      
       .room-image-small {
-        width: 45px;
-        height: 45px;
-        border-radius: 6px;
+        width: 50px;
+        height: 50px;
+        border-radius: 10px;
         object-fit: cover;
-        background: linear-gradient(135deg, #1e293b, #0f172a);
+        background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.9));
         display: flex;
         align-items: center;
         justify-content: center;
         font-size: 1.2rem;
+        overflow: hidden;
       }
+      
       .room-image-small img {
         width: 100%;
         height: 100%;
-        border-radius: 8px;
+        border-radius: 10px;
         object-fit: cover;
       }
-      .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
-      .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
+      
+      .reports-page .manage-panel {
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
+        background: rgba(15,23,42,0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 20px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+      }
+      
+      .reports-page .manage-panel:first-of-type {
+        margin-top: 0.2rem;
+      }
+      
       .rooms-table .room-card-actions {
         display: flex;
         gap: 0.5rem;
         justify-content: flex-start;
       }
+      
       .rooms-table-view { display: none; }
       .rooms-grid-view { display: grid; }
       
+      /* Load More Button */
       .load-more-container {
         display: flex;
         justify-content: center;
-        margin-top: 1.5rem;
-        padding-top: 1rem;
-        border-top: 1px solid rgba(255,255,255,0.1);
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid rgba(255,255,255,0.06);
       }
+      
       .load-more-btn {
-        padding: 0.75rem 2rem;
-        background: linear-gradient(135deg, rgba(37,99,235,0.2), rgba(29,78,216,0.2));
-        color: #60a5fa;
-        border: 1px solid rgba(96,165,250,0.4);
-        border-radius: 10px;
+        padding: 0.9rem 2.5rem;
+        background: rgba(255,255,255,0.05);
+        color: #94a3b8;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 14px;
         font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
       }
+      
       .load-more-btn:hover {
-        background: linear-gradient(135deg, rgba(37,99,235,0.3), rgba(29,78,216,0.3));
-        border-color: rgba(96,165,250,0.6);
-        transform: translateY(-1px);
+        background: rgba(255,255,255,0.1);
+        color: #f8fafc;
+        border-color: rgba(255,255,255,0.2);
+        transform: translateY(-2px);
       }
+      
       .load-more-btn.hidden {
         display: none;
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        .rooms-stats {
+          grid-template-columns: 1fr;
+        }
+        
+        .rooms-grid {
+          grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+        }
+        
+        .room-stat-card .stat-value {
+          font-size: 2.5rem;
+        }
       }
     </style>
   </head>
@@ -539,23 +803,23 @@ try {
               </div>
               <div class="room-stat-card">
                 <h3>ห้องว่าง</h3>
-                <div class="stat-value" style="color:#22c55e;"><?php echo number_format($vacant); ?></div>
+                <div class="stat-value"><?php echo number_format($vacant); ?></div>
               </div>
               <div class="room-stat-card">
-                <h3>ห้องที่มีผู้เข้าอยู่</h3>
-                <div class="stat-value" style="color:#ef4444;"><?php echo number_format($occupied); ?></div>
+                <h3>มีผู้เข้าพัก</h3>
+                <div class="stat-value"><?php echo number_format($occupied); ?></div>
               </div>
             </div>
           </section>
 
           <!-- Toggle button for room form -->
           <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleRoomFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleRoomForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+            <button type="button" id="toggleRoomFormBtn" style="white-space:nowrap;padding:0.85rem 1.5rem;cursor:pointer;font-size:0.95rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;transition:all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;" onclick="toggleRoomForm()" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='#f8fafc'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='#94a3b8'">
               <span id="toggleRoomFormIcon">▼</span> <span id="toggleRoomFormText">ซ่อนฟอร์ม</span>
             </button>
           </div>
 
-          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addRoomSection">
+          <section class="manage-panel" id="addRoomSection">
             <div class="section-header">
               <div>
                 <h1>เพิ่มห้องพัก</h1>
@@ -654,20 +918,31 @@ try {
                     <div class="room-card-content">
                       <h3 class="room-card-number">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></h3>
                       <div class="room-card-meta">
-                        ประเภท: <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?><br>
-                        ราคา: <?php echo number_format($room['type_price'] ?? 0); ?> บาท/เดือน
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?> • <?php echo number_format($room['type_price'] ?? 0); ?> บาท/เดือน
                       </div>
                       <div class="room-card-status <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
-                        <?php echo $room['room_status'] === '0' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
-                        <?php if ($room['room_status'] !== '0' && !empty($room['occupation_reason'])): ?>
-                          <div style="font-size: 0.75rem; margin-top: 0.4rem; color: #fbbf24; font-weight: normal;">
-                            <?php echo htmlspecialchars($room['occupation_reason']); ?>
-                          </div>
+                        <?php if ($room['room_status'] === '0'): ?>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                          ว่าง
+                        <?php else: ?>
+                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                          ไม่ว่าง
                         <?php endif; ?>
                       </div>
+                      <?php if ($room['room_status'] !== '0' && !empty($room['occupation_reason'])): ?>
+                        <div style="font-size: 0.75rem; margin-bottom: 0.75rem; color: #fbbf24; opacity: 0.8;">
+                          <?php echo htmlspecialchars($room['occupation_reason']); ?>
+                        </div>
+                      <?php endif; ?>
                       <div class="room-card-actions">
-                        <button type="button" class="animate-ui-action-btn edit" data-room-id="<?php echo $room['room_id']; ?>" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(<?php echo $room['room_id']; ?>)">แก้ไข</button>
-                        <button type="button" class="animate-ui-action-btn delete" onclick="deleteRoom(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars(addslashes($room['room_number'])); ?>')">ลบ</button>
+                        <button type="button" class="btn btn-edit" data-room-id="<?php echo $room['room_id']; ?>" onclick="editRoom(<?php echo $room['room_id']; ?>)">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          แก้ไข
+                        </button>
+                        <button type="button" class="btn btn-delete" onclick="deleteRoom(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars(addslashes($room['room_number'])); ?>')">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -711,7 +986,13 @@ try {
                         </td>
                         <td>
                           <span class="room-card-status <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
-                            <?php echo $room['room_status'] === '0' ? '✓ ว่าง' : '✗ ไม่ว่าง'; ?>
+                            <?php if ($room['room_status'] === '0'): ?>
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                              ว่าง
+                            <?php else: ?>
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                              ไม่ว่าง
+                            <?php endif; ?>
                           </span>
                           <?php if ($room['room_status'] !== '0' && !empty($room['occupation_reason'])): ?>
                             <div style="font-size: 0.85rem; margin-top: 0.3rem; color: #fbbf24;">
@@ -721,8 +1002,13 @@ try {
                         </td>
                         <td>
                           <div class="room-card-actions">
-                            <button type="button" class="animate-ui-action-btn edit" data-room-id="<?php echo $room['room_id']; ?>" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(<?php echo $room['room_id']; ?>)">แก้ไข</button>
-                            <button type="button" class="animate-ui-action-btn delete" onclick="deleteRoom(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars(addslashes($room['room_number'])); ?>')">ลบ</button>
+                            <button type="button" class="btn btn-edit" data-room-id="<?php echo $room['room_id']; ?>" onclick="editRoom(<?php echo $room['room_id']; ?>)">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                              แก้ไข
+                            </button>
+                            <button type="button" class="btn btn-delete" onclick="deleteRoom(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars(addslashes($room['room_number'])); ?>')">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -777,7 +1063,14 @@ try {
           <div class="booking-form-group">
             <label>รูปภาพห้อง:</label>
             <input type="file" name="room_image" id="edit_room_image" accept="image/*">
+            <input type="hidden" name="delete_image" id="delete_image" value="0">
             <div id="edit_image_preview" style="margin-top:0.5rem; color:#94a3b8; font-size:0.85rem;"></div>
+            <div id="delete_image_btn_container" style="margin-top:0.75rem; display:none;">
+              <button type="button" id="deleteImageBtn" onclick="deleteCurrentImage()" style="padding:0.6rem 1.2rem; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:10px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:all 0.25s ease;">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
+                ลบรูปภาพนี้
+              </button>
+            </div>
           </div>
           
           <div class="booking-form-actions">
@@ -867,24 +1160,37 @@ try {
         document.getElementById('edit_room_id').value = room.room_id;
         document.getElementById('edit_room_number').value = room.room_number;
         document.getElementById('edit_type_id').value = room.type_id;
+        document.getElementById('delete_image').value = '0';
         
         const preview = document.getElementById('edit_image_preview');
+        const deleteBtn = document.getElementById('delete_image_btn_container');
+        
         if (room.room_image) {
           preview.innerHTML = `<div style="margin-top:0.5rem;">
-            <img src="/Dormitory_Management/Assets/Images/Rooms/${room.room_image}" alt="Room Image" style="max-width:100%; height:auto; border-radius:8px; max-height:200px;">
+            <img src="/Dormitory_Management/Assets/Images/Rooms/${room.room_image}" alt="Room Image" style="max-width:100%; height:auto; border-radius:12px; max-height:200px;">
             <div style="color:#22c55e; margin-top:0.5rem;">✓ ${room.room_image}</div>
           </div>`;
+          deleteBtn.style.display = 'block';
         } else {
           preview.innerHTML = '<div style="color:#94a3b8;">ไม่มีรูปภาพ</div>';
+          deleteBtn.style.display = 'none';
         }
         
         document.getElementById('editModal').style.display = 'flex';
       }
       window.editRoom = editRoom;
       
+      function deleteCurrentImage() {
+        document.getElementById('delete_image').value = '1';
+        document.getElementById('edit_image_preview').innerHTML = '<div style="color:#f87171; padding:0.75rem; background:rgba(239,68,68,0.1); border-radius:10px; border:1px dashed rgba(239,68,68,0.3);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:0.4rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> รูปภาพจะถูกลบเมื่อกดบันทึก</div>';
+        document.getElementById('delete_image_btn_container').style.display = 'none';
+      }
+      window.deleteCurrentImage = deleteCurrentImage;
+      
       function closeEditModal() {
         document.getElementById('editModal').style.display = 'none';
         document.getElementById('editForm').reset();
+        document.getElementById('delete_image').value = '0';
       }
       
       // Handle Edit Form Submit via AJAX
@@ -910,15 +1216,97 @@ try {
             const data = await response.json();
             
             if (response.ok) {
-              toast(data.success || 'บันทึกสำเร็จ');
+              showSuccessToast(data.success || 'บันทึกสำเร็จ');
               closeEditModal();
+              
+              // อัปเดต UI โดยไม่ต้องรีหน้า
+              if (data.room) {
+                updateRoomInDisplay(data.room);
+              }
             } else {
-              toast('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่ทราบสาเหตุ'));
+              showErrorToast('เกิดข้อผิดพลาด: ' + (data.error || 'ไม่ทราบสาเหตุ'));
             }
           } catch (error) {
-            toast('เกิดข้อผิดพลาด: ' + error.message, 3000);
+            showErrorToast('เกิดข้อผิดพลาด: ' + error.message);
           }
         });
+      }
+      
+      // Function to update room in display without page reload
+      function updateRoomInDisplay(room) {
+        const roomId = room.room_id;
+        
+        // อัปเดตข้อมูลใน roomsData array
+        const index = roomsData.findIndex(r => r.room_id == roomId);
+        if (index !== -1) {
+          roomsData[index] = { ...roomsData[index], ...room };
+        }
+        
+        // อัปเดต Grid View Card
+        const gridCard = document.querySelector(`.room-card[data-room-id="${roomId}"]`);
+        if (gridCard) {
+          // อัปเดตรูปภาพ
+          const imageDiv = gridCard.querySelector('.room-card-image');
+          if (imageDiv) {
+            if (room.room_image) {
+              imageDiv.innerHTML = `<img src="../Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />`;
+            } else {
+              imageDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
+                <path d="M6 12V7a2 2 0 0 1 2-2h2" />
+                <path d="M2 16v-2" />
+                <path d="M22 16v-2" />
+              </svg>`;
+            }
+          }
+          
+          // อัปเดตหมายเลขห้อง
+          const numberEl = gridCard.querySelector('.room-card-number');
+          if (numberEl) {
+            numberEl.textContent = `ห้อง ${room.room_number}`;
+          }
+          
+          // อัปเดต meta (ประเภท + ราคา)
+          const metaEl = gridCard.querySelector('.room-card-meta');
+          if (metaEl) {
+            metaEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              ${room.type_name || '-'} • ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท/เดือน`;
+          }
+        }
+        
+        // อัปเดต Table View Row
+        const tableRow = document.querySelector(`tr[data-room-id="${roomId}"]`);
+        if (tableRow) {
+          const cells = tableRow.querySelectorAll('td');
+          
+          // อัปเดตรูปภาพ (cell 0)
+          if (cells[0]) {
+            const imgSmall = cells[0].querySelector('.room-image-small');
+            if (imgSmall) {
+              if (room.room_image) {
+                imgSmall.innerHTML = `<img src="../Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />`;
+              } else {
+                imgSmall.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
+                  <path d="M6 12V7a2 2 0 0 1 2-2h2" />
+                  <path d="M2 16v-2" />
+                  <path d="M22 16v-2" />
+                </svg>`;
+              }
+            }
+          }
+          
+          // อัปเดตข้อมูลห้อง (cell 1)
+          if (cells[1]) {
+            cells[1].innerHTML = `ห้อง ${room.room_number}<br>
+              <span style="font-size:0.85rem;color:#cbd5e1;font-weight:normal;">
+                ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท<br>
+                ประเภท: ${room.type_name || '-'}
+              </span>`;
+            cells[1].style.fontWeight = '600';
+            cells[1].style.color = '#f5f8ff';
+          }
+        }
       }
       
       // Handle image preview for edit form
@@ -1205,15 +1593,21 @@ try {
               <div class="room-card-content">
                 <h3 class="room-card-number">ห้อง ${room.room_number}</h3>
                 <div class="room-card-meta">
-                  ประเภท: ${room.type_name || '-'}<br>
-                  ราคา: ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท/เดือน
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                  ${room.type_name || '-'} • ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท/เดือน
                 </div>
                 <div class="room-card-status vacant">
-                  ✓ ว่าง
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                  ว่าง
                 </div>
                 <div class="room-card-actions">
-                  <button type="button" class="animate-ui-action-btn edit" data-room-id="${room.room_id}" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(${room.room_id})">แก้ไข</button>
-                  <button type="button" class="animate-ui-action-btn delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">ลบ</button>
+                  <button type="button" class="btn btn-edit" onclick="editRoom(${room.room_id})">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    แก้ไข
+                  </button>
+                  <button type="button" class="btn btn-delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                  </button>
                 </div>
               </div>
             </div>
@@ -1250,13 +1644,19 @@ try {
                 </td>
                 <td>
                   <span class="room-card-status vacant">
-                    ✓ ว่าง
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    ว่าง
                   </span>
                 </td>
                 <td>
                   <div class="room-card-actions">
-                    <button type="button" class="animate-ui-action-btn edit" data-room-id="${room.room_id}" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" onclick="editRoom(${room.room_id})">แก้ไข</button>
-                    <button type="button" class="animate-ui-action-btn delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">ลบ</button>
+                    <button type="button" class="btn btn-edit" onclick="editRoom(${room.room_id})">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                      แก้ไข
+                    </button>
+                    <button type="button" class="btn btn-delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    </button>
                   </div>
                 </td>
               </tr>

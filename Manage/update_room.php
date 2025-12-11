@@ -47,6 +47,18 @@ try {
     // คงสถานะห้องเดิม ไม่เปิดให้แก้ไขผ่านฟอร์มนี้
     $room_status = $oldData['room_status'];
 
+    // ตรวจสอบว่าต้องการลบรูปภาพหรือไม่
+    $deleteImage = isset($_POST['delete_image']) && $_POST['delete_image'] === '1';
+    
+    if ($deleteImage && $room_image) {
+        // ลบรูปภาพเก่า
+        $oldPath = __DIR__ . '/../Assets/Images/Rooms/' . $room_image;
+        if (file_exists($oldPath)) {
+            unlink($oldPath);
+        }
+        $room_image = null;
+    }
+
     // อัพโหลดรูปภาพใหม่ถ้ามี
     if (!empty($_FILES['room_image']['name'])) {
         $file = $_FILES['room_image'];
@@ -82,8 +94,21 @@ try {
     $update = $pdo->prepare("UPDATE room SET room_number = ?, type_id = ?, room_image = ? WHERE room_id = ?");
     $update->execute([$room_number, $type_id, $room_image, $room_id]);
 
+    // ดึงข้อมูลห้องที่อัปเดตพร้อมชื่อประเภทห้อง
+    $roomQuery = $pdo->prepare("
+        SELECT r.*, rt.type_name, rt.type_price 
+        FROM room r 
+        LEFT JOIN room_type rt ON r.type_id = rt.type_id 
+        WHERE r.room_id = ?
+    ");
+    $roomQuery->execute([$room_id]);
+    $updatedRoom = $roomQuery->fetch(PDO::FETCH_ASSOC);
+
     http_response_code(200);
-    echo json_encode(['success' => 'แก้ไขห้องพัก ห้อง ' . htmlspecialchars($room_number) . ' เรียบร้อยแล้ว']);
+    echo json_encode([
+        'success' => 'แก้ไขห้องพัก ห้อง ' . htmlspecialchars($room_number) . ' เรียบร้อยแล้ว',
+        'room' => $updatedRoom
+    ]);
     exit;
 } catch (PDOException $e) {
     http_response_code(500);

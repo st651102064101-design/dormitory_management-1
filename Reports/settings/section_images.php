@@ -4,7 +4,7 @@
   <div class="apple-section-card">
     <!-- Logo -->
     <div class="apple-settings-row" data-sheet="sheet-logo">
-      <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div>
+      <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label">โลโก้</p>
         <p class="apple-row-sublabel">รูปโลโก้ที่แสดงในระบบ</p>
@@ -15,7 +15,7 @@
     
     <!-- Background -->
     <div class="apple-settings-row" data-sheet="sheet-background">
-      <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+      <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label">ภาพพื้นหลัง</p>
         <p class="apple-row-sublabel">ภาพ Hero หน้าแรก</p>
