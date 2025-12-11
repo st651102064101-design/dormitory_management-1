@@ -192,7 +192,10 @@ try {
                     </select>
                   </div>
                   <div class="filter-item" style="display:flex;align-items:flex-end;gap:0.5rem;">
-                    <button type="button" class="filter-btn" onclick="document.getElementById('filterForm').submit();" style="flex:1;min-height:2.5rem;width:100%;">🔍 กรองข้อมูล</button>
+                    <button type="button" class="filter-btn" onclick="document.getElementById('filterForm').submit();" style="flex:1;min-height:2.5rem;width:100%;display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      กรองข้อมูล
+                    </button>
                     <?php if ($selectedMonth): ?>
                       <a href="report_repairs.php" class="clear-btn" style="flex:1;min-height:2.5rem;width:100%;display:flex;align-items:center;justify-content:center;">✕ ล้างตัวกรอง</a>
                     <?php endif; ?>

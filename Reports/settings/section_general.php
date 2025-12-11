@@ -100,7 +100,7 @@
 
 <!-- Section: Payment Information -->
 <div class="apple-section-group">
-  <h2 class="apple-section-title">💳 ข้อมูลการรับชำระเงิน</h2>
+  <h2 class="apple-section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;vertical-align:-3px;margin-right:6px;"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>ข้อมูลการรับชำระเงิน</h2>
   <div class="apple-section-card">
     <!-- Bank Name -->
     <div class="apple-settings-row" data-sheet="sheet-bankname">

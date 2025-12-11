@@ -580,7 +580,7 @@ foreach ($contracts as $c) {
                 <form class="contract-form hide" id="contractForm" action="../Manage/process_contract.php" method="POST" data-allow-submit>
                     <h3 style="margin-top: 0;">เพิ่มสัญญาเช่าใหม่</h3>
                     <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin: 0 0 1rem 0;">
-                        📝 เลือกเฉพาะผู้เช่าและห้องพัก - วันที่และเงินประกันจะถูกกำหนดอัตโนมัติ
+                        เลือกเฉพาะผู้เช่าและห้องพัก - วันที่และเงินประกันจะถูกกำหนดอัตโนมัติ
                     </p>
                     <div class="form-grid">
                         <div class="form-group">
@@ -645,13 +645,13 @@ foreach ($contracts as $c) {
                         </div>
                         <div class="form-group" style="grid-column: 1 / -1; padding: 1rem; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 4px;">
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <span style="font-size: 1.2rem;">ℹ️</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:#4CAF50;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                                 <strong style="color: #4CAF50;">ข้อมูลที่จะถูกบันทึกอัตโนมัติ:</strong>
                             </div>
                             <ul style="margin: 0; padding-left: 1.5rem; color: rgba(255,255,255,0.8);">
-                                <li>📅 วันเริ่มสัญญา: <strong style="color: #4CAF50;">วันนี้ (<?php echo date('d/m/Y'); ?>)</strong></li>
-                                <li>📅 วันสิ้นสุดสัญญา: <strong style="color: #4CAF50;" id="end_date_display">6 เดือนจากวันนี้</strong></li>
-                                <li>💰 เงินประกัน: <strong style="color: #4CAF50;">2,000 บาท</strong></li>
+                                <li>วันเริ่มสัญญา: <strong style="color: #4CAF50;">วันนี้ (<?php echo date('d/m/Y'); ?>)</strong></li>
+                                <li>วันสิ้นสุดสัญญา: <strong style="color: #4CAF50;" id="end_date_display">6 เดือนจากวันนี้</strong></li>
+                                <li>เงินประกัน: <strong style="color: #4CAF50;">2,000 บาท</strong></li>
                             </ul>
                         </div>
                     </div>

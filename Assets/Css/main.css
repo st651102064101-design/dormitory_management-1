@@ -1,5 +1,8 @@
 /* Main CSS for Report Pages */
 
+/* Import Light Theme Fixes */
+@import url('light-theme-fixes.css');
+
 /* Global button focus outline removal */
 button:focus,
 button:focus-visible {

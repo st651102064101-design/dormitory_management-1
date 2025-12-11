@@ -1,0 +1,471 @@
+/**
+ * Light Theme Fixes for Dormitory Management System
+ * แก้ไขปัญหาการแสดงผลในโหมด Light
+ */
+
+/* ===== Base Light Theme Variables ===== */
+html.light-theme,
+body.light-theme {
+  --lt-bg-primary: #f8fafc;
+  --lt-bg-secondary: #f1f5f9;
+  --lt-bg-card: #ffffff;
+  --lt-border: rgba(0, 0, 0, 0.08);
+  --lt-border-strong: rgba(0, 0, 0, 0.12);
+  --lt-text-primary: #1e293b;
+  --lt-text-secondary: #64748b;
+  --lt-text-muted: #94a3b8;
+  --lt-accent-blue: #3b82f6;
+  --lt-accent-green: #10b981;
+  --lt-accent-orange: #f59e0b;
+  --lt-accent-red: #ef4444;
+  --lt-shadow: rgba(0, 0, 0, 0.08);
+}
+
+/* ===== Global Background ===== */
+html.light-theme,
+html.light-theme body,
+html.light-theme .app-shell,
+html.light-theme .app-main,
+html.light-theme .reports-page,
+html.light-theme .reports-container,
+body.light-theme,
+body.light-theme .app-shell,
+body.light-theme .app-main,
+body.light-theme .reports-page,
+body.light-theme .reports-container {
+  background: var(--lt-bg-primary, #f8fafc) !important;
+  background-color: var(--lt-bg-primary, #f8fafc) !important;
+}
+
+/* ===== DataTable Modern Container - Light Theme ===== */
+html.light-theme .datatable-modern-container,
+body.light-theme .datatable-modern-container {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+  box-shadow: 0 4px 12px var(--lt-shadow, rgba(0, 0, 0, 0.08)) !important;
+}
+
+/* DataTable Header - Light Theme */
+html.light-theme .datatable-wrapper table thead,
+body.light-theme .datatable-wrapper table thead {
+  background: linear-gradient(135deg, #e2e8f0, #f1f5f9) !important;
+}
+
+html.light-theme .datatable-wrapper table thead th,
+body.light-theme .datatable-wrapper table thead th {
+  color: var(--lt-text-primary, #1e293b) !important;
+  background: transparent !important;
+  border-bottom: 2px solid var(--lt-accent-blue, #3b82f6) !important;
+  font-weight: 600 !important;
+}
+
+/* DataTable Body - Light Theme */
+html.light-theme .datatable-wrapper table tbody td,
+body.light-theme .datatable-wrapper table tbody td {
+  color: var(--lt-text-primary, #1e293b) !important;
+  border-bottom: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+html.light-theme .datatable-wrapper table tbody tr:hover,
+body.light-theme .datatable-wrapper table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+
+/* DataTable Input/Select - Light Theme */
+html.light-theme .datatable-wrapper .datatable-input,
+html.light-theme .datatable-wrapper .datatable-selector,
+body.light-theme .datatable-wrapper .datatable-input,
+body.light-theme .datatable-wrapper .datatable-selector {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border-strong, rgba(0, 0, 0, 0.12)) !important;
+  color: var(--lt-text-primary, #1e293b) !important;
+}
+
+html.light-theme .datatable-wrapper .datatable-input::placeholder,
+body.light-theme .datatable-wrapper .datatable-input::placeholder {
+  color: var(--lt-text-muted, #94a3b8) !important;
+}
+
+/* DataTable Info Text - Light Theme */
+html.light-theme .datatable-wrapper .datatable-info,
+body.light-theme .datatable-wrapper .datatable-info {
+  color: var(--lt-text-secondary, #64748b) !important;
+}
+
+/* ===== Stat Cards - Light Theme ===== */
+html.light-theme .stat-card,
+html.light-theme .report-card,
+html.light-theme .payment-stat-card,
+html.light-theme .expense-stat-card,
+html.light-theme .header-stat-item,
+body.light-theme .stat-card,
+body.light-theme .report-card,
+body.light-theme .payment-stat-card,
+body.light-theme .expense-stat-card,
+body.light-theme .header-stat-item {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+  box-shadow: 0 2px 8px var(--lt-shadow, rgba(0, 0, 0, 0.08)) !important;
+}
+
+html.light-theme .stat-card:hover,
+html.light-theme .report-card:hover,
+body.light-theme .stat-card:hover,
+body.light-theme .report-card:hover {
+  border-color: var(--lt-accent-blue, #3b82f6) !important;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* Stat Card Text - Light Theme */
+html.light-theme .stat-label,
+html.light-theme .stat-subtitle,
+html.light-theme .header-stat-item .stat-label,
+html.light-theme .report-card-subtitle,
+body.light-theme .stat-label,
+body.light-theme .stat-subtitle,
+body.light-theme .header-stat-item .stat-label,
+body.light-theme .report-card-subtitle {
+  color: var(--lt-text-secondary, #64748b) !important;
+}
+
+html.light-theme .stat-value,
+html.light-theme .stat-number,
+html.light-theme .report-card-value,
+body.light-theme .stat-value,
+body.light-theme .stat-number,
+body.light-theme .report-card-value {
+  color: var(--lt-text-primary, #1e293b) !important;
+}
+
+/* ===== Manage Panels - Light Theme ===== */
+html.light-theme .manage-panel,
+html.light-theme section.manage-panel,
+body.light-theme .manage-panel,
+body.light-theme section.manage-panel {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+  box-shadow: 0 2px 8px var(--lt-shadow, rgba(0, 0, 0, 0.08)) !important;
+}
+
+/* ===== Content Cards - Light Theme ===== */
+html.light-theme .tenant-card,
+html.light-theme .room-card,
+html.light-theme .booking-card,
+html.light-theme .news-card,
+html.light-theme .repair-card,
+html.light-theme .invoice-card,
+html.light-theme .contract-card,
+body.light-theme .tenant-card,
+body.light-theme .room-card,
+body.light-theme .booking-card,
+body.light-theme .news-card,
+body.light-theme .repair-card,
+body.light-theme .invoice-card,
+body.light-theme .contract-card {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+  box-shadow: 0 2px 8px var(--lt-shadow, rgba(0, 0, 0, 0.08)) !important;
+}
+
+html.light-theme .tenant-card:hover,
+html.light-theme .room-card:hover,
+html.light-theme .booking-card:hover,
+body.light-theme .tenant-card:hover,
+body.light-theme .room-card:hover,
+body.light-theme .booking-card:hover {
+  border-color: var(--lt-accent-blue, #3b82f6) !important;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.12) !important;
+}
+
+/* Card Text Colors - Light Theme */
+html.light-theme .tenant-card h3,
+html.light-theme .room-card h3,
+html.light-theme .booking-card h3,
+html.light-theme .card-title,
+html.light-theme .news-card-title,
+body.light-theme .tenant-card h3,
+body.light-theme .room-card h3,
+body.light-theme .booking-card h3,
+body.light-theme .card-title,
+body.light-theme .news-card-title {
+  color: var(--lt-text-primary, #1e293b) !important;
+}
+
+html.light-theme .tenant-card p,
+html.light-theme .room-card p,
+html.light-theme .card-subtitle,
+html.light-theme .card-info,
+body.light-theme .tenant-card p,
+body.light-theme .room-card p,
+body.light-theme .card-subtitle,
+body.light-theme .card-info {
+  color: var(--lt-text-secondary, #64748b) !important;
+}
+
+/* ===== Form Elements - Light Theme ===== */
+html.light-theme input,
+html.light-theme select,
+html.light-theme textarea,
+body.light-theme input,
+body.light-theme select,
+body.light-theme textarea {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border-strong, rgba(0, 0, 0, 0.12)) !important;
+  color: var(--lt-text-primary, #1e293b) !important;
+}
+
+html.light-theme input::placeholder,
+html.light-theme textarea::placeholder,
+body.light-theme input::placeholder,
+body.light-theme textarea::placeholder {
+  color: var(--lt-text-muted, #94a3b8) !important;
+}
+
+html.light-theme input:focus,
+html.light-theme select:focus,
+html.light-theme textarea:focus,
+body.light-theme input:focus,
+body.light-theme select:focus,
+body.light-theme textarea:focus {
+  border-color: var(--lt-accent-blue, #3b82f6) !important;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+}
+
+/* ===== Filter Buttons/Views - Light Theme ===== */
+html.light-theme .view-btn,
+html.light-theme .filter-btn,
+html.light-theme .filter-select,
+html.light-theme .status-filter-btn,
+body.light-theme .view-btn,
+body.light-theme .filter-btn,
+body.light-theme .filter-select,
+body.light-theme .status-filter-btn {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border-strong, rgba(0, 0, 0, 0.12)) !important;
+  color: var(--lt-text-secondary, #64748b) !important;
+}
+
+html.light-theme .view-btn:hover,
+html.light-theme .filter-btn:hover,
+body.light-theme .view-btn:hover,
+body.light-theme .filter-btn:hover {
+  background: var(--lt-bg-secondary, #f1f5f9) !important;
+  border-color: var(--lt-accent-blue, #3b82f6) !important;
+  color: var(--lt-accent-blue, #3b82f6) !important;
+}
+
+html.light-theme .view-btn.active,
+html.light-theme .filter-btn.active,
+html.light-theme .status-filter-btn.active,
+body.light-theme .view-btn.active,
+body.light-theme .filter-btn.active,
+body.light-theme .status-filter-btn.active {
+  background: var(--lt-accent-blue, #3b82f6) !important;
+  border-color: var(--lt-accent-blue, #3b82f6) !important;
+  color: #ffffff !important;
+}
+
+/* ===== Page Headers - Light Theme ===== */
+html.light-theme .page-header,
+html.light-theme .section-header,
+html.light-theme .content-container,
+body.light-theme .page-header,
+body.light-theme .section-header,
+body.light-theme .content-container {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+html.light-theme .page-header h1,
+html.light-theme .page-header h2,
+html.light-theme .section-header h2,
+body.light-theme .page-header h1,
+body.light-theme .page-header h2,
+body.light-theme .section-header h2 {
+  color: var(--lt-text-primary, #1e293b) !important;
+}
+
+html.light-theme .page-header p,
+html.light-theme .section-header p,
+body.light-theme .page-header p,
+body.light-theme .section-header p {
+  color: var(--lt-text-secondary, #64748b) !important;
+}
+
+/* ===== Tables (Non-DataTable) - Light Theme ===== */
+html.light-theme table thead,
+body.light-theme table thead {
+  background: linear-gradient(135deg, #e2e8f0, #f1f5f9) !important;
+}
+
+html.light-theme table thead th,
+body.light-theme table thead th {
+  color: var(--lt-text-primary, #1e293b) !important;
+  border-bottom: 2px solid var(--lt-accent-blue, #3b82f6) !important;
+  background: transparent !important;
+}
+
+html.light-theme table tbody td,
+body.light-theme table tbody td {
+  color: var(--lt-text-primary, #1e293b) !important;
+  border-bottom: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+html.light-theme table tbody tr:hover,
+body.light-theme table tbody tr:hover {
+  background: rgba(59, 130, 246, 0.06) !important;
+}
+
+/* ===== Status Badges - Light Theme (maintain visibility) ===== */
+html.light-theme .status-badge,
+body.light-theme .status-badge {
+  font-weight: 600 !important;
+}
+
+/* ===== Sidebar/Navigation Fix ===== */
+html.light-theme .sidebar,
+body.light-theme .sidebar {
+  background: linear-gradient(180deg, #1e293b, #0f172a) !important;
+}
+
+/* ===== Footer/Info Labels - Light Theme ===== */
+html.light-theme .tenant-card-footer,
+html.light-theme .card-footer,
+body.light-theme .tenant-card-footer,
+body.light-theme .card-footer {
+  background: var(--lt-bg-secondary, #f1f5f9) !important;
+  border-top: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+/* ===== Search Box Icon - Light Theme ===== */
+html.light-theme .search-box svg,
+body.light-theme .search-box svg {
+  color: var(--lt-text-muted, #94a3b8) !important;
+  stroke: var(--lt-text-muted, #94a3b8) !important;
+}
+
+/* ===== Lottie Icons Container - Light Theme ===== */
+html.light-theme .lottie-icon,
+html.light-theme .stat-icon,
+html.light-theme .report-card-icon,
+body.light-theme .lottie-icon,
+body.light-theme .stat-icon,
+body.light-theme .report-card-icon {
+  opacity: 1 !important;
+}
+
+/* ===== Toast Notifications - Light Theme ===== */
+html.light-theme .toast-notification,
+html.light-theme .animate-ui-toast,
+body.light-theme .toast-notification,
+body.light-theme .animate-ui-toast {
+  background: var(--lt-bg-card, #ffffff) !important;
+  color: var(--lt-text-primary, #1e293b) !important;
+  border: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* ===== Modal - Light Theme ===== */
+html.light-theme .modal-content,
+html.light-theme .animate-ui-modal,
+body.light-theme .modal-content,
+body.light-theme .animate-ui-modal {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+html.light-theme .modal-header,
+body.light-theme .modal-header {
+  border-bottom: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+html.light-theme .modal-title,
+body.light-theme .modal-title {
+  color: var(--lt-text-primary, #1e293b) !important;
+}
+
+/* ===== Empty States - Light Theme ===== */
+html.light-theme .empty-state,
+html.light-theme .room-empty,
+html.light-theme .news-empty,
+body.light-theme .empty-state,
+body.light-theme .room-empty,
+body.light-theme .news-empty {
+  color: var(--lt-text-secondary, #64748b) !important;
+}
+
+html.light-theme .empty-state h3,
+html.light-theme .room-empty h3,
+html.light-theme .news-empty h3,
+body.light-theme .empty-state h3,
+body.light-theme .room-empty h3,
+body.light-theme .news-empty h3 {
+  color: var(--lt-text-primary, #1e293b) !important;
+}
+
+/* ===== Room Status Badges - Light Theme ===== */
+html.light-theme .status-indicator.status-vacant,
+body.light-theme .status-indicator.status-vacant {
+  background: rgba(16, 185, 129, 0.15) !important;
+  color: #059669 !important;
+  border: 1px solid rgba(16, 185, 129, 0.3) !important;
+}
+
+html.light-theme .status-indicator.status-occupied,
+body.light-theme .status-indicator.status-occupied {
+  background: rgba(239, 68, 68, 0.15) !important;
+  color: #dc2626 !important;
+  border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+
+/* ===== Report Title - Light Theme ===== */
+html.light-theme h1, html.light-theme h2, html.light-theme h3,
+body.light-theme h1, body.light-theme h2, body.light-theme h3 {
+  color: var(--lt-text-primary, #1e293b);
+}
+
+/* ===== General Text - Light Theme ===== */
+html.light-theme p, html.light-theme span, html.light-theme div,
+body.light-theme p, body.light-theme span, body.light-theme div {
+  color: inherit;
+}
+
+/* ===== Specific Page Fixes ===== */
+
+/* Report Tenants - Light Theme */
+html.light-theme .stats-grid .stat-card,
+body.light-theme .stats-grid .stat-card {
+  background: var(--lt-bg-card, #ffffff) !important;
+}
+
+/* Report Reservations - Light Theme */
+html.light-theme .booking-card,
+body.light-theme .booking-card {
+  background: var(--lt-bg-card, #ffffff) !important;
+}
+
+/* Manage Stay - Light Theme */
+html.light-theme .stay-card,
+body.light-theme .stay-card {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+/* Report Utility - Light Theme */
+html.light-theme .utility-table,
+body.light-theme .utility-table {
+  background: var(--lt-bg-card, #ffffff) !important;
+}
+
+/* Report Rooms - Light Theme */
+html.light-theme .room-grid-card,
+body.light-theme .room-grid-card {
+  background: var(--lt-bg-card, #ffffff) !important;
+  border: 1px solid var(--lt-border, rgba(0, 0, 0, 0.08)) !important;
+}
+
+/* Print Contract - Light Theme */
+html.light-theme .contract-list,
+body.light-theme .contract-list {
+  background: var(--lt-bg-card, #ffffff) !important;
+}

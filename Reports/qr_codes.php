@@ -68,6 +68,16 @@ $totalContracts = count($contracts);
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../Assets/Css/main.css">
     <link rel="stylesheet" href="../Assets/Css/animate-ui.css">
+    <script>
+        // Apply theme immediately before page renders
+        (function() {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.documentElement.classList.add('light-theme');
+                document.documentElement.classList.add('live-light');
+            }
+        })();
+    </script>
     <style>
         :root {
             --apple-blue: #007aff;
@@ -85,10 +95,28 @@ $totalContracts = count($contracts);
             --apple-radius: 20px;
         }
 
+        /* Light Theme CSS Variables */
+        html.light-theme,
+        body.light-theme,
+        .light-theme {
+            --apple-bg: #f8fafc;
+            --apple-card: #ffffff;
+            --apple-card-hover: #f1f5f9;
+            --apple-text: #1e293b;
+            --apple-text-secondary: #64748b;
+            --apple-separator: #e2e8f0;
+        }
+
         body.qr-page {
             background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #0a0a0f 100%);
             min-height: 100vh;
             font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+
+        /* Light Theme Body Background */
+        html.light-theme body.qr-page,
+        body.light-theme.qr-page {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #f8fafc 100%) !important;
         }
 
         @keyframes fadeInUp {
@@ -311,6 +339,102 @@ $totalContracts = count($contracts);
             transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
             position: relative;
             overflow: hidden;
+        }
+
+        /* Light Theme - QR Card Override */
+        html.light-theme .qr-card,
+        html.live-light .qr-card,
+        body.live-light .qr-card {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08) !important;
+        }
+        
+        html.light-theme .qr-card:hover,
+        html.live-light .qr-card:hover,
+        body.live-light .qr-card:hover {
+            border-color: #007aff !important;
+            box-shadow: 0 8px 30px rgba(0, 122, 255, 0.15) !important;
+        }
+
+        html.light-theme .tenant-name,
+        html.live-light .tenant-name,
+        body.live-light .tenant-name {
+            color: #1e293b !important;
+        }
+
+        html.light-theme .tenant-phone,
+        html.live-light .tenant-phone,
+        body.live-light .tenant-phone {
+            color: #64748b !important;
+        }
+
+        html.light-theme .stat-item,
+        html.live-light .stat-item,
+        body.live-light .stat-item {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        html.light-theme .stat-value,
+        html.live-light .stat-value,
+        body.live-light .stat-value {
+            color: #1e293b !important;
+        }
+
+        html.light-theme .stat-label,
+        html.live-light .stat-label,
+        body.live-light .stat-label {
+            color: #64748b !important;
+        }
+
+        html.light-theme .qr-header h1,
+        html.live-light .qr-header h1,
+        body.live-light .qr-header h1 {
+            background: linear-gradient(135deg, #1e293b 0%, #475569 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+        }
+
+        html.light-theme .qr-header p,
+        html.live-light .qr-header p,
+        body.live-light .qr-header p {
+            color: #64748b !important;
+        }
+
+        html.light-theme .btn-apple.secondary,
+        html.live-light .btn-apple.secondary,
+        body.live-light .btn-apple.secondary {
+            background: #ffffff !important;
+            color: #1e293b !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        html.light-theme .btn-apple.secondary:hover,
+        html.live-light .btn-apple.secondary:hover,
+        body.live-light .btn-apple.secondary:hover {
+            border-color: #007aff !important;
+            color: #007aff !important;
+        }
+
+        html.light-theme .btn-card.download,
+        html.live-light .btn-card.download,
+        body.live-light .btn-card.download {
+            background: rgba(34, 197, 94, 0.1) !important;
+            color: #16a34a !important;
+        }
+
+        html.light-theme .btn-card.print,
+        html.live-light .btn-card.print,
+        body.live-light .btn-card.print {
+            background: rgba(0, 122, 255, 0.1) !important;
+            color: #0066cc !important;
+        }
+
+        html.light-theme body.qr-page,
+        html.live-light body.qr-page,
+        body.live-light.qr-page {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #f8fafc 100%) !important;
         }
 
         .qr-card::before {
@@ -599,6 +723,179 @@ $totalContracts = count($contracts);
             .tenant-name, .tenant-phone { color: #333 !important; }
             .qr-container::before, .qr-container::after { display: none; }
         }
+
+        /* ============ Light Theme ============ */
+        html.light-theme body.qr-page,
+        body.light-theme.qr-page,
+        .light-theme .qr-page,
+        .light-theme.qr-page {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #f8fafc 100%) !important;
+        }
+
+        html.light-theme .qr-header h1,
+        body.light-theme .qr-header h1,
+        .light-theme .qr-header h1 {
+            background: linear-gradient(135deg, #1e293b 0%, #475569 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
+        html.light-theme .qr-header p,
+        body.light-theme .qr-header p,
+        .light-theme .qr-header p {
+            color: #64748b !important;
+        }
+
+        html.light-theme .stat-item,
+        body.light-theme .stat-item,
+        .light-theme .stat-item {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05) !important;
+        }
+
+        html.light-theme .stat-item:hover,
+        body.light-theme .stat-item:hover,
+        .light-theme .stat-item:hover {
+            border-color: #007aff !important;
+            box-shadow: 0 8px 25px rgba(0, 122, 255, 0.15) !important;
+        }
+
+        html.light-theme .stat-value,
+        body.light-theme .stat-value,
+        .light-theme .stat-value {
+            color: #1e293b !important;
+        }
+
+        html.light-theme .stat-label,
+        body.light-theme .stat-label,
+        .light-theme .stat-label {
+            color: #64748b !important;
+        }
+
+        html.light-theme .btn-apple.secondary,
+        body.light-theme .btn-apple.secondary,
+        .light-theme .btn-apple.secondary {
+            background: #ffffff !important;
+            color: #1e293b !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        html.light-theme .btn-apple.secondary:hover,
+        body.light-theme .btn-apple.secondary:hover,
+        .light-theme .btn-apple.secondary:hover {
+            background: #f8fafc !important;
+            border-color: #007aff !important;
+            color: #007aff !important;
+        }
+
+        html.light-theme .qr-card,
+        body.light-theme .qr-card,
+        .light-theme .qr-card {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06) !important;
+        }
+
+        html.light-theme .qr-card:hover,
+        body.light-theme .qr-card:hover,
+        .light-theme .qr-card:hover {
+            border-color: #007aff !important;
+            box-shadow: 0 12px 40px rgba(0, 122, 255, 0.15) !important;
+            background: #ffffff !important;
+        }
+
+        html.light-theme .tenant-name,
+        body.light-theme .tenant-name,
+        .light-theme .tenant-name {
+            color: #1e293b !important;
+        }
+
+        html.light-theme .tenant-phone,
+        body.light-theme .tenant-phone,
+        .light-theme .tenant-phone {
+            color: #64748b !important;
+        }
+
+        html.light-theme .qr-container,
+        body.light-theme .qr-container,
+        .light-theme .qr-container {
+            background: #ffffff !important;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08) !important;
+        }
+
+        html.light-theme .qr-card:hover .qr-container,
+        body.light-theme .qr-card:hover .qr-container,
+        .light-theme .qr-card:hover .qr-container {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.12) !important;
+        }
+
+        html.light-theme .btn-card.download,
+        body.light-theme .btn-card.download,
+        .light-theme .btn-card.download {
+            background: rgba(52, 199, 89, 0.12) !important;
+            color: #22c55e !important;
+        }
+
+        html.light-theme .btn-card.download:hover,
+        body.light-theme .btn-card.download:hover,
+        .light-theme .btn-card.download:hover {
+            background: #22c55e !important;
+            color: white !important;
+        }
+
+        html.light-theme .btn-card.print,
+        body.light-theme .btn-card.print,
+        .light-theme .btn-card.print {
+            background: rgba(0, 122, 255, 0.12) !important;
+            color: #0066cc !important;
+        }
+
+        html.light-theme .btn-card.print:hover,
+        body.light-theme .btn-card.print:hover,
+        .light-theme .btn-card.print:hover {
+            background: #0066cc !important;
+            color: white !important;
+        }
+
+        html.light-theme .empty-state h3,
+        body.light-theme .empty-state h3,
+        .light-theme .empty-state h3 {
+            color: #1e293b !important;
+        }
+
+        html.light-theme .empty-state p,
+        body.light-theme .empty-state p,
+        .light-theme .empty-state p {
+            color: #64748b !important;
+        }
+
+        html.light-theme .empty-icon,
+        body.light-theme .empty-icon,
+        .light-theme .empty-icon {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+        }
+
+        html.light-theme .empty-icon svg,
+        body.light-theme .empty-icon svg,
+        .light-theme .empty-icon svg {
+            stroke: #64748b !important;
+        }
+
+        html.light-theme .particle,
+        body.light-theme .particle,
+        .light-theme .particle {
+            background: #007aff !important;
+            opacity: 0.15 !important;
+        }
+
+        html.light-theme .card-actions,
+        body.light-theme .card-actions,
+        .light-theme .card-actions {
+            background: transparent !important;
+        }
     </style>
 </head>
 <body class="reports-page qr-page">
@@ -768,11 +1065,32 @@ $totalContracts = count($contracts);
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
     function downloadQR(imageUrl, roomNumber) {
-        const link = document.createElement('a');
-        link.download = 'QR_Room_' + roomNumber + '.png';
-        link.href = imageUrl;
-        link.target = '_blank';
-        link.click();
+        // ใช้ fetch เพื่อดาวน์โหลด QR code โดยตรง
+        fetch(imageUrl)
+            .then(response => {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.blob();
+            })
+            .then(blob => {
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.style.display = 'none';
+                link.href = url;
+                link.download = 'QR_Room_' + roomNumber + '.png';
+                document.body.appendChild(link);
+                link.click();
+                
+                // Cleanup
+                setTimeout(() => {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+            })
+            .catch(err => {
+                console.error('Download failed:', err);
+                // Fallback: เปิด QR Code ในแท็บใหม่ให้ผู้ใช้บันทึกเอง
+                window.open(imageUrl, '_blank');
+            });
     }
 
     function downloadAll() {
@@ -849,10 +1167,10 @@ $totalContracts = count($contracts);
             </head>
             <body>
                 <div class="print-card">
-                    <div class="room-badge">🏠 ห้อง \${roomNumber}</div>
-                    <div class="tenant-name">👤 \${tenantName}</div>
+                    <div class="room-badge">ห้อง \${roomNumber}</div>
+                    <div class="tenant-name">\${tenantName}</div>
                     <img src="\${imageUrl}" class="qr-image" alt="QR Code">
-                    <div class="instructions">📱 สแกน QR Code เพื่อเข้าสู่ระบบผู้เช่า</div>
+                    <div class="instructions">สแกน QR Code เพื่อเข้าสู่ระบบผู้เช่า</div>
                 </div>
                 <script>
                     window.onload = function() {
@@ -867,6 +1185,13 @@ $totalContracts = count($contracts);
         \`);
         printWindow.document.close();
     }
+    
+    // Ensure body also has light-theme class
+    document.addEventListener('DOMContentLoaded', function() {
+        if (document.documentElement.classList.contains('light-theme')) {
+            document.body.classList.add('light-theme');
+        }
+    });
     </script>
 </body>
 </html>
