@@ -29,12 +29,21 @@ try {
         exit;
     }
     
-    // ตรวจสอบว่ารายการแจ้งซ่อมนี้มีอยู่หรือไม่
-    $checkStmt = $pdo->prepare('SELECT repair_id FROM repair WHERE repair_id = ?');
+    // ตรวจสอบว่ารายการแจ้งซ่อมนี้มีอยู่หรือไม่ และดึงวันที่นัดหมาย
+    $checkStmt = $pdo->prepare('SELECT repair_id, scheduled_date FROM repair WHERE repair_id = ?');
     $checkStmt->execute([$repair_id]);
-    if (!$checkStmt->fetch()) {
+    $existing = $checkStmt->fetch(PDO::FETCH_ASSOC);
+    if (!$existing) {
         echo json_encode(['success' => false, 'error' => 'ไม่พบรายการแจ้งซ่อม']);
         exit;
+    }
+    // หากจะเปลี่ยนสถานะเป็น 'กำลังซ่อม' (1) ต้องมีการนัดหมายก่อน
+    if ($repair_status === '1') {
+        $scheduledDate = $existing['scheduled_date'] ?? null;
+        if (empty($scheduledDate)) {
+            echo json_encode(['success' => false, 'error' => 'ต้องกำหนดนัดหมายก่อนจึงจะทำการซ่อมได้']);
+            exit;
+        }
     }
     
     // อัปเดตสถานะ

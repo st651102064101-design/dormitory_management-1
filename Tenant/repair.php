@@ -77,7 +77,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Get repair history
 $repairs = [];
+$hasScheduleColumns = false;
 try {
+    // Check if schedule columns exist
+    $checkCol = $pdo->query("SHOW COLUMNS FROM repair LIKE 'scheduled_date'");
+    $hasScheduleColumns = $checkCol->rowCount() > 0;
+    
     $stmt = $pdo->prepare("
         SELECT * FROM repair WHERE ctr_id = ? ORDER BY repair_date DESC, repair_time DESC
     ");
@@ -391,6 +396,61 @@ $repairStatusMap = [
         }
         #preview-container { display: none; margin-top: 0.5rem; }
         #preview-container img { max-width: 100%; max-height: 150px; border-radius: 8px; }
+        
+        /* Schedule Info Styles */
+        .schedule-info {
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.1));
+            border: 1px solid rgba(139, 92, 246, 0.3);
+            border-radius: 10px;
+            padding: 0.75rem;
+            margin-top: 0.75rem;
+        }
+        .schedule-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #a78bfa;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        .schedule-header svg {
+            width: 16px;
+            height: 16px;
+            stroke: #a78bfa;
+        }
+        .schedule-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #e2e8f0;
+            font-size: 0.85rem;
+            margin-bottom: 0.35rem;
+        }
+        .schedule-row:last-child {
+            margin-bottom: 0;
+        }
+        .schedule-row svg {
+            width: 14px;
+            height: 14px;
+            stroke: rgba(255,255,255,0.5);
+            flex-shrink: 0;
+        }
+        .schedule-label {
+            color: rgba(255,255,255,0.5);
+            min-width: 60px;
+        }
+        .schedule-value {
+            font-weight: 500;
+        }
+        .schedule-note {
+            background: rgba(0,0,0,0.2);
+            border-radius: 6px;
+            padding: 0.5rem 0.75rem;
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.7);
+        }
     </style>
 </head>
 <body>
@@ -448,6 +508,31 @@ $repairStatusMap = [
             </div>
             <?php else: ?>
             <?php foreach ($repairs as $repair): ?>
+            <?php 
+                $hasSchedule = $hasScheduleColumns && !empty($repair['scheduled_date']);
+                $scheduledDate = $repair['scheduled_date'] ?? '';
+                $scheduledTimeStart = $repair['scheduled_time_start'] ?? '';
+                $scheduledTimeEnd = $repair['scheduled_time_end'] ?? '';
+                $technicianName = $repair['technician_name'] ?? '';
+                $technicianPhone = $repair['technician_phone'] ?? '';
+                $scheduleNote = $repair['schedule_note'] ?? '';
+                
+                // Format date for display
+                $formattedDate = '';
+                if ($scheduledDate) {
+                    $dt = new DateTime($scheduledDate);
+                    $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+                    $formattedDate = (int)$dt->format('j') . ' ' . $thaiMonths[(int)$dt->format('n')] . ' ' . ((int)$dt->format('Y') + 543);
+                }
+                
+                // Format time range
+                $timeRange = '';
+                if ($scheduledTimeStart && $scheduledTimeEnd) {
+                    $timeRange = substr($scheduledTimeStart, 0, 5) . ' - ' . substr($scheduledTimeEnd, 0, 5) . ' น.';
+                } elseif ($scheduledTimeStart) {
+                    $timeRange = substr($scheduledTimeStart, 0, 5) . ' น.';
+                }
+            ?>
             <div class="repair-item">
                 <div class="repair-header">
                     <div class="repair-date">
@@ -464,6 +549,46 @@ $repairStatusMap = [
                 <?php if (!empty($repair['repair_image'])): ?>
                 <div class="repair-image">
                     <img src="../Assets/Images/Repairs/<?php echo htmlspecialchars($repair['repair_image']); ?>" alt="Repair Image">
+                </div>
+                <?php endif; ?>
+                
+                <?php if ($hasSchedule): ?>
+                <div class="schedule-info">
+                    <div class="schedule-header">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        นัดหมายซ่อม
+                    </div>
+                    <div class="schedule-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        <span class="schedule-label">วันที่</span>
+                        <span class="schedule-value"><?php echo htmlspecialchars($formattedDate); ?></span>
+                    </div>
+                    <?php if ($timeRange): ?>
+                    <div class="schedule-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        <span class="schedule-label">เวลา</span>
+                        <span class="schedule-value"><?php echo htmlspecialchars($timeRange); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($technicianName): ?>
+                    <div class="schedule-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        <span class="schedule-label">ช่าง</span>
+                        <span class="schedule-value"><?php echo htmlspecialchars($technicianName); ?></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($technicianPhone): ?>
+                    <div class="schedule-row">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                        <span class="schedule-label">โทร</span>
+                        <span class="schedule-value"><a href="tel:<?php echo htmlspecialchars($technicianPhone); ?>" style="color:#a78bfa; text-decoration:none;"><?php echo htmlspecialchars($technicianPhone); ?></a></span>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($scheduleNote): ?>
+                    <div class="schedule-note">
+                        📝 <?php echo htmlspecialchars($scheduleNote); ?>
+                    </div>
+                    <?php endif; ?>
                 </div>
                 <?php endif; ?>
             </div>

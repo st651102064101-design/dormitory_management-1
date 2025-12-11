@@ -38,8 +38,16 @@ switch ($sortBy) {
     $orderBy = 'r.repair_date DESC, r.repair_id DESC';
 }
 
+// ตรวจสอบว่ามีคอลัมน์นัดหมายหรือยัง
+$hasScheduleColumns = false;
+try {
+    $checkColumn = $pdo->query("SHOW COLUMNS FROM repair LIKE 'scheduled_date'");
+    $hasScheduleColumns = $checkColumn->rowCount() > 0;
+} catch (Exception $e) {}
+
 // รายการการแจ้งซ่อม
-$repairStmt = $pdo->query("SELECT r.*, c.ctr_id, t.tnt_name, rm.room_number
+$scheduleFields = $hasScheduleColumns ? ", r.scheduled_date, r.scheduled_time_start, r.scheduled_time_end, r.technician_name, r.technician_phone, r.schedule_note" : "";
+$repairStmt = $pdo->query("SELECT r.*, c.ctr_id, t.tnt_name, t.tnt_phone, rm.room_number $scheduleFields
   FROM repair r
   LEFT JOIN contract c ON r.ctr_id = c.ctr_id
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
@@ -898,6 +906,455 @@ try {
           justify-content: center;
         }
       }
+      
+      /* Schedule Modal Styles */
+      .schedule-modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.7);
+        backdrop-filter: blur(8px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.3s ease;
+      }
+      
+      .schedule-modal-overlay.active {
+        opacity: 1;
+        visibility: visible;
+      }
+      
+      .schedule-modal {
+        background: linear-gradient(145deg, #1e293b, #0f172a);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 24px;
+        padding: 2rem;
+        width: 95%;
+        max-width: 550px;
+        max-height: 90vh;
+        overflow-y: auto;
+        transform: scale(0.9) translateY(20px);
+        transition: transform 0.3s ease;
+        box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+      }
+      
+      .schedule-modal-overlay.active .schedule-modal {
+        transform: scale(1) translateY(0);
+      }
+      
+      .schedule-modal-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      
+      .schedule-modal-icon {
+        width: 52px;
+        height: 52px;
+        background: linear-gradient(135deg, #8b5cf6, #a855f7);
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(139,92,246,0.3);
+      }
+      
+      .schedule-modal-icon svg {
+        width: 26px;
+        height: 26px;
+        color: white;
+        stroke: white;
+      }
+      
+      .schedule-modal-title h2 {
+        color: #f8fafc;
+        font-size: 1.35rem;
+        font-weight: 700;
+        margin: 0;
+      }
+      
+      .schedule-modal-title p {
+        color: rgba(255,255,255,0.5);
+        font-size: 0.9rem;
+        margin: 0.25rem 0 0 0;
+      }
+      
+      .schedule-modal-close {
+        margin-left: auto;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: rgba(255,255,255,0.6);
+        transition: all 0.2s ease;
+      }
+      
+      .schedule-modal-close:hover {
+        background: rgba(239,68,68,0.2);
+        border-color: rgba(239,68,68,0.3);
+        color: #f87171;
+      }
+      
+      .schedule-form {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+      }
+      
+      .schedule-form .form-group {
+        position: relative;
+      }
+      
+      .schedule-form .form-group.full-width {
+        grid-column: 1 / -1;
+      }
+      
+      .schedule-form label {
+        display: block;
+        font-weight: 600;
+        color: rgba(255,255,255,0.7);
+        font-size: 0.85rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .schedule-form input,
+      .schedule-form textarea {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.05);
+        color: #f8fafc;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+      }
+      
+      .schedule-form input:focus,
+      .schedule-form textarea:focus {
+        outline: none;
+        border-color: rgba(139,92,246,0.5);
+        box-shadow: 0 0 0 3px rgba(139,92,246,0.1);
+      }
+      
+      .schedule-form textarea {
+        min-height: 80px;
+        resize: vertical;
+      }
+      
+      .schedule-form-actions {
+        grid-column: 1 / -1;
+        display: flex;
+        gap: 0.75rem;
+        margin-top: 0.5rem;
+      }
+      
+      .schedule-info-box {
+        grid-column: 1 / -1;
+        background: rgba(139,92,246,0.1);
+        border: 1px solid rgba(139,92,246,0.2);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+      }
+      
+      .schedule-info-box h4 {
+        color: #a78bfa;
+        font-size: 0.9rem;
+        font-weight: 600;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .schedule-info-box p {
+        color: rgba(255,255,255,0.7);
+        font-size: 0.85rem;
+        margin: 0;
+        line-height: 1.5;
+      }
+      
+      /* Schedule Badge in Table */
+      .schedule-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        max-width: 180px;
+      }
+      
+      .schedule-badge.scheduled {
+        background: rgba(139,92,246,0.15);
+        border: 1px solid rgba(139,92,246,0.3);
+        color: #a78bfa;
+      }
+      
+      .schedule-badge.not-scheduled {
+        background: rgba(148,163,184,0.1);
+        border: 1px solid rgba(148,163,184,0.2);
+        color: rgba(255,255,255,0.4);
+      }
+      
+      .schedule-badge svg {
+        width: 14px;
+        height: 14px;
+        flex-shrink: 0;
+      }
+      
+      .schedule-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+      
+      .schedule-details .date {
+        font-weight: 600;
+      }
+      
+      .schedule-details .time {
+        font-size: 0.75rem;
+        opacity: 0.8;
+      }
+      
+      .schedule-details .technician {
+        font-size: 0.75rem;
+        opacity: 0.7;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+      
+      /* Schedule Button */
+      .btn-schedule {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        padding: 0.45rem 0.85rem;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        transition: all 0.2s ease;
+      }
+      
+      .btn-schedule:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 15px rgba(139,92,246,0.35);
+      }
+      
+      .btn-schedule svg {
+        width: 14px;
+        height: 14px;
+      }
+      
+      /* Additional Schedule Modal Form Styles */
+      .schedule-modal-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        color: #f8fafc;
+        font-size: 1.25rem;
+        font-weight: 700;
+      }
+      
+      .schedule-modal-title svg {
+        color: #a78bfa;
+      }
+      
+      .schedule-modal-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .schedule-info-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        background: rgba(139,92,246,0.1);
+        border: 1px solid rgba(139,92,246,0.2);
+        border-radius: 12px;
+        padding: 1rem;
+      }
+      
+      .schedule-info-icon {
+        width: 44px;
+        height: 44px;
+        background: linear-gradient(135deg, #8b5cf6, #a855f7);
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      
+      .schedule-info-icon svg {
+        color: white;
+      }
+      
+      .schedule-info-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+      
+      .schedule-info-label {
+        font-size: 0.8rem;
+        color: rgba(255,255,255,0.5);
+      }
+      
+      .schedule-info-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #f8fafc;
+      }
+      
+      .schedule-form-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+      
+      .schedule-form-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      
+      .schedule-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: rgba(255,255,255,0.7);
+      }
+      
+      .schedule-label svg {
+        color: rgba(139,92,246,0.7);
+      }
+      
+      .schedule-input {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.05);
+        color: #f8fafc;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+      }
+      
+      .schedule-input:focus {
+        outline: none;
+        border-color: rgba(139,92,246,0.5);
+        box-shadow: 0 0 0 3px rgba(139,92,246,0.15);
+        background: rgba(255,255,255,0.08);
+      }
+      
+      .schedule-textarea {
+        min-height: 80px;
+        resize: vertical;
+        font-family: inherit;
+      }
+      
+      .schedule-modal-footer {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255,255,255,0.1);
+      }
+      
+      .schedule-btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.2s ease;
+      }
+      
+      .schedule-btn-cancel {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.7);
+      }
+      
+      .schedule-btn-cancel:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.2);
+        color: #f8fafc;
+      }
+      
+      .schedule-btn-save {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        color: white;
+        box-shadow: 0 4px 15px rgba(139,92,246,0.3);
+      }
+      
+      .schedule-btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(139,92,246,0.4);
+      }
+      
+      .schedule-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+      }
+      
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      .spin {
+        animation: spin 1s linear infinite;
+      }
+      
+      /* Mobile responsive for schedule modal */
+      @media (max-width: 640px) {
+        .schedule-modal {
+          padding: 1.5rem;
+          margin: 1rem;
+          width: calc(100% - 2rem);
+        }
+        
+        .schedule-form-row {
+          grid-template-columns: 1fr;
+        }
+        
+        .schedule-modal-footer {
+          flex-direction: column;
+        }
+        
+        .schedule-btn {
+          justify-content: center;
+        }
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -1139,13 +1596,14 @@ try {
                     <th>รูปภาพ</th>
                     <th>ห้อง/ผู้แจ้ง</th>
                     <th>รายละเอียด</th>
+                    <th>นัดหมายซ่อม</th>
                     <th>สถานะ</th>
                     <th class="crud-column">จัดการ</th>
                   </tr>
                 </thead>
                 <tbody>
                   <?php if (empty($repairs)): ?>
-                    <tr><td colspan="6" style="text-align:center;padding:2.5rem;color:rgba(255,255,255,0.5);">
+                    <tr><td colspan="7" style="text-align:center;padding:2.5rem;color:rgba(255,255,255,0.5);">
                       <svg style="width:48px;height:48px;margin-bottom:1rem;opacity:0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                       <br>ยังไม่มีรายการแจ้งซ่อม
                     </td></tr>
@@ -1237,6 +1695,63 @@ try {
                             <?php echo nl2br(htmlspecialchars($r['repair_desc'] ?? '-')); ?>
                           </div>
                         </td>
+                        <!-- Schedule Column -->
+                        <td>
+                          <?php 
+                            $scheduledDate = $r['scheduled_date'] ?? null;
+                            $scheduledTimeStart = $r['scheduled_time_start'] ?? null;
+                            $scheduledTimeEnd = $r['scheduled_time_end'] ?? null;
+                            $technicianName = $r['technician_name'] ?? null;
+                            $hasSchedule = !empty($scheduledDate);
+                            
+                            // Format date for display
+                            $formattedScheduleDate = '';
+                            if ($scheduledDate) {
+                              $dateObj = DateTime::createFromFormat('Y-m-d', $scheduledDate);
+                              if ($dateObj) {
+                                $thaiYear = (int)$dateObj->format('Y') + 543;
+                                $formattedScheduleDate = $dateObj->format('d/m/') . $thaiYear;
+                              }
+                            }
+                            
+                            // Format time range
+                            $timeRange = '';
+                            if ($scheduledTimeStart && $scheduledTimeEnd) {
+                              $timeRange = substr($scheduledTimeStart, 0, 5) . '-' . substr($scheduledTimeEnd, 0, 5);
+                            } elseif ($scheduledTimeStart) {
+                              $timeRange = substr($scheduledTimeStart, 0, 5) . ' น.';
+                            }
+                          ?>
+                          <div id="schedule-cell-<?php echo (int)$r['repair_id']; ?>">
+                            <?php if ($hasSchedule): ?>
+                              <div class="schedule-badge scheduled" style="cursor:pointer;" onclick="openScheduleModal(<?php echo (int)$r['repair_id']; ?>, '<?php echo htmlspecialchars($r['room_number'] ?? '-', ENT_QUOTES); ?>')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                <div class="schedule-details">
+                                  <span class="date"><?php echo htmlspecialchars($formattedScheduleDate); ?></span>
+                                  <?php if ($timeRange): ?>
+                                    <span class="time"><?php echo htmlspecialchars($timeRange); ?></span>
+                                  <?php endif; ?>
+                                  <?php if ($technicianName): ?>
+                                    <span class="technician">
+                                      <svg style="width:10px;height:10px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                                      <?php echo htmlspecialchars($technicianName); ?>
+                                    </span>
+                                  <?php endif; ?>
+                                </div>
+                              </div>
+                            <?php elseif ($status !== '2' && $status !== '3'): ?>
+                              <button type="button" class="btn-schedule" onclick="openScheduleModal(<?php echo (int)$r['repair_id']; ?>, '<?php echo htmlspecialchars($r['room_number'] ?? '-', ENT_QUOTES); ?>')">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
+                                นัดหมาย
+                              </button>
+                            <?php else: ?>
+                              <span class="schedule-badge not-scheduled">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                                -
+                              </span>
+                            <?php endif; ?>
+                          </div>
+                        </td>
                         <td>
                           <span class="status-badge" style="background: linear-gradient(135deg, <?php echo $statusColors[$status] ?? '#94a3b8'; ?>, <?php echo $statusColors[$status] ?? '#94a3b8'; ?>dd); padding:0.5rem 1rem; border-radius:100px; font-size:0.85rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; box-shadow: 0 4px 12px <?php echo $statusColors[$status] ?? '#94a3b8'; ?>40;">
                             <?php if ($status === '0'): ?>
@@ -1254,10 +1769,17 @@ try {
                         <td class="crud-column">
                           <div class="crud-actions" data-repair-id="<?php echo (int)$r['repair_id']; ?>" style="gap:0.5rem;">
                             <?php if ($status === '0'): ?>
-                              <button type="button" class="btn-modern btn-primary" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '1')" style="padding:0.5rem 0.9rem; font-size:0.85rem;">
-                                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                                ทำการซ่อม
-                              </button>
+                              <?php if (!empty($hasSchedule)): ?>
+                                <button type="button" class="btn-modern btn-primary" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '1')" style="padding:0.5rem 0.9rem; font-size:0.85rem;">
+                                  <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                                  ทำการซ่อม
+                                </button>
+                              <?php else: ?>
+                                <button type="button" class="btn-modern btn-primary" onclick="openScheduleModal(<?php echo (int)$r['repair_id']; ?>, '<?php echo htmlspecialchars($r['room_number'] ?? '-', ENT_QUOTES); ?>')" title="ต้องกำหนดนัดหมายก่อน" style="padding:0.5rem 0.9rem; font-size:0.85rem; opacity:0.8;">
+                                  <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                                  กำหนดนัดหมายก่อน
+                                </button>
+                              <?php endif; ?>
                               <button type="button" class="btn-modern" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '3')" style="padding:0.5rem 0.9rem; font-size:0.85rem; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3);">
                                 <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                                 ยกเลิก
@@ -1288,6 +1810,134 @@ try {
           </section>
         </div>
       </main>
+    </div>
+
+    <!-- Schedule Modal -->
+    <div id="scheduleModal" class="schedule-modal-overlay" style="display:none;">
+      <div class="schedule-modal">
+        <div class="schedule-modal-header">
+          <div class="schedule-modal-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;height:28px;">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+              <circle cx="12" cy="15" r="2"/>
+            </svg>
+            <span>นัดหมายซ่อม</span>
+          </div>
+          <button type="button" class="schedule-modal-close" onclick="closeScheduleModal()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;">
+              <line x1="18" y1="6" x2="6" y2="18"/>
+              <line x1="6" y1="6" x2="18" y2="18"/>
+            </svg>
+          </button>
+        </div>
+        
+        <form id="scheduleForm" onsubmit="saveSchedule(event)">
+          <input type="hidden" id="schedule_repair_id" name="repair_id" value="">
+          
+          <div class="schedule-modal-body">
+            <div class="schedule-info-card">
+              <div class="schedule-info-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                  <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+              </div>
+              <div class="schedule-info-content">
+                <span class="schedule-info-label">ห้อง</span>
+                <span id="schedule_room_info" class="schedule-info-value">-</span>
+              </div>
+            </div>
+            
+            <div class="schedule-form-group">
+              <label class="schedule-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+                  <line x1="16" y1="2" x2="16" y2="6"/>
+                  <line x1="8" y1="2" x2="8" y2="6"/>
+                  <line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                วันที่นัดหมาย
+              </label>
+              <input type="date" id="scheduled_date" name="scheduled_date" class="schedule-input" required>
+            </div>
+            
+            <div class="schedule-form-row">
+              <div class="schedule-form-group">
+                <label class="schedule-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  เวลาเริ่ม
+                </label>
+                <input type="time" id="scheduled_time_start" name="scheduled_time_start" class="schedule-input" required>
+              </div>
+              <div class="schedule-form-group">
+                <label class="schedule-label">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polyline points="12 6 12 12 16 14"/>
+                  </svg>
+                  เวลาสิ้นสุด
+                </label>
+                <input type="time" id="scheduled_time_end" name="scheduled_time_end" class="schedule-input" required>
+              </div>
+            </div>
+            
+            <div class="schedule-form-group">
+              <label class="schedule-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
+                  <circle cx="12" cy="7" r="4"/>
+                </svg>
+                ชื่อช่าง
+              </label>
+              <input type="text" id="technician_name" name="technician_name" class="schedule-input" placeholder="ระบุชื่อช่าง">
+            </div>
+            
+            <div class="schedule-form-group">
+              <label class="schedule-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                  <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+                </svg>
+                เบอร์โทรช่าง
+              </label>
+              <input type="tel" id="technician_phone" name="technician_phone" class="schedule-input" placeholder="0xx-xxx-xxxx">
+            </div>
+            
+            <div class="schedule-form-group">
+              <label class="schedule-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                หมายเหตุ
+              </label>
+              <textarea id="schedule_note" name="schedule_note" class="schedule-input schedule-textarea" placeholder="ข้อมูลเพิ่มเติม..."></textarea>
+            </div>
+          </div>
+          
+          <div class="schedule-modal-footer">
+            <button type="button" class="schedule-btn schedule-btn-cancel" onclick="closeScheduleModal()">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                <line x1="18" y1="6" x2="6" y2="18"/>
+                <line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+              ยกเลิก
+            </button>
+            <button type="submit" class="schedule-btn schedule-btn-save">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                <polyline points="17 21 17 13 7 13 7 21"/>
+                <polyline points="7 3 7 8 15 8"/>
+              </svg>
+              บันทึกนัดหมาย
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <script src="../Assets/Javascript/confirm-modal.js" defer></script>
@@ -1703,6 +2353,173 @@ try {
       }
       applyThemeClass();
       window.addEventListener('storage', applyThemeClass);
+      
+      // ==================== Schedule Modal Functions ====================
+      let currentScheduleRepairId = null;
+      let lastTechnicianInfo = null; // เก็บข้อมูลช่างล่าสุด
+      
+      // Load last technician info on page load
+      async function loadLastTechnician() {
+        try {
+          const response = await fetch('../Manage/update_repair_schedule.php?action=last_technician');
+          const data = await response.json();
+          if (data.success && data.data) {
+            lastTechnicianInfo = data.data;
+          }
+        } catch (err) {
+          console.log('Could not load last technician info');
+        }
+      }
+      loadLastTechnician();
+      
+      function openScheduleModal(repairId, roomName) {
+        currentScheduleRepairId = repairId;
+        const modal = document.getElementById('scheduleModal');
+        const form = document.getElementById('scheduleForm');
+        
+        // Reset form
+        form.reset();
+        document.getElementById('schedule_repair_id').value = repairId;
+        document.getElementById('schedule_room_info').textContent = 'ห้อง ' + (roomName || 'ไม่ระบุ');
+        
+        // Set default date to today
+        const today = new Date();
+        const dateStr = today.toISOString().split('T')[0];
+        document.getElementById('scheduled_date').value = dateStr;
+        
+        // Set default time
+        document.getElementById('scheduled_time_start').value = '09:00';
+        document.getElementById('scheduled_time_end').value = '12:00';
+        
+        // Pre-fill last technician info if available
+        if (lastTechnicianInfo) {
+          document.getElementById('technician_name').value = lastTechnicianInfo.technician_name || '';
+          document.getElementById('technician_phone').value = lastTechnicianInfo.technician_phone || '';
+        }
+        
+        // Load existing schedule if any (will override last technician if exists)
+        loadSchedule(repairId);
+        
+        // Show modal
+        modal.style.display = 'flex';
+        setTimeout(() => {
+          modal.classList.add('active');
+        }, 10);
+        
+        // Prevent body scroll
+        document.body.style.overflow = 'hidden';
+      }
+      
+      function closeScheduleModal() {
+        const modal = document.getElementById('scheduleModal');
+        modal.classList.remove('active');
+        
+        setTimeout(() => {
+          modal.style.display = 'none';
+        }, 300);
+        
+        document.body.style.overflow = '';
+        currentScheduleRepairId = null;
+      }
+      
+      async function loadSchedule(repairId) {
+        try {
+          const response = await fetch(`../Manage/get_repair_schedule.php?repair_id=${repairId}`);
+          const data = await response.json();
+          
+          if (data.success && data.schedule) {
+            const s = data.schedule;
+            if (s.scheduled_date) document.getElementById('scheduled_date').value = s.scheduled_date;
+            if (s.scheduled_time_start) document.getElementById('scheduled_time_start').value = s.scheduled_time_start;
+            if (s.scheduled_time_end) document.getElementById('scheduled_time_end').value = s.scheduled_time_end;
+            if (s.technician_name) document.getElementById('technician_name').value = s.technician_name;
+            if (s.technician_phone) document.getElementById('technician_phone').value = s.technician_phone;
+            if (s.schedule_note) document.getElementById('schedule_note').value = s.schedule_note;
+          }
+        } catch (err) {
+          console.log('No existing schedule or error loading:', err);
+        }
+      }
+      
+      async function saveSchedule(event) {
+        event.preventDefault();
+        
+        const form = document.getElementById('scheduleForm');
+        const formData = new FormData(form);
+        
+        // Show loading state
+        const saveBtn = form.querySelector('.schedule-btn-save');
+        const originalText = saveBtn.innerHTML;
+        saveBtn.innerHTML = `
+          <svg class="spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+            <circle cx="12" cy="12" r="10" stroke-dasharray="50" stroke-dashoffset="15"/>
+          </svg>
+          กำลังบันทึก...
+        `;
+        saveBtn.disabled = true;
+        
+        try {
+          const response = await fetch('../Manage/update_repair_schedule.php', {
+            method: 'POST',
+            body: formData
+          });
+          
+          const data = await response.json();
+          
+          if (data.success) {
+            // Update last technician info for next use
+            const techName = document.getElementById('technician_name').value;
+            const techPhone = document.getElementById('technician_phone').value;
+            if (techName || techPhone) {
+              lastTechnicianInfo = {
+                technician_name: techName,
+                technician_phone: techPhone
+              };
+            }
+            
+            // Show success toast
+            if (typeof showToast === 'function') {
+              showToast('บันทึกนัดหมายเรียบร้อยแล้ว', 'success');
+            }
+            
+            closeScheduleModal();
+            
+            // Reload page to show updated data
+            setTimeout(() => {
+              window.location.reload();
+            }, 500);
+          } else {
+            throw new Error(data.error || data.message || 'เกิดข้อผิดพลาด');
+          }
+        } catch (err) {
+          console.error('Save schedule error:', err);
+          if (typeof showToast === 'function') {
+            showToast(err.message || 'ไม่สามารถบันทึกได้', 'error');
+          } else {
+            alert(err.message || 'เกิดข้อผิดพลาด');
+          }
+          
+          saveBtn.innerHTML = originalText;
+          saveBtn.disabled = false;
+        }
+      }
+      
+      // Close modal on overlay click
+      document.getElementById('scheduleModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+          closeScheduleModal();
+        }
+      });
+      
+      // Close modal on escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+          const modal = document.getElementById('scheduleModal');
+          if (modal.style.display !== 'none') {
+            closeScheduleModal();
+          }
+        }
+      });
     </script>
   </body>
 </html>
