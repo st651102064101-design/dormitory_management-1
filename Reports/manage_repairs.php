@@ -152,46 +152,194 @@ try {
         --theme-bg-color: <?php echo $themeColor; ?>;
       }
       
+      /* ===== Apple-Style Modern Design with Animations ===== */
+      
       /* Disable animate-ui modal overlays on this page */
       .animate-ui-modal, .animate-ui-modal-overlay { display:none !important; visibility:hidden !important; opacity:0 !important; }
-      .repair-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.75rem; margin-top:1rem; }
       
-      /* Default: Dark mode (original dark cards) */
-      .repair-stat-card { 
-        padding:1rem; 
-        border-radius:12px; 
-        background: var(--bg-secondary, #0f172a);
-        color: var(--text-secondary, #e2e8f0);
-        border:1px solid rgba(148,163,184,0.2); 
-        box-shadow:0 12px 30px rgba(0,0,0,0.2);
-        transition: background 0.35s ease, color 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+      /* Modern Stats Cards Grid */
+      .repair-stats { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
+        gap: 1.25rem; 
+        margin-top: 1.5rem; 
       }
-      .repair-stat-card h3 { margin:0; font-size:0.95rem; color: var(--text-tertiary, #cbd5e1); transition: color 0.35s ease; }
-      .repair-stat-card .stat-number { font-size:1.8rem; font-weight:700; margin-top:0.35rem; }
+      
+      /* Animated Stats Cards - Apple Style */
+      .repair-stat-card { 
+        background: rgba(255,255,255,0.02);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 20px;
+        padding: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        cursor: default;
+      }
+      
+      .repair-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, var(--stat-accent, #3b82f6), var(--stat-accent-end, #8b5cf6));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      
+      .repair-stat-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+        padding: 1px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      
+      .repair-stat-card:hover {
+        transform: translateY(-6px) scale(1.02);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.25), 0 0 0 1px rgba(96,165,250,0.1);
+      }
+      
+      .repair-stat-card:hover::before,
+      .repair-stat-card:hover::after {
+        opacity: 1;
+      }
+      
+      /* Stat Card Content */
+      .stat-card-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1rem;
+      }
+      
+      .stat-card-icon {
+        width: 52px;
+        height: 52px;
+        background: linear-gradient(135deg, var(--stat-accent, #3b82f6), var(--stat-accent-end, #8b5cf6));
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+        transition: transform 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      }
+      
+      .repair-stat-card:hover .stat-card-icon {
+        transform: scale(1.1) rotate(-5deg);
+      }
+      
+      .stat-card-icon svg {
+        width: 26px;
+        height: 26px;
+        color: white;
+        stroke: white;
+      }
+      
+      /* Animated SVG Icons */
+      .stat-card-icon svg {
+        animation: iconPulse 2s ease-in-out infinite;
+      }
+      
+      @keyframes iconPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.08); }
+      }
+      
+      .repair-stat-card h3 { 
+        margin: 0; 
+        font-size: 0.95rem; 
+        font-weight: 500;
+        color: rgba(255,255,255,0.6); 
+        letter-spacing: 0.02em;
+      }
+      
+      .repair-stat-card .stat-number { 
+        font-size: 2.5rem; 
+        font-weight: 700; 
+        margin-top: 0.5rem;
+        background: linear-gradient(135deg, var(--stat-accent, #fff), var(--stat-accent-end, #fff));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        animation: numberGlow 3s ease-in-out infinite;
+      }
+      
+      @keyframes numberGlow {
+        0%, 100% { filter: brightness(1); }
+        50% { filter: brightness(1.2); }
+      }
+      
+      /* Stat Card Color Variants */
+      .repair-stat-card.pending { --stat-accent: #f97316; --stat-accent-end: #fb923c; }
+      .repair-stat-card.inprogress { --stat-accent: #3b82f6; --stat-accent-end: #60a5fa; }
+      .repair-stat-card.done { --stat-accent: #22c55e; --stat-accent-end: #4ade80; }
+      
+      /* Floating particles animation */
+      .stat-particles {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        pointer-events: none;
+        opacity: 0.5;
+      }
+      
+      .stat-particles span {
+        position: absolute;
+        width: 4px;
+        height: 4px;
+        background: var(--stat-accent, #3b82f6);
+        border-radius: 50%;
+        animation: floatUp 4s ease-in-out infinite;
+      }
+      
+      .stat-particles span:nth-child(1) { left: 20%; animation-delay: 0s; }
+      .stat-particles span:nth-child(2) { left: 40%; animation-delay: 1s; }
+      .stat-particles span:nth-child(3) { left: 60%; animation-delay: 2s; }
+      .stat-particles span:nth-child(4) { left: 80%; animation-delay: 3s; }
+      
+      @keyframes floatUp {
+        0% { transform: translateY(100px) scale(0); opacity: 0; }
+        50% { opacity: 0.6; }
+        100% { transform: translateY(-20px) scale(1); opacity: 0; }
+      }
       
       /* Light mode override - detect when theme is light (#ffffff or similar light colors) */
       @media (prefers-color-scheme: light) {
         .repair-stat-card {
-          background:#f3f4f6 !important;
-          color:#1f2937 !important;
-          border:1px solid #e5e7eb !important;
-          box-shadow:0 2px 8px rgba(0,0,0,0.06) !important;
+          background: rgba(255,255,255,0.8) !important;
+          border: 1px solid rgba(0,0,0,0.06) !important;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
         }
         .repair-stat-card h3 {
-          color:#6b7280 !important;
+          color: rgba(0,0,0,0.5) !important;
         }
       }
       
       /* JavaScript-detected light theme class */
       html.light-theme .repair-stat-card {
-        background:#f3f4f6 !important;
-        color:#1f2937 !important;
-        border:1px solid #e5e7eb !important;
-        box-shadow:0 2px 8px rgba(0,0,0,0.06) !important;
+        background: rgba(255,255,255,0.8) !important;
+        border: 1px solid rgba(0,0,0,0.06) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
       }
       
       html.light-theme .repair-stat-card h3 {
-        color:#6b7280 !important;
+        color: rgba(0,0,0,0.5) !important;
       }
       
       /* Fallback: Also use detection by CSS variable value */
@@ -201,10 +349,9 @@ try {
       html[style*="--theme-bg-color: #ffffff"] .repair-stat-card,
       html[style*="--theme-bg-color: #FFFFFF"] .repair-stat-card,
       html[style*="--theme-bg-color: rgb(255, 255, 255)"] .repair-stat-card {
-        background:#f3f4f6 !important; 
-        color:#1f2937 !important; 
-        border:1px solid #e5e7eb !important; 
-        box-shadow:0 2px 8px rgba(0,0,0,0.06) !important;
+        background: rgba(255,255,255,0.8) !important;
+        border: 1px solid rgba(0,0,0,0.06) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
       }
       
       html[style*="--theme-bg-color: #fff"] .repair-stat-card h3,
@@ -212,24 +359,65 @@ try {
       html[style*="--theme-bg-color: #ffffff"] .repair-stat-card h3,
       html[style*="--theme-bg-color: #FFFFFF"] .repair-stat-card h3,
       html[style*="--theme-bg-color: rgb(255, 255, 255)"] .repair-stat-card h3 {
-        color:#6b7280 !important;
+        color: rgba(0,0,0,0.5) !important;
       }
-      .repair-form { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:1rem; margin-top:1rem; }
-      .repair-form label { font-weight:600; color:#cbd5e1; margin-bottom:0.35rem; display:block; }
-      .repair-form input, .repair-form select, .repair-form textarea { width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid rgba(148,163,184,0.35); background:#0b162a; color:#e2e8f0; }
-      .repair-form textarea { min-height:110px; resize:vertical; }
+      
+      /* Modern Form Styling */
+      .repair-form { 
+        display: grid; 
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+        gap: 1.25rem; 
+        margin-top: 1.5rem; 
+      }
+      
+      .form-group {
+        position: relative;
+      }
+      
+      .repair-form label { 
+        font-weight: 600; 
+        color: rgba(255,255,255,0.7); 
+        margin-bottom: 0.5rem; 
+        display: block; 
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+      }
+      
+      .repair-form input, 
+      .repair-form select, 
+      .repair-form textarea { 
+        width: 100%; 
+        padding: 0.85rem 1rem; 
+        border-radius: 12px; 
+        border: 1px solid rgba(255,255,255,0.1); 
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        color: #f8fafc; 
+        font-size: 0.95rem;
+        transition: all 0.3s ease;
+      }
+      
+      .repair-form input:focus, 
+      .repair-form select:focus, 
+      .repair-form textarea:focus {
+        outline: none;
+        border-color: rgba(96,165,250,0.5);
+        box-shadow: 0 0 0 3px rgba(96,165,250,0.1), 0 4px 20px rgba(0,0,0,0.1);
+      }
+      
+      .repair-form textarea { min-height: 120px; resize: vertical; }
       
       /* Light theme overrides for form inputs */
       @media (prefers-color-scheme: light) {
         .repair-form input,
         .repair-form select,
         .repair-form textarea {
-          background: #ffffff !important;
+          background: rgba(255,255,255,0.9) !important;
           color: #1f2937 !important;
-          border: 1px solid #e5e7eb !important;
+          border: 1px solid rgba(0,0,0,0.1) !important;
         }
         .repair-form label {
-          color: #374151 !important;
+          color: rgba(0,0,0,0.6) !important;
         }
       }
       
@@ -237,56 +425,478 @@ try {
       html.light-theme .repair-form input,
       html.light-theme .repair-form select,
       html.light-theme .repair-form textarea {
-        background: #ffffff !important;
+        background: rgba(255,255,255,0.9) !important;
         color: #1f2937 !important;
-        border: 1px solid #e5e7eb !important;
+        border: 1px solid rgba(0,0,0,0.1) !important;
       }
       
       html.light-theme .repair-form label {
-        color: #374151 !important;
+        color: rgba(0,0,0,0.6) !important;
       }
-      .repair-form-actions { grid-column:1 / -1; display:flex; gap:0.75rem; }
-      .status-badge { display:inline-flex; align-items:center; justify-content:center; min-width:90px; padding:0.25rem 0.75rem; border-radius:999px; font-weight:600; color:#fff; }
-      .crud-actions { display:flex; gap:0.4rem; flex-wrap:wrap; }
-      .reports-page .manage-panel { background:#0f172a; border:1px solid rgba(148,163,184,0.2); box-shadow:0 12px 30px rgba(0,0,0,0.2); margin-top:1rem; }
-      .reports-page .manage-panel:first-of-type { margin-top:0; }
-      .repair-primary,
-      .animate-ui-action-btn.edit.repair-primary { background: #FF9500; color: #fff; border: none; font-weight:600; letter-spacing:0.2px; }
-      .repair-primary:hover,
-      .animate-ui-action-btn.edit.repair-primary:hover { background: #E68600; opacity: 0.9; transform: none; box-shadow: none; }
-      .repair-primary:active,
-      .animate-ui-action-btn.edit.repair-primary:active { opacity: 0.8; box-shadow: none; }
-      .time-badge { display:inline-block; padding:0.3rem 0.65rem; border-radius:6px; font-weight:600; font-size:0.85rem; white-space:nowrap; }
-      .time-fresh { background:#d1fae5; color:#065f46; }
-      .time-warning { background:#fef3c7; color:#92400e; }
-      .time-danger { background:#fee2e2; color:#b91c1c; }
-      .time-neutral { background:#e2e8f0; color:#0f172a; }
       
-      /* Status Filter Buttons */
+      .repair-form-actions { 
+        grid-column: 1 / -1; 
+        display: flex; 
+        gap: 1rem; 
+        margin-top: 0.5rem;
+      }
+      
+      /* Modern Action Buttons */
+      .btn-modern {
+        padding: 0.9rem 1.75rem;
+        border-radius: 12px;
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        border: none;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .btn-modern::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+      
+      .btn-modern:hover::before {
+        opacity: 1;
+      }
+      
+      .btn-modern:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 25px rgba(0,0,0,0.25);
+      }
+      
+      .btn-modern:active {
+        transform: translateY(-1px);
+      }
+      
+      .btn-primary {
+        background: linear-gradient(135deg, #f97316, #fb923c);
+        color: white;
+      }
+      
+      .btn-secondary {
+        background: rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.8);
+        border: 1px solid rgba(255,255,255,0.1);
+      }
+      
+      .btn-secondary:hover {
+        background: rgba(255,255,255,0.15);
+        color: white;
+      }
+      
+      /* Status Badge Modern */
+      .status-badge { 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        min-width: 100px; 
+        padding: 0.4rem 1rem; 
+        border-radius: 100px; 
+        font-weight: 600; 
+        font-size: 0.85rem;
+        color: #fff;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .status-badge::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+      }
+      
+      .crud-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+      
+      /* Modern Panel Styling */
+      .reports-page .manage-panel { 
+        background: rgba(15,23,42,0.6);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 24px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+        padding: 2rem;
+        margin-top: 1.5rem;
+        position: relative;
+        overflow: hidden;
+        animation: fadeInUp 0.6s ease forwards;
+      }
+      
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      .reports-page .manage-panel:nth-child(1) { animation-delay: 0s; }
+      .reports-page .manage-panel:nth-child(2) { animation-delay: 0.1s; }
+      .reports-page .manage-panel:nth-child(3) { animation-delay: 0.2s; }
+      
+      .reports-page .manage-panel:first-of-type { margin-top: 0; }
+      
+      /* Panel Header Modern */
+      .panel-header {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+      }
+      
+      .panel-icon {
+        width: 56px;
+        height: 56px;
+        background: linear-gradient(135deg, var(--panel-accent, #3b82f6), var(--panel-accent-end, #8b5cf6));
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+      }
+      
+      .panel-icon svg {
+        width: 28px;
+        height: 28px;
+        color: white;
+        stroke: white;
+        animation: iconFloat 3s ease-in-out infinite;
+      }
+      
+      @keyframes iconFloat {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-4px); }
+      }
+      
+      .panel-title h1 {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #f8fafc;
+        margin: 0;
+        letter-spacing: -0.01em;
+      }
+      
+      .panel-title p {
+        color: rgba(255,255,255,0.5);
+        margin: 0.25rem 0 0 0;
+        font-size: 0.95rem;
+      }
+      
+      /* Repair Action Buttons */
+      .repair-primary,
+      .animate-ui-action-btn.edit.repair-primary { 
+        background: linear-gradient(135deg, #f97316, #fb923c); 
+        color: #fff; 
+        border: none; 
+        font-weight: 600; 
+        letter-spacing: 0.2px;
+        border-radius: 10px;
+        padding: 0.5rem 1rem;
+        transition: all 0.3s ease;
+      }
+      
+      .repair-primary:hover,
+      .animate-ui-action-btn.edit.repair-primary:hover { 
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(249,115,22,0.3);
+      }
+      
+      .time-badge { 
+        display: inline-block; 
+        padding: 0.35rem 0.75rem; 
+        border-radius: 8px; 
+        font-weight: 600; 
+        font-size: 0.85rem; 
+        white-space: nowrap;
+        animation: timePulse 2s ease-in-out infinite;
+      }
+      
+      @keyframes timePulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.02); }
+      }
+      
+      .time-fresh { background: linear-gradient(135deg, #d1fae5, #a7f3d0); color: #065f46; }
+      .time-warning { background: linear-gradient(135deg, #fef3c7, #fde68a); color: #92400e; }
+      .time-danger { background: linear-gradient(135deg, #fee2e2, #fecaca); color: #b91c1c; }
+      .time-neutral { background: linear-gradient(135deg, #e2e8f0, #cbd5e1); color: #0f172a; }
+      
+      /* Modern Status Filter Buttons */
+      .status-filters {
+        display: flex;
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+      }
+      
       .status-filter-btn {
-        padding: 0.6rem 1rem;
-        border-radius: 8px;
+        padding: 0.7rem 1.25rem;
+        border-radius: 100px;
         border: 1px solid;
         background: transparent;
         cursor: pointer;
         font-weight: 500;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
+        font-size: 0.9rem;
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 0.3rem;
+        gap: 0.4rem;
+        position: relative;
+        overflow: hidden;
+      }
+      
+      .status-filter-btn::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+        opacity: 0;
+        transition: opacity 0.3s ease;
       }
       
       .status-filter-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        transform: translateY(-3px) scale(1.02);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      }
+      
+      .status-filter-btn:hover::before {
+        opacity: 1;
       }
       
       /* Active state - brighter and more prominent */
       .status-filter-btn.active {
         font-weight: 600;
-        box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+        transform: scale(1.05);
+      }
+      
+      /* Toggle Button Modern */
+      .toggle-btn {
+        padding: 0.85rem 1.5rem;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.8);
+        font-size: 0.95rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      
+      .toggle-btn:hover {
+        background: rgba(255,255,255,0.1);
+        border-color: rgba(255,255,255,0.2);
+        color: white;
+        transform: translateY(-2px);
+      }
+      
+      .toggle-btn svg {
+        width: 16px;
+        height: 16px;
+        transition: transform 0.3s ease;
+      }
+      
+      .toggle-btn.collapsed svg {
+        transform: rotate(-90deg);
+      }
+      
+      /* Sort Select Modern */
+      .sort-select {
+        padding: 0.7rem 1rem;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+        background: rgba(255,255,255,0.05);
+        backdrop-filter: blur(10px);
+        color: #f5f8ff;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+      }
+      
+      .sort-select:hover {
+        border-color: rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.1);
+      }
+      
+      .sort-select:focus {
+        outline: none;
+        border-color: rgba(96,165,250,0.5);
+        box-shadow: 0 0 0 3px rgba(96,165,250,0.1);
+      }
+      
+      /* Animated Wrench SVG */
+      @keyframes wrenchRotate {
+        0%, 100% { transform: rotate(0deg); }
+        25% { transform: rotate(-15deg); }
+        75% { transform: rotate(15deg); }
+      }
+      
+      .wrench-animated {
+        animation: wrenchRotate 2s ease-in-out infinite;
+        transform-origin: center;
+      }
+      
+      /* Animated Gear SVG */
+      @keyframes gearSpin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      
+      .gear-animated {
+        animation: gearSpin 8s linear infinite;
+        transform-origin: center;
+      }
+      
+      /* Animated Checkmark */
+      @keyframes checkDraw {
+        0% { stroke-dashoffset: 100; }
+        100% { stroke-dashoffset: 0; }
+      }
+      
+      .check-animated path {
+        stroke-dasharray: 100;
+        animation: checkDraw 1s ease forwards;
+      }
+      
+      /* Shimmer effect for loading states */
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+      
+      .shimmer {
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.1) 50%, transparent 100%);
+        background-size: 200% 100%;
+        animation: shimmer 2s infinite;
+      }
+      
+      /* Wave animation for decorative background */
+      .wave-bg {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 100px;
+        opacity: 0.05;
+        overflow: hidden;
+      }
+      
+      .wave-bg svg {
+        width: 100%;
+        height: 100%;
+      }
+      
+      .wave-bg path {
+        animation: waveMove 10s ease-in-out infinite;
+      }
+      
+      @keyframes waveMove {
+        0%, 100% { d: path('M0,50 Q250,0 500,50 T1000,50 V100 H0 Z'); }
+        50% { d: path('M0,50 Q250,100 500,50 T1000,50 V100 H0 Z'); }
+      }
+      
+      /* Image preview modern */
+      .image-preview-container {
+        margin-top: 1rem;
+        padding: 1rem;
+        border-radius: 12px;
+        background: rgba(255,255,255,0.03);
+        border: 1px dashed rgba(255,255,255,0.1);
+        transition: all 0.3s ease;
+      }
+      
+      .image-preview-container:hover {
+        border-color: rgba(96,165,250,0.3);
+        background: rgba(255,255,255,0.05);
+      }
+      
+      .image-preview-container img {
+        border-radius: 10px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        transition: transform 0.3s ease;
+      }
+      
+      .image-preview-container img:hover {
+        transform: scale(1.05);
+      }
+      
+      /* Table Modern Styling */
+      .report-table {
+        border-radius: 16px;
+        overflow: hidden;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
+      }
+      
+      .report-table table {
+        width: 100%;
+      }
+      
+      .report-table thead {
+        background: rgba(255,255,255,0.05);
+      }
+      
+      .report-table th {
+        padding: 1rem;
+        font-weight: 600;
+        color: rgba(255,255,255,0.7);
+        text-align: left;
+        font-size: 0.9rem;
+        letter-spacing: 0.02em;
+      }
+      
+      .report-table td {
+        padding: 1rem;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+      }
+      
+      .report-table tbody tr {
+        transition: all 0.3s ease;
+      }
+      
+      .report-table tbody tr:hover {
+        background: rgba(255,255,255,0.03);
+      }
+      
+      /* Responsive */
+      @media (max-width: 768px) {
+        .repair-stats {
+          grid-template-columns: 1fr;
+        }
+        
+        .repair-form {
+          grid-template-columns: 1fr;
+        }
+        
+        .panel-header {
+          flex-direction: column;
+          text-align: center;
+        }
+        
+        .status-filters {
+          justify-content: center;
+        }
       }
     </style>
   </head>
@@ -301,57 +911,116 @@ try {
           ?>
 
           <?php if (isset($_SESSION['success'])): ?>
-            <div style="padding: 1rem; margin-bottom: 1rem; background: #22c55e; color: #0f172a; border-radius: 10px; font-weight:600;">
+            <div style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border-radius: 14px; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 25px rgba(34,197,94,0.25); animation: fadeInUp 0.5s ease forwards;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
               <?php echo htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
             </div>
           <?php endif; ?>
           <?php if (isset($_SESSION['error'])): ?>
-            <div style="padding: 1rem; margin-bottom: 1rem; background: #ef4444; color: #fff; border-radius: 10px; font-weight:600;">
+            <div style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border-radius: 14px; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 25px rgba(239,68,68,0.25); animation: fadeInUp 0.5s ease forwards;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
               <?php echo htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
             </div>
           <?php endif; ?>
 
-          <section class="manage-panel">
-            <div class="section-header">
-              <div>
+          <!-- Stats Section with Animated Cards -->
+          <section class="manage-panel" style="--panel-accent: #f97316; --panel-accent-end: #fb923c;">
+            <div class="panel-header">
+              <div class="panel-icon" style="background: linear-gradient(135deg, #f97316, #fb923c);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="wrench-animated">
+                  <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+                </svg>
+              </div>
+              <div class="panel-title">
                 <h1>สรุปการแจ้งซ่อม</h1>
-                <p style="color:#94a3b8;margin-top:0.25rem;">สถานะปัจจุบันของงานซ่อมทั้งหมด</p>
+                <p>สถานะปัจจุบันของงานซ่อมทั้งหมด</p>
               </div>
             </div>
             <div class="repair-stats">
-              <div class="repair-stat-card" style="border-color:rgba(249,115,22,0.35);">
-                <h3>รอซ่อม</h3>
-                <div class="stat-number" style="color:#f97316 !important;"><?php echo (int)$stats['pending']; ?></div>
+              <!-- Pending Card -->
+              <div class="repair-stat-card pending">
+                <div class="stat-particles">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="stat-card-header">
+                  <div class="stat-card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                  </div>
+                  <h3>รอซ่อม</h3>
+                </div>
+                <div class="stat-number"><?php echo (int)$stats['pending']; ?></div>
               </div>
-              <div class="repair-stat-card" style="border-color:rgba(96,165,250,0.35);">
-                <h3>กำลังซ่อม</h3>
-                <div class="stat-number" style="color:#60a5fa !important;"><?php echo (int)$stats['inprogress']; ?></div>
+              
+              <!-- In Progress Card -->
+              <div class="repair-stat-card inprogress">
+                <div class="stat-particles">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="stat-card-header">
+                  <div class="stat-card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="gear-animated">
+                      <circle cx="12" cy="12" r="3"/>
+                      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                    </svg>
+                  </div>
+                  <h3>กำลังซ่อม</h3>
+                </div>
+                <div class="stat-number"><?php echo (int)$stats['inprogress']; ?></div>
               </div>
-              <div class="repair-stat-card" style="border-color:rgba(34,197,94,0.35);">
-                <h3>ซ่อมเสร็จแล้ว</h3>
-                <div class="stat-number" style="color:#22c55e !important;"><?php echo (int)$stats['done']; ?></div>
+              
+              <!-- Done Card -->
+              <div class="repair-stat-card done">
+                <div class="stat-particles">
+                  <span></span><span></span><span></span><span></span>
+                </div>
+                <div class="stat-card-header">
+                  <div class="stat-card-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="check-animated">
+                      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                      <polyline points="22 4 12 14.01 9 11.01"/>
+                    </svg>
+                  </div>
+                  <h3>ซ่อมเสร็จแล้ว</h3>
+                </div>
+                <div class="stat-number"><?php echo (int)$stats['done']; ?></div>
               </div>
             </div>
           </section>
 
-          <!-- Toggle button for repair form -->
-          <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleRepairForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
-              <span id="toggleFormIcon">▼</span> <span id="toggleFormText">ซ่อนฟอร์ม</span>
+          <!-- Modern Toggle Button -->
+          <div style="margin: 1.75rem 0;">
+            <button type="button" id="toggleFormBtn" class="toggle-btn" onclick="toggleRepairForm()">
+              <svg id="toggleFormIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span id="toggleFormText">ซ่อนฟอร์มแจ้งซ่อม</span>
             </button>
           </div>
 
-          <section class="manage-panel" style="color:#f8fafc;" id="addRepairSection">
-            <div class="section-header">
-              <div>
+          <!-- Add Repair Form Section -->
+          <section class="manage-panel" id="addRepairSection" style="--panel-accent: #3b82f6; --panel-accent-end: #6366f1;">
+            <div class="panel-header">
+              <div class="panel-icon" style="background: linear-gradient(135deg, #3b82f6, #6366f1);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+              <div class="panel-title">
                 <h1>เพิ่มการแจ้งซ่อม</h1>
-                <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">เลือกห้อง/ผู้เช่า ระบุวันที่และรายละเอียดงานซ่อม</p>
+                <p>เลือกห้อง/ผู้เช่า ระบุวันที่และรายละเอียดงานซ่อม</p>
               </div>
             </div>
             <form action="../Manage/process_repair.php" method="post" id="repairForm" enctype="multipart/form-data">
               <div class="repair-form">
-                <div>
-                  <label for="ctr_id">สัญญา / ห้องพัก <span style="color:#f87171;">*</span></label>
+                <div class="form-group">
+                  <label for="ctr_id">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    สัญญา / ห้องพัก <span style="color:#f87171;">*</span>
+                  </label>
                   <select id="ctr_id" name="ctr_id" required>
                     <option value="">-- เลือกสัญญา --</option>
                     <?php foreach ($contracts as $ctr): ?>
@@ -361,61 +1030,105 @@ try {
                     <?php endforeach; ?>
                   </select>
                 </div>
-                <div>
-                  <label for="repair_date">วันที่แจ้ง</label>
-                  <input type="text" id="repair_date" name="repair_date" readonly style="background:rgba(148,163,184,0.1); cursor:not-allowed;" value="<?php echo date('d/m/Y'); ?>" />
+                <div class="form-group">
+                  <label for="repair_date">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    วันที่แจ้ง
+                  </label>
+                  <input type="text" id="repair_date" name="repair_date" readonly style="opacity:0.7; cursor:not-allowed;" value="<?php echo date('d/m/Y'); ?>" />
                   <input type="hidden" id="repair_date_hidden" name="repair_date_hidden" value="<?php echo date('Y-m-d'); ?>" />
                 </div>
-                <div>
-                  <label for="repair_time">เวลาแจ้ง</label>
-                  <input type="text" id="repair_time" name="repair_time" readonly style="background:rgba(148,163,184,0.1); cursor:not-allowed; font-weight:600; font-size:1.1rem;" value="<?php echo date('H:i:s'); ?>" />
+                <div class="form-group">
+                  <label for="repair_time">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    เวลาแจ้ง
+                  </label>
+                  <input type="text" id="repair_time" name="repair_time" readonly style="opacity:0.7; cursor:not-allowed; font-weight:600; font-size:1.1rem;" value="<?php echo date('H:i:s'); ?>" />
                   <input type="hidden" id="repair_time_hidden" name="repair_time_hidden" value="<?php echo date('H:i:s'); ?>" />
                 </div>
                 <input type="hidden" name="repair_status" value="0" />
-                <div style="grid-column:1 / -1;">
-                  <label for="repair_desc">รายละเอียด <span style="color:#f87171;">*</span></label>
+                <div class="form-group" style="grid-column:1 / -1;">
+                  <label for="repair_desc">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    รายละเอียด <span style="color:#f87171;">*</span>
+                  </label>
                   <textarea id="repair_desc" name="repair_desc" required placeholder="เช่น แอร์ไม่เย็น น้ำรั่ว ซิงค์อุดตัน"></textarea>
                 </div>
-                <div style="grid-column:1 / -1;">
-                  <label for="repair_image">รูปภาพการซ่อม (ไม่จำเป็น)</label>
+                <div class="form-group" style="grid-column:1 / -1;">
+                  <label for="repair_image">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    รูปภาพการซ่อม (ไม่จำเป็น)
+                  </label>
                   <input type="file" id="repair_image" name="repair_image" accept="image/*" />
-                  <small style="color:#94a3b8; display:block; margin-top:0.4rem;">สนับสนุน: JPG, PNG, WebP (ขนาดไม่เกิน 5MB)</small>
-                  <div id="image_preview" style="margin-top:0.75rem;"></div>
+                  <small style="color:rgba(255,255,255,0.5); display:block; margin-top:0.5rem;">
+                    <svg style="width:14px;height:14px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    สนับสนุน: JPG, PNG, WebP (ขนาดไม่เกิน 5MB)
+                  </small>
+                  <div id="image_preview" class="image-preview-container" style="display:none;"></div>
                 </div>
                 <div class="repair-form-actions">
-                  <button type="submit" class="animate-ui-add-btn" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" style="flex:2; cursor: pointer;">บันทึกการแจ้งซ่อม</button>
-                  <button type="reset" class="animate-ui-action-btn delete" style="flex:1;">ล้างข้อมูล</button>
+                  <button type="submit" class="btn-modern btn-primary" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" style="flex:2;">
+                    <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    บันทึกการแจ้งซ่อม
+                  </button>
+                  <button type="reset" class="btn-modern btn-secondary" style="flex:1;">
+                    <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    ล้างข้อมูล
+                  </button>
                 </div>
               </div>
             </form>
           </section>
 
-          <section class="manage-panel">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
-              <div>
-                <h1>รายการแจ้งซ่อมทั้งหมด</h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">ดูสถานะและจัดการงานซ่อม</p>
+          <!-- Repair List Section -->
+          <section class="manage-panel" style="--panel-accent: #8b5cf6; --panel-accent-end: #a855f7;">
+            <div class="panel-header" style="justify-content:space-between;flex-wrap:wrap;">
+              <div style="display:flex;align-items:center;gap:1rem;">
+                <div class="panel-icon" style="background: linear-gradient(135deg, #8b5cf6, #a855f7);">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"/>
+                    <line x1="8" y1="12" x2="21" y2="12"/>
+                    <line x1="8" y1="18" x2="21" y2="18"/>
+                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                  </svg>
+                </div>
+                <div class="panel-title">
+                  <h1>รายการแจ้งซ่อมทั้งหมด</h1>
+                  <p>ดูสถานะและจัดการงานซ่อม</p>
+                </div>
               </div>
-              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
-                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>แจ้งล่าสุด</option>
-                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>แจ้งเก่าสุด</option>
-                <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
+              <select id="sortSelect" class="sort-select" onchange="changeSortBy(this.value)">
+                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>
+                  📅 แจ้งล่าสุด
+                </option>
+                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>
+                  📆 แจ้งเก่าสุด
+                </option>
+                <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>
+                  🏠 หมายเลขห้อง
+                </option>
               </select>
             </div>
             
-            <!-- Status Filter Buttons -->
-            <div style="display:flex;gap:0.75rem;margin-bottom:1.5rem;flex-wrap:wrap;">
-              <button type="button" class="status-filter-btn" data-status="all" onclick="filterByStatus('all')" style="background:rgba(96,165,250,0.3);border:1.5px solid rgba(96,165,250,0.6);color:#60a5fa;font-weight:500;">
-                ทั้งหมด <span style="margin-left:0.4rem;font-weight:600;">(<span class="count-all"><?php echo count($repairs); ?></span>)</span>
+            <!-- Modern Status Filter Buttons -->
+            <div class="status-filters">
+              <button type="button" class="status-filter-btn" data-status="all" onclick="filterByStatus('all')" style="background:rgba(96,165,250,0.2);border:1.5px solid rgba(96,165,250,0.5);color:#60a5fa;">
+                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                ทั้งหมด <span style="margin-left:0.3rem;font-weight:700;">(<span class="count-all"><?php echo count($repairs); ?></span>)</span>
               </button>
-              <button type="button" class="status-filter-btn" data-status="0" onclick="filterByStatus('0')" style="background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.3);color:#f97316;">
-                รอซ่อม <span style="margin-left:0.4rem;font-weight:600;">(<span class="count-0"><?php echo $stats['pending']; ?></span>)</span>
+              <button type="button" class="status-filter-btn" data-status="0" onclick="filterByStatus('0')" style="background:rgba(249,115,22,0.15);border:1.5px solid rgba(249,115,22,0.4);color:#f97316;">
+                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                รอซ่อม <span style="margin-left:0.3rem;font-weight:700;">(<span class="count-0"><?php echo $stats['pending']; ?></span>)</span>
               </button>
-              <button type="button" class="status-filter-btn" data-status="1" onclick="filterByStatus('1')" style="background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.3);color:#60a5fa;">
-                กำลังซ่อม <span style="margin-left:0.4rem;font-weight:600;">(<span class="count-1"><?php echo $stats['inprogress']; ?></span>)</span>
+              <button type="button" class="status-filter-btn" data-status="1" onclick="filterByStatus('1')" style="background:rgba(96,165,250,0.15);border:1.5px solid rgba(96,165,250,0.4);color:#60a5fa;">
+                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="gear-animated"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                กำลังซ่อม <span style="margin-left:0.3rem;font-weight:700;">(<span class="count-1"><?php echo $stats['inprogress']; ?></span>)</span>
               </button>
-              <button type="button" class="status-filter-btn" data-status="2" onclick="filterByStatus('2')" style="background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.3);color:#22c55e;">
-                ซ่อมเสร็จแล้ว <span style="margin-left:0.4rem;font-weight:600;">(<span class="count-2"><?php echo $stats['done']; ?></span>)</span>
+              <button type="button" class="status-filter-btn" data-status="2" onclick="filterByStatus('2')" style="background:rgba(34,197,94,0.15);border:1.5px solid rgba(34,197,94,0.4);color:#22c55e;">
+                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                ซ่อมเสร็จแล้ว <span style="margin-left:0.3rem;font-weight:700;">(<span class="count-2"><?php echo $stats['done']; ?></span>)</span>
               </button>
             </div>
             <div class="report-table">
@@ -432,7 +1145,10 @@ try {
                 </thead>
                 <tbody>
                   <?php if (empty($repairs)): ?>
-                    <tr><td colspan="6" style="text-align:center;padding:1.5rem;color:#94a3b8;">ยังไม่มีรายการแจ้งซ่อม</td></tr>
+                    <tr><td colspan="6" style="text-align:center;padding:2.5rem;color:rgba(255,255,255,0.5);">
+                      <svg style="width:48px;height:48px;margin-bottom:1rem;opacity:0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                      <br>ยังไม่มีรายการแจ้งซ่อม
+                    </td></tr>
                   <?php else: ?>
                     <?php foreach ($repairs as $r): ?>
                       <?php $status = (string)($r['repair_status'] ?? ''); ?>
@@ -490,34 +1206,76 @@ try {
                             <?php if (!empty($r['repair_image'])): ?>
                               <img src="../Assets/Images/Repairs/<?php echo htmlspecialchars(basename($r['repair_image'])); ?>" 
                                    alt="รูปการซ่อม" 
-                                   style="max-width:60px; max-height:60px; border-radius:6px; object-fit:cover;" />
+                                   style="max-width:60px; max-height:60px; border-radius:10px; object-fit:cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.3s ease;" 
+                                   onmouseover="this.style.transform='scale(1.1)'" 
+                                   onmouseout="this.style.transform='scale(1)'" />
                             <?php else: ?>
-                              <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                <circle cx="8.5" cy="8.5" r="1.5" />
-                                <path d="M21 15l-5-5L5 21" />
-                              </svg>
+                              <div style="width:50px; height:50px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border-radius:10px; border:1px dashed rgba(255,255,255,0.1);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                                  <circle cx="8.5" cy="8.5" r="1.5" />
+                                  <path d="M21 15l-5-5L5 21" />
+                                </svg>
+                              </div>
                             <?php endif; ?>
                           </div>
                         </td>
                         <td>
-                          <div style="display:flex; flex-direction:column; gap:0.15rem;">
-                            <span>ห้อง <?php echo htmlspecialchars((string)($r['room_number'] ?? '-')); ?></span>
-                            <span style="color:#64748b; font-size:0.8rem;">ผู้แจ้ง: <?php echo htmlspecialchars($r['tnt_name'] ?? '-'); ?></span>
+                          <div style="display:flex; flex-direction:column; gap:0.25rem;">
+                            <span style="font-weight:600; display:flex; align-items:center; gap:0.4rem;">
+                              <svg style="width:14px;height:14px;opacity:0.6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+                              ห้อง <?php echo htmlspecialchars((string)($r['room_number'] ?? '-')); ?>
+                            </span>
+                            <span style="color:rgba(255,255,255,0.5); font-size:0.8rem; display:flex; align-items:center; gap:0.35rem;">
+                              <svg style="width:12px;height:12px;opacity:0.6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                              <?php echo htmlspecialchars($r['tnt_name'] ?? '-'); ?>
+                            </span>
                           </div>
                         </td>
-                        <td><?php echo nl2br(htmlspecialchars($r['repair_desc'] ?? '-')); ?></td>
-                        <td><span class="status-badge" style="background: <?php echo $statusColors[$status] ?? '#94a3b8'; ?>; color:white; padding:0.4rem 0.8rem; border-radius:6px; font-size:0.85rem; font-weight:500; display:inline-block;"><?php echo $statusMap[$status] ?? 'ไม่ระบุ'; ?></span></td>
-                        <td class="crud-column">
-                          <div class="crud-actions" data-repair-id="<?php echo (int)$r['repair_id']; ?>">
+                        <td style="max-width:250px;">
+                          <div style="line-height:1.5; color:rgba(255,255,255,0.8);">
+                            <?php echo nl2br(htmlspecialchars($r['repair_desc'] ?? '-')); ?>
+                          </div>
+                        </td>
+                        <td>
+                          <span class="status-badge" style="background: linear-gradient(135deg, <?php echo $statusColors[$status] ?? '#94a3b8'; ?>, <?php echo $statusColors[$status] ?? '#94a3b8'; ?>dd); padding:0.5rem 1rem; border-radius:100px; font-size:0.85rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; box-shadow: 0 4px 12px <?php echo $statusColors[$status] ?? '#94a3b8'; ?>40;">
                             <?php if ($status === '0'): ?>
-                              <button type="button" class="animate-ui-action-btn edit repair-primary" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '1')">ทำการซ่อม</button>
-                              <button type="button" class="animate-ui-action-btn delete" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '3')" style="margin-left:0.4rem;">ยกเลิก</button>
+                              <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             <?php elseif ($status === '1'): ?>
-                              <button type="button" class="animate-ui-action-btn edit" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '2')">ซ่อมเสร็จแล้ว</button>
-                              <button type="button" class="animate-ui-action-btn delete" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '3')" style="margin-left:0.4rem;">ยกเลิก</button>
+                              <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg>
+                            <?php elseif ($status === '2'): ?>
+                              <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                             <?php else: ?>
-                              <span style="color:#22c55e; font-weight:600;">ซ่อมเสร็จแล้ว</span>
+                              <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                            <?php endif; ?>
+                            <?php echo $statusMap[$status] ?? 'ไม่ระบุ'; ?>
+                          </span>
+                        </td>
+                        <td class="crud-column">
+                          <div class="crud-actions" data-repair-id="<?php echo (int)$r['repair_id']; ?>" style="gap:0.5rem;">
+                            <?php if ($status === '0'): ?>
+                              <button type="button" class="btn-modern btn-primary" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '1')" style="padding:0.5rem 0.9rem; font-size:0.85rem;">
+                                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                                ทำการซ่อม
+                              </button>
+                              <button type="button" class="btn-modern" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '3')" style="padding:0.5rem 0.9rem; font-size:0.85rem; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3);">
+                                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                ยกเลิก
+                              </button>
+                            <?php elseif ($status === '1'): ?>
+                              <button type="button" class="btn-modern" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '2')" style="padding:0.5rem 0.9rem; font-size:0.85rem; background:linear-gradient(135deg, #22c55e, #16a34a); color:white;">
+                                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                ซ่อมเสร็จแล้ว
+                              </button>
+                              <button type="button" class="btn-modern" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '3')" style="padding:0.5rem 0.9rem; font-size:0.85rem; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3);">
+                                <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                                ยกเลิก
+                              </button>
+                            <?php else: ?>
+                              <span style="color:#22c55e; font-weight:600; display:flex; align-items:center; gap:0.4rem;">
+                                <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                ซ่อมเสร็จแล้ว
+                              </span>
                             <?php endif; ?>
                           </div>
                         </td>
@@ -759,7 +1517,10 @@ try {
           if (!emptyMsg) {
             emptyMsg = document.createElement('tr');
             emptyMsg.className = 'empty-filter-message';
-            emptyMsg.innerHTML = '<td colspan="6" style="text-align:center;padding:1.5rem;color:#94a3b8;">ไม่มีรายการสำหรับสถานะนี้</td>';
+            emptyMsg.innerHTML = `<td colspan="6" style="text-align:center;padding:2.5rem;color:rgba(255,255,255,0.5);">
+              <svg style="width:48px;height:48px;margin-bottom:1rem;opacity:0.5;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <br>ไม่มีรายการสำหรับสถานะนี้
+            </td>`;
             tbody.appendChild(emptyMsg);
           }
           emptyMsg.style.display = '';
@@ -774,25 +1535,42 @@ try {
         window.location.href = url.toString();
       }
 
-      // Toggle repair form visibility
+      // Toggle repair form visibility with modern animation
       function toggleRepairForm() {
         const section = document.getElementById('addRepairSection');
         const icon = document.getElementById('toggleFormIcon');
         const text = document.getElementById('toggleFormText');
+        const btn = document.getElementById('toggleFormBtn');
         const isHidden = section.style.display === 'none';
         
         if (isHidden) {
           section.style.display = '';
-          icon.textContent = '▼';
-          text.textContent = 'ซ่อนฟอร์ม';
+          section.style.animation = 'fadeInUp 0.4s ease forwards';
+          icon.innerHTML = '<polyline points="6 9 12 15 18 9"/>';
+          text.textContent = 'ซ่อนฟอร์มแจ้งซ่อม';
+          btn.classList.remove('collapsed');
           localStorage.setItem('repairFormVisible', 'true');
         } else {
-          section.style.display = 'none';
-          icon.textContent = '▶';
-          text.textContent = 'แสดงฟอร์ม';
+          section.style.animation = 'fadeOutDown 0.3s ease forwards';
+          setTimeout(() => {
+            section.style.display = 'none';
+          }, 300);
+          icon.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+          text.textContent = 'แสดงฟอร์มแจ้งซ่อม';
+          btn.classList.add('collapsed');
           localStorage.setItem('repairFormVisible', 'false');
         }
       }
+      
+      // Add fadeOutDown animation
+      const styleSheet = document.createElement('style');
+      styleSheet.textContent = `
+        @keyframes fadeOutDown {
+          from { opacity: 1; transform: translateY(0); }
+          to { opacity: 0; transform: translateY(20px); }
+        }
+      `;
+      document.head.appendChild(styleSheet);
       
       document.addEventListener('DOMContentLoaded', () => {
         // Load saved filter status from localStorage
@@ -806,10 +1584,12 @@ try {
         const section = document.getElementById('addRepairSection');
         const icon = document.getElementById('toggleFormIcon');
         const text = document.getElementById('toggleFormText');
+        const btn = document.getElementById('toggleFormBtn');
         if (!isFormVisible) {
           section.style.display = 'none';
-          icon.textContent = '▶';
-          text.textContent = 'แสดงฟอร์ม';
+          icon.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+          text.textContent = 'แสดงฟอร์มแจ้งซ่อม';
+          btn.classList.add('collapsed');
         }
 
         // Initialize DataTable
@@ -822,7 +1602,7 @@ try {
               perPage: 5,
               perPageSelect: [5, 10, 25, 50, 100],
               labels: {
-                placeholder: 'ค้นหา...',
+                placeholder: '🔍 ค้นหา...',
                 perPage: '{select} แถวต่อหน้า',
                 noRows: 'ไม่มีข้อมูล',
                 info: 'แสดง {start}–{end} จาก {rows} รายการ'
@@ -843,25 +1623,52 @@ try {
           imageInput.addEventListener('change', (e) => {
             const file = e.target.files[0];
             imagePreview.innerHTML = '';
+            imagePreview.style.display = 'none';
             if (file) {
               if (file.size > 5 * 1024 * 1024) {
-                imagePreview.innerHTML = '<div style="color:#ef4444; font-size:0.85rem;">❌ ไฟล์ใหญ่เกินไป (ไม่เกิน 5MB)</div>';
+                imagePreview.style.display = 'block';
+                imagePreview.innerHTML = `
+                  <div style="display:flex; align-items:center; gap:0.5rem; color:#ef4444;">
+                    <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    ไฟล์ใหญ่เกินไป (ไม่เกิน 5MB)
+                  </div>`;
                 imageInput.value = '';
                 return;
               }
               if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-                imagePreview.innerHTML = '<div style="color:#ef4444; font-size:0.85rem;">❌ ประเภทไฟล์ไม่ถูกต้อง</div>';
+                imagePreview.style.display = 'block';
+                imagePreview.innerHTML = `
+                  <div style="display:flex; align-items:center; gap:0.5rem; color:#ef4444;">
+                    <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    ประเภทไฟล์ไม่ถูกต้อง
+                  </div>`;
                 imageInput.value = '';
                 return;
               }
               const reader = new FileReader();
               reader.onload = (event) => {
-                imagePreview.innerHTML = `<div style="display:flex; flex-direction:column; gap:0.5rem;"><img src="${event.target.result}" alt="Preview" style="max-width:200px; max-height:200px; border-radius:8px; object-fit:contain;" /><div style="color:#22c55e; font-size:0.85rem;">✓ ${file.name}</div></div>`;
+                imagePreview.style.display = 'block';
+                imagePreview.innerHTML = `
+                  <div style="display:flex; flex-direction:column; gap:0.75rem; align-items:flex-start;">
+                    <img src="${event.target.result}" alt="Preview" style="max-width:250px; max-height:250px; border-radius:12px; object-fit:contain; box-shadow: 0 8px 25px rgba(0,0,0,0.2);" />
+                    <div style="display:flex; align-items:center; gap:0.5rem; color:#22c55e; font-weight:500;">
+                      <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                      ${file.name}
+                    </div>
+                  </div>`;
               };
               reader.readAsDataURL(file);
             }
           });
         }
+        
+        // Add entrance animations for stat cards
+        const statCards = document.querySelectorAll('.repair-stat-card');
+        statCards.forEach((card, index) => {
+          card.style.animation = `fadeInUp 0.5s ease forwards`;
+          card.style.animationDelay = `${index * 0.1}s`;
+          card.style.opacity = '0';
+        });
       });
 
       // Sync hidden fields on form submit
