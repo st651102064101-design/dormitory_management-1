@@ -950,7 +950,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #1e293b !important;
             -webkit-text-fill-color: #1e293b !important;
             background: transparent !important;
-            border: 2px solid #1e293b !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         
         /* ============ SECONDARY BUTTON - DARK TEXT ============ */

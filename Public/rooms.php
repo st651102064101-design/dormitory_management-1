@@ -928,7 +928,8 @@ $occupiedCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '1')
             color: #1e293b !important;
             -webkit-text-fill-color: #1e293b !important;
             background: transparent !important;
-            border: 2px solid #1e293b !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         
         /* Room card header - dark text on light background */
