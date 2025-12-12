@@ -131,6 +131,92 @@ try {
     border-top: 1px solid #e5e7eb !important;
   }
 
+  /* Light mode - User section in footer */
+  body.live-light .sidebar-footer .user-row,
+  body.live-light .sidebar-footer .user-meta,
+  body.live-light .sidebar-footer .user-meta .name,
+  body.live-light .sidebar-footer .user-meta .email {
+    color: #374151 !important;
+  }
+
+  body.live-light .sidebar-footer .avatar svg {
+    color: #6b7280 !important;
+  }
+
+  body.live-light .sidebar-footer .avatar svg rect {
+    fill: #e5e7eb !important;
+  }
+
+  body.live-light .sidebar-footer .avatar svg path {
+    fill: #6b7280 !important;
+  }
+
+  /* Light mode - Sidebar navigation text and icons */
+  body.live-light .app-nav a,
+  body.live-light details summary,
+  body.live-light .subitem,
+  body.live-light .app-nav-label,
+  body.live-light .summary-label,
+  body.live-light .team-meta .name {
+    color: #374151 !important;
+  }
+
+  body.live-light .app-nav a:hover,
+  body.live-light details summary:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  body.live-light .app-nav a.active,
+  body.live-light .app-nav a.subitem.active {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-left: 3px solid #3b82f6 !important;
+    color: #2563eb !important;
+  }
+
+  body.live-light .app-nav-icon svg {
+    stroke: #6b7280 !important;
+  }
+
+  body.live-light .app-nav a.active .app-nav-icon svg,
+  body.live-light .app-nav a:hover .app-nav-icon svg {
+    stroke: #2563eb !important;
+  }
+
+  body.live-light .chev {
+    color: #6b7280 !important;
+  }
+
+  body.live-light .logout-btn {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #374151 !important;
+  }
+
+  body.live-light .logout-btn:hover {
+    background: #f3f4f6 !important;
+  }
+
+  body.live-light .logout-btn svg {
+    stroke: #374151 !important;
+  }
+
+  body.live-light .sidebar-close-btn {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  }
+
+  body.live-light .sidebar-close-btn svg {
+    stroke: #374151 !important;
+  }
+
+  body.live-light .sidebar-nav-area::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15) !important;
+  }
+
+  body.live-light .sidebar-nav-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25) !important;
+  }
+
   /* Ensure panel / header icons remain visible in light mode */
   body.live-light .panel-icon svg,
   html.light-theme .panel-icon svg,
@@ -183,6 +269,18 @@ try {
 
   body.live-light, body.live-light * {
     color: #111827 !important;
+  }
+
+  /* Exception: Active nav items should have blue text */
+  body.live-light .app-nav a.active,
+  body.live-light .app-nav a.active * {
+    color: #2563eb !important;
+  }
+
+  /* Exception: Logout button icon */
+  body.live-light .logout-btn .app-nav-icon,
+  body.live-light .logout-btn .app-nav-label {
+    color: #374151 !important;
   }
 
   body.live-light .settings-card,
@@ -388,10 +486,115 @@ try {
   .sidebar-header {
     background: #f9fafb !important;
   }
+
+  /* Sidebar Close Button - Mobile */
+  .sidebar-close-btn {
+    display: none;
+  }
+  @media (max-width: 1024px) {
+    .sidebar-close-btn {
+      display: flex;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1001;
+      width: 36px;
+      height: 36px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sidebar-close-btn:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    .sidebar-close-btn svg {
+      stroke: #374151;
+    }
+  }
   
   .sidebar-footer {
     background: #f9fafb !important;
     border-top: 1px solid #e5e7eb !important;
+  }
+  
+  /* Sidebar Navigation - Light Mode */
+  .app-nav a,
+  details summary,
+  .subitem,
+  .app-nav-label,
+  .summary-label {
+    color: #374151 !important;
+  }
+
+  .app-nav a:hover,
+  details summary:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .app-nav a.active,
+  .app-nav a.subitem.active {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-left: 3px solid #3b82f6 !important;
+    color: #2563eb !important;
+  }
+
+  .app-nav-icon svg {
+    stroke: #6b7280 !important;
+  }
+
+  .app-nav a.active .app-nav-icon svg,
+  .app-nav a:hover .app-nav-icon svg {
+    stroke: #2563eb !important;
+  }
+
+  .chev {
+    color: #6b7280 !important;
+  }
+
+  .logout-btn {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #374151 !important;
+  }
+
+  .logout-btn:hover {
+    background: #f3f4f6 !important;
+  }
+
+  .logout-btn svg {
+    stroke: #374151 !important;
+  }
+
+  .sidebar-nav-area::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .sidebar-nav-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25) !important;
+  }
+
+  /* User section in footer - Light Mode */
+  .sidebar-footer .user-row,
+  .sidebar-footer .user-meta,
+  .sidebar-footer .user-meta .name,
+  .sidebar-footer .user-meta .email {
+    color: #374151 !important;
+  }
+
+  .sidebar-footer .avatar svg {
+    color: #6b7280 !important;
+  }
+
+  .sidebar-footer .avatar svg rect {
+    fill: #e5e7eb !important;
+  }
+
+  .sidebar-footer .avatar svg path {
+    fill: #6b7280 !important;
   }
   
   /* ตัวหนังสือทั้งหมดเป็นสีดำ */
@@ -931,7 +1134,36 @@ try {
       transform: translateY(-8px);
     }
   }
-  
+
+  /* Sidebar Close Button - Dark mode default */
+  .sidebar-close-btn {
+    display: none;
+  }
+  @media (max-width: 1024px) {
+    .sidebar-close-btn {
+      display: flex;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1001;
+      width: 36px;
+      height: 36px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sidebar-close-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .sidebar-close-btn svg {
+      stroke: #e2e8f0;
+    }
+  }
+
   /* Closing animation - hide items immediately */
   details:not([open]) > a {
     display: none !important;
@@ -1351,8 +1583,8 @@ try {
       top: 0 !important;
       left: 0 !important;
       height: 100vh !important;
-      width: 240px !important;
-      z-index: 1000 !important;
+      width: 260px !important;
+      z-index: 9999 !important;
       background: #0b162a !important;
       transform: translateX(-100%) !important;
       transition: transform 0.35s ease !important;
@@ -1364,12 +1596,42 @@ try {
       margin: 0 !important;
       display: flex !important;
       flex-direction: column !important;
+      visibility: hidden;
+    }
+
+    /* When sidebar is open - make it visible and slide in */
+    .app-sidebar.mobile-open,
+    body.sidebar-open .app-sidebar {
+      transform: translateX(0) !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
     }
     
     /* Mobile: header stays at top */
     .app-sidebar .sidebar-header {
       flex-shrink: 0 !important;
       background: #0b162a !important;
+    }
+
+    /* Light mode mobile sidebar */
+    body.live-light .app-sidebar .sidebar-header,
+    html.light-theme .app-sidebar .sidebar-header {
+      background: #f9fafb !important;
+    }
+
+    body.live-light .app-sidebar .sidebar-footer,
+    html.light-theme .app-sidebar .sidebar-footer {
+      background: #f9fafb !important;
+    }
+
+    body.live-light .app-sidebar,
+    html.light-theme .app-sidebar {
+      background: #f9fafb !important;
+    }
+
+    body.live-light .app-sidebar.collapsed,
+    html.light-theme .app-sidebar.collapsed {
+      background: #f9fafb !important;
     }
     
     /* Mobile: nav area scrolls, footer stays */
@@ -1425,27 +1687,36 @@ try {
     }
     
     /* When mobile-open class is applied, slide in from left */
-    .app-sidebar.mobile-open {
-      transform: translateX(0) !important;
+    /* Ensure all elements inside open sidebar are clickable */
+    .app-sidebar.mobile-open *,
+    body.sidebar-open .app-sidebar * {
+      pointer-events: auto !important;
     }
-    
-    /* Alternative selector for when body.sidebar-open is used */
-    body.sidebar-open .app-sidebar {
-      transform: translateX(0) !important;
+
+    .app-sidebar.mobile-open a,
+    .app-sidebar.mobile-open button,
+    .app-sidebar.mobile-open details,
+    .app-sidebar.mobile-open summary,
+    body.sidebar-open .app-sidebar a,
+    body.sidebar-open .app-sidebar button,
+    body.sidebar-open .app-sidebar details,
+    body.sidebar-open .app-sidebar summary {
+      pointer-events: auto !important;
+      cursor: pointer !important;
     }
     
     /* Reset collapsed styles that might conflict */
     .app-sidebar.collapsed {
-      all: revert !important;
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
       height: 100vh !important;
-      width: 240px !important;
-      z-index: 1000 !important;
+      width: 260px !important;
+      z-index: 9999 !important;
       background: #0b162a !important;
       transform: translateX(-100%) !important;
       transition: transform 0.35s ease !important;
+      visibility: hidden;
       will-change: transform;
       box-shadow: 4px 0 24px rgba(0,0,0,0.6) !important;
       padding: 1.25rem 0.75rem !important;
@@ -1456,8 +1727,10 @@ try {
       margin: 0 !important;
     }
     
-    .app-sidebar.collapsed.mobile-open {
+    .app-sidebar.collapsed.mobile-open,
+    body.sidebar-open .app-sidebar.collapsed {
       transform: translateX(0) !important;
+      visibility: visible !important;
     }
     
     /* Content area takes remaining space */
@@ -1536,8 +1809,16 @@ try {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      z-index: 999;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 9998;
+      pointer-events: auto;
+    }
+
+    /* Hide hamburger button when sidebar is open on mobile */
+    body.sidebar-open #sidebar-toggle {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
     }
   }
   
@@ -1623,6 +1904,13 @@ try {
   }
 </script>
 <aside class="app-sidebar">
+  <!-- Mobile Close Button -->
+  <button type="button" id="sidebar-close-btn" class="sidebar-close-btn" aria-label="ปิด Sidebar" onclick="closeSidebarMobile()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
   <!-- Header: Logo & Name - Fixed at top -->
   <div class="sidebar-header">
     <div class="team-avatar" >
@@ -1953,4 +2241,20 @@ if (document.readyState === 'loading') {
 } else {
   initSidebarToggle();
 }
+
+// Global function สำหรับปิด sidebar บนมือถือ (เรียกจากปุ่ม X)
+function closeSidebarMobile() {
+  const sidebar = document.querySelector('.app-sidebar');
+  if (sidebar) {
+    sidebar.classList.remove('mobile-open');
+    document.body.classList.remove('sidebar-open');
+  }
+}
+
+// ปิด sidebar ด้วย ESC key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeSidebarMobile();
+  }
+});
 </script>

@@ -427,7 +427,7 @@ try {
       .room-face-details { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 0; }
       .rooms-grid.list-view .room-number { min-width: 80px; }
       .rooms-grid.list-view .room-face-details { width: auto; gap: 0.2rem; }
-      .room-number { font-size: 1.5rem; font-weight: bold; color: #f5f8ff; }
+      .room-number { font-size: 1.5rem; font-weight: 700; color: #f5f8ff; }
       .room-status { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: #4caf50; color: white; }
       
       /* Table badges and styles */
@@ -701,6 +701,859 @@ try {
       }
       .load-more-btn.hidden {
         display: none;
+      }
+
+      /* ===== Light Theme Overrides for Booking Page ===== */
+      html.light-theme .page-title,
+      html.light-theme .section-title,
+      html.light-theme h2,
+      html.light-theme h3 {
+          color: #111827 !important;
+      }
+      
+      /* Booking stat cards */
+      html.light-theme .booking-stat-card {
+          background: rgba(255, 255, 255, 0.95) !important;
+          border: 1px solid rgba(0, 0, 0, 0.1) !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+          color: #111827 !important;
+      }
+      html.light-theme .booking-stat-card h3 {
+          color: #6b7280 !important;
+      }
+      html.light-theme .booking-stat-card .stat-value {
+          color: #111827 !important;
+      }
+      html.light-theme .booking-stat-card .stat-chip {
+          background: rgba(0, 0, 0, 0.06) !important;
+          color: #374151 !important;
+      }
+      
+      /* Room cards in light theme */
+      html.light-theme .room-card,
+      html.light-theme .booking-card {
+          background: rgba(255, 255, 255, 0.95) !important;
+          border-color: rgba(0, 0, 0, 0.1) !important;
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+          color: #111827 !important;
+      }
+      html.light-theme .room-card:hover,
+      html.light-theme .booking-card:hover {
+          border-color: rgba(59, 130, 246, 0.4) !important;
+      }
+      html.light-theme .room-card-face,
+      html.light-theme .room-card-face.front,
+      html.light-theme .room-card-face.back {
+          background: #ffffff !important;
+          border: 1px solid rgba(0, 0, 0, 0.1) !important;
+          color: #111827 !important;
+      }
+      html.light-theme .room-card-face.back div,
+      html.light-theme .room-card-face.back span,
+      html.light-theme .room-card-face.back strong {
+          color: #111827 !important;
+      }
+      html.light-theme .room-card-face.back div[style*="color: rgba(255,255,255"] {
+          color: #4b5563 !important;
+      }
+      html.light-theme .room-number {
+          color: #111827 !important;
+      }
+      html.light-theme .room-info,
+      html.light-theme .room-info-item,
+      html.light-theme .room-info-item span,
+      html.light-theme .room-info-item strong {
+          color: #4b5563 !important;
+      }
+      html.light-theme .room-price,
+      html.light-theme .room-price-header {
+          color: #2563eb !important;
+          background: rgba(59, 130, 246, 0.1) !important;
+      }
+      html.light-theme .room-status {
+          background: #22c55e !important;
+          color: #ffffff !important;
+      }
+      html.light-theme .room-image-container {
+          background: #f3f4f6 !important;
+      }
+      html.light-theme .room-image-placeholder {
+          color: #9ca3af !important;
+      }
+      html.light-theme .room-image-placeholder svg {
+          stroke: #9ca3af !important;
+      }
+      html.light-theme .room-image-placeholder span {
+          color: #9ca3af !important;
+      }
+      
+      /* Table styling for light theme - CRITICAL FIX */
+      html.light-theme table,
+      html.light-theme .datatable-table,
+      html.light-theme .table--compact {
+          background: rgba(255, 255, 255, 0.98) !important;
+      }
+      html.light-theme table th,
+      html.light-theme .datatable-table th,
+      html.light-theme .table--compact th {
+          background: #f8fafc !important;
+          color: #1f2937 !important;
+          border-bottom: 2px solid rgba(0, 0, 0, 0.1) !important;
+          font-weight: 600 !important;
+      }
+      html.light-theme table td,
+      html.light-theme .datatable-table td,
+      html.light-theme .table--compact td {
+          color: #1f2937 !important;
+          border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+      }
+      html.light-theme table tbody tr td,
+      html.light-theme .datatable-table tbody tr td,
+      html.light-theme .table--compact tbody tr td {
+          color: #1f2937 !important;
+      }
+      html.light-theme table tr:hover td,
+      html.light-theme .datatable-table tr:hover td,
+      html.light-theme .table--compact tr:hover td {
+          background: rgba(59, 130, 246, 0.05) !important;
+      }
+      
+      /* Status text in table - "เข้าพักแล้ว" and "ยกเลิกแล้ว" */
+      html.light-theme .crud-column span[style*="color: #34C759"],
+      html.light-theme td span[style*="color: #34C759"] {
+          color: #15803d !important;
+          font-weight: 600 !important;
+      }
+      html.light-theme .crud-column span[style*="color: #FF3B30"],
+      html.light-theme td span[style*="color: #FF3B30"] {
+          color: #dc2626 !important;
+          font-weight: 600 !important;
+      }
+      
+      /* Action buttons in table */
+      html.light-theme .animate-ui-action-btn.btn-success {
+          background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+          color: #ffffff !important;
+          border: none !important;
+      }
+      html.light-theme .animate-ui-action-btn.btn-success svg {
+          stroke: #ffffff !important;
+      }
+      html.light-theme .animate-ui-action-btn.delete {
+          background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+          color: #ffffff !important;
+          border: none !important;
+      }
+      html.light-theme .animate-ui-action-btn.delete svg {
+          stroke: #ffffff !important;
+      }
+      
+      /* Buttons in light theme */
+      html.light-theme .btn-primary,
+      html.light-theme .btn-book,
+      html.light-theme .btn-checkin,
+      html.light-theme .book-btn,
+      html.light-theme [class*="btn-save"] {
+          background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+          color: #ffffff !important;
+      }
+      html.light-theme .btn-primary svg,
+      html.light-theme .btn-book svg,
+      html.light-theme .book-btn svg {
+          stroke: #ffffff !important;
+      }
+      html.light-theme .btn-primary:hover,
+      html.light-theme .btn-book:hover,
+      html.light-theme .book-btn:hover {
+          background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+      }
+      html.light-theme .btn-secondary,
+      html.light-theme .btn-outline {
+          background: rgba(0, 0, 0, 0.05) !important;
+          border-color: rgba(0, 0, 0, 0.15) !important;
+          color: #374151 !important;
+      }
+      html.light-theme .btn-secondary svg,
+      html.light-theme .btn-outline svg {
+          stroke: #374151 !important;
+      }
+      html.light-theme .btn-secondary:hover,
+      html.light-theme .btn-outline:hover {
+          background: rgba(0, 0, 0, 0.1) !important;
+      }
+      html.light-theme .btn-cancel {
+          background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+          color: #ffffff !important;
+      }
+      html.light-theme .btn-cancel svg {
+          stroke: #ffffff !important;
+      }
+      html.light-theme .btn-danger {
+          background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+          color: #ffffff !important;
+      }
+      html.light-theme .btn-danger svg {
+          stroke: #ffffff !important;
+      }
+      html.light-theme .btn-submit {
+          background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+          color: #ffffff !important;
+      }
+      
+      /* View toggle buttons */
+      html.light-theme .view-toggle button,
+      html.light-theme .toggle-view-btn {
+          background: rgba(0, 0, 0, 0.05) !important;
+          border: 1px solid rgba(0, 0, 0, 0.15) !important;
+          color: #374151 !important;
+      }
+      html.light-theme .view-toggle button.active,
+      html.light-theme .toggle-view-btn.active {
+          background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+          border-color: #3b82f6 !important;
+          color: #ffffff !important;
+      }
+      
+      /* Toggle rooms button */
+      html.light-theme #toggleRoomsBtn {
+          background: rgba(0, 0, 0, 0.05) !important;
+          border: 1px solid rgba(0, 0, 0, 0.15) !important;
+          color: #374151 !important;
+      }
+      html.light-theme #toggleRoomsBtn:hover {
+          background: rgba(0, 0, 0, 0.1) !important;
+          border-color: rgba(0, 0, 0, 0.2) !important;
+      }
+      
+      /* Select dropdowns */
+      html.light-theme select,
+      html.light-theme .form-select,
+      html.light-theme #sortSelect {
+          background: rgba(255, 255, 255, 0.98) !important;
+          border: 1px solid rgba(0, 0, 0, 0.15) !important;
+          color: #111827 !important;
+      }
+      html.light-theme select:focus,
+      html.light-theme .form-select:focus,
+      html.light-theme #sortSelect:focus {
+          border-color: #3b82f6 !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+      }
+      html.light-theme select option {
+          background: #ffffff !important;
+          color: #111827 !important;
+      }
+      
+      /* Input fields */
+      html.light-theme input[type="text"],
+      html.light-theme input[type="number"],
+      html.light-theme input[type="date"],
+      html.light-theme input[type="search"],
+      html.light-theme textarea,
+      html.light-theme .form-control {
+          background: rgba(255, 255, 255, 0.98) !important;
+          border: 1px solid rgba(0, 0, 0, 0.15) !important;
+          color: #111827 !important;
+      }
+      html.light-theme input:focus,
+      html.light-theme textarea:focus,
+      html.light-theme .form-control:focus {
+          border-color: #3b82f6 !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+      }
+      html.light-theme input::placeholder,
+      html.light-theme textarea::placeholder {
+          color: #9ca3af !important;
+      }
+      html.light-theme input[readonly] {
+          background: #f3f4f6 !important;
+          color: #6b7280 !important;
+      }
+      
+      /* DataTable controls */
+      html.light-theme .datatable-input,
+      html.light-theme .datatable-selector {
+          background: rgba(255, 255, 255, 0.98) !important;
+          border: 1px solid rgba(0, 0, 0, 0.15) !important;
+          color: #111827 !important;
+      }
+      html.light-theme .datatable-info {
+          color: #374151 !important;
+      }
+      html.light-theme .datatable-pagination a {
+          color: #374151 !important;
+          background: rgba(0, 0, 0, 0.05) !important;
+          border: 1px solid rgba(0, 0, 0, 0.1) !important;
+      }
+      html.light-theme .datatable-pagination li.active a {
+          background: #3b82f6 !important;
+          color: #ffffff !important;
+          border-color: #3b82f6 !important;
+      }
+      
+      /* Status badges */
+      html.light-theme .badge,
+      html.light-theme .status-badge {
+          font-weight: 600 !important;
+      }
+      html.light-theme .badge-success,
+      html.light-theme .status-success,
+      html.light-theme .status-available {
+          background: rgba(34, 197, 94, 0.15) !important;
+          color: #15803d !important;
+      }
+      html.light-theme .badge-warning,
+      html.light-theme .status-pending {
+          background: rgba(251, 191, 36, 0.2) !important;
+          color: #b45309 !important;
+      }
+      html.light-theme .badge-danger,
+      html.light-theme .status-cancelled {
+          background: rgba(239, 68, 68, 0.15) !important;
+          color: #dc2626 !important;
+      }
+      html.light-theme .badge-secondary,
+      html.light-theme .status-empty {
+          background: rgba(148, 163, 184, 0.25) !important;
+          color: #475569 !important;
+      }
+      html.light-theme .price-badge {
+          background: rgba(59, 130, 246, 0.1) !important;
+          color: #2563eb !important;
+      }
+      
+      /* Section header */
+      html.light-theme .section-header h1,
+      html.light-theme .manage-panel h1 {
+          color: #111827 !important;
+      }
+      html.light-theme .section-header p {
+          color: #6b7280 !important;
+      }
+      
+      /* Deposit note box */
+      html.light-theme div[style*="border: 1px solid rgba(34,197,94"],
+      html.light-theme div[style*="border:1px solid rgba(34,197,94"] {
+          background: rgba(34, 197, 94, 0.08) !important;
+          border-color: rgba(34, 197, 94, 0.3) !important;
+          color: #15803d !important;
+      }
+      
+      /* Load more button */
+      html.light-theme .load-more-btn {
+          background: rgba(0, 0, 0, 0.05) !important;
+          border: 1px solid rgba(0, 0, 0, 0.15) !important;
+          color: #374151 !important;
+      }
+      html.light-theme .load-more-btn:hover {
+          background: rgba(59, 130, 246, 0.1) !important;
+          border-color: rgba(59, 130, 246, 0.3) !important;
+          color: #2563eb !important;
+      }
+      html.light-theme .load-more-btn svg {
+          stroke: currentColor !important;
+      }
+      
+      /* Labels and text */
+      html.light-theme label {
+          color: #374151 !important;
+      }
+      html.light-theme .text-muted,
+      html.light-theme .text-secondary {
+          color: #6b7280 !important;
+      }
+      
+      /* Modal styling */
+      html.light-theme .booking-modal-content {
+          background: #ffffff !important;
+          border: 1px solid rgba(0, 0, 0, 0.1) !important;
+          color: #111827 !important;
+      }
+      html.light-theme .booking-modal-content h2 {
+          color: #111827 !important;
+      }
+      html.light-theme .booking-form-group label {
+          color: #374151 !important;
+      }
+      html.light-theme .booking-form-group label small {
+          color: #6b7280 !important;
+      }
+      html.light-theme .booking-form-group input,
+      html.light-theme .booking-form-group select {
+          background: #ffffff !important;
+          border: 1px solid rgba(0, 0, 0, 0.15) !important;
+          color: #111827 !important;
+      }
+      html.light-theme .booking-form-group select option {
+          background: #ffffff !important;
+          color: #111827 !important;
+      }
+      html.light-theme .booking-form-group input[readonly] {
+          background: #f3f4f6 !important;
+          color: #6b7280 !important;
+      }
+      html.light-theme .booking-form-group .tenant-select {
+          scrollbar-color: rgba(0, 0, 0, 0.2) rgba(0, 0, 0, 0.05) !important;
+      }
+      html.light-theme .booking-form-group .tenant-select option:hover {
+          background: rgba(59, 130, 246, 0.1) !important;
+      }
+      
+      /* Modal close button */
+      html.light-theme .booking-modal-content button[aria-label="ปิดหน้าต่าง"] {
+          background: #f3f4f6 !important;
+          border: 1px solid #e5e7eb !important;
+          color: #374151 !important;
+      }
+      html.light-theme .booking-modal-content button[aria-label="ปิดหน้าต่าง"]:hover {
+          background: #e5e7eb !important;
+      }
+      
+      /* Booking modal deposit section */
+      html.light-theme .booking-modal-content div[style*="border: 1px dashed"],
+      html.light-theme .booking-modal-content div[style*="border:1px dashed"] {
+          background: #f9fafb !important;
+          border-color: #d1d5db !important;
+          color: #374151 !important;
+      }
+      html.light-theme .booking-modal-content div[style*="color:#cbd5e1"],
+      html.light-theme .booking-modal-content div[style*="color: #cbd5e1"] {
+          color: #6b7280 !important;
+      }
+      html.light-theme .booking-modal-content div[style*="color:#f5f5f5"],
+      html.light-theme .booking-modal-content div[style*="color: #f5f5f5"] {
+          color: #374151 !important;
+      }
+      html.light-theme .booking-modal-content div[style*="background: rgba(34,197,94"],
+      html.light-theme .booking-modal-content div[style*="background:rgba(34,197,94"],
+      html.light-theme .booking-modal-content div[style*="color:#f8fafc"],
+      html.light-theme .booking-modal-content div[style*="color: #f8fafc"] {
+          background: rgba(34, 197, 94, 0.1) !important;
+          border-color: rgba(34, 197, 94, 0.35) !important;
+          color: #15803d !important;
+      }
+      
+      /* Alert modal light theme */
+      html.light-theme .booking-alert-modal {
+          background: rgba(0, 0, 0, 0.4) !important;
+      }
+      html.light-theme .booking-alert-dialog {
+          background: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+          color: #374151 !important;
+      }
+      html.light-theme .booking-alert-message {
+          color: #111827 !important;
+      }
+      html.light-theme .booking-alert-dialog.success {
+          border-color: rgba(34, 197, 94, 0.4) !important;
+      }
+      html.light-theme .booking-alert-dialog.error {
+          border-color: rgba(239, 68, 68, 0.4) !important;
+      }
+      
+      /* All SVG icons in light theme */
+      html.light-theme .page-title svg,
+      html.light-theme h1 svg,
+      html.light-theme h2 svg,
+      html.light-theme .section-header svg {
+          stroke: #111827 !important;
+      }
+      html.light-theme .room-card svg:not(.room-image-placeholder svg) {
+          stroke: #374151 !important;
+      }
+      html.light-theme .manage-panel svg {
+          stroke: currentColor !important;
+      }
+      
+      /* Empty state styling */
+      html.light-theme .empty-state {
+          color: #6b7280 !important;
+      }
+      html.light-theme .empty-state svg {
+          stroke: #9ca3af !important;
+      }
+      
+      /* DataTable wrapper and label */
+      html.light-theme .datatable-wrapper .datatable-top label,
+      html.light-theme .datatable-wrapper .datatable-bottom label {
+          color: #374151 !important;
+      }
+      html.light-theme .datatable-wrapper .datatable-top span,
+      html.light-theme .datatable-wrapper .datatable-bottom span {
+          color: #374151 !important;
+      }
+      
+      /* ===== COMPREHENSIVE Light Theme Table Fix ===== */
+      html.light-theme .report-table,
+      html.light-theme .datatable-wrapper {
+          background: #ffffff !important;
+          border-radius: 12px !important;
+          border: 1px solid #e5e7eb !important;
+      }
+        /* Mirror styles for body.live-light for dynamic detection */
+        body.live-light .report-table,
+        body.live-light .datatable-wrapper {
+          background: #ffffff !important;
+          border-radius: 12px !important;
+          border: 1px solid #e5e7eb !important;
+        }
+      html.light-theme table thead,
+      html.light-theme .datatable-table thead {
+          background: #f8fafc !important;
+      }
+        body.live-light table thead,
+        body.live-light .datatable-table thead {
+          background: #f8fafc !important;
+        }
+      html.light-theme table thead tr,
+      html.light-theme .datatable-table thead tr {
+          background: #f8fafc !important;
+      }
+        body.live-light table thead tr,
+        body.live-light .datatable-table thead tr {
+          background: #f8fafc !important;
+        }
+      html.light-theme table thead th,
+      html.light-theme .datatable-table thead th {
+          background: #f8fafc !important;
+          color: #1e293b !important;
+          border-bottom: 2px solid #e2e8f0 !important;
+          font-weight: 600 !important;
+      }
+        body.live-light table thead th,
+        body.live-light .datatable-table thead th {
+          background: #f8fafc !important;
+          color: #1e293b !important;
+          border-bottom: 2px solid #e2e8f0 !important;
+          font-weight: 600 !important;
+        }
+      html.light-theme table thead th a,
+      html.light-theme .datatable-table thead th a {
+          color: #1e293b !important;
+      }
+        body.live-light table thead th a,
+        body.live-light .datatable-table thead th a {
+          color: #1e293b !important;
+        }
+      html.light-theme table tbody,
+      html.light-theme .datatable-table tbody {
+          background: #ffffff !important;
+      }
+        body.live-light table tbody,
+        body.live-light .datatable-table tbody {
+          background: #ffffff !important;
+        }
+      html.light-theme table tbody tr,
+      html.light-theme .datatable-table tbody tr {
+          background: #ffffff !important;
+          color: #1f2937 !important;
+      }
+        body.live-light table tbody tr,
+        body.live-light .datatable-table tbody tr {
+          background: #ffffff !important;
+          color: #1f2937 !important;
+        }
+      html.light-theme table tbody tr:nth-child(even),
+      html.light-theme .datatable-table tbody tr:nth-child(even) {
+          background: #f9fafb !important;
+      }
+        body.live-light table tbody tr:nth-child(even),
+        body.live-light .datatable-table tbody tr:nth-child(even) {
+          background: #f9fafb !important;
+        }
+      html.light-theme table tbody tr:hover,
+      html.light-theme .datatable-table tbody tr:hover {
+          background: rgba(59, 130, 246, 0.06) !important;
+      }
+        body.live-light table tbody tr:hover,
+        body.live-light .datatable-table tbody tr:hover {
+          background: rgba(59, 130, 246, 0.06) !important;
+        }
+      html.light-theme table tbody td,
+      html.light-theme .datatable-table tbody td {
+          color: #374151 !important;
+          border-bottom: 1px solid #f1f5f9 !important;
+      }
+        body.live-light table tbody td,
+        body.live-light .datatable-table tbody td {
+          color: #374151 !important;
+          border-bottom: 1px solid #f1f5f9 !important;
+        }
+      html.light-theme table tbody td a,
+      html.light-theme .datatable-table tbody td a {
+          color: #2563eb !important;
+      }
+        body.live-light table tbody td a,
+        body.live-light .datatable-table tbody td a {
+          color: #2563eb !important;
+        }
+      html.light-theme table tbody td strong,
+      html.light-theme .datatable-table tbody td strong {
+          color: #1e293b !important;
+      }
+        body.live-light table tbody td strong,
+        body.live-light .datatable-table tbody td strong {
+          color: #1e293b !important;
+        }
+      
+      /* Fix table sort arrows/icons */
+      html.light-theme .datatable-sorter::before,
+      html.light-theme .datatable-sorter::after {
+          border-bottom-color: #6b7280 !important;
+          border-top-color: #6b7280 !important;
+      }
+      html.light-theme .datatable-sorter.asc::after,
+      html.light-theme .datatable-sorter.desc::before {
+          border-bottom-color: #2563eb !important;
+          border-top-color: #2563eb !important;
+      }
+        body.live-light .datatable-sorter::before,
+        body.live-light .datatable-sorter::after {
+          border-bottom-color: #6b7280 !important;
+          border-top-color: #6b7280 !important;
+        }
+        body.live-light .datatable-sorter.asc::after,
+        body.live-light .datatable-sorter.desc::before {
+          border-bottom-color: #2563eb !important;
+          border-top-color: #2563eb !important;
+        }
+      
+      /* Fix inline status spans in table */
+      html.light-theme table td span[style*="background: #ff9800"],
+      html.light-theme table td span[style*="background:#ff9800"] {
+          background: #f59e0b !important;
+          color: #ffffff !important;
+      }
+      html.light-theme table td span[style*="background: #4caf50"],
+      html.light-theme table td span[style*="background:#4caf50"] {
+          background: #22c55e !important;
+          color: #ffffff !important;
+      }
+      html.light-theme table td span[style*="background: #f44336"],
+      html.light-theme table td span[style*="background:#f44336"] {
+          background: #ef4444 !important;
+          color: #ffffff !important;
+      }
+        body.live-light table td span[style*="background: #ff9800"],
+        body.live-light table td span[style*="background:#ff9800"] {
+          background: #f59e0b !important;
+          color: #ffffff !important;
+        }
+        body.live-light table td span[style*="background: #4caf50"],
+        body.live-light table td span[style*="background:#4caf50"] {
+          background: #22c55e !important;
+          color: #ffffff !important;
+        }
+        body.live-light table td span[style*="background: #f44336"],
+        body.live-light table td span[style*="background:#f44336"] {
+          background: #ef4444 !important;
+          color: #ffffff !important;
+        }
+      
+      /* Fix section headers and titles in light theme */
+      html.light-theme .manage-panel {
+          background: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+          color: #111827 !important;
+      }
+      html.light-theme .manage-panel .section-header h1,
+      html.light-theme .manage-panel h1,
+      html.light-theme .section-header h1 {
+          color: #111827 !important;
+      }
+      html.light-theme .manage-panel p,
+      html.light-theme .section-header p {
+          color: #6b7280 !important;
+      }
+      html.light-theme .manage-panel p[style*="color:#94a3b8"],
+      html.light-theme .manage-panel p[style*="color: #94a3b8"] {
+          color: #6b7280 !important;
+      }
+      
+      /* Fix deposit note box - the green bordered box */
+      html.light-theme div[style*="border:1px solid rgba(34,197,94"],
+      html.light-theme div[style*="border: 1px solid rgba(34,197,94"],
+      html.light-theme div[style*="color:#e0f2fe"],
+      html.light-theme div[style*="color: #e0f2fe"],
+      html.light-theme .manage-panel div[style*="background: rgba(34,197,94"],
+      html.light-theme .manage-panel div[style*="background:rgba(34,197,94"] {
+          background: rgba(34, 197, 94, 0.08) !important;
+          border-color: rgba(34, 197, 94, 0.35) !important;
+          color: #15803d !important;
+      }
+      
+      /* Fix SVG icons in room image placeholder */
+      html.light-theme .room-image-placeholder svg {
+          stroke: #9ca3af !important;
+          color: #9ca3af !important;
+      }
+      html.light-theme .room-image-placeholder span {
+          color: #9ca3af !important;
+      }
+      html.light-theme .room-image-placeholder {
+          color: #9ca3af !important;
+      }
+      
+      /* Fix action buttons appearance */
+      html.light-theme .crud-column .animate-ui-action-btn.btn-success {
+          background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+          color: #ffffff !important;
+          border: none !important;
+          box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3) !important;
+      }
+      html.light-theme .crud-column .animate-ui-action-btn.delete {
+          background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+          color: #ffffff !important;
+          border: none !important;
+          box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3) !important;
+      }
+        body.live-light .crud-column .animate-ui-action-btn.btn-success {
+          background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+          color: #ffffff !important;
+          border: none !important;
+          box-shadow: 0 2px 4px rgba(34, 197, 94, 0.3) !important;
+        }
+        body.live-light .crud-column .animate-ui-action-btn.delete {
+          background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+          color: #ffffff !important;
+          border: none !important;
+          box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3) !important;
+        }
+      
+      /* Fix table cell text and IDs */
+      html.light-theme table td:first-child,
+      html.light-theme .datatable-table td:first-child {
+          color: #3b82f6 !important;
+          font-weight: 600 !important;
+      }
+      
+      /* Fix toggle rooms button */
+      html.light-theme #toggleRoomsBtn {
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          color: #374151 !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+      }
+      html.light-theme #toggleRoomsBtn:hover {
+          background: #f9fafb !important;
+          border-color: #9ca3af !important;
+      }
+        body.live-light #toggleRoomsBtn {
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          color: #374151 !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;
+        }
+        body.live-light #toggleRoomsBtn:hover {
+          background: #f9fafb !important;
+          border-color: #9ca3af !important;
+        }
+      
+      /* Fix sort select dropdown */
+      html.light-theme #sortSelect {
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          color: #374151 !important;
+      }
+      html.light-theme #sortSelect option {
+          background: #ffffff !important;
+          color: #374151 !important;
+      }
+        body.live-light #sortSelect {
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          color: #374151 !important;
+        }
+        body.live-light #sortSelect option {
+          background: #ffffff !important;
+          color: #374151 !important;
+        }
+      
+      /* Fix DataTable search and pagination */
+      html.light-theme .datatable-top,
+      html.light-theme .datatable-bottom {
+          background: transparent !important;
+      }
+      html.light-theme .datatable-input {
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          color: #374151 !important;
+      }
+      html.light-theme .datatable-input::placeholder {
+          color: #9ca3af !important;
+      }
+      html.light-theme .datatable-selector {
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          color: #374151 !important;
+      }
+      html.light-theme .datatable-info {
+          color: #6b7280 !important;
+      }
+        body.live-light .datatable-input {
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          color: #374151 !important;
+        }
+        body.live-light .datatable-input::placeholder {
+          color: #9ca3af !important;
+        }
+        body.live-light .datatable-selector {
+          background: #ffffff !important;
+          border: 1px solid #d1d5db !important;
+          color: #374151 !important;
+        }
+        body.live-light .datatable-info {
+          color: #6b7280 !important;
+        }
+      html.light-theme .datatable-pagination li a {
+          background: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+          color: #374151 !important;
+      }
+      html.light-theme .datatable-pagination li a:hover {
+          background: #f3f4f6 !important;
+          border-color: #d1d5db !important;
+      }
+      html.light-theme .datatable-pagination li.datatable-active a {
+          background: #2563eb !important;
+          border-color: #2563eb !important;
+          color: #ffffff !important;
+      }
+        body.live-light .datatable-pagination li a {
+          background: #ffffff !important;
+          border: 1px solid #e5e7eb !important;
+          color: #374151 !important;
+        }
+        body.live-light .datatable-pagination li a:hover {
+          background: #f3f4f6 !important;
+          border-color: #d1d5db !important;
+        }
+        body.live-light .datatable-pagination li.datatable-active a {
+          background: #2563eb !important;
+          border-color: #2563eb !important;
+          color: #ffffff !important;
+        }
+      
+      /* Fix price badge color */
+      html.light-theme .price-badge,
+      html.light-theme strong.price-badge {
+          background: rgba(59, 130, 246, 0.1) !important;
+          color: #2563eb !important;
+      }
+      
+      /* Fix load more button SVG */
+      html.light-theme .load-more-btn svg {
+          stroke: currentColor !important;
+      }
+      
+      /* Fix header SVG icons */
+      html.light-theme .page-header svg,
+      html.light-theme .section-header svg,
+      html.light-theme h1 svg,
+      html.light-theme h2 svg {
+          stroke: #374151 !important;
       }
     </style>
   </head>
@@ -1105,6 +1958,7 @@ try {
           if (!sidebar) return;
           if (isMobile()) {
             sidebar.classList.toggle('mobile-open');
+            document.body.classList.toggle('sidebar-open', sidebar.classList.contains('mobile-open'));
             if (btn) {
               btn.setAttribute('aria-expanded', sidebar.classList.contains('mobile-open').toString());
             }
@@ -1112,6 +1966,10 @@ try {
             const collapsed = sidebar.classList.toggle('collapsed');
             try { localStorage.setItem(SIDEBAR_KEY, collapsed.toString()); } catch (e) {}
             document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', (!collapsed).toString()));
+            // Ensure body state reflects closed sidebar
+            if (collapsed) {
+              document.body.classList.remove('sidebar-open');
+            }
           }
         };
 
@@ -1203,12 +2061,16 @@ try {
           if (!sidebar) return false;
           if (isMobile()) {
             sidebar.classList.toggle('mobile-open');
+            document.body.classList.toggle('sidebar-open', sidebar.classList.contains('mobile-open'));
             const expanded = sidebar.classList.contains('mobile-open').toString();
             document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', expanded));
           } else {
             const collapsed = sidebar.classList.toggle('collapsed');
             safeSet('sidebarCollapsed', collapsed.toString());
             document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', (!collapsed).toString()));
+            if (collapsed) {
+              document.body.classList.remove('sidebar-open');
+            }
           }
           return false;
         };
@@ -1225,6 +2087,35 @@ try {
 
         document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(btn => {
           btn.onclick = handleSidebarToggle;
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', (e) => {
+          const sidebar = document.querySelector('.app-sidebar');
+          if (!sidebar) return;
+          const isOpenMobile = sidebar.classList.contains('mobile-open');
+          if (isMobile() && isOpenMobile) {
+            const insideSidebar = e.target.closest('.app-sidebar');
+            const toggleBtn = e.target.closest('#sidebar-toggle, [data-sidebar-toggle]');
+            if (!insideSidebar && !toggleBtn) {
+              sidebar.classList.remove('mobile-open');
+              document.body.classList.remove('sidebar-open');
+              document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+            }
+          }
+        }, { passive: true });
+
+        // Close sidebar on ESC
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape') {
+            const sidebar = document.querySelector('.app-sidebar');
+            if (!sidebar) return;
+            if (isMobile() && sidebar.classList.contains('mobile-open')) {
+              sidebar.classList.remove('mobile-open');
+              document.body.classList.remove('sidebar-open');
+              document.querySelectorAll('#sidebar-toggle, [data-sidebar-toggle]').forEach(b => b.setAttribute('aria-expanded', 'false'));
+            }
+          }
         });
 
         // View toggle buttons

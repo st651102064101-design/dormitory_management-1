@@ -1792,6 +1792,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         color: #666666;
       }
 
+      /* Light theme - Success Overlay */
+      body.theme-light .login-success-overlay {
+        background: rgba(255, 255, 255, 0.98);
+        backdrop-filter: blur(10px);
+      }
+
+      body.theme-light .success-content {
+        color: #333333;
+      }
+
+      body.theme-light .success-content p {
+        background: linear-gradient(135deg, #22c55e, #10b981);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+
+      body.theme-light .redirect-text {
+        color: #666666 !important;
+        -webkit-text-fill-color: #666666 !important;
+      }
+
+      body.theme-light .success-icon {
+        color: #22c55e;
+      }
+
+      body.theme-light .success-icon circle,
+      body.theme-light .success-icon path {
+        stroke: #22c55e;
+      }
+
       /* ============================================
          THEME 7: HOMEPAGE STYLE (Match index.php 100%)
          ============================================ */

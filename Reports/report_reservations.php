@@ -213,6 +213,86 @@ try {
       html.light-theme .stat-value {
         color: #1f2937 !important;
       }
+      
+      /* Light theme for reservation cards */
+      html.light-theme .reservation-card {
+        background: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+      }
+      html.light-theme .reservation-card:hover {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12) !important;
+      }
+      html.light-theme .reservation-date {
+        color: #6b7280 !important;
+      }
+      html.light-theme .reservation-info {
+        color: #374151 !important;
+      }
+      html.light-theme .reservation-info strong {
+        color: #111827 !important;
+      }
+      
+      /* Light theme for status buttons */
+      html.light-theme .status-btn {
+        background: #f3f4f6 !important;
+        border: 1px solid #e5e7eb !important;
+        color: #374151 !important;
+      }
+      html.light-theme .status-btn:hover:not(.active) {
+        background: #e5e7eb !important;
+        color: #1f2937 !important;
+      }
+      html.light-theme .status-btn.active {
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
+        color: #ffffff !important;
+      }
+      
+      /* Light theme for view toggle buttons */
+      html.light-theme .view-toggle-btn {
+        background: #f3f4f6 !important;
+        border: 1px solid #e5e7eb !important;
+        color: #374151 !important;
+      }
+      html.light-theme .view-toggle-btn:hover:not(.active) {
+        background: #e5e7eb !important;
+        color: #1f2937 !important;
+      }
+      html.light-theme .view-toggle-btn.active {
+        background: #3b82f6 !important;
+        border-color: #3b82f6 !important;
+        color: #ffffff !important;
+      }
+      
+      /* Light theme for table */
+      html.light-theme .reservation-table {
+        background: #ffffff !important;
+        border: 1px solid rgba(0, 0, 0, 0.1) !important;
+      }
+      html.light-theme .reservation-table th {
+        background: #f8fafc !important;
+        color: #374151 !important;
+        border-bottom: 2px solid rgba(0, 0, 0, 0.1) !important;
+      }
+      html.light-theme .reservation-table td {
+        color: #1f2937 !important;
+        border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+      }
+      html.light-theme .reservation-table tr:hover {
+        background: rgba(59, 130, 246, 0.05) !important;
+      }
+      
+      /* Light theme for page title */
+      html.light-theme h1 {
+        color: #1f2937 !important;
+      }
+      
+      /* Light theme for empty state */
+      html.light-theme .empty-state {
+        color: #6b7280 !important;
+      }
+      
       .view-toggle { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
       .view-toggle-btn { padding: 0.75rem 1.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #94a3b8; cursor: pointer; transition: all 0.2s; font-weight: 600; }
       .view-toggle-btn.active { background: #60a5fa; border-color: #60a5fa; color: #fff; }

@@ -249,22 +249,47 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
             color: #111827 !important;
         }
         html.light-theme .rate-info {
-            background: rgba(0,0,0,0.03) !important;
-            border-color: rgba(0,0,0,0.08) !important;
+            background: rgba(59, 130, 246, 0.08) !important;
+            border-color: rgba(59, 130, 246, 0.2) !important;
+        }
+        html.light-theme .rate-info span {
+            color: #374151 !important;
+        }
+        html.light-theme .rate-info strong {
+            color: #2563eb !important;
         }
         html.light-theme .utility-table input {
-            background: rgba(255,255,255,0.9) !important;
-            border-color: rgba(0,0,0,0.15) !important;
+            background: rgba(255,255,255,0.95) !important;
+            border-color: rgba(0,0,0,0.2) !important;
             color: #111827 !important;
         }
-        html.light-theme .status-badge,
-        html.light-theme .status-empty,
-        html.light-theme .status-saved,
-        html.light-theme .btn-cancel {
+        html.light-theme .utility-table input:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        }
+        /* Status badges - ensure proper colors in light mode */
+        html.light-theme .status-badge.saved {
+            background: rgba(34, 197, 94, 0.15) !important;
+            color: #15803d !important;
+        }
+        html.light-theme .status-badge.pending {
+            background: rgba(251, 191, 36, 0.2) !important;
+            color: #b45309 !important;
+        }
+        html.light-theme .status-badge.empty,
+        html.light-theme .status-empty {
+            background: rgba(148, 163, 184, 0.25) !important;
+            color: #475569 !important;
+        }
+        html.light-theme .status-saved {
+            background: #22c55e !important;
             color: #ffffff !important;
         }
         html.light-theme .btn-save,
         html.light-theme .btn-update,
+        html.light-theme .btn-save-small {
+            color: #ffffff !important;
+        }
         html.light-theme .view-toggle-btn.active {
             color: #ffffff !important;
         }
@@ -272,27 +297,154 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
         html.light-theme .datatable-pagination a {
             color: #374151 !important;
         }
-        /* Row with data */
-        html.light-theme tr.has-reading {
-            background: rgba(34,197,94,0.08) !important;
+        /* Row with data - light green background */
+        html.light-theme tr.has-reading,
+        html.light-theme .utility-table tbody tr:has(.status-badge.saved) {
+            background: rgba(34, 197, 94, 0.08) !important;
         }
         /* Page title SVG */
         html.light-theme .page-title svg {
             stroke: #111827 !important;
         }
         /* View toggle buttons */
-        html.light-theme .view-toggle-btn {
+        html.light-theme .view-toggle-btn,
+        html.light-theme .view-btn {
             color: #374151 !important;
             border-color: rgba(0,0,0,0.15) !important;
+            background: rgba(0,0,0,0.05) !important;
         }
-        html.light-theme .view-toggle-btn svg {
+        html.light-theme .view-toggle-btn svg,
+        html.light-theme .view-btn svg {
             stroke: #374151 !important;
         }
-        html.light-theme .view-toggle-btn.active {
+        html.light-theme .view-toggle-btn.active,
+        html.light-theme .view-btn.active {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        }
+        html.light-theme .view-toggle-btn.active svg,
+        html.light-theme .view-btn.active svg {
+            stroke: #ffffff !important;
+        }
+        /* Mode buttons */
+        html.light-theme .mode-btn {
+            background: rgba(0,0,0,0.05) !important;
+            border-color: rgba(0,0,0,0.15) !important;
+            color: #374151 !important;
+        }
+        html.light-theme .mode-btn svg {
+            stroke: #374151 !important;
+        }
+        html.light-theme .mode-btn:hover {
+            background: rgba(59, 130, 246, 0.15) !important;
+            border-color: rgba(59, 130, 246, 0.4) !important;
+            color: #2563eb !important;
+        }
+        html.light-theme .mode-btn.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+            border-color: #3b82f6 !important;
             color: #ffffff !important;
         }
-        html.light-theme .view-toggle-btn.active svg {
+        html.light-theme .mode-btn.active svg {
             stroke: #ffffff !important;
+        }
+        /* Room cards in light theme */
+        html.light-theme .room-card {
+            background: rgba(255, 255, 255, 0.9) !important;
+            border-color: rgba(0, 0, 0, 0.1) !important;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+        }
+        html.light-theme .room-card:hover {
+            border-color: rgba(59, 130, 246, 0.4) !important;
+        }
+        html.light-theme .room-card.has-data {
+            border-color: rgba(34, 197, 94, 0.4) !important;
+            background: rgba(34, 197, 94, 0.05) !important;
+        }
+        html.light-theme .room-header {
+            border-bottom-color: rgba(0, 0, 0, 0.1) !important;
+        }
+        html.light-theme .room-number {
+            color: #2563eb !important;
+        }
+        html.light-theme .tenant-name {
+            color: #64748b !important;
+        }
+        html.light-theme .meter-group label {
+            color: #475569 !important;
+        }
+        html.light-theme .meter-group input {
+            background: rgba(255, 255, 255, 0.95) !important;
+            border-color: rgba(0, 0, 0, 0.15) !important;
+            color: #111827 !important;
+        }
+        html.light-theme .meter-group input:focus {
+            border-color: #3b82f6 !important;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15) !important;
+        }
+        html.light-theme .old-reading {
+            color: #6b7280 !important;
+        }
+        html.light-theme .meter-summary {
+            background: rgba(0, 0, 0, 0.03) !important;
+            color: #475569 !important;
+        }
+        html.light-theme .meter-summary .used {
+            color: #d97706 !important;
+        }
+        html.light-theme .meter-summary .cost {
+            color: #15803d !important;
+        }
+        html.light-theme .no-contract-msg {
+            background: rgba(0, 0, 0, 0.05) !important;
+            color: #64748b !important;
+        }
+        /* Utility table in light theme */
+        html.light-theme .utility-table {
+            background: rgba(255, 255, 255, 0.95) !important;
+        }
+        html.light-theme .utility-table th {
+            background: rgba(241, 245, 249, 0.95) !important;
+            color: #475569 !important;
+            border-bottom: 2px solid rgba(0, 0, 0, 0.1) !important;
+        }
+        html.light-theme .utility-table td {
+            color: #374151 !important;
+            border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+        }
+        html.light-theme .utility-table tr:hover td {
+            background: rgba(59, 130, 246, 0.06) !important;
+        }
+        html.light-theme .utility-table td[style*="color: #fbbf24"] {
+            color: #d97706 !important;
+        }
+        html.light-theme .utility-table td[style*="color: #22c55e"] {
+            color: #15803d !important;
+        }
+        /* DataTable overrides for light theme */
+        html.light-theme .datatable-wrapper {
+            background: transparent !important;
+        }
+        html.light-theme .datatable-top,
+        html.light-theme .datatable-bottom {
+            background: transparent !important;
+        }
+        html.light-theme .datatable-pagination li a {
+            color: #374151 !important;
+            background: rgba(0, 0, 0, 0.05) !important;
+            border-color: rgba(0, 0, 0, 0.1) !important;
+        }
+        html.light-theme .datatable-pagination li.active a {
+            background: #3b82f6 !important;
+            color: #ffffff !important;
+        }
+        /* Empty state in light theme */
+        html.light-theme div[style*="text-align: center"][style*="padding: 3rem"] {
+            background: rgba(0, 0, 0, 0.03) !important;
+            color: #64748b !important;
+        }
+        html.light-theme div[style*="text-align: center"][style*="padding: 3rem"] svg {
+            stroke: #94a3b8 !important;
         }
 
         .utility-container {
