@@ -8,6 +8,16 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// ดึงค่า default_view_mode จาก database
+$defaultViewMode = 'grid';
+try {
+    $viewStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'default_view_mode' LIMIT 1");
+    $viewRow = $viewStmt->fetch(PDO::FETCH_ASSOC);
+    if ($viewRow && strtolower($viewRow['setting_value']) === 'list') {
+        $defaultViewMode = 'list';
+    }
+} catch (PDOException $e) {}
+
 // รับค่า sort จาก query parameter
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 $orderBy = 'ym DESC';
@@ -148,20 +158,28 @@ try {
         const viewToggle = document.getElementById('toggle-view');
         const cardView = document.getElementById('card-view');
         const tableView = document.getElementById('table-view');
-        let isCardView = true;
+        // Get default view mode from database (list -> false, grid -> true)
+        let isCardView = <?php echo $defaultViewMode === "list" ? "false" : "true"; ?>;
+
+        function updateViewDisplay() {
+          if (isCardView) {
+            cardView.style.display = 'grid';
+            tableView.style.display = 'none';
+            if (viewToggle) viewToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>ตาราง';
+          } else {
+            cardView.style.display = 'none';
+            tableView.style.display = 'block';
+            if (viewToggle) viewToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด';
+          }
+        }
+
+        // Initialize view on page load
+        updateViewDisplay();
 
         if (viewToggle) {
           viewToggle.addEventListener('click', function() {
             isCardView = !isCardView;
-            if (isCardView) {
-              cardView.style.display = 'grid';
-              tableView.style.display = 'none';
-              viewToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>ตาราง';
-            } else {
-              cardView.style.display = 'none';
-              tableView.style.display = 'block';
-              viewToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด';
-            }
+            updateViewDisplay();
           });
         }
       })();

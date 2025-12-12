@@ -8,6 +8,16 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// ดึงค่า default_view_mode จาก database
+$defaultViewMode = 'grid';
+try {
+    $viewStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'default_view_mode' LIMIT 1");
+    $viewRow = $viewStmt->fetch(PDO::FETCH_ASSOC);
+    if ($viewRow && strtolower($viewRow['setting_value']) === 'list') {
+        $defaultViewMode = 'list';
+    }
+} catch (PDOException $e) {}
+
 // รับค่า sort จาก query parameter
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 $orderBy = 'u.utl_date DESC, u.utl_id DESC';
@@ -270,7 +280,8 @@ try {
         const viewToggle = document.getElementById('toggle-view');
         const cardView = document.getElementById('card-view');
         const tableView = document.getElementById('table-view');
-        let isCardView = localStorage.getItem('utilityViewMode') !== 'table';
+        // Get default view mode from database (list -> table, grid -> card)
+        let isCardView = '<?php echo $defaultViewMode === "list" ? "false" : "true"; ?>' === 'true';
 
         function updateView() {
           if (isCardView) {

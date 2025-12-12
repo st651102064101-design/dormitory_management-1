@@ -210,6 +210,14 @@ class AppleSettings {
         this.saveFontSize();
       });
     }
+
+    // FPS Threshold Change
+    const fpsThresholdSelect = document.getElementById('fpsThreshold');
+    if (fpsThresholdSelect) {
+      fpsThresholdSelect.addEventListener('change', () => {
+        this.saveFpsThreshold();
+      });
+    }
   }
 
   async saveSiteName() {
@@ -424,6 +432,36 @@ class AppleSettings {
         
         // Dispatch storage event manually for same-page listeners (storage event only fires on OTHER tabs)
         // Other pages will get notified via 'storage' event automatically
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async saveFpsThreshold() {
+    const fpsThreshold = document.getElementById('fpsThreshold')?.value;
+    
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `fps_threshold=${encodeURIComponent(fpsThreshold)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('บันทึกค่า FPS สำเร็จ', 'success');
+        
+        // Update display value in row
+        const rowValue = document.querySelector('[data-sheet="sheet-fps-threshold"] .apple-row-value');
+        if (rowValue) {
+          rowValue.textContent = fpsThreshold;
+        }
+        
+        // Store in localStorage for other pages
+        localStorage.setItem('fpsThreshold', fpsThreshold);
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
       }

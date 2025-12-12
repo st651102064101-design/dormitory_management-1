@@ -8,6 +8,16 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// ดึงค่า default_view_mode จาก database
+$defaultViewMode = 'grid';
+try {
+    $viewStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'default_view_mode' LIMIT 1");
+    $viewRow = $viewStmt->fetch(PDO::FETCH_ASSOC);
+    if ($viewRow && strtolower($viewRow['setting_value']) === 'list') {
+        $defaultViewMode = 'list';
+    }
+} catch (PDOException $e) {}
+
 // รับค่า status filter - Default แสดงกำลังเข้าพัก (สถานะ 0 = ปกติ)
 $selectedStatus = isset($_GET['status']) ? $_GET['status'] : '0';
 
@@ -457,6 +467,10 @@ try {
         return false;
       };
 
+      const safeGet = (key) => {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+      };
+
       let dataTable = null;
 
       function switchView(view) {
@@ -502,9 +516,11 @@ try {
       }
 
       window.addEventListener('load', function() {
-        // Restore saved view
-        const savedView = localStorage.getItem('stayViewMode') || 'card';
-        switchView(savedView);
+        console.log('Window Load: dbDefaultView =', '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>');
+        // Get default view mode from database (list -> table, grid -> card)
+        const dbDefaultView = '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>';
+        console.log('Window Load: Calling switchView with:', dbDefaultView);
+        switchView(dbDefaultView);
       });
     </script>
   </body>

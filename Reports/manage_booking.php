@@ -115,9 +115,10 @@ $statusMap = [
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $defaultViewMode = 'grid';
+$fpsThreshold = '60';
 $roomFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi']; // ค่า default
 try {
-  $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'room_features', 'default_view_mode')");
+  $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'room_features', 'default_view_mode', 'fps_threshold')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
@@ -127,6 +128,9 @@ try {
     if ($row['setting_key'] === 'default_view_mode') {
       $val = strtolower(trim((string)$row['setting_value']));
       $defaultViewMode = ($val === 'list') ? 'list' : 'grid';
+    }
+    if ($row['setting_key'] === 'fps_threshold') {
+      $fpsThreshold = $row['setting_value'];
     }
     }
 } catch (PDOException $e) {}
@@ -344,43 +348,51 @@ try {
 
       // ===== FPS CHECKER - Auto switch to List view if low performance =====
       (function() {
-        let frameCount = 0;
         let lastTime = performance.now();
-        let fpsValues = [];
-        let checkDuration = 3000; // Check for 3 seconds (more reliable measurement)
+        let frameCount = 0;
+        let fps = 60;
+        let fpsReadings = []; // เก็บ FPS ที่วัดได้
         let hasChecked = false;
-        let startTime = performance.now();
+        const FPS_READINGS_NEEDED = 6; // รวบรวม 6 ครั้งก่อน check
+        const FPS_THRESHOLD = <?php echo (int)$fpsThreshold; ?>; // ค่าจาก database
         
         function checkFPS(currentTime) {
           frameCount++;
           
-          // Measure FPS every 1 second
-          if (currentTime - lastTime >= 1000) {
-            const fps = frameCount;
-            fpsValues.push(fps);
+          // Calculate FPS every 500ms (more accurate)
+          if (currentTime - lastTime >= 500) {
+            fps = Math.round((frameCount / (currentTime - lastTime)) * 1000);
+            fpsReadings.push(fps);
+            console.log(`FPS Reading ${fpsReadings.length}: ${fps}`);
             frameCount = 0;
             lastTime = currentTime;
+            
+            // เมื่อรวบรวมครบ 6 ครั้งแล้ว ให้ check
+            if (fpsReadings.length >= FPS_READINGS_NEEDED && !hasChecked) {
+              hasChecked = true;
+              const avgFPS = Math.round(fpsReadings.reduce((a, b) => a + b, 0) / fpsReadings.length);
+              console.log(`Average FPS from ${FPS_READINGS_NEEDED} readings: ${avgFPS}`, fpsReadings);
+              console.log(`FPS Threshold from settings: ${FPS_THRESHOLD}`);
+              
+              if (avgFPS < FPS_THRESHOLD) {
+                window.__isLowPerformance = true;
+                console.log('Low performance detected! Avg FPS:', avgFPS, 'Threshold:', FPS_THRESHOLD);
+                showPerformanceAlert(avgFPS);
+              } else {
+                console.log('Performance OK, no alert needed');
+              }
+              return; // หยุดการ loop
+            }
           }
           
-          // Continue checking until duration is reached
-          if (currentTime - startTime < checkDuration && !hasChecked) {
+          // ถ้ายังไม่ check ก็ยังคง loop
+          if (!hasChecked) {
             requestAnimationFrame(checkFPS);
-          } else if (!hasChecked) {
-            hasChecked = true;
-            const avgFPS = fpsValues.length > 0 
-              ? fpsValues.reduce((a, b) => a + b, 0) / fpsValues.length 
-              : 60;
-            
-            // Only show alert if truly low performance (below 20 FPS)
-            // 20 FPS is still acceptable for browsing, only alert if worse
-            if (avgFPS < 20) {
-              window.__isLowPerformance = true;
-              showPerformanceAlert(Math.round(avgFPS));
-            }
           }
         }
         
         function showPerformanceAlert(fps) {
+          console.log('showPerformanceAlert called with fps:', fps);
           // Create Apple-style alert overlay
           const overlay = document.createElement('div');
           overlay.id = 'fps-alert-overlay';
@@ -412,10 +424,12 @@ try {
           `;
           
           document.body.appendChild(overlay);
+          console.log('Alert overlay appended to body');
           
           // Auto close and switch to list after 4 seconds
           window.__fpsAlertTimeout = setTimeout(() => {
             if (document.getElementById('fps-alert-overlay')) {
+              console.log('Auto-closing FPS alert');
               closeFPSAlert(true);
             }
           }, 4000);
@@ -3743,13 +3757,12 @@ try {
             } catch (e) {}
           }
 
-          // Restore view mode using system default when no per-page choice
+          // Restore view mode using system default
           try {
-            const savedView = localStorage.getItem(VIEW_KEY);
-            const adminDefault = localStorage.getItem('adminDefaultViewMode') || <?php echo json_encode($defaultViewMode === 'list' ? 'list' : 'grid'); ?>;
-            const initial = (savedView === 'list' || savedView === 'grid') ? savedView : adminDefault;
-            applyViewMode(initial === 'list' ? 'list' : 'grid');
-          } catch (e) {}
+            const adminDefault = <?php echo json_encode($defaultViewMode === 'list' ? 'list' : 'grid'); ?>;
+            console.log('adminDefault from DB:', adminDefault);
+            applyViewMode(adminDefault);
+          } catch (e) { console.error('View mode error:', e); }
         });
       })();
     </script>
@@ -3891,10 +3904,9 @@ try {
         });
 
         restoreSidebar();
-        const savedMode = safeGet('bookingViewMode');
-        const adminDefault = safeGet('adminDefaultViewMode') || <?php echo json_encode($defaultViewMode === 'list' ? 'list' : 'grid'); ?>;
-        const startMode = (savedMode === 'list' || savedMode === 'grid') ? savedMode : adminDefault;
-        applyView(startMode);
+        const adminDefault = <?php echo json_encode($defaultViewMode === 'list' ? 'list' : 'grid'); ?>;
+        console.log('adminDefault from DB (DOMContentLoaded):', adminDefault);
+        applyView(adminDefault);
       });
     </script>
     <script>

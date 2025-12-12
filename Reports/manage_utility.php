@@ -1066,6 +1066,7 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
     <script>
     const waterRate = <?php echo $waterRate; ?>;
     const electricRate = <?php echo $electricRate; ?>;
+    const safeGet = (key) => { try { return localStorage.getItem(key); } catch (e) { return null; } };
 
     // คำนวณค่าใช้จ่ายอัตโนมัติ
     document.querySelectorAll('.meter-form').forEach(form => {
@@ -1196,10 +1197,10 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
 
     // Restore view mode on load
     document.addEventListener('DOMContentLoaded', () => {
-        const savedMode = localStorage.getItem('utilityViewMode');
-        if (savedMode === 'table') {
-            switchView('table');
-        }
+        const savedMode = safeGet('utilityViewMode');
+        const adminDefault = safeGet('adminDefaultViewMode') === 'list' ? 'table' : 'grid';
+        const initialMode = (savedMode === 'table' || savedMode === 'grid') ? savedMode : adminDefault;
+        switchView(initialMode || 'grid');
     });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>

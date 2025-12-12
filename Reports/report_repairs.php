@@ -8,6 +8,16 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// ดึงค่า default_view_mode จาก database
+$defaultViewMode = 'grid';
+try {
+    $viewStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'default_view_mode' LIMIT 1");
+    $viewRow = $viewStmt->fetch(PDO::FETCH_ASSOC);
+    if ($viewRow && strtolower($viewRow['setting_value']) === 'list') {
+        $defaultViewMode = 'list';
+    }
+} catch (PDOException $e) {}
+
 // รับค่าเดือน/ปี ที่เลือก (รูปแบบ YYYY-MM)
 $selectedMonth = isset($_GET['month']) ? $_GET['month'] : '';
 $selectedStatus = isset($_GET['status']) ? $_GET['status'] : '';
@@ -299,7 +309,15 @@ try {
     <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script src="../Assets/Javascript/main.js" defer></script>
     <script>
-      document.addEventListener('DOMContentLoaded', function() { const savedView = localStorage.getItem('repairViewMode') || 'card'; switchView(savedView); });
+      const safeGet = (key) => { try { return localStorage.getItem(key); } catch (e) { return null; } };
+
+      window.addEventListener('load', function() {
+        console.log('Window Load: dbDefaultView =', '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>');
+        // Get default view mode from database (list -> table, grid -> card)
+        const dbDefaultView = '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>';
+        console.log('Window Load: Calling switchView with:', dbDefaultView);
+        switchView(dbDefaultView);
+      });
       function switchView(view) { const cardView = document.getElementById('card-view'); const tableView = document.getElementById('table-view'); const buttons = document.querySelectorAll('.view-toggle-btn'); buttons.forEach(btn => btn.classList.remove('active')); if (view === 'card') { cardView.style.display = 'grid'; tableView.style.display = 'none'; buttons[0].classList.add('active'); localStorage.setItem('repairViewMode', 'card'); } else { cardView.style.display = 'none'; tableView.style.display = 'block'; buttons[1].classList.add('active'); localStorage.setItem('repairViewMode', 'table'); } }
       function showImage(imageName) { const modal = document.getElementById('imageModal'); const modalImg = document.getElementById('modalImage'); modalImg.src = '../Assets/Images/Repairs/' + imageName; modal.classList.add('show'); }
       function closeImage() { document.getElementById('imageModal').classList.remove('show'); }

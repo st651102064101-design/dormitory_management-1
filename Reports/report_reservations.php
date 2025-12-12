@@ -9,14 +9,15 @@ require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
 // ดึง theme color จากการตั้งค่าระบบ
-$settingsStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
 $themeColor = '#0f172a'; // ค่า default (dark mode)
-if ($settingsStmt) {
-    $theme = $settingsStmt->fetch(PDO::FETCH_ASSOC);
-    if ($theme && !empty($theme['setting_value'])) {
-        $themeColor = htmlspecialchars($theme['setting_value'], ENT_QUOTES, 'UTF-8');
+$defaultViewMode = 'grid';
+try {
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('theme_color', 'default_view_mode')");
+    while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
+        if ($row['setting_key'] === 'theme_color') $themeColor = htmlspecialchars($row['setting_value'], ENT_QUOTES, 'UTF-8');
+        if ($row['setting_key'] === 'default_view_mode') $defaultViewMode = strtolower($row['setting_value']) === 'list' ? 'list' : 'grid';
     }
-}
+} catch (PDOException $e) {}
 
 // รับค่าเดือน/ปี ที่เลือก (รูปแบบ YYYY-MM)
 $selectedMonth = isset($_GET['month']) ? $_GET['month'] : '';
@@ -481,6 +482,10 @@ try {
         return false;
       };
 
+      const safeGet = (key) => {
+        try { return localStorage.getItem(key); } catch (e) { return null; }
+      };
+
       function switchView(view) {
         const cardView = document.getElementById('card-view');
         const tableView = document.getElementById('table-view');
@@ -505,9 +510,11 @@ try {
       }
 
       window.addEventListener('load', function() {
-        // Restore saved view
-        const savedView = localStorage.getItem('reservationViewMode') || 'card';
-        switchView(savedView);
+        console.log('Window Load: dbDefaultView =', '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>');
+        // Get default view mode from database (list -> table, grid -> card)
+        const dbDefaultView = '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>';
+        console.log('Window Load: Calling switchView with:', dbDefaultView);
+        switchView(dbDefaultView);
         
         // Light theme detection - apply class to html element if theme color is light
         function applyThemeClass() {

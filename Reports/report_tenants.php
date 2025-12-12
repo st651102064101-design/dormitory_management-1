@@ -12,12 +12,14 @@ $pdo = connectDB();
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $themeColor = '#0f172a';
+$defaultViewMode = 'grid';
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'default_view_mode')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
+        if ($row['setting_key'] === 'default_view_mode') $defaultViewMode = strtolower($row['setting_value']) === 'list' ? 'list' : 'grid';
     }
 } catch (PDOException $e) {}
 
@@ -891,12 +893,27 @@ $statusMap = [
         let dataTable = null;
         let currentView = 'grid';
 
+        // Safe localStorage getter
+        function safeGet(key) {
+            try {
+                return localStorage.getItem(key) || '';
+            } catch (e) {
+                console.warn('localStorage access denied:', e);
+                return '';
+            }
+        }
+
         // Switch between Grid and Table view
         function switchView(view) {
             currentView = view;
             const gridView = document.getElementById('gridView');
             const tableView = document.getElementById('tableView');
             const viewBtns = document.querySelectorAll('.view-btn');
+
+            console.log('switchView called with:', view);
+            console.log('gridView:', gridView ? 'found' : 'NOT FOUND');
+            console.log('tableView:', tableView ? 'found' : 'NOT FOUND');
+            console.log('viewBtns count:', viewBtns.length);
 
             viewBtns.forEach(btn => {
                 btn.classList.toggle('active', btn.dataset.view === view);
@@ -913,7 +930,7 @@ $statusMap = [
                         card.style.animation = `cardFadeIn 0.5s ease forwards ${Math.min(i * 0.05, 0.35)}s`;
                     });
                 }, 150);
-            } else {
+            } else if (view === 'table') {
                 gridView.classList.add('hidden');
                 setTimeout(() => {
                     tableView.classList.remove('hidden');
@@ -993,14 +1010,22 @@ $statusMap = [
         }
 
         // Initialize on load
-        document.addEventListener('DOMContentLoaded', function() {
+        window.addEventListener('load', function() {
+            console.log('===== WINDOW LOAD EVENT =====');
             applyTheme();
+
+            // Get default view mode from database (via PHP)
+            // list -> table, grid -> grid
+            const dbDefaultView = '<?php echo $defaultViewMode === "list" ? "table" : "grid"; ?>';
             
-            // Restore view preference
-            const savedView = localStorage.getItem('tenantViewPreference');
-            if (savedView && savedView !== currentView) {
-                switchView(savedView);
-            }
+            console.log('Window Load: $defaultViewMode =', '<?php echo htmlspecialchars($defaultViewMode, ENT_QUOTES, "UTF-8"); ?>');
+            console.log('Window Load: dbDefaultView =', dbDefaultView);
+            console.log('Window Load: Calling switchView with:', dbDefaultView);
+            
+            // Use database default directly (no localStorage fallback)
+            switchView(dbDefaultView);
+            
+            console.log('===== WINDOW LOAD COMPLETE =====');
         });
     </script>
 </body>

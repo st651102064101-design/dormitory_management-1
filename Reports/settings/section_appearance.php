@@ -62,6 +62,17 @@
       ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
+    
+    <!-- FPS Threshold -->
+    <div class="apple-settings-row" data-sheet="sheet-fps-threshold">
+      <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">FPS Threshold</p>
+        <p class="apple-row-sublabel">แจ้งเตือนเมื่อ FPS ต่ำกว่า</p>
+      </div>
+      <span class="apple-row-value"><?php echo htmlspecialchars($fpsThreshold ?? '60'); ?> FPS</span>
+      <span class="apple-row-chevron">›</span>
+    </div>
   </div>
 </div>
 
@@ -218,6 +229,59 @@
         <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0;">
           💡 การตั้งค่านี้จะมีผลกับทุกหน้าแอดมิน เช่น หน้าจัดการห้องพัก, หน้าจัดการผู้เช่า, หน้าจองห้อง เป็นต้น
         </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: FPS Threshold -->
+<div class="apple-sheet-overlay" id="sheet-fps-threshold">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-fps-threshold">เสร็จ</button>
+      <h3 class="apple-sheet-title">ค่า FPS ขั้นต่ำ</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <div class="apple-input-group">
+        <label class="apple-input-label">กำหนดค่า FPS</label>
+        <select id="fpsThreshold" class="apple-input">
+          <option value="30" <?php echo $fpsThreshold === '30' ? 'selected' : ''; ?>>30 FPS (ต่ำ)</option>
+          <option value="45" <?php echo $fpsThreshold === '45' ? 'selected' : ''; ?>>45 FPS</option>
+          <option value="60" <?php echo $fpsThreshold === '60' ? 'selected' : ''; ?>>60 FPS (ปกติ)</option>
+          <option value="90" <?php echo $fpsThreshold === '90' ? 'selected' : ''; ?>>90 FPS</option>
+          <option value="120" <?php echo $fpsThreshold === '120' ? 'selected' : ''; ?>>120 FPS (สูง)</option>
+          <option value="180" <?php echo $fpsThreshold === '180' ? 'selected' : ''; ?>>180 FPS (สูงมาก)</option>
+          <option value="240" <?php echo $fpsThreshold === '240' ? 'selected' : ''; ?>>240 FPS (สูงสุด)</option>
+          <option value="300" <?php echo $fpsThreshold === '300' ? 'selected' : ''; ?>>300 FPS (สูงเว่อร์)</option>
+        </select>
+      </div>
+      
+      <div style="margin-top: 16px; padding: 12px; background: rgba(234, 179, 8, 0.1); border-radius: 10px; border: 1px solid rgba(234, 179, 8, 0.2);">
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0;">
+          ⚡ ระบบจะแจ้งเตือนเมื่อ FPS ต่ำกว่าค่านี้
+        </p>
+      </div>
+      
+      <div style="margin-top: 12px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
+        <p style="font-size: 12px; color: var(--apple-text-secondary); margin: 0 0 6px 0;">
+          <strong>📍 ตรวจสอบใน:</strong>
+        </p>
+        <ul style="font-size: 12px; color: var(--apple-text-secondary); margin: 0; padding-left: 16px;">
+          <li>หน้าจัดการจองห้องพัก (Booking)</li>
+        </ul>
+      </div>
+      
+      <div style="margin-top: 12px; padding: 12px; background: var(--apple-card); border-radius: 10px;">
+        <p style="font-size: 12px; color: var(--apple-text-secondary); margin: 0 0 8px 0;">
+          <strong>คำแนะนำ:</strong>
+        </p>
+        <ul style="font-size: 12px; color: var(--apple-text-secondary); margin: 0; padding-left: 16px;">
+          <li>คอมพิวเตอร์ทั่วไป: 60 FPS</li>
+          <li>คอมพิวเตอร์เก่า: 30-45 FPS</li>
+          <li>หน้าจอความถี่สูง: 90-120 FPS</li>
+        </ul>
       </div>
     </div>
   </div>

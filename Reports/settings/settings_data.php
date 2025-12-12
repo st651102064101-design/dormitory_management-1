@@ -26,6 +26,7 @@ $contactEmail = 'test@gmail.com';
 $publicTheme = 'dark';
 $useBgImage = '0';
 $defaultViewMode = 'grid'; // ค่าเริ่มต้นการแสดงผล grid หรือ list
+$fpsThreshold = '60'; // FPS threshold สำหรับแจ้งเตือนประสิทธิภาพต่ำ
 
 // ข้อมูลบัญชีธนาคาร
 $bankName = '';
@@ -35,7 +36,7 @@ $promptpayNumber = '';
 
 // ดึงค่าตั้งค่าระบบจาก database
 try {
-    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'default_view_mode')");
+    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'default_view_mode', 'fps_threshold')");
     $rawSettings = $settingsStmt->fetchAll(PDO::FETCH_ASSOC);
     $settings = [];
     foreach ($rawSettings as $setting) {
@@ -53,6 +54,7 @@ try {
     $publicTheme = $settings['public_theme'] ?? $publicTheme;
     $useBgImage = $settings['use_bg_image'] ?? $useBgImage;
     $defaultViewMode = $settings['default_view_mode'] ?? $defaultViewMode;
+    $fpsThreshold = $settings['fps_threshold'] ?? $fpsThreshold;
     
     // ข้อมูลบัญชีธนาคาร
     $bankName = $settings['bank_name'] ?? $bankName;

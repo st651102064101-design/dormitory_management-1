@@ -287,6 +287,25 @@ try {
         exit;
     }
 
+    // จัดการ FPS Threshold
+    if (!empty($_POST['fps_threshold'])) {
+        $fpsThreshold = trim($_POST['fps_threshold']);
+        $allowedFps = ['30', '45', '60', '90', '120', '180', '240', '300'];
+        
+        if (!in_array($fpsThreshold, $allowedFps)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ค่า FPS ไม่ถูกต้อง']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['fps_threshold', $fpsThreshold, $fpsThreshold]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกค่า FPS สำเร็จ']);
+        exit;
+    }
+
     // จัดการ Background Filename (เลือกจาก dropdown)
     if (!empty($_POST['bg_filename'])) {
         $bgFilename = trim($_POST['bg_filename']);
