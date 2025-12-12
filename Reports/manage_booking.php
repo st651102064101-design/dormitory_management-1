@@ -353,7 +353,7 @@ try {
               ? fpsValues.reduce((a, b) => a + b, 0) / fpsValues.length 
               : 60;
             
-            if (avgFPS < 10) {
+            if (a ) {
               window.__isLowPerformance = true;
               showPerformanceAlert(Math.round(avgFPS));
             }
@@ -380,31 +380,45 @@ try {
               <div class="fps-alert-progress">
                 <div class="fps-alert-progress-bar"></div>
               </div>
-              <button class="fps-alert-btn" onclick="closeFPSAlert()">
-                <span>เข้าใจแล้ว</span>
-              </button>
+              <div class="fps-alert-buttons">
+                <button class="fps-alert-btn fps-alert-btn-primary" onclick="closeFPSAlert(true)">
+                  <span>เข้าใจแล้ว</span>
+                </button>
+                <button class="fps-alert-btn fps-alert-btn-secondary" onclick="closeFPSAlert(false)">
+                  <span>ไม่สนใจ</span>
+                </button>
+              </div>
             </div>
           `;
           
           document.body.appendChild(overlay);
           
-          // Auto close and switch to list after 3 seconds
-          setTimeout(() => {
+          // Auto close and switch to list after 4 seconds
+          window.__fpsAlertTimeout = setTimeout(() => {
             if (document.getElementById('fps-alert-overlay')) {
-              closeFPSAlert();
+              closeFPSAlert(true);
             }
           }, 4000);
         }
         
-        window.closeFPSAlert = function() {
+        window.closeFPSAlert = function(switchToList = true) {
+          // Clear auto-close timeout
+          if (window.__fpsAlertTimeout) {
+            clearTimeout(window.__fpsAlertTimeout);
+            window.__fpsAlertTimeout = null;
+          }
+          
           const overlay = document.getElementById('fps-alert-overlay');
           if (overlay) {
             overlay.classList.add('closing');
             setTimeout(() => {
               overlay.remove();
-              // Switch to list view
-              if (window.__setBookingView) {
+              // Switch to list view only if user accepted
+              if (switchToList && window.__setBookingView) {
                 window.__setBookingView('list');
+              } else if (!switchToList) {
+                // User chose to ignore - disable low performance flag
+                window.__isLowPerformance = false;
               }
             }, 300);
           }
@@ -509,14 +523,18 @@ try {
         animation: fpsProgressBar 4s linear forwards;
       }
       
-      .fps-alert-btn {
+      .fps-alert-buttons {
+        display: flex;
+        gap: 0.75rem;
         width: 100%;
+      }
+      
+      .fps-alert-btn {
+        flex: 1;
         padding: 0.875rem;
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
         border: none;
         border-radius: 12px;
-        color: white;
-        font-size: 1rem;
+        font-size: 0.95rem;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -526,8 +544,25 @@ try {
         gap: 0.5rem;
       }
       
-      .fps-alert-btn:hover {
+      .fps-alert-btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        color: white;
+      }
+      
+      .fps-alert-btn-primary:hover {
         background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        transform: scale(1.02);
+      }
+      
+      .fps-alert-btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        color: #94a3b8;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+      }
+      
+      .fps-alert-btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: #f5f8ff;
         transform: scale(1.02);
       }
       
@@ -578,6 +613,11 @@ try {
       
       body.live-light .fps-alert-message {
         color: #6b7280;
+      }
+      
+      /* ===== GLOBAL OVERFLOW FIX ===== */
+      html, body {
+        overflow-x: hidden;
       }
       
       /* ===== THEME VARIABLES ===== */
@@ -1026,7 +1066,8 @@ try {
         /* Web3 Portrait Card Style - Figma size 1137x1606 = ratio ~7:10 (0.708:1) */
         aspect-ratio: 1137 / 1606;
         min-height: 280px;
-        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+                    filter 0.3s ease;
         will-change: transform, filter;
         /* Living breathing animation */
         animation: fadeInUp 0.6s ease-out backwards,
@@ -1119,12 +1160,19 @@ try {
         z-index: 10;
       }
       
-      /* When flipped, more dramatic effect */
+      /* When flipped, stop all animations to prevent flicker */
       .room-card.flipped {
         transform: translateY(-12px) scale(1.03);
         animation: none !important;
         filter: brightness(1.1);
         z-index: 10;
+      }
+      
+      /* Keep animation stopped during flip back to prevent flicker */
+      .room-card.was-flipped {
+        animation: none !important;
+        transform: none;
+        filter: none;
       }
       
       .room-card.flipped::before {
@@ -1197,10 +1245,12 @@ try {
         width: 100%;
         height: 100%;
         border-radius: 24px;
-        /* Fast flip back when mouse leaves (no delay) */
-        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
-                    box-shadow 0.3s ease;
+        /* Smooth transition for both flip and unflip */
+        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.4s ease;
         transform-style: preserve-3d;
+        -webkit-transform-style: preserve-3d;
+        transform: rotateY(0deg);
       }
       .rooms-grid.list-view .room-card-inner { 
         height: auto; 
@@ -1216,8 +1266,6 @@ try {
         transform: rotateY(180deg);
         box-shadow: 0 25px 60px rgba(99, 102, 241, 0.4),
                     0 10px 30px rgba(0,0,0,0.3);
-        transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-                    box-shadow 0.5s ease;
       }
       /* Subtle hover effect without flip */
       .room-card:hover:not(.flipped) {
@@ -1240,24 +1288,21 @@ try {
         justify-content: flex-end;
         gap: 0.5rem;
         border: 1px solid rgba(255,255,255,0.1);
-        transition: visibility 0s 0.5s;
         box-shadow: inset 0 0 30px rgba(0,0,0,0.3);
       }
       
-      /* Glowing border effect on front card */
+      /* Front card - starts visible */
       .room-card-face.front {
         pointer-events: auto;
         border: 1px solid rgba(99, 102, 241, 0.2);
-        animation: borderGlow 4s ease-in-out infinite;
-        z-index: 2;
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
+        transform: rotateY(0deg);
       }
       
       /* Only disable pointer on front when flipped */
       .room-card.flipped .room-card-face.front {
         pointer-events: none;
-        border-color: rgba(99, 102, 241, 0.6);
       }
       
       /* Shimmer effect removed - conflicts with image gradient overlay */
@@ -1522,10 +1567,14 @@ try {
         gap: 0.4rem;
         padding: 1rem;
         background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%) !important;
-        z-index: 1;
-        visibility: visible;
         border: 1px solid rgba(255,255,255,0.15) !important;
         border-radius: 24px;
+        pointer-events: none;
+        overflow: hidden;
+      }
+      
+      /* Enable pointer events only when flipped */
+      .room-card.flipped .room-card-face.back {
         pointer-events: auto;
       }
       
@@ -1543,6 +1592,7 @@ try {
         flex: 1;
         overflow: hidden;
         min-height: 0;
+        max-width: 100%;
       }
       
       .back-header {
@@ -1587,7 +1637,9 @@ try {
         flex-direction: column;
         gap: 0.35rem;
         flex: 1;
+        overflow-x: hidden;
         overflow-y: auto;
+        max-width: 100%;
       }
       
       .detail-item {
@@ -1598,11 +1650,12 @@ try {
         background: rgba(255,255,255,0.03);
         border-radius: 10px;
         transition: all 0.3s ease;
+        overflow: hidden;
+        max-width: 100%;
       }
       
       .detail-item:hover {
         background: rgba(255,255,255,0.08);
-        transform: translateX(3px);
       }
       
       .detail-item.highlight {
@@ -1656,6 +1709,8 @@ try {
         flex-wrap: wrap;
         gap: 0.3rem;
         margin-top: 0.2rem;
+        overflow: hidden;
+        max-width: 100%;
       }
       
       .feature-tag {
@@ -1681,7 +1736,6 @@ try {
         margin-top: auto;
         padding-top: 0.2rem;
         flex-shrink: 0;
-        pointer-events: auto;
       }
       
       .book-btn-back {
@@ -1700,10 +1754,6 @@ try {
         cursor: pointer;
         transition: all 0.3s ease;
         box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-        pointer-events: auto;
-        position: relative;
-        z-index: 100;
-      }
       }
       
       .book-btn-back:hover {
@@ -3921,8 +3971,15 @@ try {
                 clearTimeout(timer);
                 flipTimers.delete(card);
               }
-              // Unflip immediately
-              card.classList.remove('flipped');
+              // Unflip with smooth transition - add temporary class to prevent animation restart
+              if (card.classList.contains('flipped')) {
+                card.classList.add('was-flipped');
+                card.classList.remove('flipped');
+                // Remove was-flipped after transition completes
+                setTimeout(() => {
+                  card.classList.remove('was-flipped');
+                }, 700);
+              }
             });
           });
         }
