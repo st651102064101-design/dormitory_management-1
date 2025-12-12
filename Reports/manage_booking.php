@@ -833,7 +833,23 @@ try {
         transform: scale(0.7) rotateY(90deg);
         pointer-events: none;
       }
-      .rooms-grid.list-view .room-card { min-height: auto; }
+      .rooms-grid.list-view .room-card { 
+        min-height: auto; 
+        aspect-ratio: unset;
+        animation: none !important;
+        transform: none !important;
+      }
+      .rooms-grid.list-view .room-card::before,
+      .rooms-grid.list-view .room-card::after {
+        display: none !important;
+      }
+      .rooms-grid.list-view .room-card:hover {
+        transform: none !important;
+        filter: none !important;
+      }
+      .rooms-grid.list-view .card-particles {
+        display: none !important;
+      }
       .room-card-inner {
         position: relative;
         width: 100%;
@@ -844,7 +860,15 @@ try {
                     box-shadow 0.3s ease;
         transform-style: preserve-3d;
       }
-      .rooms-grid.list-view .room-card-inner { height: auto; }
+      .rooms-grid.list-view .room-card-inner { 
+        height: auto; 
+        transform: none !important;
+        transition: none !important;
+      }
+      .rooms-grid.list-view .room-card:hover .room-card-inner {
+        transform: none !important;
+        box-shadow: none !important;
+      }
       .room-card:hover .room-card-inner {
         transform: rotateY(180deg);
         box-shadow: 0 25px 60px rgba(99, 102, 241, 0.4),
@@ -856,10 +880,6 @@ try {
       /* Prevent flip when modal is open */
       body.modal-open .room-card:hover .room-card-inner {
         transform: none !important;
-      }
-      .rooms-grid.list-view .room-card:hover .room-card-inner,
-      .rooms-grid.list-view .room-card .room-card-inner {
-        transform: none;
       }
       .room-card-face {
         position: absolute;
@@ -1092,7 +1112,37 @@ try {
         opacity: 0.6;
       }
       
-      .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 100px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 1.2rem; align-items: center; padding: 1rem 1.5rem; border-radius: 16px; }
+      /* List view - simple row layout */
+      .rooms-grid.list-view .room-card-face { 
+        position: relative; 
+        inset: auto; 
+        min-height: auto; 
+        height: auto; 
+        width: 100%; 
+        box-sizing: border-box; 
+        display: flex; 
+        flex-direction: row; 
+        gap: 1.5rem; 
+        align-items: center; 
+        padding: 1rem 1.5rem; 
+        border-radius: 12px;
+        background: var(--card-bg) !important;
+        border: 1px solid var(--card-border) !important;
+        animation: none !important;
+      }
+      .rooms-grid.list-view .room-card-face.front {
+        position: relative;
+        display: flex;
+        padding: 0 !important;
+        background: transparent !important;
+        border: none !important;
+      }
+      .rooms-grid.list-view .room-card-face.front::before {
+        display: none !important;
+      }
+      .rooms-grid.list-view .room-card-face.back {
+        display: none !important;
+      }
       .rooms-grid.list-view .room-price { font-size: 1rem; line-height: 1.2; margin: 0.3rem 0; }
       
       /* ===== BACK CARD FACE - Dark background with content ===== */
@@ -1334,7 +1384,6 @@ try {
         color: #7c3aed;
       }
       
-      .rooms-grid.list-view .room-card-face.back { flex-direction: column; align-items: flex-start; display: none; }
       .room-card-header {
         display: flex;
         justify-content: space-between;
@@ -1392,28 +1441,74 @@ try {
       .room-price { font-size: 1.1rem; font-weight: bold; color: #60a5fa; margin: 0.4rem 0; }
       
       /* Base room-image-container - for list view only */
-      .rooms-grid.list-view .room-image-container,
-      .room-image-container.list-view-img {
+      .rooms-grid.list-view .room-image-container {
         aspect-ratio: 1 / 1;
         overflow: hidden;
-        border-radius: 16px;
+        border-radius: 10px;
         background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(79, 70, 229, 0.4));
         display: flex;
         align-items: center;
         justify-content: center;
+        margin: 0; 
+        width: 60px; 
+        max-width: 60px; 
+        min-height: 60px; 
+        height: 60px; 
+        flex-shrink: 0; 
+        position: static !important; 
+        inset: auto !important;
       }
-      .rooms-grid.list-view .room-image-container { margin: 0; width: 80px; max-width: 80px; min-height: 60px; height: 60px; flex-shrink: 0; border-radius: 10px; position: static; transform: none; }
+      .rooms-grid.list-view .room-image-container img { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+      }
       .room-image-container img { width: 100%; height: 100%; object-fit: cover; }
       .room-image-placeholder { display: grid; place-items: center; color: rgba(255,255,255,0.6); gap: 0.25rem; text-align: center; width: 100%; height: 100%; }
       .room-image-placeholder svg { width: 48px; height: 48px; opacity: 0.7; }
       .room-image-placeholder span { font-size: 0.7rem; }
       .book-btn-front { display: none; }
       .rooms-grid.list-view .book-btn-front { display: inline-flex; width: 120px; justify-content: center; flex-shrink: 0; padding: 0.6rem 1rem; font-size: 0.9rem; margin-left: auto; }
-      .rooms-grid.list-view .room-card-face.front { position: relative; display: flex; align-items: center; }
+
       .rooms-grid.list-view .room-info-item { justify-content: flex-start; gap: 0.5rem; font-size: 0.85rem; }
       .rooms-grid.list-view .room-number { font-size: 1.1rem; }
       .rooms-grid.list-view .room-face-details { gap: 0.3rem; }
       .rooms-grid.list-view .list-book-btn { margin-left: auto; }
+      
+      /* List view - hide unnecessary elements */
+      .rooms-grid.list-view .status-badge-web3 {
+        position: static !important;
+        margin-left: auto;
+        animation: none !important;
+        box-shadow: none !important;
+      }
+      .rooms-grid.list-view .status-badge-web3::before {
+        display: none !important;
+      }
+      .rooms-grid.list-view .card-info-bottom {
+        position: static !important;
+        flex-direction: row !important;
+        align-items: center !important;
+        gap: 1.5rem !important;
+        flex: 1;
+      }
+      .rooms-grid.list-view .room-number-web3 {
+        font-size: 1.1rem;
+        color: var(--text-primary) !important;
+        text-shadow: none !important;
+      }
+      .rooms-grid.list-view .room-type-web3 {
+        font-size: 0.9rem;
+        color: var(--text-secondary) !important;
+        text-shadow: none !important;
+      }
+      .rooms-grid.list-view .room-price-web3 {
+        font-size: 1rem;
+        color: #60a5fa !important;
+        text-shadow: none !important;
+        margin-left: auto;
+      }
+      
       .book-btn {
         width: 100%;
         padding: 0.75rem;
