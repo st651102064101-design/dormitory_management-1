@@ -165,11 +165,17 @@ try {
         const normalized = mode === 'list' ? 'list' : 'grid';
         
         if (normalized === 'list') {
-          roomsGrid.style.display = 'none';
-          if (roomsTable) roomsTable.style.display = 'block';
+          roomsGrid.classList.add('list-view');
+          roomsGrid.style.display = 'flex';
+          if (roomsTable) roomsTable.style.display = 'none';
+          // Show list-view-extra elements
+          document.querySelectorAll('.list-view-extra').forEach(el => el.style.display = 'flex');
         } else {
+          roomsGrid.classList.remove('list-view');
           roomsGrid.style.display = 'grid';
           if (roomsTable) roomsTable.style.display = 'none';
+          // Hide list-view-extra elements
+          document.querySelectorAll('.list-view-extra').forEach(el => el.style.display = 'none');
         }
         
         document.querySelectorAll('.toggle-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === normalized));
@@ -1122,26 +1128,39 @@ try {
         box-sizing: border-box; 
         display: flex; 
         flex-direction: row; 
-        gap: 1.5rem; 
+        gap: 1rem; 
         align-items: center; 
         padding: 1rem 1.5rem; 
         border-radius: 12px;
-        background: var(--card-bg) !important;
-        border: 1px solid var(--card-border) !important;
+        background: rgba(30, 41, 59, 0.8) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
         animation: none !important;
+        backdrop-filter: blur(10px);
+      }
+      .rooms-grid.list-view .room-card-face:hover {
+        background: rgba(30, 41, 59, 0.95) !important;
+        border-color: rgba(99, 102, 241, 0.3) !important;
       }
       .rooms-grid.list-view .room-card-face.front {
         position: relative;
         display: flex;
-        padding: 0 !important;
-        background: transparent !important;
-        border: none !important;
+        padding: 1rem 1.5rem !important;
+        background: rgba(30, 41, 59, 0.8) !important;
+        border: 1px solid rgba(255,255,255,0.1) !important;
+        pointer-events: auto !important;
       }
       .rooms-grid.list-view .room-card-face.front::before {
         display: none !important;
       }
       .rooms-grid.list-view .room-card-face.back {
         display: none !important;
+      }
+      /* Ensure list view cards are fully clickable */
+      .rooms-grid.list-view .room-card {
+        pointer-events: auto !important;
+      }
+      .rooms-grid.list-view .room-card * {
+        pointer-events: auto;
       }
       .rooms-grid.list-view .room-price { font-size: 1rem; line-height: 1.2; margin: 0.3rem 0; }
       
@@ -1475,12 +1494,17 @@ try {
       .rooms-grid.list-view .room-face-details { gap: 0.3rem; }
       .rooms-grid.list-view .list-book-btn { margin-left: auto; }
       
-      /* List view - hide unnecessary elements */
+      /* List view - proper layout */
       .rooms-grid.list-view .status-badge-web3 {
         position: static !important;
-        margin-left: auto;
+        order: -1;
+        margin-right: 0.5rem;
         animation: none !important;
         box-shadow: none !important;
+        padding: 0.3rem 0.8rem;
+        font-size: 0.7rem;
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(16, 185, 129, 0.9)) !important;
+        flex-shrink: 0;
       }
       .rooms-grid.list-view .status-badge-web3::before {
         display: none !important;
@@ -1489,24 +1513,123 @@ try {
         position: static !important;
         flex-direction: row !important;
         align-items: center !important;
-        gap: 1.5rem !important;
+        gap: 2rem !important;
         flex: 1;
       }
       .rooms-grid.list-view .room-number-web3 {
         font-size: 1.1rem;
-        color: var(--text-primary) !important;
+        font-weight: 600;
+        color: #f5f8ff !important;
         text-shadow: none !important;
+        min-width: 100px;
       }
       .rooms-grid.list-view .room-type-web3 {
         font-size: 0.9rem;
-        color: var(--text-secondary) !important;
+        color: #94a3b8 !important;
         text-shadow: none !important;
+        min-width: 100px;
+        padding: 0.25rem 0.75rem;
+        background: rgba(99, 102, 241, 0.15);
+        border-radius: 6px;
+        border: 1px solid rgba(99, 102, 241, 0.3);
       }
       .rooms-grid.list-view .room-price-web3 {
-        font-size: 1rem;
+        font-size: 1.1rem;
+        font-weight: 600;
         color: #60a5fa !important;
         text-shadow: none !important;
+      }
+      
+      /* List view - extra info and book button */
+      .rooms-grid.list-view .list-view-extra {
+        display: flex !important;
+        align-items: center;
+        gap: 1.5rem;
         margin-left: auto;
+        pointer-events: auto;
+        position: relative;
+        z-index: 50;
+      }
+      .rooms-grid.list-view .list-view-features {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .rooms-grid.list-view .list-feature-tag {
+        font-size: 0.7rem;
+        padding: 0.2rem 0.5rem;
+        background: rgba(255,255,255,0.1);
+        border-radius: 4px;
+        color: #cbd5e1;
+      }
+      .rooms-grid.list-view .list-book-btn {
+        padding: 0.6rem 1.5rem;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        white-space: nowrap;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        pointer-events: auto !important;
+        position: relative;
+        z-index: 100;
+      }
+      .rooms-grid.list-view .list-book-btn:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+      }
+      .rooms-grid.list-view .list-book-btn svg {
+        width: 16px;
+        height: 16px;
+      }
+      
+      /* List view deposit info */
+      .rooms-grid.list-view .list-deposit {
+        font-size: 0.8rem;
+        color: #94a3b8;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+      }
+      .rooms-grid.list-view .list-deposit svg {
+        width: 14px;
+        height: 14px;
+        color: #f59e0b;
+      }
+      
+      /* Light mode list view */
+      body.live-light .rooms-grid.list-view .room-card-face.front {
+        background: rgba(255,255,255,0.95) !important;
+        border: 1px solid #e5e7eb !important;
+      }
+      body.live-light .rooms-grid.list-view .room-card-face.front:hover {
+        background: #ffffff !important;
+        border-color: #c7d2fe !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      }
+      body.live-light .rooms-grid.list-view .room-number-web3 {
+        color: #111827 !important;
+      }
+      body.live-light .rooms-grid.list-view .room-type-web3 {
+        color: #4f46e5 !important;
+        background: rgba(99, 102, 241, 0.1);
+      }
+      body.live-light .rooms-grid.list-view .room-price-web3 {
+        color: #2563eb !important;
+      }
+      body.live-light .rooms-grid.list-view .list-feature-tag {
+        background: #f3f4f6;
+        color: #374151;
+      }
+      body.live-light .rooms-grid.list-view .list-deposit {
+        color: #6b7280;
       }
       
       .book-btn {
@@ -2735,6 +2858,38 @@ try {
                           <div class="room-number-web3">ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></div>
                           <div class="room-type-web3"><?php echo htmlspecialchars($room['type_name']); ?></div>
                           <div class="room-price-web3"><?php echo number_format((int)$room['type_price']); ?>/เดือน</div>
+                        </div>
+                        
+                        <!-- List view extra info -->
+                        <div class="list-view-extra" style="display:none;">
+                          <div class="list-deposit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <path d="M12 6v6l4 2"></path>
+                            </svg>
+                            มัดจำ ฿2,000
+                          </div>
+                          <div class="list-view-features">
+                            <?php 
+                            $displayFeatures = array_slice($roomFeatures, 0, 3);
+                            foreach ($displayFeatures as $feature): ?>
+                            <span class="list-feature-tag"><?php echo htmlspecialchars($feature); ?></span>
+                            <?php endforeach; ?>
+                          </div>
+                          <button type="button" class="list-book-btn" 
+                                  onclick="return window.__openBookingModal ? window.__openBookingModal(this, event) : true;"
+                                  data-room-id="<?php echo $room['room_id']; ?>"
+                                  data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
+                                  data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
+                                  data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                              <line x1="16" y1="2" x2="16" y2="6"></line>
+                              <line x1="8" y1="2" x2="8" y2="6"></line>
+                              <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            จองห้องนี้
+                          </button>
                         </div>
                       </div>
 
