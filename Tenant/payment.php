@@ -584,7 +584,7 @@ $paymentStatusMap = [
                 <div class="bank-info-icon number"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg></div>
                 <div class="bank-info-content">
                     <div class="bank-info-label">เลขบัญชี</div>
-                    <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['bank_account_number']); ?>')"><?php echo htmlspecialchars($settings['bank_account_number']); ?> <span class="copy-icon">📋</span></div>
+                    <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['bank_account_number']); ?>')"><?php echo htmlspecialchars($settings['bank_account_number']); ?> <span class="copy-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;opacity:0.75;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span></div>
                 </div>
             </div>
             <?php endif; ?>
@@ -594,7 +594,7 @@ $paymentStatusMap = [
                 <div class="bank-info-icon promptpay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
                 <div class="bank-info-content">
                     <div class="bank-info-label">พร้อมเพย์</div>
-                    <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['promptpay_number']); ?>')"><?php echo htmlspecialchars($settings['promptpay_number']); ?> <span class="copy-icon">📋</span></div>
+                    <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['promptpay_number']); ?>')"><?php echo htmlspecialchars($settings['promptpay_number']); ?> <span class="copy-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;opacity:0.75;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span></div>
                 </div>
             </div>
             <?php endif; ?>

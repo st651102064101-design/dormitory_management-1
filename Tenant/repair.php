@@ -586,7 +586,7 @@ $repairStatusMap = [
                     <?php endif; ?>
                     <?php if ($scheduleNote): ?>
                     <div class="schedule-note">
-                        📝 <?php echo htmlspecialchars($scheduleNote); ?>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline-block; width: 1.2em; height: 1.2em; margin-right: 0.5em; vertical-align: -0.15em;"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg> <?php echo htmlspecialchars($scheduleNote); ?>
                     </div>
                     <?php endif; ?>
                 </div>

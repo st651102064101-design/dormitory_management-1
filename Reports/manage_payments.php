@@ -2116,7 +2116,7 @@ $roomPaymentSummary = $pdo->query("
 
           <!-- Bank Payment Destination Section -->
           <?php if (!empty($settings['bank_name']) || !empty($settings['promptpay_number'])): ?>
-          <section class="manage-panel">
+          <!-- <section class="manage-panel">
             <div class="section-title">
               <span class="section-icon">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -2189,7 +2189,7 @@ $roomPaymentSummary = $pdo->query("
               </div>
               <?php endif; ?>
             </div>
-          </section>
+          </section> -->
           <?php endif; ?>
 
           <!-- Room Payment Summary -->
