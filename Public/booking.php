@@ -3791,7 +3791,7 @@ if ($publicTheme === 'light') {
                     </div>
                     
                     <label class="terms-checkbox">
-                        <input type="checkbox" name="accept_terms" id="acceptTerms" required>
+                        <input type="checkbox" name="accept_terms" id="acceptTerms" checked required>
                         <span>ฉันยอมรับเงื่อนไขการจองห้องพัก</span>
                     </label>
                     <div class="error-message" id="termsError" style="display: none;">

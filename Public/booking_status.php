@@ -8,13 +8,37 @@ $pdo = connectDB();
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
+$themeColor = '#1e40af';
+$bgFilename = 'bg.jpg';
+$publicTheme = 'dark';
+$useBgImage = '0';
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'bg_filename', 'public_theme', 'use_bg_image')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+        if ($row['setting_key'] === 'theme_color' && !empty($row['setting_value'])) $themeColor = $row['setting_value'];
+        if ($row['setting_key'] === 'bg_filename' && !empty($row['setting_value'])) $bgFilename = $row['setting_value'];
+        if ($row['setting_key'] === 'public_theme' && !empty($row['setting_value'])) $publicTheme = $row['setting_value'];
+        if ($row['setting_key'] === 'use_bg_image' && $row['setting_value'] !== null) $useBgImage = $row['setting_value'];
     }
 } catch (PDOException $e) {}
+
+// Derive lighter/darker tones for backgrounds
+function adjustColor($hex, $percent) {
+    $hex = ltrim($hex, '#');
+    if (strlen($hex) === 3) {
+        $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+    }
+    $num = hexdec($hex);
+    $r = max(0, min(255, (($num >> 16) & 0xFF) + (255 * $percent / 100)));
+    $g = max(0, min(255, (($num >> 8) & 0xFF) + (255 * $percent / 100)));
+    $b = max(0, min(255, ($num & 0xFF) + (255 * $percent / 100)));
+    return sprintf('#%02x%02x%02x', $r, $g, $b);
+}
+
+$themeDark = adjustColor($themeColor, -35);
+$themeLight = adjustColor($themeColor, 25);
 
 $bookingInfo = null;
 $error = '';
@@ -38,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.access_token,
                     e.exp_id, e.exp_total, e.exp_status,
                     COUNT(p.pay_id) as payment_count,
-                    SUM(CASE WHEN p.pay_status = '1' THEN p.pay_amount ELSE 0 END) as paid_amount
+                    SUM(IF(p.pay_status = '1', p.pay_amount, 0)) as paid_amount
                 FROM tenant t
                 LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                 LEFT JOIN room r ON b.room_id = r.room_id
@@ -47,7 +71,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 LEFT JOIN expense e ON c.ctr_id = e.ctr_id
                 LEFT JOIN payment p ON e.exp_id = p.exp_id
                 WHERE t.tnt_id = ?
-                GROUP BY t.tnt_id
+                GROUP BY t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_education, t.tnt_faculty, t.tnt_year, b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status, r.room_id, r.room_number, rt.type_name, rt.type_price, c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.access_token, e.exp_id, e.exp_total, e.exp_status
             ");
             $stmt->execute([$idCard]);
             $bookingInfo = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -55,7 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!$bookingInfo || !$bookingInfo['bkg_id']) {
                 $error = 'ไม่พบข้อมูลการจองของคุณ';
             } else {
+                // แปลงค่า NULL เป็น 0 สำหรับการคำนวณ
+                $bookingInfo['ctr_deposit'] = floatval($bookingInfo['ctr_deposit'] ?? 0);
+                $bookingInfo['paid_amount'] = floatval($bookingInfo['paid_amount'] ?? 0);
+                $bookingInfo['type_price'] = floatval($bookingInfo['type_price'] ?? 0);
                 $searchMethod = 'found';
+                
+                // Debug: แสดงข้อมูลที่ดึงได้ (ลบบรรทัดนี้ในโปรดักชัน)
+                // error_log("Booking Info: " . print_r($bookingInfo, true));
             }
         } catch (PDOException $e) {
             error_log("Booking status error: " . $e->getMessage());
@@ -95,24 +126,50 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
     <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --primary: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>;
+            --primary-glow: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>40;
+            --theme-base: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>;
+            --theme-dark: <?php echo htmlspecialchars($themeDark, ENT_QUOTES, 'UTF-8'); ?>;
+            --theme-light: <?php echo htmlspecialchars($themeLight, ENT_QUOTES, 'UTF-8'); ?>;
+            --bg-dark: #0a0a0f;
+            --bg-card: rgba(15, 23, 42, 0.8);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --border-color: rgba(255, 255, 255, 0.1);
+            --glass-bg: rgba(255, 255, 255, 0.03);
+            <?php if (!empty($useBgImage) && $useBgImage === '1' && !empty($bgFilename)): ?>
+            --bg-image: url('../Assets/Images/<?php echo htmlspecialchars($bgFilename, ENT_QUOTES, 'UTF-8'); ?>');
+            <?php else: ?>
+            --bg-image: none;
+            <?php endif; ?>
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Prompt', system-ui, sans-serif;
-            background: #0a0a0f;
+            background: var(--bg-dark);
+            <?php if (!empty($useBgImage) && $useBgImage === '1' && !empty($bgFilename)): ?>
+            background-image: var(--bg-image);
+            background-attachment: fixed;
+            background-size: cover;
+            background-position: center;
+            <?php endif; ?>
             min-height: 100vh;
-            color: #fff;
+            color: var(--text-primary);
             overflow-x: hidden;
         }
 
-        /* Animated Background */
+        /* Animated Background (match index) */
         .bg-animation {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: -1;
+            z-index: 0;
+            pointer-events: none;
             overflow: hidden;
         }
 
@@ -120,32 +177,181 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
             position: absolute;
             width: 100%;
             height: 100%;
-            background: linear-gradient(125deg, #0a0a0f 0%, #1a1a2e 25%, #16213e 50%, #0f3460 75%, #1a1a2e 100%);
-            background-size: 400% 400%;
-            animation: gradientShift 15s ease infinite;
+            background: 
+                radial-gradient(ellipse at 20% 20%, rgba(59, 130, 246, 0.15) 0%, transparent 50%),
+                radial-gradient(ellipse at 80% 80%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
+                radial-gradient(ellipse at 50% 50%, rgba(6, 182, 212, 0.08) 0%, transparent 60%);
+            animation: bgPulse 20s ease-in-out infinite;
         }
 
-        @keyframes gradientShift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+        @keyframes bgPulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.8; transform: scale(1.1); }
         }
 
         .floating-orb {
             position: absolute;
             border-radius: 50%;
-            opacity: 0.1;
-            filter: blur(40px);
+            filter: blur(80px);
             animation: float 20s ease-in-out infinite;
         }
 
-        .orb1 { width: 300px; height: 300px; background: #667eea; top: -100px; left: -100px; animation-duration: 25s; }
-        .orb2 { width: 250px; height: 250px; background: #764ba2; top: 50%; right: -50px; animation-duration: 30s; animation-delay: 5s; }
-        .orb3 { width: 200px; height: 200px; background: #34d399; bottom: -50px; left: 10%; animation-duration: 28s; animation-delay: 10s; }
+        .orb-1 {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(139, 92, 246, 0.2));
+            top: -200px;
+            right: -100px;
+            animation-delay: 0s;
+        }
+
+        .orb-2 {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, rgba(6, 182, 212, 0.25), rgba(59, 130, 246, 0.2));
+            bottom: -150px;
+            left: -100px;
+            animation-delay: 5s;
+        }
+
+        .orb-3 {
+            width: 300px;
+            height: 300px;
+            background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(236, 72, 153, 0.15));
+            top: 40%;
+            left: 60%;
+            animation-delay: 10s;
+        }
 
         @keyframes float {
-            0%, 100% { transform: translate(0, 0); }
-            50% { transform: translate(30px, -30px); }
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            25% { transform: translate(50px, -50px) rotate(5deg); }
+            50% { transform: translate(0, -100px) rotate(0deg); }
+            75% { transform: translate(-50px, -50px) rotate(-5deg); }
         }
+
+        /* Particles & grid lines */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: rgba(96, 165, 250, 0.6);
+            border-radius: 50%;
+            animation: rise 15s infinite;
+            box-shadow: 0 0 10px rgba(96, 165, 250, 0.8);
+        }
+
+        .particle:nth-child(1) { left: 10%; animation-delay: 0s; }
+        .particle:nth-child(2) { left: 20%; animation-delay: 2s; }
+        .particle:nth-child(3) { left: 30%; animation-delay: 4s; }
+        .particle:nth-child(4) { left: 40%; animation-delay: 1s; }
+        .particle:nth-child(5) { left: 50%; animation-delay: 3s; }
+        .particle:nth-child(6) { left: 60%; animation-delay: 5s; }
+        .particle:nth-child(7) { left: 70%; animation-delay: 2.5s; }
+        .particle:nth-child(8) { left: 80%; animation-delay: 1.5s; }
+        .particle:nth-child(9) { left: 90%; animation-delay: 4.5s; }
+
+        @keyframes rise {
+            0% { bottom: -10px; opacity: 0; transform: scale(0); }
+            10% { opacity: 1; transform: scale(1); }
+            90% { opacity: 1; }
+            100% { bottom: 100vh; opacity: 0; transform: scale(0.5); }
+        }
+
+        .grid-lines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Light theme overrides (match index) */
+        body.theme-light {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            color: #0f172a;
+        }
+        body.theme-light .bg-animation {
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+        }
+        body.theme-light .bg-gradient {
+            background: radial-gradient(ellipse at 30% 20%, rgba(59, 130, 246, 0.08), transparent 50%),
+                        radial-gradient(ellipse at 70% 60%, rgba(139, 92, 246, 0.06), transparent 50%),
+                        radial-gradient(ellipse at 40% 80%, rgba(34, 197, 94, 0.04), transparent 40%);
+        }
+        body.theme-light .grid-lines {
+            background-image: linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
+                             linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+        }
+        body.theme-light .floating-orb {
+            opacity: 0.15;
+        }
+        body.theme-light .particle {
+            background: rgba(59, 130, 246, 0.3);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+        }
+        body.theme-light .card, body.theme-light .status-card, body.theme-light .input-field {
+            background: rgba(255,255,255,0.9);
+            color: #0f172a;
+            border-color: rgba(148,163,184,0.3);
+        }
+        body.theme-light .search-card {
+            background: rgba(255,255,255,0.92);
+            border-color: rgba(148,163,184,0.35);
+        }
+        body.theme-light .search-form input {
+            border: 2px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            box-shadow: inset 0 1px 4px rgba(15,23,42,0.05);
+            text-shadow: none;
+        }
+        body.theme-light .search-form input:focus {
+            border-color: #a5b4fc;
+            box-shadow: 0 0 0 4px rgba(165, 180, 252, 0.25), inset 0 1px 4px rgba(15,23,42,0.08);
+            background: #fff;
+            color: #0f172a;
+        }
+        body.theme-light .search-form input::placeholder { color: #94a3b8; opacity: 0.9; }
+        body.theme-light .search-form button { box-shadow: 0 6px 18px rgba(102, 126, 234, 0.35); }
+        body.theme-light .search-form button,
+        body.theme-light .search-form button span,
+        body.theme-light .search-form button svg {
+            color: #ffffff !important;
+        }
+        body.theme-light .status-card,
+        body.theme-light .info-section,
+        body.theme-light .progress-section {
+            background: rgba(255,255,255,0.92);
+            border-color: rgba(148,163,184,0.35);
+            color: #0f172a;
+        }
+        body.theme-light .status-card-title,
+        body.theme-light .info-label,
+        body.theme-light .progress-title {
+            color: #475569;
+        }
+        body.theme-light .info-value { color: #0f172a; }
+        body.theme-light .info-value.highlight { color: #16a34a; }
+        body.theme-light .status-card:hover { background: rgba(255,255,255,0.96); }
+        body.theme-light .progress-steps::before { background: rgba(102, 126, 234, 0.2); }
+        body.theme-light .progress-step small { color: #475569; }
         
         .container {
             max-width: 900px;
@@ -187,20 +393,78 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
         .btn-back {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 10px 16px;
-            background: rgba(255,255,255,0.1);
+            gap: 8px;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0.05));
             border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 10px;
-            color: #cbd5e1;
+            border-radius: 16px;
+            color: #fff;
             text-decoration: none;
             font-size: 0.95rem;
-            transition: all 0.3s;
+            font-weight: 500;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-back::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn-back:hover::before {
+            left: 100%;
+        }
+        
+        .btn-back svg {
+            width: 22px;
+            height: 22px;
+            transition: transform 0.3s;
+        }
+        
+        .btn-back span {
+            position: relative;
+            z-index: 1;
         }
         
         .btn-back:hover {
-            background: rgba(255,255,255,0.15);
-            color: #fff;
+            background: linear-gradient(135deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1));
+            border-color: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-back:hover svg {
+            transform: translateX(-4px);
+        }
+        
+        .btn-back:active {
+            transform: translateY(0);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Back button - light theme */
+        body.theme-light .btn-back {
+            background: rgba(255,255,255,0.95);
+            border-color: rgba(148,163,184,0.35);
+            color: #0f172a;
+            box-shadow: 0 10px 25px rgba(148, 163, 184, 0.25);
+        }
+        body.theme-light .btn-back svg {
+            color: #0f172a;
+        }
+        body.theme-light .btn-back:hover {
+            background: rgba(255,255,255,0.98);
+            border-color: rgba(148,163,184,0.5);
+            box-shadow: 0 12px 28px rgba(148, 163, 184, 0.32);
         }
         
         /* Page Title */
@@ -216,6 +480,15 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
         
         .page-title p {
             color: #94a3b8;
+        }
+
+        body.theme-light h1,
+        body.theme-light h2,
+        body.theme-light h3,
+        body.theme-light p,
+        body.theme-light span,
+        body.theme-light label {
+            color: #0f172a;
         }
         
         /* Search Form */
@@ -237,38 +510,99 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
         .search-form input {
             flex: 1;
             min-width: 250px;
-            padding: 1rem 1.25rem;
-            border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
+            padding: 1.2rem 1.5rem;
+            border-radius: 12px;
+            border: 2px solid #667eea;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 1), rgba(15, 23, 42, 1));
             color: #fff;
-            font-size: 1rem;
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: 5px;
+            text-align: center;
+            font-family: 'Courier New', Courier, monospace;
+            transition: all 0.3s ease;
+            caret-color: #fbbf24;
+            text-shadow: 0 2px 10px rgba(102, 126, 234, 0.5);
+            box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
         }
         
         .search-form input:focus {
             outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+            border-color: #fbbf24;
+            background: linear-gradient(135deg, rgba(30, 41, 59, 1), rgba(15, 23, 42, 1));
+            box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.3), inset 0 2px 10px rgba(0, 0, 0, 0.5);
+            color: #fff;
         }
         
         .search-form input::placeholder {
             color: #64748b;
+            font-family: 'Prompt', sans-serif;
+            letter-spacing: 1px;
+            font-weight: 400;
+            font-size: 16px;
+            opacity: 0.6;
+        }
+        
+        .search-form input::-webkit-input-placeholder {
+            color: #64748b;
+        }
+        
+        .search-form input::-moz-placeholder {
+            color: #64748b;
+            opacity: 0.6;
+        }
+        
+        .search-form input:-ms-input-placeholder {
+            color: #64748b;
         }
         
         .search-form button {
-            padding: 1rem 2rem;
-            background: linear-gradient(135deg, #667eea, #764ba2);
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             color: #fff;
             font-weight: 600;
+            font-size: 1.05rem;
             cursor: pointer;
-            transition: all 0.3s;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .search-form button::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .search-form button:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .search-form button span {
+            position: relative;
+            z-index: 1;
         }
         
         .search-form button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 15px 40px rgba(102, 126, 234, 0.5);
+            background: linear-gradient(135deg, #7c8ff5 0%, #8a5bb8 100%);
+        }
+        
+        .search-form button:active {
+            transform: translateY(-1px) scale(0.98);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
         }
         
         /* Error Alert */
@@ -594,13 +928,45 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
         }
     </style>
 </head>
-<body>
+<?php
+// กำหนด theme class (align with index.php)
+$themeClass = '';
+if ($publicTheme === 'light') {
+    $themeClass = 'theme-light';
+} elseif ($publicTheme === 'auto') {
+    $themeClass = '';
+}
+?>
+<body class="<?php echo $themeClass; ?>" data-theme-mode="<?php echo htmlspecialchars($publicTheme, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php if ($publicTheme === 'auto'): ?>
+    <script>
+      (function() {
+        const hour = new Date().getHours();
+        const isDay = hour >= 6 && hour < 18;
+        if (isDay) {
+          document.body.classList.add('theme-light');
+        }
+      })();
+    </script>
+    <?php endif; ?>
     <!-- Animated Background -->
     <div class="bg-animation">
         <div class="bg-gradient"></div>
-        <div class="floating-orb orb1"></div>
-        <div class="floating-orb orb2"></div>
-        <div class="floating-orb orb3"></div>
+        <div class="floating-orb orb-1"></div>
+        <div class="floating-orb orb-2"></div>
+        <div class="floating-orb orb-3"></div>
+    </div>
+    <div class="grid-lines"></div>
+    <div class="particles">
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
+        <div class="particle"></div>
     </div>
     
     <div class="container">
@@ -612,10 +978,11 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
             </a>
             <div class="header-actions">
                 <a href="../index.php" class="btn-back">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <line x1="19" y1="12" x2="5" y2="12" stroke-linecap="round"/>
+                        <polyline points="12 19 5 12 12 5" stroke-linecap="round" stroke-linejoin="round"/>
                     </svg>
-                    กลับหน้าแรก
+                    <span>กลับหน้าแรก</span>
                 </a>
             </div>
         </div>
@@ -629,8 +996,8 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
         <!-- Search Form -->
         <div class="search-card">
             <form method="post" class="search-form">
-                <input type="text" name="id_card" placeholder="กรอกเลขบัตรประชาชน 13 หลัก" required maxlength="13" inputmode="numeric">
-                <button type="submit">ค้นหา</button>
+                <input type="text" name="id_card" id="id_card_input" placeholder="กรอกเลขบัตรประชาชน 13 หลัก" required maxlength="13" inputmode="numeric">
+                <button type="submit"><span>ค้นหา</span></button>
             </form>
         </div>
         
@@ -657,13 +1024,35 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
                             default => 'rgba(248, 113, 113, 0.2)'
                         };
                     ?>">
-                        <?php 
-                            echo match($currentBkgStatus) {
-                                '1' => '⏳',
-                                '2' => '✓',
-                                default => '✗'
-                            };
-                        ?>
+                        <?php if ($currentBkgStatus === '1'): ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2">
+                                <circle cx="12" cy="12" r="10">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="3s" repeatCount="indefinite"/>
+                                </circle>
+                                <polyline points="12 6 12 12 16 14">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="2s" repeatCount="indefinite"/>
+                                </polyline>
+                            </svg>
+                        <?php elseif ($currentBkgStatus === '2'): ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10" stroke-dasharray="63" stroke-dashoffset="0">
+                                    <animate attributeName="stroke-dashoffset" from="63" to="0" dur="0.8s" fill="freeze"/>
+                                </circle>
+                                <polyline points="8 12 11 15 16 9" stroke-dasharray="15" stroke-dashoffset="0">
+                                    <animate attributeName="stroke-dashoffset" from="15" to="0" dur="0.6s" begin="0.4s" fill="freeze"/>
+                                </polyline>
+                            </svg>
+                        <?php else: ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="8" y1="8" x2="16" y2="16">
+                                    <animate attributeName="opacity" values="0;1" dur="0.3s" fill="freeze"/>
+                                </line>
+                                <line x1="16" y1="8" x2="8" y2="16">
+                                    <animate attributeName="opacity" values="0;1" dur="0.3s" begin="0.15s" fill="freeze"/>
+                                </line>
+                            </svg>
+                        <?php endif; ?>
                     </div>
                     <div>
                         <div class="status-card-title">สถานะการจอง</div>
@@ -685,13 +1074,41 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
                             default => 'rgba(251, 191, 36, 0.2)'
                         };
                     ?>">
-                        <?php 
-                            echo match($currentCtrStatus) {
-                                '0' => '📜',
-                                '1' => '✗',
-                                default => '⏳'
-                            };
-                        ?>
+                        <?php if ($currentCtrStatus === '0'): ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" stroke-dasharray="80" stroke-dashoffset="0">
+                                    <animate attributeName="stroke-dashoffset" from="80" to="0" dur="1s" fill="freeze"/>
+                                </path>
+                                <polyline points="14 2 14 8 20 8" opacity="0">
+                                    <animate attributeName="opacity" values="0;1" dur="0.3s" begin="0.7s" fill="freeze"/>
+                                </polyline>
+                                <line x1="8" y1="13" x2="16" y2="13" opacity="0">
+                                    <animate attributeName="opacity" values="0;1" dur="0.3s" begin="1s" fill="freeze"/>
+                                </line>
+                                <line x1="8" y1="17" x2="13" y2="17" opacity="0">
+                                    <animate attributeName="opacity" values="0;1" dur="0.3s" begin="1.2s" fill="freeze"/>
+                                </line>
+                            </svg>
+                        <?php elseif ($currentCtrStatus === '1'): ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="8" y1="8" x2="16" y2="16">
+                                    <animate attributeName="opacity" values="0;1" dur="0.3s" fill="freeze"/>
+                                </line>
+                                <line x1="16" y1="8" x2="8" y2="16">
+                                    <animate attributeName="opacity" values="0;1" dur="0.3s" begin="0.15s" fill="freeze"/>
+                                </line>
+                            </svg>
+                        <?php else: ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2">
+                                <circle cx="12" cy="12" r="10">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="3s" repeatCount="indefinite"/>
+                                </circle>
+                                <polyline points="12 6 12 12 16 14">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="2s" repeatCount="indefinite"/>
+                                </polyline>
+                            </svg>
+                        <?php endif; ?>
                     </div>
                     <div>
                         <div class="status-card-title">สถานะสัญญา</div>
@@ -714,13 +1131,35 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
                             default => 'rgba(248, 113, 113, 0.2)'
                         };
                     ?>">
-                        <?php 
-                            echo match($currentExpStatus) {
-                                '1' => '✓',
-                                '0' => '⏳',
-                                default => '✗'
-                            };
-                        ?>
+                        <?php if ($currentExpStatus === '1'): ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10" stroke-dasharray="63" stroke-dashoffset="0">
+                                    <animate attributeName="stroke-dashoffset" from="63" to="0" dur="0.8s" fill="freeze"/>
+                                </circle>
+                                <polyline points="8 12 11 15 16 9" stroke-dasharray="15" stroke-dashoffset="0">
+                                    <animate attributeName="stroke-dashoffset" from="15" to="0" dur="0.6s" begin="0.4s" fill="freeze"/>
+                                </polyline>
+                            </svg>
+                        <?php elseif ($currentExpStatus === '0'): ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2">
+                                <circle cx="12" cy="12" r="10">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="3s" repeatCount="indefinite"/>
+                                </circle>
+                                <polyline points="12 6 12 12 16 14">
+                                    <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="2s" repeatCount="indefinite"/>
+                                </polyline>
+                            </svg>
+                        <?php else: ?>
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2.5">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="8" y1="8" x2="16" y2="16">
+                                    <animate attributeName="opacity" values="0;1" dur="0.3s" fill="freeze"/>
+                                </line>
+                                <line x1="16" y1="8" x2="8" y2="16">
+                                    <animate attributeName="opacity" values="0;1" dur="0.3s" begin="0.15s" fill="freeze"/>
+                                </line>
+                            </svg>
+                        <?php endif; ?>
                     </div>
                     <div>
                         <div class="status-card-title">สถานะการชำระมัดจำ</div>
@@ -818,5 +1257,50 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
         <?php endif; ?>
         <?php endif; ?>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const idCardInput = document.getElementById('id_card_input');
+            
+            if (idCardInput) {
+                console.log('✅ พบ input element');
+                
+                // บังคับให้แสดงตัวเลข
+                idCardInput.style.color = '#ffffff';
+                idCardInput.style.fontSize = '24px';
+                idCardInput.style.fontWeight = '700';
+                idCardInput.style.letterSpacing = '5px';
+                idCardInput.style.textAlign = 'center';
+                idCardInput.style.fontFamily = 'Courier New, monospace';
+                
+                // จัดการการพิมพ์
+                idCardInput.addEventListener('input', function(e) {
+                    // กรองเฉพาะตัวเลข
+                    let value = e.target.value.replace(/\D/g, '');
+                    value = value.slice(0, 13);
+                    e.target.value = value;
+                    
+                    // แสดงใน console
+                    console.log('📝 ค่าที่พิมพ์:', value, '| ความยาว:', value.length);
+                    
+                    // บังคับ style อีกครั้ง
+                    e.target.style.color = '#ffffff';
+                });
+                
+                // เมื่อ focus
+                idCardInput.addEventListener('focus', function(e) {
+                    console.log('🎯 Focus เข้าช่อง input');
+                    e.target.style.color = '#ffffff';
+                });
+                
+                // เมื่อพิมพ์
+                idCardInput.addEventListener('keypress', function(e) {
+                    console.log('⌨️ กดปุ่ม:', e.key);
+                });
+                
+            } else {
+                console.error('❌ ไม่พบ input element!');
+            }
+        });
+    </script>
 </body>
 </html>

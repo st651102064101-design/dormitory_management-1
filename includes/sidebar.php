@@ -2214,6 +2214,12 @@ function initSidebarToggle() {
   
   if (!sidebar) return;
 
+  // If animate-ui already set up sidebar toggle, skip binding duplicate handlers
+  if (window.__sidebarToggleHandled) {
+    console.debug('Sidebar toggle already handled by animate-ui; skipping legacy binding');
+    return;
+  }
+
   // โหลดสถานะจาก localStorage (desktop เท่านั้น)
   if (window.innerWidth > 1024 && localStorage.getItem('sidebarCollapsed') === 'true') {
     sidebar.classList.add('collapsed');
@@ -2222,6 +2228,11 @@ function initSidebarToggle() {
   toggleBtn.addEventListener('click', function(e) {
     e.preventDefault();
     e.stopPropagation();
+
+    // If animate-ui has already handled toggle, skip this legacy handler
+    if (window.__sidebarToggleHandled) {
+      return;
+    }
 
     if (window.innerWidth > 1024) {
       sidebar.style.transition = 'none';

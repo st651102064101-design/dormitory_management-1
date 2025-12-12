@@ -50,17 +50,26 @@ $stats = [
   'inactive' => 0,
 ];
 foreach ($tenants as $t) {
-    if (($t['tnt_status'] ?? '0') === '1') {
+    // Normalize status value - treat null, empty, false as '0' (moved out)
+    $rawStatus = $t['tnt_status'];
+    if ($rawStatus === null || $rawStatus === '' || $rawStatus === false) {
+        $status = '0';
+    } else {
+        $status = (string)$rawStatus;
+    }
+    
+    if ($status === '1') {
         $stats['total']++;
         $stats['active']++;
-    } elseif (($t['tnt_status'] ?? '0') === '2') {
+    } elseif ($status === '2') {
         $stats['total']++;
         $stats['pending']++;
-    } elseif (($t['tnt_status'] ?? '0') === '3') {
+    } elseif ($status === '3') {
         $stats['booking']++;
-    } elseif (($t['tnt_status'] ?? '0') === '4') {
+    } elseif ($status === '4') {
         $stats['cancel_booking']++;
     } else {
+        // Status 0 or any other value = moved out/inactive
         $stats['inactive']++;
     }
 }
@@ -445,7 +454,15 @@ try {
                     <tr><td colspan="6" style="text-align:center; padding:1.5rem; color:#64748b;">ยังไม่มีข้อมูลผู้เช่า</td></tr>
                   <?php else: ?>
                     <?php foreach ($tenants as $t): ?>
-                      <?php $statusKey = (string)($t['tnt_status'] ?? '0'); ?>
+                      <?php 
+                        // Handle status properly - convert to string and treat empty/null as '0' (moved out)
+                        $rawStatus = $t['tnt_status'];
+                        if ($rawStatus === null || $rawStatus === '' || $rawStatus === false) {
+                          $statusKey = '0';
+                        } else {
+                          $statusKey = (string)$rawStatus;
+                        }
+                      ?>
                       <tr data-status="<?php echo htmlspecialchars($statusKey); ?>">
                         <td>
                           <div>เลขบัตรประชาชน: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars($t['tnt_id'] ?? '-'); ?></span></div>
@@ -462,6 +479,7 @@ try {
                             elseif ($statusKey === '4') $badgeClass = 'status-cancel-booking';
                           ?>
                           <span class="status-badge <?php echo $badgeClass; ?>"><?php echo $statusMap[$statusKey] ?? '-'; ?></span>
+                          <span style="position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;">STATUS_<?php echo htmlspecialchars($statusKey); ?>_STATUS</span>
                         </td>
                         <td>
                           <div><?php echo htmlspecialchars($t['tnt_education'] ?? '-'); ?></div>
@@ -794,14 +812,19 @@ try {
       }
 
       function applyTenantStatusFilter(filter) {
-        const rows = document.querySelectorAll('#table-tenants tbody tr');
-        rows.forEach(row => {
-          const rowStatus = row.getAttribute('data-status') || '';
-          const shouldShow = filter === 'all' || rowStatus === filter;
-          row.style.display = shouldShow ? '' : 'none';
-        });
-
         try { localStorage.setItem('tenantStatusFilter', filter); } catch (e) {}
+        
+        // Use DataTable's built-in search to filter by status
+        const dt = window.__tenantDataTable;
+        if (dt) {
+          if (filter === 'all') {
+            // Clear the search to show all rows
+            dt.search('');
+          } else {
+            // Search for the hidden status key
+            dt.search('STATUS_' + filter + '_STATUS');
+          }
+        }
 
         document.querySelectorAll('.status-filter-btn').forEach(btn => {
           const isActive = btn.dataset.statusFilter === filter;
@@ -952,38 +975,7 @@ try {
         setupSelectSync('tnt_education_select', 'tnt_education', 'tnt_education_wrap');
         setupSelectSync('tnt_faculty_select', 'tnt_faculty', 'tnt_faculty_wrap');
 
-        const editButtons = document.querySelectorAll('.btn-edit-tenant');
-        console.log('Found ' + editButtons.length + ' edit buttons');
-        editButtons.forEach(btn => {
-          btn.addEventListener('click', () => {
-            console.log('Edit button clicked, data:', {
-              tntId: btn.dataset.tntId,
-              tntName: btn.dataset.tntName,
-              tntAge: btn.dataset.tntAge,
-              tntPhone: btn.dataset.tntPhone,
-              tntAddress: btn.dataset.tntAddress,
-              tntEducation: btn.dataset.tntEducation,
-              tntFaculty: btn.dataset.tntFaculty,
-              tntYear: btn.dataset.tntYear,
-              tntVehicle: btn.dataset.tntVehicle,
-              tntParent: btn.dataset.tntParent,
-              tntParentsPhone: btn.dataset.tntParentsphone,
-            });
-            openTenantModal({
-              tntId: btn.dataset.tntId,
-              tntName: btn.dataset.tntName,
-              tntAge: btn.dataset.tntAge,
-              tntPhone: btn.dataset.tntPhone,
-              tntAddress: btn.dataset.tntAddress,
-              tntEducation: btn.dataset.tntEducation,
-              tntFaculty: btn.dataset.tntFaculty,
-              tntYear: btn.dataset.tntYear,
-              tntVehicle: btn.dataset.tntVehicle,
-              tntParent: btn.dataset.tntParent,
-              tntParentsPhone: btn.dataset.tntParentsphone,
-            });
-          });
-        });
+        // Edit button event listeners are handled via event delegation above
 
         setupAgeSync('edit_tnt_age_select', 'edit_tnt_age', 'edit_tnt_age_wrap');
 
@@ -992,14 +984,14 @@ try {
 
         document.querySelectorAll('.status-filter-btn').forEach(btn => {
           btn.addEventListener('click', () => {
+            // Update button states
+            document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
             applyTenantStatusFilter(btn.dataset.statusFilter || 'all');
           });
         });
 
-        const savedFilter = localStorage.getItem('tenantStatusFilter') || 'all';
-        applyTenantStatusFilter(savedFilter);
-
-        // Initialize enhanced table with Simple-DataTables
+        // Initialize enhanced table with Simple-DataTables FIRST
         const tenantTableEl = document.querySelector('#table-tenants');
         if (tenantTableEl && window.simpleDatatables) {
           try {
@@ -1015,62 +1007,104 @@ try {
                 info: 'แสดง {start}–{end} จาก {rows} รายการ'
               },
               columns: [
-                { select: 5, sortable: false } // จัดการ
+                { select: 3, sortable: false } // จัดการ column (index 3)
               ],
             });
             // save reference if needed later
             window.__tenantDataTable = dt;
+            
+            // Apply saved filter after DataTable is ready
+            dt.on('datatable.init', () => {
+              const filter = localStorage.getItem('tenantStatusFilter') || 'all';
+              // Update button states
+              document.querySelectorAll('.status-filter-btn').forEach(b => {
+                b.classList.toggle('active', b.dataset.statusFilter === filter);
+              });
+              setTimeout(() => applyTenantStatusFilter(filter), 100);
+            });
           } catch (err) {
             console.error('Failed to init data table', err);
           }
+        } else {
+          // Fallback if DataTable not available
+          const savedFilter = localStorage.getItem('tenantStatusFilter') || 'all';
+          applyTenantStatusFilter(savedFilter);
         }
+        
+        // Use event delegation for edit buttons (works with DataTable)
+        document.querySelector('#table-tenants')?.addEventListener('click', (e) => {
+          const editBtn = e.target.closest('.btn-edit-tenant');
+          if (editBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            console.log('Edit button clicked (delegated), data:', editBtn.dataset);
+            openTenantModal({
+              tntId: editBtn.dataset.tntId,
+              tntName: editBtn.dataset.tntName,
+              tntAge: editBtn.dataset.tntAge,
+              tntPhone: editBtn.dataset.tntPhone,
+              tntAddress: editBtn.dataset.tntAddress,
+              tntEducation: editBtn.dataset.tntEducation,
+              tntFaculty: editBtn.dataset.tntFaculty,
+              tntYear: editBtn.dataset.tntYear,
+              tntVehicle: editBtn.dataset.tntVehicle,
+              tntParent: editBtn.dataset.tntParent,
+              tntParentsPhone: editBtn.dataset.tntParentsphone,
+            });
+          }
+        });
 
-        document.querySelectorAll('.btn-delete-tenant').forEach(btn => {
-          btn.addEventListener('click', async () => {
-            const id = btn.dataset.tntId;
-            if (!id) return;
-            
-            const confirmed = await showConfirmDialog(
-              'ยืนยันการลบผู้เช่า',
-              `คุณต้องการลบผู้เช่า <strong>ID: ${id}</strong> หรือไม่?<br><br>ข้อมูลทั้งหมดจะถูกลบอย่างถาวร`
-            );
-            
-            if (!confirmed) return;
+        // Use event delegation for delete buttons (works with DataTable)
+        document.querySelector('#table-tenants')?.addEventListener('click', async (e) => {
+          const deleteBtn = e.target.closest('.btn-delete-tenant');
+          if (!deleteBtn) return;
+          
+          e.preventDefault();
+          e.stopPropagation();
+          
+          const id = deleteBtn.dataset.tntId;
+          if (!id) return;
+          
+          const confirmed = await showConfirmDialog(
+            'ยืนยันการลบผู้เช่า',
+            `คุณต้องการลบผู้เช่า <strong>ID: ${id}</strong> หรือไม่?<br><br>ข้อมูลทั้งหมดจะถูกลบอย่างถาวร`
+          );
+          
+          if (!confirmed) return;
 
-            try {
-              const formData = new FormData();
-              formData.append('tnt_id', id);
-              const response = await fetch('../Manage/delete_tenant.php', {
-                method: 'POST',
-                body: formData,
-              });
+          try {
+            const formData = new FormData();
+            formData.append('tnt_id', id);
+            const response = await fetch('../Manage/delete_tenant.php', {
+              method: 'POST',
+              body: formData,
+            });
 
-              if (!response.ok) throw new Error('delete failed');
+            if (!response.ok) throw new Error('delete failed');
 
-              const row = btn.closest('tr');
-              const removeRow = () => {
-                if (row && row.parentNode) {
-                  row.parentNode.removeChild(row);
-                  const tbody = document.querySelector('#table-tenants tbody');
-                  const hasRows = tbody && tbody.querySelectorAll('tr').length > 0;
-                  if (!hasRows) {
-                    window.location.reload();
-                  }
+            const row = deleteBtn.closest('tr');
+            const removeRow = () => {
+              if (row && row.parentNode) {
+                row.parentNode.removeChild(row);
+                const tbody = document.querySelector('#table-tenants tbody');
+                const hasRows = tbody && tbody.querySelectorAll('tr').length > 0;
+                if (!hasRows) {
+                  window.location.reload();
                 }
-              };
-
-              if (row) {
-                row.classList.add('row-fade-out');
-                row.addEventListener('animationend', removeRow, { once: true });
-                setTimeout(removeRow, 300); // fallback
               }
+            };
 
-              showSuccessToast('ลบผู้เช่าเรียบร้อยแล้ว');
-            } catch (err) {
-              console.error(err);
-              showErrorToast('ลบไม่สำเร็จ');
+            if (row) {
+              row.classList.add('row-fade-out');
+              row.addEventListener('animationend', removeRow, { once: true });
+              setTimeout(removeRow, 300); // fallback
             }
-          });
+
+            showSuccessToast('ลบผู้เช่าเรียบร้อยแล้ว');
+          } catch (err) {
+            console.error(err);
+            showErrorToast('ลบไม่สำเร็จ');
+          }
         });
 
         document.getElementById('tenantForm')?.addEventListener('submit', (e) => {

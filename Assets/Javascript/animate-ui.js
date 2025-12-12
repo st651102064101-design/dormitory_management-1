@@ -85,6 +85,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Signal that sidebar toggle has already been wired to avoid duplicate handlers elsewhere
+    window.__sidebarToggleHandled = true;
+
     // ===== Sidebar: Arrow toggle and active link =====
     const activeLink = document.querySelector('.app-nav a.active, .app-nav-sublist a.active');
     if (activeLink) {
