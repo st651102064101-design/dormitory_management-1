@@ -31,8 +31,7 @@ switch ($sortBy) {
     $orderBy = 'ym DESC';
 }
 
-// Sum of payments grouped by month
-$stmt = $pdo->query("SELECT DATE_FORMAT(p.pay_date, '%Y-%m') AS ym, SUM(p.pay_amount) AS total_received FROM payment p GROUP BY ym ORDER BY $orderBy");
+$stmt = $pdo->query("SELECT DATE_FORMAT(p.pay_date, '%Y-%m') AS ym, SUM(p.pay_amount) AS total_received FROM payment p WHERE p.pay_status = '1' GROUP BY ym ORDER BY $orderBy");
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ดึงค่าตั้งค่าระบบ

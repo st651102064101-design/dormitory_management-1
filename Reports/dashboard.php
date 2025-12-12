@@ -53,8 +53,8 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM payment WHERE pay_status = 1");
     $payment_verified = $stmt->fetch()['total'] ?? 0;
     
-    // 5. รายงานการชำระเงิน
-    $stmt = $pdo->query("SELECT SUM(pay_amount) as total FROM payment");
+    // 5. รายงานการชำระเงิน (รวมเฉพาะการชำระที่ตรวจสอบแล้ว/ยืนยันแล้ว)
+    $stmt = $pdo->query("SELECT SUM(pay_amount) as total FROM payment WHERE pay_status = '1'");
     $total_payment = $stmt->fetch()['total'] ?? 0;
     
     // 6. รายงานข้อมูลห้องพัก
@@ -70,8 +70,8 @@ try {
     $avg_water = round($utility_avg['avg_water'] ?? 0, 2);
     $avg_elec = round($utility_avg['avg_elec'] ?? 0, 2);
     
-    // 8. รายงานข้อมูลรายรับ
-    $stmt = $pdo->query("SELECT SUM(exp_total) as total_revenue FROM expense WHERE exp_status = 1");
+    // 8. รายงานข้อมูลรายรับ (คำนวนจากการชำระของผู้เช่า — เฉพาะรายการที่ตรวจสอบแล้ว)
+    $stmt = $pdo->query("SELECT SUM(pay_amount) as total_revenue FROM payment WHERE pay_status = '1'");
     $total_revenue = $stmt->fetch()['total_revenue'] ?? 0;
     
     // 9. ข้อมูลสัญญา
@@ -96,14 +96,14 @@ try {
         }
     } catch (PDOException $e) {}
     
-    // ข้อมูลรายได้รายเดือน
-    $stmt = $pdo->query("SELECT DATE_FORMAT(exp_month, '%Y-%m') as month, SUM(exp_total) as total 
-            FROM expense 
-            WHERE exp_status = 1 
-            GROUP BY DATE_FORMAT(exp_month, '%Y-%m')
-            ORDER BY DATE_FORMAT(exp_month, '%Y-%m') DESC
+        // ข้อมูลรายได้รายเดือน (จากการชำระของผู้เช่า)
+        $stmt = $pdo->query("SELECT DATE_FORMAT(pay_date, '%Y-%m') as month, SUM(pay_amount) as total 
+            FROM payment 
+            WHERE pay_status = '1' 
+            GROUP BY DATE_FORMAT(pay_date, '%Y-%m')
+            ORDER BY DATE_FORMAT(pay_date, '%Y-%m') DESC
             LIMIT 12");
-    $monthly_revenue = array_reverse($stmt->fetchAll());
+        $monthly_revenue = array_reverse($stmt->fetchAll());
     
     // ข้อมูล Booking trend (7 วันล่าสุด)
     $stmt = $pdo->query("SELECT DATE(bkg_date) as date, COUNT(*) as count 
@@ -1030,7 +1030,7 @@ try {
                                 </div>
                             </div>
                             <div style="margin-top: 10px; text-align: center;">
-                                <a href="report_booking.php" style="color: #3b82f6; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
+                                <a href="manage_booking.php" style="color: #3b82f6; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
                             </div>
                         </div>
                     </div>

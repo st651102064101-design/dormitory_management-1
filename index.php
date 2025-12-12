@@ -2117,6 +2117,26 @@ if ($publicTheme === 'light') {
                 <p>ดูรายละเอียดห้องพัก ประเภท ราคา และสิ่งอำนวยความสะดวก</p>
             </a>
             
+            <a href="Public/booking_status.php" class="quick-link-card animate-on-scroll">
+                <div class="quick-link-icon animated-icon">
+                    <div class="icon-glow"></div>
+                    <svg class="icon-float" viewBox="0 0 24 24" fill="none" stroke="url(#statusGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <defs>
+                            <linearGradient id="statusGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#fbbf24"/>
+                                <stop offset="50%" stop-color="#60a5fa"/>
+                                <stop offset="100%" stop-color="#a78bfa"/>
+                            </linearGradient>
+                        </defs>
+                        <path d="M12 2a10 10 0 110 20 10 10 0 010-20z"/>
+                        <polyline points="12 6 12 12 16 14"/>
+                        <circle cx="12" cy="12" r="1"/>
+                    </svg>
+                </div>
+                <h4>ตรวจสอบสถานะการจอง</h4>
+                <p>ตรวจสอบสถานะการจอง สัญญา และการชำระเงิน</p>
+            </a>
+            
             <a href="Public/news.php" class="quick-link-card animate-on-scroll">
                 <div class="quick-link-icon animated-icon">
                     <div class="icon-glow"></div>

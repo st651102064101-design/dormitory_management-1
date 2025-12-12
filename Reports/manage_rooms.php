@@ -751,6 +751,9 @@ try {
       .load-more-btn.hidden {
         display: none;
       }
+
+      /* Hidden card for grid lazy-load */
+      .hidden-card { display: none; }
       
       /* Responsive */
       @media (max-width: 768px) {
@@ -901,8 +904,8 @@ try {
             <?php else: ?>
               <!-- Grid View -->
               <div class="rooms-grid rooms-grid-view" id="roomsGrid">
-                <?php foreach ($rooms as $room): ?>
-                  <div class="room-card" data-room-id="<?php echo $room['room_id']; ?>">
+                <?php foreach ($rooms as $index => $room): ?>
+                  <div class="room-card <?php echo $index >= 5 ? 'hidden-card' : ''; ?>" data-room-id="<?php echo $room['room_id']; ?>">
                     <div class="room-card-image">
                       <?php if (!empty($room['room_image'])): ?>
                         <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
@@ -948,6 +951,15 @@ try {
                   </div>
                 <?php endforeach; ?>
               </div>
+
+              <?php if (count($rooms) > 5): ?>
+              <div class="load-more-container">
+                <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreRooms()">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                  <span id="loadMoreText">โหลดเพิ่มเติม (<span id="remainingCount"><?php echo count($rooms) - 5; ?></span> ห้อง)</span>
+                </button>
+              </div>
+              <?php endif; ?>
               
               <!-- Table View -->
               <div class="rooms-table-view" id="roomsTable">
@@ -1015,14 +1027,7 @@ try {
                     <?php endforeach; ?>
                   </tbody>
                 </table>
-                <?php if (count($rooms) > 5): ?>
-                <div class="load-more-container">
-                  <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreRooms()">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                    <span id="loadMoreText">โหลดเพิ่มเติม (<span id="remainingCount"><?php echo count($rooms) - 5; ?></span> ห้อง)</span>
-                  </button>
-                </div>
-                <?php endif; ?>
+                <?php /* load-more moved to grid view above */ ?>
               </div>
             <?php endif; ?>
           </section>
@@ -1747,69 +1752,89 @@ try {
         roomNumberInput.value = nextRoomNumber;
       }
 
-      // Load More Rooms Function
+      // Load More Rooms Function (supports both grid and table views)
       let visibleRooms = 5;
       const ROOMS_PER_LOAD = 5;
-      
+
       function loadMoreRooms() {
-        const hiddenRows = document.querySelectorAll('.room-row.hidden-row');
-        const totalRooms = document.querySelectorAll('.room-row').length;
-        let showCount = 0;
-        
-        hiddenRows.forEach((row, index) => {
-          if (showCount < ROOMS_PER_LOAD) {
-            row.classList.remove('hidden-row');
-            showCount++;
-            visibleRooms++;
-          }
-        });
-        
-        // บันทึกจำนวนห้องที่โหลดแล้ว
-        try { 
-          localStorage.setItem('visibleRoomsCount', visibleRooms); 
-        } catch (e) {}
-        
-        // Update remaining count
-        const remaining = totalRooms - visibleRooms;
-        const remainingCountEl = document.getElementById('remainingCount');
         const loadMoreBtn = document.getElementById('loadMoreBtn');
-        
-        if (remaining > 0) {
-          remainingCountEl.textContent = remaining;
+        const remainingCountEl = document.getElementById('remainingCount');
+
+        if (currentView === 'grid') {
+          const hiddenCards = document.querySelectorAll('.room-card.hidden-card');
+          const totalCards = document.querySelectorAll('.room-card').length;
+          let shown = 0;
+          hiddenCards.forEach(card => {
+            if (shown < ROOMS_PER_LOAD) {
+              card.classList.remove('hidden-card');
+              shown++;
+              visibleRooms++;
+            }
+          });
+
+          const remaining = totalCards - visibleRooms;
+          if (remainingCountEl) remainingCountEl.textContent = remaining;
+          if (remaining <= 0) loadMoreBtn?.classList.add('hidden');
         } else {
-          // Hide button when all rooms are shown
-          loadMoreBtn.classList.add('hidden');
+          // table view
+          const hiddenRows = document.querySelectorAll('.room-row.hidden-row');
+          const totalRows = document.querySelectorAll('.room-row').length;
+          let showCount = 0;
+          hiddenRows.forEach((row) => {
+            if (showCount < ROOMS_PER_LOAD) {
+              row.classList.remove('hidden-row');
+              showCount++;
+              visibleRooms++;
+            }
+          });
+
+          const remaining = totalRows - visibleRooms;
+          if (remainingCountEl) remainingCountEl.textContent = remaining;
+          if (remaining <= 0) loadMoreBtn?.classList.add('hidden');
         }
+
+        // Save count
+        try { localStorage.setItem('visibleRoomsCount', visibleRooms); } catch (e) {}
       }
-      
-      // Restore visible rooms count on page load
+
+      // Restore visible rooms count on page load for both views
       document.addEventListener('DOMContentLoaded', () => {
         try {
           const savedVisibleCount = localStorage.getItem('visibleRoomsCount');
           if (savedVisibleCount) {
             const targetCount = parseInt(savedVisibleCount);
-            const hiddenRows = document.querySelectorAll('.room-row.hidden-row');
-            const totalRooms = document.querySelectorAll('.room-row').length;
-            let shownCount = 0;
-            
-            hiddenRows.forEach((row) => {
-              if (shownCount < (targetCount - 5)) {
-                row.classList.remove('hidden-row');
-                shownCount++;
-              }
-            });
-            
             visibleRooms = targetCount;
-            
-            // Update remaining count
-            const remaining = totalRooms - visibleRooms;
-            const remainingCountEl = document.getElementById('remainingCount');
-            const loadMoreBtn = document.getElementById('loadMoreBtn');
-            
-            if (remaining > 0) {
-              remainingCountEl.textContent = remaining;
-            } else {
-              loadMoreBtn?.classList.add('hidden');
+
+            // Restore grid cards
+            const totalCards = document.querySelectorAll('.room-card').length;
+            if (totalCards > 0) {
+              const toShow = Math.max(0, targetCount - 5);
+              const hiddenCards = document.querySelectorAll('.room-card.hidden-card');
+              let shown = 0;
+              hiddenCards.forEach(card => {
+                if (shown < toShow) { card.classList.remove('hidden-card'); shown++; }
+              });
+              const remaining = totalCards - visibleRooms;
+              const remainingCountEl = document.getElementById('remainingCount');
+              const loadMoreBtn = document.getElementById('loadMoreBtn');
+              if (remainingCountEl) remainingCountEl.textContent = remaining;
+              if (remaining <= 0) loadMoreBtn?.classList.add('hidden');
+            }
+
+            // Restore table rows
+            const totalRows = document.querySelectorAll('.room-row').length;
+            if (totalRows > 0) {
+              const toShowRows = Math.max(0, targetCount - 5);
+              const hiddenRows = document.querySelectorAll('.room-row.hidden-row');
+              let shownRows = 0;
+              hiddenRows.forEach(row => {
+                if (shownRows < toShowRows) { row.classList.remove('hidden-row'); shownRows++; }
+              });
+              const remaining = totalRows - visibleRooms;
+              const remainingCountEl = document.getElementById('remainingCount');
+              const loadMoreBtn = document.getElementById('loadMoreBtn');
+              if (remainingCountEl) remainingCountEl.textContent = remaining;
+              if (remaining <= 0) loadMoreBtn?.classList.add('hidden');
             }
           }
         } catch (e) {}
