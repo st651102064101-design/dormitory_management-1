@@ -10,13 +10,18 @@ $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $themeColor = '#1e40af';
 $publicTheme = 'dark';
+$roomFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi', 'เฟอร์นิเจอร์', 'แอร์', 'ตู้เย็น'];
+
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'public_theme')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'public_theme', 'room_features')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
         if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
+        if ($row['setting_key'] === 'room_features' && !empty($row['setting_value'])) {
+            $roomFeatures = array_map('trim', explode(',', $row['setting_value']));
+        }
     }
 } catch (PDOException $e) {}
 
@@ -742,6 +747,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #4ade80;
         }
 
+        /* Room Features in Booking */
+        .room-features-mini {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 0.35rem;
+            margin-top: 0.75rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .feature-tag-mini {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.2rem 0.4rem;
+            background: rgba(102, 126, 234, 0.15);
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            color: #a5b4fc;
+        }
+
+        .feature-tag-mini svg {
+            width: 10px;
+            height: 10px;
+            stroke: currentColor;
+        }
+
+        body.theme-light .feature-tag-mini {
+            background: rgba(102, 126, 234, 0.1);
+            color: #6366f1;
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .header { 
@@ -1125,6 +1164,17 @@ if ($publicTheme === 'light') {
                             <div class="room-num"><svg class="room-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> <?php echo htmlspecialchars($room['room_number']); ?></div>
                             <div class="room-type"><?php echo htmlspecialchars($room['type_name'] ?? 'มาตรฐาน'); ?></div>
                             <div class="room-price">฿<?php echo number_format($room['type_price'] ?? 0); ?>/เดือน</div>
+                            <div class="room-features-mini">
+                                <?php foreach (array_slice($roomFeatures, 0, 4) as $feature): ?>
+                                <span class="feature-tag-mini">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                    <?php echo htmlspecialchars($feature); ?>
+                                </span>
+                                <?php endforeach; ?>
+                                <?php if (count($roomFeatures) > 4): ?>
+                                <span class="feature-tag-mini">+<?php echo count($roomFeatures) - 4; ?></span>
+                                <?php endif; ?>
+                            </div>
                         </label>
                         <?php endforeach; ?>
                     </div>

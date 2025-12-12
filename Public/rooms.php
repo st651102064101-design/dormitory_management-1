@@ -12,13 +12,19 @@ $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $themeColor = '#1e40af';
 $publicTheme = 'dark';
+// Room features default
+$roomFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi', 'เฟอร์นิเจอร์', 'แอร์', 'ตู้เย็น'];
+
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'public_theme')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'public_theme', 'room_features')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
         if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
+        if ($row['setting_key'] === 'room_features' && !empty($row['setting_value'])) {
+            $roomFeatures = array_map('trim', explode(',', $row['setting_value']));
+        }
     }
 } catch (PDOException $e) { echo "Settings Error: " . $e->getMessage(); }
 
@@ -595,19 +601,72 @@ $occupiedCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '1')
 
         .room-info {
             list-style: none;
-            margin-bottom: 1.5rem;
+            margin-bottom: 1rem;
         }
 
         .room-info li {
-            padding: 0.75rem 0;
+            padding: 0.6rem 0;
             color: #94a3b8;
             display: flex;
             align-items: center;
             gap: 0.75rem;
             border-bottom: 1px solid rgba(255,255,255,0.05);
+            font-size: 0.9rem;
         }
 
         .room-info li:last-child {
+            border-bottom: none;
+        }
+
+        /* Room Features Section */
+        .room-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .feature-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.35rem 0.65rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.15));
+            border: 1px solid rgba(102, 126, 234, 0.2);
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #a5b4fc;
+            transition: all 0.3s ease;
+        }
+
+        .feature-tag:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.25), rgba(118, 75, 162, 0.25));
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .feature-tag svg {
+            width: 12px;
+            height: 12px;
+            stroke: currentColor;
+            flex-shrink: 0;
+        }
+
+        /* Light theme features */
+        body.theme-light .feature-tag {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+            border-color: rgba(102, 126, 234, 0.3);
+            color: #6366f1;
+        }
+
+        body.theme-light .feature-tag:hover {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+        }
+
+        .room-info li.last-child {
             border-bottom: none;
         }
 
@@ -1231,6 +1290,19 @@ if ($publicTheme === 'light') {
                                 </span>
                             </li>
                         </ul>
+                        
+                        <!-- Room Features -->
+                        <div class="room-features">
+                            <?php foreach ($roomFeatures as $feature): ?>
+                            <span class="feature-tag">
+                                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <polyline points="20 6 9 17 4 12"></polyline>
+                                </svg>
+                                <?php echo htmlspecialchars($feature); ?>
+                            </span>
+                            <?php endforeach; ?>
+                        </div>
+                        
                         <?php if ($room['room_status'] === '0'): ?>
                         <a href="booking.php?room=<?php echo $room['room_id']; ?>" class="btn-book">
                             <span>▶</span> จองห้องนี้
