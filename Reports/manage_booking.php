@@ -157,12 +157,21 @@ try {
         return false;
       };
 
+      // Track if device is low performance
+      window.__isLowPerformance = false;
+      
       window.__setBookingView = function(mode, event) {
         if (event) event.preventDefault();
         const roomsGrid = document.getElementById('roomsGrid');
         const roomsTable = document.getElementById('roomsTable');
         if (!roomsGrid) return false;
         const normalized = mode === 'list' ? 'list' : 'grid';
+        
+        // If low performance device tries to use grid, show warning
+        if (normalized === 'grid' && window.__isLowPerformance) {
+          showPerformanceWarning();
+          return false;
+        }
         
         if (normalized === 'list') {
           roomsGrid.classList.add('list-view');
@@ -181,6 +190,66 @@ try {
         document.querySelectorAll('.toggle-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === normalized));
         try { localStorage.setItem('bookingViewMode', normalized); } catch (e) {}
         return false;
+      };
+      
+      // Warning when low performance user tries to switch to grid
+      function showPerformanceWarning() {
+        const overlay = document.createElement('div');
+        overlay.id = 'fps-alert-overlay';
+        overlay.innerHTML = `
+          <div class="fps-alert-backdrop"></div>
+          <div class="fps-alert-container">
+            <div class="fps-alert-icon warning">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" fill="rgba(239, 68, 68, 0.2)" stroke="#ef4444"/>
+              </svg>
+            </div>
+            <h2 class="fps-alert-title">ไม่แนะนำ</h2>
+            <p class="fps-alert-message">
+              อุปกรณ์ของคุณมีประสิทธิภาพต่ำ<br>
+              โหมด Grid อาจทำให้เครื่องช้าลง<br>
+              <strong>แนะนำให้ใช้โหมด List</strong>
+            </p>
+            <div class="fps-alert-buttons">
+              <button class="fps-alert-btn secondary" onclick="forceGridMode()">
+                ใช้ Grid ต่อ
+              </button>
+              <button class="fps-alert-btn primary" onclick="closePerformanceWarning()">
+                ใช้ List (แนะนำ)
+              </button>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(overlay);
+      }
+      
+      window.forceGridMode = function() {
+        const overlay = document.getElementById('fps-alert-overlay');
+        if (overlay) {
+          overlay.classList.add('closing');
+          setTimeout(() => {
+            overlay.remove();
+            // Force grid mode
+            const roomsGrid = document.getElementById('roomsGrid');
+            if (roomsGrid) {
+              roomsGrid.classList.remove('list-view');
+              roomsGrid.style.display = 'grid';
+              document.querySelectorAll('.list-view-extra').forEach(el => el.style.display = 'none');
+              document.querySelectorAll('.toggle-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'grid'));
+            }
+          }, 300);
+        }
+      };
+      
+      window.closePerformanceWarning = function() {
+        const overlay = document.getElementById('fps-alert-overlay');
+        if (overlay) {
+          overlay.classList.add('closing');
+          setTimeout(() => {
+            overlay.remove();
+          }, 300);
+        }
       };
 
       window.__openBookingModal = function(btn, event) {
@@ -257,8 +326,260 @@ try {
         document.body.classList.remove('modal-open');
         if (form) form.reset();
       };
+
+      // ===== FPS CHECKER - Auto switch to List view if low performance =====
+      (function() {
+        let frameCount = 0;
+        let lastTime = performance.now();
+        let fpsValues = [];
+        let checkDuration = 2000; // Check for 2 seconds
+        let hasChecked = false;
+        
+        function checkFPS(currentTime) {
+          frameCount++;
+          
+          if (currentTime - lastTime >= 1000) {
+            const fps = frameCount;
+            fpsValues.push(fps);
+            frameCount = 0;
+            lastTime = currentTime;
+          }
+          
+          if (currentTime < checkDuration && !hasChecked) {
+            requestAnimationFrame(checkFPS);
+          } else if (!hasChecked) {
+            hasChecked = true;
+            const avgFPS = fpsValues.length > 0 
+              ? fpsValues.reduce((a, b) => a + b, 0) / fpsValues.length 
+              : 60;
+            
+            if (avgFPS < 10) {
+              window.__isLowPerformance = true;
+              showPerformanceAlert(Math.round(avgFPS));
+            }
+          }
+        }
+        
+        function showPerformanceAlert(fps) {
+          // Create Apple-style alert overlay
+          const overlay = document.createElement('div');
+          overlay.id = 'fps-alert-overlay';
+          overlay.innerHTML = `
+            <div class="fps-alert-backdrop"></div>
+            <div class="fps-alert-container">
+              <div class="fps-alert-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                  <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="rgba(251, 191, 36, 0.2)" stroke="#fbbf24"/>
+                </svg>
+              </div>
+              <h2 class="fps-alert-title">ประสิทธิภาพต่ำ</h2>
+              <p class="fps-alert-message">
+                ตรวจพบว่าอุปกรณ์ของคุณทำงานที่ <strong>${fps} FPS</strong><br>
+                เราจะเปลี่ยนเป็นโหมด List เพื่อประสบการณ์ที่ดีขึ้น
+              </p>
+              <div class="fps-alert-progress">
+                <div class="fps-alert-progress-bar"></div>
+              </div>
+              <button class="fps-alert-btn" onclick="closeFPSAlert()">
+                <span>เข้าใจแล้ว</span>
+              </button>
+            </div>
+          `;
+          
+          document.body.appendChild(overlay);
+          
+          // Auto close and switch to list after 3 seconds
+          setTimeout(() => {
+            if (document.getElementById('fps-alert-overlay')) {
+              closeFPSAlert();
+            }
+          }, 4000);
+        }
+        
+        window.closeFPSAlert = function() {
+          const overlay = document.getElementById('fps-alert-overlay');
+          if (overlay) {
+            overlay.classList.add('closing');
+            setTimeout(() => {
+              overlay.remove();
+              // Switch to list view
+              if (window.__setBookingView) {
+                window.__setBookingView('list');
+              }
+            }, 300);
+          }
+        };
+        
+        // Start FPS check after page load
+        if (document.readyState === 'complete') {
+          requestAnimationFrame(checkFPS);
+        } else {
+          window.addEventListener('load', () => {
+            setTimeout(() => requestAnimationFrame(checkFPS), 500);
+          });
+        }
+      })();
     </script>
     <style>
+      /* ===== FPS ALERT - Apple Style ===== */
+      #fps-alert-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fpsAlertFadeIn 0.3s ease-out;
+      }
+      
+      #fps-alert-overlay.closing {
+        animation: fpsAlertFadeOut 0.3s ease-out forwards;
+      }
+      
+      .fps-alert-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+      }
+      
+      .fps-alert-container {
+        position: relative;
+        background: linear-gradient(145deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        padding: 2rem;
+        max-width: 340px;
+        width: 90%;
+        text-align: center;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5),
+                    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+        animation: fpsAlertSlideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+      }
+      
+      .fps-alert-icon {
+        width: 60px;
+        height: 60px;
+        margin: 0 auto 1rem;
+        background: rgba(251, 191, 36, 0.1);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: fpsIconPulse 2s ease-in-out infinite;
+      }
+      
+      .fps-alert-icon svg {
+        width: 32px;
+        height: 32px;
+      }
+      
+      .fps-alert-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #f5f8ff;
+        margin: 0 0 0.5rem;
+      }
+      
+      .fps-alert-message {
+        font-size: 0.9rem;
+        color: #94a3b8;
+        margin: 0 0 1.25rem;
+        line-height: 1.5;
+      }
+      
+      .fps-alert-message strong {
+        color: #fbbf24;
+        font-weight: 600;
+      }
+      
+      .fps-alert-progress {
+        height: 4px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 2px;
+        overflow: hidden;
+        margin-bottom: 1.25rem;
+      }
+      
+      .fps-alert-progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        border-radius: 2px;
+        animation: fpsProgressBar 4s linear forwards;
+      }
+      
+      .fps-alert-btn {
+        width: 100%;
+        padding: 0.875rem;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+      }
+      
+      .fps-alert-btn:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        transform: scale(1.02);
+      }
+      
+      .fps-alert-btn:active {
+        transform: scale(0.98);
+      }
+      
+      @keyframes fpsAlertFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      @keyframes fpsAlertFadeOut {
+        from { opacity: 1; }
+        to { opacity: 0; }
+      }
+      
+      @keyframes fpsAlertSlideUp {
+        from { 
+          opacity: 0;
+          transform: translateY(20px) scale(0.95);
+        }
+        to { 
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+      
+      @keyframes fpsIconPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+      }
+      
+      @keyframes fpsProgressBar {
+        from { width: 0%; }
+        to { width: 100%; }
+      }
+      
+      /* Light mode FPS alert */
+      body.live-light .fps-alert-container {
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
+        border-color: rgba(0, 0, 0, 0.1);
+      }
+      
+      body.live-light .fps-alert-title {
+        color: #111827;
+      }
+      
+      body.live-light .fps-alert-message {
+        color: #6b7280;
+      }
+      
       /* ===== THEME VARIABLES ===== */
       :root {
         --card-bg: linear-gradient(135deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));
@@ -785,20 +1106,35 @@ try {
       }
       
       .room-card:hover::before {
+        opacity: 0.6;
+        filter: blur(18px);
+      }
+      
+      .room-card:hover::after {
+        opacity: 0.5;
+      }
+      
+      /* Subtle hover without flip */
+      .room-card:hover:not(.flipped) {
+        z-index: 10;
+      }
+      
+      /* When flipped, more dramatic effect */
+      .room-card.flipped {
+        transform: translateY(-12px) scale(1.03);
+        animation: none !important;
+        filter: brightness(1.1);
+        z-index: 10;
+      }
+      
+      .room-card.flipped::before {
         opacity: 1;
         filter: blur(20px);
       }
       
-      .room-card:hover::after {
+      .room-card.flipped::after {
         opacity: 1;
         animation-play-state: running;
-      }
-      
-      .room-card:hover {
-        transform: translateY(-12px) scale(1.03) rotateX(2deg);
-        animation: none !important;
-        filter: brightness(1.1);
-        z-index: 10;
       }
       
       /* Particle effects on cards */
@@ -875,16 +1211,20 @@ try {
         transform: none !important;
         box-shadow: none !important;
       }
-      .room-card:hover .room-card-inner {
+      /* Flip only when .flipped class is added by JavaScript */
+      .room-card.flipped .room-card-inner {
         transform: rotateY(180deg);
         box-shadow: 0 25px 60px rgba(99, 102, 241, 0.4),
                     0 10px 30px rgba(0,0,0,0.3);
-        /* Delayed flip on hover */
-        transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s,
-                    box-shadow 0.5s ease 0.3s;
+        transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                    box-shadow 0.5s ease;
+      }
+      /* Subtle hover effect without flip */
+      .room-card:hover:not(.flipped) {
+        transform: translateY(-8px) scale(1.02);
       }
       /* Prevent flip when modal is open */
-      body.modal-open .room-card:hover .room-card-inner {
+      body.modal-open .room-card.flipped .room-card-inner {
         transform: none !important;
       }
       .room-card-face {
@@ -900,7 +1240,7 @@ try {
         justify-content: flex-end;
         gap: 0.5rem;
         border: 1px solid rgba(255,255,255,0.1);
-        transition: all 0.4s ease;
+        transition: visibility 0s 0.5s;
         box-shadow: inset 0 0 30px rgba(0,0,0,0.3);
       }
       
@@ -909,9 +1249,13 @@ try {
         pointer-events: auto;
         border: 1px solid rgba(99, 102, 241, 0.2);
         animation: borderGlow 4s ease-in-out infinite;
+        z-index: 2;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
       }
       
-      .room-card:hover .room-card-face.front {
+      /* Only disable pointer on front when flipped */
+      .room-card.flipped .room-card-face.front {
         pointer-events: none;
         border-color: rgba(99, 102, 241, 0.6);
       }
@@ -1170,6 +1514,7 @@ try {
         inset: 0;
         transform: rotateY(180deg);
         backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
         display: flex;
         flex-direction: column;
         align-items: flex-start;
@@ -1177,6 +1522,8 @@ try {
         gap: 0.4rem;
         padding: 1rem;
         background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%) !important;
+        z-index: 1;
+        visibility: visible;
         border: 1px solid rgba(255,255,255,0.15) !important;
         border-radius: 24px;
         pointer-events: auto;
@@ -3541,6 +3888,57 @@ try {
       const ROOMS_PER_LOAD = 5;
 
       document.addEventListener('DOMContentLoaded', function() {
+        // ===== CARD FLIP ON HOVER WITH DELAY =====
+        // Only flip if mouse stays on card for 400ms
+        const flipDelay = 400; // milliseconds
+        const flipTimers = new WeakMap();
+        
+        function setupCardFlip() {
+          document.querySelectorAll('.room-card').forEach(card => {
+            // Skip if already setup
+            if (card.dataset.flipSetup) return;
+            card.dataset.flipSetup = 'true';
+            
+            card.addEventListener('mouseenter', () => {
+              // Don't flip in list view
+              if (card.closest('.rooms-grid.list-view')) return;
+              
+              // Clear any existing timer
+              const existingTimer = flipTimers.get(card);
+              if (existingTimer) clearTimeout(existingTimer);
+              
+              // Set timer to flip after delay
+              const timer = setTimeout(() => {
+                card.classList.add('flipped');
+              }, flipDelay);
+              flipTimers.set(card, timer);
+            });
+            
+            card.addEventListener('mouseleave', () => {
+              // Clear timer if mouse leaves before delay
+              const timer = flipTimers.get(card);
+              if (timer) {
+                clearTimeout(timer);
+                flipTimers.delete(card);
+              }
+              // Unflip immediately
+              card.classList.remove('flipped');
+            });
+          });
+        }
+        
+        // Initial setup
+        setupCardFlip();
+        
+        // Re-setup after any dynamic content changes
+        const observer = new MutationObserver(() => {
+          setupCardFlip();
+        });
+        const roomsGrid = document.querySelector('.rooms-grid');
+        if (roomsGrid) {
+          observer.observe(roomsGrid, { childList: true, subtree: true });
+        }
+        
         // Restore section visibility from localStorage
         const isSectionVisible = localStorage.getItem('availableRoomsVisible') !== 'false';
         const section = document.getElementById('availableRoomsSection');
