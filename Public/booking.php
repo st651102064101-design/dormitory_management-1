@@ -96,10 +96,12 @@ function uploadFile($file, $uploadDir, $prefix = 'file') {
         return null;
     }
     
-    $allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    $allowedExt = ['jpg', 'jpeg', 'png', 'webp', 'pdf'];
     $maxSize = 5 * 1024 * 1024; // 5MB
     
-    if (!in_array($file['type'], $allowedTypes)) {
+    // Check by extension instead of MIME type (more reliable)
+    if (!in_array($ext, $allowedExt)) {
         return null;
     }
     
@@ -111,13 +113,13 @@ function uploadFile($file, $uploadDir, $prefix = 'file') {
         mkdir($uploadDir, 0755, true);
     }
     
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
     $filename = $prefix . '_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
     $filepath = $uploadDir . '/' . $filename;
     
     if (move_uploaded_file($file['tmp_name'], $filepath)) {
         return $filename;
     }
+    return null;
     
     return null;
 }
@@ -128,14 +130,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $roomId = (int)($_POST['room_id'] ?? 0);
     $idCard = trim($_POST['id_card'] ?? '');
     $idCard = preg_replace('/[^0-9]/', '', $idCard);
-    $idCard = substr($idCard, -13);
+    // ตรวจสอบความยาวก่อน substr เพื่อหลีกเลี่ยงปัญหา
+    if (strlen($idCard) > 13) {
+        $idCard = substr($idCard, -13);
+    }
     
     $name = trim($_POST['name'] ?? '');
     $age = (int)($_POST['age'] ?? 0);
     $address = trim($_POST['address'] ?? '');
     $phone = trim($_POST['phone'] ?? '');
     $phone = preg_replace('/[^0-9]/', '', $phone);
-    $phone = substr($phone, -10);
+    // ตรวจสอบความยาวก่อน substr เพื่อหลีกเลี่ยงปัญหา
+    if (strlen($phone) > 10) {
+        $phone = substr($phone, -10);
+    }
     
     // ข้อมูลการศึกษา
     $education = trim($_POST['education'] ?? '');
@@ -147,16 +155,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $parent = trim($_POST['parent'] ?? '');
     $parentsphone = trim($_POST['parentsphone'] ?? '');
     $parentsphone = preg_replace('/[^0-9]/', '', $parentsphone);
-    $parentsphone = substr($parentsphone, -10);
+    if (strlen($parentsphone) > 10) {
+        $parentsphone = substr($parentsphone, -10);
+    }
     
     // วันที่สัญญา
     $ctrStart = $_POST['ctr_start'] ?? '';
     $ctrEnd = $_POST['ctr_end'] ?? '';
     $deposit = (int)($_POST['deposit'] ?? 2000);
     
-    // Validate
-    if (!$roomId || !$name || !$phone || !$idCard || strlen($idCard) !== 13) {
-        $error = 'กรุณากรอกข้อมูลให้ครบถ้วน (เลขบัตรประชาชน 13 หลัก, ชื่อ-นามสกุล, เบอร์โทร)';
+    // Validate - ตรวจสอบแต่ละฟิลด์และให้ error message ที่ชัดเจน
+    $validationErrors = [];
+    if (!$roomId) {
+        $validationErrors[] = 'ห้องพัก';
+    }
+    if (!$idCard || strlen($idCard) !== 13) {
+        $validationErrors[] = 'เลขบัตรประชาชน 13 หลัก';
+    }
+    if (!$name || strlen($name) < 4) {
+        $validationErrors[] = 'ชื่อ-นามสกุล';
+    }
+    if (!$phone || strlen($phone) !== 10) {
+        $validationErrors[] = 'เบอร์โทรศัพท์ 10 หลัก';
+    }
+    
+    if (!empty($validationErrors)) {
+        $error = 'กรุณากรอกข้อมูลให้ครบถ้วน: ' . implode(', ', $validationErrors);
     } elseif (!$ctrStart || !$ctrEnd) {
         $error = 'กรุณาระบุวันที่เข้าพักและวันที่ออก';
     } else {
@@ -223,8 +247,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             tnt_vehicle = VALUES(tnt_vehicle),
                             tnt_parent = VALUES(tnt_parent),
                             tnt_parentsphone = VALUES(tnt_parentsphone),
-                            tnt_idcard_copy = COALESCE(VALUES(tnt_idcard_copy), tnt_idcard_copy),
-                            tnt_house_copy = COALESCE(VALUES(tnt_house_copy), tnt_house_copy),
+                            tnt_idcard_copy = VALUES(tnt_idcard_copy),
+                            tnt_house_copy = VALUES(tnt_house_copy),
                             tnt_status = '3'
                         ");
                         $stmtTenant->execute([$tenantId, $name, $age ?: null, $address ?: null, $phone, $education ?: null, $faculty ?: null, $year ?: null, $vehicle ?: null, $parent ?: null, $parentsphone ?: null, $idcardCopy, $houseCopy]);
@@ -610,9 +634,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             margin-top: 0;
         }
         .section-title svg {
-            width: 22px;
-            height: 22px;
+            width: 24px;
+            height: 24px;
             color: #667eea;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: iconFloat 3s ease-in-out infinite;
+        }
+        
+        .section-title:hover svg {
+            color: #8b5cf6;
+            animation: none;
+            transform: scale(1.15) rotate(5deg);
+        }
+        
+        @keyframes iconFloat {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+                color: #667eea;
+            }
+            50% {
+                transform: translateY(-4px) scale(1.05);
+                color: #8b5cf6;
+            }
         }
         
         /* Form Row (side by side) */
@@ -620,6 +663,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: grid;
             grid-template-columns: 1fr 1fr;
             gap: 1rem;
+            max-width: 100%;
         }
         @media (max-width: 600px) {
             .form-row {
@@ -630,11 +674,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Apple-Style File Upload */
         .file-upload-group {
             margin-bottom: 1.5rem;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+        }
+        
+        .file-upload-group.has-error .apple-upload-zone,
+        .file-upload-group.has-error .apple-preview-zone {
+            border-color: rgba(239, 68, 68, 0.5) !important;
+            background: rgba(239, 68, 68, 0.05);
         }
         
         .apple-upload-container {
             position: relative;
             width: 100%;
+            max-width: 100%;
+            overflow: hidden;
         }
         
         /* Upload Zone */
@@ -691,25 +746,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             align-items: center;
             justify-content: center;
-            animation: float 3s ease-in-out infinite;
+            animation: floatUpDown 3s ease-in-out infinite;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-10px); }
+        .upload-icon-wrapper:hover {
+            animation: none;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.35), rgba(118, 75, 162, 0.35));
+            transform: scale(1.08);
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+        }
+        
+        @keyframes floatUpDown {
+            0%, 100% { transform: translateY(0px) scale(1); }
+            50% { transform: translateY(-12px) scale(1.02); }
         }
         
         .upload-icon {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             color: #a5b4fc;
             stroke-width: 1.5;
-            animation: uploadPulse 2s ease-in-out infinite;
+            animation: uploadBounce 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        @keyframes uploadPulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
+        @keyframes uploadBounce {
+            0%, 100% { 
+                opacity: 1; 
+                transform: scale(1) translateY(0);
+                color: #a5b4fc;
+            }
+            25% { 
+                opacity: 0.8; 
+                transform: scale(1.08) translateY(-3px);
+                color: #8b5cf6;
+            }
+            50% { 
+                opacity: 1;
+                transform: scale(1.1) translateY(-6px);
+                color: #667eea;
+            }
+            75% { 
+                opacity: 0.8;
+                transform: scale(1.08) translateY(-3px);
+                color: #8b5cf6;
+            }
         }
         
         .upload-title {
@@ -755,7 +837,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         /* Preview Zone */
         .apple-preview-zone {
-            padding: 1.5rem;
+            padding: 1rem;
             background: rgba(17, 24, 39, 0.6);
             backdrop-filter: blur(20px) saturate(180%);
             -webkit-backdrop-filter: blur(20px) saturate(180%);
@@ -764,6 +846,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             animation: slideIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
             max-width: 100%;
             box-sizing: border-box;
+            overflow: hidden;
         }
         
         @keyframes slideIn {
@@ -780,17 +863,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .preview-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             margin-bottom: 1rem;
             padding-bottom: 1rem;
             border-bottom: 1px solid rgba(100, 116, 139, 0.2);
+            gap: 12px;
+            flex-wrap: nowrap;
+            min-width: 0;
         }
         
         .preview-info {
             display: flex;
-            align-items: center;
+            align-items: flex-start;
             gap: 12px;
             flex: 1;
+            min-width: 0;
+            overflow: hidden;
         }
         
         .file-icon {
@@ -801,6 +889,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-radius: 10px;
             color: #a5b4fc;
             flex-shrink: 0;
+            margin-top: 2px;
         }
         
         .file-details {
@@ -816,6 +905,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
+            max-width: 100%;
+            display: block;
         }
         
         .file-size {
@@ -849,11 +940,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .preview-content {
-            margin: 1rem 0;
+            margin: 0.5rem auto;
             border-radius: 12px;
-            overflow: auto;
+            overflow: hidden;
             background: rgba(10, 10, 15, 0.5);
-            max-height: 450px;
+            height: 150px;
+            width: 100%;
             max-width: 100%;
             display: flex;
             align-items: center;
@@ -884,7 +976,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .preview-content img {
             max-width: 100%;
-            max-height: 100%;
+            max-height: 140px;
             width: auto;
             height: auto;
             object-fit: contain;
@@ -933,14 +1025,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .checkmark {
-            width: 20px;
-            height: 20px;
-            animation: checkmarkDraw 0.6s ease;
+            width: 22px;
+            height: 22px;
+            animation: checkmarkPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+            color: #34d399;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        @keyframes checkmarkDraw {
-            0% { stroke-dasharray: 0 50; }
-            100% { stroke-dasharray: 50 50; }
+        .checkmark:hover {
+            animation: none;
+            transform: scale(1.15) rotate(10deg);
+            color: #06b6d4;
+        }
+        
+        @keyframes checkmarkPop {
+            0% { 
+                stroke-dasharray: 0 50;
+                transform: scale(0) rotate(-45deg);
+                opacity: 0;
+            }
+            60% { 
+                transform: scale(1.2) rotate(10deg);
+            }
+            100% { 
+                stroke-dasharray: 50 50;
+                transform: scale(1) rotate(0deg);
+                opacity: 1;
+            }
         }
         
         /* Hint text */
@@ -1250,19 +1361,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .duration-info svg {
-            width: 40px;
-            height: 40px;
-            padding: 10px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
-            border-radius: 12px;
+            width: 50px;
+            height: 50px;
+            padding: 8px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+            border-radius: 16px;
             color: #a5b4fc;
             flex-shrink: 0;
-            animation: rotatePulse 3s ease-in-out infinite;
+            animation: clockAnimation 4s linear infinite;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
         
-        @keyframes rotatePulse {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            50% { transform: rotate(5deg) scale(1.05); }
+        .duration-info svg:hover {
+            animation: none;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.4), rgba(118, 75, 162, 0.4));
+            color: #06b6d4;
+            transform: scale(1.1);
+            padding: 6px;
+        }
+        
+        @keyframes clockAnimation {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            25% {
+                transform: rotate(90deg) scale(1.02);
+            }
+            50% {
+                transform: rotate(180deg) scale(1);
+            }
+            75% {
+                transform: rotate(270deg) scale(1.02);
+            }
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
         }
         
         .duration-text {
@@ -1595,6 +1728,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: #1a1a2e;
             color: #fff;
         }
+        
+        /* Select with icon wrapper */
+        .input-wrapper select {
+            width: 100%;
+            padding: 1rem 2.5rem 1rem 3rem;
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            cursor: pointer;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%23667eea' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 18px;
+        }
+        
+        .input-wrapper select:hover {
+            border-color: rgba(102, 126, 234, 0.5);
+        }
 
         .form-group textarea {
             min-height: 120px;
@@ -1647,6 +1798,71 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             position: relative;
         }
         
+        /* Modern animated icons */
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 22px;
+            height: 22px;
+            color: #667eea;
+            pointer-events: none;
+            z-index: 1;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        /* Calendar Icon Animation */
+        @keyframes calendarPulse {
+            0% {
+                transform: translateY(-50%) scale(1);
+                color: #667eea;
+            }
+            50% {
+                transform: translateY(-50%) scale(1.1);
+                color: #8b5cf6;
+            }
+            100% {
+                transform: translateY(-50%) scale(1);
+                color: #667eea;
+            }
+        }
+        
+        .calendar-icon {
+            animation: calendarPulse 3s ease-in-out infinite;
+        }
+        
+        .calendar-icon:hover {
+            animation: none;
+            color: #8b5cf6;
+            transform: translateY(-50%) scale(1.15);
+        }
+        
+        /* Clock Icon Animation - rotating */
+        @keyframes clockTick {
+            0% {
+                transform: translateY(-50%) rotate(0deg);
+                color: #667eea;
+            }
+            50% {
+                color: #06b6d4;
+            }
+            100% {
+                transform: translateY(-50%) rotate(360deg);
+                color: #667eea;
+            }
+        }
+        
+        .clock-icon {
+            animation: clockTick 8s linear infinite;
+        }
+        
+        .clock-icon:hover {
+            animation: none;
+            color: #06b6d4;
+            transform: translateY(-50%) scale(1.15);
+        }
+        
         /* Validation icon container */
         .validation-icon {
             position: absolute;
@@ -1669,15 +1885,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-group.is-valid .validation-icon.success {
             opacity: 1;
             transform: translateY(-50%) scale(1);
-            animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            animation: successBounce 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
         }
         .form-group.is-valid input,
+        .form-group.is-valid select,
         .form-group.is-valid textarea {
             border-color: rgba(52, 211, 153, 0.5);
             background: linear-gradient(135deg, rgba(52, 211, 153, 0.03), rgba(16, 185, 129, 0.05));
             padding-right: 48px;
         }
         .form-group.is-valid input:focus,
+        .form-group.is-valid select:focus,
         .form-group.is-valid textarea:focus {
             border-color: #34d399;
             box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.15), 0 2px 8px rgba(52, 211, 153, 0.1);
@@ -1687,15 +1905,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-group.has-error .validation-icon.error {
             opacity: 1;
             transform: translateY(-50%) scale(1);
-            animation: shake 0.4s ease;
+            animation: errorShake 0.5s cubic-bezier(0.36, 0, 0.66, -0.56);
         }
         .form-group.has-error input,
+        .form-group.has-error select,
         .form-group.has-error textarea {
             border-color: rgba(248, 113, 113, 0.5);
             background: linear-gradient(135deg, rgba(248, 113, 113, 0.03), rgba(239, 68, 68, 0.05));
             padding-right: 48px;
         }
         .form-group.has-error input:focus,
+        .form-group.has-error select:focus,
         .form-group.has-error textarea:focus {
             border-color: #f87171;
             box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.15), 0 2px 8px rgba(248, 113, 113, 0.1);
@@ -1734,6 +1954,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             50% { transform: translateY(-50%) scale(1.2); }
             100% { transform: translateY(-50%) scale(1); opacity: 1; }
         }
+        
+        @keyframes successBounce {
+            0% { transform: translateY(-50%) scale(0); opacity: 0; }
+            50% { transform: translateY(-50%) scale(1.3); }
+            100% { transform: translateY(-50%) scale(1); opacity: 1; }
+        }
+        
+        @keyframes errorShake {
+            0%, 100% { transform: translateY(-50%) translateX(0) scale(1); }
+            10%, 30%, 50%, 70%, 90% { transform: translateY(-50%) translateX(-8px) scale(1.05); }
+            20%, 40%, 60%, 80% { transform: translateY(-50%) translateX(8px) scale(1.05); }
+        }
+        
         @keyframes shake {
             0%, 100% { transform: translateY(-50%) translateX(0); }
             20% { transform: translateY(-50%) translateX(-6px); }
@@ -1741,6 +1974,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             60% { transform: translateY(-50%) translateX(-4px); }
             80% { transform: translateY(-50%) translateX(4px); }
         }
+        
         @keyframes slideDown {
             from { opacity: 0; transform: translateY(-8px); max-height: 0; }
             to { opacity: 1; transform: translateY(0); max-height: 60px; }
@@ -2782,6 +3016,12 @@ if ($publicTheme === 'light') {
                 <a href="../index.php"><svg class="btn-icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> กลับหน้าแรก</a>
             </div>
         </div>
+        <script>
+            // Clear localStorage after successful booking
+            localStorage.removeItem('bookingForm_payProof');
+            localStorage.removeItem('bookingForm_idcard');
+            localStorage.removeItem('bookingForm_house');
+        </script>
         
         <?php elseif (count($availableRooms) === 0): ?>
         <div class="booking-form">
@@ -2803,7 +3043,7 @@ if ($publicTheme === 'light') {
                 <!-- ส่วนที่ 1: เลือกห้องพัก -->
                 <h3 class="section-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg> เลือกห้องพัก</h3>
                 <div class="form-group">
-                    <label>เลือกห้องพัก <span class="required">*</span></label>
+                    <label>เลือกห้องพัก</label>
                     <div class="room-selection-error" id="roomError">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                         <span>กรุณาเลือกห้องพักที่ต้องการจอง</span>
@@ -2839,7 +3079,7 @@ if ($publicTheme === 'light') {
                 
                 <div class="form-row">
                     <div class="form-group" data-field="id_card">
-                        <label>เลขบัตรประชาชน <span class="required">*</span></label>
+                        <label>เลขบัตรประชาชน</label>
                         <div class="input-wrapper">
                             <input type="text" name="id_card" maxlength="13" placeholder="1234567890123" inputmode="numeric" required>
                             <span class="validation-icon success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
@@ -2922,7 +3162,7 @@ if ($publicTheme === 'light') {
                 </div>
                 
                 <div class="form-group" data-field="name">
-                    <label>ชื่อ-นามสกุล <span class="required">*</span></label>
+                    <label>ชื่อ-นามสกุล</label>
                     <div class="form-row" style="gap: 1rem;">
                         <div class="input-wrapper" style="flex: 2;">
                             <input type="text" id="firstName" required placeholder="ชื่อจริง" autocomplete="given-name">
@@ -3038,7 +3278,7 @@ if ($publicTheme === 'light') {
                         </div>
                         
                         <!-- Hidden inputs for form submission -->
-                        <input type="hidden" name="addr_province" id="addrProvince">
+                        <input type="hidden" name="addr_province" id="addrProvince" required>
                         <input type="hidden" name="addr_district" id="addrDistrict">
                         <input type="hidden" name="addr_subdistrict" id="addrSubdistrict">
                         <input type="hidden" name="addr_zipcode" id="addrZipcode">
@@ -3061,7 +3301,7 @@ if ($publicTheme === 'light') {
                 </div>
                 
                 <div class="form-group" data-field="phone">
-                    <label>เบอร์โทรศัพท์ <span class="required">*</span></label>
+                    <label>เบอร์โทรศัพท์</label>
                     <div class="input-wrapper">
                         <input type="tel" name="phone" required placeholder="0812345678" autocomplete="tel" maxlength="10">
                         <span class="validation-icon success"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></span>
@@ -3140,52 +3380,58 @@ if ($publicTheme === 'light') {
                 
                 <div class="form-row">
                     <div class="form-group" data-field="ctr_start">
-                        <label>วันที่เข้าพัก <span class="required">*</span></label>
+                        <label>เดือนที่เริ่มเข้าพัก</label>
+                        <p class="field-hint" style="font-size: 12px; color: rgba(255,255,255,0.5); margin: 0 0 8px 0;">เริ่มวันที่ 1 ของเดือนที่เลือก</p>
                         
-                        <!-- Quick Start Date Buttons -->
-                        <div class="date-quick-select" style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-                            <button type="button" class="date-quick-btn" data-days="0">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <circle cx="12" cy="12" r="10"/>
-                                    <polyline points="12 6 12 12 16 14"/>
-                                </svg>
-                                วันนี้
-                            </button>
-                            <button type="button" class="date-quick-btn" data-days="1">พรุ่งนี้</button>
-                            <button type="button" class="date-quick-btn" data-days="3">3 วันข้างหน้า</button>
-                            <button type="button" class="date-quick-btn" data-days="7">สัปดาห์หน้า</button>
-                            <button type="button" class="date-quick-btn" data-days="30">เดือนหน้า</button>
-                        </div>
-                        
-                        <div class="input-wrapper date-input-enhanced">
-                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <div class="input-wrapper">
+                            <svg class="input-icon calendar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
                                 <line x1="16" y1="2" x2="16" y2="6"/>
                                 <line x1="8" y1="2" x2="8" y2="6"/>
                                 <line x1="3" y1="10" x2="21" y2="10"/>
                             </svg>
-                            <input type="date" name="ctr_start" id="ctrStart" min="<?php echo date('Y-m-d'); ?>" required>
+                            <select name="ctr_start_month" id="ctrStartMonth" required>
+                                <?php
+                                date_default_timezone_set('Asia/Bangkok');
+                                $currentMonth = (int)date('n');
+                                $currentYear = (int)date('Y');
+                                $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+                                
+                                // Show next 12 months
+                                for ($i = 0; $i < 12; $i++) {
+                                    $month = (($currentMonth - 1 + $i) % 12) + 1;
+                                    $year = $currentYear + floor(($currentMonth - 1 + $i) / 12);
+                                    $value = sprintf('%04d-%02d-01', $year, $month);
+                                    $thaiYear = $year + 543;
+                                    $label = $thaiMonths[$month] . ' ' . $thaiYear;
+                                    $selected = ($i == 0) ? 'selected' : '';
+                                    echo "<option value=\"$value\" $selected>$label</option>";
+                                }
+                                ?>
+                            </select>
+                            <!-- Hidden input for actual date value -->
+                            <input type="hidden" name="ctr_start" id="ctrStart" value="<?php echo date('Y-m-01'); ?>">
                         </div>
                     </div>
                     <div class="form-group" data-field="ctr_end">
-                        <label>วันที่สิ้นสุดสัญญา <span class="required">*</span></label>
+                        <label>ระยะเวลาสัญญา</label>
+                        <p class="field-hint" style="font-size: 12px; color: rgba(255,255,255,0.5); margin: 0 0 8px 0;">ขั้นต่ำ 3 เดือน</p>
                         
-                        <!-- Quick Duration Buttons -->
-                        <div class="date-duration-select" style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
-                            <button type="button" class="duration-btn" data-months="1">1 เดือน</button>
-                            <button type="button" class="duration-btn" data-months="3">3 เดือน</button>
-                            <button type="button" class="duration-btn active" data-months="6">6 เดือน</button>
-                            <button type="button" class="duration-btn" data-months="12">1 ปี</button>
-                        </div>
-                        
-                        <div class="input-wrapper date-input-enhanced">
-                            <svg class="input-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-                                <line x1="16" y1="2" x2="16" y2="6"/>
-                                <line x1="8" y1="2" x2="8" y2="6"/>
-                                <line x1="3" y1="10" x2="21" y2="10"/>
+                        <div class="input-wrapper">
+                            <svg class="input-icon clock-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <polyline points="12 6 12 12 16 14"/>
                             </svg>
-                            <input type="date" name="ctr_end" id="ctrEnd" min="<?php echo date('Y-m-d', strtotime('+1 month')); ?>" required>
+                            <select name="ctr_duration" id="ctrDuration" required>
+                                <option value="3">3 เดือน</option>
+                                <option value="6" selected>6 เดือน</option>
+                                <option value="9">9 เดือน</option>
+                                <option value="12">1 ปี</option>
+                                <option value="18">1 ปี 6 เดือน</option>
+                                <option value="24">2 ปี</option>
+                            </select>
+                            <!-- Hidden input for actual end date value -->
+                            <input type="hidden" name="ctr_end" id="ctrEnd" value="<?php echo date('Y-m-d', strtotime('+6 months', strtotime(date('Y-m-01')))); ?>">
                         </div>
                     </div>
                 </div>
@@ -3215,7 +3461,7 @@ if ($publicTheme === 'light') {
                 </div>
                 
                 <div class="form-group" data-field="deposit">
-                    <label>เงินมัดจำ (บาท) <span class="required">*</span></label>
+                    <label>เงินมัดจำ (บาท)</label>
                     <div class="deposit-display">
                         <div class="deposit-amount">฿<?php echo number_format($defaultDeposit); ?></div>
                     </div>
@@ -3230,7 +3476,7 @@ if ($publicTheme === 'light') {
                     <div class="form-group file-upload-group">
                         <label>สำเนาบัตรประชาชน</label>
                         <div class="apple-upload-container" id="idcardUploadContainer">
-                            <input type="file" name="idcard_copy" accept="image/*,.pdf" id="idcardFile" hidden>
+                            <input type="file" name="idcard_copy" accept="image/*,.pdf" id="idcardFile" hidden required>
                             
                             <!-- Upload Zone -->
                             <div class="apple-upload-zone" id="idcardUploadZone">
@@ -3285,7 +3531,7 @@ if ($publicTheme === 'light') {
                     <div class="form-group file-upload-group">
                         <label>สำเนาทะเบียนบ้าน</label>
                         <div class="apple-upload-container" id="houseUploadContainer">
-                            <input type="file" name="house_copy" accept="image/*,.pdf" id="houseFile" hidden>
+                            <input type="file" name="house_copy" accept="image/*,.pdf" id="houseFile" hidden required>
                             
                             <!-- Upload Zone -->
                             <div class="apple-upload-zone" id="houseUploadZone">
@@ -3345,7 +3591,7 @@ if ($publicTheme === 'light') {
                 <div class="form-group file-upload-group">
                     <label>หลักฐานการโอนเงิน</label>
                     <div class="apple-upload-container" id="appleUploadContainer">
-                        <input type="file" name="pay_proof" accept="image/*,.pdf" id="payProofFile" hidden>
+                        <input type="file" name="pay_proof" accept="image/*,.pdf" id="payProofFile" hidden required>
                         
                         <!-- Upload Zone -->
                         <div class="apple-upload-zone" id="uploadZone">
@@ -3634,7 +3880,7 @@ if ($publicTheme === 'light') {
                 message: 'กรุณากรอกอีเมลที่ถูกต้อง'
             },
             id_card: {
-                validate: (val) => !val || /^[0-9]{13}$/.test(val),
+                validate: (val) => /^[0-9]{13}$/.test(val.replace(/[^0-9]/g, '')),
                 message: 'กรุณากรอกเลขบัตรประชาชน 13 หลัก'
             }
         };
@@ -3652,7 +3898,6 @@ if ($publicTheme === 'light') {
                 if (card) card.classList.add('selected');
                 radio.checked = true;
                 if (roomError) roomError.classList.remove('show');
-                updateSubmitState();
             }
             
             // Attach room listeners
@@ -3719,24 +3964,57 @@ if ($publicTheme === 'light') {
                     if (showErrors && roomError) roomError.classList.add('show');
                 }
                 
-                // Check text fields
-                form.querySelectorAll('input[name]:not([type="radio"]), textarea[name]').forEach(input => {
+                // Check required text fields
+                form.querySelectorAll('input[required][name]:not([type="radio"]):not([type="file"]), textarea[required][name]').forEach(input => {
                     if (!validateField(input, showErrors)) {
                         allValid = false;
                     }
                 });
                 
+                // Check required file uploads
+                // ต้องเช็คทั้ง input.files และ preview zone (สำหรับไฟล์ที่โหลดจาก localStorage)
+                form.querySelectorAll('input[required][type="file"]').forEach(input => {
+                    const hasRealFile = input.files && input.files.length > 0;
+                    const container = input.closest('.apple-upload-container');
+                    const previewZone = container ? container.querySelector('.apple-preview-zone') : null;
+                    const hasPreview = previewZone && previewZone.style.display !== 'none' && previewZone.querySelector('img');
+                    
+                    // ถ้าไม่มี file จริง และไม่มี preview = ยังไม่ได้อัพโหลด
+                    if (!hasRealFile && !hasPreview) {
+                        allValid = false;
+                        if (showErrors) {
+                            const group = input.closest('.file-upload-group');
+                            if (group) {
+                                group.classList.add('has-error');
+                            }
+                        }
+                    } else {
+                        // มีไฟล์แล้ว ลบ error state
+                        const group = input.closest('.file-upload-group');
+                        if (group) {
+                            group.classList.remove('has-error');
+                        }
+                    }
+                });
+                
+                // Check if address (hidden field) has value
+                const addrProvinceField = form.querySelector('input[name="addr_province"]');
+                if (addrProvinceField && addrProvinceField.hasAttribute('required')) {
+                    if (!addrProvinceField.value) {
+                        allValid = false;
+                    }
+                }
+                
                 return allValid;
             }
             
-            // Update submit button state
+            // Update submit button state (ให้ปุ่มกดได้ตลอด)
             function updateSubmitState() {
-                const isValid = validateAll(false);
-                submitBtn.disabled = !isValid;
+                // ไม่ได้ปิดปุ่มแล้ว ให้ user กดได้ตลอดแล้ว validate เมื่อกด submit
             }
             
             // Attach field listeners
-            form.querySelectorAll('input[name]:not([type="radio"]), textarea[name]').forEach(input => {
+            form.querySelectorAll('input[required][name]:not([type="radio"]):not([type="file"]), textarea[required][name]').forEach(input => {
                 // Real-time validation on input
                 input.addEventListener('input', () => {
                     const group = input.closest('.form-group');
@@ -3746,7 +4024,6 @@ if ($publicTheme === 'light') {
                     } else {
                         validateField(input, false);
                     }
-                    updateSubmitState();
                 });
                 
                 // Full validation on blur
@@ -3754,7 +4031,6 @@ if ($publicTheme === 'light') {
                     if (input.value.trim() || input.required) {
                         validateField(input, true);
                     }
-                    updateSubmitState();
                 });
                 
                 // Format phone number
@@ -3776,14 +4052,99 @@ if ($publicTheme === 'light') {
             form.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
+                // Combine name fields before validation
+                if (typeof combineNameFields === 'function') {
+                    combineNameFields();
+                }
+                
+                // Combine address fields before validation
+                if (typeof combineAddress === 'function') {
+                    combineAddress();
+                }
+                
+                // Save form data before validation to prevent data loss
+                if (typeof saveFormData === 'function') {
+                    saveFormData();
+                }
+                
                 // Validate all with errors shown
                 if (!validateAll(true)) {
+                    // Find what's missing and show specific message
+                    let missingFields = [];
+                    
+                    if (!form.querySelector('input[name="room_id"]:checked')) {
+                        missingFields.push('ห้องพัก');
+                    }
+                    
+                    // Check text fields that are actually empty (not just has-error class)
+                    const requiredTextFields = {
+                        'id_card': 'เลขประจำตัว 13 หลัก',
+                        'name': 'ชื่อ-นามสกุล',
+                        'phone': 'เบอร์โทรศัพท์',
+                        'ctr_start_month': 'เดือนที่เริ่มเข้าพัก',
+                        'ctr_duration': 'ระยะเวลาสัญญา'
+                    };
+                    
+                    Object.keys(requiredTextFields).forEach(fieldName => {
+                        const input = form.querySelector(`input[name="${fieldName}"], select[name="${fieldName}"]`);
+                        if (input && input.hasAttribute('required')) {
+                            const value = input.value.trim();
+                            
+                            // Validate based on field type
+                            let isValid = false;
+                            if (fieldName === 'id_card') {
+                                // ID card must be 13 digits
+                                isValid = /^[0-9]{13}$/.test(value.replace(/[^0-9]/g, ''));
+                            } else if (fieldName === 'phone') {
+                                // Phone must be 10 digits
+                                isValid = /^[0-9]{10}$/.test(value.replace(/[^0-9]/g, ''));
+                            } else {
+                                // Other fields just need to be non-empty
+                                isValid = value.length > 0;
+                            }
+                            
+                            if (!isValid) {
+                                missingFields.push(requiredTextFields[fieldName]);
+                            }
+                        }
+                    });
+                    
+                    const fileInputs = ['idcard_copy', 'house_copy', 'pay_proof'];
+                    fileInputs.forEach(name => {
+                        const input = form.querySelector(`input[name="${name}"]`);
+                        if (input && input.hasAttribute('required')) {
+                            const hasRealFile = input.files && input.files.length > 0;
+                            const container = input.closest('.apple-upload-container');
+                            const previewZone = container ? container.querySelector('.apple-preview-zone') : null;
+                            const hasPreview = previewZone && previewZone.style.display !== 'none' && previewZone.querySelector('img');
+                            
+                            if (!hasRealFile && !hasPreview) {
+                                if (name === 'idcard_copy') missingFields.push('สำเนาบัตรประชาชน');
+                                if (name === 'house_copy') missingFields.push('สำเนาทะเบียนบ้าน');
+                                if (name === 'pay_proof') missingFields.push('หลักฐานการชำระมัดจำ');
+                            }
+                        }
+                    });
+                    
+                    const addrProvinceField = form.querySelector('input[name="addr_province"]');
+                    if (addrProvinceField && addrProvinceField.hasAttribute('required') && !addrProvinceField.value) {
+                        missingFields.push('ที่อยู่');
+                    }
+                    
                     // Find first error and scroll to it
-                    const firstError = form.querySelector('.form-group.has-error, .room-selection-error.show');
+                    const firstError = form.querySelector('.form-group.has-error, .room-selection-error.show, .file-upload-group.has-error');
                     if (firstError) {
                         firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     }
-                    showToast('กรุณากรอกข้อมูลให้ครบถ้วน', 'warning');
+                    
+                    // Remove duplicates from missingFields
+                    const uniqueFields = [...new Set(missingFields)];
+                    
+                    const message = uniqueFields.length > 0 
+                        ? `กรุณากรอก: ${uniqueFields.join(', ')}`
+                        : 'กรุณากรอกข้อมูลให้ครบถ้วน';
+                    
+                    showToast(message, 'warning');
                     return;
                 }
                 
@@ -3791,14 +4152,83 @@ if ($publicTheme === 'light') {
                 submitBtn.classList.add('loading');
                 submitBtn.disabled = true;
                 
-                // Submit with delay for animation
-                setTimeout(() => {
-                    form.submit();
-                }, 600);
+                // เรียก combine functions อีกครั้งก่อนสร้าง FormData เพื่อให้แน่ใจว่าข้อมูลถูกต้อง
+                if (typeof combineNameFields === 'function') {
+                    combineNameFields();
+                }
+                if (typeof combineAddress === 'function') {
+                    combineAddress();
+                }
+                
+                // Debug: ตรวจสอบค่าก่อนส่ง
+                console.log('Form values before submit:', {
+                    id_card: form.querySelector('input[name="id_card"]')?.value,
+                    name: form.querySelector('input[name="name"]')?.value,
+                    phone: form.querySelector('input[name="phone"]')?.value,
+                    firstName: document.getElementById('firstName')?.value,
+                    lastName: document.getElementById('lastName')?.value
+                });
+                
+                // Submit via AJAX to prevent page reload
+                const formData = new FormData(form);
+                
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.text())
+                .then(html => {
+                    // Parse response to check for success or error
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Check if there's a success message in the response
+                    const successBox = doc.querySelector('.success-box');
+                    const errorAlert = doc.querySelector('.alert-error');
+                    
+                    if (successBox) {
+                        // Success - show success message
+                        showToast('จองห้องพักสำเร็จ!', 'success');
+                        
+                        // Clear localStorage และ form data เฉพาะเมื่อสำเร็จ
+                        localStorage.removeItem('bookingForm_payProof');
+                        localStorage.removeItem('bookingForm_idcard');
+                        localStorage.removeItem('bookingForm_house');
+                        if (typeof clearFormData === 'function') {
+                            clearFormData();
+                        }
+                        
+                        // Replace the form content with success box
+                        const bookingForm = document.querySelector('.booking-form');
+                        if (bookingForm && successBox.parentElement) {
+                            bookingForm.innerHTML = successBox.parentElement.innerHTML;
+                        }
+                        
+                        // Scroll to top
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        
+                    } else if (errorAlert) {
+                        // Error from server - ไม่ล้างข้อมูล ให้ user แก้ไขได้
+                        const errorText = errorAlert.textContent || 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+                        showToast(errorText.trim(), 'error');
+                        submitBtn.classList.remove('loading');
+                        submitBtn.disabled = false;
+                    } else {
+                        // Unknown response - ไม่ reload ให้แสดง error แทน
+                        showToast('เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ กรุณาลองใหม่อีกครั้ง', 'error');
+                        submitBtn.classList.remove('loading');
+                        submitBtn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Submit error:', error);
+                    showToast('เกิดข้อผิดพลาดในการส่งข้อมูล กรุณาลองใหม่อีกครั้ง', 'error');
+                    submitBtn.classList.remove('loading');
+                    submitBtn.disabled = false;
+                });
             });
             
-            // Initial state
-            updateSubmitState();
+            // ปุ่มกดได้ตลอด ไม่ต้อง initial state update
         }
         
         // File upload handlers
@@ -4248,6 +4678,57 @@ if ($publicTheme === 'light') {
         // Load Thai address data when page loads
         loadThaiAddressData();
         
+        // ฟังก์ชันสำหรับ save และ load ภาพจาก localStorage
+        function saveFileToLocalStorage(fileInputId, storageKey) {
+            const fileInput = document.getElementById(fileInputId);
+            if (!fileInput) return;
+            
+            fileInput.addEventListener('change', function() {
+                const file = this.files[0];
+                if (!file) return;
+                
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        localStorage.setItem(storageKey, JSON.stringify({
+                            name: file.name,
+                            type: file.type,
+                            size: file.size,
+                            data: e.target.result
+                        }));
+                    } catch(e) {
+                        console.warn('localStorage เต็มแล้ว หรืออื่นๆ', e);
+                    }
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function loadFileFromLocalStorage(storageKey) {
+            try {
+                const data = localStorage.getItem(storageKey);
+                if (!data) return null;
+                return JSON.parse(data);
+            } catch(e) {
+                console.warn('ไม่สามารถโหลดไฟล์จาก localStorage', e);
+                return null;
+            }
+        }
+        
+        // Save uploaded files to localStorage
+        saveFileToLocalStorage('payProofFile', 'bookingForm_payProof');
+        saveFileToLocalStorage('idcardFile', 'bookingForm_idcard');
+        saveFileToLocalStorage('houseFile', 'bookingForm_house');
+        
+        // Global function to format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
         // Apple-style File Upload Handler
         (function() {
             const fileInput = document.getElementById('payProofFile');
@@ -4259,6 +4740,33 @@ if ($publicTheme === 'light') {
             const previewContent = document.getElementById('previewContent');
             
             if (!fileInput || !uploadZone || !previewZone) return;
+            
+            // Load saved file from localStorage on page load
+            const savedFile = loadFileFromLocalStorage('bookingForm_payProof');
+            if (savedFile) {
+                fileNamePreview.textContent = savedFile.name;
+                fileSizePreview.textContent = formatFileSize(savedFile.size);
+                previewContent.innerHTML = '';
+                
+                if (savedFile.type.startsWith('image/')) {
+                    previewContent.innerHTML = `<img src="${savedFile.data}" alt="Preview">`;
+                } else if (savedFile.type === 'application/pdf') {
+                    previewContent.innerHTML = `
+                        <div class="pdf-placeholder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <path d="M10 12h4M10 16h4"/>
+                            </svg>
+                            <p style="margin: 0; font-size: 1rem; font-weight: 500;">ไฟล์ PDF</p>
+                            <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">${savedFile.name}</p>
+                        </div>
+                    `;
+                }
+                
+                uploadZone.style.display = 'none';
+                previewZone.style.display = 'block';
+            }
             
             // Click to upload
             uploadZone.addEventListener('click', () => fileInput.click());
@@ -4343,14 +4851,6 @@ if ($publicTheme === 'light') {
                 // Switch views with animation
                 uploadZone.style.display = 'none';
                 previewZone.style.display = 'block';
-            }
-            
-            function formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
             }
         })();
         
@@ -4396,6 +4896,42 @@ if ($publicTheme === 'light') {
             
             if (!fileInput || !uploadZone || !previewZone) return;
             
+            // Map file input ID to localStorage key
+            const storageKeyMap = {
+                'idcardFile': 'bookingForm_idcard',
+                'houseFile': 'bookingForm_house'
+            };
+            const storageKey = storageKeyMap[fileInputId];
+            
+            // Load saved file from localStorage on page load
+            if (storageKey) {
+                const savedFile = loadFileFromLocalStorage(storageKey);
+                if (savedFile) {
+                    fileNamePreview.textContent = savedFile.name;
+                    fileSizePreview.textContent = formatFileSize(savedFile.size);
+                    previewContent.innerHTML = '';
+                    
+                    if (savedFile.type.startsWith('image/')) {
+                        previewContent.innerHTML = `<img src="${savedFile.data}" alt="Preview">`;
+                    } else if (savedFile.type === 'application/pdf') {
+                        previewContent.innerHTML = `
+                            <div class="pdf-placeholder">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                    <polyline points="14 2 14 8 20 8"/>
+                                    <path d="M10 12h4M10 16h4"/>
+                                </svg>
+                                <p style="margin: 0; font-size: 1rem; font-weight: 500;">ไฟล์ PDF</p>
+                                <p style="margin: 0.5rem 0 0 0; font-size: 0.85rem;">${savedFile.name}</p>
+                            </div>
+                        `;
+                    }
+                    
+                    uploadZone.style.display = 'none';
+                    previewZone.style.display = 'block';
+                }
+            }
+            
             // Click to upload
             uploadZone.addEventListener('click', () => fileInput.click());
             
@@ -4479,14 +5015,6 @@ if ($publicTheme === 'light') {
                 // Switch views with animation
                 uploadZone.style.display = 'none';
                 previewZone.style.display = 'block';
-            }
-            
-            function formatFileSize(bytes) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const sizes = ['Bytes', 'KB', 'MB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
             }
         }
         
@@ -4632,80 +5160,69 @@ if ($publicTheme === 'light') {
             
             if (!startDateInput || !endDateInput) return;
             
-            // Quick date select buttons
-            const dateQuickBtns = document.querySelectorAll('.date-quick-btn');
-            dateQuickBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const days = parseInt(this.dataset.days);
-                    const date = new Date();
-                    date.setDate(date.getDate() + days);
-                    startDateInput.value = date.toISOString().split('T')[0];
-                    
-                    // Highlight selected button
-                    dateQuickBtns.forEach(b => b.classList.remove('selected'));
-                    this.classList.add('selected');
-                    
-                    // Update end date if already set
-                    if (endDateInput.value) {
-                        updateDurationDisplay();
-                    }
-                });
-            });
+            // Month and Duration select dropdowns
+            const startMonthSelect = document.getElementById('ctrStartMonth');
+            const durationSelect = document.getElementById('ctrDuration');
             
-            // Duration buttons
-            const durationBtns = document.querySelectorAll('.duration-btn');
-            durationBtns.forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const months = parseInt(this.dataset.months);
-                    
-                    if (!startDateInput.value) {
-                        // Set start date to today if not set
-                        startDateInput.value = new Date().toISOString().split('T')[0];
-                    }
-                    
-                    const startDate = new Date(startDateInput.value);
-                    const endDate = new Date(startDate);
-                    endDate.setMonth(endDate.getMonth() + months);
-                    endDateInput.value = endDate.toISOString().split('T')[0];
-                    
-                    // Highlight selected button
-                    durationBtns.forEach(b => b.classList.remove('active'));
-                    this.classList.add('active');
-                    
+            // Update dates when start month changes
+            if (startMonthSelect) {
+                startMonthSelect.addEventListener('change', function() {
+                    startDateInput.value = this.value;
+                    updateEndDate();
                     updateDurationDisplay();
                 });
-            });
+            }
             
-            // Update duration display when dates change
-            startDateInput.addEventListener('change', updateDurationDisplay);
-            endDateInput.addEventListener('change', updateDurationDisplay);
+            // Update end date when duration changes
+            if (durationSelect) {
+                durationSelect.addEventListener('change', function() {
+                    updateEndDate();
+                    updateDurationDisplay();
+                });
+            }
+            
+            // Calculate end date based on start month and duration
+            function updateEndDate() {
+                if (!startMonthSelect || !durationSelect) return;
+                
+                const startValue = startMonthSelect.value; // YYYY-MM-01
+                const months = parseInt(durationSelect.value);
+                
+                // Parse start date
+                const [startYear, startMonth, startDay] = startValue.split('-').map(Number);
+                const endDate = new Date(startYear, startMonth - 1 + months, 1);
+                
+                // Set end date to last day of the month before (so it's exactly N months)
+                endDate.setDate(0); // Goes to last day of previous month
+                
+                // Format end date
+                const endYear = endDate.getFullYear();
+                const endMonth = String(endDate.getMonth() + 1).padStart(2, '0');
+                const endDay = String(endDate.getDate()).padStart(2, '0');
+                endDateInput.value = `${endYear}-${endMonth}-${endDay}`;
+            }
+            
+            // Initialize end date
+            updateEndDate();
             
             function updateDurationDisplay() {
-                if (!startDateInput.value || !endDateInput.value) {
+                if (!startMonthSelect || !durationSelect) {
                     durationDisplay.style.display = 'none';
                     return;
                 }
                 
-                const start = new Date(startDateInput.value);
-                const end = new Date(endDateInput.value);
+                const startValue = startMonthSelect.value; // YYYY-MM-01
+                const months = parseInt(durationSelect.value);
                 
-                if (end <= start) {
-                    durationDisplay.style.display = 'none';
-                    return;
-                }
+                // Parse start date
+                const [startYear, startMonth, startDay] = startValue.split('-').map(Number);
+                const start = new Date(startYear, startMonth - 1, 1);
                 
-                // Calculate duration
-                const diffTime = Math.abs(end - start);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                const diffMonths = Math.floor(diffDays / 30);
+                // End date is last day of the N-th month
+                const endDate = new Date(startYear, startMonth - 1 + months, 0);
                 
                 // Format display
-                let durationText = '';
-                if (diffMonths > 0) {
-                    durationText = `${diffMonths} เดือน (${diffDays} วัน)`;
-                } else {
-                    durationText = `${diffDays} วัน`;
-                }
+                const durationText = `${months} เดือน`;
                 
                 // Thai date format
                 const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 
@@ -4720,19 +5237,18 @@ if ($publicTheme === 'light') {
                 
                 durationValue.textContent = durationText;
                 startDateText.textContent = formatThaiDate(start);
-                endDateText.textContent = formatThaiDate(end);
+                endDateText.textContent = formatThaiDate(endDate);
                 
                 durationDisplay.style.display = 'block';
             }
             
-            // Initialize with default 6 months if start date is set
-            if (startDateInput.value) {
-                updateDurationDisplay();
-            }
+            // Initialize with default 6 months
+            updateEndDate();
+            updateDurationDisplay();
         }
         
         // Initialize date inputs on page load
-        if (document.getElementById('ctrStart')) {
+        if (document.getElementById('ctrStartMonth')) {
             setupDateInputs();
         }
         
@@ -4745,12 +5261,19 @@ if ($publicTheme === 'light') {
         
         // Save form data to localStorage
         function saveFormData() {
+            console.log('🔥 saveFormData() called');
+            
             const formData = {};
             const form = document.getElementById('bookingForm');
             
-            if (!form) return;
+            if (!form) {
+                console.warn('❌ Form not found');
+                return;
+            }
             
-            // Save all text inputs, textareas, select, date inputs
+            console.log('💾 Starting to save form data...');
+            
+            // Save all text inputs, textareas, select, date inputs (name attributes)
             form.querySelectorAll('input[name], select[name], textarea[name]').forEach(input => {
                 const name = input.name;
                 const type = input.type;
@@ -4762,26 +5285,7 @@ if ($publicTheme === 'light') {
                 } else if (type === 'checkbox') {
                     formData[name] = input.checked;
                 } else if (type === 'file') {
-                    // เก็บไฟล์เป็น Base64 (สำหรับรูปภาพขนาดเล็ก)
-                    if (input.files && input.files[0]) {
-                        const file = input.files[0];
-                        const reader = new FileReader();
-                        reader.onload = function(e) {
-                            formData[`file_${name}`] = {
-                                name: file.name,
-                                type: file.type,
-                                size: file.size,
-                                data: e.target.result
-                            };
-                            // Save after reading file
-                            try {
-                                localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
-                            } catch (error) {
-                                console.warn('File too large for localStorage:', file.name);
-                            }
-                        };
-                        reader.readAsDataURL(file);
-                    }
+                    // Skip file inputs for now - they're too complex
                     return;
                 } else {
                     formData[name] = input.value;
@@ -4794,29 +5298,69 @@ if ($publicTheme === 'light') {
                                   'addrProvince', 'addrDistrict', 'addrSubdistrict', 'addrZipcode',
                                   'educationInput', 'facultyInput'];
             
+            console.log('🔍 Checking special fields...');
             specialFields.forEach(id => {
                 const field = document.getElementById(id);
-                if (field && field.value) {
-                    formData[`field_${id}`] = field.value;
+                if (field) {
+                    console.log('  ' + id + ': found, value=' + (field.value || '(empty)'));
+                    if (field.value) {
+                        formData[`field_${id}`] = field.value;
+                        console.log('  ✓ Saved:', id, '=', field.value);
+                    }
+                } else {
+                    console.log('  ' + id + ': NOT FOUND');
                 }
             });
             
             // เก็บค่า SELECT สำหรับที่อยู่ (dropdown mode)
             const addressSelects = ['addrProvinceSelect', 'addrDistrictSelect', 'addrSubdistrictSelect', 'addrZipcodeSelect'];
+            console.log('🔍 Checking address selects...');
             addressSelects.forEach(id => {
                 const select = document.getElementById(id);
+                console.log('  ' + id + ':', select ? 'found' : 'NOT FOUND', select ? ('value=' + select.value) : '');
                 if (select && select.value) {
                     formData[`select_${id}`] = select.value;
+                    console.log('  ✓ Saved select:', id, '=', select.value);
+                }
+            });
+            
+            // เก็บค่าจากโหมดค้นหา (Search Mode)
+            const searchModeFields = {
+                'addrSubdistrictSearch': 'search_subdistrict',
+                'addrProvinceDisplay': 'search_province',
+                'addrDistrictDisplay': 'search_district',
+                'addrZipcodeDisplay': 'search_zipcode'
+            };
+            console.log('🔍 Checking search mode fields...');
+            Object.keys(searchModeFields).forEach(id => {
+                const field = document.getElementById(id);
+                if (field && field.value) {
+                    formData[searchModeFields[id]] = field.value;
+                    console.log('  ✓ Saved search field:', id, '=', field.value);
                 }
             });
             
             // เก็บโหมดที่อยู่ที่เลือก
             const searchMode = document.getElementById('searchMode');
             const dropdownMode = document.getElementById('dropdownMode');
-            if (searchMode && searchMode.classList.contains('active')) {
+            if (searchMode && searchMode.style.display !== 'none') {
                 formData._addressMode = 'search';
-            } else if (dropdownMode && dropdownMode.classList.contains('active')) {
+            } else if (dropdownMode && dropdownMode.style.display !== 'none') {
                 formData._addressMode = 'dropdown';
+            }
+            
+            // เก็บปุ่ม date-quick-btn ที่ active
+            const selectedDateBtn = document.querySelector('.date-quick-btn.selected');
+            if (selectedDateBtn && selectedDateBtn.dataset.days) {
+                formData._selectedDateDays = selectedDateBtn.dataset.days;
+                console.log('✓ Saved selected date button:', selectedDateBtn.dataset.days, 'days');
+            }
+            
+            // เก็บปุ่ม duration-btn ที่ active
+            const activeDurationBtn = document.querySelector('.duration-btn.active');
+            if (activeDurationBtn && activeDurationBtn.dataset.months) {
+                formData._selectedDurationMonths = activeDurationBtn.dataset.months;
+                console.log('✓ Saved active duration button:', activeDurationBtn.dataset.months, 'months');
             }
             
             // เพิ่ม timestamp
@@ -4824,29 +5368,23 @@ if ($publicTheme === 'light') {
             
             try {
                 localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
-                console.log('✓ Form data auto-saved');
+                console.log('✓ Form data auto-saved (' + Object.keys(formData).length + ' fields)');
+                
                 // Show clear button after saving
-                addClearDataButton();
+                setTimeout(() => {
+                    addClearDataButton();
+                }, 100);
+                
             } catch (e) {
                 console.error('Error saving form data:', e);
-                // ถ้าเกินขนาด ให้ลบไฟล์ออก
-                Object.keys(formData).forEach(key => {
-                    if (key.startsWith('file_')) delete formData[key];
-                });
-                try {
-                    localStorage.setItem(FORM_STORAGE_KEY, JSON.stringify(formData));
-                    console.log('✓ Form data saved (without files - too large)');
-                    // Show clear button after saving
-                    addClearDataButton();
-                } catch (e2) {
-                    console.error('Still too large:', e2);
-                }
             }
         }
         
         // Load form data from localStorage
         function loadFormData() {
             try {
+                console.log('📂 Attempting to load form data...');
+                
                 // Check if user just cleared data
                 if (sessionStorage.getItem('formDataCleared') === 'true') {
                     sessionStorage.removeItem('formDataCleared');
@@ -4856,8 +5394,12 @@ if ($publicTheme === 'light') {
                 
                 const savedData = localStorage.getItem(FORM_STORAGE_KEY);
                 
-                if (!savedData) return false;
+                if (!savedData) {
+                    console.log('⊘ No saved data found in localStorage');
+                    return false;
+                }
                 
+                console.log('✓ Found saved data, parsing...');
                 const formData = JSON.parse(savedData);
                 
                 // Check if data is expired
@@ -4866,7 +5408,7 @@ if ($publicTheme === 'light') {
                     const now = new Date().getTime();
                     
                     if (now - formData._timestamp > expiryTime) {
-                        console.log('Form data expired, clearing...');
+                        console.log('⚠ Form data expired, clearing...');
                         localStorage.removeItem(FORM_STORAGE_KEY);
                         return false;
                     }
@@ -4879,25 +5421,111 @@ if ($publicTheme === 'light') {
                 
                 // Restore address mode first
                 if (formData._addressMode === 'dropdown') {
-                    const dropdownBtn = document.getElementById('dropdownMode');
+                    const dropdownBtn = document.getElementById('dropdownModeBtn');
                     if (dropdownBtn) dropdownBtn.click();
+                } else if (formData._addressMode === 'search') {
+                    const searchBtn = document.getElementById('searchModeBtn');
+                    if (searchBtn) searchBtn.click();
+                    
+                    // Restore search mode fields immediately
+                    setTimeout(() => {
+                        if (formData.search_subdistrict) {
+                            const subdistrictInput = document.getElementById('addrSubdistrictSearch');
+                            if (subdistrictInput) {
+                                subdistrictInput.value = formData.search_subdistrict;
+                                console.log('✓ Restored search_subdistrict:', formData.search_subdistrict);
+                            }
+                        }
+                        if (formData.search_province) {
+                            const provinceDisplay = document.getElementById('addrProvinceDisplay');
+                            if (provinceDisplay) {
+                                provinceDisplay.value = formData.search_province;
+                                console.log('✓ Restored search_province:', formData.search_province);
+                            }
+                        }
+                        if (formData.search_district) {
+                            const districtDisplay = document.getElementById('addrDistrictDisplay');
+                            if (districtDisplay) {
+                                districtDisplay.value = formData.search_district;
+                                console.log('✓ Restored search_district:', formData.search_district);
+                            }
+                        }
+                        if (formData.search_zipcode) {
+                            const zipcodeDisplay = document.getElementById('addrZipcodeDisplay');
+                            if (zipcodeDisplay) {
+                                zipcodeDisplay.value = formData.search_zipcode;
+                                console.log('✓ Restored search_zipcode:', formData.search_zipcode);
+                            }
+                        }
+                    }, 100);
                 }
                 
-                // Restore all form fields
-                Object.keys(formData).forEach(key => {
-                    // Handle select dropdowns (address selects)
-                    if (key.startsWith('select_')) {
-                        const selectId = key.replace('select_', '');
-                        const select = document.getElementById(selectId);
-                        if (select && formData[key]) {
-                            // Wait a bit for data to load, then set value
+                // Restore address selects with proper cascade
+                const restoreAddressSelects = () => {
+                    // Restore province first
+                    if (formData.select_addrProvinceSelect) {
+                        const provinceSelect = document.getElementById('addrProvinceSelect');
+                        if (provinceSelect && provinceSelect.options.length > 1) {
+                            provinceSelect.value = formData.select_addrProvinceSelect;
+                            provinceSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                            console.log('✓ Restored province select:', formData.select_addrProvinceSelect);
+                            
+                            // Wait for district to load, then restore
                             setTimeout(() => {
-                                select.value = formData[key];
-                                const event = new Event('change', { bubbles: true });
-                                select.dispatchEvent(event);
-                                fieldsRestored++;
-                            }, 100);
+                                if (formData.select_addrDistrictSelect) {
+                                    const districtSelect = document.getElementById('addrDistrictSelect');
+                                    if (districtSelect && districtSelect.options.length > 1) {
+                                        districtSelect.value = formData.select_addrDistrictSelect;
+                                        districtSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                        console.log('✓ Restored district select:', formData.select_addrDistrictSelect);
+                                        
+                                        // Wait for subdistrict to load, then restore
+                                        setTimeout(() => {
+                                            if (formData.select_addrSubdistrictSelect) {
+                                                const subdistrictSelect = document.getElementById('addrSubdistrictSelect');
+                                                if (subdistrictSelect && subdistrictSelect.options.length > 1) {
+                                                    subdistrictSelect.value = formData.select_addrSubdistrictSelect;
+                                                    subdistrictSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                                    console.log('✓ Restored subdistrict select:', formData.select_addrSubdistrictSelect);
+                                                }
+                                            }
+                                            
+                                            // Finally restore zipcode
+                                            if (formData.select_addrZipcodeSelect) {
+                                                const zipcodeSelect = document.getElementById('addrZipcodeSelect');
+                                                if (zipcodeSelect && zipcodeSelect.options.length > 1) {
+                                                    zipcodeSelect.value = formData.select_addrZipcodeSelect;
+                                                    zipcodeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+                                                    console.log('✓ Restored zipcode select:', formData.select_addrZipcodeSelect);
+                                                }
+                                            }
+                                        }, 300);
+                                    }
+                                }
+                            }, 300);
                         }
+                    }
+                };
+                
+                // Wait for thaiAddressData to be ready, then restore address selects
+                if (formData._addressMode === 'dropdown') {
+                    let attempts = 0;
+                    const waitForData = setInterval(() => {
+                        attempts++;
+                        if (typeof thaiAddressData !== 'undefined' && thaiAddressData.length > 0) {
+                            clearInterval(waitForData);
+                            setTimeout(restoreAddressSelects, 500);
+                        } else if (attempts > 50) { // 5 seconds max
+                            clearInterval(waitForData);
+                            console.log('⚠ Timeout waiting for address data');
+                        }
+                    }, 100);
+                }
+                
+                // Restore all other form fields
+                Object.keys(formData).forEach(key => {
+                    // Skip select dropdowns (handled above with cascade)
+                    if (key.startsWith('select_')) {
                         return;
                     }
                     if (key === '_timestamp' || key === '_addressMode') return;
@@ -4935,8 +5563,15 @@ if ($publicTheme === 'light') {
                     if (key.startsWith('field_')) {
                         const fieldId = key.replace('field_', '');
                         const field = document.getElementById(fieldId);
+                        
+                        // Debug address fields
+                        if (fieldId.includes('addr')) {
+                            console.log('🔄 Restoring address field:', fieldId, 'value=', formData[key]);
+                        }
+                        
                         if (field && formData[key]) {
                             field.value = formData[key];
+                            console.log('  ✓ Restored:', fieldId, '=', formData[key]);
                             
                             // Trigger change event for dropdowns
                             if (field.tagName === 'SELECT') {
@@ -4945,6 +5580,8 @@ if ($publicTheme === 'light') {
                             }
                             
                             fieldsRestored++;
+                        } else if (fieldId.includes('addr')) {
+                            console.log('  ❌ Not restored:', fieldId, 'field=', field ? 'found' : 'NOT FOUND', 'data=', formData[key] || '(empty)');
                         }
                         return;
                     }
@@ -5050,8 +5687,46 @@ if ($publicTheme === 'light') {
                             document.getElementById('ctrStart').dispatchEvent(event);
                         }
                         
+                        // Restore date-quick-btn selected state
+                        if (formData._selectedDateDays) {
+                            const dateBtn = document.querySelector(`.date-quick-btn[data-days="${formData._selectedDateDays}"]`);
+                            if (dateBtn) {
+                                document.querySelectorAll('.date-quick-btn').forEach(b => b.classList.remove('selected'));
+                                dateBtn.classList.add('selected');
+                                console.log('✓ Restored date button selection:', formData._selectedDateDays, 'days');
+                            }
+                        }
+                        
+                        // Restore duration-btn active state
+                        if (formData._selectedDurationMonths) {
+                            const durationBtn = document.querySelector(`.duration-btn[data-months="${formData._selectedDurationMonths}"]`);
+                            if (durationBtn) {
+                                document.querySelectorAll('.duration-btn').forEach(b => b.classList.remove('active'));
+                                durationBtn.classList.add('active');
+                                console.log('✓ Restored duration button:', formData._selectedDurationMonths, 'months');
+                            }
+                        }
+                        
                         // Show notification
                         showAutoSaveNotification();
+                        
+                        // Trigger validation update for all fields
+                        const form = document.getElementById('bookingForm');
+                        if (form) {
+                            form.querySelectorAll('input[required][name]:not([type="radio"]):not([type="file"]), textarea[required][name]').forEach(input => {
+                                if (input.value) {
+                                    const event = new Event('input', { bubbles: true });
+                                    input.dispatchEvent(event);
+                                }
+                            });
+                            
+                            // Check if room is selected and trigger click
+                            const selectedRoom = form.querySelector('input[name="room_id"]:checked');
+                            if (selectedRoom) {
+                                const event = new Event('change', { bubbles: true });
+                                selectedRoom.dispatchEvent(event);
+                            }
+                        }
                     }, 800);
                     
                     return true;
@@ -5277,13 +5952,10 @@ if ($publicTheme === 'light') {
             // Save before page unload
             window.addEventListener('beforeunload', saveFormData);
             
-            // Clear data on successful form submission
-            form.addEventListener('submit', function(e) {
-                // Don't clear immediately, let the form submit first
-                setTimeout(() => {
-                    clearFormData();
-                }, 100);
-            });
+            // Note: We DON'T clear data on form submit event
+            // because the main form handler uses e.preventDefault() for validation
+            // We will clear data only when form is actually successfully submitted
+            // via the form.submit() call which will trigger page navigation
             
             console.log('✓ Auto-save system initialized');
         }
@@ -5542,6 +6214,13 @@ if ($publicTheme === 'light') {
             document.addEventListener('keydown', escHandler);
         }
         
+        // Initialize auto-save when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initAutoSave);
+        } else {
+            initAutoSave();
+        }
+        
         // Add clear button after auto-save loads
         setTimeout(addClearDataButton, 1000);
         
@@ -5640,9 +6319,19 @@ if ($publicTheme === 'light') {
         
         // Combine name fields (ชื่อจริง (ชื่อเล่น) นามสกุล)
         function combineNameFields() {
-            const firstName = document.getElementById('firstName')?.value?.trim() || '';
-            const nickName = document.getElementById('nickName')?.value?.trim() || '';
-            const lastName = document.getElementById('lastName')?.value?.trim() || '';
+            const firstNameEl = document.getElementById('firstName');
+            const nickNameEl = document.getElementById('nickName');
+            const lastNameEl = document.getElementById('lastName');
+            const fullNameEl = document.getElementById('fullName');
+            
+            if (!fullNameEl) {
+                console.error('fullName element not found');
+                return;
+            }
+            
+            const firstName = firstNameEl?.value?.trim() || '';
+            const nickName = nickNameEl?.value?.trim() || '';
+            const lastName = lastNameEl?.value?.trim() || '';
             
             let fullName = '';
             if (firstName) {
@@ -5655,7 +6344,8 @@ if ($publicTheme === 'light') {
                 }
             }
             
-            document.getElementById('fullName').value = fullName;
+            fullNameEl.value = fullName;
+            console.log('combineNameFields called:', { firstName, nickName, lastName, fullName });
         }
         
         // Add event listeners for name fields
@@ -5759,6 +6449,8 @@ if ($publicTheme === 'light') {
                 
                 termsError.style.display = 'none';
                 combineAddress();
+                
+                // Note: localStorage for images will be cleared when success page loads
             }, true);
             
             // Hide error when checkbox is checked

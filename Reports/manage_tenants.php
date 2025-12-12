@@ -606,7 +606,7 @@ try {
             </div>
           </div>
           <div class="modal-actions">
-            <button type="submit" class="btn-submit">บันทึกการแก้ไข</button>
+            <button type="button" class="btn-submit" onclick="submitTenantEditForm()">บันทึกการแก้ไข</button>
             <button type="button" class="btn-cancel" onclick="closeTenantModal()">ยกเลิก</button>
           </div>
         </form>
@@ -810,6 +810,7 @@ try {
       }
 
       function openTenantModal(data) {
+        console.log('openTenantModal called with data:', data);
         document.getElementById('tenantEditModal').classList.add('active');
         document.body.classList.add('modal-open');
         const setVal = (id, val = '') => { const el = document.getElementById(id); if (el) el.value = val; };
@@ -825,6 +826,7 @@ try {
         setVal('edit_tnt_vehicle', data.tntVehicle || '');
         setVal('edit_tnt_parent', data.tntParent || '');
         setVal('edit_tnt_parentsphone', data.tntParentsPhone || '');
+        console.log('Modal opened successfully');
       }
 
       function closeTenantModal() {
@@ -833,6 +835,73 @@ try {
         document.body.classList.remove('modal-open');
         const form = document.getElementById('tenantEditForm');
         if (form) form.reset();
+      }
+
+      function submitTenantEditForm() {
+        console.log('submitTenantEditForm called');
+        const form = document.getElementById('tenantEditForm');
+        if (!form) {
+          console.error('Form not found!');
+          return;
+        }
+        
+        // Validate required fields
+        const tntName = document.getElementById('edit_tnt_name');
+        if (!tntName || !tntName.value.trim()) {
+          alert('กรุณากรอกชื่อ-สกุล');
+          tntName?.focus();
+          return;
+        }
+        
+        console.log('Validation passed, enabling disabled fields...');
+        
+        // Enable all disabled fields before submission
+        const allInputs = form.querySelectorAll('input[disabled], textarea[disabled], select[disabled]');
+        console.log('Found ' + allInputs.length + ' disabled fields');
+        allInputs.forEach(input => {
+          console.log('Enabling field:', input.name || input.id);
+          input.disabled = false;
+        });
+        
+        // Handle custom education value
+        const editEducationSelect = document.getElementById('edit_tnt_education_select');
+        const editEducationInput = document.getElementById('edit_tnt_education');
+        if (editEducationSelect && editEducationInput) {
+          if (editEducationSelect.value === 'other') {
+            const customValue = editEducationInput.value.trim();
+            if (customValue) {
+              addSelectOptionIfNew('edit_tnt_education_select', customValue, 'education');
+              addSelectOptionIfNew('tnt_education_select', customValue, 'education');
+              editEducationInput.value = customValue;
+            }
+          } else if (editEducationSelect.value) {
+            editEducationInput.value = editEducationSelect.value;
+          }
+        }
+        
+        // Handle custom faculty value
+        const editFacultySelect = document.getElementById('edit_tnt_faculty_select');
+        const editFacultyInput = document.getElementById('edit_tnt_faculty');
+        if (editFacultySelect && editFacultyInput) {
+          if (editFacultySelect.value === 'other') {
+            const customValue = editFacultyInput.value.trim();
+            if (customValue) {
+              addSelectOptionIfNew('edit_tnt_faculty_select', customValue, 'faculty');
+              addSelectOptionIfNew('tnt_faculty_select', customValue, 'faculty');
+              editFacultyInput.value = customValue;
+            }
+          } else if (editFacultySelect.value) {
+            editFacultyInput.value = editFacultySelect.value;
+          }
+        }
+        
+        console.log('Submitting form with data:', {
+          tnt_id_original: document.getElementById('edit_tnt_id_original').value,
+          tnt_name: document.getElementById('edit_tnt_name').value,
+          tnt_phone: document.getElementById('edit_tnt_phone').value,
+        });
+        
+        form.submit();
       }
 
       // Toggle tenant form visibility
@@ -856,6 +925,8 @@ try {
       }
 
       document.addEventListener('DOMContentLoaded', () => {
+        console.log('DOMContentLoaded fired - setting up tenant management');
+        
         // Restore form visibility from localStorage
         const isFormVisible = localStorage.getItem('tenantFormVisible') !== 'false';
         const section = document.getElementById('addTenantSection');
@@ -881,8 +952,23 @@ try {
         setupSelectSync('tnt_education_select', 'tnt_education', 'tnt_education_wrap');
         setupSelectSync('tnt_faculty_select', 'tnt_faculty', 'tnt_faculty_wrap');
 
-        document.querySelectorAll('.btn-edit-tenant').forEach(btn => {
+        const editButtons = document.querySelectorAll('.btn-edit-tenant');
+        console.log('Found ' + editButtons.length + ' edit buttons');
+        editButtons.forEach(btn => {
           btn.addEventListener('click', () => {
+            console.log('Edit button clicked, data:', {
+              tntId: btn.dataset.tntId,
+              tntName: btn.dataset.tntName,
+              tntAge: btn.dataset.tntAge,
+              tntPhone: btn.dataset.tntPhone,
+              tntAddress: btn.dataset.tntAddress,
+              tntEducation: btn.dataset.tntEducation,
+              tntFaculty: btn.dataset.tntFaculty,
+              tntYear: btn.dataset.tntYear,
+              tntVehicle: btn.dataset.tntVehicle,
+              tntParent: btn.dataset.tntParent,
+              tntParentsPhone: btn.dataset.tntParentsphone,
+            });
             openTenantModal({
               tntId: btn.dataset.tntId,
               tntName: btn.dataset.tntName,
@@ -1034,6 +1120,12 @@ try {
         });
 
         document.getElementById('tenantEditForm')?.addEventListener('submit', (e) => {
+          // Enable all disabled fields before submission so they get sent to server
+          const allInputs = document.getElementById('tenantEditForm').querySelectorAll('input[disabled], textarea[disabled], select[disabled]');
+          allInputs.forEach(input => {
+            input.disabled = false;
+          });
+          
           // Handle custom education value in edit modal
           const editEducationSelect = document.getElementById('edit_tnt_education_select');
           const editEducationInput = document.getElementById('edit_tnt_education');
@@ -1044,11 +1136,9 @@ try {
                 addSelectOptionIfNew('edit_tnt_education_select', customValue, 'education');
                 addSelectOptionIfNew('tnt_education_select', customValue, 'education');
                 editEducationInput.value = customValue;
-                editEducationInput.disabled = false;
               }
             } else if (editEducationSelect.value) {
               editEducationInput.value = editEducationSelect.value;
-              editEducationInput.disabled = false;
             }
           }
 
@@ -1062,11 +1152,9 @@ try {
                 addSelectOptionIfNew('edit_tnt_faculty_select', customValue, 'faculty');
                 addSelectOptionIfNew('tnt_faculty_select', customValue, 'faculty');
                 editFacultyInput.value = customValue;
-                editFacultyInput.disabled = false;
               }
             } else if (editFacultySelect.value) {
               editFacultyInput.value = editFacultySelect.value;
-              editFacultyInput.disabled = false;
             }
           }
         });
