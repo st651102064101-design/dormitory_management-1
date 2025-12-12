@@ -114,15 +114,20 @@ $statusMap = [
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
+$defaultViewMode = 'grid';
 $roomFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi']; // ค่า default
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'room_features')");
+  $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'room_features', 'default_view_mode')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'room_features' && !empty($row['setting_value'])) {
             $roomFeatures = array_map('trim', explode(',', $row['setting_value']));
         }
+    if ($row['setting_key'] === 'default_view_mode') {
+      $val = strtolower(trim((string)$row['setting_value']));
+      $defaultViewMode = ($val === 'list') ? 'list' : 'grid';
+    }
     }
 } catch (PDOException $e) {}
 ?>
@@ -342,12 +347,14 @@ try {
         let frameCount = 0;
         let lastTime = performance.now();
         let fpsValues = [];
-        let checkDuration = 2000; // Check for 2 seconds
+        let checkDuration = 3000; // Check for 3 seconds (more reliable measurement)
         let hasChecked = false;
+        let startTime = performance.now();
         
         function checkFPS(currentTime) {
           frameCount++;
           
+          // Measure FPS every 1 second
           if (currentTime - lastTime >= 1000) {
             const fps = frameCount;
             fpsValues.push(fps);
@@ -355,7 +362,8 @@ try {
             lastTime = currentTime;
           }
           
-          if (currentTime < checkDuration && !hasChecked) {
+          // Continue checking until duration is reached
+          if (currentTime - startTime < checkDuration && !hasChecked) {
             requestAnimationFrame(checkFPS);
           } else if (!hasChecked) {
             hasChecked = true;
@@ -363,7 +371,9 @@ try {
               ? fpsValues.reduce((a, b) => a + b, 0) / fpsValues.length 
               : 60;
             
-            if (avgFPS < 30) {
+            // Only show alert if truly low performance (below 20 FPS)
+            // 20 FPS is still acceptable for browsing, only alert if worse
+            if (avgFPS < 20) {
               window.__isLowPerformance = true;
               showPerformanceAlert(Math.round(avgFPS));
             }
@@ -434,12 +444,12 @@ try {
           }
         };
         
-        // Start FPS check after page load
+        // Start FPS check immediately after page load
         if (document.readyState === 'complete') {
           requestAnimationFrame(checkFPS);
         } else {
           window.addEventListener('load', () => {
-            setTimeout(() => requestAnimationFrame(checkFPS), 500);
+            requestAnimationFrame(checkFPS);
           });
         }
       })();
@@ -1174,15 +1184,18 @@ try {
       
       /* Subtle hover without flip */
       .room-card:hover:not(.flipped) {
-        z-index: 10;
+        transform: translateY(-8px) scale(1.02);
       }
       
       /* When flipped, stop all animations to prevent flicker */
       .room-card.flipped {
-        transform: translateY(-12px) scale(1.03);
+        /* Avoid vertical shift/jump that causes layout reflow */
+        transform: none;
         animation: none !important;
         filter: brightness(1.1);
-        z-index: 10;
+        /* Keep transition active for smooth return */
+        transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+                    filter 0.3s ease;
       }
       
       /* Keep animation stopped during flip back to prevent flicker */
@@ -1190,6 +1203,9 @@ try {
         animation: none !important;
         transform: none;
         filter: none;
+        /* Smooth transition back to normal state */
+        transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1),
+                    filter 0.3s ease;
       }
       
       .room-card.flipped::before {
@@ -1267,7 +1283,9 @@ try {
                     box-shadow 0.4s ease;
         transform-style: preserve-3d;
         -webkit-transform-style: preserve-3d;
-        transform: rotateY(0deg);
+        transform-origin: center center;
+        /* Force composite layer to avoid flicker */
+        transform: translateZ(0) rotateY(0deg);
       }
       .rooms-grid.list-view .room-card-inner { 
         height: auto; 
@@ -1315,11 +1333,13 @@ try {
         backface-visibility: hidden;
         -webkit-backface-visibility: hidden;
         transform: rotateY(0deg);
+        z-index: 3;
       }
       
       /* Only disable pointer on front when flipped */
       .room-card.flipped .room-card-face.front {
         pointer-events: none;
+        z-index: 2;
       }
       
       /* Shimmer effect removed - conflicts with image gradient overlay */
@@ -1583,16 +1603,18 @@ try {
         justify-content: space-between;
         gap: 0.4rem;
         padding: 1rem;
-        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%) !important;
-        border: 1px solid rgba(255,255,255,0.15) !important;
+        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+        border: 1px solid rgba(255,255,255,0.15);
         border-radius: 24px;
         pointer-events: none;
         overflow: hidden;
+        z-index: 2;
       }
       
-      /* Enable pointer events only when flipped */
+      /* Enable pointer and raise z-index when flipped */
       .room-card.flipped .room-card-face.back {
         pointer-events: auto;
+        z-index: 3;
       }
       
       /* Hide image on back card */
@@ -3721,10 +3743,12 @@ try {
             } catch (e) {}
           }
 
-          // Restore view mode
+          // Restore view mode using system default when no per-page choice
           try {
-            const savedView = localStorage.getItem(VIEW_KEY) || 'grid';
-            applyViewMode(savedView === 'list' ? 'list' : 'grid');
+            const savedView = localStorage.getItem(VIEW_KEY);
+            const adminDefault = localStorage.getItem('adminDefaultViewMode') || <?php echo json_encode($defaultViewMode === 'list' ? 'list' : 'grid'); ?>;
+            const initial = (savedView === 'list' || savedView === 'grid') ? savedView : adminDefault;
+            applyViewMode(initial === 'list' ? 'list' : 'grid');
           } catch (e) {}
         });
       })();
@@ -3867,7 +3891,10 @@ try {
         });
 
         restoreSidebar();
-        applyView(safeGet('bookingViewMode') || 'grid');
+        const savedMode = safeGet('bookingViewMode');
+        const adminDefault = safeGet('adminDefaultViewMode') || <?php echo json_encode($defaultViewMode === 'list' ? 'list' : 'grid'); ?>;
+        const startMode = (savedMode === 'list' || savedMode === 'grid') ? savedMode : adminDefault;
+        applyView(startMode);
       });
     </script>
     <script>
@@ -4010,10 +4037,14 @@ try {
               if (card.classList.contains('flipped')) {
                 card.classList.add('was-flipped');
                 card.classList.remove('flipped');
-                // Remove was-flipped after transition completes
-                setTimeout(() => {
-                  card.classList.remove('was-flipped');
-                }, 700);
+                // Remove was-flipped when transition actually ends to avoid mid-animation glitches
+                const onTransitionEnd = (ev) => {
+                  if (ev.propertyName === 'transform') {
+                    card.classList.remove('was-flipped');
+                    card.removeEventListener('transitionend', onTransitionEnd);
+                  }
+                };
+                card.addEventListener('transitionend', onTransitionEnd);
               }
             });
           });

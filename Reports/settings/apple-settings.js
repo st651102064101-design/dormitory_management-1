@@ -15,6 +15,7 @@ class AppleSettings {
     this.initImageUploads();
     this.initThemeSelector();
     this.initColorPicker();
+    this.initViewModeSelector();
   }
 
   // ===== Sheet Modal Management =====
@@ -685,6 +686,45 @@ class AppleSettings {
         this.savePublicTheme(theme);
       });
     });
+  }
+
+  // ===== View Mode Selector =====
+  initViewModeSelector() {
+    document.querySelectorAll('.apple-view-option').forEach(option => {
+      option.addEventListener('click', () => {
+        document.querySelectorAll('.apple-view-option').forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+        const viewMode = option.dataset.view;
+        this.saveDefaultViewMode(viewMode);
+        
+        // Update display value
+        const displayEl = document.querySelector('[data-sheet="sheet-default-view"] .apple-row-value');
+        if (displayEl) {
+          displayEl.textContent = viewMode === 'grid' ? 'Grid' : 'List';
+        }
+      });
+    });
+  }
+
+  async saveDefaultViewMode(viewMode) {
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `default_view_mode=${encodeURIComponent(viewMode)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Also update localStorage so it takes effect immediately
+        localStorage.setItem('adminDefaultViewMode', viewMode);
+        this.showToast('บันทึกรูปแบบการแสดงผลสำเร็จ', 'success');
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
   }
 
   async savePublicTheme(theme) {

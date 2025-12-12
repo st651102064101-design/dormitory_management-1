@@ -268,6 +268,25 @@ try {
         exit;
     }
 
+    // จัดการ Default View Mode (grid/list)
+    if (!empty($_POST['default_view_mode'])) {
+        $viewMode = trim($_POST['default_view_mode']);
+        $allowedModes = ['grid', 'list'];
+        
+        if (!in_array($viewMode, $allowedModes)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รูปแบบการแสดงผลไม่ถูกต้อง']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['default_view_mode', $viewMode, $viewMode]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกรูปแบบการแสดงผลสำเร็จ']);
+        exit;
+    }
+
     // จัดการ Background Filename (เลือกจาก dropdown)
     if (!empty($_POST['bg_filename'])) {
         $bgFilename = trim($_POST['bg_filename']);

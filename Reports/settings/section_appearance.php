@@ -2,6 +2,20 @@
 <div class="apple-section-group">
   <h2 class="apple-section-title">การแสดงผล</h2>
   <div class="apple-section-card">
+    <!-- Default View Mode -->
+    <div class="apple-settings-row" data-sheet="sheet-default-view">
+      <div class="apple-row-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">รูปแบบการแสดงผลเริ่มต้น</p>
+        <p class="apple-row-sublabel">ใช้กับทุกหน้าแอดมิน</p>
+      </div>
+      <span class="apple-row-value"><?php 
+        $viewModeNames = ['grid' => 'Grid', 'list' => 'List'];
+        echo $viewModeNames[$defaultViewMode] ?? 'Grid';
+      ?></span>
+      <span class="apple-row-chevron">›</span>
+    </div>
+    
     <!-- Public Theme -->
     <div class="apple-settings-row" data-sheet="sheet-public-theme">
       <div class="apple-row-icon indigo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
@@ -152,6 +166,58 @@
       
       <div class="font-size-preview" style="padding: 16px; background: var(--apple-card); border-radius: 12px; text-align: center; font-size: calc(1rem * <?php echo htmlspecialchars($fontSize); ?>); color: var(--apple-text);">
         ตัวอย่างข้อความ - Example Text
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Default View Mode -->
+<div class="apple-sheet-overlay" id="sheet-default-view">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-default-view">เสร็จ</button>
+      <h3 class="apple-sheet-title">รูปแบบการแสดงผล</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <p style="font-size: 13px; color: var(--apple-text-secondary); margin-bottom: 16px;">
+        เลือกรูปแบบการแสดงผลเริ่มต้นสำหรับทุกหน้าในระบบแอดมิน
+      </p>
+      <div class="apple-theme-grid">
+        <div class="apple-view-option <?php echo $defaultViewMode === 'grid' ? 'active' : ''; ?>" data-view="grid">
+          <div class="apple-view-preview">
+            <div class="view-grid-preview">
+              <div class="grid-box"></div>
+              <div class="grid-box"></div>
+              <div class="grid-box"></div>
+              <div class="grid-box"></div>
+            </div>
+          </div>
+          <span class="apple-theme-name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+            Grid
+          </span>
+        </div>
+        <div class="apple-view-option <?php echo $defaultViewMode === 'list' ? 'active' : ''; ?>" data-view="list">
+          <div class="apple-view-preview">
+            <div class="view-list-preview">
+              <div class="list-row"></div>
+              <div class="list-row"></div>
+              <div class="list-row"></div>
+            </div>
+          </div>
+          <span class="apple-theme-name">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+            List
+          </span>
+        </div>
+      </div>
+      
+      <div style="margin-top: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0;">
+          💡 การตั้งค่านี้จะมีผลกับทุกหน้าแอดมิน เช่น หน้าจัดการห้องพัก, หน้าจัดการผู้เช่า, หน้าจองห้อง เป็นต้น
+        </p>
       </div>
     </div>
   </div>

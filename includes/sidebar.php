@@ -11,7 +11,7 @@ try {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
     
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'font_size')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'font_size', 'default_view_mode')");
     $sidebarSettings = [];
     foreach ($settingsStmt->fetchAll(PDO::FETCH_ASSOC) as $setting) {
         $sidebarSettings[$setting['setting_key']] = $setting['setting_value'];
@@ -21,6 +21,7 @@ try {
     $logoFilename = $sidebarSettings['logo_filename'] ?? $logoFilename;
     $themeColor = $sidebarSettings['theme_color'] ?? $themeColor;
     $fontSize = $sidebarSettings['font_size'] ?? $fontSize;
+    $defaultViewMode = isset($sidebarSettings['default_view_mode']) && strtolower($sidebarSettings['default_view_mode']) === 'list' ? 'list' : 'grid';
 } catch (Exception $e) {
     // ใช้ค่า default ถ้า database error
 }
@@ -1902,6 +1903,17 @@ try {
   if (window.innerWidth <= 1024) {
      document.write('<style>.app-sidebar.collapsed { all: revert !important; width: 240px !important; } .app-sidebar.collapsed .app-nav-label, .app-sidebar.collapsed .summary-label, .app-sidebar.collapsed .chev { all: revert !important; } .app-sidebar.collapsed .team-avatar { width: 120px !important; height: 120px !important; padding: 0 !important; margin: 0 auto !important; } .app-sidebar.collapsed .team-avatar-img { width: 120px !important; height: 120px !important; object-fit: cover !important; } .app-sidebar.collapsed .team-meta { display: block !important; text-align: center !important; padding-top: 0.75rem !important; }</style>');
   }
+</script>
+
+<!-- Persist admin default view mode for all pages -->
+<script>
+(function(){
+  try {
+    var mode = <?php echo json_encode(isset($defaultViewMode) ? $defaultViewMode : 'grid'); ?>;
+    if (mode !== 'grid' && mode !== 'list') { mode = 'grid'; }
+    localStorage.setItem('adminDefaultViewMode', mode);
+  } catch (e) {}
+})();
 </script>
 <aside class="app-sidebar">
   <!-- Mobile Close Button -->

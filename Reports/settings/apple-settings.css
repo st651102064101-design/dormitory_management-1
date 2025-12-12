@@ -24,6 +24,10 @@
   --apple-gray: #8e8e93;
   --apple-radius: 16px;
   --apple-radius-lg: 24px;
+  
+  /* Font scaling inherited from html (set by sidebar.php) */
+  /* Default to 1 if --font-scale not defined */
+  --font-scale: 1;
 }
 
 /* ===== SVG Icon Animations ===== */
@@ -362,7 +366,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-settings-header h1 {
-  font-size: 34px;
+  font-size: calc(34px * var(--font-scale, 1));
   font-weight: 700;
   color: var(--apple-text);
   margin: 0;
@@ -371,7 +375,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-settings-header p {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale, 1));
   color: var(--apple-text-secondary);
   margin: 8px 0 0;
   transition: color 0.3s ease;
@@ -438,7 +442,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-profile-name {
-  font-size: 24px;
+  font-size: calc(24px * var(--font-scale, 1));
   font-weight: 700;
   color: var(--apple-text);
   margin: 0;
@@ -447,7 +451,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-profile-detail {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale, 1));
   color: var(--apple-text-secondary);
   margin: 6px 0 0;
   transition: color 0.3s ease;
@@ -455,7 +459,7 @@ body.apple-settings-page .manage-panel {
 
 .apple-profile-chevron {
   color: var(--apple-text-secondary);
-  font-size: 24px;
+  font-size: calc(24px * var(--font-scale, 1));
   opacity: 0.4;
   transition: all 0.3s;
 }
@@ -532,7 +536,7 @@ body.apple-settings-page .manage-panel {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
+  font-size: calc(24px * var(--font-scale, 1));
   margin: 0 auto 10px;
 }
 
@@ -541,7 +545,7 @@ body.apple-settings-page .manage-panel {
 .apple-stat-icon.orange { background: linear-gradient(135deg, rgba(255, 149, 0, 0.2), rgba(255, 107, 0, 0.2)); }
 
 .apple-stat-value {
-  font-size: 32px;
+  font-size: calc(32px * var(--font-scale, 1));
   font-weight: 700;
   color: var(--apple-text);
   line-height: 1;
@@ -577,7 +581,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-stat-label {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   color: var(--apple-text-secondary);
   margin-top: 4px;
   transition: color 0.3s ease;
@@ -589,7 +593,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-section-title {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   font-weight: 600;
   color: var(--apple-text-secondary);
   text-transform: uppercase;
@@ -661,7 +665,7 @@ body.apple-settings-page .manage-panel {
   align-items: center;
   justify-content: center;
   margin-right: 14px;
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   flex-shrink: 0;
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
@@ -748,7 +752,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-row-label {
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   font-weight: 400;
   color: var(--apple-text);
   margin: 0;
@@ -756,14 +760,14 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-row-sublabel {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   color: var(--apple-text-secondary);
   margin: 2px 0 0;
   transition: color 0.3s ease;
 }
 
 .apple-row-value {
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   color: var(--apple-text-secondary);
   margin-right: 8px;
   white-space: nowrap;
@@ -775,7 +779,7 @@ body.apple-settings-page .manage-panel {
 
 .apple-row-chevron {
   color: var(--apple-text-secondary);
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale, 1));
   font-weight: 600;
   opacity: 0.4;
   transition: all 0.3s;
@@ -856,7 +860,7 @@ body.apple-settings-page .manage-panel {
   padding: 0 7px;
   background: var(--apple-red);
   color: white;
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale, 1));
   font-weight: 600;
   border-radius: 11px;
   margin-left: 8px;
@@ -932,7 +936,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-sheet-title {
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale, 1));
   font-weight: 700;
   color: var(--apple-text);
   margin: 0;
@@ -940,7 +944,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-sheet-action {
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   font-weight: 500;
   color: var(--apple-blue);
   background: none;
@@ -978,7 +982,7 @@ body.apple-settings-page .manage-panel {
 
 .apple-input-label {
   display: block;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   font-weight: 600;
   color: var(--apple-text-secondary);
   text-transform: uppercase;
@@ -996,7 +1000,7 @@ body.apple-settings-page .manage-panel {
 .apple-input {
   width: 100%;
   padding: 16px 18px;
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   border: 2px solid transparent;
   border-radius: 14px;
   background: var(--apple-card);
@@ -1033,7 +1037,7 @@ body.apple-settings-page .manage-panel {
 .apple-button {
   width: 100%;
   padding: 16px 24px;
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   font-weight: 600;
   border: none;
   border-radius: 16px;
@@ -1172,7 +1176,7 @@ body.apple-settings-page .manage-panel {
   justify-content: center;
   color: white;
   font-weight: bold;
-  font-size: 20px;
+  font-size: calc(20px * var(--font-scale, 1));
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
   animation: iconBounce 0.4s ease;
 }
@@ -1256,7 +1260,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-theme-name {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   font-weight: 600;
   color: var(--apple-text);
   transition: color 0.3s ease;
@@ -1264,6 +1268,98 @@ body.apple-settings-page .manage-panel {
 
 .apple-theme-option.active .apple-theme-name {
   color: var(--apple-blue);
+}
+
+/* ===== View Mode Option ===== */
+.apple-view-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 16px;
+  background: var(--apple-card);
+  border-radius: var(--apple-radius);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid transparent;
+  position: relative;
+}
+
+.apple-view-option::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(var(--apple-radius) + 2px);
+  background: linear-gradient(135deg, var(--apple-blue), var(--apple-purple));
+  opacity: 0;
+  z-index: -1;
+  transition: opacity 0.3s ease;
+}
+
+.apple-view-option:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 122, 255, 0.15);
+}
+
+.apple-view-option.active {
+  border-color: var(--apple-blue);
+  background: rgba(0, 122, 255, 0.1);
+}
+
+.apple-view-option.active::before {
+  opacity: 0.1;
+}
+
+.apple-view-preview {
+  width: 100%;
+  height: 80px;
+  background: var(--apple-bg);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+}
+
+.view-grid-preview {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+}
+
+.view-grid-preview .grid-box {
+  background: var(--apple-blue);
+  border-radius: 4px;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.apple-view-option:hover .grid-box,
+.apple-view-option.active .grid-box {
+  opacity: 1;
+}
+
+.view-list-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  height: 100%;
+}
+
+.view-list-preview .list-row {
+  background: var(--apple-blue);
+  border-radius: 4px;
+  height: 100%;
+  opacity: 0.6;
+  transition: opacity 0.3s ease;
+}
+
+.apple-view-option:hover .list-row,
+.apple-view-option.active .list-row {
+  opacity: 1;
 }
 
 /* ===== Rate Display ===== */
@@ -1286,12 +1382,12 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-rate-icon {
-  font-size: 32px;
+  font-size: calc(32px * var(--font-scale, 1));
   margin-bottom: 4px;
 }
 
 .apple-rate-value {
-  font-size: 32px;
+  font-size: calc(32px * var(--font-scale, 1));
   font-weight: 700;
   color: var(--apple-text);
   transition: color 0.3s ease, transform 0.2s ease;
@@ -1303,7 +1399,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-rate-unit {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   color: var(--apple-text-secondary);
   transition: color 0.3s ease;
 }
@@ -1356,7 +1452,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-upload-icon {
-  font-size: 56px;
+  font-size: calc(56px * var(--font-scale, 1));
   margin-bottom: 14px;
   transition: transform 0.3s;
   animation: iconFloat 3s ease-in-out infinite;
@@ -1368,7 +1464,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-upload-text {
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale, 1));
   font-weight: 500;
   color: var(--apple-text);
   margin: 0;
@@ -1378,7 +1474,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-upload-hint {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   color: var(--apple-text-secondary);
   opacity: 0.7;
   margin-top: 8px;
@@ -1418,7 +1514,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-image-info h4 {
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   font-weight: 600;
   color: var(--apple-text);
   margin: 0 0 6px;
@@ -1426,7 +1522,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-image-info p {
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   color: var(--apple-text-secondary);
   margin: 0;
   transition: color 0.3s ease;
@@ -1476,14 +1572,14 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-confirm-title {
-  font-size: 18px;
+  font-size: calc(18px * var(--font-scale, 1));
   font-weight: 700;
   color: var(--apple-text, #fff);
   margin: 0 0 8px;
 }
 
 .apple-confirm-message {
-  font-size: 14px;
+  font-size: calc(14px * var(--font-scale, 1));
   color: var(--apple-text-secondary, #8e8e93);
   margin: 0;
   line-height: 1.5;
@@ -1499,7 +1595,7 @@ body.apple-settings-page .manage-panel {
   padding: 14px 8px;
   border: none;
   background: transparent;
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
@@ -1556,7 +1652,7 @@ body.apple-settings-page .manage-panel {
   color: white;
   padding: 20px 28px;
   border-radius: 16px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale, 1));
   font-weight: 500;
   z-index: 99999;
   opacity: 0;
@@ -1575,7 +1671,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-toast-icon {
-  font-size: 44px;
+  font-size: calc(44px * var(--font-scale, 1));
   margin-bottom: 12px;
   display: block;
 }
@@ -1598,13 +1694,13 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-info-label {
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   color: var(--apple-text);
   transition: color 0.3s ease;
 }
 
 .apple-info-value {
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   color: var(--apple-text-secondary);
   transition: all 0.3s ease;
 }
@@ -1621,7 +1717,7 @@ body.apple-settings-page .manage-panel {
 }
 
 .apple-rate-table th {
-  font-size: 12px;
+  font-size: calc(12px * var(--font-scale, 1));
   font-weight: 700;
   color: var(--apple-text-secondary);
   text-transform: uppercase;
@@ -1634,7 +1730,7 @@ body.apple-settings-page .manage-panel {
 
 .apple-rate-table td {
   padding: 16px 18px;
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale, 1));
   color: var(--apple-text);
   border-bottom: 0.5px solid var(--apple-separator);
   transition: all 0.3s ease;
@@ -1675,7 +1771,7 @@ body.apple-settings-page .manage-panel {
   border: none;
   padding: 8px 14px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1699,7 +1795,7 @@ body.apple-settings-page .manage-panel {
   border: none;
   padding: 8px 14px;
   border-radius: 10px;
-  font-size: 13px;
+  font-size: calc(13px * var(--font-scale, 1));
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -1722,7 +1818,7 @@ body.apple-settings-page .manage-panel {
   }
   
   .apple-settings-header h1 {
-    font-size: 28px;
+    font-size: calc(28px * var(--font-scale, 1));
   }
   
   .apple-stats-grid {
@@ -1735,7 +1831,7 @@ body.apple-settings-page .manage-panel {
   }
   
   .apple-stat-value {
-    font-size: 22px;
+    font-size: calc(22px * var(--font-scale, 1));
   }
   
   .apple-color-grid {
@@ -1761,7 +1857,7 @@ body.apple-settings-page .manage-panel {
   }
   
   .apple-profile-name {
-    font-size: 18px;
+    font-size: calc(18px * var(--font-scale, 1));
   }
 }
 
@@ -1773,15 +1869,15 @@ body.apple-settings-page .manage-panel {
   .apple-stat-icon {
     width: 36px;
     height: 36px;
-    font-size: 18px;
+    font-size: calc(18px * var(--font-scale, 1));
   }
   
   .apple-stat-value {
-    font-size: 20px;
+    font-size: calc(20px * var(--font-scale, 1));
   }
   
   .apple-stat-label {
-    font-size: 11px;
+    font-size: calc(11px * var(--font-scale, 1));
   }
 }
 
@@ -1907,7 +2003,7 @@ body.apple-settings-page header > div {
 }
 
 body.apple-settings-page header h2 {
-  font-size: 17px;
+  font-size: calc(17px * var(--font-scale, 1));
   font-weight: 600;
   color: var(--apple-text) !important;
   margin: 0;
@@ -1976,7 +2072,7 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-settings-header h1 {
-    font-size: 28px;
+    font-size: calc(28px * var(--font-scale, 1));
   }
   
   .apple-profile-card {
@@ -1989,7 +2085,7 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-profile-name {
-    font-size: 19px;
+    font-size: calc(19px * var(--font-scale, 1));
   }
   
   .apple-stats-grid {
@@ -2001,7 +2097,7 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-stat-value {
-    font-size: 24px;
+    font-size: calc(24px * var(--font-scale, 1));
   }
   
   .apple-section-title {
@@ -2013,11 +2109,11 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-row-label {
-    font-size: 16px;
+    font-size: calc(16px * var(--font-scale, 1));
   }
   
   .apple-row-value {
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale, 1));
     max-width: 120px;
   }
   
@@ -2047,7 +2143,7 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-rate-value {
-    font-size: 26px;
+    font-size: calc(26px * var(--font-scale, 1));
   }
 }
 
@@ -2057,11 +2153,11 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-settings-header h1 {
-    font-size: 24px;
+    font-size: calc(24px * var(--font-scale, 1));
   }
   
   .apple-settings-header p {
-    font-size: 14px;
+    font-size: calc(14px * var(--font-scale, 1));
   }
   
   .apple-profile-card {
@@ -2075,11 +2171,11 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-profile-name {
-    font-size: 17px;
+    font-size: calc(17px * var(--font-scale, 1));
   }
   
   .apple-profile-detail {
-    font-size: 13px;
+    font-size: calc(13px * var(--font-scale, 1));
   }
   
   .apple-stats-grid {
@@ -2093,16 +2189,16 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   .apple-stat-icon {
     width: 36px;
     height: 36px;
-    font-size: 18px;
+    font-size: calc(18px * var(--font-scale, 1));
     margin-bottom: 6px;
   }
   
   .apple-stat-value {
-    font-size: 20px;
+    font-size: calc(20px * var(--font-scale, 1));
   }
   
   .apple-stat-label {
-    font-size: 10px;
+    font-size: calc(10px * var(--font-scale, 1));
   }
   
   .apple-section-group {
@@ -2110,7 +2206,7 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-section-title {
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
     padding: 0 14px 6px;
   }
   
@@ -2122,25 +2218,25 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   .apple-row-icon {
     width: 28px;
     height: 28px;
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale, 1));
     margin-right: 12px;
   }
   
   .apple-row-label {
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale, 1));
   }
   
   .apple-row-sublabel {
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
   }
   
   .apple-row-value {
-    font-size: 14px;
+    font-size: calc(14px * var(--font-scale, 1));
     max-width: 90px;
   }
   
   .apple-row-chevron {
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
   }
   
   /* Sheet adjustments */
@@ -2149,11 +2245,11 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-sheet-title {
-    font-size: 16px;
+    font-size: calc(16px * var(--font-scale, 1));
   }
   
   .apple-sheet-action {
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale, 1));
   }
   
   .apple-sheet-body {
@@ -2162,16 +2258,16 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   
   .apple-input {
     padding: 12px 14px;
-    font-size: 16px;
+    font-size: calc(16px * var(--font-scale, 1));
   }
   
   .apple-input-label {
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
   }
   
   .apple-button {
     padding: 14px 16px;
-    font-size: 16px;
+    font-size: calc(16px * var(--font-scale, 1));
   }
   
   .apple-color-grid {
@@ -2193,7 +2289,7 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-theme-name {
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
   }
   
   .apple-rate-display {
@@ -2206,15 +2302,15 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-rate-icon {
-    font-size: 24px;
+    font-size: calc(24px * var(--font-scale, 1));
   }
   
   .apple-rate-value {
-    font-size: 22px;
+    font-size: calc(22px * var(--font-scale, 1));
   }
   
   .apple-rate-unit {
-    font-size: 11px;
+    font-size: calc(11px * var(--font-scale, 1));
   }
   
   .apple-image-preview {
@@ -2228,7 +2324,7 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-image-info h4 {
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale, 1));
   }
   
   .apple-upload-area {
@@ -2236,18 +2332,18 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-upload-icon {
-    font-size: 36px;
+    font-size: calc(36px * var(--font-scale, 1));
   }
   
   .apple-upload-text {
-    font-size: 14px;
+    font-size: calc(14px * var(--font-scale, 1));
   }
   
   /* Rate table responsive */
   .apple-rate-table th,
   .apple-rate-table td {
     padding: 10px 12px;
-    font-size: 13px;
+    font-size: calc(13px * var(--font-scale, 1));
   }
   
   .apple-info-row {
@@ -2256,18 +2352,18 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   
   .apple-info-label,
   .apple-info-value {
-    font-size: 15px;
+    font-size: calc(15px * var(--font-scale, 1));
   }
   
   .apple-delete-btn {
     padding: 5px 10px;
-    font-size: 12px;
+    font-size: calc(12px * var(--font-scale, 1));
   }
 }
 
 @media (max-width: 360px) {
   .apple-settings-header h1 {
-    font-size: 22px;
+    font-size: calc(22px * var(--font-scale, 1));
   }
   
   .apple-profile-avatar {
@@ -2276,11 +2372,11 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   }
   
   .apple-profile-name {
-    font-size: 16px;
+    font-size: calc(16px * var(--font-scale, 1));
   }
   
   .apple-stat-value {
-    font-size: 18px;
+    font-size: calc(18px * var(--font-scale, 1));
   }
   
   .apple-color-grid {
@@ -2345,7 +2441,7 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: calc(16px * var(--font-scale, 1));
   animation: iconBounce 0.5s ease;
 }
 
@@ -2360,7 +2456,7 @@ body.apple-settings-page aside.app-sidebar details summary:hover {
 }
 
 .apple-toast-message {
-  font-size: 15px;
+  font-size: calc(15px * var(--font-scale, 1));
   font-weight: 500;
   color: var(--apple-text);
 }

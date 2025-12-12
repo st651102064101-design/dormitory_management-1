@@ -34,6 +34,34 @@ include __DIR__ . '/settings/settings_data.php';
   <link rel="stylesheet" href="../Assets/Css/main.css">
   <link rel="stylesheet" href="../Assets/Css/lottie-icons.css">
   <link rel="stylesheet" href="settings/apple-settings.css">
+  <style>
+    /* Override all fonts globally - NO SERIFS for Thai */
+    html {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 'Noto Sans Thai', 'Noto Sans', sans-serif !important;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 'Noto Sans Thai', 'Noto Sans', sans-serif !important;
+    }
+    
+    * {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 'Noto Sans Thai', 'Noto Sans', sans-serif !important;
+    }
+    
+    /* Explicitly override any serif fonts */
+    .apple-settings-page, .apple-settings-wrapper, 
+    .apple-settings-header, .apple-profile-card, .apple-stats-grid,
+    .apple-section-group, .apple-section-card, .apple-section-title,
+    .apple-settings-row, .apple-row-label, .apple-row-sublabel, .apple-row-value,
+    .apple-sheet, .apple-sheet-title, .apple-sheet-body,
+    .apple-input, .apple-input-label, .apple-input-group {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', 'Noto Sans Thai', 'Noto Sans', sans-serif !important;
+    }
+    
+    /* Smooth font rendering */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  </style>
 </head>
 <body class="reports-page apple-settings-page" data-theme-color="<?php echo htmlspecialchars($themeColor); ?>">
   <div class="app-shell">
