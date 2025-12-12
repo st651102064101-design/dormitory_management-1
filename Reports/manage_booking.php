@@ -353,7 +353,7 @@ try {
               ? fpsValues.reduce((a, b) => a + b, 0) / fpsValues.length 
               : 60;
             
-            if (a ) {
+            if (avgFPS < 10) {
               window.__isLowPerformance = true;
               showPerformanceAlert(Math.round(avgFPS));
             }
