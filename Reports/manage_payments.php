@@ -18,6 +18,24 @@ if ($settingsStmt) {
     }
 }
 
+// ตรวจสอบว่าเป็น light theme หรือไม่ (คำนวณจากความสว่างของสี)
+$isLightTheme = false;
+$lightThemeClass = '';
+if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
+    $hex = ltrim($themeColor, '#');
+    if (strlen($hex) == 3) {
+        $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+    }
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+    $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+    if ($brightness > 180) {
+        $isLightTheme = true;
+        $lightThemeClass = 'light-theme';
+    }
+}
+
 // ดึงข้อมูลการตั้งค่าธนาคาร (bank information)
 $settings = [
     'bank_name' => '',
@@ -165,7 +183,7 @@ $roomPaymentSummary = $pdo->query("
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!doctype html>
-<html lang="th">
+<html lang="th" class="<?php echo $lightThemeClass; ?>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -179,6 +197,213 @@ $roomPaymentSummary = $pdo->query("
     <style>
       :root {
         --theme-bg-color: <?php echo $themeColor; ?>;
+      }
+
+      /* ===== Comprehensive Light Theme Overrides ===== */
+      html.light-theme .manage-panel,
+      html.light-theme .section-header,
+      html.light-theme .panel-title h1,
+      html.light-theme .panel-title p,
+      html.light-theme .section-title h3,
+      html.light-theme .section-title p,
+      html.light-theme .title-block h1,
+      html.light-theme .title-block p,
+      html.light-theme .report-table,
+      html.light-theme .report-table th,
+      html.light-theme .report-table td,
+      html.light-theme label,
+      html.light-theme select,
+      html.light-theme input:not([type="submit"]):not([type="button"]),
+      html.light-theme textarea {
+        color: #111827 !important;
+      }
+
+      /* Buttons with gradient background - keep white text - HIGH SPECIFICITY */
+      html.light-theme button[type="submit"],
+      html.light-theme button[type="submit"] *,
+      html.light-theme button.submit-btn-animated,
+      html.light-theme button.submit-btn-animated *,
+      html.light-theme .btn.btn-primary,
+      html.light-theme .btn.btn-primary * {
+        color: #ffffff !important;
+      }
+      html.light-theme button[type="submit"] svg,
+      html.light-theme button.submit-btn-animated svg,
+      html.light-theme .btn.btn-primary svg {
+        stroke: #ffffff !important;
+        color: #ffffff !important;
+      }
+
+      html.light-theme .manage-panel {
+        background: rgba(255,255,255,0.7) !important;
+        border-color: rgba(0,0,0,0.08) !important;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
+      }
+
+      html.light-theme .manage-panel svg {
+        stroke: #111827 !important;
+      }
+
+      /* Payment form section - keep dark background and white text */
+      html.light-theme .payment-form-section {
+        background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)) !important;
+      }
+      html.light-theme .payment-form-section,
+      html.light-theme .payment-form-section *,
+      html.light-theme .payment-form-section label,
+      html.light-theme .payment-form-section span,
+      html.light-theme .payment-form-section h3 {
+        color: #f8fafc !important;
+      }
+      html.light-theme .payment-form-section svg {
+        stroke: #f8fafc !important;
+      }
+      html.light-theme .payment-form-section input:not([type="submit"]):not([type="button"]),
+      html.light-theme .payment-form-section select {
+        color: #111827 !important;
+        background: rgba(255,255,255,0.9) !important;
+      }
+      /* Submit button - force green background and white text */
+      html.light-theme .payment-form-section button[type="submit"],
+      html.light-theme .payment-form-section #submitPaymentBtn,
+      html.light-theme #submitPaymentBtn {
+        background: linear-gradient(135deg,#22c55e,#16a34a) !important;
+        color: #ffffff !important;
+      }
+      html.light-theme .payment-form-section button[type="submit"] span,
+      html.light-theme .payment-form-section button[type="submit"] *,
+      html.light-theme #submitPaymentBtn span,
+      html.light-theme #submitPaymentBtn * {
+        color: #ffffff !important;
+      }
+      html.light-theme .payment-form-section button[type="submit"] svg,
+      html.light-theme #submitPaymentBtn svg {
+        stroke: #ffffff !important;
+      }
+
+      /* HIGHEST SPECIFICITY: Target by ID */
+      html.light-theme #addPaymentSection button[type="submit"],
+      html.light-theme #addPaymentSection button[type="submit"] *,
+      html.light-theme #addPaymentSection .submit-btn-animated,
+      html.light-theme #addPaymentSection .submit-btn-animated * {
+        color: #ffffff !important;
+      }
+      html.light-theme #addPaymentSection button[type="submit"] svg,
+      html.light-theme #addPaymentSection .submit-btn-animated svg {
+        stroke: #ffffff !important;
+        fill: none !important;
+      }
+
+      /* Exception: buttons with colored background keep white icons */
+      html.light-theme .manage-panel button[type="submit"] svg,
+      html.light-theme .manage-panel button.submit-btn-animated svg,
+      html.light-theme .manage-panel .btn.btn-primary svg,
+      html.light-theme .manage-panel button[style*="background:linear-gradient"] svg,
+      html.light-theme .manage-panel button[style*="background: linear-gradient"] svg,
+      html.light-theme .manage-panel .status-badge svg {
+        stroke: #ffffff !important;
+      }
+      html.light-theme .manage-panel button[type="submit"],
+      html.light-theme .manage-panel button[type="submit"] span,
+      html.light-theme .manage-panel button.submit-btn-animated,
+      html.light-theme .manage-panel button.submit-btn-animated span,
+      html.light-theme .manage-panel .btn.btn-primary,
+      html.light-theme .manage-panel .btn.btn-primary span {
+        color: #ffffff !important;
+      }
+
+      /* Keep white icons on colored backgrounds */
+      html.light-theme .panel-icon-modern svg,
+      html.light-theme .panel-icon-animated svg,
+      html.light-theme .payment-info-icon svg,
+      html.light-theme .stat-card-icon svg,
+      html.light-theme .icon-circle svg {
+        stroke: #ffffff !important;
+      }
+
+      /* Section header styles */
+      html.light-theme .section-header .title-block h1 { color: #1e293b !important; }
+      html.light-theme .section-header .title-block p { color: #64748b !important; }
+
+      /* Filter inputs */
+      html.light-theme .filter-select,
+      html.light-theme select {
+        background: rgba(0,0,0,0.05) !important;
+        border-color: rgba(0,0,0,0.12) !important;
+        color: #111827 !important;
+      }
+
+      /* Action buttons - keep text white on colored backgrounds */
+      html.light-theme .btn-modern,
+      html.light-theme .btn-action,
+      html.light-theme button[style*="background:linear-gradient"],
+      html.light-theme button[style*="background: linear-gradient"] {
+        color: #ffffff !important;
+      }
+      html.light-theme .btn-modern svg,
+      html.light-theme .btn-action svg,
+      html.light-theme button[style*="background:linear-gradient"] svg,
+      html.light-theme button[style*="background: linear-gradient"] svg {
+        stroke: #ffffff !important;
+      }
+
+      /* Outline/ghost buttons - dark text */
+      html.light-theme button[style*="background:rgba(239,68,68"],
+      html.light-theme button[style*="background: rgba(239,68,68"] {
+        color: #dc2626 !important;
+      }
+      html.light-theme button[style*="background:rgba(239,68,68"] svg,
+      html.light-theme button[style*="background: rgba(239,68,68"] svg {
+        stroke: #dc2626 !important;
+      }
+
+      /* Status badges - solid background with white text in light theme */
+      html.light-theme .status-badge.status-pending {
+        background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+        color: #ffffff !important;
+        border: none !important;
+      }
+      html.light-theme .status-badge.status-verified {
+        background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+        color: #ffffff !important;
+        border: none !important;
+      }
+      html.light-theme .status-badge svg {
+        stroke: #ffffff !important;
+      }
+
+      /* Submit button - ensure visible */
+      html.light-theme .submit-btn-animated,
+      html.light-theme button[type="submit"] {
+        color: #ffffff !important;
+      }
+      html.light-theme .submit-btn-animated svg,
+      html.light-theme button[type="submit"] svg {
+        stroke: #ffffff !important;
+      }
+
+      /* Table action buttons with specific styling */
+      html.light-theme .crud-actions button {
+        color: #ffffff !important;
+      }
+      html.light-theme .crud-actions button svg {
+        stroke: #ffffff !important;
+      }
+
+      /* DataTable specific */
+      html.light-theme .datatable-table th,
+      html.light-theme .datatable-table td {
+        color: #111827 !important;
+      }
+      html.light-theme .datatable-input,
+      html.light-theme .datatable-selector {
+        background: rgba(0,0,0,0.03) !important;
+        border-color: rgba(0,0,0,0.1) !important;
+        color: #111827 !important;
+      }
+      html.light-theme .datatable-info,
+      html.light-theme .datatable-pagination a {
+        color: #374151 !important;
       }
 
       /* Modern panel + animations */
@@ -2206,13 +2431,13 @@ $roomPaymentSummary = $pdo->query("
                 </div>
               </div>
               <div style="padding:1rem 0;">
-                <button type="submit" class="btn btn-primary submit-btn-animated" style="padding:0.75rem 2rem;font-size:1rem;background:linear-gradient(135deg,#22c55e,#16a34a);border:none;border-radius:10px;color:#fff;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(34,197,94,0.3);transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(34,197,94,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(34,197,94,0.3)'">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="save-icon-animated" style="width:18px;height:18px;">
+                <button type="submit" id="submitPaymentBtn" class="btn btn-primary submit-btn-animated" style="padding:0.75rem 2rem;font-size:1rem;background:linear-gradient(135deg,#22c55e,#16a34a) !important;border:none;border-radius:10px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(34,197,94,0.3);transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;color:#ffffff !important;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(34,197,94,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(34,197,94,0.3)'">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="save-icon-animated" style="width:18px;height:18px;stroke:#ffffff !important;">
                     <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
                     <polyline points="17 21 17 13 7 13 7 21"/>
                     <polyline points="7 3 7 8 15 8"/>
                   </svg>
-                  บันทึกการชำระเงิน
+                  <span style="color:#ffffff !important;">บันทึกการชำระเงิน</span>
                 </button>
               </div>
             </form>

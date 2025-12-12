@@ -78,13 +78,33 @@ try {
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
+$themeColor = '#0f172a';
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+        if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
     }
 } catch (PDOException $e) {}
+
+// ตรวจสอบว่าเป็น light theme หรือไม่
+$isLightTheme = false;
+$lightThemeClass = '';
+if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
+    $hex = ltrim($themeColor, '#');
+    if (strlen($hex) == 3) {
+        $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+    }
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+    $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+    if ($brightness > 180) {
+        $isLightTheme = true;
+        $lightThemeClass = 'light-theme';
+    }
+}
 
 // Debug: แสดง POST data (ลบออกหลังทดสอบเสร็จ)
 $debugMode = false;
@@ -200,7 +220,7 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
                'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 ?>
 <!doctype html>
-<html lang="th">
+<html lang="th" class="<?php echo $lightThemeClass; ?>">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -211,6 +231,70 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css">
     <link rel="stylesheet" href="../Assets/Css/datatable-modern.css">
     <style>
+        /* ===== Light Theme Overrides ===== */
+        html.light-theme .page-title,
+        html.light-theme .utility-container,
+        html.light-theme .rate-info span,
+        html.light-theme .datatable-table th,
+        html.light-theme .datatable-table td,
+        html.light-theme label,
+        html.light-theme .show-mode-text {
+            color: #111827 !important;
+        }
+        html.light-theme .month-selector select,
+        html.light-theme .datatable-input,
+        html.light-theme .datatable-selector {
+            background: rgba(0,0,0,0.05) !important;
+            border-color: rgba(0,0,0,0.12) !important;
+            color: #111827 !important;
+        }
+        html.light-theme .rate-info {
+            background: rgba(0,0,0,0.03) !important;
+            border-color: rgba(0,0,0,0.08) !important;
+        }
+        html.light-theme .utility-table input {
+            background: rgba(255,255,255,0.9) !important;
+            border-color: rgba(0,0,0,0.15) !important;
+            color: #111827 !important;
+        }
+        html.light-theme .status-badge,
+        html.light-theme .status-empty,
+        html.light-theme .status-saved,
+        html.light-theme .btn-cancel {
+            color: #ffffff !important;
+        }
+        html.light-theme .btn-save,
+        html.light-theme .btn-update,
+        html.light-theme .view-toggle-btn.active {
+            color: #ffffff !important;
+        }
+        html.light-theme .datatable-info,
+        html.light-theme .datatable-pagination a {
+            color: #374151 !important;
+        }
+        /* Row with data */
+        html.light-theme tr.has-reading {
+            background: rgba(34,197,94,0.08) !important;
+        }
+        /* Page title SVG */
+        html.light-theme .page-title svg {
+            stroke: #111827 !important;
+        }
+        /* View toggle buttons */
+        html.light-theme .view-toggle-btn {
+            color: #374151 !important;
+            border-color: rgba(0,0,0,0.15) !important;
+        }
+        html.light-theme .view-toggle-btn svg {
+            stroke: #374151 !important;
+        }
+        html.light-theme .view-toggle-btn.active {
+            color: #ffffff !important;
+        }
+        html.light-theme .view-toggle-btn.active svg {
+            stroke: #ffffff !important;
+        }
+
         .utility-container {
             padding: 1.5rem;
         }

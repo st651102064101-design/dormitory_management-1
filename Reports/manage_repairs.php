@@ -142,9 +142,35 @@ try {
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
 } catch (PDOException $e) {}
+
+// Detect if theme is light (white or very light color)
+$isLightTheme = false;
+if ($themeColor) {
+    $color = strtolower(trim($themeColor));
+    // Check for common light color values
+    if (in_array($color, ['#fff', '#ffffff', '#fafafa', '#f8fafc', '#f1f5f9', '#e2e8f0', 'white', 'rgb(255,255,255)', 'rgb(255, 255, 255)'])) {
+        $isLightTheme = true;
+    }
+    // Also check if it's a hex color with high brightness
+    if (preg_match('/^#([a-f0-9]{6}|[a-f0-9]{3})$/i', $color)) {
+        $hex = ltrim($color, '#');
+        if (strlen($hex) === 3) {
+            $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+        }
+        $r = hexdec(substr($hex, 0, 2));
+        $g = hexdec(substr($hex, 2, 2));
+        $b = hexdec(substr($hex, 4, 2));
+        // Calculate perceived brightness (0-255)
+        $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+        if ($brightness > 200) {
+            $isLightTheme = true;
+        }
+    }
+}
+$lightThemeClass = $isLightTheme ? 'light-theme' : '';
 ?>
 <!doctype html>
-<html lang="th">
+<html lang="th" class="<?php echo $lightThemeClass; ?>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -1355,6 +1381,134 @@ try {
           justify-content: center;
         }
       }
+      /* Ensure active filter icons and counts are visible (white) in light theme.
+         Targets when theme class is on <html> (html.light-theme) or on <body> (body.live-light).
+         Also tries to match inline blue backgrounds (#60a5fa) used on some buttons. */
+      html.light-theme .status-filter-btn.active,
+      html.light-theme .status-filter-btn.active *,
+      html.light-theme a.filter-btn[style*="#60a5fa"],
+      html.light-theme a.filter-btn[style*="#60a5fa"] *,
+      body.live-light .status-filter-btn.active,
+      body.live-light a.filter-btn[style*="#60a5fa"] {
+        color: #ffffff !important;
+      }
+
+      html.light-theme .status-filter-btn.active svg,
+      html.light-theme .status-filter-btn.active svg *,
+      body.live-light .status-filter-btn.active svg,
+      body.live-light .status-filter-btn.active svg *,
+      html.light-theme a.filter-btn[style*="#60a5fa"] svg,
+      body.live-light a.filter-btn[style*="#60a5fa"] svg {
+        stroke: #ffffff !important;
+        fill: #ffffff !important;
+      }
+
+      /* If numeric counts are wrapped in a span with class 'count' enforce white */
+      html.light-theme .status-filter-btn.active .count,
+      html.light-theme a.filter-btn .count,
+      body.live-light .status-filter-btn.active .count,
+      body.live-light a.filter-btn .count,
+      html.light-theme .status-filters .status-filter-btn[style*="#60a5fa"] .count,
+      body.live-light .status-filters .status-filter-btn[style*="#60a5fa"] .count {
+        color: #ffffff !important;
+      }
+
+      /* Image placeholder color: adapt to light/dark themes */
+      .image-placeholder { color: rgba(255,255,255,0.3); }
+      html.light-theme .image-placeholder,
+      body.live-light .image-placeholder { color: rgba(0,0,0,0.35) !important; }
+
+      /* Force schedule/action buttons to use dark-mode appearance even in light theme */
+      html.light-theme .btn-schedule,
+      body.live-light .btn-schedule {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 8px 20px rgba(124,58,237,0.15) !important;
+      }
+
+      html.light-theme .schedule-badge.scheduled,
+      body.live-light .schedule-badge.scheduled {
+        background: linear-gradient(135deg, #8b5cf6, #a855f7) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 8px 20px rgba(168,85,247,0.12) !important;
+      }
+
+      /* Cancel button should appear like dark-mode secondary in light theme */
+      html.light-theme .schedule-btn-cancel,
+      body.live-light .schedule-btn-cancel {
+        background: rgba(0,0,0,0.06) !important;
+        border: 1px solid rgba(0,0,0,0.08) !important;
+        color: #ffffff !important;
+      }
+
+      /* Ensure status-badge action buttons (like 'ซ่อมเสร็จแล้ว') keep white icons/text */
+      html.light-theme .schedule-badge.scheduled svg,
+      body.live-light .schedule-badge.scheduled svg,
+      html.light-theme .btn-schedule svg,
+      body.live-light .btn-schedule svg {
+        stroke: #ffffff !important;
+        fill: #ffffff !important;
+      }
+
+      /* Override inline-styled action buttons in the table to match dark-mode look */
+      html.light-theme .crud-actions button[onclick*="openScheduleModal"],
+      body.live-light .crud-actions button[onclick*="openScheduleModal"] {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 8px 20px rgba(124,58,237,0.12) !important;
+      }
+
+      html.light-theme .crud-actions button[onclick*="'2'"],
+      body.live-light .crud-actions button[onclick*="'2'"] {
+        background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+        color: #ffffff !important;
+        border: none !important;
+      }
+
+      html.light-theme .crud-actions button[onclick*="'3'"],
+      body.live-light .crud-actions button[onclick*="'3'"] {
+        background: rgba(153,27,27,0.12) !important;
+        color: #f87171 !important;
+        border: 1px solid rgba(153,27,27,0.25) !important;
+      }
+
+      /* Ensure SVG icons inside these action buttons are white/visible */
+      html.light-theme .crud-actions button[onclick*="openScheduleModal"] svg,
+      body.live-light .crud-actions button[onclick*="openScheduleModal"] svg,
+      html.light-theme .crud-actions button[onclick*="'2'"] svg,
+      body.live-light .crud-actions button[onclick*="'2'"] svg {
+        stroke: #ffffff !important;
+        fill: #ffffff !important;
+      }
+
+      /* Cover any other buttons that open the schedule modal (not only inside .crud-actions) */
+      html.light-theme button[onclick*="openScheduleModal"],
+      body.live-light button[onclick*="openScheduleModal"] {
+        background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 8px 20px rgba(124,58,237,0.12) !important;
+      }
+
+      html.light-theme button[onclick*="openScheduleModal"] svg,
+      body.live-light button[onclick*="openScheduleModal"] svg {
+        stroke: #ffffff !important;
+        fill: #ffffff !important;
+      }
+
+      /* Ensure SVGs inherit currentColor in buttons generally */
+      button svg { stroke: currentColor; fill: none; }
+
+      /* Also ensure view-toggle active icons are white in light theme */
+      html.light-theme .view-toggle-btn.active svg,
+      body.live-light .view-toggle-btn.active svg {
+        stroke: #ffffff !important;
+        fill: #ffffff !important;
+        color: #ffffff !important;
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -1366,6 +1520,145 @@ try {
             $pageTitle = 'จัดการการแจ้งซ่อมอุปกรณ์';
             include __DIR__ . '/../includes/page_header.php'; 
           ?>
+
+          <?php if ($isLightTheme): ?>
+          <style>
+            /* ===== Light Theme Active - Complete Override ===== */
+            
+            /* Dark text for all content areas */
+            .manage-panel,
+            .manage-panel *,
+            .repair-form,
+            .repair-form *,
+            .repair-stats *,
+            .status-filters *,
+            .report-table,
+            .report-table *,
+            .panel-title,
+            .panel-title *,
+            .form-group,
+            .form-group *,
+            .crud-actions,
+            .crud-actions * {
+              color: #111827 !important;
+            }
+
+            /* SVGs should be dark by default */
+            .manage-panel svg,
+            .repair-form svg,
+            .report-table svg,
+            .status-filters svg,
+            .form-group svg {
+              stroke: #111827 !important;
+              fill: none !important;
+            }
+
+            /* Placeholder styling */
+            .image-placeholder {
+              color: rgba(17,24,39,0.35) !important;
+              border-color: rgba(17,24,39,0.15) !important;
+              background: rgba(0,0,0,0.03) !important;
+            }
+            .image-placeholder svg {
+              stroke: rgba(17,24,39,0.35) !important;
+              fill: none !important;
+            }
+
+            /* ===== Buttons with colored backgrounds - keep white text/icons ===== */
+            
+            /* Panel icons */
+            .manage-panel .panel-icon,
+            .manage-panel .panel-icon svg {
+              color: #ffffff !important;
+              stroke: #ffffff !important;
+            }
+
+            /* Stat card icons */
+            .repair-stat-card .stat-card-icon,
+            .repair-stat-card .stat-card-icon svg {
+              color: #ffffff !important;
+              stroke: #ffffff !important;
+            }
+
+            /* Toggle button - dark text on light background */
+            .toggle-btn {
+              background: rgba(0,0,0,0.08) !important;
+              border-color: rgba(0,0,0,0.15) !important;
+              color: #111827 !important;
+            }
+            .toggle-btn:hover {
+              background: rgba(0,0,0,0.12) !important;
+              border-color: rgba(0,0,0,0.2) !important;
+              color: #111827 !important;
+            }
+            .toggle-btn svg {
+              stroke: #111827 !important;
+            }
+
+            /* Schedule badge (purple card) */
+            .schedule-badge,
+            .schedule-badge *,
+            .schedule-badge svg,
+            .schedule-badge.scheduled,
+            .schedule-badge.scheduled *,
+            .schedule-badge.scheduled svg {
+              color: #ffffff !important;
+              stroke: #ffffff !important;
+            }
+
+            /* Schedule button (purple) */
+            .btn-schedule,
+            .btn-schedule *,
+            .btn-schedule svg {
+              color: #ffffff !important;
+              stroke: #ffffff !important;
+              background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+            }
+
+            /* Primary buttons (purple gradient) */
+            .btn-modern.btn-primary,
+            .btn-modern.btn-primary *,
+            .btn-modern.btn-primary svg,
+            button.btn-modern[style*="background:linear-gradient"],
+            button.btn-modern[style*="background:linear-gradient"] * {
+              color: #ffffff !important;
+              stroke: #ffffff !important;
+            }
+
+            /* Green success button */
+            button[style*="background:linear-gradient(135deg, #22c55e"],
+            button[style*="background:linear-gradient(135deg, #22c55e"] *,
+            button[style*="background:linear-gradient(135deg, #22c55e"] svg {
+              color: #ffffff !important;
+              stroke: #ffffff !important;
+            }
+
+            /* Red/Pink cancel button - keep its original styling */
+            button[style*="background:rgba(239,68,68"],
+            button[style*="background:rgba(239,68,68"] * {
+              color: #f87171 !important;
+            }
+            button[style*="background:rgba(239,68,68"] svg {
+              stroke: #f87171 !important;
+            }
+
+            /* Status badge */
+            .status-badge,
+            .status-badge *,
+            .status-badge svg {
+              color: #ffffff !important;
+              stroke: #ffffff !important;
+            }
+
+            /* CRUD action buttons - need specific handling */
+            .crud-actions button[style*="background:linear-gradient"],
+            .crud-actions button[style*="background:linear-gradient"] *,
+            .crud-actions button[style*="background:linear-gradient"] svg {
+              color: #ffffff !important;
+              stroke: #ffffff !important;
+            }
+          </style>
+          <?php endif; ?>
 
           <?php if (isset($_SESSION['success'])): ?>
             <div style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border-radius: 14px; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 25px rgba(34,197,94,0.25); animation: fadeInUp 0.5s ease forwards;">
@@ -1668,11 +1961,11 @@ try {
                                    onmouseover="this.style.transform='scale(1.1)'" 
                                    onmouseout="this.style.transform='scale(1)'" />
                             <?php else: ?>
-                              <div style="width:50px; height:50px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border-radius:10px; border:1px dashed rgba(255,255,255,0.1);">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.3)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                                  <circle cx="8.5" cy="8.5" r="1.5" />
-                                  <path d="M21 15l-5-5L5 21" />
+                              <div class="image-placeholder" style="width:50px; height:50px; display:flex; align-items:center; justify-content:center; background:rgba(255,255,255,0.05); border-radius:10px; border:1px dashed rgba(255,255,255,0.1);">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" fill="none" stroke="currentColor" stroke-width="1.5" />
+                                  <circle cx="8.5" cy="8.5" r="1.5" fill="none" stroke="currentColor" stroke-width="1.5" />
+                                  <path d="M21 15l-5-5L5 21" fill="none" stroke="currentColor" stroke-width="1.5" />
                                 </svg>
                               </div>
                             <?php endif; ?>

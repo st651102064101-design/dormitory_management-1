@@ -131,6 +131,56 @@ try {
     border-top: 1px solid #e5e7eb !important;
   }
 
+  /* Ensure panel / header icons remain visible in light mode */
+  body.live-light .panel-icon svg,
+  html.light-theme .panel-icon svg,
+  body.light-theme .panel-icon svg,
+  .light-theme .panel-icon svg {
+    stroke: #111827 !important;
+    color: #111827 !important;
+    fill: none !important;
+  }
+
+  /* Ensure filter buttons (active blue) show white icon/text in light mode */
+  body.live-light a.filter-btn[style*="#60a5fa"],
+  html.light-theme a.filter-btn[style*="#60a5fa"],
+  body.light-theme a.filter-btn[style*="#60a5fa"],
+  .light-theme a.filter-btn[style*="#60a5fa"],
+  body.live-light .view-toggle-btn.active,
+  html.light-theme .view-toggle-btn.active,
+  body.light-theme .view-toggle-btn.active,
+  .light-theme .view-toggle-btn.active {
+    color: #ffffff !important;
+  }
+
+  body.live-light a.filter-btn[style*="#60a5fa"] svg,
+  html.light-theme a.filter-btn[style*="#60a5fa"] svg,
+  body.light-theme a.filter-btn[style*="#60a5fa"] svg,
+  .light-theme a.filter-btn[style*="#60a5fa"] svg,
+  body.live-light .view-toggle-btn.active svg,
+  html.light-theme .view-toggle-btn.active svg,
+  body.light-theme .view-toggle-btn.active svg,
+  .light-theme .view-toggle-btn.active svg {
+    stroke: #ffffff !important;
+    color: #ffffff !important;
+    fill: none !important;
+  }
+
+  /* More robust: force SVG children to follow currentColor (so explicit strokes are overridden) */
+  a.filter-btn svg *,
+  .view-toggle-btn.active svg *,
+  .filter-btn svg * {
+    stroke: currentColor !important;
+    fill: currentColor !important;
+  }
+
+  /* If inline style sets color to #fff, ensure entire button (including numeric count) is white */
+  a.filter-btn[style*="color:#fff"],
+  a.filter-btn[style*="color: #fff"],
+  .view-toggle-btn.active {
+    color: #ffffff !important;
+  }
+
   body.live-light, body.live-light * {
     color: #111827 !important;
   }
@@ -1504,6 +1554,50 @@ try {
       font-size: 0.9rem;
     }
   }</style>
+<style>
+  /* Final overrides to ensure active filter/view icons and counts are white in light modes. */
+  body.live-light a.filter-btn[style*="#60a5fa"],
+  body.live-light a.filter-btn[style*="background: #60a5fa"],
+  body.live-light a.filter-btn[style*="background:#60a5fa"],
+  body.live-light a.filter-btn[style*="color:#fff"],
+  body.live-light .view-toggle-btn.active,
+  html.light-theme a.filter-btn[style*="#60a5fa"],
+  html.light-theme .view-toggle-btn.active,
+  html.live-light a.filter-btn[style*="#60a5fa"],
+  html.live-light .view-toggle-btn.active,
+  .live-light a.filter-btn[style*="#60a5fa"],
+  .live-light .view-toggle-btn.active {
+    color: #ffffff !important;
+  }
+
+  body.live-light a.filter-btn svg,
+  body.live-light a.filter-btn svg *,
+  body.live-light .view-toggle-btn.active svg,
+  body.live-light .view-toggle-btn.active svg *,
+  html.light-theme a.filter-btn svg,
+  html.light-theme a.filter-btn svg *,
+  html.light-theme .view-toggle-btn.active svg,
+  html.light-theme .view-toggle-btn.active svg *,
+  html.live-light a.filter-btn svg,
+  html.live-light a.filter-btn svg *,
+  html.live-light .view-toggle-btn.active svg,
+  html.live-light .view-toggle-btn.active svg *,
+  .live-light a.filter-btn svg,
+  .live-light a.filter-btn svg *,
+  .live-light .view-toggle-btn.active svg,
+  .live-light .view-toggle-btn.active svg * {
+    stroke: #ffffff !important;
+    color: #ffffff !important;
+    fill: #ffffff !important;
+  }
+
+  /* Also ensure any .filter-btn with inline background blue shows its child count white */
+  body.live-light a.filter-btn span,
+  body.live-light a.filter-btn b,
+  body.live-light a.filter-btn strong {
+    color: #ffffff !important;
+  }
+</style>
 <script>
   // ====== Global Admin Font Scale Sync ======
   // โหลด font scale จาก localStorage ทันทีก่อน DOM render

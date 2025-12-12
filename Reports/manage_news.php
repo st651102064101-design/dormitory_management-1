@@ -42,16 +42,36 @@ foreach ($newsList as $news) {
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
+$themeColor = '#0f172a';
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+        if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
     }
 } catch (PDOException $e) {}
+
+// ตรวจสอบว่าเป็น light theme หรือไม่
+$isLightTheme = false;
+$lightThemeClass = '';
+if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
+    $hex = ltrim($themeColor, '#');
+    if (strlen($hex) == 3) {
+        $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
+    }
+    $r = hexdec(substr($hex, 0, 2));
+    $g = hexdec(substr($hex, 2, 2));
+    $b = hexdec(substr($hex, 4, 2));
+    $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+    if ($brightness > 180) {
+        $isLightTheme = true;
+        $lightThemeClass = 'light-theme';
+    }
+}
 ?>
 <!doctype html>
-<html lang="th">
+<html lang="th" class="<?php echo $lightThemeClass; ?>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -63,6 +83,65 @@ try {
     <style>
         /* Force-hide animate-ui modal overlays on this page */
         .animate-ui-modal, .animate-ui-modal-overlay { display: none !important; visibility: hidden !important; opacity: 0 !important; }
+
+      /* ===== Light Theme Overrides ===== */
+      html.light-theme .page-title,
+      html.light-theme .page-subtitle,
+      html.light-theme .news-card-title,
+      html.light-theme .news-card-content,
+      html.light-theme .news-card-content p,
+      html.light-theme .news-card h3,
+      html.light-theme .news-card p,
+      html.light-theme .news-meta,
+      html.light-theme .news-date,
+      html.light-theme .news-author,
+      html.light-theme .news-card-meta,
+      html.light-theme .news-card-meta span,
+      html.light-theme label,
+      html.light-theme select {
+        color: #111827 !important;
+      }
+
+      html.light-theme .news-card {
+        background: rgba(255,255,255,0.9) !important;
+        border-color: rgba(0,0,0,0.1) !important;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
+      }
+      html.light-theme .news-card svg {
+        stroke: #374151 !important;
+      }
+
+      html.light-theme .news-stat-card {
+        background: linear-gradient(135deg, rgba(243,244,246,0.95), rgba(229,231,235,0.9)) !important;
+        border-color: rgba(0,0,0,0.08) !important;
+      }
+      html.light-theme .news-stat-card h3 {
+        color: #6b7280 !important;
+      }
+      html.light-theme .news-stat-card .stat-value {
+        color: #2563eb !important;
+      }
+
+      /* Buttons - keep white text on colored backgrounds */
+      html.light-theme .btn-edit,
+      html.light-theme .btn-delete,
+      html.light-theme .news-card-actions button,
+      html.light-theme .news-card button[style*="background"] {
+        color: #ffffff !important;
+      }
+      html.light-theme .news-card-actions button svg,
+      html.light-theme .news-card button svg {
+        stroke: #ffffff !important;
+      }
+
+      /* Sort select */
+      html.light-theme .sort-select,
+      html.light-theme select {
+        background: rgba(0,0,0,0.05) !important;
+        border-color: rgba(0,0,0,0.12) !important;
+        color: #111827 !important;
+      }
+
       .news-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
