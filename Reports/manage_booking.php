@@ -181,10 +181,15 @@ try {
           document.querySelectorAll('.list-view-extra').forEach(el => el.style.display = 'flex');
         } else {
           roomsGrid.classList.remove('list-view');
-          roomsGrid.style.display = 'grid';
+          // Remove inline styles to let CSS media queries apply properly
+          roomsGrid.style.display = '';
+          roomsGrid.style.gridTemplateColumns = '';
+          roomsGrid.style.maxWidth = '';
           if (roomsTable) roomsTable.style.display = 'none';
           // Hide list-view-extra elements
           document.querySelectorAll('.list-view-extra').forEach(el => el.style.display = 'none');
+          // Force reflow to apply CSS media queries
+          void roomsGrid.offsetHeight;
         }
         
         document.querySelectorAll('.toggle-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === normalized));
@@ -234,9 +239,14 @@ try {
             const roomsGrid = document.getElementById('roomsGrid');
             if (roomsGrid) {
               roomsGrid.classList.remove('list-view');
-              roomsGrid.style.display = 'grid';
+              // Remove inline display style to let CSS media queries apply
+              roomsGrid.style.display = '';
+              roomsGrid.style.gridTemplateColumns = '';
+              roomsGrid.style.maxWidth = '';
               document.querySelectorAll('.list-view-extra').forEach(el => el.style.display = 'none');
               document.querySelectorAll('.toggle-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === 'grid'));
+              // Force reflow to apply CSS media queries
+              void roomsGrid.offsetHeight;
             }
           }, 300);
         }
@@ -353,7 +363,7 @@ try {
               ? fpsValues.reduce((a, b) => a + b, 0) / fpsValues.length 
               : 60;
             
-            if (avgFPS < 10) {
+            if (avgFPS < 30) {
               window.__isLowPerformance = true;
               showPerformanceAlert(Math.round(avgFPS));
             }
@@ -1036,6 +1046,13 @@ try {
           margin-left: auto;
           margin-right: auto;
           gap: 1.5rem;
+        }
+        /* Override max-width for grid mode - allow full width */
+        .rooms-grid:not(.list-view) {
+          max-width: none;
+          margin-left: 0;
+          margin-right: 0;
+          width: 100%;
         }
       }
       .rooms-grid.list-view { display: flex; flex-direction: column; gap: 1rem; }
@@ -1938,6 +1955,9 @@ try {
       }
       
       /* List view - extra info and book button */
+      .list-view-extra {
+        display: none !important;
+      }
       .rooms-grid.list-view .list-view-extra {
         display: flex !important;
         align-items: center;
@@ -3789,7 +3809,22 @@ try {
         const applyView = (mode) => {
           if (!roomsGrid) return;
           const normalized = mode === 'list' ? 'list' : 'grid';
-          roomsGrid.classList.toggle('list-view', normalized === 'list');
+          
+          if (normalized === 'list') {
+            roomsGrid.classList.add('list-view');
+            roomsGrid.style.display = 'flex';
+          } else {
+            roomsGrid.classList.remove('list-view');
+            // Clear ALL inline styles to let CSS media queries apply
+            roomsGrid.style.display = '';
+            roomsGrid.style.gridTemplateColumns = '';
+            roomsGrid.style.maxWidth = '';
+            roomsGrid.style.marginLeft = '';
+            roomsGrid.style.marginRight = '';
+            // Force browser reflow to apply CSS media queries
+            void roomsGrid.offsetHeight;
+          }
+          
           document.querySelectorAll('.toggle-view-btn').forEach(b => b.classList.toggle('active', b.dataset.view === normalized));
           safeSet('bookingViewMode', normalized);
         };
