@@ -114,11 +114,15 @@ $statusMap = [
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
+$roomFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi']; // ค่า default
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'room_features')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+        if ($row['setting_key'] === 'room_features' && !empty($row['setting_value'])) {
+            $roomFeatures = array_map('trim', explode(',', $row['setting_value']));
+        }
     }
 } catch (PDOException $e) {}
 ?>
@@ -249,6 +253,294 @@ try {
       };
     </script>
     <style>
+      /* ===== THEME VARIABLES ===== */
+      :root {
+        --card-bg: linear-gradient(135deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));
+        --card-border: rgba(255,255,255,0.08);
+        --card-shadow: 0 15px 35px rgba(3,7,18,0.4);
+        --text-primary: #f5f8ff;
+        --text-secondary: rgba(255,255,255,0.7);
+        --text-muted: rgba(255,255,255,0.5);
+        --accent-blue: #60a5fa;
+        --accent-green: #22c55e;
+        --accent-red: #ef4444;
+        --accent-purple: #a78bfa;
+        --stat-bg: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
+      }
+      
+      /* Light Theme Variables */
+      html.light-theme {
+        --card-bg: linear-gradient(135deg, #ffffff, #f8fafc);
+        --card-border: rgba(0,0,0,0.1);
+        --card-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        --text-primary: #111827;
+        --text-secondary: #4b5563;
+        --text-muted: #9ca3af;
+        --accent-blue: #3b82f6;
+        --stat-bg: linear-gradient(135deg, #ffffff, #f1f5f9);
+      }
+      
+      body.live-light {
+        --card-bg: linear-gradient(135deg, #ffffff, #f8fafc);
+        --card-border: rgba(0,0,0,0.1);
+        --card-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        --text-primary: #111827;
+        --text-secondary: #4b5563;
+        --text-muted: #9ca3af;
+        --accent-blue: #3b82f6;
+        --stat-bg: linear-gradient(135deg, #ffffff, #f1f5f9);
+      }
+      
+      /* Purple/Violet Theme */
+      html.theme-purple {
+        --card-bg: linear-gradient(135deg, rgba(49,46,129,0.95), rgba(30,27,75,0.95));
+        --card-border: rgba(167,139,250,0.2);
+        --card-shadow: 0 15px 35px rgba(30,27,75,0.5);
+        --text-primary: #f5f3ff;
+        --text-secondary: rgba(221,214,254,0.8);
+        --text-muted: rgba(196,181,253,0.6);
+        --accent-blue: #a78bfa;
+        --accent-purple: #c4b5fd;
+        --stat-bg: linear-gradient(135deg, rgba(49,46,129,0.9), rgba(30,27,75,0.95));
+      }
+      
+      /* Cyan/Teal Theme */
+      html.theme-cyan {
+        --card-bg: linear-gradient(135deg, rgba(6,78,59,0.95), rgba(4,47,46,0.95));
+        --card-border: rgba(45,212,191,0.2);
+        --card-shadow: 0 15px 35px rgba(4,47,46,0.5);
+        --text-primary: #f0fdfa;
+        --text-secondary: rgba(153,246,228,0.8);
+        --text-muted: rgba(94,234,212,0.6);
+        --accent-blue: #2dd4bf;
+        --accent-green: #34d399;
+        --stat-bg: linear-gradient(135deg, rgba(6,78,59,0.9), rgba(4,47,46,0.95));
+      }
+      
+      /* Warm/Orange Theme */
+      html.theme-warm {
+        --card-bg: linear-gradient(135deg, rgba(124,45,18,0.95), rgba(67,20,7,0.95));
+        --card-border: rgba(251,146,60,0.2);
+        --card-shadow: 0 15px 35px rgba(67,20,7,0.5);
+        --text-primary: #fff7ed;
+        --text-secondary: rgba(254,215,170,0.8);
+        --text-muted: rgba(253,186,116,0.6);
+        --accent-blue: #fb923c;
+        --accent-green: #fbbf24;
+        --accent-red: #f87171;
+        --stat-bg: linear-gradient(135deg, rgba(124,45,18,0.9), rgba(67,20,7,0.95));
+      }
+      
+      /* Rose/Pink Theme */
+      html.theme-rose {
+        --card-bg: linear-gradient(135deg, rgba(136,19,55,0.95), rgba(76,5,25,0.95));
+        --card-border: rgba(251,113,133,0.2);
+        --card-shadow: 0 15px 35px rgba(76,5,25,0.5);
+        --text-primary: #fff1f2;
+        --text-secondary: rgba(254,205,211,0.8);
+        --text-muted: rgba(253,164,175,0.6);
+        --accent-blue: #fb7185;
+        --accent-purple: #f472b6;
+        --stat-bg: linear-gradient(135deg, rgba(136,19,55,0.9), rgba(76,5,25,0.95));
+      }
+      
+      /* ===== ANIMATIONS ===== */
+      @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      @keyframes fadeInScale {
+        from { opacity: 0; transform: scale(0.95); }
+        to { opacity: 1; transform: scale(1); }
+      }
+      
+      @keyframes pulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+      }
+      
+      @keyframes shimmer {
+        0% { background-position: -200% 0; }
+        100% { background-position: 200% 0; }
+      }
+      
+      @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+      
+      @keyframes glow {
+        0%, 100% { box-shadow: 0 0 5px var(--accent-blue), 0 0 10px var(--accent-blue); }
+        50% { box-shadow: 0 0 20px var(--accent-blue), 0 0 30px var(--accent-blue); }
+      }
+      
+      @keyframes slideInRight {
+        from { opacity: 0; transform: translateX(30px); }
+        to { opacity: 1; transform: translateX(0); }
+      }
+      
+      @keyframes bounceIn {
+        0% { transform: scale(0.3); opacity: 0; }
+        50% { transform: scale(1.05); }
+        70% { transform: scale(0.9); }
+        100% { transform: scale(1); opacity: 1; }
+      }
+      
+      @keyframes rotateIn {
+        from { transform: rotate(-200deg) scale(0); opacity: 0; }
+        to { transform: rotate(0) scale(1); opacity: 1; }
+      }
+      
+      @keyframes countUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      /* SVG Icon Animations */
+      @keyframes svgDraw {
+        to { stroke-dashoffset: 0; }
+      }
+      
+      @keyframes svgPulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+      }
+      
+      @keyframes iconBounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-5px); }
+      }
+      
+      /* ===== ADVANCED CARD ANIMATIONS ===== */
+      @keyframes cardFloat {
+        0%, 100% { transform: translateY(0) rotateX(0deg); }
+        50% { transform: translateY(-8px) rotateX(2deg); }
+      }
+      
+      @keyframes glowPulse {
+        0%, 100% { 
+          box-shadow: 0 0 20px rgba(99, 102, 241, 0.3),
+                      0 0 40px rgba(99, 102, 241, 0.1),
+                      inset 0 0 20px rgba(99, 102, 241, 0.05);
+        }
+        50% { 
+          box-shadow: 0 0 30px rgba(99, 102, 241, 0.5),
+                      0 0 60px rgba(99, 102, 241, 0.2),
+                      inset 0 0 30px rgba(99, 102, 241, 0.1);
+        }
+      }
+      
+      @keyframes borderGlow {
+        0%, 100% { border-color: rgba(99, 102, 241, 0.3); }
+        50% { border-color: rgba(99, 102, 241, 0.8); }
+      }
+      
+      @keyframes shimmerSlide {
+        0% { transform: translateX(-100%) skewX(-15deg); }
+        100% { transform: translateX(200%) skewX(-15deg); }
+      }
+      
+      @keyframes holographicShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+      }
+      
+      @keyframes tiltBounce {
+        0%, 100% { transform: perspective(1000px) rotateX(0deg) rotateY(0deg); }
+        25% { transform: perspective(1000px) rotateX(2deg) rotateY(-2deg); }
+        75% { transform: perspective(1000px) rotateX(-2deg) rotateY(2deg); }
+      }
+      
+      /* ===== ORGANIC LIVING ANIMATIONS ===== */
+      @keyframes breathe {
+        0%, 100% { 
+          transform: scale(1) translateY(0);
+          filter: brightness(1);
+        }
+        50% { 
+          transform: scale(1.008) translateY(-3px);
+          filter: brightness(1.05);
+        }
+      }
+      
+      @keyframes floatOrbit {
+        0% { transform: translateY(0) translateX(0) rotate(0deg); }
+        25% { transform: translateY(-6px) translateX(3px) rotate(0.5deg); }
+        50% { transform: translateY(-2px) translateX(6px) rotate(0deg); }
+        75% { transform: translateY(-8px) translateX(3px) rotate(-0.5deg); }
+        100% { transform: translateY(0) translateX(0) rotate(0deg); }
+      }
+      
+      @keyframes auroraGlow {
+        0%, 100% { 
+          background-position: 0% 50%;
+          filter: hue-rotate(0deg) blur(15px);
+        }
+        25% { 
+          background-position: 50% 100%;
+          filter: hue-rotate(30deg) blur(18px);
+        }
+        50% { 
+          background-position: 100% 50%;
+          filter: hue-rotate(60deg) blur(20px);
+        }
+        75% { 
+          background-position: 50% 0%;
+          filter: hue-rotate(30deg) blur(18px);
+        }
+      }
+      
+      @keyframes pulseRing {
+        0% { 
+          transform: scale(1);
+          opacity: 0.8;
+        }
+        50% { 
+          transform: scale(1.05);
+          opacity: 0.4;
+        }
+        100% { 
+          transform: scale(1);
+          opacity: 0.8;
+        }
+      }
+      
+      @keyframes particleFloat {
+        0%, 100% { 
+          transform: translateY(0) scale(1);
+          opacity: 0.6;
+        }
+        50% { 
+          transform: translateY(-20px) scale(1.2);
+          opacity: 1;
+        }
+      }
+      
+      @keyframes glitchFlicker {
+        0%, 100% { opacity: 1; transform: translateX(0); }
+        92% { opacity: 1; transform: translateX(0); }
+        93% { opacity: 0.8; transform: translateX(-2px); }
+        94% { opacity: 1; transform: translateX(2px); }
+        95% { opacity: 0.9; transform: translateX(0); }
+      }
+      
+      @keyframes neonPulse {
+        0%, 100% {
+          text-shadow: 0 0 5px currentColor,
+                       0 0 10px currentColor,
+                       0 0 20px currentColor;
+        }
+        50% {
+          text-shadow: 0 0 10px currentColor,
+                       0 0 20px currentColor,
+                       0 0 40px currentColor,
+                       0 0 80px currentColor;
+        }
+      }
+      
+      /* ===== STAT CARDS WITH ANIMATIONS ===== */
       .booking-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -256,22 +548,74 @@ try {
         margin-top: 1rem;
       }
       .booking-stat-card {
-        background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
+        background: var(--stat-bg);
         border-radius: 16px;
         padding: 1.25rem;
-        border: 1px solid rgba(255,255,255,0.08);
-        color: #f5f8ff;
-        box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+        border: 1px solid var(--card-border);
+        color: var(--text-primary);
+        box-shadow: var(--card-shadow);
+        position: relative;
+        overflow: hidden;
+        animation: fadeInUp 0.6s ease-out backwards;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
+      .booking-stat-card:nth-child(1) { animation-delay: 0.1s; }
+      .booking-stat-card:nth-child(2) { animation-delay: 0.2s; }
+      .booking-stat-card:nth-child(3) { animation-delay: 0.3s; }
+      
+      .booking-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+        transition: left 0.5s;
+      }
+      .booking-stat-card:hover::before {
+        left: 100%;
+      }
+      .booking-stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+      }
+      
+      .booking-stat-card .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 0.75rem;
+        animation: iconBounce 2s ease-in-out infinite;
+      }
+      .booking-stat-card .stat-icon svg {
+        width: 24px;
+        height: 24px;
+        stroke: currentColor;
+        stroke-width: 2;
+        fill: none;
+      }
+      .booking-stat-card .stat-icon.blue { background: rgba(96, 165, 250, 0.2); color: #60a5fa; }
+      .booking-stat-card .stat-icon.green { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+      .booking-stat-card .stat-icon.red { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+      
       .booking-stat-card h3 {
         margin: 0;
         font-size: 0.95rem;
-        color: rgba(255,255,255,0.7);
+        color: var(--text-secondary);
       }
       .booking-stat-card .stat-value {
         font-size: 2.5rem;
         font-weight: 700;
         margin-top: 0.5rem;
+        animation: countUp 0.8s ease-out backwards;
+        background: linear-gradient(135deg, var(--text-primary), var(--accent-blue));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
       .booking-stat-card .stat-chip {
         margin-top: 1rem;
@@ -286,14 +630,45 @@ try {
       .booking-section { margin-bottom: 2rem; }
       .rooms-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 2.5rem;
         margin-top: 1rem;
       }
-      /* Desktop: fix 3 cards per row */
-      @media (min-width: 1024px) {
+      /* Desktop: 5 cards per row for portrait 1:2 cards */
+      @media (min-width: 1400px) {
+        .rooms-grid {
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 2.5rem;
+        }
+      }
+      @media (min-width: 1200px) and (max-width: 1399px) {
+        .rooms-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 2rem;
+        }
+      }
+      /* Tablet: 3 cards */
+      @media (max-width: 1199px) and (min-width: 768px) {
         .rooms-grid {
           grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 1.5rem;
+        }
+      }
+      /* Mobile: 2 cards */
+      @media (max-width: 767px) and (min-width: 481px) {
+        .rooms-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+          gap: 1.25rem;
+        }
+      }
+      /* Small Mobile: single column */
+      @media (max-width: 480px) {
+        .rooms-grid {
+          grid-template-columns: 1fr;
+          max-width: 240px;
+          margin-left: auto;
+          margin-right: auto;
+          gap: 1.5rem;
         }
       }
       .rooms-grid.list-view { display: flex; flex-direction: column; gap: 1rem; }
@@ -312,16 +687,147 @@ try {
         border-color: rgba(96,165,250,0.8);
         box-shadow: 0 10px 20px rgba(37,99,235,0.35);
       }
+      
+      /* ===== ENHANCED ROOM CARD WITH FLIP - WEB3 STYLE ===== */
       .room-card {
         position: relative;
-        border-radius: 12px;
+        border-radius: 24px;
         background: transparent;
-        box-shadow: 0 12px 30px rgba(0,0,0,0.35);
-        color: #f5f8ff;
+        box-shadow: var(--card-shadow);
+        color: var(--text-primary);
         perspective: 1200px;
-        min-height: 440px;
-        transition: all 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        /* Web3 Portrait Card Style - Figma size 1137x1606 = ratio ~7:10 (0.708:1) */
+        aspect-ratio: 1137 / 1606;
+        min-height: 280px;
+        transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        will-change: transform, filter;
+        /* Living breathing animation */
+        animation: fadeInUp 0.6s ease-out backwards,
+                   breathe 4s ease-in-out infinite,
+                   floatOrbit 12s ease-in-out infinite;
       }
+      
+      /* Each card has unique animation timing for organic feel */
+      .room-card:nth-child(odd) {
+        animation: fadeInUp 0.6s ease-out backwards,
+                   breathe 4.5s ease-in-out infinite,
+                   floatOrbit 14s ease-in-out infinite reverse;
+      }
+      
+      .room-card:nth-child(3n) {
+        animation: fadeInUp 0.6s ease-out backwards,
+                   breathe 5s ease-in-out infinite 0.5s,
+                   floatOrbit 16s ease-in-out infinite;
+      }
+      
+      .room-card:nth-child(4n) {
+        animation: fadeInUp 0.6s ease-out backwards,
+                   breathe 3.5s ease-in-out infinite 1s,
+                   floatOrbit 10s ease-in-out infinite reverse;
+      }
+      
+      /* Staggered entrance animations */
+      .room-card:nth-child(1) { animation-delay: 0.1s, 0s, 0s; }
+      .room-card:nth-child(2) { animation-delay: 0.15s, 0.3s, 0.5s; }
+      .room-card:nth-child(3) { animation-delay: 0.2s, 0.6s, 1s; }
+      .room-card:nth-child(4) { animation-delay: 0.25s, 0.9s, 1.5s; }
+      .room-card:nth-child(5) { animation-delay: 0.3s, 1.2s, 2s; }
+      .room-card:nth-child(6) { animation-delay: 0.35s, 0.2s, 0.7s; }
+      .room-card:nth-child(7) { animation-delay: 0.4s, 0.5s, 1.2s; }
+      .room-card:nth-child(8) { animation-delay: 0.45s, 0.8s, 1.7s; }
+      .room-card:nth-child(9) { animation-delay: 0.5s, 1.1s, 2.2s; }
+      .room-card:nth-child(10) { animation-delay: 0.55s, 0.4s, 0.9s; }
+      
+      /* Card Glow Effect - Aurora Borealis Style */
+      .room-card::before {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 28px;
+        background: linear-gradient(135deg, 
+          #667eea 0%, #764ba2 15%, 
+          #f093fb 30%, #f5576c 45%,
+          #4facfe 60%, #00f2fe 75%,
+          #43e97b 90%, #667eea 100%);
+        background-size: 300% 300%;
+        opacity: 0.3;
+        z-index: -1;
+        filter: blur(15px);
+        animation: auroraGlow 8s ease infinite;
+        transition: opacity 0.4s ease, filter 0.4s ease;
+      }
+      
+      /* Shimmer overlay */
+      .room-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 24px;
+        background: linear-gradient(105deg, 
+          transparent 20%, 
+          rgba(255,255,255,0.03) 35%,
+          rgba(255,255,255,0.15) 50%,
+          rgba(255,255,255,0.03) 65%,
+          transparent 80%);
+        background-size: 300% 100%;
+        opacity: 0;
+        pointer-events: none;
+        z-index: 5;
+        transition: opacity 0.3s ease;
+        animation: shimmerSlide 3s ease-in-out infinite;
+        animation-play-state: paused;
+      }
+      
+      .room-card:hover::before {
+        opacity: 1;
+        filter: blur(20px);
+      }
+      
+      .room-card:hover::after {
+        opacity: 1;
+        animation-play-state: running;
+      }
+      
+      .room-card:hover {
+        transform: translateY(-12px) scale(1.03) rotateX(2deg);
+        animation: none !important;
+        filter: brightness(1.1);
+        z-index: 10;
+      }
+      
+      /* Particle effects on cards */
+      .room-card .card-particles {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        overflow: hidden;
+        border-radius: 24px;
+        z-index: 1;
+      }
+      
+      .room-card .card-particles::before,
+      .room-card .card-particles::after {
+        content: '';
+        position: absolute;
+        width: 6px;
+        height: 6px;
+        background: rgba(255,255,255,0.6);
+        border-radius: 50%;
+        animation: particleFloat 3s ease-in-out infinite;
+      }
+      
+      .room-card .card-particles::before {
+        top: 20%;
+        left: 15%;
+        animation-delay: 0s;
+      }
+      
+      .room-card .card-particles::after {
+        top: 60%;
+        right: 20%;
+        animation-delay: 1.5s;
+      }
+      
       .room-card.removing {
         opacity: 0;
         transform: scale(0.7) rotateY(90deg);
@@ -332,16 +838,20 @@ try {
         position: relative;
         width: 100%;
         height: 100%;
-        border-radius: 12px;
-        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+        border-radius: 24px;
+        /* Fast flip back when mouse leaves (no delay) */
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+                    box-shadow 0.3s ease;
         transform-style: preserve-3d;
       }
       .rooms-grid.list-view .room-card-inner { height: auto; }
       .room-card:hover .room-card-inner {
         transform: rotateY(180deg);
-        box-shadow: 0 16px 36px rgba(0,0,0,0.45);
-        border-color: rgba(96,165,250,0.5);
-        transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1) 0.3s;
+        box-shadow: 0 25px 60px rgba(99, 102, 241, 0.4),
+                    0 10px 30px rgba(0,0,0,0.3);
+        /* Delayed flip on hover */
+        transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) 0.3s,
+                    box-shadow 0.5s ease 0.3s;
       }
       /* Prevent flip when modal is open */
       body.modal-open .room-card:hover .room-card-inner {
@@ -354,17 +864,33 @@ try {
       .room-card-face {
         position: absolute;
         inset: 0;
-        border-radius: 12px;
-        padding: 1rem;
-        background: linear-gradient(135deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));
+        border-radius: 24px;
+        padding: 1.25rem;
+        background: #1e293b;
         backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        gap: 0.6rem;
-        border: 1px solid rgba(255,255,255,0.05);
-        overflow: hidden;
+        justify-content: flex-end;
+        gap: 0.5rem;
+        border: 1px solid rgba(255,255,255,0.1);
+        transition: all 0.4s ease;
+        box-shadow: inset 0 0 30px rgba(0,0,0,0.3);
       }
+      
+      /* Glowing border effect on front card */
+      .room-card-face.front {
+        pointer-events: auto;
+        border: 1px solid rgba(99, 102, 241, 0.2);
+        animation: borderGlow 4s ease-in-out infinite;
+      }
+      
+      .room-card:hover .room-card-face.front {
+        pointer-events: none;
+        border-color: rgba(99, 102, 241, 0.6);
+      }
+      
+      /* Shimmer effect removed - conflicts with image gradient overlay */
 
       /* Light mode overrides */
       body.live-light .booking-stat-card {
@@ -374,21 +900,41 @@ try {
         box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
       }
       body.live-light .booking-stat-card h3 { color: #6b7280 !important; }
-      body.live-light .booking-stat-card .stat-value { color: #111827 !important; }
+      body.live-light .booking-stat-card .stat-value { 
+        color: #111827 !important; 
+        background: linear-gradient(135deg, #111827, #3b82f6) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+      }
       body.live-light .booking-stat-card .stat-chip { background: #f3f4f6 !important; color: #374151 !important; }
 
       body.live-light .room-card { 
         box-shadow: 0 2px 10px rgba(0,0,0,0.06) !important; 
         color: #111827 !important; 
       }
-      body.live-light .room-card-face,
-      body.live-light .room-card-face.front,
+      body.live-light .room-card::before {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6, #22c55e) !important;
+      }
+      /* Light mode - ONLY back card gets white background */
       body.live-light .room-card-face.back {
-        background: #ffffff !important;
+        background: linear-gradient(145deg, #ffffff 0%, #f8fafc 100%) !important;
         border: 1px solid #e5e7eb !important;
         color: #111827 !important;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
       }
+      /* Light mode - Front card keeps image-based design */
+      body.live-light .room-card-face.front {
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%) !important;
+      }
+      /* Light mode - back card content colors */
+      body.live-light .room-number-back { color: #111827 !important; }
+      body.live-light .room-number-back svg { stroke: #2563eb !important; }
+      body.live-light .availability-badge { background: #dcfce7 !important; color: #166534 !important; }
+      body.live-light .back-header { border-bottom-color: #e5e7eb !important; }
+      body.live-light .detail-item { background: #f3f4f6 !important; border-color: #e5e7eb !important; }
+      body.live-light .detail-label { color: #6b7280 !important; }
+      body.live-light .detail-value { color: #111827 !important; }
+      body.live-light .feature-tag { background: #e0e7ff !important; color: #3730a3 !important; border-color: #c7d2fe !important; }
       body.live-light .room-number { color: #111827 !important; }
       body.live-light .room-info,
       body.live-light .room-info-item { color: #6b7280 !important; }
@@ -407,28 +953,401 @@ try {
         color: #ffffff !important;
         border-color: #2563eb !important;
       }
-      .room-card-face.front { padding-bottom: 1.25rem; }
-      .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 100px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 1.2rem; align-items: center; padding: 1rem 1.5rem; }
-      .rooms-grid.list-view .room-price { font-size: 1rem; line-height: 1.2; margin: 0.3rem 0; }
-      .room-card-face.back {
-        transform: rotateY(180deg);
-        align-items: flex-start;
-        gap: 0.75rem;
+      
+      /* ===== WEB3 STYLE CARD FRONT ===== */
+      .room-card-face.front { 
+        padding: 0 !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+        overflow: hidden;
+        border-radius: 24px;
       }
+      
+      /* Room image fills entire card */
+      .room-card-face.front .room-image-container {
+        position: absolute !important;
+        inset: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        aspect-ratio: unset !important;
+        z-index: 0;
+        border-radius: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        display: block !important;
+      }
+      
+      .room-card-face.front .room-image-container img {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        display: block !important;
+      }
+      
+      /* Gradient overlay for text readability */
+      .room-card-face.front::before {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 50%;
+        background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 40%, transparent 100%);
+        pointer-events: none;
+        z-index: 1;
+        border-radius: 0 0 24px 24px;
+      }
+      
+      /* Info section at bottom left */
+      .room-card-face.front .card-info-bottom {
+        position: absolute;
+        bottom: 1rem;
+        left: 1rem;
+        right: 1rem;
+        z-index: 2;
+        display: flex;
+        flex-direction: column;
+        gap: 0.1rem;
+        color: white;
+        text-align: left;
+      }
+      
+      .room-card-face.front .card-info-bottom .room-number-web3 {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #ffffff;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      }
+      
+      .room-card-face.front .card-info-bottom .room-type-web3 {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.9);
+        text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+      }
+      
+      .room-card-face.front .card-info-bottom .room-price-web3 {
+        font-size: 1.15rem;
+        font-weight: 600;
+        color: #ffffff;
+        margin-top: 0.15rem;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      }
+      
+      /* Status badge top right - with pulse animation */
+      .room-card-face.front .status-badge-web3 {
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        background: linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(16, 185, 129, 0.9));
+        backdrop-filter: blur(10px);
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+        z-index: 3;
+        text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        animation: pulseRing 2s ease-in-out infinite;
+        box-shadow: 0 0 15px rgba(34, 197, 94, 0.5),
+                    0 0 30px rgba(34, 197, 94, 0.3);
+        border: 1px solid rgba(255,255,255,0.3);
+      }
+      
+      .room-card-face.front .status-badge-web3::before {
+        content: '';
+        position: absolute;
+        inset: -2px;
+        border-radius: 22px;
+        background: linear-gradient(135deg, #22c55e, #10b981, #14b8a6);
+        z-index: -1;
+        opacity: 0.5;
+        filter: blur(4px);
+        animation: pulseRing 2s ease-in-out infinite 0.5s;
+      }
+      
+      /* Placeholder styling when no image */
+      .room-card-face.front .room-image-placeholder {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        color: rgba(255,255,255,0.5);
+      }
+      
+      .room-card-face.front .room-image-placeholder svg {
+        width: 60px;
+        height: 60px;
+        opacity: 0.4;
+      }
+      
+      .room-card-face.front .room-image-placeholder span {
+        font-size: 0.8rem;
+        opacity: 0.6;
+      }
+      
+      .rooms-grid.list-view .room-card-face { position: relative; inset: auto; min-height: 100px; height: auto; width: 100%; box-sizing: border-box; display: flex; flex-direction: row; gap: 1.2rem; align-items: center; padding: 1rem 1.5rem; border-radius: 16px; }
+      .rooms-grid.list-view .room-price { font-size: 1rem; line-height: 1.2; margin: 0.3rem 0; }
+      
+      /* ===== BACK CARD FACE - Dark background with content ===== */
+      .room-card-face.back {
+        position: absolute;
+        inset: 0;
+        transform: rotateY(180deg);
+        backface-visibility: hidden;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.4rem;
+        padding: 1rem;
+        background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%) !important;
+        border: 1px solid rgba(255,255,255,0.15) !important;
+        border-radius: 24px;
+        pointer-events: auto;
+      }
+      
+      /* Hide image on back card */
+      .room-card-face.back .room-image-container {
+        display: none !important;
+      }
+      
+      /* ===== ENHANCED BACK CARD STYLES ===== */
+      .back-card-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        width: 100%;
+        flex: 1;
+        overflow: hidden;
+        min-height: 0;
+      }
+      
+      .back-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 0.4rem;
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      
+      .room-number-back {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 1.15rem;
+        font-weight: 700;
+        color: var(--text-primary);
+      }
+      
+      .room-icon-animated {
+        width: 18px;
+        height: 18px;
+        stroke: var(--accent-blue);
+        animation: iconBounce 2s ease-in-out infinite;
+      }
+      
+      .availability-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 20px;
+        font-size: 0.6rem;
+        font-weight: 600;
+        background: rgba(34, 197, 94, 0.15);
+        color: #22c55e;
+        animation: pulse 2s ease-in-out infinite;
+      }
+      
+      .back-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.35rem;
+        flex: 1;
+        overflow-y: auto;
+      }
+      
+      .detail-item {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.35rem 0.5rem;
+        background: rgba(255,255,255,0.03);
+        border-radius: 10px;
+        transition: all 0.3s ease;
+      }
+      
+      .detail-item:hover {
+        background: rgba(255,255,255,0.08);
+        transform: translateX(3px);
+      }
+      
+      .detail-item.highlight {
+        background: rgba(96, 165, 250, 0.1);
+        border: 1px solid rgba(96, 165, 250, 0.2);
+      }
+      
+      .detail-icon {
+        width: 26px;
+        height: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(96, 165, 250, 0.15);
+        border-radius: 6px;
+        flex-shrink: 0;
+      }
+      
+      .detail-icon svg {
+        width: 14px;
+        height: 14px;
+        stroke: var(--accent-blue);
+      }
+      
+      .detail-text {
+        display: flex;
+        flex-direction: column;
+        gap: 0;
+      }
+      
+      .detail-label {
+        font-size: 0.55rem;
+        color: var(--text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+      
+      .detail-value {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-primary);
+      }
+      
+      .detail-value.price {
+        color: var(--accent-blue);
+        font-size: 0.9rem;
+      }
+      
+      .back-features {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.3rem;
+        margin-top: 0.2rem;
+      }
+      
+      .feature-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+        padding: 0.15rem 0.4rem;
+        background: rgba(167, 139, 250, 0.15);
+        border-radius: 6px;
+        font-size: 0.55rem;
+        font-weight: 500;
+        color: #a78bfa;
+      }
+      
+      .feature-tag svg {
+        stroke: currentColor;
+        width: 9px;
+        height: 9px;
+      }
+      
+      .back-actions {
+        width: 100%;
+        margin-top: auto;
+        padding-top: 0.2rem;
+        flex-shrink: 0;
+        pointer-events: auto;
+      }
+      
+      .book-btn-back {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.35rem;
+        padding: 0.5rem 0.8rem;
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        border: none;
+        border-radius: 12px;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+        pointer-events: auto;
+        position: relative;
+        z-index: 100;
+      }
+      }
+      
+      .book-btn-back:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+      }
+      
+      .book-btn-back svg {
+        stroke: white;
+        width: 14px;
+        height: 14px;
+      }
+      
+      /* Light Theme Back Card */
+      html.light-theme .back-header,
+      body.live-light .back-header {
+        border-bottom-color: rgba(0,0,0,0.1);
+      }
+      
+      html.light-theme .detail-item,
+      body.live-light .detail-item {
+        background: rgba(0,0,0,0.02);
+      }
+      
+      html.light-theme .detail-item:hover,
+      body.live-light .detail-item:hover {
+        background: rgba(0,0,0,0.05);
+      }
+      
+      html.light-theme .detail-item.highlight,
+      body.live-light .detail-item.highlight {
+        background: rgba(59, 130, 246, 0.08);
+        border-color: rgba(59, 130, 246, 0.15);
+      }
+      
+      html.light-theme .detail-icon,
+      body.live-light .detail-icon {
+        background: rgba(59, 130, 246, 0.1);
+      }
+      
+      html.light-theme .feature-tag,
+      body.live-light .feature-tag {
+        background: rgba(139, 92, 246, 0.1);
+        color: #7c3aed;
+      }
+      
       .rooms-grid.list-view .room-card-face.back { flex-direction: column; align-items: flex-start; display: none; }
       .room-card-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.25rem;
       }
-      .room-face-body { display: flex; flex-direction: column; gap: 0.75rem; width: 100%; }
+      .room-face-body { display: flex; flex-direction: column; gap: 0.4rem; width: 100%; flex: 1; }
       .rooms-grid.list-view .room-face-body { flex-direction: row; align-items: center; gap: 1.5rem; flex: 1; }
-      .room-face-details { display: flex; flex-direction: column; gap: 0.5rem; flex: 1; min-width: 0; }
+      .room-face-details { display: flex; flex-direction: column; gap: 0.25rem; flex: 0 0 auto; min-width: 0; }
       .rooms-grid.list-view .room-number { min-width: 80px; }
       .rooms-grid.list-view .room-face-details { width: auto; gap: 0.2rem; }
-      .room-number { font-size: 1.5rem; font-weight: 700; color: #f5f8ff; }
-      .room-status { padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: #4caf50; color: white; }
+      .room-number { font-size: 1.35rem; font-weight: 700; color: #f5f8ff; }
+      .room-status { padding: 0.2rem 0.5rem; border-radius: 8px; font-size: 0.7rem; background: #4caf50; color: white; }
       
       /* Table badges and styles */
       .price-badge { 
@@ -468,24 +1387,26 @@ try {
         box-shadow: 0 4px 8px rgba(0, 122, 255, 0.3); 
       }
       
-      .room-info { margin: 0.2rem 0; color: rgba(255,255,255,0.75); font-size: 0.9rem; }
-      .room-info-item { display: flex; justify-content: space-between; padding: 0.1rem 0; font-size: 0.9rem; }
-      .room-price { font-size: 1.25rem; font-weight: bold; color: #60a5fa; margin: 0.75rem 0; }
-      .room-image-container {
-        margin: 0.25rem 0;
-        aspect-ratio: 4 / 3;
-        min-height: 250px;
+      .room-info { margin: 0.2rem 0; color: rgba(255,255,255,0.75); font-size: 0.8rem; }
+      .room-info-item { display: flex; justify-content: space-between; padding: 0.1rem 0; font-size: 0.8rem; }
+      .room-price { font-size: 1.1rem; font-weight: bold; color: #60a5fa; margin: 0.4rem 0; }
+      
+      /* Base room-image-container - for list view only */
+      .rooms-grid.list-view .room-image-container,
+      .room-image-container.list-view-img {
+        aspect-ratio: 1 / 1;
         overflow: hidden;
-        border-radius: 10px;
-        background: linear-gradient(135deg, rgba(30,41,59,0.85), rgba(15,23,42,0.9));
+        border-radius: 16px;
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(79, 70, 229, 0.4));
         display: flex;
         align-items: center;
         justify-content: center;
       }
-      .rooms-grid.list-view .room-image-container { margin: 0; width: 80px; max-width: 80px; min-height: 60px; height: 60px; flex-shrink: 0; }
+      .rooms-grid.list-view .room-image-container { margin: 0; width: 80px; max-width: 80px; min-height: 60px; height: 60px; flex-shrink: 0; border-radius: 10px; position: static; transform: none; }
       .room-image-container img { width: 100%; height: 100%; object-fit: cover; }
-      .room-image-placeholder { display: grid; place-items: center; color: rgba(148,163,184,0.85); gap: 0.35rem; text-align: center; }
-      .room-image-placeholder svg { width: 42px; height: 42px; opacity: 0.85; }
+      .room-image-placeholder { display: grid; place-items: center; color: rgba(255,255,255,0.6); gap: 0.25rem; text-align: center; width: 100%; height: 100%; }
+      .room-image-placeholder svg { width: 48px; height: 48px; opacity: 0.7; }
+      .room-image-placeholder span { font-size: 0.7rem; }
       .book-btn-front { display: none; }
       .rooms-grid.list-view .book-btn-front { display: inline-flex; width: 120px; justify-content: center; flex-shrink: 0; padding: 0.6rem 1rem; font-size: 0.9rem; margin-left: auto; }
       .rooms-grid.list-view .room-card-face.front { position: relative; display: flex; align-items: center; }
@@ -741,8 +1662,13 @@ try {
       html.light-theme .booking-card:hover {
           border-color: rgba(59, 130, 246, 0.4) !important;
       }
+      /* Keep Web3 gradient for front card even in light theme */
+      html.light-theme .room-card-face.front {
+          background: linear-gradient(135deg, #6366f1 0%, #818cf8 50%, #a5b4fc 100%) !important;
+          border: 2px solid rgba(99, 102, 241, 0.3) !important;
+          color: #ffffff !important;
+      }
       html.light-theme .room-card-face,
-      html.light-theme .room-card-face.front,
       html.light-theme .room-card-face.back {
           background: #ffffff !important;
           border: 1px solid rgba(0, 0, 0, 0.1) !important;
@@ -775,7 +1701,7 @@ try {
           color: #ffffff !important;
       }
       html.light-theme .room-image-container {
-          background: #f3f4f6 !important;
+          background: rgba(99, 102, 241, 0.2) !important;
       }
       html.light-theme .room-image-placeholder {
           color: #9ca3af !important;
@@ -1590,33 +2516,64 @@ try {
           <section class="manage-panel">
             <div class="section-header">
               <div>
-                <h1>ภาพรวมผู้เช่า</h1>
+                <h1>
+                  <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:28px;height:28px;margin-right:8px;vertical-align:middle;">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                  ภาพรวมผู้เช่า
+                </h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">สถิติผู้เช่าปัจจุบัน</p>
               </div>
             </div>
             <div class="booking-stats">
               <div class="booking-stat-card">
+                <div class="stat-icon blue">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+                    <circle cx="9" cy="7" r="4"></circle>
+                    <path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+                    <path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+                  </svg>
+                </div>
                 <h3>ผู้เช่าทั้งหมด</h3>
                 <div class="stat-value"><?php echo number_format($stats['total']); ?></div>
                 <div class="stat-chip">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#60a5fa;"></span>
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#60a5fa;animation:pulse 2s infinite;"></span>
                   รวมทั้งหมด
                 </div>
               </div>
               <div class="booking-stat-card">
+                <div class="stat-icon green">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                    <path d="M9 16l2 2 4-4"></path>
+                  </svg>
+                </div>
                 <h3>จองแล้ว</h3>
                 <div class="stat-value"><?php echo number_format($stats['reserved']); ?></div>
                 <div class="stat-chip">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;"></span>
-                  สถานะ = 1
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite;"></span>
+                  รอเข้าพัก
                 </div>
               </div>
               <div class="booking-stat-card">
+                <div class="stat-icon red">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                  </svg>
+                </div>
                 <h3>พักอยู่</h3>
                 <div class="stat-value"><?php echo number_format($stats['checkedin']); ?></div>
                 <div class="stat-chip">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;"></span>
-                  สถานะ = 2
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulse 2s infinite;"></span>
+                  กำลังเข้าพัก
                 </div>
               </div>
             </div>
@@ -1653,89 +2610,151 @@ try {
               <div class="rooms-grid" id="roomsGrid" aria-live="polite">
                 <?php foreach($availableRooms as $index => $room): ?>
                   <div class="room-card <?php echo $index >= 5 ? 'hidden-room' : ''; ?>" data-index="<?php echo $index; ?>">
+                    <!-- Floating particles -->
+                    <div class="card-particles"></div>
                     <div class="room-card-inner">
                       <div class="room-card-face front">
-                        <div class="room-card-header">
-                          <span class="room-number">ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></span>
-                          <span class="room-price-header">฿<?php echo number_format((int)$room['type_price']); ?> / เดือน</span>
-                          <span class="room-status">ว่าง</span>
+                        <!-- Status Badge Top Right -->
+                        <span class="status-badge-web3">ว่าง</span>
+                        
+                        <!-- Room Image Centered -->
+                        <div class="room-image-container">
+                          <?php if (!empty($room['room_image'])): 
+                            $img = basename($room['room_image']); 
+                          ?>
+                            <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
+                          <?php else: ?>
+                            <div class="room-image-placeholder" aria-label="ไม่มีรูปห้อง">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="14" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="9.5" r="1.5"></circle>
+                                <path d="M21 15l-4.5-4.5a2 2 0 0 0-3 0L5 19"></path>
+                              </svg>
+                              <span>ไม่มีรูป</span>
+                            </div>
+                          <?php endif; ?>
                         </div>
-                        <div class="room-face-body">
-                          <div class="room-image-container">
-                            <?php if (!empty($room['room_image'])): 
-                              $img = basename($room['room_image']); 
-                            ?>
-                              <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
-                            <?php else: ?>
-                              <div class="room-image-placeholder" aria-label="ไม่มีรูปห้อง">
-                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                  <rect x="3" y="4" width="18" height="14" rx="2" ry="2"></rect>
-                                  <circle cx="8.5" cy="9.5" r="1.5"></circle>
-                                  <path d="M21 15l-4.5-4.5a2 2 0 0 0-3 0L5 19"></path>
-                                </svg>
-                                <span>ไม่มีรูป</span>
-                              </div>
-                            <?php endif; ?>
-                          </div>
-                          <div class="room-face-details">
-                            <div class="room-info">
-                              <div class="room-info-item">
-                                <span>ประเภท:</span>
-                                <span><strong><?php echo htmlspecialchars($room['type_name']); ?></strong></span>
-                              </div>
-                            </div>
-                            <!-- Room price moved to header -->
-                                <style>
-                                  .room-price-header {
-                                    font-size: 1.1rem;
-                                    font-weight: bold;
-                                    color: #60a5fa;
-                                    margin-left: 0.5rem;
-                                    margin-right: auto;
-                                    background: rgba(15,23,42,0.15);
-                                    border-radius: 8px;
-                                    padding: 0.15em 0.7em;
-                                    display: inline-block;
-                                    vertical-align: middle;
-                                  }
-                                  .room-card-header {
-                                    gap: 0.5rem;
-                                  }
-                                  @media (max-width: 768px) {
-                                    .room-price-header {
-                                      font-size: 1rem;
-                                      padding: 0.1em 0.5em;
-                                    }
-                                  }
-                                </style>
-                            <div class="room-info list-book-btn">
-                              <button type="button" class="book-btn book-btn-front"
-                                      onclick="return window.__openBookingModal ? window.__openBookingModal(this, event) : true;"
-                                      data-room-id="<?php echo $room['room_id']; ?>"
-                                      data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
-                                      data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
-                                      data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
-                                จองห้องนี้
-                              </button>
-                            </div>
-                          </div>
+                        
+                        <!-- Info at Bottom Left -->
+                        <div class="card-info-bottom">
+                          <div class="room-number-web3">ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></div>
+                          <div class="room-type-web3"><?php echo htmlspecialchars($room['type_name']); ?></div>
+                          <div class="room-price-web3"><?php echo number_format((int)$room['type_price']); ?>/เดือน</div>
                         </div>
                       </div>
 
                       <div class="room-card-face back">
-                        <div>
-                          <div class="room-number" style="display:block;">ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></div>
-                          <div style="margin-top:0.25rem; color: rgba(255,255,255,0.75);">ประเภท: <strong><?php echo htmlspecialchars($room['type_name']); ?></strong></div>
-                          <div style="margin-top:0.25rem; color: rgba(255,255,255,0.75);">ราคา: ฿<?php echo number_format((int)$room['type_price']); ?> / เดือน</div>
+                        <!-- Enhanced Back Card with More Information -->
+                        <div class="back-card-content">
+                          <div class="back-header">
+                            <div class="room-number-back">
+                              <svg class="room-icon-animated" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                              </svg>
+                              <span>ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></span>
+                            </div>
+                            <span class="availability-badge">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                              </svg>
+                              พร้อมให้เช่า
+                            </span>
+                          </div>
+                          
+                          <div class="back-details">
+                            <div class="detail-item">
+                              <div class="detail-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                  <line x1="3" y1="9" x2="21" y2="9"></line>
+                                  <line x1="9" y1="21" x2="9" y2="9"></line>
+                                </svg>
+                              </div>
+                              <div class="detail-text">
+                                <span class="detail-label">ประเภทห้อง</span>
+                                <span class="detail-value"><?php echo htmlspecialchars($room['type_name']); ?></span>
+                              </div>
+                            </div>
+                            
+                            <div class="detail-item highlight">
+                              <div class="detail-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <line x1="12" y1="1" x2="12" y2="23"></line>
+                                  <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                </svg>
+                              </div>
+                              <div class="detail-text">
+                                <span class="detail-label">ค่าเช่ารายเดือน</span>
+                                <span class="detail-value price">฿<?php echo number_format((int)$room['type_price']); ?></span>
+                              </div>
+                            </div>
+                            
+                            <div class="detail-item">
+                              <div class="detail-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <circle cx="12" cy="12" r="10"></circle>
+                                  <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                              </div>
+                              <div class="detail-text">
+                                <span class="detail-label">ค่ามัดจำ</span>
+                                <span class="detail-value">฿2,000</span>
+                              </div>
+                            </div>
+                            
+                            <div class="detail-item">
+                              <div class="detail-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                  <polyline points="14 2 14 8 20 8"></polyline>
+                                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                                </svg>
+                              </div>
+                              <div class="detail-text">
+                                <span class="detail-label">สัญญาขั้นต่ำ</span>
+                                <span class="detail-value">6 เดือน</span>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div class="back-features">
+                            <?php 
+                            // SVG icons สำหรับแต่ละ feature
+                            $featureIcons = [
+                              'ไฟฟ้า' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>',
+                              'น้ำประปา' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>',
+                              'WiFi' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"></path></svg>',
+                              'แอร์' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M8 16a4 4 0 0 1-4-4 4 4 0 0 1 4-4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H8zm0-8v12M16 8v12"></path></svg>',
+                              'เฟอร์นิเจอร์' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="2" y="6" width="20" height="8" rx="2"></rect><path d="M4 14v4M20 14v4M2 10h20"></path></svg>',
+                              'ที่จอดรถ' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="1" y="3" width="15" height="13" rx="2"></rect><path d="M16 8h3l3 3v5h-2M8 16h8M7 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM16 16a2 2 0 1 0 0 4 2 2 0 0 0 0-4z"></path></svg>',
+                              'กล้องวงจรปิด' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>',
+                              'ตู้เย็น' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="4" y1="10" x2="20" y2="10"></line><line x1="10" y1="6" x2="10" y2="6"></line><line x1="10" y1="14" x2="10" y2="18"></line></svg>',
+                              'default' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+                            ];
+                            foreach ($roomFeatures as $feature): 
+                              $icon = $featureIcons[$feature] ?? $featureIcons['default'];
+                            ?>
+                            <span class="feature-tag"><?php echo $icon; ?> <?php echo htmlspecialchars($feature); ?></span>
+                            <?php endforeach; ?>
+                          </div>
                         </div>
-                        <div style="margin-top:auto; width:100%; display:flex; gap:0.5rem;">
-                          <button type="button" class="book-btn" 
+                        
+                        <div class="back-actions">
+                          <button type="button" class="book-btn book-btn-back" 
                                   onclick="return window.__openBookingModal ? window.__openBookingModal(this, event) : true;"
-                                  style="flex:1;"
                                   data-room-id="<?php echo $room['room_id']; ?>"
                                   data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
                                   data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
                                   data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                              <line x1="16" y1="2" x2="16" y2="6"></line>
+                              <line x1="8" y1="2" x2="8" y2="6"></line>
+                              <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
                             จองห้องนี้
                           </button>
                         </div>
