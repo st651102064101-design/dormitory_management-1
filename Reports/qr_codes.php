@@ -199,6 +199,26 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             fill: none;
         }
 
+        /* Light theme override for header icon to ensure contrast */
+        html.light-theme .qr-header-icon,
+        body.light-theme .qr-header-icon,
+        .light-theme .qr-header-icon,
+        html.live-light .qr-header-icon,
+        body.live-light .qr-header-icon {
+            background: linear-gradient(135deg, #ffffff, #f1f5f9) !important;
+            box-shadow: 0 6px 18px rgba(16,24,40,0.06) !important;
+            border: 1px solid #e6eef6 !important;
+        }
+
+        html.light-theme .qr-header-icon svg,
+        body.light-theme .qr-header-icon svg,
+        .light-theme .qr-header-icon svg,
+        html.live-light .qr-header-icon svg,
+        body.live-light .qr-header-icon svg {
+            stroke: var(--apple-text) !important;
+            fill: none !important;
+        }
+
         .qr-header h1 {
             font-size: 2.5rem;
             font-weight: 700;
@@ -416,6 +436,30 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             color: #64748b !important;
         }
 
+        html.light-theme .room-badge,
+        html.live-light .room-badge,
+        body.live-light .room-badge {
+            color: white !important;
+        }
+
+        /* Force room-badge inline SVG to white in light modes */
+        html.light-theme .room-badge svg,
+        html.live-light .room-badge svg,
+        body.live-light .room-badge svg,
+        html.light-theme .room-badge svg *,
+        html.live-light .room-badge svg *,
+        body.live-light .room-badge svg * {
+            stroke: #ffffff !important;
+            fill: #ffffff !important;
+        }
+
+        html.light-theme .room-badge svg path,
+        html.live-light .room-badge svg path,
+        body.live-light .room-badge svg path {
+            stroke: currentColor !important;
+            fill: none !important;
+        }
+
         html.light-theme .btn-apple.secondary,
         html.live-light .btn-apple.secondary,
         body.live-light .btn-apple.secondary {
@@ -507,6 +551,13 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             height: 20px;
             stroke: currentColor;
             stroke-width: 2;
+            fill: none;
+        }
+
+        .room-badge svg path,
+        .room-badge svg polyline,
+        .room-badge svg line {
+            stroke: currentColor;
             fill: none;
         }
 
@@ -911,6 +962,84 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             background: transparent !important;
         }
     </style>
+    <script>
+    // QR Code Download Functions - defined in head to ensure availability
+    function downloadQR(imageUrl, roomNumber) {
+        fetch(imageUrl)
+            .then(function(response) {
+                if (!response.ok) throw new Error('Network response was not ok');
+                return response.blob();
+            })
+            .then(function(blob) {
+                var url = window.URL.createObjectURL(blob);
+                var link = document.createElement('a');
+                link.style.display = 'none';
+                link.href = url;
+                link.download = 'QR_Room_' + roomNumber + '.png';
+                document.body.appendChild(link);
+                link.click();
+                setTimeout(function() {
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+            })
+            .catch(function(err) {
+                console.error('Download failed:', err);
+                window.open(imageUrl, '_blank');
+            });
+    }
+
+    function downloadAll() {
+        var cards = document.querySelectorAll('.qr-card');
+        var delay = 0;
+        cards.forEach(function(card) {
+            var img = card.querySelector('.qr-container img');
+            var roomBadge = card.querySelector('.room-badge');
+            var roomNumber = roomBadge.textContent.replace('ห้อง', '').trim();
+            setTimeout(function() {
+                downloadQR(img.src, roomNumber);
+            }, delay);
+            delay += 500;
+        });
+    }
+
+    function printAll() {
+        window.print();
+    }
+
+    function printSingleQR(imageUrl, roomNumber, tenantName) {
+        var printWindow = window.open('', '_blank');
+        printWindow.document.write(
+            '<!DOCTYPE html>' +
+            '<html>' +
+            '<head>' +
+            '<title>QR Code ห้อง ' + roomNumber + '</title>' +
+            '<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">' +
+            '<style>' +
+            '* { margin: 0; padding: 0; box-sizing: border-box; }' +
+            'body { font-family: "Prompt", sans-serif; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f5f5f7; }' +
+            '.print-card { background: white; border-radius: 20px; padding: 40px; text-align: center; box-shadow: 0 10px 40px rgba(0,0,0,0.1); }' +
+            '.room-badge { display: inline-block; background: linear-gradient(135deg, #007aff, #5856d6); color: white; padding: 12px 30px; border-radius: 30px; font-size: 1.5rem; font-weight: 700; margin-bottom: 15px; }' +
+            '.tenant-name { font-size: 1.2rem; font-weight: 600; color: #1d1d1f; margin-bottom: 20px; }' +
+            '.qr-image { width: 200px; height: 200px; border-radius: 12px; }' +
+            '.instructions { margin-top: 20px; font-size: 0.95rem; color: #86868b; }' +
+            '@media print { body { background: white; } .print-card { box-shadow: none; border: 2px solid #e5e5e5; } }' +
+            '</style>' +
+            '</head>' +
+            '<body>' +
+            '<div class="print-card">' +
+            '<div class="room-badge">ห้อง ' + roomNumber + '</div>' +
+            '<div class="tenant-name">' + tenantName + '</div>' +
+            '<img src="' + imageUrl + '" class="qr-image" alt="QR Code">' +
+            '<div class="instructions">สแกน QR Code เพื่อเข้าสู่ระบบผู้เช่า</div>' +
+            '</div>' +
+            '<script>window.onload = function() { setTimeout(function() { window.print(); window.close(); }, 500); };<\/script>' +
+            '</body>' +
+            '</html>'
+        );
+        printWindow.document.close();
+    }
+    </script>
 </head>
 <body class="reports-page qr-page <?php echo $lightThemeClass; ?>">
     <div class="particles no-print">
@@ -1009,9 +1138,9 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
                         ?>
                         <div class="qr-card" style="animation-delay: <?php echo ($index % 8) * 0.05; ?>s;">
                             <div class="room-badge">
-                                <svg viewBox="0 0 24 24">
-                                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
-                                    <polyline points="9 22 9 12 15 12 15 22"/>
+                                <svg viewBox="0 0 24 24" stroke="#ffffff" fill="none">
+                                    <path stroke="#ffffff" d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                                    <polyline stroke="#ffffff" points="9 22 9 12 15 12 15 22"/>
                                 </svg>
                                 ห้อง <?php echo htmlspecialchars($contract['room_number']); ?>
                             </div>
@@ -1075,154 +1204,47 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
         </div>
     </div>
     
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
-    <script src="../Assets/Javascript/main.js" defer></script>
     <script>
-    function downloadQR(imageUrl, roomNumber) {
-        // ใช้ fetch เพื่อดาวน์โหลด QR code โดยตรง
-        fetch(imageUrl)
-            .then(response => {
-                if (!response.ok) throw new Error('Network response was not ok');
-                return response.blob();
-            })
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.style.display = 'none';
-                link.href = url;
-                link.download = 'QR_Room_' + roomNumber + '.png';
-                document.body.appendChild(link);
-                link.click();
-                
-                // Cleanup
-                setTimeout(() => {
-                    document.body.removeChild(link);
-                    window.URL.revokeObjectURL(url);
-                }, 100);
-            })
-            .catch(err => {
-                console.error('Download failed:', err);
-                // Fallback: เปิด QR Code ในแท็บใหม่ให้ผู้ใช้บันทึกเอง
-                window.open(imageUrl, '_blank');
-            });
-    }
-
-    function downloadAll() {
-        const cards = document.querySelectorAll('.qr-card');
-        let delay = 0;
-        cards.forEach(card => {
-            const img = card.querySelector('.qr-container img');
-            const roomBadge = card.querySelector('.room-badge');
-            const roomNumber = roomBadge.textContent.replace('ห้อง', '').trim();
-            
-            setTimeout(() => {
-                downloadQR(img.src, roomNumber);
-            }, delay);
-            delay += 500;
-        });
-    }
-    
-    function printSingleQR(imageUrl, roomNumber, tenantName) {
-        const printWindow = window.open('', '_blank');
-        printWindow.document.write(\`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>QR Code ห้อง \${roomNumber}</title>
-                <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body {
-                        font-family: 'Prompt', sans-serif;
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        min-height: 100vh;
-                        background: #f5f5f7;
+        // Ensure badge SVG icons render white in Light Theme (runtime override)
+        (function(){
+            function applyWhiteToBadgeSVGs() {
+                const isLight = document.documentElement.classList.contains('light-theme') || document.documentElement.classList.contains('live-light') || document.body.classList.contains('live-light');
+                document.querySelectorAll('.room-badge svg').forEach(svg => {
+                    try {
+                        if (isLight) {
+                            svg.setAttribute('stroke', '#ffffff');
+                            svg.setAttribute('fill', 'none');
+                            svg.style.setProperty('stroke', '#ffffff', 'important');
+                            svg.style.setProperty('fill', 'none', 'important');
+                            svg.querySelectorAll('*').forEach(el => {
+                                el.setAttribute('stroke', '#ffffff');
+                                el.setAttribute('fill', 'none');
+                                el.style.setProperty('stroke', '#ffffff', 'important');
+                                el.style.setProperty('fill', 'none', 'important');
+                            });
+                        }
+                    } catch (e) {
+                        // fail silently
                     }
-                    .print-card {
-                        background: white;
-                        border-radius: 20px;
-                        padding: 40px;
-                        text-align: center;
-                        box-shadow: 0 10px 40px rgba(0,0,0,0.1);
-                    }
-                    .room-badge {
-                        display: inline-block;
-                        background: linear-gradient(135deg, #007aff, #5856d6);
-                        color: white;
-                        padding: 12px 30px;
-                        border-radius: 30px;
-                        font-size: 1.5rem;
-                        font-weight: 700;
-                        margin-bottom: 15px;
-                    }
-                    .tenant-name {
-                        font-size: 1.2rem;
-                        font-weight: 600;
-                        color: #1d1d1f;
-                        margin-bottom: 20px;
-                    }
-                    .qr-image {
-                        width: 200px;
-                        height: 200px;
-                        border-radius: 12px;
-                    }
-                    .instructions {
-                        margin-top: 20px;
-                        font-size: 0.95rem;
-                        color: #86868b;
-                    }
-                    @media print {
-                        body { background: white; }
-                        .print-card { box-shadow: none; border: 2px solid #e5e5e5; }
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="print-card">
-                    <div class="room-badge">ห้อง \${roomNumber}</div>
-                    <div class="tenant-name">\${tenantName}</div>
-                    <img src="\${imageUrl}" class="qr-image" alt="QR Code">
-                    <div class="instructions">สแกน QR Code เพื่อเข้าสู่ระบบผู้เช่า</div>
-                </div>
-                <script>
-                    window.onload = function() {
-                        setTimeout(function() {
-                            window.print();
-                            window.close();
-                        }, 500);
-                    };
-                <\/script>
-            </body>
-            </html>
-        \`);
-        printWindow.document.close();
-    }
-    
-    // Watch for live-light class changes on body (from sidebar theme system)
-    document.addEventListener('DOMContentLoaded', function() {
-        // Check if body has live-light class (set by system-settings.js)
-        const checkLightTheme = () => {
-            if (document.body.classList.contains('live-light')) {
-                document.documentElement.classList.add('live-light');
+                });
             }
-        };
-        
-        // Initial check
-        checkLightTheme();
-        
-        // Watch for changes
-        const observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (mutation.attributeName === 'class') {
-                    checkLightTheme();
+
+            document.addEventListener('DOMContentLoaded', applyWhiteToBadgeSVGs);
+
+            // Watch for theme class changes (system-settings.js may toggle classes later)
+            const obs = new MutationObserver(muts => {
+                for (const m of muts) {
+                    if (m.type === 'attributes' && (m.attributeName === 'class')) {
+                        applyWhiteToBadgeSVGs();
+                        break;
+                    }
                 }
             });
-        });
-        
-        observer.observe(document.body, { attributes: true });
-    });
+            obs.observe(document.documentElement, { attributes: true });
+            obs.observe(document.body, { attributes: true });
+        })();
     </script>
+    <script src="../Assets/Javascript/animate-ui.js" defer></script>
+    <script src="../Assets/Javascript/main.js" defer></script>
 </body>
 </html>
