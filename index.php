@@ -70,6 +70,7 @@ try {
     <title><?php echo htmlspecialchars($siteName); ?> - หอพักคุณภาพ</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23667eea;stop-opacity:1' /><stop offset='100%' style='stop-color:%23764ba2;stop-opacity:1' /></linearGradient><style>.house { animation: draw 1s ease-in-out forwards; stroke-dasharray: 200; } @keyframes draw { to { stroke-dashoffset: 0; } }</style></defs><rect width='100' height='100' fill='white'/><g class='house' fill='none' stroke='url(%23grad)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M20 60 L50 25 L80 60 Z'/><rect x='25' y='60' width='50' height='35' rx='3'/><rect x='35' y='70' width='12' height='15'/><rect x='53' y='70' width='12' height='15'/><rect x='44' y='80' width='12' height='15'/></g></svg>" />
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script defer src="Assets/Javascript/public_theme_toggle.js"></script>
     <style>
         * {
             margin: 0;
@@ -105,6 +106,32 @@ try {
             min-height: 100vh;
             color: var(--text-primary);
             overflow-x: hidden;
+        }
+
+        /* ===== Modern Scrollbar (Public pages) ===== */
+        html, body {
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: #8b5cf6 transparent;
+        }
+
+        ::-webkit-scrollbar {
+            width: 10px;
+            height: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #a78bfa, #8b5cf6);
+            border-radius: 999px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(180deg, #c4b5fd, #a78bfa);
         }
 
         /* ===== ANIMATED BACKGROUND ===== */
@@ -2023,6 +2050,7 @@ if ($publicTheme === 'light') {
             <a href="#services"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m15.364-6.364l-4.243 4.243m0 4.243l4.243 4.243M6.636 6.636l4.243 4.243m0 4.243l-4.243 4.243"/></svg> บริการ</a>
             <a href="#rooms"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> ห้องพัก</a>
             <a href="#news"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6m-6-4h6"/></svg> ข่าวสาร</a>
+            <a href="Public/booking_status.php"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ตรวจสอบสถานะการจอง</a>
             <a href="Public/booking.php"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg> จองห้อง</a>
             <a href="Login.php" class="btn-login"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg> เข้าสู่ระบบ</a>
         </nav>

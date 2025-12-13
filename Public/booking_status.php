@@ -40,6 +40,28 @@ function adjustColor($hex, $percent) {
 $themeDark = adjustColor($themeColor, -35);
 $themeLight = adjustColor($themeColor, 25);
 
+// Thai date formatter (วัน เดือน ปี พ.ศ.)
+function thaiDate(?string $dateStr, string $format = 'd M Y') {
+    if (empty($dateStr)) return '';
+    $ts = strtotime($dateStr);
+    if ($ts === false) return '';
+    $day = date('j', $ts);
+    $monthNum = (int)date('n', $ts);
+    $yearBE = (int)date('Y', $ts) + 543;
+    $thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    $thaiMonthsFull = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+    $monthShort = $thaiMonthsShort[$monthNum - 1] ?? '';
+    $monthFull = $thaiMonthsFull[$monthNum - 1] ?? '';
+    // Support simple tokens: d, M, F, Y
+    $out = $format;
+    $out = str_replace('d', str_pad((string)$day, 2, '0', STR_PAD_LEFT), $out);
+    $out = str_replace('j', (string)$day, $out);
+    $out = str_replace('M', $monthShort, $out);
+    $out = str_replace('F', $monthFull, $out);
+    $out = str_replace('Y', (string)$yearBE, $out);
+    return $out;
+}
+
 $bookingInfo = null;
 $error = '';
 $searchMethod = '';
@@ -116,6 +138,56 @@ $paymentStatuses = [
 $currentBkgStatus = $bookingInfo['bkg_status'] ?? null;
 $currentCtrStatus = $bookingInfo['ctr_status'] ?? null;
 $currentExpStatus = $bookingInfo['exp_status'] ?? null;
+
+// Derive booking badge label/class: if payment verified, show "จองสำเร็จ"
+$bookingBadge = $bookingStatuses[$currentBkgStatus] ?? ['label' => 'ไม่ทราบ', 'class' => 'pending'];
+if ($currentBkgStatus === '1' && $currentExpStatus === '1') {
+    $bookingBadge['label'] = 'จองสำเร็จ';
+    $bookingBadge['class'] = 'verified';
+}
+
+// Build tracking steps (shipment-like) with dynamic state
+$hasPaymentProof = (($bookingInfo['paid_amount'] ?? 0) > 0) || $currentExpStatus === '1';
+$progressStage = 1; // baseline: booking found
+if ($hasPaymentProof) $progressStage = 2;
+if ($currentExpStatus === '1') $progressStage = 3;
+if (!empty($bookingInfo['ctr_id']) && $currentExpStatus === '1') $progressStage = 4;
+if ($currentBkgStatus === '2') $progressStage = 5;
+
+$trackingSteps = [
+    [
+        'label' => 'รับคำจอง',
+        'desc' => 'ระบบบันทึกคำจองแล้ว ' . (!empty($bookingInfo['bkg_date']) ? '(' . htmlspecialchars(thaiDate($bookingInfo['bkg_date'], 'd M Y')) . ')' : ''),
+    ],
+    [
+        'label' => 'ส่งหลักฐานมัดจำ',
+        'desc' => $hasPaymentProof ? 'รับสลิปแล้ว กำลังประมวลผล' : 'รออัปโหลดสลิปหรือใบเสร็จ',
+    ],
+    [
+        'label' => 'ตรวจสอบ/อนุมัติ',
+        'desc' => $currentExpStatus === '1' ? 'ตรวจสอบแล้ว เตรียมออกสัญญา' : 'เจ้าหน้าที่จะตรวจสอบภายในเวลาไม่นาน',
+    ],
+    [
+        'label' => 'สัญญาพร้อมลงชื่อ',
+        'desc' => !empty($bookingInfo['ctr_id']) && !empty($bookingInfo['access_token']) ? 'เปิดดู/ดาวน์โหลดและเตรียมลงชื่อได้เลย' : 'สัญญาจะพร้อมหลังอนุมัติการชำระ',
+    ],
+    [
+        'label' => 'เข้าพัก',
+        'desc' => $currentBkgStatus === '2' ? 'เช็คอินแล้ว' : ('เตรียมเข้าพัก' . (!empty($bookingInfo['bkg_checkin_date']) ? ' (' . htmlspecialchars(thaiDate($bookingInfo['bkg_checkin_date'], 'd M Y')) . ')' : '')), 
+    ],
+];
+
+foreach ($trackingSteps as $idx => &$step) {
+    $stepIndex = $idx + 1;
+    if ($progressStage > $stepIndex) {
+        $step['state'] = 'done';
+    } elseif ($progressStage === $stepIndex) {
+        $step['state'] = 'current';
+    } else {
+        $step['state'] = 'next';
+    }
+}
+unset($step);
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -745,6 +817,258 @@ $currentExpStatus = $bookingInfo['exp_status'] ?? null;
             color: #34d399;
             font-size: 1.2rem;
         }
+
+        /* Upcoming Box Styles */
+        .upcoming-box .upcoming-content {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-primary);
+        }
+        .upcoming-box .amount {
+            font-size: 1.25rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, var(--accent, #fbbf24), #fde047);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: 0.25px;
+            animation: amountPulse 2.4s ease-in-out infinite;
+        }
+        .upcoming-box .upcoming-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03));
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: 999px;
+            box-shadow: 0 6px 18px rgba(2, 8, 23, 0.35);
+            color: var(--text-primary);
+            position: relative;
+            overflow: hidden;
+        }
+        .upcoming-box .upcoming-pill::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at 10% 10%, rgba(255,255,255,0.12), transparent 40%),
+                        radial-gradient(circle at 90% 90%, rgba(255,255,255,0.08), transparent 40%);
+            opacity: 0;
+            animation: pillGlow 3.2s ease-in-out infinite;
+        }
+        @keyframes amountPulse {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+        @keyframes pillGlow {
+            0% { opacity: 0; }
+            50% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        /* Futuristic Tracking Steps */
+        .tracking-card {
+            background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 18px;
+            padding: 1.6rem;
+            margin: 1.5rem 0 2.5rem;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.25);
+        }
+        .tracking-card::before {
+            content: '';
+            position: absolute;
+            inset: -50%;
+            background: radial-gradient(circle at 20% 20%, rgba(56,189,248,0.12), transparent 35%),
+                        radial-gradient(circle at 80% 40%, rgba(99,102,241,0.12), transparent 30%),
+                        radial-gradient(circle at 60% 80%, rgba(52,211,153,0.12), transparent 30%);
+            filter: blur(10px);
+            z-index: 0;
+        }
+        .tracking-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            position: relative;
+            z-index: 1;
+        }
+        .tracking-kicker {
+            letter-spacing: 0.08em;
+            font-size: 0.78rem;
+            color: #a5b4fc;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+        .tracking-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        .tracking-meta {
+            font-size: 0.9rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .tracking-rail {
+            position: relative;
+            margin-top: 1.2rem;
+            padding-left: 10px;
+        }
+        .tracking-rail::before {
+            content: '';
+            position: absolute;
+            left: 18px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: linear-gradient(180deg, rgba(99,102,241,0.5), rgba(45,212,191,0.4));
+            opacity: 0.7;
+        }
+        .track-step {
+            position: relative;
+            display: grid;
+            grid-template-columns: 60px 1fr;
+            gap: 1rem;
+            padding: 0.75rem 0.75rem 0.75rem 0;
+            border-radius: 12px;
+            margin-left: 10px;
+            z-index: 1;
+        }
+        .track-step::before {
+            content: '';
+            position: absolute;
+            left: 7px;
+            top: 22px;
+            width: 2px;
+            height: calc(100% - 22px);
+            background: linear-gradient(180deg, rgba(255,255,255,0), rgba(99,102,241,0.4));
+            opacity: 0.4;
+        }
+        .track-step:last-child::before { display: none; }
+        .track-step:hover { background: rgba(255,255,255,0.02); }
+        .track-step .state-pill {
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 12px;
+            letter-spacing: 0.01em;
+            background: rgba(255,255,255,0.08);
+            color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.15);
+        }
+        .track-step.done .state-pill { background: rgba(52,211,153,0.15); border-color: rgba(52,211,153,0.4); color: #a7f3d0; }
+        .track-step.current .state-pill { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.4); color: #c7d2fe; }
+        .track-step.next .state-pill { background: rgba(148,163,184,0.1); border-color: rgba(148,163,184,0.2); color: #cbd5e1; }
+        .track-node {
+            position: relative;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            margin: 0 auto;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(255,255,255,0.15);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.25);
+            overflow: hidden;
+        }
+        .track-node::after {
+            content: '';
+            position: absolute;
+            inset: -30%;
+            background: conic-gradient(from 0deg, rgba(99,102,241,0.25), rgba(56,189,248,0.25), rgba(52,211,153,0.25), rgba(99,102,241,0.25));
+            animation: spin 6s linear infinite;
+            opacity: 0;
+        }
+        .track-node .node-core {
+            position: relative;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #0f172a;
+            border: 2px solid rgba(255,255,255,0.2);
+            display: grid;
+            place-items: center;
+            z-index: 1;
+        }
+        .track-node .node-number {
+            font-size: 12px;
+            color: #cbd5e1;
+            font-weight: 700;
+        }
+        .track-node .node-icon {
+            display: none;
+        }
+        .track-step.done .track-node { border-color: rgba(52,211,153,0.5); box-shadow: 0 0 0 6px rgba(52,211,153,0.12); }
+        .track-step.done .track-node::after { opacity: 0.6; }
+        .track-step.done .node-core { border-color: rgba(52,211,153,0.8); }
+        .track-step.current .track-node { border-color: rgba(99,102,241,0.6); box-shadow: 0 0 0 8px rgba(99,102,241,0.1); }
+        .track-step.current .track-node::after { opacity: 0.7; animation-duration: 3s; }
+        .track-step.current .node-core { border-color: rgba(99,102,241,0.8); }
+        .track-body {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            padding-top: 2px;
+        }
+        .track-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .track-label {
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        .track-desc {
+            color: #94a3b8;
+            font-size: 0.92rem;
+            line-height: 1.4;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 640px) {
+            .track-row { flex-direction: column; align-items: flex-start; }
+            .tracking-rail::before { left: 14px; }
+            .track-step { grid-template-columns: 50px 1fr; }
+        }
+
+        /* Light theme overrides for upcoming pill */
+        body.theme-light .upcoming-box .upcoming-pill {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #0f172a;
+            box-shadow: 0 6px 16px rgba(15,23,42,0.08);
+        }
+        body.theme-light .upcoming-box .upcoming-pill svg {
+            stroke: #334155;
+        }
+
+        /* Light theme overrides for tracking */
+        body.theme-light .tracking-card {
+            background: rgba(255,255,255,0.92);
+            border-color: rgba(148,163,184,0.35);
+            box-shadow: 0 12px 30px rgba(148,163,184,0.35);
+        }
+        body.theme-light .tracking-title { color: #0f172a; }
+        body.theme-light .tracking-kicker { color: #6b7280; }
+        body.theme-light .tracking-meta { color: #475569; }
+        body.theme-light .tracking-rail::before { background: linear-gradient(180deg, rgba(99,102,241,0.35), rgba(45,212,191,0.3)); }
+        body.theme-light .track-step:hover { background: rgba(15,23,42,0.04); }
+        body.theme-light .track-node { background: rgba(255,255,255,0.9); border-color: rgba(148,163,184,0.35); }
+        body.theme-light .node-core { background: #fff; border-color: rgba(148,163,184,0.6); }
+        body.theme-light .node-number { color: #334155; }
+        body.theme-light .track-label { color: #0f172a; }
+        body.theme-light .track-desc { color: #475569; }
+        body.theme-light .state-pill { background: rgba(241,245,249,0.9); color: #334155; border-color: rgba(203,213,225,0.8); }
+        body.theme-light .track-step.done .state-pill { background: rgba(220,252,231,0.9); color: #166534; border-color: rgba(187,247,208,0.9); }
+        body.theme-light .track-step.current .state-pill { background: rgba(224,231,255,0.9); color: #3730a3; border-color: rgba(199,210,254,0.9); }
         
         /* Progress Bar */
         .progress-section {
@@ -938,6 +1262,23 @@ if ($publicTheme === 'light') {
 }
 ?>
 <body class="<?php echo $themeClass; ?>" data-theme-mode="<?php echo htmlspecialchars($publicTheme, ENT_QUOTES, 'UTF-8'); ?>">
+        <script>
+            // Respect admin setting; only apply saved preference when admin chooses 'auto'
+            (function() {
+                try {
+                    const mode = document.body.getAttribute('data-theme-mode');
+                    if (mode === 'light') {
+                        document.body.classList.add('theme-light');
+                    } else if (mode === 'dark') {
+                        document.body.classList.remove('theme-light');
+                    } else if (mode === 'auto') {
+                        const saved = localStorage.getItem('public_theme');
+                        if (saved === 'light') document.body.classList.add('theme-light');
+                        if (saved === 'dark') document.body.classList.remove('theme-light');
+                    }
+                } catch(e) {}
+            })();
+        </script>
     <?php if ($publicTheme === 'auto'): ?>
     <script>
       (function() {
@@ -984,6 +1325,13 @@ if ($publicTheme === 'light') {
                     </svg>
                     <span>กลับหน้าแรก</span>
                 </a>
+                <button id="btnThemeToggle" class="btn-back" style="margin-left:8px;">
+                    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="4" />
+                        <path d="M21 12a9 9 0 1 1-9-9" />
+                    </svg>
+                    <span>สลับธีม</span>
+                </button>
             </div>
         </div>
         
@@ -1056,8 +1404,8 @@ if ($publicTheme === 'light') {
                     </div>
                     <div>
                         <div class="status-card-title">สถานะการจอง</div>
-                        <span class="status-badge <?php echo $bookingStatuses[$currentBkgStatus]['class'] ?? 'pending'; ?>">
-                            <?php echo $bookingStatuses[$currentBkgStatus]['label'] ?? 'ไม่ทราบ'; ?>
+                        <span class="status-badge <?php echo $bookingBadge['class']; ?>">
+                            <?php echo $bookingBadge['label']; ?>
                         </span>
                     </div>
                 </div>
@@ -1171,10 +1519,60 @@ if ($publicTheme === 'light') {
             </div>
             <?php endif; ?>
         </div>
+
+        <!-- Futuristic Tracking Steps -->
+        <?php $latestStepLabel = $trackingSteps[$progressStage - 1]['label'] ?? 'กำลังดำเนินการ'; ?>
+        <div class="tracking-card">
+            <div class="tracking-header">
+                <div>
+                    <div class="tracking-kicker">เส้นทางการจอง</div>
+                    <div class="tracking-title">สถานะล่าสุด: <?php echo htmlspecialchars($latestStepLabel); ?></div>
+                </div>
+                <div class="tracking-meta">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="9" opacity="0.4"/>
+                        <polyline points="12 7 12 12 15 14" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span><?php echo !empty($bookingInfo['bkg_checkin_date']) ? 'วันเข้าพัก: ' . htmlspecialchars(thaiDate($bookingInfo['bkg_checkin_date'], 'd M Y')) : 'เตรียมเอกสารให้พร้อม'; ?></span>
+                </div>
+            </div>
+            <div class="tracking-rail">
+                <?php foreach ($trackingSteps as $idx => $step): ?>
+                <div class="track-step <?php echo htmlspecialchars($step['state']); ?>">
+                    <div class="track-node">
+                        <div class="node-core">
+                            <?php if ($step['state'] === 'done'): ?>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5">
+                                    <polyline points="5 13 10 17 19 7" stroke-linecap="round" stroke-linejoin="round" />
+                                </svg>
+                            <?php elseif ($step['state'] === 'current'): ?>
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a5b4fc" stroke-width="2">
+                                    <circle cx="12" cy="12" r="6">
+                                        <animate attributeName="r" values="6;7;6" dur="1.6s" repeatCount="indefinite" />
+                                    </circle>
+                                </svg>
+                            <?php else: ?>
+                                <span class="node-number"><?php echo $idx + 1; ?></span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                    <div class="track-body">
+                        <div class="track-row">
+                            <div class="track-label"><?php echo htmlspecialchars($step['label']); ?></div>
+                            <span class="state-pill <?php echo htmlspecialchars($step['state']); ?>">
+                                <?php echo $step['state'] === 'done' ? 'เสร็จแล้ว' : ($step['state'] === 'current' ? 'กำลังดำเนินการ' : 'รอถัดไป'); ?>
+                            </span>
+                        </div>
+                        <div class="track-desc"><?php echo htmlspecialchars($step['desc']); ?></div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
         
-        <!-- Booking Details -->
+        <!-- Essential Booking & Contract Snapshot -->
         <div class="info-section">
-            <h3>ข้อมูลการจองห้อง</h3>
+            <h3>ข้อมูลสำคัญ</h3>
             <div class="info-grid">
                 <div class="info-item">
                     <div class="info-label">ชื่อผู้จอง</div>
@@ -1185,60 +1583,99 @@ if ($publicTheme === 'light') {
                     <div class="info-value"><?php echo htmlspecialchars($bookingInfo['tnt_phone'] ?? '-'); ?></div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">หมายเลขห้อง</div>
-                    <div class="info-value"><?php echo htmlspecialchars($bookingInfo['room_number'] ?? '-'); ?></div>
+                    <div class="info-label">ห้อง</div>
+                    <div class="info-value"><?php echo htmlspecialchars($bookingInfo['room_number'] ?? '-'); ?> · <?php echo htmlspecialchars($bookingInfo['type_name'] ?? '-'); ?></div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">ประเภทห้อง</div>
-                    <div class="info-value"><?php echo htmlspecialchars($bookingInfo['type_name'] ?? '-'); ?></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">ค่าห้องต่อเดือน</div>
+                    <div class="info-label">ค่าห้อง/เดือน</div>
                     <div class="info-value highlight">฿<?php echo number_format($bookingInfo['type_price'] ?? 0); ?></div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">เงินมัดจำ</div>
+                    <div class="info-label">มัดจำ</div>
                     <div class="info-value highlight">฿<?php echo number_format($bookingInfo['ctr_deposit'] ?? 0); ?></div>
+                </div>
+                <?php 
+                  // Upcoming room fee due logic (simplified)
+                  $deposit = floatval($bookingInfo['ctr_deposit'] ?? 0);
+                  $paid = floatval($bookingInfo['paid_amount'] ?? 0);
+                  $monthly = floatval($bookingInfo['type_price'] ?? 0);
+                  $expStatus = $currentExpStatus; // 0=รอตรวจ,1=ตรวจแล้ว
+                  $bkgStatus = $currentBkgStatus; // 1=จองแล้ว,2=เข้าพักแล้ว
+                  $ctrStart = $bookingInfo['ctr_start'] ?? null;
+                  $bkgCheckin = $bookingInfo['bkg_checkin_date'] ?? null;
+                  $dueBase = !empty($ctrStart) ? $ctrStart : $bkgCheckin;
+                  $dueDateStr = '-';
+                  if (!empty($dueBase)) { try { $dueDateStr = date_format(date_create($dueBase), 'd M Y'); } catch (Exception $e) {} }
+                  $showUpcoming = ($expStatus === '1' && $bkgStatus === '1' && $monthly > 0);
+                  $remainingColor = $showUpcoming ? '#fbbf24' : (($deposit - $paid > 0) ? '#f87171' : '#34d399');
+                ?>
+                <div class="info-item upcoming-box">
+                    <div class="info-label">คงเหลือ</div>
+                    <div class="upcoming-content" style="--accent: <?php echo $remainingColor; ?>;">
+                        <span class="amount"><?php echo ($showUpcoming ? '฿' . number_format($monthly) : '฿' . number_format(max(0, $deposit - $paid))); ?></span>
+                        <?php if ($showUpcoming): ?>
+                        <span class="upcoming-pill">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            ที่กำลังมาถึง: <?php echo $dueDateStr; ?>
+                        </span>
+                        <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
-        
-        <!-- Contract Details -->
-        <?php if ($bookingInfo['ctr_id']): ?>
+
+        <!-- Next Steps for ผู้จอง -->
         <div class="info-section">
-            <h3>รายละเอียดสัญญา</h3>
+            <h3>ขั้นตอนต่อไป</h3>
             <div class="info-grid">
                 <div class="info-item">
-                    <div class="info-label">วันที่เข้าพัก</div>
-                    <div class="info-value"><?php echo date_format(date_create($bookingInfo['ctr_start']), 'd M Y'); ?></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">วันที่สิ้นสุดสัญญา</div>
-                    <div class="info-value"><?php echo date_format(date_create($bookingInfo['ctr_end']), 'd M Y'); ?></div>
-                </div>
-                <div class="info-item">
-                    <div class="info-label">ระยะเวลาเช่า</div>
-                    <div class="info-value">
-                        <?php 
-                            $start = new DateTime($bookingInfo['ctr_start']);
-                            $end = new DateTime($bookingInfo['ctr_end']);
-                            $interval = $start->diff($end);
-                            echo $interval->m . ' เดือน ' . $interval->d . ' วัน';
-                        ?>
+                    <div class="info-label">มาถึงหอ</div>
+                    <div class="info-value">ปักหมุดนำทาง</div>
+                    <div class="info-value" style="margin-top:8px;">
+                        <a class="status-badge verified" style="text-decoration:none; padding:8px 12px; display:inline-flex; align-items:center; gap:8px;" href="https://maps.google.com/?q=<?php echo urlencode($siteName); ?>" target="_blank" rel="noopener">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 12-9 12S3 17 3 10a9 9 0 1 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            เปิดแผนที่
+                        </a>
                     </div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">ยอดชำระ</div>
-                    <div class="info-value highlight">฿<?php echo number_format($bookingInfo['ctr_deposit'] ?? 0); ?></div>
+                    <div class="info-label">ติดต่อ</div>
+                    <div class="info-value">โทร: <?php echo htmlspecialchars($contactPhone ?? '-'); ?></div>
+                    <div class="info-value">อีเมล: <?php echo htmlspecialchars($contactEmail ?? '-'); ?></div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">ยอดที่ชำระแล้ว</div>
-                    <div class="info-value highlight">฿<?php echo number_format($bookingInfo['paid_amount'] ?? 0); ?></div>
+                    <div class="info-label">เตรียมเอกสาร</div>
+                    <div class="info-value">- บัตรประชาชนตัวจริง<br>- หลักฐานชำระมัดจำ (ถ้ามี)<br>- เอกสารเพิ่มเติมที่เจ้าหน้าที่แจ้ง</div>
                 </div>
                 <div class="info-item">
-                    <div class="info-label">คงเหลือ</div>
-                    <div class="info-value highlight" style="<?php echo ($bookingInfo['ctr_deposit'] - ($bookingInfo['paid_amount'] ?? 0) > 0) ? 'color: #f87171;' : 'color: #34d399;'; ?>">
-                        ฿<?php echo number_format(max(0, ($bookingInfo['ctr_deposit'] ?? 0) - ($bookingInfo['paid_amount'] ?? 0))); ?>
+                    <div class="info-label">ชำระวันเข้าพัก</div>
+                    <div class="info-value">ค่าห้องเดือนแรก ฿<?php echo number_format($bookingInfo['type_price'] ?? 0); ?><br>ชำระในวันเข้าพัก</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Access -->
+        <?php if (!empty($bookingInfo['ctr_id']) && !empty($bookingInfo['access_token']) && ($currentExpStatus === '1' || $currentBkgStatus === '2')): ?>
+        <div class="info-section">
+            <h3>สัญญาเช่า</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">ดู/ดาวน์โหลด</div>
+                    <div class="info-value" style="margin-top:8px;">
+                        <a class="status-badge verified" style="text-decoration:none; padding:10px 14px; display:inline-flex; align-items:center; gap:8px;" href="../Tenant/contract.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank" rel="noopener">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="11" y2="17"/></svg>
+                            เปิดสัญญาเช่า
+                        </a>
+                        <div style="margin-top:10px; color:#94a3b8; font-size:14px; line-height:1.6;">
+                            คำแนะนำเกี่ยวกับสัญญาและหลักฐานการชำระเงิน:<br>
+                            1) ดาวน์โหลดสัญญา หากมีเครื่องปริ้นให้ปริ้นและเซ็นก่อนนำมาแสดงในวันเข้าพัก<br>
+                            2) หากคุณได้อัปโหลดหลักฐานการชำระเงิน (สลิป/ใบเสร็จ) ในระบบแล้ว ให้เตรียมแสดงไฟล์หรือแสดงบนมือถือเพื่อให้เจ้าหน้าที่ตรวจสอบได้สะดวก<br>
+                            3) หากยังไม่ได้อัปโหลดหลักฐาน กรุณานำใบเสร็จตัวจริง (เช่น สลิปโอน/ใบเสร็จเงินสด) และบัตรประชาชนของผู้ลงชื่อมาด้วยในวันเข้าพัก<br>
+                            4) ถ้าไม่สะดวกปริ้น สามารถมาลงชื่อเซ็นสัญญากับเจ้าหน้าที่ในวันเข้าพักได้
+                        </div>
                     </div>
                 </div>
             </div>
@@ -1260,6 +1697,17 @@ if ($publicTheme === 'light') {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const idCardInput = document.getElementById('id_card_input');
+            const btnThemeToggle = document.getElementById('btnThemeToggle');
+            if (btnThemeToggle) {
+                btnThemeToggle.addEventListener('click', function() {
+                    const mode = document.body.getAttribute('data-theme-mode');
+                    // Allow user toggle only in auto mode; otherwise follow admin setting
+                    if (mode === 'auto') {
+                        const isLight = document.body.classList.toggle('theme-light');
+                        try { localStorage.setItem('public_theme', isLight ? 'light' : 'dark'); } catch(e) {}
+                    }
+                });
+            }
             
             if (idCardInput) {
                 console.log('✅ พบ input element');

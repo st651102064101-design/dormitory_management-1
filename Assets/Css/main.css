@@ -3,6 +3,43 @@
 /* Import Light Theme Fixes */
 @import url('light-theme-fixes.css');
 
+/* Global Modern Scrollbar (applies where this CSS is loaded) */
+html, body, .app-shell, .app-main {
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #8b5cf6 transparent; /* thumb color + track */
+}
+
+/* WebKit-based browsers (Chrome, Edge, Safari) */
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #a78bfa, #8b5cf6);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #c4b5fd, #a78bfa);
+}
+
+/* Optional: inner scroll areas get consistent scrollbar too */
+.scrollable,
+.datatable-wrapper,
+.report-content,
+.manage-panel,
+.content-area {
+    scrollbar-width: thin;
+    scrollbar-color: #8b5cf6 transparent;
+}
+
 /* Global button focus outline removal */
 button:focus,
 button:focus-visible {

@@ -5,6 +5,59 @@ require_once __DIR__ . '/../ConnectDB.php';
 
 $pdo = connectDB();
 
+// Apply shared public background and scrollbar styles
+include_once __DIR__ . '/../includes/public_theme.php';
+?>
+<script>
+// Show monthly payment due information to the user
+document.addEventListener('DOMContentLoaded', function() {
+    // Wait longer to ensure theme toggle button is rendered first
+    setTimeout(function() {
+        function computeNextDue(dayOfMonth) {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth();
+            const targetThisMonth = new Date(year, month, dayOfMonth);
+            if (today <= targetThisMonth) {
+                return targetThisMonth;
+            }
+            return new Date(year, month + 1, dayOfMonth);
+        }
+        // Default billing day = 1st of month; can be adjusted later from settings
+        const billingDay = 1;
+        const nextDue = computeNextDue(billingDay);
+        const nextDueStr = nextDue.toLocaleDateString('th-TH', { year: 'numeric', month: 'long', day: 'numeric' });
+        // Light mode variant: adjust pill style if body has theme-light
+        const isLight = document.body.classList.contains('theme-light');
+
+        // Create a subtle floating info pill - use separate fixed position
+        const pill = document.createElement('div');
+        pill.setAttribute('role', 'status');
+        pill.style.position = 'fixed';
+        pill.style.right = '20px';
+        pill.style.bottom = '90px';
+        pill.style.zIndex = '9998';
+        pill.style.background = isLight ? 'rgba(255,255,255,0.92)' : 'rgba(30, 41, 59, 0.75)';
+        pill.style.backdropFilter = 'blur(8px)';
+        pill.style.color = isLight ? '#0f172a' : '#e2e8f0';
+        pill.style.padding = '10px 14px';
+        pill.style.borderRadius = '999px';
+        pill.style.boxShadow = isLight ? '0 8px 22px rgba(15,23,42,0.12)' : '0 10px 30px rgba(2, 8, 23, 0.45)';
+        pill.style.display = 'flex';
+        pill.style.alignItems = 'center';
+        pill.style.gap = '8px';
+        pill.style.whiteSpace = 'nowrap';
+        pill.style.pointerEvents = 'auto';
+        const iconStroke = isLight ? '#059669' : '#22c55e';
+        const nextDueColor = isLight ? '#065f46' : '#a7f3d0';
+        pill.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="' + iconStroke + '" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' +
+                         '<span>กำหนดชำระค่าห้องทุกวันที่ ' + billingDay + ' • งวดถัดไป: <strong style="color:' + nextDueColor + '">' + nextDueStr + '</strong></span>';
+        document.body.appendChild(pill);
+    }, 300);
+});
+</script>
+<?php
+
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
