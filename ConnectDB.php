@@ -7,7 +7,7 @@ function connectDB(){
 	$host = 'localhost:3306';
 	$db   = 'dormitory_management_db';
 	$user = 'root';
-	$pass = '12345678';
+	$pass = '';
 	$dsn  = "mysql:host=$host;dbname=$db;charset=utf8mb4";
 	try {
 		$pdo = new PDO($dsn, $user, $pass, [
