@@ -1643,7 +1643,7 @@ try {
         gap: 0.4rem;
         width: 100%;
         flex: 1;
-        overflow: hidden;
+        overflow: auto;
         min-height: 0;
         max-width: 100%;
       }
