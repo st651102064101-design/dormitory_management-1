@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 session_start();
-require_once __DIR__ . '/config.php';
 // Destroy session and redirect to login
 $_SESSION = [];
 if (ini_get('session.use_cookies')) {
@@ -11,5 +10,5 @@ if (ini_get('session.use_cookies')) {
     );
 }
 session_destroy();
-header('Location: ' . BASE_URL . '/Login.php');
+header('Location: Login.php');
 exit;

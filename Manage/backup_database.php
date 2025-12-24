@@ -80,7 +80,7 @@ try {
             'success' => true,
             'message' => 'สำรองข้อมูลสำเร็จ',
             'filename' => $filename,
-            'file' => BASE_PATH . '/backups/' . $filename
+            'file' => '/Dormitory_Management/backups/' . $filename
         ], JSON_UNESCAPED_UNICODE);
         exit;
     } else {

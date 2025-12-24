@@ -3,9 +3,8 @@ declare(strict_types=1);
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-require_once __DIR__ . '/../config.php';
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
@@ -32,16 +31,16 @@ if ($ctr_id === 0) {
 ?>
 <?php $pageTitle = 'พิมพ์สัญญา'; ?>
 <!DOCTYPE html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เลือกสัญญาเพื่อพิมพ์</title>
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/animate-ui.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/main.css">
+    <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/main.css">
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css">
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/datatable-modern.css">
+    <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/datatable-modern.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Tahoma, Arial, sans-serif; background: #f5f5f5; min-height: 100vh; }
@@ -280,7 +279,7 @@ function nameWithoutNickname($fullName) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

@@ -1,12 +1,10 @@
 <?php
 declare(strict_types=1);
 session_start();
-require_once __DIR__ . '/../config.php';
 if (empty($_SESSION['admin_username'])) {
-  header('Location: ' . BASE_URL . '/Login.php');
-  exit;
+    header('Location: ../Login.php');
+    exit;
 }
-require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
@@ -49,17 +47,17 @@ try {
 ?>
 
 <!doctype html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายงานรายรับ</title>
-    <link rel="icon" type="image/jpeg" href="<?php echo BASE_URL; ?>/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/main.css" />
+    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="../Assets/Css/main.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -152,14 +150,7 @@ try {
         </div>
       </main>
     </div>
-    <script src="<?php echo BASE_URL; ?>/Assets/Javascript/animate-ui.js" defer></script>
-    <!-- ตัวอย่างการอ่าน BASE_URL ใน JS -->
-    <script>
-      // อ่าน BASE_URL จาก data attribute
-      const BASE_URL = document.documentElement.getAttribute('data-base-url') || '';
-      // ตัวอย่างการใช้งาน BASE_URL ใน fetch/AJAX
-      // fetch(`${BASE_URL}/api/endpoint`, { ... })
-    </script>
+    <script src="../Assets/Javascript/animate-ui.js" defer></script>
     <script>
       (function() {
         // View Toggle

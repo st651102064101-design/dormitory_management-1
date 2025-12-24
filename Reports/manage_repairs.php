@@ -6,10 +6,9 @@ session_start();
 date_default_timezone_set('Asia/Bangkok');
 
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
-require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 

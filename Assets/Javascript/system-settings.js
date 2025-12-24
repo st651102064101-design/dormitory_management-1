@@ -229,7 +229,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   const ext = selectedFile.split('.').pop().toLowerCase();
                   const newLogoFile = 'Logo.' + ext;
                   const imageUrl = `../Assets/Images/${encodeURIComponent(newLogoFile)}?t=${Date.now()}`;
-                  const absImageUrl = `${document.documentElement.getAttribute('data-base-url') || ''}/Assets/Images/${encodeURIComponent(newLogoFile)}?t=${Date.now()}`;
+                  const absImageUrl = `/Dormitory_Management/Assets/Images/${encodeURIComponent(newLogoFile)}?t=${Date.now()}`;
                   
                   // อัพเดท logo ในส่วน main
                   const logoPreview = document.getElementById('logoPreview');

@@ -3,7 +3,6 @@ declare(strict_types=1);
 error_reporting(E_ALL);
 ini_set('display_errors', '1');
 session_start();
-require_once __DIR__ . '/../config.php';
 
 // Log เพื่อ debug
 error_log('process_news.php called');
@@ -20,7 +19,7 @@ if (empty($_SESSION['admin_username'])) {
         exit;
     }
     $_SESSION['error'] = 'กรุณาเข้าสู่ระบบก่อน';
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
 
@@ -53,7 +52,7 @@ try {
             exit;
         }
         $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
-        header('Location: ' . BASE_URL . '/Reports/manage_news.php');
+        header('Location: ../Reports/manage_news.php');
         exit;
     }
 

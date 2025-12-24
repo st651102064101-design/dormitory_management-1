@@ -1,5 +1,4 @@
 <?php
-require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/ConnectDB.php';
 $pdo = connectDB();
 
@@ -20,7 +19,7 @@ $utilities = $utilStmt->fetchAll(PDO::FETCH_ASSOC);
 
 ?>
 <!DOCTYPE html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

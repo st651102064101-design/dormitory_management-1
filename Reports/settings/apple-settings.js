@@ -613,7 +613,7 @@ class AppleSettings {
         // Update sidebar logo (team-avatar-img class)
         const sidebarLogo = document.querySelector('.team-avatar-img');
         if (sidebarLogo) {
-          sidebarLogo.src = `${document.documentElement.getAttribute('data-base-url') || ''}/Assets/Images/${filename}?t=${newTimestamp}`;
+          sidebarLogo.src = `/Dormitory_Management/Assets/Images/${filename}?t=${newTimestamp}`;
         }
         
         // Update any other logo images on page

@@ -1,7 +1,6 @@
 <?php
 header('Content-Type: application/json');
 session_start();
-require_once __DIR__ . '/../config.php';
 
 if (empty($_SESSION['admin_username'])) {
     echo json_encode(['success' => false, 'error' => 'Unauthorized']);

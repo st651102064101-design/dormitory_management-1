@@ -50,7 +50,7 @@ try {
 
     // ลบรูปภาพ
     if ($room['room_image']) {
-        $imagePath = __DIR__ . '/..' . str_replace(BASE_PATH, '', $room['room_image']);
+        $imagePath = __DIR__ . '/..' . str_replace('/Dormitory_Management', '', $room['room_image']);
         if (file_exists($imagePath)) {
             unlink($imagePath);
         }

@@ -1,12 +1,10 @@
 <?php
 declare(strict_types=1);
 session_start();
-require_once __DIR__ . '/../config.php';
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
-require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
@@ -74,24 +72,17 @@ $statusMap = [
 ];
 ?>
 <!DOCTYPE html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($siteName); ?> - รายงานผู้เช่า</title>
-    <link rel="icon" type="image/jpeg" href="<?php echo BASE_URL; ?>/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" />
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/main.css" />
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/lottie-icons.css" />
+    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" />
+    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/datatable-modern.css" />
-            <!-- ตัวอย่างการอ่าน BASE_URL ใน JS -->
-            <script>
-                // อ่าน BASE_URL จาก data attribute
-                const BASE_URL = document.documentElement.getAttribute('data-base-url') || '';
-                // ตัวอย่างการใช้งาน BASE_URL ใน fetch/AJAX
-                // fetch(`${BASE_URL}/api/endpoint`, { ... })
-            </script>
+    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
     <style>
         :root {
             --theme-bg: <?php echo $themeColor; ?>;

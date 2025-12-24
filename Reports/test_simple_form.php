@@ -1,7 +1,7 @@
 <?php
 session_start();
 $_SESSION['admin_username'] = 'admin01';
-require_once __DIR__ . '/../config.php';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo "<h2 style='color:green'>POST Received!</h2>";
     echo "<pre>";
@@ -9,8 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo "</pre>";
     
     if (isset($_POST['save_meter'])) {
-        require_once __DIR__ . '/../config.php';
-require_once __DIR__ . '/../ConnectDB.php';
+        require_once __DIR__ . '/../ConnectDB.php';
         $pdo = connectDB();
         
         $ctrId = (int)$_POST['ctr_id'];
@@ -29,15 +28,9 @@ require_once __DIR__ . '/../ConnectDB.php';
 }
 ?>
 <!DOCTYPE html>
-<html data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html>
 <head><title>Test Form</title></head>
 <body style="background:#1a1a2e;color:white;padding:2rem;">
-<script>
-    // อ่าน BASE_URL จาก data attribute
-    const BASE_URL = document.documentElement.getAttribute('data-base-url') || '';
-    // ตัวอย่างการใช้งาน BASE_URL ใน fetch/AJAX
-    // fetch(`${BASE_URL}/api/endpoint`, { ... })
-</script>
 <h1>Test Form Submission</h1>
 <form method="post" action="">
     <input type="hidden" name="save_meter" value="1">

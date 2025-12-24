@@ -3,11 +3,9 @@ declare(strict_types=1);
 session_start();
 header('Content-Type: text/html; charset=utf-8');
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
-$configPath = __DIR__ . '/../config.php';
-if (file_exists($configPath)) require_once $configPath;
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
@@ -73,7 +71,7 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
 }
 ?>
 <!doctype html>
-<html lang="th" class="<?php echo $lightThemeClass; ?>" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th" class="<?php echo $lightThemeClass; ?>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

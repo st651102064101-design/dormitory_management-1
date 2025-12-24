@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 session_start();
-require_once __DIR__ . '/../config.php';
 
 // Check if AJAX request
 $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
@@ -12,7 +11,7 @@ if (empty($_SESSION['admin_username'])) {
         echo json_encode(['success' => false, 'error' => 'กรุณาเข้าสู่ระบบก่อน']);
         exit;
     }
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
 
@@ -40,7 +39,7 @@ try {
             exit;
         }
         $_SESSION['error'] = 'ข้อมูลไม่ถูกต้อง';
-        header('Location: ' . BASE_URL . '/Reports/manage_news.php');
+        header('Location: ../Reports/manage_news.php');
         exit;
     }
 

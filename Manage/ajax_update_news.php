@@ -23,7 +23,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 session_start();
-require_once __DIR__ . '/../config.php';
 
 if (empty($_SESSION['admin_username'])) {
     http_response_code(401);

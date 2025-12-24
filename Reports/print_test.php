@@ -1,8 +1,7 @@
 <?php
 session_start();
-require_once __DIR__ . '/../config.php';
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
@@ -14,7 +13,7 @@ if ($ctr_id <= 0) {
     $contracts = $pdo->query("SELECT c.ctr_id, c.ctr_start, t.tnt_name, r.room_number FROM contract c LEFT JOIN tenant t ON c.tnt_id = t.tnt_id LEFT JOIN room r ON c.room_id = r.room_id ORDER BY c.ctr_id DESC")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <title>พิมพ์สัญญา</title>
@@ -83,7 +82,7 @@ function formatThaiDate($dateStr) {
 }
 ?>
 <!DOCTYPE html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <title>หนังสือสัญญาเช่า</title>

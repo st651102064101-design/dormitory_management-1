@@ -4,12 +4,10 @@ ini_set('display_errors', '1');
 error_reporting(E_ALL);
 
 session_start();
-require_once __DIR__ . '/../config.php';
 if (empty($_SESSION['admin_username'])) {
-  header('Location: ' . BASE_URL . '/Login.php');
-  exit;
+    header('Location: ../Login.php');
+    exit;
 }
-require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
@@ -226,7 +224,7 @@ try {
 } catch (PDOException $e) {}
 ?>
 <!doctype html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -2,11 +2,9 @@
 declare(strict_types=1);
 session_start();
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
-$configPath = __DIR__ . '/../config.php';
-if (file_exists($configPath)) require_once $configPath;
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
@@ -211,7 +209,7 @@ try {
 } catch (PDOException $e) {}
 ?>
 <!doctype html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -456,7 +454,7 @@ try {
       }
     </style>
   </head>
-  <body class="reports-page" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+  <body class="reports-page">
     <div class="app-shell">
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main">
@@ -527,7 +525,7 @@ try {
                 <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">เลือกสัญญาและระบุค่าใช้จ่ายประจำเดือน</p>
               </div>
             </div>
-            <form action="<?php echo defined('BASE_URL') ? BASE_URL . '/Manage/process_expense.php' : '../Manage/process_expense.php'; ?>" method="post" id="expenseForm" data-allow-submit="true">
+            <form action="../Manage/process_expense.php" method="post" id="expenseForm" data-allow-submit="true">
               <div class="expense-form">
                 <div class="expense-form-group">
                   <label for="ctr_id">สัญญา / ห้องพัก <span style="color:#f87171;">*</span></label>
@@ -1413,8 +1411,7 @@ try {
           try {
             // Fetch payment records for this expense
             console.log('Fetching payments for expense:', expenseId);
-            const baseUrl = document.documentElement.getAttribute('data-base-url') || '';
-            const response = await fetch(baseUrl + '/Reports/get_payment_proofs.php?exp_id=' + encodeURIComponent(expenseId), {
+            const response = await fetch('/Dormitory_Management/Reports/get_payment_proofs.php?exp_id=' + encodeURIComponent(expenseId), {
               credentials: 'include'
             });
 

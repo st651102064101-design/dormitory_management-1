@@ -2,7 +2,7 @@
 declare(strict_types=1);
 session_start();
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
@@ -42,7 +42,7 @@ $utilityCount = safeCount($pdo, "SELECT COUNT(*) FROM utility");
 $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status IN ('0', '2')");
 ?>
 <!doctype html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

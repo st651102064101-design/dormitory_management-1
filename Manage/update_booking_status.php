@@ -1,14 +1,13 @@
 <?php
 declare(strict_types=1);
 session_start();
-require_once __DIR__ . '/../config.php';
 
 if (empty($_SESSION['admin_username'])) {
     if ($_SERVER['HTTP_X_REQUESTED_WITH'] === 'XMLHttpRequest') {
         header('Content-Type: application/json');
         echo json_encode(['success' => false, 'error' => 'Unauthorized']);
     } else {
-        header('Location: ' . BASE_URL . '/Login.php');
+        header('Location: ../Login.php');
     }
     exit;
 }

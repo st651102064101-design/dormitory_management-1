@@ -18,8 +18,7 @@ echo "</pre>";
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo "<hr><h3>Processing...</h3>";
     
-    require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/ConnectDB.php';
+    require_once __DIR__ . '/ConnectDB.php';
     
     try {
         $pdo = connectDB();

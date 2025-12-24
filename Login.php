@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 session_start();
-require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/ConnectDB.php';
 
 $login_error = '';
@@ -76,7 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   
   // If login success and not AJAX, redirect
   if ($login_success) {
-    header('Location: ' . BASE_URL . '/Reports/manage.php');
+    header('Location: Reports/manage.php');
     exit;
   }
   // If not AJAX and login failed, show error without reload (page stays as is)
@@ -84,7 +83,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 ?>
 <!doctype html>
-<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
+<html lang="th">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

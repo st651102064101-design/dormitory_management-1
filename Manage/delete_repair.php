@@ -2,15 +2,14 @@
 // ลบรายการแจ้งซ่อม
 declare(strict_types=1);
 session_start();
-require_once __DIR__ . '/../config.php';
 
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ' . BASE_URL . '/Reports/manage_repairs.php');
+    header('Location: ../Reports/manage_repairs.php');
     exit;
 }
 

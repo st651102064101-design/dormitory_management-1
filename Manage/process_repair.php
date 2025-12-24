@@ -1,7 +1,6 @@
 <?php
 declare(strict_types=1);
 session_start();
-require_once __DIR__ . '/../config.php';
 error_reporting(E_ALL);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
@@ -10,12 +9,12 @@ ini_set('log_errors', 1);
 date_default_timezone_set('Asia/Bangkok');
 
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ' . BASE_URL . '/Login.php');
+    header('Location: ../Login.php');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    header('Location: ' . BASE_URL . '/Reports/manage_repairs.php');
+    header('Location: ../Reports/manage_repairs.php');
     exit;
 }
 

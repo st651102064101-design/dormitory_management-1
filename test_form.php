@@ -7,8 +7,7 @@ print_r($_POST);
 echo "</pre>";
 
 if (!empty($_POST)) {
-    require_once __DIR__ . '/config.php';
-require_once __DIR__ . '/ConnectDB.php';
+    require_once __DIR__ . '/ConnectDB.php';
     $pdo = connectDB();
     
     $ctrId = (int)$_POST['ctr_id'];
