@@ -3,9 +3,11 @@ declare(strict_types=1);
 session_start();
 header('Content-Type: text/html; charset=utf-8');
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ../Login.php');
+    header('Location: ' . BASE_URL . '/Login.php');
     exit;
 }
+$configPath = __DIR__ . '/../config.php';
+if (file_exists($configPath)) require_once $configPath;
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
@@ -130,7 +132,7 @@ try {
 } catch (PDOException $e) {}
 ?>
 <!doctype html>
-<html lang="th">
+<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -1172,7 +1174,7 @@ try {
         
         if (room.room_image) {
           preview.innerHTML = `<div style="margin-top:0.5rem;">
-            <img src="/Dormitory_Management/Assets/Images/Rooms/${room.room_image}" alt="Room Image" style="max-width:100%; height:auto; border-radius:12px; max-height:200px;">
+            <img src="${document.documentElement.getAttribute('data-base-url') || ''}/Assets/Images/Rooms/${room.room_image}" alt="Room Image" style="max-width:100%; height:auto; border-radius:12px; max-height:200px;">
             <div style="color:#22c55e; margin-top:0.5rem;">✓ ${room.room_image}</div>
           </div>`;
           deleteBtn.style.display = 'block';

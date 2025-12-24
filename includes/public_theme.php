@@ -1,5 +1,6 @@
 <?php
 // Shared public theme settings: background image toggle and CSS
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 

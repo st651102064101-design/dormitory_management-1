@@ -1,10 +1,12 @@
 <?php
 declare(strict_types=1);
 session_start();
+require_once __DIR__ . '/../config.php';
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ../Login.php');
-    exit;
+  header('Location: ' . BASE_URL . '/Login.php');
+  exit;
 }
+require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 // Sum of payments grouped by month
@@ -13,12 +15,12 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!doctype html>
-<html lang="th">
+<html lang="th" data-base-url="<?php echo defined('BASE_URL') ? BASE_URL : ''; ?>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>รายงานรายรับ</title>
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="<?php echo BASE_URL; ?>/Assets/Css/animate-ui.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -60,7 +62,14 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
       </main>
     </div>
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
+    <script src="<?php echo BASE_URL; ?>/Assets/Javascript/animate-ui.js" defer></script>
+    <!-- ตัวอย่างการอ่าน BASE_URL ใน JS -->
+    <script>
+      // อ่าน BASE_URL จาก data attribute
+      const BASE_URL = document.documentElement.getAttribute('data-base-url') || '';
+      // ตัวอย่างการใช้งาน BASE_URL ใน fetch/AJAX
+      // fetch(`${BASE_URL}/api/endpoint`, { ... })
+    </script>
   </body>
 </html>
 

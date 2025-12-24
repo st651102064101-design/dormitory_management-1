@@ -1,6 +1,7 @@
 <?php
 session_start();
 $_SESSION['admin_username'] = 'test';
+require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/ConnectDB.php';
 $pdo = connectDB();
 

@@ -3,7 +3,8 @@
  * API สำหรับบันทึกธีมหน้าสาธารณะ
  */
 session_start();
-require_once '../ConnectDB.php';
+require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../ConnectDB.php';
 
 header('Content-Type: application/json');
 

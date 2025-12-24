@@ -8,6 +8,7 @@ $logoFilename = 'Logo.jpg';
 $themeColor = '#0f172a';
 $fontSize = '1';
 try {
+    require_once __DIR__ . '/../config.php';
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
     
@@ -1927,7 +1928,7 @@ try {
   <div class="sidebar-header">
     <div class="team-avatar" >
       <!-- Project logo from database -->
-      <img src="/Dormitory_Management/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="team-avatar-img"  />
+      <img src="<?php echo BASE_URL; ?>/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="team-avatar-img"  />
     </div>
     <div class="team-meta">
       <div class="name"><?php echo htmlspecialchars($siteName); ?></div>
