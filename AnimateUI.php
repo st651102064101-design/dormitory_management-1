@@ -7,7 +7,7 @@ declare(strict_types=1);
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Animate UI Demo</title>
     <meta name="description" content="Simple page that loads the Animate UI docs." />
-    <link rel="stylesheet" href="Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="/Assets/Css/animate-ui.css" />
   </head>
   <body>
     <main class="animate-ui-root">
@@ -21,6 +21,6 @@ declare(strict_types=1);
         </a>
       </section>
     </main>
-    <script src="Assets/Javascript/animate-ui.js" defer></script>
+    <script src="/Assets/Javascript/animate-ui.js" defer></script>
   </body>
 </html>

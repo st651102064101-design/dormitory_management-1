@@ -9,7 +9,7 @@
         <p class="apple-row-label">โลโก้</p>
         <p class="apple-row-sublabel">รูปโลโก้ที่แสดงในระบบ</p>
       </div>
-      <img id="logoRowImg" src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; margin-right: 8px;">
+      <img id="logoRowImg" src="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover; margin-right: 8px;">
       <span class="apple-row-chevron">›</span>
     </div>
     
@@ -20,7 +20,7 @@
         <p class="apple-row-label">ภาพพื้นหลัง</p>
         <p class="apple-row-sublabel">ภาพ Hero หน้าแรก</p>
       </div>
-      <img id="bgRowImg" src="../Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>" alt="BG" style="width: 50px; height: 30px; border-radius: 6px; object-fit: cover; margin-right: 8px;">
+      <img id="bgRowImg" src="..//Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>" alt="BG" style="width: 50px; height: 30px; border-radius: 6px; object-fit: cover; margin-right: 8px;">
       <span class="apple-row-chevron">›</span>
     </div>
   </div>
@@ -38,7 +38,7 @@
     <div class="apple-sheet-body">
       <!-- Current Logo -->
       <div class="apple-image-preview">
-        <img id="logoPreviewImg" src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo">
+        <img id="logoPreviewImg" src="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo">
         <div class="apple-image-info">
           <h4>โลโก้ปัจจุบัน</h4>
           <p><?php echo htmlspecialchars($logoFilename); ?></p>
@@ -83,7 +83,7 @@
     <div class="apple-sheet-body">
       <!-- Current Background -->
       <div class="apple-image-preview">
-        <img id="bgPreviewImg" src="../Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>" alt="Background" style="width: 120px; height: 70px;">
+        <img id="bgPreviewImg" src="..//Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>" alt="Background" style="width: 120px; height: 70px;">
         <div class="apple-image-info">
           <h4>ภาพพื้นหลังปัจจุบัน</h4>
           <p><?php echo htmlspecialchars($bgFilename); ?></p>

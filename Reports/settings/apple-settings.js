@@ -523,7 +523,7 @@ class AppleSettings {
         // Update preview
         const preview = document.getElementById('logoPreviewImg');
         if (preview) {
-          preview.src = `../Assets/Images/${result.filename}?t=${Date.now()}`;
+          preview.src = `..//Assets/Images/${result.filename}?t=${Date.now()}`;
         }
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
@@ -551,7 +551,7 @@ class AppleSettings {
         // Update preview
         const preview = document.getElementById('bgPreviewImg');
         if (preview) {
-          preview.src = `../Assets/Images/${result.filename}?t=${Date.now()}`;
+          preview.src = `..//Assets/Images/${result.filename}?t=${Date.now()}`;
         }
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
@@ -567,7 +567,7 @@ class AppleSettings {
 
     if (filename) {
       previewContainer.innerHTML = `
-        <img src="../Assets/Images/${filename}" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 12px;">
+        <img src="..//Assets/Images/${filename}" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 12px;">
         <button type="button" class="apple-button primary" style="width: auto; padding: 10px 16px;" onclick="appleSettings.useOldLogo('${filename}')">
           ใช้รูปนี้
         </button>
@@ -590,7 +590,7 @@ class AppleSettings {
         this.showToast('เปลี่ยน Logo สำเร็จ', 'success');
         
         const newTimestamp = Date.now();
-        const newSrc = `../Assets/Images/${filename}?t=${newTimestamp}`;
+        const newSrc = `..//Assets/Images/${filename}?t=${newTimestamp}`;
         
         // Update preview image in sheet
         const preview = document.getElementById('logoPreviewImg');
@@ -613,7 +613,7 @@ class AppleSettings {
         // Update sidebar logo (team-avatar-img class)
         const sidebarLogo = document.querySelector('.team-avatar-img');
         if (sidebarLogo) {
-          sidebarLogo.src = `/Dormitory_Management/Assets/Images/${filename}?t=${newTimestamp}`;
+          sidebarLogo.src = `/Dormitory_Management//Assets/Images/${filename}?t=${newTimestamp}`;
         }
         
         // Update any other logo images on page
@@ -650,7 +650,7 @@ class AppleSettings {
 
     if (filename) {
       previewContainer.innerHTML = `
-        <img src="../Assets/Images/${filename}" alt="Preview" style="max-width: 200px; max-height: 120px; border-radius: 12px; object-fit: cover;">
+        <img src="..//Assets/Images/${filename}" alt="Preview" style="max-width: 200px; max-height: 120px; border-radius: 12px; object-fit: cover;">
         <button type="button" class="apple-button primary" style="width: auto; padding: 10px 16px; margin-top: 8px;" onclick="appleSettings.useBgImage('${filename}')">
           ใช้ภาพนี้
         </button>
@@ -673,7 +673,7 @@ class AppleSettings {
         this.showToast('เปลี่ยนภาพพื้นหลังสำเร็จ', 'success');
         
         const newTimestamp = Date.now();
-        const newSrc = `../Assets/Images/${filename}?t=${newTimestamp}`;
+        const newSrc = `..//Assets/Images/${filename}?t=${newTimestamp}`;
         
         // Update preview image in sheet
         const preview = document.getElementById('bgPreviewImg');

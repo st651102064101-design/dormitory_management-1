@@ -77,12 +77,12 @@ $statusMap = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($siteName); ?> - รายงานผู้เช่า</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
-    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/main.css" />
+    <link rel="stylesheet" href="..//Assets/Css/lottie-icons.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css" />
     <style>
         :root {
             --theme-bg: <?php echo $themeColor; ?>;
@@ -886,8 +886,8 @@ $statusMap = [
         </main>
     </div>
 
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
-    <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/main.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
         let dataTable = null;

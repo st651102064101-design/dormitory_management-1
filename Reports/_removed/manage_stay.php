@@ -31,8 +31,8 @@ $statusLabels = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>จัดการห้องพัก (เก็บถาวร)</title>
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/main.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -92,8 +92,8 @@ $statusLabels = [
         </div>
       </main>
     </div>
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
-    <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/main.js" defer></script>
     <script>
       window.tenants = <?php echo json_encode($pdo->query("SELECT tnt_id, tnt_name FROM tenant")->fetchAll(PDO::FETCH_ASSOC)); ?>;
       window.rooms = <?php echo json_encode($pdo->query("SELECT * FROM room WHERE room_status = 0")->fetchAll(PDO::FETCH_ASSOC)); ?>;

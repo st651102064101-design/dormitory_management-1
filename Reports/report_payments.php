@@ -229,13 +229,13 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายงานการชำระเงิน</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
-    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/main.css" />
+    <link rel="stylesheet" href="..//Assets/Css/lottie-icons.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css" />
     <style>
       .reports-container {
         width: 100%;
@@ -737,15 +737,15 @@ try {
       </div>
     </div>
 
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
-    <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/main.js" defer></script>
     <script>
       function openProofModal(filename, payId) {
         const modal = document.getElementById('proofModal');
         const image = document.getElementById('proofImage');
         const title = document.getElementById('proofModalTitle');
         
-        image.src = '../Assets/Images/Payments/' + filename;
+        image.src = '..//Assets/Images/Payments/' + filename;
         title.textContent = 'หลักฐานการชำระเงิน #' + payId;
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';

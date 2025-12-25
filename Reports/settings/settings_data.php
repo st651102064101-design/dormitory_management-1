@@ -128,7 +128,7 @@ try {
 
 // ดึงรายการรูปภาพจากโฟลเดอร์
 $imageFiles = [];
-$logoDir = realpath(__DIR__ . '/../../Assets/Images/');
+$logoDir = realpath(__DIR__ . '/../..//Assets/Images/');
 if ($logoDir && is_dir($logoDir)) {
     $files = scandir($logoDir);
     foreach ($files as $file) {

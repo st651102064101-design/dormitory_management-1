@@ -18,7 +18,7 @@ $settings = getSystemSettings($pdo);
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ข้อมูลห้องพัก - <?php echo htmlspecialchars($settings['site_name']); ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($settings['logo_filename']); ?>">
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($settings['logo_filename']); ?>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -169,7 +169,7 @@ $settings = getSystemSettings($pdo);
         <!-- Room Image -->
         <div class="room-image">
             <?php if (!empty($contract['room_image'])): ?>
-            <img src="../Assets/Images/<?php echo htmlspecialchars($contract['room_image']); ?>" alt="Room Image">
+            <img src="..//Assets/Images/<?php echo htmlspecialchars($contract['room_image']); ?>" alt="Room Image">
             <?php else: ?>
             <div class="room-image-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
             <?php endif; ?>

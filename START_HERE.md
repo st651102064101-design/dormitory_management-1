@@ -20,7 +20,7 @@
    - Dark overlay background styling
    - Inline reset script for smooth transitions
 
-2. **Assets/Javascript/animate-ui.js** (947 → 971 lines)
+2. **/Assets/Javascript/animate-ui.js** (947 → 971 lines)
    - Mobile detection function (`isMobile()`)
    - Enhanced toggle handler (mobile vs desktop)
    - Overlay click-to-close functionality
@@ -80,7 +80,7 @@
 ### 📂 Modified Files (Production Code)
 ```
 includes/sidebar.php                 [11 KB] ✅ Modified
-Assets/Javascript/animate-ui.js      [52 KB] ✅ Modified
+/Assets/Javascript/animate-ui.js      [52 KB] ✅ Modified
 ```
 
 ### 📚 Documentation (Complete Reference)
@@ -138,7 +138,7 @@ MOBILE_IMPLEMENTATION.txt           [3.5 KB]  Summary
 
 ### For DevOps/Deployment
 1. Backup: Current production files
-2. Deploy: `includes/sidebar.php` and `Assets/Javascript/animate-ui.js`
+2. Deploy: `includes/sidebar.php` and `/Assets/Javascript/animate-ui.js`
 3. Deploy: Documentation files (optional)
 4. Verify: All pages working on production
 
@@ -178,7 +178,7 @@ MOBILE_IMPLEMENTATION.txt           [3.5 KB]  Summary
 MODIFIED:
 ├── includes/
 │   └── sidebar.php                    [Modified]
-└── Assets/Javascript/
+└── /Assets/Javascript/
     └── animate-ui.js                  [Modified]
 
 DOCUMENTATION:
@@ -237,7 +237,7 @@ Header:      2000+ (unchanged)
 ```bash
 # If needed, revert changes:
 git revert includes/sidebar.php
-git revert Assets/Javascript/animate-ui.js
+git revert /Assets/Javascript/animate-ui.js
 
 # Or manually remove:
 # - @media (max-width: 1024px) block

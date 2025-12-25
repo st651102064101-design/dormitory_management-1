@@ -30,7 +30,7 @@ Comprehensive mobile-first responsive redesign for the Dormitory Management syst
 
 ---
 
-### 2. **JavaScript Enhanced Mobile UX (Assets/Javascript/animate-ui.js)**
+### 2. **JavaScript Enhanced Mobile UX (/Assets/Javascript/animate-ui.js)**
 
 #### Mobile Detection
 ```javascript
@@ -229,7 +229,7 @@ body.sidebar-open::before {
    - Added reset script for collapsed class
    - Updated app-main, section, header CSS for responsiveness
 
-2. **Assets/Javascript/animate-ui.js**
+2. **/Assets/Javascript/animate-ui.js**
    - Added isMobile() detection function
    - Added overlay click-to-close handler
    - Added Escape key handler
@@ -253,7 +253,7 @@ body.sidebar-open::before {
 If issues occur, revert these files:
 ```bash
 git revert includes/sidebar.php
-git revert Assets/Javascript/animate-ui.js
+git revert /Assets/Javascript/animate-ui.js
 ```
 
 Or manually remove:

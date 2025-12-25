@@ -135,12 +135,12 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการห้องพัก</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
-    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/main.css" />
+    <link rel="stylesheet" href="..//Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css" />
     <style>
       /* ===== Apple-Style Modern Design ===== */
       
@@ -908,7 +908,7 @@ try {
                   <div class="room-card <?php echo $index >= 5 ? 'hidden-card' : ''; ?>" data-room-id="<?php echo $room['room_id']; ?>">
                     <div class="room-card-image">
                       <?php if (!empty($room['room_image'])): ?>
-                        <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
+                        <img src="..//Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
                       <?php else: ?>
                         <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                           <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
@@ -978,7 +978,7 @@ try {
                         <td>
                           <div class="room-image-small">
                             <?php if (!empty($room['room_image'])): ?>
-                              <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
+                              <img src="..//Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
                             <?php else: ?>
                               <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
@@ -1086,8 +1086,8 @@ try {
       </div>
     </div>
 
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
-    <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/main.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
       // Toggle room form visibility
@@ -1172,7 +1172,7 @@ try {
         
         if (room.room_image) {
           preview.innerHTML = `<div style="margin-top:0.5rem;">
-            <img src="/Dormitory_Management/Assets/Images/Rooms/${room.room_image}" alt="Room Image" style="max-width:100%; height:auto; border-radius:12px; max-height:200px;">
+            <img src="/Dormitory_Management//Assets/Images/Rooms/${room.room_image}" alt="Room Image" style="max-width:100%; height:auto; border-radius:12px; max-height:200px;">
             <div style="color:#22c55e; margin-top:0.5rem;">✓ ${room.room_image}</div>
           </div>`;
           deleteBtn.style.display = 'block';
@@ -1254,7 +1254,7 @@ try {
           const imageDiv = gridCard.querySelector('.room-card-image');
           if (imageDiv) {
             if (room.room_image) {
-              imageDiv.innerHTML = `<img src="../Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />`;
+              imageDiv.innerHTML = `<img src="..//Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />`;
             } else {
               imageDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
@@ -1289,7 +1289,7 @@ try {
             const imgSmall = cells[0].querySelector('.room-image-small');
             if (imgSmall) {
               if (room.room_image) {
-                imgSmall.innerHTML = `<img src="../Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />`;
+                imgSmall.innerHTML = `<img src="..//Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />`;
               } else {
                 imgSmall.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
@@ -1586,7 +1586,7 @@ try {
             <div class="room-card" data-room-id="${room.room_id}">
               <div class="room-card-image">
                 ${room.room_image ? 
-                  `<img src="../Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
+                  `<img src="..//Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
                   `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
                     <path d="M6 12V7a2 2 0 0 1 2-2h2" />
@@ -1630,7 +1630,7 @@ try {
                 <td>
                   <div class="room-image-small">
                     ${room.room_image ?
-                      `<img src="../Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
+                      `<img src="..//Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
                       `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
                         <path d="M6 12V7a2 2 0 0 1 2-2h2" />
@@ -1840,8 +1840,8 @@ try {
         } catch (e) {}
       });
     </script>
-    <script src="../Assets/Javascript/toast-notification.js"></script>
-    <script src="../Assets/Javascript/confirm-modal.js"></script>
+    <script src="..//Assets/Javascript/toast-notification.js"></script>
+    <script src="..//Assets/Javascript/confirm-modal.js"></script>
     <script>
       // Restore all details elements state on this page
       (function() {

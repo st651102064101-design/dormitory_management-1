@@ -56,7 +56,7 @@ try {
             die(json_encode(['success' => false, 'error' => $msg]));
         }
 
-        $uploadDir = __DIR__ . '/../Assets/Images/Payments/';
+        $uploadDir = __DIR__ . '/..//Assets/Images/Payments/';
 
         // สร้างโฟลเดอร์ถ้ายังไม่มี
         if (!is_dir($uploadDir)) {

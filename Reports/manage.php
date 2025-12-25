@@ -47,9 +47,9 @@ $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status I
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการระบบ</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/main.css" />
     <style>
       /* ===== Apple-Style Modern Design ===== */
       
@@ -377,6 +377,6 @@ $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status I
       </main>
     </div>
 
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
   </body>
 </html>

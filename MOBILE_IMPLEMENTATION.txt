@@ -26,7 +26,7 @@ MODIFIED FILES
    └─ Added: Dark overlay background styling
    └─ Added: Inline reset script for collapsed class
 
-2. Assets/Javascript/animate-ui.js
+2. /Assets/Javascript/animate-ui.js
    └─ Added: isMobile() detection function
    └─ Added: Overlay click-to-close handler
    └─ Added: Escape key close handler

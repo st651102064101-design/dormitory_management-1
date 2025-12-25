@@ -70,7 +70,7 @@ $occupiedCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '1')
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ข้อมูลห้องพัก - <?php echo htmlspecialchars($siteName); ?></title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <?php include_once __DIR__ . '/../includes/public_theme.php'; ?>
     <style>
@@ -1630,7 +1630,7 @@ if ($publicTheme === 'light') {
     <!-- Header -->
     <header class="header" id="header">
         <a href="../index.php" class="logo">
-            <img src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="">
+            <img src="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="">
             <h1><?php echo htmlspecialchars($siteName); ?></h1>
         </a>
         <nav class="nav-links">
@@ -1797,7 +1797,7 @@ if ($publicTheme === 'light') {
                                 <?php if (!empty($room['room_image'])): 
                                     $img = basename($room['room_image']); 
                                 ?>
-                                    <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
+                                    <img src="..//Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
                                 <?php else: ?>
                                     <div class="room-image-placeholder" aria-label="ไม่มีรูปห้อง">
                                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">

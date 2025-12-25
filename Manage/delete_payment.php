@@ -35,7 +35,7 @@ try {
 
     // ลบไฟล์หลักฐานถ้ามี (ไม่บล็อกการลบ record แม้ไฟล์ลบไม่สำเร็จ)
     if (!empty($payment['pay_proof'])) {
-        $filePath = __DIR__ . '/../Assets/Images/Payments/' . $payment['pay_proof'];
+        $filePath = __DIR__ . '/..//Assets/Images/Payments/' . $payment['pay_proof'];
         if (file_exists($filePath)) {
             if (!is_writable($filePath)) {
                 @chmod($filePath, 0644);

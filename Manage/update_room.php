@@ -52,7 +52,7 @@ try {
     
     if ($deleteImage && $room_image) {
         // ลบรูปภาพเก่า
-        $oldPath = __DIR__ . '/../Assets/Images/Rooms/' . $room_image;
+        $oldPath = __DIR__ . '/..//Assets/Images/Rooms/' . $room_image;
         if (file_exists($oldPath)) {
             unlink($oldPath);
         }
@@ -72,13 +72,13 @@ try {
 
         // ลบรูปเก่า
         if ($room_image) {
-            $oldPath = __DIR__ . '/../Assets/Images/Rooms/' . $room_image;
+            $oldPath = __DIR__ . '/..//Assets/Images/Rooms/' . $room_image;
             if (file_exists($oldPath)) {
                 unlink($oldPath);
             }
         }
 
-        $uploadDir = __DIR__ . '/../Assets/Images/Rooms/';
+        $uploadDir = __DIR__ . '/..//Assets/Images/Rooms/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }

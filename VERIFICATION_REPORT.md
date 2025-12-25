@@ -30,7 +30,7 @@ Successfully completed comprehensive mobile-first responsive redesign of the Dor
 - [x] Accessible toggle button with aria-expanded
 
 **Files Modified**: `includes/sidebar.php` (lines 103-254)  
-**Files Modified**: `Assets/Javascript/animate-ui.js` (lines 111-160)
+**Files Modified**: `/Assets/Javascript/animate-ui.js` (lines 111-160)
 
 #### Requirement 2: Overlay Interaction
 - [x] Dark semi-transparent overlay appears
@@ -40,7 +40,7 @@ Successfully completed comprehensive mobile-first responsive redesign of the Dor
 - [x] Sidebar closes when navigating
 
 **Files Modified**: `includes/sidebar.php` (lines 242-249)  
-**Files Modified**: `Assets/Javascript/animate-ui.js` (lines 192-213)
+**Files Modified**: `/Assets/Javascript/animate-ui.js` (lines 192-213)
 
 #### Requirement 3: Content Responsiveness
 - [x] No horizontal scrollbar on mobile
@@ -59,7 +59,7 @@ Successfully completed comprehensive mobile-first responsive redesign of the Dor
 - [x] Touch-friendly target sizes (40px+)
 - [x] Proper focus management
 
-**Files Modified**: `Assets/Javascript/animate-ui.js` (lines 15-26, 118)
+**Files Modified**: `/Assets/Javascript/animate-ui.js` (lines 15-26, 118)
 
 #### Requirement 5: Performance
 - [x] 60fps smooth animations
@@ -69,7 +69,7 @@ Successfully completed comprehensive mobile-first responsive redesign of the Dor
 - [x] Fast page loads
 
 **Files Modified**: `includes/sidebar.php` (lines 127, 130)  
-**Files Modified**: `Assets/Javascript/animate-ui.js` (all)
+**Files Modified**: `/Assets/Javascript/animate-ui.js` (all)
 
 #### Requirement 6: Desktop Unchanged
 - [x] Desktop behavior completely unchanged
@@ -107,7 +107,7 @@ Successfully completed comprehensive mobile-first responsive redesign of the Dor
 - ✅ No breaking changes to existing styles
 - ✅ Consistent formatting
 
-### File 2: `Assets/Javascript/animate-ui.js`
+### File 2: `/Assets/Javascript/animate-ui.js`
 
 **Total Lines**: 947 (original) → 971 (with additions)  
 **Changes Type**: New functions + enhanced event handlers

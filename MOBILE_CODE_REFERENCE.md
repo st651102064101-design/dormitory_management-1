@@ -410,7 +410,7 @@ If updating existing code:
 | File | Changes | Lines |
 |------|---------|-------|
 | `includes/sidebar.php` | Media query CSS, overlay styling, reset script | ~180 lines |
-| `Assets/Javascript/animate-ui.js` | Mobile toggle logic, overlay close, Escape key | ~50 lines |
+| `/Assets/Javascript/animate-ui.js` | Mobile toggle logic, overlay close, Escape key | ~50 lines |
 
 ---
 

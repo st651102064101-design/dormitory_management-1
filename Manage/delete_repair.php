@@ -50,7 +50,7 @@ try {
     
     // ลบไฟล์รูปภาพ
     if (!empty($repair['repair_image'])) {
-        $imagePath = __DIR__ . '/../Assets/Images/Repairs/' . $repair['repair_image'];
+        $imagePath = __DIR__ . '/..//Assets/Images/Repairs/' . $repair['repair_image'];
         if (file_exists($imagePath)) {
             unlink($imagePath);
         }

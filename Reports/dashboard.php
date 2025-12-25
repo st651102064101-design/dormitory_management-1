@@ -190,9 +190,9 @@ try {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - แดชบอร์ด</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css">
-    <link rel="stylesheet" href="../Assets/Css/main.css">
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="..//Assets/Css/main.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <style>
         .dashboard-grid {
@@ -1252,8 +1252,8 @@ try {
         </main>
     </div>
 
-    <script src="../Assets/Javascript/main.js" defer></script>
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/main.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
 
     <script>
         // สีสำหรับ Charts

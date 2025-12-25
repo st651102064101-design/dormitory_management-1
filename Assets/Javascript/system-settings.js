@@ -98,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const deleteContainer = document.getElementById('deleteLogoContainer');
       if (this.value) {
         previewContainer.innerHTML = `
-          <img src="../Assets/Images/${this.value}" alt="Old Logo" style="max-width: 80px; max-height: 80px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
+          <img src="..//Assets/Images/${this.value}" alt="Old Logo" style="max-width: 80px; max-height: 80px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" />
           <div style="display: flex; gap: 0.5rem; align-items: center;">
             <button type="button" id="loadOldLogoBtn" style="margin: 0; padding: 0.4rem 0.8rem; min-width: auto; white-space: nowrap; font-size: 0.8rem; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(59,130,246,0.3);">✓ เปลี่ยน</button>
             <button type="button" id="deleteOldLogoBtn" style="margin: 0; padding: 0.4rem 0.8rem; min-width: auto; white-space: nowrap; font-size: 0.8rem; background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(239,68,68,0.3);">🗑️ ลบ</button>
@@ -145,7 +145,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // รีเฟรช favicon
                 const favicon = document.querySelector('link[rel="icon"]');
                 if (favicon) {
-                  favicon.href = '../Assets/Images/Logo.jpg?' + timestamp;
+                  favicon.href = '..//Assets/Images/Logo.jpg?' + timestamp;
                 }
                 
                 // รีเฟรช dropdown options
@@ -228,8 +228,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => {
                   const ext = selectedFile.split('.').pop().toLowerCase();
                   const newLogoFile = 'Logo.' + ext;
-                  const imageUrl = `../Assets/Images/${encodeURIComponent(newLogoFile)}?t=${Date.now()}`;
-                  const absImageUrl = `/Dormitory_Management/Assets/Images/${encodeURIComponent(newLogoFile)}?t=${Date.now()}`;
+                  const imageUrl = `..//Assets/Images/${encodeURIComponent(newLogoFile)}?t=${Date.now()}`;
+                  const absImageUrl = `/Dormitory_Management//Assets/Images/${encodeURIComponent(newLogoFile)}?t=${Date.now()}`;
                   
                   // อัพเดท logo ในส่วน main
                   const logoPreview = document.getElementById('logoPreview');
@@ -246,7 +246,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   // รีเฟรชไอคอน favicon
                   const icon = document.querySelector('link[rel="icon"]');
                   if (icon) {
-                    icon.href = `../Assets/Images/Logo.${selectedFile.split('.').pop().toLowerCase()}?t=${Date.now()}`;
+                    icon.href = `..//Assets/Images/Logo.${selectedFile.split('.').pop().toLowerCase()}?t=${Date.now()}`;
                   }
                   
                   // รีเซ็ต dropdown และซ่อนปุ่ม
@@ -322,7 +322,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // อัปเดต Logo ใน sidebar (ถ้ามี)
         const sidebarLogo = document.querySelector('.team-avatar-img');
         if (sidebarLogo && result.filename) {
-          sidebarLogo.src = `../Assets/Images/${result.filename}?t=${Date.now()}`;
+          sidebarLogo.src = `..//Assets/Images/${result.filename}?t=${Date.now()}`;
         }
       } else {
         showErrorToast(result.error || 'เกิดข้อผิดพลาด');
@@ -663,7 +663,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bgSelect.addEventListener('change', function() {
       if (this.value) {
         bgSelectPreview.innerHTML = `
-          <img src="../Assets/Images/${this.value}" alt="Preview" style="max-width: 280px; max-height: 160px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); object-fit: cover;" />
+          <img src="..//Assets/Images/${this.value}" alt="Preview" style="max-width: 280px; max-height: 160px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); object-fit: cover;" />
           <button type="button" id="setBgBtn" style="display: block; margin-top: 0.5rem; padding: 0.4rem 0.8rem; font-size: 0.85rem; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border: none; border-radius: 8px; font-weight: 600; cursor: pointer;">✓ ใช้ภาพนี้</button>
         `;
         
@@ -695,7 +695,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Update preview
                 const bgPreviewImg = document.querySelector('#bgPreview img');
                 if (bgPreviewImg) {
-                  bgPreviewImg.src = '../Assets/Images/' + selectedFile + '?t=' + new Date().getTime();
+                  bgPreviewImg.src = '..//Assets/Images/' + selectedFile + '?t=' + new Date().getTime();
                 }
                 bgSelectPreview.innerHTML = '';
               } else {
@@ -767,7 +767,7 @@ document.addEventListener('DOMContentLoaded', () => {
           const timestamp = new Date().getTime();
           const bgPreviewImg = document.querySelector('#bgPreview img');
           if (bgPreviewImg && result.filename) {
-            bgPreviewImg.src = '../Assets/Images/' + result.filename + '?t=' + timestamp;
+            bgPreviewImg.src = '..//Assets/Images/' + result.filename + '?t=' + timestamp;
           }
           
           // Clear input and preview

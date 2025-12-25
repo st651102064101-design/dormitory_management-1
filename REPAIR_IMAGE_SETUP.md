@@ -23,7 +23,7 @@ mysql -u [username] -p [database_name] < add_repair_image_column.sql
   - Supported formats: JPG, PNG, WebP
   - Maximum file size: 5MB
   - Real-time preview during upload
-- **Image storage**: Images are stored in `Assets/Images/Repairs/` directory
+- **Image storage**: Images are stored in `/Assets/Images/Repairs/` directory
 
 ### 3. Usage
 
@@ -38,7 +38,7 @@ The image will be displayed as a thumbnail in the repair list table under the "à
 
 - Images are automatically named with timestamp and random ID to avoid conflicts
 - Original filenames are not preserved for security reasons
-- Images stored in: `/Assets/Images/Repairs/`
+- Images stored in: `//Assets/Images/Repairs/`
 
 ### 5. Notes
 

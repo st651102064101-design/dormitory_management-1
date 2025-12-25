@@ -141,12 +141,12 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จองห้องพัก</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
-    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/main.css" />
+    <link rel="stylesheet" href="..//Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css" />
     <script>
       // Ultra-early fallbacks so buttons always work
       window.__directSidebarToggle = function(event) {
@@ -3293,7 +3293,7 @@ try {
                           <?php if (!empty($room['room_image'])): 
                             $img = basename($room['room_image']); 
                           ?>
-                            <img src="../Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
+                            <img src="..//Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
                           <?php else: ?>
                             <div class="room-image-placeholder" aria-label="ไม่มีรูปห้อง">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3664,9 +3664,9 @@ try {
       </div>
     </div>
 
-    <script src="../Assets/Javascript/toast-notification.js"></script>
-    <script src="../Assets/Javascript/animate-ui.js"></script>
-    <script src="../Assets/Javascript/main.js"></script>
+    <script src="..//Assets/Javascript/toast-notification.js"></script>
+    <script src="..//Assets/Javascript/animate-ui.js"></script>
+    <script src="..//Assets/Javascript/main.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
       // Fallback handlers (keep UI usable even if other scripts fail)
@@ -4295,7 +4295,7 @@ try {
         });
       });
     </script>
-    <script src="../Assets/Javascript/confirm-modal.js"></script>
-    <script src="../Assets/Javascript/toast-notification.js"></script>
+    <script src="..//Assets/Javascript/confirm-modal.js"></script>
+    <script src="..//Assets/Javascript/toast-notification.js"></script>
   </body>
 </html>

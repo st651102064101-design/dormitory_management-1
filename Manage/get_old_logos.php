@@ -7,7 +7,7 @@ if (empty($_SESSION['admin_username'])) {
     exit;
 }
 
-$logosDir = '../Assets/Images/';
+$logosDir = '..//Assets/Images/';
 $files = [];
 
 try {

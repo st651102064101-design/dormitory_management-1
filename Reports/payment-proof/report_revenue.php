@@ -18,7 +18,7 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>รายงานรายรับ</title>
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -60,7 +60,7 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
       </main>
     </div>
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
   </body>
 </html>
 

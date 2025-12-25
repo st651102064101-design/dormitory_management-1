@@ -267,7 +267,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $error = 'หมายเลขบัตรประชาชนนี้มีการจองหรือสัญญาเช่าอยู่แล้ว';
                     } else {
                         // อัพโหลดไฟล์เอกสาร
-                        $uploadDir = __DIR__ . '/../Assets/Images/Documents';
+                        $uploadDir = __DIR__ . '/..//Assets/Images/Documents';
                         $idcardCopy = null;
                         $houseCopy = null;
                         $payProof = null;
@@ -280,7 +280,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         }
                         
                         // อัพโหลดหลักฐานการชำระมัดจำ
-                        $paymentDir = __DIR__ . '/../Assets/Images/Payments';
+                        $paymentDir = __DIR__ . '/..//Assets/Images/Payments';
                         if (!empty($_FILES['pay_proof']['name'])) {
                             $payProof = uploadFile($_FILES['pay_proof'], $paymentDir, 'deposit');
                         }
@@ -365,7 +365,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>จองห้องพัก - <?php echo htmlspecialchars($siteName); ?></title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -3040,7 +3040,7 @@ if ($publicTheme === 'light') {
     <!-- Header -->
     <header class="header" id="header">
         <a href="../index.php" class="logo">
-            <img src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="">
+            <img src="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="">
             <h1><?php echo htmlspecialchars($siteName); ?></h1>
         </a>
         <nav class="nav-links">

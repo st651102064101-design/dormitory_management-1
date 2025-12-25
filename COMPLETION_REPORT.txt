@@ -24,14 +24,14 @@ Requirement 1: Sidebar Mobile Toggle
   Status:     ✅ COMPLETE
   Details:    Sidebar slides in from left as overlay on mobile (≤1024px)
   Animation:  Smooth 0.35s CSS transform (60fps GPU-accelerated)
-  Files:      includes/sidebar.php, Assets/Javascript/animate-ui.js
+  Files:      includes/sidebar.php, /Assets/Javascript/animate-ui.js
   Lines:      ~150 CSS + ~40 JS
 
 Requirement 2: Overlay Interaction
   Status:     ✅ COMPLETE
   Details:    Click overlay to close, Press Escape to close
   Features:   Dark semi-transparent background, smooth transitions
-  Files:      includes/sidebar.php, Assets/Javascript/animate-ui.js
+  Files:      includes/sidebar.php, /Assets/Javascript/animate-ui.js
   Lines:      ~15 CSS + ~25 JS
 
 Requirement 3: Content Responsiveness
@@ -45,7 +45,7 @@ Requirement 4: Accessibility (WCAG 2.1 AA)
   Status:     ✅ COMPLETE
   Details:    Keyboard navigation, screen reader support, ARIA attributes
   Features:   Tab/Escape/Enter navigation, aria-expanded, aria-label
-  Files:      Assets/Javascript/animate-ui.js
+  Files:      /Assets/Javascript/animate-ui.js
   Lines:      ~15 JS
 
 Requirement 5: Performance (60fps)
@@ -84,7 +84,7 @@ FILES MODIFIED
    • Dark overlay background
    • Inline reset script
 
-2. Assets/Javascript/animate-ui.js
+2. /Assets/Javascript/animate-ui.js
    Location: /Applications/XAMPP/xamppfiles/htdocs/Dormitory_Management/
    Original: 947 lines
    Modified: 971 lines

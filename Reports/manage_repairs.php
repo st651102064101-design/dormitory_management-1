@@ -175,12 +175,12 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการการแจ้งซ่อม</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
-    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/main.css" />
+    <link rel="stylesheet" href="..//Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css" />
     <style>
       :root {
         --theme-bg-color: <?php echo $themeColor; ?>;
@@ -1955,7 +1955,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                         <td>
                           <div style="display:flex; align-items:center; justify-content:center; min-width:60px; min-height:60px;">
                             <?php if (!empty($r['repair_image'])): ?>
-                              <img src="../Assets/Images/Repairs/<?php echo htmlspecialchars(basename($r['repair_image'])); ?>" 
+                              <img src="..//Assets/Images/Repairs/<?php echo htmlspecialchars(basename($r['repair_image'])); ?>" 
                                    alt="รูปการซ่อม" 
                                    style="max-width:60px; max-height:60px; border-radius:10px; object-fit:cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.3s ease;" 
                                    onmouseover="this.style.transform='scale(1.1)'" 
@@ -2233,10 +2233,10 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
       </div>
     </div>
 
-    <script src="../Assets/Javascript/confirm-modal.js" defer></script>
-    <script src="../Assets/Javascript/toast-notification.js" defer></script>
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
-    <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="..//Assets/Javascript/confirm-modal.js" defer></script>
+    <script src="..//Assets/Javascript/toast-notification.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/main.js" defer></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
       // Get server time (Bangkok timezone) for accurate relative time calculation

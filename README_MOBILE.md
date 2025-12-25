@@ -81,7 +81,7 @@ includes/sidebar.php
 ├── CSS: Dark overlay background
 └── JS: Inline reset script for collapsed class
 
-Assets/Javascript/animate-ui.js
+/Assets/Javascript/animate-ui.js
 ├── New: isMobile() detection function
 ├── New: Overlay click-to-close handler
 ├── New: Escape key close handler
@@ -162,7 +162,7 @@ If issues occur:
 ```bash
 # Revert the changes
 git revert includes/sidebar.php
-git revert Assets/Javascript/animate-ui.js
+git revert /Assets/Javascript/animate-ui.js
 
 # Or manually remove:
 # - @media (max-width: 1024px) block in sidebar.php

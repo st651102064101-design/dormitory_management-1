@@ -78,10 +78,10 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>สร้าง QR Code ผู้เช่า - <?php echo htmlspecialchars($siteName); ?></title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../Assets/Css/main.css">
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="..//Assets/Css/main.css">
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css">
     <script>
         // Apply theme immediately before page renders
         (function() {
@@ -1244,7 +1244,7 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             obs.observe(document.body, { attributes: true });
         })();
     </script>
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
-    <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/main.js" defer></script>
 </body>
 </html>

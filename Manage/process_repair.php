@@ -92,7 +92,7 @@ try {
         }
         
         // สร้างชื่อไฟล์ใหม่
-        $uploadsDir = __DIR__ . '/../Assets/Images/Repairs';
+        $uploadsDir = __DIR__ . '/..//Assets/Images/Repairs';
         if (!is_dir($uploadsDir)) {
             mkdir($uploadsDir, 0755, true);
         }

@@ -48,7 +48,7 @@ try {
             exit;
         }
 
-        $uploadDir = __DIR__ . '/../Assets/Images/Rooms/';
+        $uploadDir = __DIR__ . '/..//Assets/Images/Rooms/';
         if (!is_dir($uploadDir)) {
             mkdir($uploadDir, 0755, true);
         }

@@ -41,7 +41,7 @@ Lines 103-254: Complete mobile media query
 - Lines 260-268: Inline reset script
 ```
 
-### 2. `Assets/Javascript/animate-ui.js`
+### 2. `/Assets/Javascript/animate-ui.js`
 **Purpose**: JavaScript logic for sidebar toggle and mobile UX
 **Size**: 971 lines total
 **Key Additions**:
@@ -357,7 +357,7 @@ document.querySelector('.app-sidebar').classList.toggle('mobile-open');
 | File | Type | Lines | Purpose |
 |------|------|-------|---------|
 | includes/sidebar.php | HTML + CSS + JS | 376 | Layout, styling, reset logic |
-| Assets/Javascript/animate-ui.js | JavaScript | 971 | Toggle logic, UX handlers |
+| /Assets/Javascript/animate-ui.js | JavaScript | 971 | Toggle logic, UX handlers |
 | MOBILE_RESPONSIVE_IMPROVEMENTS.md | Documentation | 250 | Technical overview |
 | MOBILE_TESTING_GUIDE.md | Documentation | 320 | Testing procedures |
 | MOBILE_CODE_REFERENCE.md | Documentation | 380 | Code snippets & reference |

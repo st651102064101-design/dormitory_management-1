@@ -225,11 +225,11 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo htmlspecialchars($siteName); ?> - จดมิเตอร์น้ำไฟ</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css">
-    <link rel="stylesheet" href="../Assets/Css/main.css">
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="..//Assets/Css/main.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css">
-    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css">
+    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css">
     <style>
         /* ===== Light Theme Overrides ===== */
         html.light-theme .page-title,
@@ -1204,6 +1204,6 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
     });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
-    <script src="../Assets/Javascript/animate-ui.js"></script>
+    <script src="..//Assets/Javascript/animate-ui.js"></script>
 </body>
 </html>

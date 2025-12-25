@@ -76,10 +76,10 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการข่าวประชาสัมพันธ์</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
-    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/main.css" />
+    <link rel="stylesheet" href="..//Assets/Css/confirm-modal.css" />
     <style>
         /* Force-hide animate-ui modal overlays on this page */
         .animate-ui-modal, .animate-ui-modal-overlay { display: none !important; visibility: hidden !important; opacity: 0 !important; }
@@ -541,8 +541,8 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
       </div>
     </div>
 
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
-    <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+    <script src="..//Assets/Javascript/main.js" defer></script>
     <script>
       const newsData = <?php echo json_encode($newsList); ?>;
       
@@ -966,8 +966,8 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
         document.getElementById('newsContainer').scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     </script>
-    <script src="../Assets/Javascript/toast-notification.js"></script>
-    <script src="../Assets/Javascript/confirm-modal.js"></script>
+    <script src="..//Assets/Javascript/toast-notification.js"></script>
+    <script src="..//Assets/Javascript/confirm-modal.js"></script>
     <script>
       function changeSortBy(sortValue) {
         const url = new URL(window.location);

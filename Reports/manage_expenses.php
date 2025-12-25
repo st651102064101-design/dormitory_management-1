@@ -214,12 +214,12 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการค่าใช้จ่าย</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
-    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="..//Assets/Css/main.css" />
+    <link rel="stylesheet" href="..//Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css" />
     <style>
       :root {
         --theme-bg-color: <?php echo $themeColor; ?>;
@@ -800,10 +800,10 @@ try {
       </div>
     </div>
 
-    <script src="../Assets/Javascript/toast-notification.js"></script>
-    <script src="../Assets/Javascript/confirm-modal.js"></script>
-    <script src="../Assets/Javascript/animate-ui.js"></script>
-    <script src="../Assets/Javascript/main.js"></script>
+    <script src="..//Assets/Javascript/toast-notification.js"></script>
+    <script src="..//Assets/Javascript/confirm-modal.js"></script>
+    <script src="..//Assets/Javascript/animate-ui.js"></script>
+    <script src="..//Assets/Javascript/main.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
       function changeSortBy(sortValue) {
@@ -1479,10 +1479,10 @@ try {
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
 
         if (isPdf) {
-          paymentProofEmbed.src = '../Assets/Images/Payments/' + payment.pay_proof;
+          paymentProofEmbed.src = '..//Assets/Images/Payments/' + payment.pay_proof;
           paymentProofEmbed.style.display = 'block';
         } else if (isImage) {
-          paymentProofImage.src = '../Assets/Images/Payments/' + payment.pay_proof;
+          paymentProofImage.src = '..//Assets/Images/Payments/' + payment.pay_proof;
           paymentProofImage.style.display = 'block';
           paymentProofImage.style.opacity = '0';
           paymentProofImage.style.transform = 'scale(0.98)';

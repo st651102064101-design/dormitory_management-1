@@ -36,11 +36,11 @@ if ($ctr_id === 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เลือกสัญญาเพื่อพิมพ์</title>
-    <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/animate-ui.css">
-    <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/main.css">
+    <link rel="stylesheet" href="/Dormitory_Management//Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="/Dormitory_Management//Assets/Css/main.css">
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css">
-    <link rel="stylesheet" href="/Dormitory_Management/Assets/Css/datatable-modern.css">
+    <link rel="stylesheet" href="/Dormitory_Management//Assets/Css/datatable-modern.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Tahoma, Arial, sans-serif; background: #f5f5f5; min-height: 100vh; }
@@ -160,8 +160,8 @@ if ($ctr_id === 0) {
                         });
                     }
                 </script>
-                <script src="../Assets/Javascript/animate-ui.js" defer></script>
-                <script src="../Assets/Javascript/main.js" defer></script>
+                <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+                <script src="..//Assets/Javascript/main.js" defer></script>
                 
                 <!-- DataTable Initialization -->
                 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>

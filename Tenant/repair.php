@@ -48,7 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     throw new Exception('นามสกุลไฟล์ไม่ถูกต้อง');
                 }
                 
-                $uploadsDir = __DIR__ . '/../Assets/Images/Repairs';
+                $uploadsDir = __DIR__ . '/..//Assets/Images/Repairs';
                 if (!is_dir($uploadsDir)) {
                     mkdir($uploadsDir, 0755, true);
                 }
@@ -103,7 +103,7 @@ $repairStatusMap = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>แจ้งซ่อม - <?php echo htmlspecialchars($settings['site_name']); ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($settings['logo_filename']); ?>">
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($settings['logo_filename']); ?>">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -548,7 +548,7 @@ $repairStatusMap = [
                 <div class="repair-desc"><?php echo htmlspecialchars($repair['repair_desc'] ?? '-'); ?></div>
                 <?php if (!empty($repair['repair_image'])): ?>
                 <div class="repair-image">
-                    <img src="../Assets/Images/Repairs/<?php echo htmlspecialchars($repair['repair_image']); ?>" alt="Repair Image">
+                    <img src="..//Assets/Images/Repairs/<?php echo htmlspecialchars($repair['repair_image']); ?>" alt="Repair Image">
                 </div>
                 <?php endif; ?>
                 

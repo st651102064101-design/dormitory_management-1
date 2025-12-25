@@ -18,7 +18,7 @@ try {
 
 $bgStyle = '';
 if (!empty($useBgImage) && $useBgImage === '1' && !empty($bgFilename)) {
-    $bgUrl = 'Assets/Images/' . htmlspecialchars($bgFilename, ENT_QUOTES, 'UTF-8');
+    $bgUrl = '/Assets/Images/' . htmlspecialchars($bgFilename, ENT_QUOTES, 'UTF-8');
     $bgStyle = "background-image: url('{$bgUrl}'); background-attachment: fixed; background-size: cover; background-position: center;";
 }
 ?>

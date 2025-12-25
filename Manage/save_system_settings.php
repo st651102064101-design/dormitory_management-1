@@ -30,7 +30,7 @@ try {
     // โหลดรูปเก่า
     if (!empty($_POST['load_old_logo'])) {
         $oldLogoFile = trim($_POST['load_old_logo']);
-        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $uploadsDir = __DIR__ . '/..//Assets/Images/';
         $oldLogoPath = $uploadsDir . $oldLogoFile;
 
         // ตรวจสอบความปลอดภัย - ตรวจสอบว่าไฟล์อยู่ในโฟลเดอร์ที่ถูกต้อง
@@ -88,7 +88,7 @@ try {
     // ลบรูปเก่า
     if (!empty($_POST['delete_old_logo'])) {
         $oldLogoFile = trim($_POST['delete_old_logo']);
-        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $uploadsDir = __DIR__ . '/..//Assets/Images/';
         $oldLogoPath = $uploadsDir . $oldLogoFile;
 
         // ตรวจสอบความปลอดภัย
@@ -155,7 +155,7 @@ try {
             exit;
         }
 
-        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $uploadsDir = __DIR__ . '/..//Assets/Images/';
         if (!is_dir($uploadsDir)) {
             mkdir($uploadsDir, 0755, true);
         }
@@ -309,7 +309,7 @@ try {
     // จัดการ Background Filename (เลือกจาก dropdown)
     if (!empty($_POST['bg_filename'])) {
         $bgFilename = trim($_POST['bg_filename']);
-        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $uploadsDir = __DIR__ . '/..//Assets/Images/';
         $bgPath = $uploadsDir . $bgFilename;
 
         // ตรวจสอบว่าไฟล์มีอยู่จริง
@@ -353,7 +353,7 @@ try {
             exit;
         }
 
-        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $uploadsDir = __DIR__ . '/..//Assets/Images/';
         if (!is_dir($uploadsDir)) {
             mkdir($uploadsDir, 0755, true);
         }

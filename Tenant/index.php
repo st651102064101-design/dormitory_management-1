@@ -105,7 +105,7 @@ $contractStatusMap = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title><?php echo htmlspecialchars($siteName); ?> - Tenant Portal</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <style>
         * {
             margin: 0;
@@ -468,7 +468,7 @@ $contractStatusMap = [
 <body>
     <header class="header">
         <div class="header-content">
-            <img src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="logo">
+            <img src="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="logo">
             <div class="header-info">
                 <h1><?php echo htmlspecialchars($siteName); ?></h1>
                 <p>Tenant Portal</p>

@@ -195,7 +195,7 @@ unset($step);
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ตรวจสอบสถานะการจอง - <?php echo htmlspecialchars($siteName); ?></title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
+    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -211,7 +211,7 @@ unset($step);
             --border-color: rgba(255, 255, 255, 0.1);
             --glass-bg: rgba(255, 255, 255, 0.03);
             <?php if (!empty($useBgImage) && $useBgImage === '1' && !empty($bgFilename)): ?>
-            --bg-image: url('../Assets/Images/<?php echo htmlspecialchars($bgFilename, ENT_QUOTES, 'UTF-8'); ?>');
+            --bg-image: url('..//Assets/Images/<?php echo htmlspecialchars($bgFilename, ENT_QUOTES, 'UTF-8'); ?>');
             <?php else: ?>
             --bg-image: none;
             <?php endif; ?>
@@ -1314,7 +1314,7 @@ if ($publicTheme === 'light') {
         <!-- Header -->
         <div class="header">
             <a href="../index.php" class="logo">
-                <img src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="">
+                <img src="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="">
                 <h1><?php echo htmlspecialchars($siteName); ?></h1>
             </a>
             <div class="header-actions">

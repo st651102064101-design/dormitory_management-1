@@ -41,7 +41,7 @@ try {
         $file = $_FILES['room_image'];
         $allowed = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
         if (in_array($file['type'], $allowed, true)) {
-            $uploadDir = __DIR__ . '/../Assets/Images/Rooms/';
+            $uploadDir = __DIR__ . '/..//Assets/Images/Rooms/';
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
