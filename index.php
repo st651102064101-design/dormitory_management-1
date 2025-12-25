@@ -70,7 +70,7 @@ try {
     <title><?php echo htmlspecialchars($siteName); ?> - หอพักคุณภาพ</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><defs><linearGradient id='grad' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' style='stop-color:%23667eea;stop-opacity:1' /><stop offset='100%' style='stop-color:%23764ba2;stop-opacity:1' /></linearGradient><style>.house { animation: draw 1s ease-in-out forwards; stroke-dasharray: 200; } @keyframes draw { to { stroke-dashoffset: 0; } }</style></defs><rect width='100' height='100' fill='white'/><g class='house' fill='none' stroke='url(%23grad)' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'><path d='M20 60 L50 25 L80 60 Z'/><rect x='25' y='60' width='50' height='35' rx='3'/><rect x='35' y='70' width='12' height='15'/><rect x='53' y='70' width='12' height='15'/><rect x='44' y='80' width='12' height='15'/></g></svg>" />
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script defer src="/Assets/Javascript/public_theme_toggle.js"></script>
+    <script defer src="/dormitory_management/Public/Assets/Javascript/public_theme_toggle.js"></script>
     <style>
         * {
             margin: 0;
@@ -88,7 +88,7 @@ try {
             --border-color: rgba(255, 255, 255, 0.1);
             --glass-bg: rgba(255, 255, 255, 0.03);
             <?php if (!empty($useBgImage) && $useBgImage === '1' && !empty($bgFilename)): ?>
-            --bg-image: url('/Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>');
+            --bg-image: url('/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>');
             <?php else: ?>
             --bg-image: none;
             <?php endif; ?>
@@ -2043,7 +2043,7 @@ if ($publicTheme === 'light') {
     <!-- Header -->
     <header class="header" id="header">
         <div class="logo">
-            <img src="/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="<?php echo htmlspecialchars($siteName); ?>">
+            <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="<?php echo htmlspecialchars($siteName); ?>">
             <h1><?php echo htmlspecialchars($siteName); ?></h1>
         </div>
         <nav class="nav-links">
@@ -2204,7 +2204,7 @@ if ($publicTheme === 'light') {
             <div class="room-card animate-on-scroll">
                 <div class="room-card-image-wrapper">
                     <?php if (!empty($room['room_image'])): ?>
-                    <img src="/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" class="room-card-image">
+                    <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" class="room-card-image">
                     <?php else: ?>
                     <svg class="room-card-placeholder-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
                         <defs>

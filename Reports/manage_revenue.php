@@ -52,12 +52,12 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายงานรายรับ</title>
-    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="..//Assets/Css/main.css" />
+    <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -150,7 +150,7 @@ try {
         </div>
       </main>
     </div>
-    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+    <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
     <script>
       (function() {
         // View Toggle

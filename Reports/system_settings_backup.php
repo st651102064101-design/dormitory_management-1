@@ -101,9 +101,9 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการระบบ</title>
-    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="..//Assets/Css/main.css" />
+    <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
     <link rel="stylesheet" href="..//Assets/Css/confirm-modal.css" />
     <style>
       /* ======================================
