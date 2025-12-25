@@ -1,0 +1,160 @@
+/**
+ * Lottie Icons CSS - Animated icons for admin dashboard
+ * ใช้แทน emoji ให้ดูเป็น professional มากขึ้น
+ */
+
+/* ===== Lottie Icon Container ===== */
+.lottie-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  margin-bottom: 0.5rem;
+}
+
+.lottie-icon svg {
+  width: 28px;
+  height: 28px;
+  stroke: white;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.lottie-icon dotlottie-player,
+.lottie-icon lottie-player {
+  width: 32px;
+  height: 32px;
+}
+
+/* Size variants */
+.lottie-icon.sm {
+  width: 36px;
+  height: 36px;
+}
+.lottie-icon.sm dotlottie-player,
+.lottie-icon.sm lottie-player {
+  width: 24px;
+  height: 24px;
+}
+
+.lottie-icon.lg {
+  width: 64px;
+  height: 64px;
+}
+.lottie-icon.lg dotlottie-player,
+.lottie-icon.lg lottie-player {
+  width: 48px;
+  height: 48px;
+}
+
+.lottie-icon.xl {
+  width: 80px;
+  height: 80px;
+}
+.lottie-icon.xl dotlottie-player,
+.lottie-icon.xl lottie-player {
+  width: 60px;
+  height: 60px;
+}
+
+/* ===== Color backgrounds ===== */
+.lottie-icon.blue {
+  background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+}
+
+.lottie-icon.green {
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+}
+
+.lottie-icon.orange {
+  background: linear-gradient(135deg, #f97316 0%, #ea580c 100%);
+}
+
+.lottie-icon.red {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.lottie-icon.purple {
+  background: linear-gradient(135deg, #a855f7 0%, #7c3aed 100%);
+}
+
+.lottie-icon.yellow {
+  background: linear-gradient(135deg, #eab308 0%, #ca8a04 100%);
+}
+
+.lottie-icon.cyan {
+  background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%);
+}
+
+.lottie-icon.pink {
+  background: linear-gradient(135deg, #ec4899 0%, #db2777 100%);
+}
+
+.lottie-icon.gray {
+  background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+}
+
+.lottie-icon.indigo {
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+}
+
+.lottie-icon.teal {
+  background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+}
+
+/* ===== Stat Card with Lottie ===== */
+.stat-card .lottie-icon {
+  margin: 0 auto 0.75rem auto;
+}
+
+/* ===== Animation hover effects ===== */
+.stat-card:hover .lottie-icon {
+  transform: scale(1.15) rotate(5deg);
+}
+
+.stat-card:hover .lottie-icon svg {
+  animation: iconPulse 0.6s ease;
+}
+
+@keyframes iconPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.15); }
+}
+
+.lottie-icon {
+  transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.3s ease;
+}
+
+.lottie-icon:hover {
+  box-shadow: 0 8px 20px rgba(0,0,0,0.25);
+}
+
+/* ===== Apple Settings Style ===== */
+.apple-stat-card .lottie-icon {
+  margin-bottom: 0.5rem;
+}
+
+.apple-stat-card:hover .lottie-icon {
+  transform: scale(1.1);
+}
+
+/* ===== Responsive ===== */
+@media (max-width: 768px) {
+  .lottie-icon {
+    width: 40px;
+    height: 40px;
+  }
+  .lottie-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  .lottie-icon dotlottie-player,
+  .lottie-icon lottie-player {
+    width: 28px;
+    height: 28px;
+  }
+}
