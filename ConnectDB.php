@@ -28,6 +28,6 @@ if (!function_exists('connectDB')) {
             echo 'Connection failed: ' . $e->getMessage();
             exit;
         }
-    }
+    } 
 } // <--- ต้องมีปีกกาปิดตัวนี้ เพื่อปิด 'if' ที่เปิดไว้ในบรรทัดที่ 5
 ?>
