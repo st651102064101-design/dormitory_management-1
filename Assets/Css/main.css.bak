@@ -259,8 +259,8 @@ button:focus-visible {
 .animate-ui-action-btn.delete:hover {
     background: #E63D32;
     opacity: 0.9;
+}   opacity: 0.9;
 }
-
 
 .animate-ui-action-btn.btn-success {
     background: #34C759 !important;

@@ -8,7 +8,7 @@ if (empty($_SESSION['admin_username'])) {
 
 $error = '';
 
-require_once '../ConnectDB.php';
+require_once __DIR__ . '/../ConnectDB.php';
 
 // Initialize database connection
 $conn = connectDB();

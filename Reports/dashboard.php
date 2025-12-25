@@ -1,6 +1,11 @@
 <?php
 session_start();
-require_once '../ConnectDB.php';
+// Enable error display for debugging (temporary)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+echo "<!-- DEBUG: start of dashboard.php -->\n";
+require_once __DIR__ . '/../ConnectDB.php';
 
 // ตรวจสอบการ login
 if (empty($_SESSION['admin_username'])) {
@@ -750,7 +755,7 @@ try {
         }
     </style>
 </head>
-<body class="reports-page">
+<body class="reports-page <?php echo ($isLight ? 'live-light' : 'live-dark'); ?>">
     <script>
         // Define toggle function early so it's available immediately
         window.__directSidebarToggle = function(event) {
@@ -762,8 +767,18 @@ try {
             return false;
         };
     </script>
+    <script>
+        // Ensure theme class is applied even if server-side didn't output it
+        (function() {
+            var c = '<?php echo ($isLight ? "live-light" : "live-dark"); ?>';
+            if (c) {
+                document.documentElement.classList.add(c);
+                document.body.classList.add(c);
+            }
+        })();
+    </script>
     <div class="app-shell">
-        <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+        <?php echo "<!-- DEBUG: before include sidebar -->"; include __DIR__ . '/../includes/sidebar.php'; echo "<!-- DEBUG: after include sidebar -->"; ?>
         <main class="app-main">
             <div>
                 <?php $pageTitle = 'แดชบอร์ด'; include __DIR__ . '/../includes/page_header.php'; ?>
