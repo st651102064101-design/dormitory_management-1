@@ -15,14 +15,13 @@ if (!function_exists('connectDB')) {
         $dsn  = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
 
         try {
-            // Option สำหรับ SSL (แบบปลอดภัยและไม่เรื่องมาก)
+            try {
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 
-                // --- บรรทัดที่คุณลืม (สำคัญมาก ต้องใส่เพื่อให้มันยอมใช้ SSL) ---
-                PDO::MYSQL_ATTR_SSL_CA => '/etc/ssl/certs/ca-certificates.crt',
-                // -------------------------------------------------------
+                // แก้เป็น Path ที่ TiDB แนะนำตามในรูปที่ 4 ครับ
+                PDO::MYSQL_ATTR_SSL_CA => '/etc/ssl/cert.pem',
 
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ];
