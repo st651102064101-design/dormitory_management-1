@@ -111,13 +111,13 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายงานการแจ้งซ่อม</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
-    <link rel="stylesheet" href="../Assets/Css/lottie-icons.css" />
+    <link rel="icon" type="image/jpeg" href="/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="/Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/Assets/Css/lottie-icons.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="../Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="/Assets/Css/datatable-modern.css" />
     <style>
       .reports-container { width: 100%; max-width: 100%; padding: 0; }
       .reports-container .container { max-width: 100%; width: 100%; padding: 1.5rem; }
@@ -273,7 +273,7 @@ try {
                   <div style="color:#fff;"><?php echo renderField($r['repair_desc'], 'ไม่มีรายละเอียด'); ?></div>
                 </div>
                 <?php if (!empty($r['repair_image'])): ?>
-                  <img src="../Assets/Images/Repairs/<?php echo htmlspecialchars($r['repair_image']); ?>" alt="Repair" class="repair-image-preview" onclick="showImage('<?php echo htmlspecialchars($r['repair_image']); ?>')">
+                  <img src="/Assets/Images/Repairs/<?php echo htmlspecialchars($r['repair_image']); ?>" alt="Repair" class="repair-image-preview" onclick="showImage('<?php echo htmlspecialchars($r['repair_image']); ?>')">
                 <?php endif; ?>
               </div>
 <?php endforeach; ?>
@@ -292,7 +292,7 @@ try {
                     <td><?php echo renderField($r['tnt_name'], '-'); ?></td>
                     <td><strong><?php echo renderField($r['room_number'], '-'); ?></strong></td>
                     <td style="max-width:300px;"><?php echo renderField($r['repair_desc'], '-'); ?></td>
-                    <td style="text-align:center;"><?php if (!empty($r['repair_image'])): ?><img src="../Assets/Images/Repairs/<?php echo htmlspecialchars($r['repair_image']); ?>" alt="Repair" style="width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;" onclick="showImage('<?php echo htmlspecialchars($r['repair_image']); ?>')"><?php else: ?><span style="color:#94a3b8;">ไม่มีรูป</span><?php endif; ?></td>
+                    <td style="text-align:center;"><?php if (!empty($r['repair_image'])): ?><img src="/Assets/Images/Repairs/<?php echo htmlspecialchars($r['repair_image']); ?>" alt="Repair" style="width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;" onclick="showImage('<?php echo htmlspecialchars($r['repair_image']); ?>')"><?php else: ?><span style="color:#94a3b8;">ไม่มีรูป</span><?php endif; ?></td>
                     <td style="text-align:center;"><span class="repair-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
                   </tr>
 <?php endforeach; ?>
@@ -306,8 +306,8 @@ try {
 
     <div id="imageModal" class="image-modal" onclick="closeImage()"><img id="modalImage" src="" alt="Repair Image"></div>
 
-    <script src="../Assets/Javascript/animate-ui.js" defer></script>
-    <script src="../Assets/Javascript/main.js" defer></script>
+    <script src="/Assets/Javascript/animate-ui.js" defer></script>
+    <script src="/Assets/Javascript/main.js" defer></script>
     <script>
       const safeGet = (key) => { try { return localStorage.getItem(key); } catch (e) { return null; } };
 
@@ -319,7 +319,7 @@ try {
         switchView(dbDefaultView);
       });
       function switchView(view) { const cardView = document.getElementById('card-view'); const tableView = document.getElementById('table-view'); const buttons = document.querySelectorAll('.view-toggle-btn'); buttons.forEach(btn => btn.classList.remove('active')); if (view === 'card') { cardView.style.display = 'grid'; tableView.style.display = 'none'; buttons[0].classList.add('active'); localStorage.setItem('repairViewMode', 'card'); } else { cardView.style.display = 'none'; tableView.style.display = 'block'; buttons[1].classList.add('active'); localStorage.setItem('repairViewMode', 'table'); } }
-      function showImage(imageName) { const modal = document.getElementById('imageModal'); const modalImg = document.getElementById('modalImage'); modalImg.src = '../Assets/Images/Repairs/' + imageName; modal.classList.add('show'); }
+      function showImage(imageName) { const modal = document.getElementById('imageModal'); const modalImg = document.getElementById('modalImage'); modalImg.src = '/Assets/Images/Repairs/' + imageName; modal.classList.add('show'); }
       function closeImage() { document.getElementById('imageModal').classList.remove('show'); }
       document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeImage(); });
     </script>

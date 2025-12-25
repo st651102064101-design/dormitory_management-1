@@ -101,10 +101,10 @@ try {
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการระบบ</title>
-    <link rel="icon" type="image/jpeg" href="../Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="../Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="../Assets/Css/main.css" />
-    <link rel="stylesheet" href="../Assets/Css/confirm-modal.css" />
+    <link rel="icon" type="image/jpeg" href="/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="/Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/Assets/Css/confirm-modal.css" />
     <style>
       /* ======================================
          Apple Settings Style - iOS 18 Design
@@ -1837,9 +1837,9 @@ try {
                   <div class="form-group">
                     <label>รูป Logo ปัจจุบัน</label>
                     <div class="logo-preview" id="logoPreview" style="margin-bottom: 1rem; text-align: center;">
-                      <img src="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" style="max-width: 200px; max-height: 200px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" />
+                      <img src="/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" style="max-width: 200px; max-height: 200px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);" />
                     </div>
-                    <a href="../Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" download class="btn-save" style="display:inline-flex; align-items:center; gap:0.5rem; background: rgba(96,165,250,0.5); box-shadow:none; padding:0.6rem 1rem;">
+                    <a href="/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" download class="btn-save" style="display:inline-flex; align-items:center; gap:0.5rem; background: rgba(96,165,250,0.5); box-shadow:none; padding:0.6rem 1rem;">
                       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>ดาวน์โหลดรูปปัจจุบัน
                     </a>
                   </div>
@@ -1849,7 +1849,7 @@ try {
                     <select id="oldLogoSelect" style="width: 100%; padding: 0.75rem 0.85rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(8,12,24,0.85); color: #f5f8ff; font-size: 0.95rem; margin-bottom: 0.5rem;">
                       <option value="">-- เลือกรูปเก่า --</option>
                       <?php
-                        $logoDir = realpath(__DIR__ . '/../Assets/Images/');
+                        $logoDir = realpath(__DIR__ . '/../Public/Assets/Images/');
                         if ($logoDir && is_dir($logoDir)) {
                           $files = scandir($logoDir);
                           foreach ($files as $file) {
@@ -1891,7 +1891,7 @@ try {
                   <div class="form-group">
                     <label>ภาพพื้นหลังปัจจุบัน</label>
                     <div class="logo-preview" id="bgPreview" style="margin-bottom: 1rem; text-align: center;">
-                      <img src="../Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>" alt="Background" style="max-width: 300px; max-height: 180px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); object-fit: cover;" />
+                      <img src="/Assets/Images/<?php echo htmlspecialchars($bgFilename); ?>" alt="Background" style="max-width: 300px; max-height: 180px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); object-fit: cover;" />
                     </div>
                     <small style="color: #94a3b8;">ภาพนี้จะแสดงเป็นพื้นหลังของหน้าแรก (Hero Section)</small>
                   </div>
@@ -2195,10 +2195,10 @@ try {
       </main>
     </div>
 
-    <script src="../Assets/Javascript/toast-notification.js"></script>
-    <script src="../Assets/Javascript/confirm-modal.js"></script>
-    <script src="../Assets/Javascript/system-settings.js"></script>
-    <script src="../Assets/Javascript/animate-ui.js"></script>
+    <script src="/Assets/Javascript/toast-notification.js"></script>
+    <script src="/Assets/Javascript/confirm-modal.js"></script>
+    <script src="/Assets/Javascript/system-settings.js"></script>
+    <script src="/Assets/Javascript/animate-ui.js"></script>
     <script>
     // Handle Phone Form
     document.getElementById('phoneForm')?.addEventListener('submit', async function(e) {
