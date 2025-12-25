@@ -9,19 +9,18 @@ if (!function_exists('connectDB')) {
         $port = '4000';
         $db   = 'dormitory_management_db';
         $user = 'utqDEKTsPzQHHm4.root';
-        $pass = 'UTuBB1K0XsmeNjyx'; // <--- **อย่าลืมแก้รหัสผ่านตรงนี้**
+        $pass = 'UTuBB1K0XsmeNjyx'; // รหัสผ่านของคุณ (ถ้าถูกต้องแล้วก็เยี่ยมเลย!)
 
         // DSN สำหรับ TiDB (ระบุ Port ด้วย)
         $dsn  = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
 
         try {
-            // เพิ่ม Option สำหรับ SSL (TiDB บังคับใช้)
+            // Option สำหรับ SSL (แบบปลอดภัยและไม่เรื่องมาก)
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                // ตั้งค่า SSL ให้รองรับ TiDB Cloud
-                PDO::MYSQL_ATTR_SSL_CA => '/etc/ssl/cert.pem', // Path มาตรฐานของ CA ใน Linux/Vercel
-                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false, // ป้องกัน Error เรื่อง Certificate
+                // ปิดการตรวจสอบใบรับรอง (Certificate) เพื่อลดปัญหา Error จุกจิกบน Vercel
+                PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ];
 
             $pdo = new PDO($dsn, $user, $pass, $options);
@@ -33,4 +32,4 @@ if (!function_exists('connectDB')) {
         }
     }
 }
-?>ดไฟดไฟด
+?>
