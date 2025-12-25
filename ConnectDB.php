@@ -9,7 +9,7 @@ if (!function_exists('connectDB')) {
         $port = '4000';
         $db   = 'dormitory_management_db';
         $user = 'utqDEKTsPzQHHm4.root';
-        $pass = 'UTuBB1K0XsmeNjyx'; // รหัสผ่านของคุณ (ถ้าถูกต้องแล้วก็เยี่ยมเลย!)
+        $pass = 'x5aHcQP0Y9m9gZMZ'; // รหัสผ่านของคุณ (ถ้าถูกต้องแล้วก็เยี่ยมเลย!)
 
         // DSN สำหรับ TiDB (ระบุ Port ด้วย)
         $dsn  = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
