@@ -35,4 +35,4 @@ if (!function_exists('connectDB')) {
         }
     }
 }
-?>
+?>ดไฟดฟได
