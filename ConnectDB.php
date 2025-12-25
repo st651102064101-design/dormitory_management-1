@@ -8,7 +8,7 @@ if (!function_exists('connectDB')) {
         $host = 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com';
         $port = '4000';
         $db   = 'dormitory_management_db';
-        $user = 'utqDEKTsPzQHHm4.root';
+        $user = 'utqDEKTsPzQHUm4.root';
         $pass = 'x5aHcQP0Y9m9gZMZ'; // รหัสผ่านของคุณ (ถ้าถูกต้องแล้วก็เยี่ยมเลย!)
 
         // DSN สำหรับ TiDB (ระบุ Port ด้วย)
