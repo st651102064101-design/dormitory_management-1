@@ -1,0 +1,2284 @@
+<?php
+// Expect session already started and $adminName set in including script
+$adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
+
+// ดึงชื่อระบบและการตั้งค่าจาก database
+$siteName = 'Sangthian Dormitory';
+$logoFilename = 'Logo.jpg';
+$themeColor = '#0f172a';
+$fontSize = '1';
+try {
+    require_once __DIR__ . '/../ConnectDB.php';
+    $pdo = connectDB();
+    
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'font_size', 'default_view_mode')");
+    $sidebarSettings = [];
+    foreach ($settingsStmt->fetchAll(PDO::FETCH_ASSOC) as $setting) {
+        $sidebarSettings[$setting['setting_key']] = $setting['setting_value'];
+    }
+    
+    $siteName = $sidebarSettings['site_name'] ?? $siteName;
+    $logoFilename = $sidebarSettings['logo_filename'] ?? $logoFilename;
+    $themeColor = $sidebarSettings['theme_color'] ?? $themeColor;
+    $fontSize = $sidebarSettings['font_size'] ?? $fontSize;
+    $defaultViewMode = isset($sidebarSettings['default_view_mode']) && strtolower($sidebarSettings['default_view_mode']) === 'list' ? 'list' : 'grid';
+} catch (Exception $e) {
+    // ใช้ค่า default ถ้า database error
+}
+?>
+<style>
+  :root {
+    --theme-bg-color: <?php echo htmlspecialchars($themeColor, ENT_QUOTES, 'UTF-8'); ?>;
+    --font-scale: <?php echo htmlspecialchars($fontSize, ENT_QUOTES, 'UTF-8'); ?>;
+    --admin-font-scale: <?php echo htmlspecialchars($fontSize, ENT_QUOTES, 'UTF-8'); ?>;
+  }
+
+  /* Font scaling for admin pages */
+  html { 
+    font-size: calc(16px * var(--font-scale, 1)); 
+  }
+  
+  body {
+    font-size: calc(14px * var(--admin-font-scale, 1));
+  }
+  
+  /* Scale all text elements */
+  .app-main, .app-main *, .manage-panel, .manage-panel *,
+  .card, .card *, .panel, .panel *, .stat-card, .stat-card *,
+  .report-section, .report-section *, table, table * {
+    font-size: inherit;
+  }
+  
+  /* พื้นหลังหลัก - ใช้ theme color */
+  html, body, .app-shell, .app-main, .reports-page {
+    background: var(--theme-bg-color) !important;
+  }
+
+  /* Smooth animation when switching theme */
+  html, body, .app-shell, .app-main, .reports-page,
+  aside.app-sidebar, .manage-panel, .card, .panel, .stat-card,
+  .report-section, .report-item, .chart-container, .settings-card,
+  input, select, textarea, button {
+    transition: background-color 0.35s ease, color 0.35s ease,
+                border-color 0.35s ease, box-shadow 0.35s ease,
+                font-size 0.2s ease;
+  }
+
+  @keyframes themeFadeIn {
+    from { opacity: 0; filter: saturate(0.6); }
+    to { opacity: 1; filter: saturate(1); }
+  }
+
+  body.theme-fade {
+    animation: themeFadeIn 0.45s ease;
+  }
+
+  /* ===== Live DARK mode (no reload) - เมื่อเลือกสีเข้ม ===== */
+  body.live-dark,
+  body.live-dark .app-shell,
+  body.live-dark .app-main,
+  body.live-dark.reports-page,
+  body.live-dark .reports-page {
+    background: var(--theme-bg-color) !important;
+    color: #f1f5f9 !important;
+  }
+  
+  body.live-dark, body.live-dark * {
+    color: #f1f5f9 !important;
+  }
+  
+  body.live-dark .settings-card,
+  body.live-dark .manage-panel,
+  body.live-dark .card,
+  body.live-dark .panel {
+    background: rgba(255,255,255,0.05) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+  }
+  
+  body.live-dark input,
+  body.live-dark select,
+  body.live-dark textarea {
+    background: rgba(255,255,255,0.08) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    color: #f1f5f9 !important;
+  }
+  
+  /* Exception: Color picker in Live-dark mode */
+  body.live-dark .apple-color-option {
+    background: unset !important;
+  }
+
+  /* ===== Live LIGHT mode (no reload) - เมื่อเลือกสีสว่าง ===== */
+  body.live-light,
+  body.live-light .app-shell,
+  body.live-light .app-main,
+  body.live-light.reports-page,
+  body.live-light .reports-page {
+    background: #ffffff !important;
+    color: #111827 !important;
+  }
+
+  body.live-light aside.app-sidebar {
+    background: #f9fafb !important;
+    border-right: 1px solid #e5e7eb !important;
+  }
+
+  body.live-light .sidebar-header {
+    background: #f9fafb !important;
+  }
+
+  body.live-light .sidebar-footer {
+    background: #f9fafb !important;
+    border-top: 1px solid #e5e7eb !important;
+  }
+
+  /* Light mode - User section in footer */
+  body.live-light .sidebar-footer .user-row,
+  body.live-light .sidebar-footer .user-meta,
+  body.live-light .sidebar-footer .user-meta .name,
+  body.live-light .sidebar-footer .user-meta .email {
+    color: #374151 !important;
+  }
+
+  body.live-light .sidebar-footer .avatar svg {
+    color: #6b7280 !important;
+  }
+
+  body.live-light .sidebar-footer .avatar svg rect {
+    fill: #e5e7eb !important;
+  }
+
+  body.live-light .sidebar-footer .avatar svg path {
+    fill: #6b7280 !important;
+  }
+
+  /* Light mode - Sidebar navigation text and icons */
+  body.live-light .app-nav a,
+  body.live-light details summary,
+  body.live-light .subitem,
+  body.live-light .app-nav-label,
+  body.live-light .summary-label,
+  body.live-light .team-meta .name {
+    color: #374151 !important;
+  }
+
+  body.live-light .app-nav a:hover,
+  body.live-light details summary:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  body.live-light .app-nav a.active,
+  body.live-light .app-nav a.subitem.active {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-left: 3px solid #3b82f6 !important;
+    color: #2563eb !important;
+  }
+
+  body.live-light .app-nav-icon svg {
+    stroke: #6b7280 !important;
+  }
+
+  body.live-light .app-nav a.active .app-nav-icon svg,
+  body.live-light .app-nav a:hover .app-nav-icon svg {
+    stroke: #2563eb !important;
+  }
+
+  body.live-light .chev {
+    color: #6b7280 !important;
+  }
+
+  body.live-light .logout-btn {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #374151 !important;
+  }
+
+  body.live-light .logout-btn:hover {
+    background: #f3f4f6 !important;
+  }
+
+  body.live-light .logout-btn svg {
+    stroke: #374151 !important;
+  }
+
+  body.live-light .sidebar-close-btn {
+    background: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  }
+
+  body.live-light .sidebar-close-btn svg {
+    stroke: #374151 !important;
+  }
+
+  body.live-light .sidebar-nav-area::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15) !important;
+  }
+
+  body.live-light .sidebar-nav-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25) !important;
+  }
+
+  /* Ensure panel / header icons remain visible in light mode */
+  body.live-light .panel-icon svg,
+  html.light-theme .panel-icon svg,
+  body.light-theme .panel-icon svg,
+  .light-theme .panel-icon svg {
+    stroke: #111827 !important;
+    color: #111827 !important;
+    fill: none !important;
+  }
+
+  /* Ensure filter buttons (active blue) show white icon/text in light mode */
+  body.live-light a.filter-btn[style*="#60a5fa"],
+  html.light-theme a.filter-btn[style*="#60a5fa"],
+  body.light-theme a.filter-btn[style*="#60a5fa"],
+  .light-theme a.filter-btn[style*="#60a5fa"],
+  body.live-light .view-toggle-btn.active,
+  html.light-theme .view-toggle-btn.active,
+  body.light-theme .view-toggle-btn.active,
+  .light-theme .view-toggle-btn.active {
+    color: #ffffff !important;
+  }
+
+  body.live-light a.filter-btn[style*="#60a5fa"] svg,
+  html.light-theme a.filter-btn[style*="#60a5fa"] svg,
+  body.light-theme a.filter-btn[style*="#60a5fa"] svg,
+  .light-theme a.filter-btn[style*="#60a5fa"] svg,
+  body.live-light .view-toggle-btn.active svg,
+  html.light-theme .view-toggle-btn.active svg,
+  body.light-theme .view-toggle-btn.active svg,
+  .light-theme .view-toggle-btn.active svg {
+    stroke: #ffffff !important;
+    color: #ffffff !important;
+    fill: none !important;
+  }
+
+  /* More robust: force SVG children to follow currentColor (so explicit strokes are overridden) */
+  a.filter-btn svg *,
+  .view-toggle-btn.active svg *,
+  .filter-btn svg * {
+    stroke: currentColor !important;
+    fill: currentColor !important;
+  }
+
+  /* If inline style sets color to #fff, ensure entire button (including numeric count) is white */
+  a.filter-btn[style*="color:#fff"],
+  a.filter-btn[style*="color: #fff"],
+  .view-toggle-btn.active {
+    color: #ffffff !important;
+  }
+
+  body.live-light, body.live-light * {
+    color: #111827 !important;
+  }
+
+  /* Exception: Active nav items should have blue text */
+  body.live-light .app-nav a.active,
+  body.live-light .app-nav a.active * {
+    color: #2563eb !important;
+  }
+
+  /* Exception: Logout button icon */
+  body.live-light .logout-btn .app-nav-icon,
+  body.live-light .logout-btn .app-nav-label {
+    color: #374151 !important;
+  }
+
+  body.live-light .settings-card,
+  body.live-light .manage-panel,
+  body.live-light .card,
+  body.live-light .panel,
+  body.live-light .stat-card,
+  body.live-light .report-section,
+  body.live-light .report-item,
+  body.live-light .chart-container,
+  body.live-light .booking-stat-card,
+  body.live-light .tenant-stat-card,
+  body.live-light .expense-stat-card,
+  body.live-light .news-stat-card,
+  body.live-light .contract-stat-card,
+  body.live-light .dashboard-grid .stat-card,
+  body.live-light .report-grid .report-item,
+  body.live-light .charts-row .chart-container {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+  }
+
+  body.live-light input,
+  body.live-light select,
+  body.live-light textarea,
+  body.live-light button,
+  body.live-light .form-control {
+    background: #ffffff !important;
+    color: #111827 !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  /* Exception: Color picker in Live-light mode */
+  body.live-light .apple-color-option,
+  .apple-color-option {
+    background: unset !important;
+  }
+
+  /* User icon always white */
+  .sidebar-footer .avatar svg *,
+  .sidebar-footer .rail-user svg *,
+  .sidebar-footer .rail-logout .app-nav-icon,
+  .sidebar-footer .user-row .app-nav-icon {
+    color: #ffffff !important;
+    fill: currentColor !important;
+  }
+
+  /* Uniform icon sizing for nav, footer, and rails */
+  .app-nav-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 1.1rem;
+    line-height: 1;
+    flex-shrink: 0;
+    text-align: center;
+  }
+  
+  /* SVG icons inside app-nav-icon */
+  .app-nav-icon svg {
+    width: 1.2rem;
+    height: 1.2rem;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    fill: none;
+    flex-shrink: 0;
+  }
+  
+  /* Hover animation for SVG icons */
+  .app-nav a:hover .app-nav-icon svg,
+  details summary:hover .app-nav-icon svg {
+    transform: scale(1.15);
+    transition: transform 0.2s ease;
+  }
+  
+  /* Dashboard and Manage summary styling */
+  #nav-dashboard > summary,
+  #nav-management > summary {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.6rem 0.85rem;
+    margin: 0.1rem 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    list-style: none;
+  }
+  
+  #nav-dashboard > summary .summary-link,
+  #nav-management > summary .summary-link {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex: 1;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+  }
+  
+  #nav-dashboard > summary .summary-link:hover,
+  #nav-management > summary .summary-link:hover {
+    opacity: 0.8;
+  }
+  
+  /* Dashboard and Manage icons - ensure consistent sizing */
+  #nav-dashboard .summary-link .app-nav-icon,
+  #nav-management .summary-link .app-nav-icon {
+    width: 1.8rem;
+    height: 1.8rem;
+    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin: 0;
+  }
+  
+  /* Add margin only when sidebar is NOT collapsed */
+  aside.app-sidebar:not(.collapsed) .app-nav-icon {
+    margin-right: 0.4rem;
+  }
+
+  /* Ensure icons stay square in collapsed rail just like user/logout */
+  aside.sidebar-collapsed .app-nav-icon,
+  .app-sidebar.collapsed .app-nav-icon {
+    width: 2.25rem !important;
+    height: 2.25rem !important;
+    min-width: 2.25rem !important;
+    min-height: 2.25rem !important;
+    font-size: 1.1rem !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  body.live-light .status-badge.time-fresh { background:#d1fae5 !important; color:#065f46 !important; }
+  body.live-light .status-badge.time-warning { background:#fef3c7 !important; color:#92400e !important; }
+  body.live-light .status-badge.time-danger { background:#fee2e2 !important; color:#b91c1c !important; }
+  body.live-light .status-badge.time-neutral { background:#e5e7eb !important; color:#111827 !important; }
+
+  /* Soft fade animation (no overlay) */
+  @keyframes themeSoftFade {
+    from { opacity: 0.6; filter: blur(1px) saturate(0.8); }
+    to { opacity: 1; filter: blur(0) saturate(1); }
+  }
+
+  body.theme-softfade {
+    animation: themeSoftFade 0.45s ease;
+  }
+  
+  /* Sidebar - ใช้ theme color */
+  aside.app-sidebar {
+    background: var(--theme-bg-color) !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  aside.app-sidebar::-webkit-scrollbar { display: none; }
+  
+  /* ปรับสีตัวหนังสือตามความสว่างของพื้นหลัง */
+  <?php
+  // คำนวณความสว่างของสี
+  $hex = ltrim($themeColor, '#');
+  if (strlen($hex) === 6) {
+      $r = hexdec(substr($hex, 0, 2));
+      $g = hexdec(substr($hex, 2, 2));
+      $b = hexdec(substr($hex, 4, 2));
+      $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+      $isLight = $brightness > 155;
+  } else {
+      $isLight = false;
+  }
+  
+  if ($isLight): ?>
+  /* ===== LIGHT MODE - พื้นหลังสว่าง ===== */
+  
+  /* พื้นหลังทั้งหมดเป็นสีขาว */
+  html, body {
+    background: #ffffff !important;
+  }
+  
+  .app-shell,
+  .app-main,
+  .reports-page,
+  body.reports-page {
+    background: #ffffff !important;
+  }
+  
+  /* Sidebar สีขาว */
+  aside.app-sidebar {
+    background: #f9fafb !important;
+    border-right: 1px solid #e5e7eb !important;
+  }
+  
+  .sidebar-header {
+    background: #f9fafb !important;
+  }
+
+  /* Sidebar Close Button - Mobile */
+  .sidebar-close-btn {
+    display: none;
+  }
+  @media (max-width: 1024px) {
+    .sidebar-close-btn {
+      display: flex;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1001;
+      width: 36px;
+      height: 36px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sidebar-close-btn:hover {
+      background: rgba(0, 0, 0, 0.1);
+    }
+    .sidebar-close-btn svg {
+      stroke: #374151;
+    }
+  }
+  
+  .sidebar-footer {
+    background: #f9fafb !important;
+    border-top: 1px solid #e5e7eb !important;
+  }
+  
+  /* Sidebar Navigation - Light Mode */
+  .app-nav a,
+  details summary,
+  .subitem,
+  .app-nav-label,
+  .summary-label {
+    color: #374151 !important;
+  }
+
+  .app-nav a:hover,
+  details summary:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+  }
+
+  .app-nav a.active,
+  .app-nav a.subitem.active {
+    background: rgba(59, 130, 246, 0.1) !important;
+    border-left: 3px solid #3b82f6 !important;
+    color: #2563eb !important;
+  }
+
+  .app-nav-icon svg {
+    stroke: #6b7280 !important;
+  }
+
+  .app-nav a.active .app-nav-icon svg,
+  .app-nav a:hover .app-nav-icon svg {
+    stroke: #2563eb !important;
+  }
+
+  .chev {
+    color: #6b7280 !important;
+  }
+
+  .logout-btn {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #374151 !important;
+  }
+
+  .logout-btn:hover {
+    background: #f3f4f6 !important;
+  }
+
+  .logout-btn svg {
+    stroke: #374151 !important;
+  }
+
+  .sidebar-nav-area::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.15) !important;
+  }
+
+  .sidebar-nav-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.25) !important;
+  }
+
+  /* User section in footer - Light Mode */
+  .sidebar-footer .user-row,
+  .sidebar-footer .user-meta,
+  .sidebar-footer .user-meta .name,
+  .sidebar-footer .user-meta .email {
+    color: #374151 !important;
+  }
+
+  .sidebar-footer .avatar svg {
+    color: #6b7280 !important;
+  }
+
+  .sidebar-footer .avatar svg rect {
+    fill: #e5e7eb !important;
+  }
+
+  .sidebar-footer .avatar svg path {
+    fill: #6b7280 !important;
+  }
+  
+  /* ตัวหนังสือทั้งหมดเป็นสีดำ */
+  body, body *,
+  .app-main, .app-main *,
+  .reports-page, .reports-page *,
+  h1, h2, h3, h4, h5, h6, p, span, div, label, a,
+  .section-header h1,
+  .settings-card h3,
+  .settings-card label,
+  .settings-card small,
+  aside.app-sidebar,
+  aside.app-sidebar *,
+  nav a, .sidebar-nav a, details summary,
+  .team-meta .name, .team-meta .role,
+  .manage-panel *,
+  .settings-card * {
+    color: #111827 !important;
+  }
+  
+  /* ===== Exception: Color picker options - ไม่ force สี ===== */
+  .apple-color-option,
+  .apple-color-grid .apple-color-option {
+    background: inherit !important;
+  }
+  
+  /* Cards และ Panels สีขาว/เทาอ่อน */
+  .settings-card,
+  .manage-panel,
+  .card,
+  .panel {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  /* Stat Cards สีขาว */
+  .booking-stat-card,
+  .tenant-stat-card,
+  .expense-stat-card,
+  .news-stat-card,
+  .contract-stat-card,
+  .stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  }
+  
+  .booking-stat-card *,
+  .tenant-stat-card *,
+  .expense-stat-card *,
+  .news-stat-card *,
+  .contract-stat-card *,
+  .stat-card * {
+    color: #111827 !important;
+  }
+  
+  /* Form Elements สีขาว */
+  input[type="text"],
+  input[type="email"],
+  input[type="number"],
+  input[type="date"],
+  input[type="password"],
+  input[type="file"],
+  input[type="color"],
+  select,
+  textarea {
+    background: #ffffff !important;
+    border: 1px solid #d1d5db !important;
+    color: #111827 !important;
+  }
+  
+  input::placeholder,
+  textarea::placeholder {
+    color: #9ca3af !important;
+  }
+  
+  /* Buttons */
+  .quick-color,
+  button:not(.btn-save):not([type="submit"]) {
+    background: #f3f4f6 !important;
+    border: 1px solid #d1d5db !important;
+    color: #111827 !important;
+  }
+  
+  /* Sidebar Navigation */
+  nav a, 
+  .sidebar-nav a,
+  details summary {
+    color: #374151 !important;
+  }
+  
+  nav a:hover,
+  .sidebar-nav a:hover,
+  details summary:hover {
+    background: #f3f4f6 !important;
+    color: #111827 !important;
+  }
+  
+  nav a.active,
+  .sidebar-nav a.active {
+    background: #dbeafe !important;
+    color: #1e40af !important;
+  }
+  
+  /* Tables */
+  table {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  table thead {
+    background: #f9fafb !important;
+  }
+  
+  table thead th {
+    color: #111827 !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+  
+  table tbody tr {
+    background: #ffffff !important;
+    border-bottom: 1px solid #f3f4f6 !important;
+  }
+  
+  table tbody tr:hover {
+    background: #f9fafb !important;
+  }
+  
+  table tbody td {
+    color: #111827 !important;
+  }
+  
+  /* Header */
+  header {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+  
+  header h2,
+  header * {
+    color: #111827 !important;
+  }
+  
+  #sidebar-toggle {
+    color: #111827 !important;
+  }
+  
+  #sidebar-toggle svg {
+    stroke: #111827 !important;
+  }
+  
+  /* Modals */
+  .modal-content,
+  .booking-modal-content,
+  .confirm-modal {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #111827 !important;
+  }
+  
+  /* Logo Preview */
+  .logo-preview,
+  .preview-area {
+    background: #f9fafb !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  /* Team Avatar Section - User Icon */
+  .team-switcher,
+  aside.app-sidebar .team-switcher {
+    background: #ffffff !important;
+    border-bottom: 1px solid #e5e7eb !important;
+  }
+  
+  /* Simple avatar without border */
+  .team-avatar,
+  aside.app-sidebar .team-avatar,
+  .app-sidebar .team-avatar {
+    position: relative;
+    width: 120px !important;
+    height: 120px !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 auto !important;
+  }
+  
+  .team-avatar-img,
+  aside.app-sidebar .team-avatar-img,
+  .app-sidebar .team-avatar-img {
+    width: 120px !important;
+    height: 120px !important;
+    border-radius: 12px !important;
+    background: #ffffff !important;
+    border: 1px solid rgba(0,0,0,0.08) !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    object-fit: cover !important;
+  }
+  
+  .team-meta .name,
+  .team-meta .role {
+    color: #111827 !important;
+  }
+  
+  .team-info {
+    background: #ffffff !important;
+  }
+  
+  /* ปุ่มออกจากระบบ */
+  .logout-btn,
+  aside.app-sidebar .logout-btn,
+  .app-sidebar .logout-btn {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #111827 !important;
+  }
+  
+  .logout-btn:hover,
+  aside.app-sidebar .logout-btn:hover {
+    background: #f3f4f6 !important;
+    background-color: #f3f4f6 !important;
+    color: #111827 !important;
+  }
+  
+  .logout-btn .app-nav-icon,
+  .logout-btn .app-nav-label,
+  aside.app-sidebar .logout-btn .app-nav-icon,
+  aside.app-sidebar .logout-btn .app-nav-label {
+    color: #111827 !important;
+  }
+  
+  /* Dashboard Cards */
+  .dashboard-grid .card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  /* Color Preview */
+  .color-preview {
+    color: #111827 !important;
+    border: 1px solid #d1d5db !important;
+  }
+  
+  /* Expense Stats Cards */
+  .expense-stats,
+  .expense-stat-card,
+  .booking-stats,
+  .room-stats {
+    background: #ffffff !important;
+  }
+  
+  .expense-stat-card,
+  .booking-stat-card,
+  .room-stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  .expense-stat-card *,
+  .booking-stat-card *,
+  .room-stat-card * {
+    color: #111827 !important;
+  }
+  
+  /* Available Rooms Grid */
+  .available-rooms-grid,
+  .rooms-grid {
+    background: transparent !important;
+  }
+  
+  .room-card,
+  .available-room-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #111827 !important;
+  }
+  
+  .room-card *,
+  .available-room-card * {
+    color: #111827 !important;
+  }
+  
+  /* Room Stats */
+  .room-stats .stat-card {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  .room-stats .stat-value,
+  .room-stats h3,
+  .room-stats p {
+    color: #111827 !important;
+  }
+  
+  /* Dashboard Cards - เฉพาะเจาะจง */
+  body.reports-page .dashboard-grid,
+  body.reports-page .dashboard-grid > div,
+  body.reports-page .dashboard-grid .card,
+  body.reports-page .chart-container,
+  body.reports-page .stat-overview,
+  body.reports-page .overview-card,
+  body.reports-page section,
+  body.reports-page section > div {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+  }
+  
+  body.reports-page .dashboard-grid *,
+  body.reports-page .chart-container *,
+  body.reports-page .stat-overview *,
+  body.reports-page .overview-card *,
+  body.reports-page section *,
+  body.reports-page section h2,
+  body.reports-page section h3,
+  body.reports-page section h4,
+  body.reports-page section p,
+  body.reports-page section span {
+    color: #111827 !important;
+  }
+  
+  /* Chart Cards */
+  body.reports-page .chart-card,
+  body.reports-page canvas {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+  
+  /* Override gradient backgrounds */
+  body.reports-page [style*="background: linear-gradient"],
+  body.reports-page [style*="background:linear-gradient"],
+  body.reports-page div[style*="background"],
+  body.reports-page section[style*="background"] {
+    background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+  
+  <?php endif; ?>
+  
+  <?php if ($isLight): ?>
+  <script>
+  // Force override inline styles for Light Mode
+  document.addEventListener('DOMContentLoaded', function() {
+    const allElements = document.querySelectorAll('section, div, .dashboard-grid, .chart-container');
+    allElements.forEach(el => {
+      const style = el.getAttribute('style');
+      if (style && (style.includes('background') || style.includes('linear-gradient'))) {
+        el.style.setProperty('background', '#ffffff', 'important');
+        el.style.setProperty('background-color', '#ffffff', 'important');
+        el.style.setProperty('color', '#111827', 'important');
+      }
+    });
+  });
+  </script>
+  <?php endif; ?>
+  details summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    padding: 0.6rem 2.5rem 0.6rem 0.85rem !important;
+    margin: 0 !important;
+    transition: all 0.3s ease;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    width: 100%;
+    min-height: 2.25rem;
+  }
+  
+  /* ลิงก์ภายใน summary */
+  details summary .summary-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    text-decoration: none;
+    color: inherit;
+    padding: 0;
+    margin: 0;
+    flex: 1;
+  }
+  
+  details summary .summary-link:hover {
+    text-decoration: none;
+    opacity: 0.8;
+  }
+  
+  /* ข้อความธรรมดาใน summary */
+  details summary .summary-text {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+  }
+  
+  details summary .app-nav-icon {
+    width: 1.8rem;
+    height: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: all 0.3s ease;
+  }
+  
+  /* Override for dashboard and management icons - force perfect centering (only when sidebar is open) */
+  aside.app-sidebar:not(.collapsed) details summary .app-nav-icon {
+    width: 1.8rem !important;
+    height: 1.8rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    font-size: 1.1rem !important;
+    flex-shrink: 0 !important;
+  }
+  details summary .chev {
+    cursor: pointer;
+    padding: 0.5rem 0.65rem;
+    position: absolute;
+    right: 0.35rem;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2rem;
+    min-height: 2rem;
+  }
+  
+  details summary .summary-label {
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    flex: 1;
+  }
+  details[open] summary .chev {
+    transform: rotate(90deg);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease;
+  }
+  
+  summary .chev {
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.2s ease;
+  }
+  
+  /* Hide all dropdown items by default - completely invisible */
+  details > a {
+    display: none !important;
+    opacity: 0;
+    pointer-events: none;
+  }
+  
+  /* Show dropdown items only when details[open] */
+  details[open] > a {
+    display: block !important;
+    opacity: 1;
+    pointer-events: auto;
+    animation: slideDown 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    animation-fill-mode: both;
+  }
+  
+  /* Staggered animations for each dropdown item */
+  details[open] > a:nth-child(2) {
+    animation-delay: 0.05s;
+  }
+  
+  details[open] > a:nth-child(3) {
+    animation-delay: 0.1s;
+  }
+  
+  details[open] > a:nth-child(4) {
+    animation-delay: 0.15s;
+  }
+  
+  details[open] > a:nth-child(5) {
+    animation-delay: 0.2s;
+  }
+  
+  details[open] > a:nth-child(6) {
+    animation-delay: 0.25s;
+  }
+  
+  details[open] > a:nth-child(7) {
+    animation-delay: 0.3s;
+  }
+  
+  details[open] > a:nth-child(8) {
+    animation-delay: 0.35s;
+  }
+  
+  details[open] > a:nth-child(9) {
+    animation-delay: 0.4s;
+  }
+  
+  details[open] > a:nth-child(10) {
+    animation-delay: 0.45s;
+  }
+  
+  details[open] > a:nth-child(11) {
+    animation-delay: 0.5s;
+  }
+  
+  details[open] > a:nth-child(12) {
+    animation-delay: 0.55s;
+  }
+  
+  /* Animation keyframes for smooth slide-in */
+  @keyframes slideDown {
+    from {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  /* Animation keyframes for closing */
+  @keyframes slideUp {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+  }
+
+  /* Sidebar Close Button - Dark mode default */
+  .sidebar-close-btn {
+    display: none;
+  }
+  @media (max-width: 1024px) {
+    .sidebar-close-btn {
+      display: flex;
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1001;
+      width: 36px;
+      height: 36px;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255, 255, 255, 0.1);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .sidebar-close-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .sidebar-close-btn svg {
+      stroke: #e2e8f0;
+    }
+  }
+
+  /* Closing animation - hide items immediately */
+  details:not([open]) > a {
+    display: none !important;
+  }
+  .team-switcher {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem !important;
+    gap: 0.75rem;
+    transition: all 0.3s ease;
+  }
+  .team-avatar {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 !important;
+    overflow: hidden;
+    margin: 0 auto !important;
+    border-radius: 16px;
+    background: transparent;
+    box-shadow: none;
+    transition: width 0.3s ease, height 0.3s ease, opacity 0.3s ease;
+  }
+  .team-avatar-img {
+    width: 120px !important;
+    height: 120px !important;
+    border-radius: 12px;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.12);
+    object-fit: cover;
+    background: #ffffff;
+    border: 1px solid rgba(255,255,255,0.6);
+    transition: all 0.3s ease;
+  } 
+  .team-meta {
+    display: block;
+    text-align: center;
+    width: 100%;
+    padding: 0.75rem 0.5rem 0 0.5rem;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .team-meta .name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #e2e8f0;
+    line-height: 1.4;
+    margin-bottom: 0.25rem;
+    transition: all 0.3s ease;
+  }
+  .subitem {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.6rem 0.85rem;
+    margin: 0.1rem 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+  /* Ensure dark-mode nav text is visible */
+  .app-nav a,
+  details summary,
+  .subitem {
+    color: #e2e8f0;
+  }
+  /* Tighten nav vertical spacing */
+  aside.app-sidebar {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.25rem;
+    height: 100vh;
+    overflow: hidden;
+  }
+  /* Header: Logo & Name - Fixed at top */
+  .app-sidebar .sidebar-header {
+    flex-shrink: 0;
+    padding: 0.5rem;
+    text-align: center;
+  }
+  /* Navigation area should scroll if content is too long */
+  .app-sidebar .sidebar-nav-area {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0; /* Important for flex scroll */
+  }
+  /* Scrollbar styling for nav area */
+  .app-sidebar .sidebar-nav-area::-webkit-scrollbar {
+    width: 4px;
+  }
+  .app-sidebar .sidebar-nav-area::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .app-sidebar .sidebar-nav-area::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+  }
+  .app-sidebar .sidebar-nav-area::-webkit-scrollbar-thumb:hover {
+    background: rgba(255,255,255,0.3);
+  }
+  /* Footer stays at bottom, never scrolls */
+  .sidebar-footer {
+    flex-shrink: 0;
+    background: var(--theme-bg-color, #1e293b);
+    padding: 0.75rem 0.5rem;
+    border-top: 1px solid rgba(255,255,255,0.1);
+  }
+  .app-sidebar nav {
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .app-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    margin: 0 !important;
+    padding: 0 !important;
+    flex: 0 0 auto !important;
+    width: 100% !important;
+  }
+  .app-sidebar nav + nav {
+    margin-top: 0rem !important;
+  }
+  .app-nav .group {
+    gap: 0.1rem;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+  }
+  /* Dashboard button: tighter background around icon/text */
+  .app-nav .group:first-child .subitem {
+    padding: 0rem 0.6rem;
+    border-radius: 12px;
+    min-height: auto;
+  }
+  .app-nav .group:first-child .subitem .app-nav-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 12px;
+    justify-content: center;
+    align-items: center;
+  }
+  /* Center the gear (manage) and palette (system settings) icons */
+  a[href="system_settings.php"] .app-nav-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    margin: 0;
+    line-height: 1;
+    flex-shrink: 0;
+    text-align: center;
+    font-size: 1.25rem;
+  }
+  .subitem .app-nav-icon {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  /* Base link styling for main nav items */
+  .app-nav a {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.6rem 0.85rem;
+    margin: 0.1rem 0;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+  }
+  .group {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+  }
+  
+  /* Active menu item styles */
+  .app-nav a.active,
+  .app-nav a.subitem.active {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.1));
+    border-left: 3px solid #3b82f6;
+    color: #60a5fa;
+    font-weight: 600;
+  }
+  
+  .app-nav a.active .app-nav-icon,
+  .app-nav a.subitem.active .app-nav-icon {
+    transform: scale(1.1);
+  }
+  
+  /* Sidebar collapsed state - icon centered */
+  aside.sidebar-collapsed {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+  aside.sidebar-collapsed * {
+    text-align: center !important;
+  }
+  aside.sidebar-collapsed .team-switcher {
+    width: auto !important;
+      gap: 0.5rem !important;
+    padding: 0.5rem 0 !important;
+  }
+  aside.sidebar-collapsed .team-avatar {
+      width: 48px !important;
+      height: 48px !important;
+      padding: 0 !important;
+      margin: 0 auto !important;
+  }
+    aside.sidebar-collapsed .team-avatar-img {
+      width: 48px !important;
+      height: 48px !important;
+      object-fit: cover !important;
+    }
+  aside.sidebar-collapsed .team-meta {
+    display: none !important;
+  }
+  
+  /* Also apply to .app-sidebar.collapsed */
+  .app-sidebar.collapsed .team-switcher {
+    width: auto !important;
+      gap: 0.5rem !important;
+    padding: 0.5rem 0 !important;
+  }
+  .app-sidebar.collapsed .team-avatar {
+      width: 48px !important;
+      height: 48px !important;
+      padding: 0 !important;
+      margin: 0 auto !important;
+  }
+    .app-sidebar.collapsed .team-avatar-img {
+      width: 48px !important;
+      height: 48px !important;
+      object-fit: cover !important;
+    }
+  .app-sidebar.collapsed .team-meta {
+    display: none !important;
+  }
+  aside.sidebar-collapsed .group {
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+  aside.sidebar-collapsed details {
+    width: 100% !important;
+  }
+  
+  /* Make details 100% width */
+  details {
+    width: 100% !important;
+  }
+  aside.sidebar-collapsed .subitem {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 0.5rem 0 !important;
+    margin: 0 !important;
+    gap: 0 !important;
+  }
+  aside.sidebar-collapsed .subitem .app-nav-icon {
+    width: auto !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  aside.sidebar-collapsed .subitem .app-nav-icon {
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+  aside.sidebar-collapsed .subitem .app-nav-label {
+    display: none;
+  }
+  
+  /* Hide dropdown content when sidebar is collapsed */
+  aside.sidebar-collapsed details[open] > :not(summary) {
+    display: none !important;
+  }
+  
+  /* Hide all labels when sidebar is collapsed */
+  aside.sidebar-collapsed .app-nav-label,
+  aside.sidebar-collapsed .summary-label {
+    display: none !important;
+  }
+  
+  .app-sidebar.collapsed .app-nav-label,
+  .app-sidebar.collapsed .summary-label {
+    display: none !important;
+  }
+  
+  /* Show dropdown items as icon-only in vertical column when sidebar is collapsed */
+  aside.sidebar-collapsed details,
+  .app-sidebar.collapsed details {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    width: 100% !important;
+  }
+  
+  aside.sidebar-collapsed details > a,
+  .app-sidebar.collapsed details > a {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0.6rem 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    animation: none !important;
+  }
+  
+  aside.sidebar-collapsed details > a .app-nav-icon,
+  .app-sidebar.collapsed details > a .app-nav-icon {
+    width: 2rem !important;
+    height: 2rem !important;
+    font-size: 1.2rem !important;
+    margin: 0 !important;
+  }
+  
+  aside.sidebar-collapsed details > a .app-nav-label,
+  .app-sidebar.collapsed details > a .app-nav-label {
+    display: none !important;
+  }
+  
+  /* Reset summary styling when sidebar is collapsed */
+  aside.sidebar-collapsed details summary {
+    padding: 0.75rem 0 !important;
+    width: 100% !important;
+    display: block !important;
+    position: relative !important;
+    min-height: 3rem !important;
+  }
+  aside.sidebar-collapsed details summary .summary-link {
+    display: block !important;
+    width: 100% !important;
+    position: relative !important;
+    height: 2.5rem !important;
+  }
+  aside.sidebar-collapsed details summary .app-nav-icon {
+    width: 2.5rem !important;
+    height: 2.5rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    font-size: 1.5rem !important;
+  }
+  .app-sidebar.collapsed details summary {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    padding: 0.75rem 0.5rem !important;
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 0.5rem !important;
+    min-height: 3rem !important;
+  }
+  .app-sidebar.collapsed details summary .summary-link {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex: 1 !important;
+    height: auto !important;
+    position: static !important;
+  }
+  .app-sidebar.collapsed details summary .app-nav-icon {
+    width: 2rem !important;
+    height: 2rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    font-size: 1.2rem !important;
+  }
+  .app-sidebar.collapsed details summary .chev {
+    display: none !important;
+  }
+  
+  /* Mobile Responsive */
+  @media (max-width: 1024px) {
+    html, body {
+      width: 100%;
+      overflow-x: hidden;
+    }
+    
+    .app-shell {
+      flex-direction: row !important;
+      width: 100%;
+      overflow-x: hidden;
+    }
+    
+    /* Mobile: sidebar as fixed overlay with slide animation */
+    .app-sidebar {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      height: 100vh !important;
+      width: 260px !important;
+      z-index: 9999 !important;
+      background: #0b162a !important;
+      transform: translateX(-100%) !important;
+      transition: transform 0.35s ease !important;
+      will-change: transform;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.6) !important;
+      padding: 1.25rem 0.75rem !important;
+      overflow: hidden !important;
+      flex-shrink: 0 !important;
+      margin: 0 !important;
+      display: flex !important;
+      flex-direction: column !important;
+      visibility: hidden;
+    }
+
+    /* When sidebar is open - make it visible and slide in */
+    .app-sidebar.mobile-open,
+    body.sidebar-open .app-sidebar {
+      transform: translateX(0) !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+    }
+    
+    /* Mobile: header stays at top */
+    .app-sidebar .sidebar-header {
+      flex-shrink: 0 !important;
+      background: #0b162a !important;
+    }
+
+    /* Light mode mobile sidebar */
+    body.live-light .app-sidebar .sidebar-header,
+    html.light-theme .app-sidebar .sidebar-header {
+      background: #f9fafb !important;
+    }
+
+    body.live-light .app-sidebar .sidebar-footer,
+    html.light-theme .app-sidebar .sidebar-footer {
+      background: #f9fafb !important;
+    }
+
+    body.live-light .app-sidebar,
+    html.light-theme .app-sidebar {
+      background: #f9fafb !important;
+    }
+
+    body.live-light .app-sidebar.collapsed,
+    html.light-theme .app-sidebar.collapsed {
+      background: #f9fafb !important;
+    }
+    
+    /* Mobile: nav area scrolls, footer stays */
+    .app-sidebar .sidebar-nav-area {
+      flex: 1 !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      min-height: 0 !important;
+    }
+    
+    .app-sidebar .sidebar-footer {
+      flex-shrink: 0 !important;
+      position: relative !important;
+      background: #0b162a !important;
+    }
+    
+    /* Show team avatar/logo on mobile/tablet */
+    .team-switcher {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      width: 100% !important;
+      margin-bottom: 1rem !important;
+    }
+    
+    .team-avatar {
+      display: flex !important;
+        width: 120px !important;
+        height: 120px !important;
+        margin: 0 auto !important;
+    }
+    
+    .team-avatar-img {
+      display: block !important;
+        width: 120px !important;
+        height: 120px !important;
+        object-fit: cover !important;
+        border-radius: 12px !important;
+    }
+
+    .team-meta {
+      display: block !important;
+      text-align: center !important;
+      margin-top: 0.75rem !important;
+      width: 100% !important;
+    }
+
+    .team-meta .name {
+        font-size: 1rem !important;
+        font-weight: 700 !important;
+      color: #e2e8f0 !important;
+        line-height: 1.4 !important;
+    }
+    
+    /* When mobile-open class is applied, slide in from left */
+    /* Ensure all elements inside open sidebar are clickable */
+    .app-sidebar.mobile-open *,
+    body.sidebar-open .app-sidebar * {
+      pointer-events: auto !important;
+    }
+
+    .app-sidebar.mobile-open a,
+    .app-sidebar.mobile-open button,
+    .app-sidebar.mobile-open details,
+    .app-sidebar.mobile-open summary,
+    body.sidebar-open .app-sidebar a,
+    body.sidebar-open .app-sidebar button,
+    body.sidebar-open .app-sidebar details,
+    body.sidebar-open .app-sidebar summary {
+      pointer-events: auto !important;
+      cursor: pointer !important;
+    }
+    
+    /* Reset collapsed styles that might conflict */
+    .app-sidebar.collapsed {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      height: 100vh !important;
+      width: 260px !important;
+      z-index: 9999 !important;
+      background: #0b162a !important;
+      transform: translateX(-100%) !important;
+      transition: transform 0.35s ease !important;
+      visibility: hidden;
+      will-change: transform;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.6) !important;
+      padding: 1.25rem 0.75rem !important;
+      overflow: auto !important;
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 0.5rem !important;
+      margin: 0 !important;
+    }
+    
+    .app-sidebar.collapsed.mobile-open,
+    body.sidebar-open .app-sidebar.collapsed {
+      transform: translateX(0) !important;
+      visibility: visible !important;
+    }
+    
+    /* Content area takes remaining space */
+    .app-main {
+      margin: 0 !important;
+      width: 100vw !important;
+      height: auto !important;
+      position: relative;
+      z-index: 1 !important;
+      flex: 1 1 auto !important;
+      padding: 1rem !important;
+      transition: all 0.3s ease !important;
+      box-sizing: border-box !important;
+      overflow-x: hidden;
+    }
+    
+    /* Remove margins/padding that cause gaps */
+    .app-main section {
+      margin: 0 !important;
+      padding: 1.25rem !important;
+    }
+    
+    /* Header responsive */
+    .app-main header {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0.5rem !important;
+      box-sizing: border-box;
+    }
+    
+    .app-main header h2 {
+      font-size: 1rem !important;
+      margin: 0 !important;
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    /* Text wrapping to prevent overflow */
+    .app-main h1,
+    .app-main h2,
+    .app-main h3,
+    .app-main p,
+    .app-main .card,
+    .app-main .manage-panel,
+    .app-main .section-header,
+    .app-main .chart-card,
+    .app-main .small-card {
+      word-break: break-word;
+      overflow-wrap: break-word;
+      max-width: 100%;
+      margin: 0 !important;
+      padding-right: 0 !important;
+    }
+    
+    /* Global header styles */
+    header {
+      width: 100% !important;
+      margin: 0 !important;
+      padding: 0.5rem !important;
+      box-sizing: border-box;
+    }
+    
+    header h2 {
+      font-size: 1rem !important;
+      margin: 0 !important;
+    }
+    
+    /* Mobile overlay - dark background when sidebar open */
+    body.sidebar-open::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      z-index: 9998;
+      pointer-events: auto;
+    }
+
+    /* Hide hamburger button when sidebar is open on mobile */
+    body.sidebar-open #sidebar-toggle {
+      opacity: 0 !important;
+      pointer-events: none !important;
+      visibility: hidden !important;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .team-switcher {
+      padding: 0.25rem !important;
+    }
+    .subitem {
+      padding-left: 0.5rem;
+      font-size: 0.9rem;
+    }
+    details summary {
+      padding: 0.4rem 0.5rem !important;
+      font-size: 0.9rem;
+    }
+  }</style>
+<style>
+  /* Final overrides to ensure active filter/view icons and counts are white in light modes. */
+  body.live-light a.filter-btn[style*="#60a5fa"],
+  body.live-light a.filter-btn[style*="background: #60a5fa"],
+  body.live-light a.filter-btn[style*="background:#60a5fa"],
+  body.live-light a.filter-btn[style*="color:#fff"],
+  body.live-light .view-toggle-btn.active,
+  html.light-theme a.filter-btn[style*="#60a5fa"],
+  html.light-theme .view-toggle-btn.active,
+  html.live-light a.filter-btn[style*="#60a5fa"],
+  html.live-light .view-toggle-btn.active,
+  .live-light a.filter-btn[style*="#60a5fa"],
+  .live-light .view-toggle-btn.active {
+    color: #ffffff !important;
+  }
+
+  body.live-light a.filter-btn svg,
+  body.live-light a.filter-btn svg *,
+  body.live-light .view-toggle-btn.active svg,
+  body.live-light .view-toggle-btn.active svg *,
+  html.light-theme a.filter-btn svg,
+  html.light-theme a.filter-btn svg *,
+  html.light-theme .view-toggle-btn.active svg,
+  html.light-theme .view-toggle-btn.active svg *,
+  html.live-light a.filter-btn svg,
+  html.live-light a.filter-btn svg *,
+  html.live-light .view-toggle-btn.active svg,
+  html.live-light .view-toggle-btn.active svg *,
+  .live-light a.filter-btn svg,
+  .live-light a.filter-btn svg *,
+  .live-light .view-toggle-btn.active svg,
+  .live-light .view-toggle-btn.active svg * {
+    stroke: #ffffff !important;
+    color: #ffffff !important;
+    fill: #ffffff !important;
+  }
+
+  /* Also ensure any .filter-btn with inline background blue shows its child count white */
+  body.live-light a.filter-btn span,
+  body.live-light a.filter-btn b,
+  body.live-light a.filter-btn strong {
+    color: #ffffff !important;
+  }
+</style>
+<script>
+  // ====== Global Admin Font Scale Sync ======
+  // โหลด font scale จาก localStorage ทันทีก่อน DOM render
+  (function() {
+    const savedScale = localStorage.getItem('adminFontScale');
+    if (savedScale && !isNaN(parseFloat(savedScale))) {
+      document.documentElement.style.setProperty('--font-scale', savedScale);
+      document.documentElement.style.setProperty('--admin-font-scale', savedScale);
+    }
+    
+    // Listen สำหรับ font scale change จากหน้าอื่น (เช่น Settings)
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'adminFontScale' && e.newValue) {
+        document.documentElement.style.setProperty('--font-scale', e.newValue);
+        document.documentElement.style.setProperty('--admin-font-scale', e.newValue);
+      }
+    });
+  })();
+  
+  // Force reset collapsed on mobile IMMEDIATELY before CSS applies
+  if (window.innerWidth <= 1024) {
+     document.write('<style>.app-sidebar.collapsed { all: revert !important; width: 240px !important; } .app-sidebar.collapsed .app-nav-label, .app-sidebar.collapsed .summary-label, .app-sidebar.collapsed .chev { all: revert !important; } .app-sidebar.collapsed .team-avatar { width: 120px !important; height: 120px !important; padding: 0 !important; margin: 0 auto !important; } .app-sidebar.collapsed .team-avatar-img { width: 120px !important; height: 120px !important; object-fit: cover !important; } .app-sidebar.collapsed .team-meta { display: block !important; text-align: center !important; padding-top: 0.75rem !important; }</style>');
+  }
+</script>
+
+<!-- Persist admin default view mode for all pages -->
+<script>
+(function(){
+  try {
+    var mode = <?php echo json_encode(isset($defaultViewMode) ? $defaultViewMode : 'grid'); ?>;
+    if (mode !== 'grid' && mode !== 'list') { mode = 'grid'; }
+    localStorage.setItem('adminDefaultViewMode', mode);
+  } catch (e) {}
+})();
+</script>
+<aside class="app-sidebar">
+  <!-- Mobile Close Button -->
+  <button type="button" id="sidebar-close-btn" class="sidebar-close-btn" aria-label="ปิด Sidebar" onclick="closeSidebarMobile()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+  <!-- Header: Logo & Name - Fixed at top -->
+  <div class="sidebar-header">
+    <div class="team-avatar" >
+      <!-- Project logo from database -->
+      <img src="/Dormitory_Management/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="team-avatar-img"  />
+    </div>
+    <div class="team-meta">
+      <div class="name"><?php echo htmlspecialchars($siteName); ?></div>
+    </div>
+  </div>
+
+  <!-- Navigation area - Scrollable -->
+  <div class="sidebar-nav-area">
+  <nav class="app-nav" aria-label="Main navigation" >
+    <div class="group" >
+      <details id="nav-dashboard" open>
+        <summary>
+          <a href="dashboard.php" class="summary-link">
+            <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+            <span class="summary-label">แดชบอร์ด</span>
+          </a>
+          <span class="chev" style="font-size: 1.5rem;">›</span>
+        </summary>
+        <a class="" href="report_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label">รายงานผู้เช่า</span></a>
+        <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><span class="app-nav-label">รายงานการจอง</span></a>
+        <a class="" href="manage_stay.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="app-nav-label">รายงานการเข้าพัก</span></a>
+        <a class="" href="report_utility.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span><span class="app-nav-label" style="font-size: 0.8rem;">รายงานสาธารณูปโภค</span></a>
+        <a class="" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="app-nav-label">รายงานรายรับ</span></a>
+        <a class="" href="report_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span class="app-nav-label">รายงานห้องพัก</span></a>
+        <a class="" href="report_payments.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="app-nav-label">รายงานชำระเงิน</span></a>
+        <a class="" href="report_invoice.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span class="app-nav-label">รายงานใบแจ้ง</span></a>
+        <a class="" href="report_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">รายงานแจ้งซ่อม</span></a>
+        <a class="" href="report_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label">รายงานข่าวสาร</span></a>
+        <a class="" href="print_contract.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span><span class="app-nav-label">พิมพ์สัญญา</span></a>
+        <!-- Removed link to Public/booking_status.php per request -->
+      </details>
+    </div>
+  </nav>
+
+  <nav class="app-nav" aria-label="Reports navigation">
+    <div class="group">
+      <details id="nav-management" open>
+        <summary>
+          <a href="manage.php" class="summary-link">
+            <span class="app-nav-icon app-nav-icon--management" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+            <span class="summary-label">จัดการ</span>
+          </a>
+          <span class="chev chev-toggle" data-target="nav-management" style="cursor:pointer;font-size: 1.5rem;">›</span>
+        </summary>
+        <!-- manage_stay.php removed; link intentionally omitted -->
+        <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label">ผู้เช่า</span></a>
+        <a class="" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span></a>
+        <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span></a>
+        <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
+        <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span><span class="app-nav-label">ห้องพัก</span></a>
+        <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label">จัดการสัญญา</span></a>
+        <a class="" href="qr_codes.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg></span><span class="app-nav-label">QR Code ผู้เช่า</span></a>
+        <a class="" href="manage_expenses.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="app-nav-label">ค่าใช้จ่าย</span></a>
+        <a class="" href="manage_payments.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="app-nav-label">การชำระเงิน</span></a>
+        <a class="" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">แจ้งซ่อม</span></a>
+        <a class="" href="system_settings.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="app-nav-label">ตั้งค่าระบบ</span></a>
+      </details>
+    </div>
+  </nav>
+  </div><!-- end sidebar-nav-area -->
+
+  <div class="sidebar-footer">
+    <div class="user-row">
+      <div class="avatar">
+        <!-- user svg icon -->
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.06" />
+          <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
+          <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
+        </svg>
+      </div>
+      <div class="user-meta">
+        <div class="name"><?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?></div>
+        <div class="email"><?php echo htmlspecialchars($_SESSION['admin_username'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+      </div>
+    </div>
+    <div style="margin-top:0.6rem">
+      <form action="../logout.php" method="post" data-allow-submit>
+        <button type="submit" class="logout-btn" aria-label="Log out">
+          <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
+          <span class="app-nav-label">ออกจากระบบ</span>
+        </button>
+      </form>
+    </div>
+
+    <!-- Rail shown only when sidebar is collapsed: icon-only controls -->
+    <div class="sidebar-rail">
+      <div class="rail-user" title="<?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?>">
+        <span class="app-nav-icon" aria-hidden="true">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
+            <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
+          </svg>
+        </span>
+      </div>
+      <form action="../logout.php" method="post" class="rail-logout" data-allow-submit>
+        <button type="submit" class="app-nav-icon" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+      </form>
+    </div>
+  </div>
+</aside>
+
+<script>
+  // Fade-in animation on theme change/page load
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('theme-fade');
+    setTimeout(() => document.body.classList.remove('theme-fade'), 500);
+  });
+</script>
+<script>
+(function() {
+  const sidebar = document.querySelector('.app-sidebar');
+  
+  // Restore sidebar state on page load (desktop only)
+  // Note: Sidebar toggle handler is now managed by animate-ui.js
+  const savedState = localStorage.getItem('sidebarCollapsed');
+  if (savedState === 'true' && window.innerWidth > 1024) {
+    sidebar.classList.add('collapsed');
+    console.log('Sidebar state restored from localStorage');
+  }
+  
+  // Set active menu item based on current page
+  function setActiveMenu() {
+    const currentPage = window.location.pathname.split('/').pop();
+    const menuLinks = document.querySelectorAll('.app-nav a');
+    
+    menuLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (href && (href === currentPage || href.endsWith('/' + currentPage))) {
+        link.classList.add('active');
+      }
+    });
+  }
+  
+  // Run on page load
+  setActiveMenu();
+
+  // Ensure summary links navigate (แดชบอร์ด/จัดการ)
+  document.querySelectorAll('summary .summary-link').forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      e.stopPropagation(); // ป้องกันไม่ให้ toggle dropdown
+      // ให้ลิงก์ทำงานทันที
+      window.location.href = link.getAttribute('href');
+    });
+  });
+  
+  // Close sidebar when clicking overlay
+  const toggleBtn = document.getElementById('sidebar-toggle');
+  document.addEventListener('click', function(e) {
+      if (window.innerWidth <= 1024 && 
+        sidebar.classList.contains('mobile-open') && 
+        !sidebar.contains(e.target) &&
+        e.target !== toggleBtn) {
+      sidebar.classList.remove('mobile-open');
+      document.body.classList.remove('sidebar-open');
+    }
+  });
+  
+  // Handle window resize
+  window.addEventListener('resize', function() {
+    if (window.innerWidth > 1024) {
+      sidebar.classList.remove('mobile-open');
+      document.body.classList.remove('sidebar-open');
+    } else {
+      // On mobile, remove collapsed state
+      sidebar.classList.remove('collapsed');
+    }
+  });
+})();
+
+// Save and restore collapsible details state
+(function() {
+  let isInitializing = true;
+  
+  // Function to restore state - ทำงาน FORCE เพื่อ override ทุกอย่าง
+  function restoreDetailsState() {
+    document.querySelectorAll('details[id]').forEach(function(details) {
+      const id = details.id;
+      if (id) {
+        const key = 'sidebar_details_' + id;
+        const savedState = localStorage.getItem(key);
+        
+        // ใช้สถานะที่บันทึกไว้เสมอ ถ้ามี
+        if (savedState === 'closed') {
+          // ปิด dropdown - FORCE
+          details.removeAttribute('open');
+          details.open = false;
+        } else if (savedState === 'open') {
+          // เปิด dropdown - FORCE
+          details.setAttribute('open', '');
+          details.open = true;
+        }
+        // ถ้าไม่มีการบันทึก ใช้สถานะเริ่มต้นจาก HTML (ครั้งแรก)
+      }
+    });
+    
+    // หลังจาก restore เสร็จ ให้เริ่มบันทึกการเปลี่ยนแปลง
+    setTimeout(function() {
+      isInitializing = false;
+    }, 100);
+  }
+  
+  // Save collapsible state on toggle
+  document.addEventListener('toggle', function(e) {
+    if (e.target.tagName === 'DETAILS' && e.target.id && !isInitializing) {
+      const key = 'sidebar_details_' + e.target.id;
+      const newState = e.target.open ? 'open' : 'closed';
+      localStorage.setItem(key, newState);
+      console.log('💾 Saved:', key, '=', newState);
+    }
+  }, true);
+  
+  // Restore state when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(restoreDetailsState, 50);
+    });
+  } else {
+    // ทำงานทันทีและซ้ำอีกครั้งหลังจาก setActiveMenu ทำงานเสร็จ
+    restoreDetailsState();
+    setTimeout(restoreDetailsState, 50);
+    setTimeout(restoreDetailsState, 200);
+  }
+})();
+
+// Chevron toggle for dropdowns with animation (separate from link navigation)
+(function() {
+  document.addEventListener('click', function(e) {
+    const chev = e.target.closest('.chev, .chev-toggle');
+    if (!chev) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const details = chev.closest('details');
+    if (!details) return;
+
+    const isOpening = !details.open;
+    
+    if (isOpening) {
+      // Opening: set open then trigger animation
+      details.open = true;
+      
+      // Force reflow to trigger animation
+      void details.offsetHeight;
+      
+      const items = details.querySelectorAll(':scope > a');
+      items.forEach((item, index) => {
+        item.style.animation = 'none';
+        void item.offsetHeight;
+        item.style.animation = '';
+        item.style.animationDelay = (0.05 * (index + 1)) + 's';
+      });
+    } else {
+      // Closing: animate out then close
+      const items = details.querySelectorAll(':scope > a');
+      
+      items.forEach((item, index) => {
+        item.style.animation = 'slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards';
+        item.style.animationDelay = (0.03 * (items.length - index - 1)) + 's';
+      });
+      
+      // Close after animation completes
+      setTimeout(() => {
+        details.open = false;
+      }, 300 + (items.length * 30));
+    }
+
+    const key = 'sidebar_details_' + details.id;
+    localStorage.setItem(key, isOpening ? 'open' : 'closed');
+  });
+})();
+
+// Global sidebar toggle (ทำงานทุกหน้า)
+// รอจน DOM โหลดเสร็จก่อนหาปุ่ม (เพราะ page_header.php อาจโหลดทีหลัง sidebar.php)
+function initSidebarToggle() {
+  const sidebar = document.querySelector('.app-sidebar');
+  const toggleBtn = document.getElementById('sidebar-toggle');
+  
+  // ถ้ายังไม่มีปุ่ม รอสักครู่แล้วลองใหม่
+  if (!toggleBtn) {
+    setTimeout(initSidebarToggle, 50);
+    return;
+  }
+  
+  if (!sidebar) return;
+
+  // If animate-ui already set up sidebar toggle, skip binding duplicate handlers
+  if (window.__sidebarToggleHandled) {
+    console.debug('Sidebar toggle already handled by animate-ui; skipping legacy binding');
+    return;
+  }
+
+  // โหลดสถานะจาก localStorage (desktop เท่านั้น)
+  if (window.innerWidth > 1024 && localStorage.getItem('sidebarCollapsed') === 'true') {
+    sidebar.classList.add('collapsed');
+  }
+
+  toggleBtn.addEventListener('click', function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // If animate-ui has already handled toggle, skip this legacy handler
+    if (window.__sidebarToggleHandled) {
+      return;
+    }
+
+    if (window.innerWidth > 1024) {
+      sidebar.style.transition = 'none';
+      void sidebar.offsetHeight;
+      sidebar.style.transition = '';
+
+      sidebar.classList.toggle('collapsed');
+      localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+    } else {
+      sidebar.classList.toggle('mobile-open');
+      document.body.classList.toggle('sidebar-open');
+    }
+  });
+
+  // ปิด sidebar เมื่อคลิกนอก (mobile)
+  document.addEventListener('click', function(e) {
+    if (window.innerWidth <= 1024 && sidebar.classList.contains('mobile-open')) {
+      if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        sidebar.classList.remove('mobile-open');
+        document.body.classList.remove('sidebar-open');
+      }
+    }
+  });
+}
+
+// เริ่มต้นเมื่อ DOM พร้อมหรือถ้าพร้อมแล้ว
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initSidebarToggle);
+} else {
+  initSidebarToggle();
+}
+
+// Global function สำหรับปิด sidebar บนมือถือ (เรียกจากปุ่ม X)
+function closeSidebarMobile() {
+  const sidebar = document.querySelector('.app-sidebar');
+  if (sidebar) {
+    sidebar.classList.remove('mobile-open');
+    document.body.classList.remove('sidebar-open');
+  }
+}
+
+// ปิด sidebar ด้วย ESC key
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') {
+    closeSidebarMobile();
+  }
+});
+</script>

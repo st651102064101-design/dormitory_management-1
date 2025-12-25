@@ -1,0 +1,486 @@
+<?php
+declare(strict_types=1);
+session_start();
+
+if (empty($_SESSION['admin_username'])) {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => 'Unauthorized']);
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => 'Invalid request method']);
+    exit;
+}
+
+require_once __DIR__ . '/../ConnectDB.php';
+
+try {
+    $pdo = connectDB();
+
+    // สร้าง table ถ้ายังไม่มี
+    $pdo->exec("CREATE TABLE IF NOT EXISTS system_settings (
+        id INT PRIMARY KEY AUTO_INCREMENT,
+        setting_key VARCHAR(100) UNIQUE NOT NULL,
+        setting_value LONGTEXT,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    )");
+
+    // โหลดรูปเก่า
+    if (!empty($_POST['load_old_logo'])) {
+        $oldLogoFile = trim($_POST['load_old_logo']);
+        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $oldLogoPath = $uploadsDir . $oldLogoFile;
+
+        // ตรวจสอบความปลอดภัย - ตรวจสอบว่าไฟล์อยู่ในโฟลเดอร์ที่ถูกต้อง
+        if (!file_exists($oldLogoPath) || realpath($oldLogoPath) === false) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบไฟล์รูป']);
+            exit;
+        }
+
+        // ตรวจสอบว่าเป็นไฟล์ในระบบ
+        $realPath = realpath($oldLogoPath);
+        $realUploadDir = realpath($uploadsDir);
+        if (strpos($realPath, $realUploadDir) !== 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไฟล์ไม่ถูกต้อง']);
+            exit;
+        }
+
+        // ตรวจสอบนามสกุลไฟล์
+        $ext = strtolower(pathinfo($oldLogoFile, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG และ PNG']);
+            exit;
+        }
+
+        // คัดลอกไฟล์เก่ามาเป็น Logo.jpg
+        $newLogoFile = 'Logo.' . $ext;
+        $newLogoPath = $uploadsDir . $newLogoFile;
+
+        // หากไฟล์เดิมคือไฟล์ปัจจุบันอยู่แล้ว ให้ถือว่าสำเร็จทันที
+        if (realpath($oldLogoPath) === realpath($newLogoPath)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['logo_filename', $newLogoFile, $newLogoFile]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'โหลดรูปเก่าสำเร็จ']);
+            exit;
+        }
+
+        if (copy($oldLogoPath, $newLogoPath)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['logo_filename', $newLogoFile, $newLogoFile]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'โหลดรูปเก่าสำเร็จ']);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถโหลดรูป']);
+            exit;
+        }
+    }
+
+    // ลบรูปเก่า
+    if (!empty($_POST['delete_old_logo'])) {
+        $oldLogoFile = trim($_POST['delete_old_logo']);
+        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $oldLogoPath = $uploadsDir . $oldLogoFile;
+
+        // ตรวจสอบความปลอดภัย
+        if (!file_exists($oldLogoPath) || realpath($oldLogoPath) === false) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบไฟล์รูป']);
+            exit;
+        }
+
+        $realPath = realpath($oldLogoPath);
+        $realUploadDir = realpath($uploadsDir);
+        if (strpos($realPath, $realUploadDir) !== 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไฟล์ไม่ถูกต้อง']);
+            exit;
+        }
+
+        // ตรวจสอบนามสกุลไฟล์
+        $ext = strtolower(pathinfo($oldLogoFile, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG และ PNG']);
+            exit;
+        }
+
+        // ตรวจสอบว่ารูปที่จะลบกำลังถูกใช้อยู่
+        $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'logo_filename'");
+        $stmt->execute();
+        $currentLogo = $stmt->fetchColumn();
+
+        if ($currentLogo === $oldLogoFile) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบรูปได้ เพราะกำลังใช้อยู่ในระบบ']);
+            exit;
+        }
+
+        // ลบไฟล์
+        if (unlink($oldLogoPath)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'ลบรูปเก่าสำเร็จ']);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบรูป']);
+            exit;
+        }
+    }
+
+    // จัดการ Logo Upload
+    if (!empty($_FILES['logo'])) {
+        $file = $_FILES['logo'];
+        $allowedTypes = ['image/jpeg', 'image/png'];
+        $maxSize = 5 * 1024 * 1024; // 5MB
+
+        if (!in_array($file['type'], $allowedTypes)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG และ PNG']);
+            exit;
+        }
+
+        if ($file['size'] > $maxSize) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ขนาดไฟล์ไม่ควรเกิน 5MB']);
+            exit;
+        }
+
+        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        if (!is_dir($uploadsDir)) {
+            mkdir($uploadsDir, 0755, true);
+        }
+
+        // เก็บสำรองโลโก้เดิม (ถ้ามี) โดยไม่ลบ จนกว่าจะเกิน 10 ไฟล์
+        $existingLogo = null;
+        foreach (['jpg', 'jpeg', 'png'] as $extCheck) {
+            $candidate = $uploadsDir . 'Logo.' . $extCheck;
+            if (file_exists($candidate)) {
+                $existingLogo = $candidate;
+                break;
+            }
+        }
+
+        if ($existingLogo) {
+            $backupName = 'Logo_backup_' . date('Ymd_His') . '.' . pathinfo($existingLogo, PATHINFO_EXTENSION);
+            @copy($existingLogo, $uploadsDir . $backupName);
+        }
+
+        $filename = 'Logo.' . pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filepath = $uploadsDir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            // จำกัดไฟล์ logo ให้เหลือ 10 ไฟล์ล่าสุด
+            $logoFiles = [];
+            $dirItems = scandir($uploadsDir);
+            foreach ($dirItems as $item) {
+                if ($item === '.' || $item === '..') continue;
+                $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
+                if (!in_array($ext, ['jpg','jpeg','png'])) continue;
+                if (stripos($item, 'logo') !== false) {
+                    $logoFiles[] = $item;
+                }
+            }
+
+            // เรียงไฟล์ตามเวลาแก้ไข (ใหม่สุดอยู่ท้าย)
+            usort($logoFiles, function($a, $b) use ($uploadsDir) {
+                return filemtime($uploadsDir . $a) <=> filemtime($uploadsDir . $b);
+            });
+
+            $deleted = [];
+            while (count($logoFiles) > 10) {
+                $old = array_shift($logoFiles);
+                @unlink($uploadsDir . $old);
+                $deleted[] = $old;
+            }
+
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['logo_filename', $filename, $filename]);
+
+            header('Content-Type: application/json');
+            $msg = 'บันทึก Logo สำเร็จ';
+            if (!empty($deleted)) {
+                $msg .= ' | ลบรูปเก่าอัตโนมัติ ' . count($deleted) . ' ไฟล์';
+            }
+            echo json_encode(['success' => true, 'message' => $msg, 'filename' => $filename]);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัพโหลดไฟล์']);
+            exit;
+        }
+    }
+
+    // จัดการ Site Name
+    if (!empty($_POST['site_name'])) {
+        $siteName = trim($_POST['site_name']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['site_name', $siteName, $siteName]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกชื่อสำเร็จ', 'site_name' => $siteName]);
+        exit;
+    }
+
+    // จัดการ Theme Color
+    if (!empty($_POST['theme_color'])) {
+        $color = trim($_POST['theme_color']);
+        // Validate hex color
+        if (!preg_match('/^#[0-9A-F]{6}$/i', $color)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รูปแบบสีไม่ถูกต้อง']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['theme_color', $color, $color]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกสีสำเร็จ']);
+        exit;
+    }
+
+    // จัดการ Font Size
+    if (!empty($_POST['font_size'])) {
+        $fontSize = trim($_POST['font_size']);
+        $allowedSizes = ['0.9', '1', '1.1', '1.25'];
+        
+        if (!in_array($fontSize, $allowedSizes)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ขนาดข้อความไม่ถูกต้อง']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['font_size', $fontSize, $fontSize]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกขนาดข้อความสำเร็จ']);
+        exit;
+    }
+
+    // จัดการ Default View Mode (grid/list)
+    if (!empty($_POST['default_view_mode'])) {
+        $viewMode = trim($_POST['default_view_mode']);
+        $allowedModes = ['grid', 'list'];
+        
+        if (!in_array($viewMode, $allowedModes)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รูปแบบการแสดงผลไม่ถูกต้อง']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['default_view_mode', $viewMode, $viewMode]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกรูปแบบการแสดงผลสำเร็จ']);
+        exit;
+    }
+
+    // จัดการ FPS Threshold
+    if (!empty($_POST['fps_threshold'])) {
+        $fpsThreshold = trim($_POST['fps_threshold']);
+        $allowedFps = ['30', '45', '60', '90', '120', '180', '240', '300'];
+        
+        if (!in_array($fpsThreshold, $allowedFps)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ค่า FPS ไม่ถูกต้อง']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['fps_threshold', $fpsThreshold, $fpsThreshold]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกค่า FPS สำเร็จ']);
+        exit;
+    }
+
+    // จัดการ Background Filename (เลือกจาก dropdown)
+    if (!empty($_POST['bg_filename'])) {
+        $bgFilename = trim($_POST['bg_filename']);
+        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        $bgPath = $uploadsDir . $bgFilename;
+
+        // ตรวจสอบว่าไฟล์มีอยู่จริง
+        if (!file_exists($bgPath)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบไฟล์รูป']);
+            exit;
+        }
+
+        // ตรวจสอบนามสกุลไฟล์
+        $ext = strtolower(pathinfo($bgFilename, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG, PNG และ WebP']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['bg_filename', $bgFilename, $bgFilename]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกภาพพื้นหลังสำเร็จ', 'filename' => $bgFilename]);
+        exit;
+    }
+
+    // จัดการ Background Upload
+    if (!empty($_FILES['bg'])) {
+        $file = $_FILES['bg'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+        $maxSize = 10 * 1024 * 1024; // 10MB
+
+        if (!in_array($file['type'], $allowedTypes)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG, PNG และ WebP']);
+            exit;
+        }
+
+        if ($file['size'] > $maxSize) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ขนาดไฟล์ไม่ควรเกิน 10MB']);
+            exit;
+        }
+
+        $uploadsDir = __DIR__ . '/../Assets/Images/';
+        if (!is_dir($uploadsDir)) {
+            mkdir($uploadsDir, 0755, true);
+        }
+
+        // สร้างชื่อไฟล์ใหม่
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'bg_' . date('Ymd_His') . '.' . $ext;
+        $filepath = $uploadsDir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['bg_filename', $filename, $filename]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'อัพโหลดภาพพื้นหลังสำเร็จ', 'filename' => $filename]);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัพโหลดไฟล์']);
+            exit;
+        }
+    }
+
+    // บันทึกเบอร์โทร
+    if (!empty($_POST['contact_phone'])) {
+        $phone = trim($_POST['contact_phone']);
+        // ตรวจสอบความถูกต้องของเบอร์โทร
+        if (preg_match('/^[0-9\-\+\s()]{8,20}$/', $phone)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['contact_phone', $phone, $phone]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'บันทึกเบอร์โทรสำเร็จ']);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รูปแบบเบอร์โทรไม่ถูกต้อง']);
+            exit;
+        }
+    }
+
+    // บันทึกอีเมล
+    if (!empty($_POST['contact_email'])) {
+        $email = trim($_POST['contact_email']);
+        // ตรวจสอบความถูกต้องของอีเมล
+        if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['contact_email', $email, $email]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'บันทึกอีเมลสำเร็จ']);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รูปแบบอีเมลไม่ถูกต้อง']);
+            exit;
+        }
+    }
+
+    // จัดการ Use Background Image Toggle
+    if (isset($_POST['use_bg_image'])) {
+        $useBgImage = trim($_POST['use_bg_image']);
+        
+        if (!in_array($useBgImage, ['0', '1'])) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ค่าไม่ถูกต้อง']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['use_bg_image', $useBgImage, $useBgImage]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกการตั้งค่ารูปพื้นหลังสำเร็จ']);
+        exit;
+    }
+
+    // บันทึกชื่อธนาคาร
+    if (isset($_POST['bank_name'])) {
+        $bankName = trim($_POST['bank_name']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['bank_name', $bankName, $bankName]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกชื่อธนาคารสำเร็จ']);
+        exit;
+    }
+
+    // บันทึกชื่อบัญชี
+    if (isset($_POST['bank_account_name'])) {
+        $bankAccountName = trim($_POST['bank_account_name']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['bank_account_name', $bankAccountName, $bankAccountName]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกชื่อบัญชีสำเร็จ']);
+        exit;
+    }
+
+    // บันทึกเลขบัญชี
+    if (isset($_POST['bank_account_number'])) {
+        $bankAccountNumber = trim($_POST['bank_account_number']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['bank_account_number', $bankAccountNumber, $bankAccountNumber]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกเลขบัญชีสำเร็จ']);
+        exit;
+    }
+
+    // บันทึกพร้อมเพย์
+    if (isset($_POST['promptpay_number'])) {
+        $promptpayNumber = trim($_POST['promptpay_number']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['promptpay_number', $promptpayNumber, $promptpayNumber]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกพร้อมเพย์สำเร็จ']);
+        exit;
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => 'ไม่มีข้อมูลที่จะบันทึก']);
+    exit;
+
+} catch (Exception $e) {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => 'เกิดข้อผิดพลาด: ' . $e->getMessage()]);
+    exit;
+}

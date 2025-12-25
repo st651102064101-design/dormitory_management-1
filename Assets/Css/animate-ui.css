@@ -1,0 +1,1013 @@
+@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
+
+:root {
+    color-scheme: dark light;
+    font-family: 'Prompt', system-ui, sans-serif;
+}
+
+/* Make sizing include padding/border so width:100% doesn't overflow */
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
+.animate-ui-root {
+    min-height: 100vh;
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: radial-gradient(circle at top, #1c2541, #0b0c10 60%);
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Compact table: reduce wide tables by hiding optional columns */
+.table--compact {
+    width: 100%;
+    border-collapse: collapse;
+}
+.table--compact th,
+.table--compact td {
+    padding: 0.5rem 0.75rem;
+}
+/* Hide columns after 5th by default */
+.table--compact th:nth-child(n+6),
+.table--compact td:nth-child(n+6) {
+    display: none;
+}
+/* Expanded state shows all */
+.table--compact.table--expanded th,
+.table--compact.table--expanded td {
+    display: table-cell;
+}
+/* Optional helper to visually indicate overflow handled */
+.table-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.manage-toolbar {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+ .section-header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+}
+
+.crud-column {
+    display: table-cell !important;
+    text-align: right;
+    vertical-align: middle;
+}
+.crud-action {
+    display: inline-flex !important;
+    margin-left: auto;
+}
+.manage-visible .crud-column {
+    /* kept for compatibility with older code that may toggle the class */
+    display: table-cell;
+}
+.manage-visible .crud-action {
+    display: inline-flex;
+}
+
+body::-webkit-scrollbar,
+.app-main::-webkit-scrollbar {
+    display: none;
+}
+
+body {
+    -ms-overflow-style: none;
+}
+
+@supports (scrollbar-width: none) {
+    body { scrollbar-width: none; }
+}
+
+.animate-ui-card {
+    width: min(420px, 90vw);
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45);
+    background: linear-gradient(135deg, #1f7a8c, #0b1d51);
+    color: #f5f8ff;
+    text-align: center;
+}
+
+/* Wide card for reports and dashboards */
+.animate-ui-card--wide {
+    max-width: 100%;
+    padding: 1.25rem 1rem;
+}
+
+/* Responsive table wrapper for reports */
+.report-table {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.report-table table {
+    min-width: 820px;
+    width: 100%;
+    border-collapse: collapse;
+}
+.report-table th, .report-table td {
+    padding: 0.6rem 0.5rem;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+     text-align: left; /* Added new rule for text alignment */
+     vertical-align: middle; /* Added new rule for vertical alignment */
+}
+
+.animate-ui-card h1 {
+    margin-bottom: 0.75rem;
+    font-size: clamp(1.8rem, 4vw, 2.4rem);
+}
+.animate-ui-add-btn {
+    border: none;
+    background: linear-gradient(135deg, #34d399, #059669);
+    color: #fff;
+    border-radius: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.875rem;
+    height: 2.5rem;
+    transition: transform 150ms ease, box-shadow 150ms ease;
+}
+.animate-ui-add-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.3);
+}
+.animate-ui-add-btn:active {
+    transform: scale(0.98);
+}
+.animate-ui-action-btn {
+    border: 0;
+    border-radius: 0.8rem;
+    padding: 0.7rem 1.4rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    height: 2.5rem;
+    transition: all 150ms ease;
+    box-shadow: none;
+}
+.animate-ui-action-btn:hover {
+    transform: scale(1.02);
+}
+.animate-ui-action-btn:active {
+    transform: scale(0.98);
+}
+.animate-ui-action-btn.edit { 
+    background: #007AFF;
+    color: #fff;
+}
+.animate-ui-action-btn.edit:hover {
+    background: #0A66DB;
+    opacity: 0.9;
+}
+.animate-ui-action-btn.delete { 
+    background: #FF3B30;
+    color: #fff;
+}
+.animate-ui-action-btn.delete:hover {
+    background: #E63D32;
+    opacity: 0.9;
+}
+/* Success button (Green) */
+.animate-ui-action-btn.btn-success {
+    background: #34C759 !important;
+    color: #fff;
+}
+.animate-ui-action-btn.btn-success:hover {
+    background: #31A74F !important;
+    opacity: 0.9;
+}
+.animate-ui-action-btn.btn-success:active {
+    opacity: 0.8;
+}
+/* Cancel button (Orange) */
+.animate-ui-action-btn.btn-cancel {
+    background: #FF9500 !important;
+    color: #fff;
+}
+.animate-ui-action-btn.btn-cancel:hover {
+    background: #E68600 !important;
+    opacity: 0.9;
+}
+.animate-ui-action-btn.btn-cancel:active {
+    opacity: 0.8;
+}
+.animate-ui-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1300;
+}
+.animate-ui-modal {
+    background: radial-gradient(circle at top, #1c2541, #0b0c10 60%);
+    border-radius: 1rem;
+    max-width: 480px;
+    width: min(90vw, 480px);
+    padding: 1.5rem;
+    box-shadow: 0 25px 60px rgba(15, 23, 42, 0.55);
+}
+.animate-ui-modal h3 {
+    margin: 0 0 0.6rem 0;
+    font-size: 1.4rem;
+}
+.animate-ui-modal form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.animate-ui-modal label {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+.animate-ui-modal input,
+.animate-ui-modal textarea,
+.animate-ui-modal select {
+    border-radius: 0.65rem;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: rgba(15, 23, 42, 0.65);
+    color: #f5f5f5;
+    padding: 0.55rem 0.75rem;
+    font-size: 1rem;
+}
+.animate-ui-modal button[type="submit"] {
+    border: none;
+    border-radius: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #60a5fa, #2563eb);
+    color: #fff;
+    cursor: pointer;
+}
+.animate-ui-cancel-btn {
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 0.75rem;
+    padding: 0.65rem 1.25rem;
+    font-weight: 700;
+    background: rgba(248, 113, 113, 0.15);
+    color: #fecaca;
+    cursor: pointer;
+}
+.animate-ui-cancel-btn:hover {
+    background: rgba(248, 113, 113, 0.25);
+}
+.animate-ui-modal-close {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 1.1rem;
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    cursor: pointer;
+}
+
+.animate-ui-card p {
+    margin-bottom: 1rem;
+    line-height: 1.5;
+    color: rgba(245, 248, 255, 0.85);
+}
+
+.animate-ui-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    margin-top: 1rem;
+}
+
+.animate-ui-input {
+    width: 100%;
+    display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    padding: 0.85rem 1.25rem;
+    border-radius: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(15, 24, 52, 0.6);
+    color: #f5f8ff;
+    font-size: 1rem;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.animate-ui-input:focus {
+    border-color: #9ef3ff;
+    box-shadow: 0 0 0 3px rgba(158, 243, 255, 0.25);
+    outline: none;
+}
+
+.animate-ui-submit {
+    padding: 0.9rem 1.4rem;
+    border-radius: 999px;
+    border: none;
+    font-weight: 700;
+    background: linear-gradient(135deg, #ffd166, #f97316);
+    color: #0b0c10;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.animate-ui-submit:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 15px 35px rgba(249, 115, 22, 0.35);
+}
+
+.animate-ui-note {
+    font-size: 0.9rem;
+    color: rgba(245, 248, 255, 0.65);
+}
+
+.animate-ui-image {
+    transition: transform 0.2s ease, box-shadow 150ms ease;
+    width: 64px;
+    height: 64px;
+    display: inline-block;
+    border-radius: 0.5rem; /* rounded corners for thumbnails */
+    object-fit: cover;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(2,6,23,0.45);
+}
+
+.animate-ui-image:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 28px rgba(2,6,23,0.55);
+}
+
+/* Circular variant */
+.animate-ui-image--circle {
+    border-radius: 9999px;
+}
+
+/* Smaller thumbnail variant */
+.animate-ui-image--sm {
+    width: 40px;
+    height: 40px;
+}
+
+@keyframes bounce {
+    0% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-14px) rotate(-1deg);
+    }
+    100% {
+        transform: translateY(0) rotate(0);
+    }
+}
+
+/* Toast / Alert */
+.animate-ui-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translateX(-50%);
+    background: linear-gradient(90deg, #ffd166, #f97316);
+    color: #07122b;
+    padding: 0.8rem 1.25rem;
+    border-radius: 999px;
+    box-shadow: 0 10px 30px rgba(8, 16, 32, 0.45);
+    font-weight: 700;
+    z-index: 1200;
+    opacity: 0;
+    pointer-events: auto;
+    animation: toastIn 260ms ease forwards;
+}
+
+@keyframes toastIn {
+    from { transform: translateX(-50%) translateY(10px); opacity: 0; }
+    to   { transform: translateX(-50%) translateY(0); opacity: 1; }
+}
+
+@keyframes toastOut {
+    from { opacity: 1; transform: translateX(-50%) translateY(0); }
+    to { opacity: 0; transform: translateX(-50%) translateY(10px); }
+}
+
+/* Dashboard / Sidebar layout */
+.app-shell {
+    min-height: 100vh;
+    display: flex;
+    background: radial-gradient(circle at top, #0b1020, #06060a 60%);
+}
+.app-shell,
+.app-main,
+.app-sidebar {
+    height: 100vh;
+}
+.app-sidebar {
+    width: 220px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background: linear-gradient(180deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));
+    padding: 1.25rem 0.75rem;
+    box-shadow: 4px 0 24px rgba(0,0,0,0.6);
+    gap: 0.5rem;
+    transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, transform 500ms cubic-bezier(0.4, 0, 0.2, 1) 0ms !important;
+    overflow-x: hidden;
+    position: relative;
+    will-change: width;
+}
+.app-nav a .app-nav-icon {
+    width: 1.9rem;
+    height: 1.9rem;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.08);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 0.5rem;
+    font-size: 0.95rem;
+    transition: margin 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                width 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.app-nav summary .app-nav-icon,
+.app-nav .group > details summary .app-nav-icon { /* icon in the summary (Reports) */
+    width: 2.8rem;
+    height: 2.8rem;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 0;
+    margin-right: 0;
+    font-size: 1.1rem;
+    transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                margin 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.app-nav a .app-nav-label { 
+    min-width:0;
+    flex: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                width 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+    transform-origin: left;
+    white-space: nowrap;
+    will-change: opacity, transform;
+    text-decoration: none !important;
+}
+    width: auto;
+}
+.app-sidebar.collapsed .app-nav-label {
+    opacity: 0;
+    transform: translateX(-20px) scaleX(0);
+    pointer-events: none;
+    width: 0;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed {
+    width: 72px;
+    transition: width 500ms cubic-bezier(0.4, 0, 0.2, 1) 0ms !important;
+}
+.app-sidebar.collapsed .team-meta,
+.app-sidebar.collapsed .plan,
+.app-sidebar.collapsed .team-meta .plan {
+    opacity: 0;
+    transform: translateX(-20px) scaleX(0);
+    pointer-events: none;
+    width: 0;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed .team-avatar,
+.app-sidebar.collapsed .avatar { margin: 0 auto }
+.app-sidebar.collapsed summary { 
+    justify-content: center;
+    transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.app-sidebar.collapsed .chev { 
+    opacity: 0;
+    transform: scale(0) rotate(90deg);
+    pointer-events: none;
+    transition: transform 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                opacity 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed .subitem {
+    justify-content: center;
+    padding-left: 0.35rem;
+    padding-right: 0.35rem;
+    width: 100%;
+    opacity: 1;
+    transform: translateX(0);
+    transition: padding-left 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                padding-right 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed .app-nav-icon {
+    margin-right: 0;
+    transition: margin-right 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                margin-left 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                height 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed .summary-label {
+    opacity: 0;
+    transform: translateX(-20px) scaleX(0);
+    pointer-events: none;
+    width: 0;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed .team-meta .name,
+.app-sidebar.collapsed .team-meta .plan {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+
+/* IMPORTANT: On mobile, never apply collapsed styles */
+@media (max-width: 1024px) {
+    .app-sidebar.collapsed {
+        width: 240px !important;
+    }
+    .app-sidebar.collapsed .app-nav-label,
+    .app-sidebar.collapsed .team-meta,
+    .app-sidebar.collapsed .plan,
+    .app-sidebar.collapsed .summary-label {
+        display: revert !important;
+    }
+    .app-sidebar.collapsed .chev {
+        display: revert !important;
+    }
+    .app-sidebar.collapsed .subitem {
+        justify-content: flex-start !important;
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+    }
+    .app-sidebar.collapsed .app-nav-icon {
+        margin-right: 0.5rem !important;
+    }
+    .app-sidebar.collapsed .sidebar-footer .user-row,
+    .app-sidebar.collapsed .sidebar-footer .logout-btn {
+        display: flex !important;
+    }
+    .app-sidebar.collapsed .sidebar-footer .sidebar-rail {
+        display: none !important;
+    }
+}
+
+
+.app-sidebar .team-switcher {
+    display:flex;align-items:center;gap:0.6rem;padding:0.5rem 0.75rem;border-radius:0.6rem;
+    background: linear-gradient(90deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    transition: all 500ms cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+}
+.team-avatar { 
+    width:36px;height:36px;border-radius:8px;background:rgba(255,255,255,0.04);
+    display:flex;align-items:center;justify-content:center;font-weight:700;
+    transition: width 350ms cubic-bezier(0.4, 0, 0.2, 1), 
+                height 350ms cubic-bezier(0.4, 0, 0.2, 1), 
+                margin 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.team-meta {
+    display:flex;flex-direction:column;min-width:0;
+    flex: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                width 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+    transform-origin: left;
+    overflow: hidden;
+    will-change: opacity, transform;
+    width: auto;
+}
+.team-meta .name {
+    font-weight:700;font-size:0.95rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    will-change: opacity, transform;
+}
+.team-meta .plan {
+    font-size:0.8rem;color:rgba(255,255,255,0.65);
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms;
+    will-change: opacity, transform;
+}
+.app-sidebar .brand {
+    color: #fff;
+    font-weight: 800;
+    font-size: 1.1rem;
+    padding: 0.5rem 0.75rem;
+}
+.app-nav {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    /* allow nav to grow and scroll if needed so footer stays pinned */
+    flex: 1 1 auto;
+    overflow: visible;
+}
+.app-nav a {
+    color: rgba(255,255,255,0.85);
+    text-decoration: none !important;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.5rem;
+    font-weight: 600;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.5rem;
+    align-items: flex-start;
+    transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+    border: none !important;
+    outline: none !important;
+}
+.app-nav a .app-nav-icon {
+    transition: margin 350ms cubic-bezier(0.4, 0, 0.2, 1), 
+                transform 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.app-nav .group {
+    margin-top:0.6rem;padding-top:0.3rem;border-top:1px solid rgba(255,255,255,0.02)
+}
+.app-nav details {
+    border-radius:0.5rem;overflow:hidden
+}
+.app-nav summary {
+    list-style:none;cursor:pointer;display:flex;align-items:center;gap:0.4rem;padding:0.55rem 0.75rem;color:rgba(255,255,255,0.9);font-weight:700;border-radius:0.5rem;justify-content:flex-start;
+    transition: all 350ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+.app-nav summary::-webkit-details-marker{display:none}
+.app-nav summary .chev {
+    transition: transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    transform-origin: center;
+    will-change: transform, opacity;
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+}
+.app-nav summary .summary-label {
+    flex: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    opacity: 1;
+    transform: translateX(0) scaleX(1);
+    transform-origin: left;
+    overflow: hidden;
+    white-space: nowrap;
+    will-change: opacity, transform;
+}
+.app-nav .subitem {
+    display:grid;padding:0.4rem 1.1rem;color:rgba(255,255,255,0.75);font-weight:600;grid-template-columns:auto 1fr;gap:0.5rem;align-items:flex-start;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                padding 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms,
+                margin 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    will-change: opacity, transform, padding;
+}
+.app-nav .subitem .app-nav-label { 
+    white-space: normal;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    will-change: opacity, transform;
+}
+.app-sidebar.collapsed .subitem .app-nav-label {
+    opacity: 0;
+    transform: translateX(-20px) scaleX(0);
+    pointer-events: none;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-nav a.active, .app-nav a:hover {
+    background: rgba(255,255,255,0.06);
+    color: #fff;
+    text-decoration: none !important;
+    border: none !important;
+    border-bottom: none !important;
+    box-shadow: none !important;
+}
+
+.app-nav a.active .app-nav-label, .app-nav a:hover .app-nav-label {
+    text-decoration: none !important;
+    border-bottom: none !important;
+}
+.app-main {
+    flex: 1 1 auto;
+    padding: 2.2rem;
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+    overflow-y: auto; /* Allow main content to scroll */
+}
+body.reports-page .app-main {
+    padding-right: 0;
+}
+body.reports-page .app-main > div {
+    width: 100%;
+}
+header {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+header > div {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+header h2 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #f5f8ff;
+}
+body.reports-page .animate-ui-card--wide {
+    width: 100%;
+    max-width: none;
+}
+.sidebar-footer { padding:0.5rem 0.75rem;border-top:1px solid rgba(255,255,255,0.02); margin-top: auto; }
+.user-row{display:flex;gap:0.6rem;align-items:center;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    will-change: opacity, transform;
+}
+.avatar {width:36px;height:36px;border-radius:8px;background:linear-gradient(90deg,#0b2233,#063547);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;
+    transition: width 400ms cubic-bezier(0.4, 0, 0.2, 1), 
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1), 
+                margin 400ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Image variants for logo/avatar */
+.team-avatar img.team-avatar-img,
+.avatar img.avatar-img { width:100%; height:100%; object-fit:cover; display:block; border-radius:8px; }
+.team-avatar img.team-avatar-img { background: transparent; }
+.avatar img.avatar-img { background: transparent; }
+.user-meta{font-size:0.9rem;
+    opacity: 1;
+    transform: translateX(0);
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms, 
+                transform 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms;
+    will-change: opacity, transform;
+}
+.user-meta .name{font-weight:700;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+}
+.user-meta .email{font-size:0.75rem;color:rgba(255,255,255,0.65)}
+
+/* Sidebar footer rail for collapsed view */
+.sidebar-footer .sidebar-rail { 
+    display: none !important; 
+    gap: 0.6rem; 
+    align-items: center; 
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.sidebar-footer .logout-btn .app-nav-icon {
+    transition: margin 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                width 400ms cubic-bezier(0.4, 0, 0.2, 1),
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    flex-shrink: 0;
+}
+.app-sidebar.collapsed .sidebar-footer .logout-btn .app-nav-icon {
+    transition: margin 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                width 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                height 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+    flex-shrink: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sidebar-footer .logout-btn .app-nav-label { 
+    display: inline-block; 
+    margin-left: 0.4rem;
+    opacity: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms;
+}
+
+.sidebar-footer .rail-user {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+    transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+    opacity: 0;
+}
+
+.app-sidebar.collapsed .sidebar-footer .rail-user {
+    opacity: 1;
+}
+
+.app-sidebar.collapsed .sidebar-footer .rail-logout {
+    opacity: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+}
+
+.sidebar-footer .rail-logout button {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #000000;
+    font-size: 1.05rem;
+    color: #fff;
+    border: 0;
+    cursor: pointer;
+    transition: background 200ms cubic-bezier(0.4, 0, 0.2, 1),
+                color 200ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sidebar-footer .rail-logout button:hover {
+    background: #1a1a1a;
+}.sidebar-footer .logout-btn {
+    width:100%;
+    padding:0.45rem;
+    border-radius:0.5rem;
+    background:#000000;
+    color:#fff;
+    border:0;
+    display:flex;
+    align-items:center;
+    gap:0.5rem;
+    justify-content:flex-start;
+    opacity: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms,
+                height 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms,
+                padding 400ms cubic-bezier(0.4, 0, 0.2, 1) 250ms;
+    min-width: auto;
+}
+
+.app-sidebar.collapsed .sidebar-footer .user-row { 
+    opacity: 0;
+    transform: translateX(-20px);
+    pointer-events: none;
+    height: 0;
+    overflow: hidden;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms, 
+                transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,
+                height 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed .sidebar-footer .logout-btn { 
+    display: none !important;
+}
+.app-sidebar.collapsed .sidebar-footer .sidebar-rail { 
+    display: flex !important; 
+    flex-direction: column; 
+    padding: 0.6rem 0;
+    opacity: 1;
+    transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms;
+}
+.app-sidebar.collapsed .sidebar-footer .logout-btn .app-nav-label { 
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;
+}
+.app-sidebar.collapsed .sidebar-footer { padding: 0.6rem 0; }
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    gap: 1.25rem;
+    width: 100%;
+}
+.small-card {
+    padding: 1rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    color: #f5f8ff;
+}
+
+/* Content spacing - prevent text from being too close to edges */
+section {
+    padding: 1.25rem;
+    border-radius: 0.75rem;
+}
+
+.manage-panel {
+    padding: 1.5rem;
+    border-radius: 0.75rem;
+    background: linear-gradient(135deg, rgba(15,23,42,0.6), rgba(2,6,23,0.6));
+}
+
+/* Increase padding inside cards and panels */
+.animate-ui-card {
+    padding: 2.5rem;
+}
+
+.animate-ui-card--wide {
+    padding: 1.5rem 1.25rem;
+}
+
+/* Ensure content has proper spacing */
+section h1,
+section h2,
+section h3,
+.manage-panel h1,
+.manage-panel h2,
+.manage-panel h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+section p,
+.manage-panel p {
+    margin-bottom: 1rem;
+}
+
+@media print {
+    body, .app-shell, .app-main, .animate-ui-card, .report-table, table, th, td {
+        background: transparent !important;
+        color: #000 !important;
+    }
+    .app-shell {
+        display: block !important;
+    }
+    .app-sidebar,
+    header,
+    #sidebar-toggle,
+    .animate-ui-submit,
+    .animate-ui-card h1,
+    .animate-ui-card h2,
+    .animate-ui-card p,
+    .app-shell .team-switcher,
+    .app-shell details,
+    .app-shell .sidebar-footer {
+        display: none !important;
+    }
+    .animate-ui-card {
+        padding: 0 !important;
+        box-shadow: none !important;
+    }
+    .app-main {
+        padding: 0 !important;
+    }
+    .report-table table {
+        width: 100%;
+        border: 1px solid #000;
+    }
+    .report-table th,
+    .report-table td {
+        border: 1px solid #222 !important;
+        color: #000 !important;
+        background: transparent;
+    }
+}
