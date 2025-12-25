@@ -19,7 +19,11 @@ if (!function_exists('connectDB')) {
             $options = [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                // ปิดการตรวจสอบใบรับรอง (Certificate) เพื่อลดปัญหา Error จุกจิกบน Vercel
+
+                // --- บรรทัดที่คุณลืม (สำคัญมาก ต้องใส่เพื่อให้มันยอมใช้ SSL) ---
+                PDO::MYSQL_ATTR_SSL_CA => '/etc/ssl/certs/ca-certificates.crt',
+                // -------------------------------------------------------
+
                 PDO::MYSQL_ATTR_SSL_VERIFY_SERVER_CERT => false,
             ];
 
