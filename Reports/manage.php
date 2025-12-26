@@ -377,6 +377,6 @@ $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status I
       </main>
     </div>
 
-    <script src="..//Assets/Javascript/animate-ui.js" defer></script>
+    <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
   </body>
 </html>

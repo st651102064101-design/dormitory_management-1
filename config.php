@@ -39,7 +39,15 @@ function getBaseUrl($path = '') {
         }
     }
     
-    return $protocol . '://' . $host . '/Dormitory_Management' . $path;
+    // ระบุชื่อโปรเจคจากโฟลเดอร์ถ้าเป็นไปได้ (ทำให้ไม่ต้อง hardcode ชื่อโฟลเดอร์)
+    $projectFolder = basename(__DIR__);
+    
+    // ทำให้แน่ใจว่าพาธเริ่มด้วย / ถ้ามีการส่งเข้ามา
+    if ($path !== '' && strpos($path, '/') !== 0) {
+        $path = '/' . $path;
+    }
+    
+    return $protocol . '://' . $host . '/' . $projectFolder . $path;
 }
 
 /**

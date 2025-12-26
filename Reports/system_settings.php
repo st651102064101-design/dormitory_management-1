@@ -72,7 +72,7 @@ include __DIR__ . '/settings/settings_data.php';
         
         <!-- Profile Card -->
         <div class="apple-profile-card">
-          <img src="..//Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="apple-profile-avatar">
+          <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="apple-profile-avatar">
           <div class="apple-profile-info">
             <h2 class="apple-profile-name"><?php echo htmlspecialchars($siteName); ?></h2>
             <p class="apple-profile-detail">ผู้ดูแลระบบ: <?php echo htmlspecialchars($_SESSION['admin_username']); ?></p>
@@ -117,8 +117,8 @@ include __DIR__ . '/settings/settings_data.php';
   </div>
   
   <!-- Scripts -->
-  <script src="..//Assets/Javascript/toast-notification.js"></script>
-  <script src="..//Assets/Javascript/animate-ui.js"></script>
+  <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
+  <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>
   <script src="settings/apple-settings.js"></script>
   <script>
   // Direct sidebar toggle - guaranteed to work

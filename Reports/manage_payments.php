@@ -2597,8 +2597,8 @@ $roomPaymentSummary = $pdo->query("
       </div>
     </div>
 
-    <script src="..//Assets/Javascript/animate-ui.js"></script>
-    <script src="..//Assets/Javascript/confirm-modal.js"></script>
+    <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>
+    <script src="/dormitory_management/Public/Assets/Javascript/confirm-modal.js"></script>
     <script>
       // Toast fallback (ถ้าไม่มีประกาศไว้จากไฟล์อื่น)
       if (typeof showSuccessToast !== 'function' || typeof showErrorToast !== 'function') {

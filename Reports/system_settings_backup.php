@@ -1849,7 +1849,7 @@ try {
                     <select id="oldLogoSelect" style="width: 100%; padding: 0.75rem 0.85rem; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15); background: rgba(8,12,24,0.85); color: #f5f8ff; font-size: 0.95rem; margin-bottom: 0.5rem;">
                       <option value="">-- เลือกรูปเก่า --</option>
                       <?php
-                        $logoDir = realpath(__DIR__ . '/..//Assets/Images/');
+                        $logoDir = realpath(__DIR__ . '//dormitory_management/Public/Assets/Images/');
                         if ($logoDir && is_dir($logoDir)) {
                           $files = scandir($logoDir);
                           foreach ($files as $file) {
