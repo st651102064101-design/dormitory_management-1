@@ -371,7 +371,7 @@ $pageTitle = 'รายงานห้องพัก';
     </div>
   </div>
 
-  <script src="..//Assets/Javascript/animate-ui.js" defer></script>
-  <script src="..//Assets/Javascript/main.js" defer></script>
+  <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
+  <script src="/dormitory_management/Public/Assets/Javascript/main.js" defer></script>
 </body>
 </html>

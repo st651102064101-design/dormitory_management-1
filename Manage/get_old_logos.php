@@ -7,7 +7,7 @@ if (empty($_SESSION['admin_username'])) {
     exit;
 }
 
-$logosDir = '..//Assets/Images/';
+$logosDir = '/dormitory_management/Public/Assets/Images/';
 $files = [];
 
 try {
