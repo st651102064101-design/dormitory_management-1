@@ -62,8 +62,8 @@ $pageTitle = 'รายงานห้องพัก';
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><?php echo htmlspecialchars($pageTitle); ?></title>
-  <link rel="stylesheet" href="..//Assets/Css/animate-ui.css">
-  <link rel="stylesheet" href="..//Assets/Css/main.css">
+  <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
+  <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
   <style>
     .reports-container {
       width: 100%;

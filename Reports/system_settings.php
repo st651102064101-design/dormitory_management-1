@@ -29,10 +29,10 @@ include __DIR__ . '/settings/settings_data.php';
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการระบบ</title>
-  <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>">
-  <link rel="stylesheet" href="..//Assets/Css/animate-ui.css">
-  <link rel="stylesheet" href="..//Assets/Css/main.css">
-  <link rel="stylesheet" href="..//Assets/Css/lottie-icons.css">
+  <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>">
+  <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
+  <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
+  <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/lottie-icons.css">
   <link rel="stylesheet" href="settings/apple-settings.css">
   <!-- Explicit Prompt font load to ensure Thai sans-serif (no serifs) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
