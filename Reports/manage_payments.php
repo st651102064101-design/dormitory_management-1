@@ -188,12 +188,12 @@ $roomPaymentSummary = $pdo->query("
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการการชำระเงิน</title>
-    <link rel="icon" type="image/jpeg" href="..//Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="..//Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="..//Assets/Css/main.css" />
-    <link rel="stylesheet" href="..//Assets/Css/confirm-modal.css" />
+    <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
       :root {
         --theme-bg-color: <?php echo $themeColor; ?>;
@@ -2704,7 +2704,7 @@ $roomPaymentSummary = $pdo->query("
         
         const ext = filename.toLowerCase().split('.').pop();
         const isPdf = ext === 'pdf';
-        const path = '..//Assets/Images/Payments/' + filename;
+        const path = '/dormitory_management/Public/Assets/Images/Payments/' + filename;
         
         if (isPdf) {
           body.innerHTML = '<embed src="' + path + '" type="application/pdf" width="100%" height="600px" />';

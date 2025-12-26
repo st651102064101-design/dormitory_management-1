@@ -163,7 +163,7 @@ try {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/lottie-icons.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="..//Assets/Css/datatable-modern.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
       :root {
         --theme-bg-color: <?php echo $themeColor; ?>;
