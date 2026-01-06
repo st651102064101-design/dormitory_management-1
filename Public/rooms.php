@@ -1342,24 +1342,43 @@ $occupiedCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '1')
             font-size: 1.2rem;
         }
 
+        /* Header hide/show on scroll */
+        .header {
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        .header.hide {
+            transform: translateY(-100%);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .header { 
                 flex-direction: column; 
-                gap: 1rem; 
-                padding: 1rem; 
+                gap: 0.5rem; 
+                padding: 0.75rem 1rem; 
             }
             .nav-links { 
-                flex-wrap: wrap; 
-                justify-content: center;
+                width: 100%;
+                overflow-x: auto;
+                overflow-y: hidden;
+                display: flex;
+                flex-wrap: nowrap;
                 gap: 0.5rem;
+                padding: 0.25rem 0;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-links::-webkit-scrollbar {
+                display: none;
             }
             .nav-links a {
-                padding: 0.5rem 0.8rem;
+                padding: 0.5rem 1rem;
                 font-size: 0.85rem;
+                white-space: nowrap;
+                flex-shrink: 0;
             }
             .container {
-                padding-top: 9rem;
+                padding-top: 8rem;
             }
             .page-title h2 {
                 font-size: 1.75rem;

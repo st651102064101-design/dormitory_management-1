@@ -33,6 +33,7 @@ document.addEventListener('DOMContentLoaded', function() {
         // Create a subtle floating info pill - use separate fixed position
         const pill = document.createElement('div');
         pill.setAttribute('role', 'status');
+        pill.className = 'payment-reminder-pill';
         pill.style.position = 'fixed';
         pill.style.right = '20px';
         pill.style.bottom = '90px';
@@ -53,6 +54,12 @@ document.addEventListener('DOMContentLoaded', function() {
         pill.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="' + iconStroke + '" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>' +
                          '<span>กำหนดชำระค่าห้องทุกวันที่ ' + billingDay + ' • งวดถัดไป: <strong style="color:' + nextDueColor + '">' + nextDueStr + '</strong></span>';
         document.body.appendChild(pill);
+        
+        // Also populate mobile reminder if exists
+        const mobileReminder = document.getElementById('mobileBillingInfo');
+        if (mobileReminder) {
+            mobileReminder.innerHTML = 'ทุกวันที่ <strong style="color:#a7f3d0">' + billingDay + '</strong> • งวดถัดไป: <strong style="color:#a7f3d0">' + nextDueStr + '</strong>';
+        }
     }, 300);
 });
 </script>
@@ -883,7 +890,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .upload-limit {
-            color: #64748b;
+            color: #94a3b8;
             font-size: 0.8rem;
             margin: 0;
         }
@@ -1041,6 +1048,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         @keyframes fadeIn {
             from { opacity: 0; }
             to { opacity: 1; }
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
         
         .preview-content .pdf-placeholder {
@@ -1491,7 +1503,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .breakdown-label {
-            color: #64748b;
+            color: #94a3b8;
             font-size: 0.75rem;
             text-transform: uppercase;
             letter-spacing: 0.5px;
@@ -1597,7 +1609,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             top: 8px;
             left: 12px;
             font-size: 0.7rem;
-            color: #64748b;
+            color: #94a3b8;
             pointer-events: none;
             transition: all 0.2s;
         }
@@ -1609,6 +1621,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         /* Toggle Buttons */
+        .toggle-mode-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            flex-wrap: wrap;
+        }
         .toggle-buttons {
             display: flex;
             gap: 8px;
@@ -1616,6 +1635,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             padding: 4px;
             border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.1);
+            flex-wrap: wrap;
         }
         .toggle-btn {
             display: flex;
@@ -1630,6 +1650,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 0.9rem;
             transition: all 0.3s;
             font-family: 'Prompt', sans-serif;
+            white-space: nowrap;
         }
         .toggle-btn:hover {
             color: #fff;
@@ -1643,6 +1664,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .toggle-btn svg {
             width: 16px;
             height: 16px;
+            flex-shrink: 0;
         }
         .address-mode {
             grid-column: 1 / -1;
@@ -1727,7 +1749,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-group label {
             display: block;
             margin-bottom: 0.6rem;
-            color: #94a3b8;
+            color: #e2e8f0;
             font-weight: 500;
             font-size: 0.95rem;
         }
@@ -1742,9 +1764,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 100%;
             padding: 1rem 1.25rem;
             border-radius: 12px;
-            border: 1px solid rgba(255,255,255,0.1);
-            background: rgba(255,255,255,0.05);
-            color: #fff;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.08);
+            color: #f1f5f9;
             font-size: 1rem;
             transition: all 0.3s;
         }
@@ -1807,7 +1829,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         .form-group input::placeholder,
         .form-group textarea::placeholder {
-            color: #64748b;
+            color: #94a3b8;
         }
 
         /* ═══════════════════════════════════════════════════════
@@ -2119,20 +2141,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: rgba(59, 130, 246, 0.08);
             border: 1px solid rgba(59, 130, 246, 0.3);
             border-radius: 16px;
-            padding: 2rem;
+            padding: 1rem;
             margin-bottom: 2rem;
         }
         
         .payment-header {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
         }
         
         .payment-header svg {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             color: #3b82f6;
             flex-shrink: 0;
             animation: cardSlide 2s ease-in-out infinite;
@@ -2144,7 +2166,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .payment-header h3 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: #fff;
         }
@@ -2193,26 +2215,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             background: rgba(102, 126, 234, 0.08);
             border: 1px solid rgba(102, 126, 234, 0.3);
             border-radius: 16px;
-            padding: 2rem;
+            padding: 1rem;
             margin-bottom: 2rem;
         }
         
         .terms-header {
             display: flex;
             align-items: center;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
         }
         
         .terms-header svg {
-            width: 28px;
-            height: 28px;
+            width: 24px;
+            height: 24px;
             color: #667eea;
             flex-shrink: 0;
         }
         
         .terms-header h3 {
-            font-size: 1.2rem;
+            font-size: 1.1rem;
             font-weight: 600;
             color: #fff;
         }
@@ -2220,12 +2242,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .terms-content {
             margin-bottom: 1.5rem;
             border-left: 3px solid rgba(102, 126, 234, 0.5);
-            padding-left: 1.5rem;
+            padding-left: 1rem;
+            margin-left: 0;
         }
         
         .term-item {
             display: flex;
-            gap: 1rem;
+            gap: 0.75rem;
             margin-bottom: 1.5rem;
         }
         
@@ -2237,17 +2260,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             align-items: center;
             justify-content: center;
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             background: rgba(102, 126, 234, 0.15);
             border: 1px solid rgba(102, 126, 234, 0.3);
             flex-shrink: 0;
         }
         
         .term-icon-svg {
-            width: 28px;
-            height: 28px;
+            width: 22px;
+            height: 22px;
             color: #667eea;
             animation: iconPulse 2.5s ease-in-out infinite;
         }
@@ -2714,21 +2737,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #6366f1;
         }
 
+        /* Header hide/show on scroll */
+        .header {
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        .header.hide {
+            transform: translateY(-100%);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .header { 
                 flex-direction: column; 
-                gap: 1rem; 
-                padding: 1rem; 
+                gap: 0.5rem; 
+                padding: 0.75rem 1rem; 
             }
             .nav-links { 
-                flex-wrap: wrap; 
-                justify-content: center;
+                width: 100%;
+                overflow-x: auto;
+                overflow-y: hidden;
+                display: flex;
+                flex-wrap: nowrap;
                 gap: 0.5rem;
+                padding: 0.25rem 0;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-links::-webkit-scrollbar {
+                display: none;
             }
             .nav-links a {
-                padding: 0.5rem 0.8rem;
+                padding: 0.5rem 1rem;
                 font-size: 0.85rem;
+                white-space: nowrap;
+                flex-shrink: 0;
             }
             .container {
                 padding-top: 9rem;
@@ -2745,7 +2787,134 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 font-size: 1.75rem;
             }
             .room-selection {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            .room-option {
+                padding: 0.9rem;
+                display: grid;
+                grid-template-columns: auto 1fr auto;
+                grid-template-rows: auto auto;
+                gap: 0.5rem 0.75rem;
+                text-align: left;
+                align-items: center;
+            }
+            .room-option .room-num {
+                grid-column: 1;
+                grid-row: 1 / 3;
+                font-size: 1.8rem;
+                margin-bottom: 0;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 60px;
+            }
+            .room-option .room-icon {
+                width: 20px;
+                height: 20px;
+                margin-right: 6px;
+            }
+            .room-option .room-type {
+                grid-column: 2;
+                grid-row: 1;
+                font-size: 0.75rem;
+                margin-bottom: 0;
+                align-self: end;
+            }
+            .room-option .room-price {
+                grid-column: 2;
+                grid-row: 2;
+                font-size: 0.95rem;
+                align-self: start;
+            }
+            .room-option .checkmark {
+                grid-column: 3;
+                grid-row: 1 / 3;
+                position: static;
+                margin: 0;
+            }
+            .room-features-mini {
+                grid-column: 1 / -1;
+                grid-row: 3;
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+                gap: 0.3rem;
+                justify-content: flex-start;
+            }
+            .feature-tag-mini {
+                font-size: 0.6rem;
+                padding: 0.15rem 0.35rem;
+            }
+            .room-selection-error {
+                font-size: 0.85rem;
+                padding: 0.75rem;
+            }
+            .payment-info-grid {
+                grid-template-columns: 1fr !important;
+                gap: 1rem;
+            }
+            .payment-info-item {
+                width: 100%;
+            }
+            /* Hide fixed floating elements on mobile */
+            .payment-reminder-pill,
+            .clear-saved-data-btn {
+                display: none !important;
+            }
+            /* Show mobile payment reminder only on mobile */
+            .mobile-payment-reminder {
+                display: block !important;
+            }
+            /* PromptPay section mobile layout */
+            .promptpay-content {
+                flex-direction: column !important;
+                align-items: center !important;
+            }
+            .qr-section {
+                width: 100% !important;
+                max-width: 280px !important;
+            }
+            .instructions-section {
+                width: 100% !important;
+                min-width: unset !important;
+            }
+            /* Toggle buttons responsive */
+            .toggle-mode-wrapper {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            .toggle-mode-wrapper > span {
+                font-size: 0.8rem !important;
+            }
+            .toggle-buttons {
+                width: 100%;
+                justify-content: stretch;
+            }
+            .toggle-btn {
+                flex: 1;
+                justify-content: center;
+                padding: 10px 12px;
+                font-size: 0.85rem;
+            }
+            .toggle-btn span {
+                display: none;
+            }
+            /* Reduce padding further on mobile */
+            .payment-info-section,
+            .terms-section {
+                padding: 0.75rem !important;
+            }
+            .payment-header,
+            .terms-header {
+                margin-bottom: 0.75rem !important;
+            }
+            .promptpay-section {
+                padding: 12px !important;
+                margin-top: 12px !important;
+            }
+            .promptpay-content {
+                gap: 12px !important;
             }
         }
 
@@ -3219,15 +3388,15 @@ if ($publicTheme === 'light') {
                     <div class="form-row" style="gap: 1rem;">
                         <div class="input-wrapper" style="flex: 2;">
                             <input type="text" id="firstName" required placeholder="ชื่อจริง" autocomplete="given-name">
-                            <span class="field-label" style="position: absolute; top: 8px; left: 12px; font-size: 0.7rem; color: #64748b;">ชื่อจริง</span>
+                            <span class="field-label" style="position: absolute; top: 8px; left: 12px; font-size: 0.7rem; color: #94a3b8;">ชื่อจริง</span>
                         </div>
                         <div class="input-wrapper" style="flex: 1;">
                             <input type="text" id="nickName" placeholder="ชื่อเล่น">
-                            <span class="field-label" style="position: absolute; top: 8px; left: 12px; font-size: 0.7rem; color: #64748b;">ชื่อเล่น</span>
+                            <span class="field-label" style="position: absolute; top: 8px; left: 12px; font-size: 0.7rem; color: #94a3b8;">ชื่อเล่น</span>
                         </div>
                         <div class="input-wrapper" style="flex: 2;">
                             <input type="text" id="lastName" required placeholder="นามสกุล" autocomplete="family-name">
-                            <span class="field-label" style="position: absolute; top: 8px; left: 12px; font-size: 0.7rem; color: #64748b;">นามสกุล</span>
+                            <span class="field-label" style="position: absolute; top: 8px; left: 12px; font-size: 0.7rem; color: #94a3b8;">นามสกุล</span>
                         </div>
                     </div>
                     <input type="hidden" name="name" id="fullName" required>
@@ -3241,8 +3410,8 @@ if ($publicTheme === 'light') {
                     <label>ที่อยู่ตามบัตรประชาชน</label>
                     
                     <!-- Toggle Switch for Input Mode -->
-                    <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                        <span style="color: #94a3b8; font-size: 0.9rem;">วิธีกรอกข้อมูล:</span>
+                    <div class="toggle-mode-wrapper">
+                        <span style="color: #94a3b8; font-size: 0.85rem;">วิธีกรอกข้อมูล:</span>
                         <div class="toggle-buttons">
                             <button type="button" class="toggle-btn active" data-mode="search" id="searchModeBtn">
                                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -3700,14 +3869,19 @@ if ($publicTheme === 'light') {
                 
                 <!-- Payment Information Section -->
                 <?php if (!empty($bankName) || !empty($bankAccountName) || !empty($bankAccountNumber) || !empty($promptpayNumber)): ?>
-                <div class="payment-info-section">
-                    <div class="payment-header">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
-                            <line x1="1" y1="10" x2="23" y2="10"/>
-                            <circle cx="6" cy="15" r="1.5"/>
-                        </svg>
-                        <h3>ข้อมูลการโอนเงินมัดจำ</h3>
+                <div style="margin-bottom: 2rem;">
+                    <!-- Mobile-only payment reminder -->
+                    <div class="mobile-payment-reminder" style="display: none; margin-bottom: 1rem; padding: 12px 16px; background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 12px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" style="flex-shrink: 0;">
+                                <circle cx="12" cy="12" r="10"/>
+                                <path d="M12 6v6l4 2"/>
+                            </svg>
+                            <div style="flex: 1; font-size: 0.85rem; line-height: 1.5;">
+                                <div style="color: #94a3b8; margin-bottom: 2px;">กำหนดชำระค่าห้อง</div>
+                                <div style="color: #e2e8f0;" id="mobileBillingInfo">ทุกวันที่ 1 ของเดือน</div>
+                            </div>
+                        </div>
                     </div>
                     
                     <div class="payment-info-grid" style="<?php echo !empty($promptpayNumber) ? 'grid-template-columns: 1fr 1fr;' : ''; ?>">
@@ -3736,9 +3910,9 @@ if ($publicTheme === 'light') {
                         
                         <?php if (!empty($promptpayNumber)): ?>
                         <!-- PromptPay Section -->
-                        <div class="promptpay-section" style="grid-column: 1 / -1; margin-top: 20px; padding: 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%); border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.2);">
+                        <div class="promptpay-section" style="grid-column: 1 / -1; margin-top: 20px; padding: 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%); border-radius: 12px; border: 1px solid rgba(245, 158, 11, 0.2); overflow: hidden;">
                             <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 15px;">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="flex-shrink: 0;">
                                     <rect x="2" y="5" width="20" height="14" rx="2"/>
                                     <path d="M2 10h20"/>
                                     <circle cx="7" cy="15" r="1" fill="#f59e0b"/>
@@ -3747,38 +3921,51 @@ if ($publicTheme === 'light') {
                                 <h4 style="color: #fbbf24; font-size: 1.1rem; margin: 0;">สแกน QR Code พร้อมเพย์</h4>
                             </div>
                             
-                            <div style="display: flex; gap: 20px; align-items: center; flex-wrap: wrap;">
-                                <div style="flex-shrink: 0;">
-                                    <div style="background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
-                                        <img src="https://promptpay.io/<?php echo urlencode($promptpayNumber); ?>/<?php echo $defaultDeposit; ?>.png" 
+                            <div style="display: flex; gap: 20px; align-items: flex-start; flex-wrap: wrap; justify-content: center;" class="promptpay-content">
+                                <div style="flex-shrink: 0; width: 100%; max-width: 260px;" class="qr-section">
+                                    <div style="background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); max-width: 230px; margin: 0 auto;">
+                                        <img id="qrCodeImage" 
+                                             src="https://promptpay.io/<?php echo urlencode($promptpayNumber); ?>/<?php echo $defaultDeposit; ?>.png" 
                                              alt="PromptPay QR Code" 
-                                             style="width: 200px; height: 200px; display: block;">
+                                             style="width: 100%; max-width: 200px; height: auto; display: block; margin: 0 auto;"
+                                             onerror="this.onerror=null; this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22200%22 height=%22200%22 viewBox=%220 0 200 200%22%3E%3Crect fill=%22%23f3f4f6%22 width=%22200%22 height=%22200%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 fill=%22%239ca3af%22 font-size=%2214%22%3EQR Code%3C/text%3E%3C/svg%3E';">
                                     </div>
-                                    <div style="text-align: center; margin-top: 10px; padding: 8px; background: rgba(245, 158, 11, 0.15); border-radius: 8px;">
+                                    <a id="downloadQrBtn" 
+                                       href="https://promptpay.io/<?php echo urlencode($promptpayNumber); ?>/<?php echo $defaultDeposit; ?>.png"
+                                       download="PromptPay-QR-<?php echo htmlspecialchars($promptpayNumber); ?>.png"
+                                       style="width: 100%; max-width: 230px; margin: 10px auto 0; padding: 12px 16px; background: linear-gradient(135deg, #f59e0b, #fbbf24); color: white; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); text-decoration: none;">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink: 0;">
+                                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                            <polyline points="7 10 12 15 17 10"/>
+                                            <line x1="12" y1="15" x2="12" y2="3"/>
+                                        </svg>
+                                        <span>ดาวน์โหลด QR Code</span>
+                                    </a>
+                                    <div style="text-align: center; margin-top: 10px; padding: 8px; background: rgba(245, 158, 11, 0.15); border-radius: 8px; max-width: 230px; margin-left: auto; margin-right: auto;">
                                         <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 3px;">หมายเลขพร้อมเพย์</div>
-                                        <div style="color: #fbbf24; font-weight: 600; font-size: 1rem; font-family: monospace;"><?php echo htmlspecialchars($promptpayNumber); ?></div>
+                                        <div style="color: #fbbf24; font-weight: 600; font-size: 1rem; font-family: monospace; word-break: break-all;"><?php echo htmlspecialchars($promptpayNumber); ?></div>
                                     </div>
                                 </div>
                                 
-                                <div style="flex: 1; min-width: 250px;">
+                                <div style="flex: 1; min-width: 200px; max-width: 100%;" class="instructions-section">
                                     <div style="background: rgba(10, 10, 15, 0.5); padding: 15px; border-radius: 10px; margin-bottom: 15px;">
                                         <div style="color: #94a3b8; font-size: 0.85rem; margin-bottom: 8px;">💡 วิธีชำระเงิน:</div>
-                                        <ol style="color: #e2e8f0; font-size: 0.9rem; line-height: 1.8; margin: 0; padding-left: 20px;">
-                                            <li>เปิดแอปธนาคารของคุณ</li>
+                                        <ol style="color: #e2e8f0; font-size: 0.85rem; line-height: 1.7; margin: 0; padding-left: 18px;">
+                                            <li>เปิดแอปธนาคาร</li>
                                             <li>เลือก "สแกน QR Code"</li>
-                                            <li>สแกน QR Code ด้านซ้าย</li>
-                                            <li>ตรวจสอบยอดเงิน <strong style="color: #fbbf24;">฿<?php echo number_format($defaultDeposit); ?></strong></li>
+                                            <li>สแกน QR Code ด้านบน</li>
+                                            <li>ตรวจสอบยอด <strong style="color: #fbbf24;">฿<?php echo number_format($defaultDeposit); ?></strong></li>
                                             <li>ยืนยันการโอน</li>
                                         </ol>
                                     </div>
-                                    <div style="padding: 12px; background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; border-radius: 6px;">
-                                        <div style="color: #fbbf24; font-size: 0.85rem; display: flex; align-items: center; gap: 8px;">
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <div style="padding: 10px 12px; background: rgba(245, 158, 11, 0.1); border-left: 3px solid #f59e0b; border-radius: 6px;">
+                                        <div style="color: #fbbf24; font-size: 0.85rem; display: flex; align-items: flex-start; gap: 8px;">
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; margin-top: 2px;">
                                                 <circle cx="12" cy="12" r="10"/>
                                                 <line x1="12" y1="16" x2="12" y2="12"/>
                                                 <line x1="12" y1="8" x2="12.01" y2="8"/>
                                             </svg>
-                                            <span>QR Code นี้มีจำนวนเงินฝังอยู่แล้ว ไม่ต้องใส่จำนวนเงินเอง</span>
+                                            <span style="flex: 1;">QR Code นี้มีจำนวนเงินฝังอยู่แล้ว ไม่ต้องใส่จำนวนเงินเอง</span>
                                         </div>
                                     </div>
                                 </div>
@@ -3874,15 +4061,46 @@ if ($publicTheme === 'light') {
     </div>
 
     <script>
-        // Header scroll effect
+        // Header scroll effect with hide/show
+        let lastScrollTop = 0;
+        const header = document.getElementById('header');
+        
         window.addEventListener('scroll', function() {
-            const header = document.getElementById('header');
-            if (window.scrollY > 50) {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Add scrolled class
+            if (scrollTop > 50) {
                 header.classList.add('scrolled');
             } else {
                 header.classList.remove('scrolled');
             }
+            
+            // Hide/show header based on scroll direction
+            if (scrollTop > lastScrollTop && scrollTop > 100) {
+                // Scrolling down
+                header.classList.add('hide');
+            } else {
+                // Scrolling up
+                header.classList.remove('hide');
+            }
+            
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
         });
+
+        // ═══════════════════════════════════════════════════════
+        // QR Code Download - Hover Effect
+        // ═══════════════════════════════════════════════════════
+        const downloadQrBtn = document.getElementById('downloadQrBtn');
+        if (downloadQrBtn) {
+            downloadQrBtn.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-2px)';
+                this.style.boxShadow = '0 6px 20px rgba(245, 158, 11, 0.5)';
+            });
+            downloadQrBtn.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+                this.style.boxShadow = '0 4px 12px rgba(245, 158, 11, 0.3)';
+            });
+        }
 
         // ═══════════════════════════════════════════════════════
         // Apple-Style Validation System
