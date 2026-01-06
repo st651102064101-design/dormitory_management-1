@@ -67,15 +67,19 @@ $error = '';
 $searchMethod = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $idCard = trim($_POST['id_card'] ?? '');
-    $idCard = preg_replace('/[^0-9]/', '', $idCard);
-    $idCard = substr($idCard, -13);
+    $bookingRef = trim($_POST['booking_ref'] ?? '');
+    $contactInfo = trim($_POST['contact_info'] ?? '');
     
-    if (empty($idCard) || strlen($idCard) !== 13) {
-        $error = 'กรุณากรอกเลขบัตรประชาชน 13 หลัก';
+    // ถ้าเป็น booking ID (ตัวเลข) หรือ tnt_id
+    $bookingRef = preg_replace('/[^0-9a-zA-Z]/', '', $bookingRef);
+    
+    if (empty($bookingRef)) {
+        $error = 'กรุณากรอกหมายเลขการจอง';
+    } elseif (empty($contactInfo)) {
+        $error = 'กรุณากรอกเบอร์โทรศัพท์หรืออีเมล';
     } else {
         try {
-            // ดึงข้อมูลการจอง สัญญา และการชำระเงิน
+            // ค้นหาด้วย booking ID + เบอร์โทร หรือ tnt_id + เบอร์โทร
             $stmt = $pdo->prepare("
                 SELECT 
                     t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_education, t.tnt_faculty, t.tnt_year,
@@ -92,14 +96,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
                 LEFT JOIN expense e ON c.ctr_id = e.ctr_id
                 LEFT JOIN payment p ON e.exp_id = p.exp_id
-                WHERE t.tnt_id = ?
+                WHERE (b.bkg_id = ? OR t.tnt_id = ?) AND t.tnt_phone = ?
                 GROUP BY t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_education, t.tnt_faculty, t.tnt_year, b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status, r.room_id, r.room_number, rt.type_name, rt.type_price, c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.access_token, e.exp_id, e.exp_total, e.exp_status
             ");
-            $stmt->execute([$idCard]);
+            $stmt->execute([$bookingRef, $bookingRef, $contactInfo]);
             $bookingInfo = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if (!$bookingInfo || !$bookingInfo['bkg_id']) {
-                $error = 'ไม่พบข้อมูลการจองของคุณ';
+                $error = 'ไม่พบข้อมูลการจอง กรุณาตรวจสอบหมายเลขการจองและเบอร์โทรศัพท์อีกครั้ง';
             } else {
                 // แปลงค่า NULL เป็น 0 สำหรับการคำนวณ
                 $bookingInfo['ctr_deposit'] = floatval($bookingInfo['ctr_deposit'] ?? 0);
@@ -1338,15 +1342,25 @@ if ($publicTheme === 'light') {
         <!-- Page Title -->
         <div class="page-title">
             <h2>ตรวจสอบสถานะการจอง</h2>
-            <p>ค้นหาข้อมูลการจองห้องพักของคุณ</p>
+            <p>กรอกหมายเลขการจองและเบอร์โทรศัพท์ที่ใช้จอง</p>
         </div>
         
         <!-- Search Form -->
         <div class="search-card">
-            <form method="post" class="search-form">
-                <input type="text" name="id_card" id="id_card_input" placeholder="กรอกเลขบัตรประชาชน 13 หลัก" required maxlength="13" inputmode="numeric">
-                <button type="submit"><span>ค้นหา</span></button>
+            <form method="post" class="search-form" style="flex-direction: column; gap: 1rem;">
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                    <label style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">หมายเลขการจอง (Booking Reference)</label>
+                    <input type="text" name="booking_ref" id="booking_ref_input" placeholder="เช่น 767830691 หรือ T1736152095" required style="width: 100%;">
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
+                    <label style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">เบอร์โทรศัพท์ที่ใช้จอง</label>
+                    <input type="tel" name="contact_info" id="contact_input" placeholder="เช่น 0812345678" required maxlength="10" inputmode="tel" style="width: 100%;">
+                </div>
+                <button type="submit" style="width: 100%; margin-top: 0.5rem;"><span>ค้นหาการจอง</span></button>
             </form>
+            <p style="text-align: center; font-size: 0.8rem; color: rgba(255,255,255,0.5); margin-top: 1rem;">
+                หมายเลขการจองอยู่ในข้อความ SMS หรือหน้ายืนยันการจองที่คุณได้รับ
+            </p>
         </div>
         
         <?php if ($error): ?>
