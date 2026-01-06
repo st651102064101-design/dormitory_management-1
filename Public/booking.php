@@ -223,6 +223,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         $pdo->commit();
                         $success = true;
+                        // Store IDs for success page display
+                        $_SESSION['last_booking_id'] = $bookingId;
+                        $_SESSION['last_tenant_id'] = $tenantId;
                     }
                 } catch (PDOException $e) {
                     if ($pdo->inTransaction()) $pdo->rollBack();
@@ -1092,6 +1095,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <div class="main-container">
         <?php if ($success): ?>
+        <?php
+        $lastBookingId = $_SESSION['last_booking_id'] ?? '';
+        $lastTenantId = $_SESSION['last_tenant_id'] ?? '';
+        // Clear session data after retrieval
+        unset($_SESSION['last_booking_id'], $_SESSION['last_tenant_id']);
+        ?>
         <!-- Success Page -->
         <div class="success-page">
             <div class="success-icon">
@@ -1101,6 +1110,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <h1 class="success-title">จองห้องพักสำเร็จ!</h1>
             <p class="success-message">ขอบคุณที่ไว้วางใจ เจ้าหน้าที่จะติดต่อกลับเพื่อยืนยันการจองภายใน 24 ชั่วโมง</p>
+            
+            <!-- Booking Reference Section -->
+            <div style="background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
+                <p style="color: #10b981; font-size: 14px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px;">📋 หมายเลขการจองของคุณ</p>
+                <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+                    <?php if ($lastBookingId): ?>
+                    <div style="background: rgba(255,255,255,0.1); padding: 16px 24px; border-radius: 12px; min-width: 200px;">
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">เลขที่การจอง</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 2px;"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
+                    </div>
+                    <?php endif; ?>
+                    <?php if ($lastTenantId): ?>
+                    <div style="background: rgba(255,255,255,0.1); padding: 16px 24px; border-radius: 12px; min-width: 200px;">
+                        <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">รหัสผู้เช่า</div>
+                        <div style="font-size: 28px; font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 2px;"><?php echo htmlspecialchars($lastTenantId); ?></div>
+                    </div>
+                    <?php endif; ?>
+                </div>
+                <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 0; line-height: 1.6;">
+                    💡 <strong>กรุณาบันทึกหมายเลขนี้</strong> เพื่อใช้ตรวจสอบสถานะการจองและข้อมูลการชำระเงินภายหลัง<br>
+                    <a href="/dormitory_management/Public/booking_status.php" style="color: #10b981; text-decoration: underline; font-weight: 600;">คลิกที่นี่เพื่อตรวจสอบสถานะ</a>
+                </p>
+            </div>
+            
             <div class="success-actions">
                 <a href="/dormitory_management/" class="success-btn primary">กลับหน้าหลัก</a>
                 <a href="/dormitory_management/Public/booking.php" class="success-btn secondary">จองห้องอื่น</a>
