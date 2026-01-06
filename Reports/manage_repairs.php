@@ -196,7 +196,8 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
         display: grid; 
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); 
         gap: 1.25rem; 
-        margin-top: 1.5rem; 
+        margin-top: 1.5rem;
+        padding-right: 1rem;
       }
       
       /* Animated Stats Cards - Apple Style */
