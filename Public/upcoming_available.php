@@ -247,7 +247,78 @@ for ($i = 0; $i < 12; $i++) {
             font-size: 1rem;
         }
 
-        /* Month Selector */
+        /* Quick Stats */
+        .quick-stats {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-stat {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 1rem 2rem;
+            text-align: center;
+            min-width: 140px;
+        }
+
+        .quick-stat.green { border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.1); }
+        .quick-stat.orange { border-color: rgba(249, 115, 22, 0.3); background: rgba(249, 115, 22, 0.1); }
+
+        .quick-stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .quick-stat.green .quick-stat-number { color: #22c55e; }
+        .quick-stat.orange .quick-stat-number { color: #f97316; }
+
+        .quick-stat-label {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Month Buttons */
+        .month-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+            padding: 0 1rem;
+        }
+
+        .month-btn {
+            padding: 0.6rem 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.7);
+            font-size: 0.85rem;
+            font-family: 'Prompt', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .month-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: <?php echo $themeColor; ?>;
+            color: #fff;
+        }
+
+        .month-btn.active {
+            background: <?php echo $themeColor; ?>;
+            border-color: <?php echo $themeColor; ?>;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Month Selector (fallback for more months) */
         .month-selector {
             display: flex;
             justify-content: center;
@@ -582,7 +653,36 @@ for ($i = 0; $i < 12; $i++) {
             <p>ดูห้องที่สัญญาใกล้หมดและพร้อมให้จองในแต่ละเดือน</p>
         </div>
 
-        <!-- Month Selector -->
+        <!-- Quick Stats -->
+        <div class="quick-stats">
+            <div class="quick-stat green">
+                <div class="quick-stat-number"><?php echo count($availableNow); ?></div>
+                <div class="quick-stat-label">ว่างตอนนี้</div>
+            </div>
+            <div class="quick-stat orange">
+                <div class="quick-stat-number"><?php echo count($upcomingRooms); ?></div>
+                <div class="quick-stat-label">ว่างใน<?php echo $thaiMonths[$selectedMonthNum]; ?></div>
+            </div>
+        </div>
+
+        <!-- Month Quick Buttons -->
+        <div class="month-buttons">
+            <?php 
+            // แสดงปุ่ม 6 เดือนแรก
+            for ($i = 0; $i < 6; $i++): 
+                $monthDate = date('Y-m', strtotime("+$i months"));
+                $y = (int)substr($monthDate, 0, 4);
+                $m = (int)substr($monthDate, 5, 2);
+                $isActive = $monthDate === $selectedMonth;
+                $shortMonth = $thaiMonths[$m];
+            ?>
+            <a href="?month=<?php echo $monthDate; ?>" class="month-btn <?php echo $isActive ? 'active' : ''; ?>">
+                <?php echo $shortMonth . ' ' . ($y + 543 - 2500); ?>
+            </a>
+            <?php endfor; ?>
+        </div>
+
+        <!-- Month Dropdown (for more months) -->
         <div class="month-selector">
             <label>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -591,7 +691,7 @@ for ($i = 0; $i < 12; $i++) {
                     <line x1="8" y1="2" x2="8" y2="6"></line>
                     <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
-                เลือกเดือน:
+                หรือเลือกเดือนอื่น:
             </label>
             <select class="month-select" onchange="window.location.href='?month=' + this.value">
                 <?php foreach ($monthOptions as $option): ?>

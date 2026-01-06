@@ -63,6 +63,35 @@ if ($filterStatus !== '') {
 // Count available and occupied
 $availableCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '0'));
 $occupiedCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '1'));
+
+// ดึงห้องที่จะว่างใน 3 เดือนข้างหน้า
+$upcomingRooms = [];
+$thaiMonths = [
+    1 => 'ม.ค.', 2 => 'ก.พ.', 3 => 'มี.ค.', 4 => 'เม.ย.',
+    5 => 'พ.ค.', 6 => 'มิ.ย.', 7 => 'ก.ค.', 8 => 'ส.ค.',
+    9 => 'ก.ย.', 10 => 'ต.ค.', 11 => 'พ.ย.', 12 => 'ธ.ค.'
+];
+try {
+    $threeMonthsLater = date('Y-m-d', strtotime('+3 months'));
+    $stmt = $pdo->prepare("
+        SELECT 
+            r.room_id, r.room_number, r.room_status, r.room_image,
+            rt.type_name, rt.type_price,
+            c.ctr_end,
+            t.tnt_name
+        FROM contract c
+        INNER JOIN room r ON c.room_id = r.room_id
+        LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+        LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+        WHERE c.ctr_status = '0' 
+            AND c.ctr_end >= CURDATE()
+            AND c.ctr_end <= :end_date
+        ORDER BY c.ctr_end ASC
+        LIMIT 6
+    ");
+    $stmt->execute([':end_date' => $threeMonthsLater]);
+    $upcomingRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -505,6 +534,140 @@ $occupiedCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '1')
         @keyframes iconBounce {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-5px); }
+        }
+
+        /* Upcoming Section */
+        .upcoming-section {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(234, 88, 12, 0.05));
+            border: 1px solid rgba(249, 115, 22, 0.2);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .upcoming-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .upcoming-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .upcoming-icon svg {
+            width: 22px;
+            height: 22px;
+            color: #fff;
+        }
+
+        .upcoming-header h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .upcoming-header p {
+            font-size: 0.85rem;
+            color: rgba(255,255,255,0.6);
+            margin: 0;
+        }
+
+        .view-all-btn {
+            margin-left: auto;
+            padding: 0.5rem 1rem;
+            background: rgba(249, 115, 22, 0.2);
+            border: 1px solid rgba(249, 115, 22, 0.4);
+            border-radius: 8px;
+            color: #f97316;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .view-all-btn:hover {
+            background: rgba(249, 115, 22, 0.3);
+            transform: translateX(3px);
+        }
+
+        .upcoming-rooms {
+            display: flex;
+            gap: 1rem;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(249, 115, 22, 0.3) transparent;
+        }
+
+        .upcoming-rooms::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .upcoming-rooms::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .upcoming-rooms::-webkit-scrollbar-thumb {
+            background: rgba(249, 115, 22, 0.3);
+            border-radius: 10px;
+        }
+
+        .upcoming-card {
+            min-width: 160px;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            flex-shrink: 0;
+        }
+
+        .upcoming-card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(249, 115, 22, 0.4);
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        .upcoming-room-number {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        .upcoming-price {
+            font-size: 0.9rem;
+            color: <?php echo $themeColor; ?>;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .upcoming-date {
+            font-size: 0.8rem;
+            color: #f97316;
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        @media (max-width: 768px) {
+            .upcoming-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .view-all-btn {
+                margin-left: 0;
+                width: 100%;
+                text-align: center;
+            }
         }
 
         /* Room Grid */
@@ -1782,6 +1945,47 @@ if ($publicTheme === 'light') {
                 </select>
             </form>
         </section>
+        
+        <?php if (!empty($upcomingRooms)): ?>
+        <!-- Upcoming Available Section -->
+        <section class="upcoming-section">
+            <div class="upcoming-header">
+                <div class="upcoming-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                </div>
+                <div>
+                    <h3>🗓️ ห้องที่จะว่างเร็วๆ นี้</h3>
+                    <p>สัญญาใกล้หมดใน 3 เดือนข้างหน้า</p>
+                </div>
+                <a href="/dormitory_management/Public/upcoming_available.php" class="view-all-btn">ดูทั้งหมด →</a>
+            </div>
+            <div class="upcoming-rooms">
+                <?php foreach ($upcomingRooms as $room): 
+                    $endDate = new DateTime($room['ctr_end']);
+                    $thaiEndDate = $endDate->format('j') . ' ' . $thaiMonths[(int)$endDate->format('n')] . ' ' . ($endDate->format('Y') + 543);
+                ?>
+                <div class="upcoming-card">
+                    <div class="upcoming-room-number">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></div>
+                    <div class="upcoming-price">฿<?php echo number_format((float)($room['type_price'] ?? 0)); ?>/เดือน</div>
+                    <div class="upcoming-date">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                        ว่าง <?php echo $thaiEndDate; ?>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </section>
+        <?php endif; ?>
         
         <div class="room-grid" id="roomsGrid" aria-live="polite">
             <?php if (count($rooms) > 0): ?>
