@@ -565,6 +565,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
         box-shadow: 0 20px 50px rgba(0,0,0,0.15);
         padding: 2rem;
         margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
         position: relative;
         overflow: hidden;
         animation: fadeInUp 0.6s ease forwards;
@@ -677,6 +678,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
         display: flex;
         gap: 0.75rem;
         margin-bottom: 1.5rem;
+        padding-right: 1rem;
         flex-wrap: wrap;
       }
       
