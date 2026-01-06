@@ -1203,7 +1203,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <?php endif; ?>
         
-        <form method="POST" enctype="multipart/form-data" id="bookingForm">
+        <form method="POST" enctype="multipart/form-data" id="bookingForm" novalidate>
             <div class="booking-layout">
                 <!-- Left: Room Selection -->
                 <div class="room-section">
