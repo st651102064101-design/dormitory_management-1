@@ -947,6 +947,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             max-height: calc(90vh - 80px);
         }
         
+        /* Validation Styles for Mobile Form */
+        .form-input.invalid,
+        .form-select.invalid {
+            border: 2px solid #ef4444 !important;
+            background: rgba(239, 68, 68, 0.05) !important;
+            animation: shake 0.4s ease-in-out;
+        }
+        
+        .form-input.valid {
+            border: 2px solid #10b981 !important;
+            background: rgba(16, 185, 129, 0.05) !important;
+        }
+        
+        .error-message {
+            color: #ef4444;
+            font-size: 12px;
+            margin-top: 6px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+            font-weight: 500;
+        }
+        
+        .error-message.show {
+            display: block;
+        }
+        
+        .error-message::before {
+            content: '⚠️ ';
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+            20%, 40%, 60%, 80% { transform: translateX(4px); }
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
         .mobile-room-summary {
             background: rgba(34, 197, 94, 0.1);
             border: 1px solid rgba(34, 197, 94, 0.3);
@@ -1371,12 +1418,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <!-- Mobile Form Fields -->
                     <div class="form-group">
                         <label class="form-label">ชื่อ-นามสกุล <span class="required">*</span></label>
-                        <input type="text" id="mobileNameInput" class="form-input" placeholder="เช่น สมชาย ใจดี">
+                        <input type="text" id="mobileNameInput" class="form-input" placeholder="เช่น สมชาย ใจดี" required>
+                        <div class="error-message" id="mobileNameError"></div>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">เบอร์โทรศัพท์ <span class="required">*</span></label>
-                        <input type="tel" id="mobilePhoneInput" class="form-input" placeholder="0812345678" maxlength="10">
+                        <input type="tel" id="mobilePhoneInput" class="form-input" placeholder="0812345678" maxlength="10" required pattern="[0-9]{10}">
+                        <div class="error-message" id="mobilePhoneError"></div>
                     </div>
                     
                     <div class="form-group">
@@ -1537,10 +1586,92 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
         });
         
-        // Mobile phone input format
+        // Mobile phone input format with validation
         document.getElementById('mobilePhoneInput')?.addEventListener('input', function() {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
+            validateMobilePhone();
         });
+        
+        // Mobile name input validation
+        document.getElementById('mobileNameInput')?.addEventListener('input', function() {
+            validateMobileName();
+        });
+        
+        // Validate on blur
+        document.getElementById('mobileNameInput')?.addEventListener('blur', function() {
+            if (this.value.trim()) validateMobileName();
+        });
+        
+        document.getElementById('mobilePhoneInput')?.addEventListener('blur', function() {
+            if (this.value.trim()) validateMobilePhone();
+        });
+        
+        // Validation Functions
+        function validateMobileName() {
+            const input = document.getElementById('mobileNameInput');
+            const error = document.getElementById('mobileNameError');
+            const value = input.value.trim();
+            
+            if (!value) {
+                input.classList.remove('valid', 'invalid');
+                error.classList.remove('show');
+                return false;
+            }
+            
+            if (value.length < 4) {
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+                error.textContent = 'กรุณากรอกชื่อ-นามสกุลอย่างน้อย 4 ตัวอักษร';
+                error.classList.add('show');
+                return false;
+            }
+            
+            if (!/^[\u0E00-\u0E7Fa-zA-Z\s]+$/.test(value)) {
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+                error.textContent = 'กรุณากรอกชื่อเป็นภาษาไทยหรืออังกฤษเท่านั้น';
+                error.classList.add('show');
+                return false;
+            }
+            
+            input.classList.add('valid');
+            input.classList.remove('invalid');
+            error.classList.remove('show');
+            return true;
+        }
+        
+        function validateMobilePhone() {
+            const input = document.getElementById('mobilePhoneInput');
+            const error = document.getElementById('mobilePhoneError');
+            const value = input.value.trim();
+            
+            if (!value) {
+                input.classList.remove('valid', 'invalid');
+                error.classList.remove('show');
+                return false;
+            }
+            
+            if (value.length < 10) {
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+                error.textContent = `กรุณากรอกเบอร์โทรศัพท์ให้ครบ 10 หลัก (ป้อนแล้ว ${value.length} หลัก)`;
+                error.classList.add('show');
+                return false;
+            }
+            
+            if (!/^0[0-9]{9}$/.test(value)) {
+                input.classList.add('invalid');
+                input.classList.remove('valid');
+                error.textContent = 'เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0 และมี 10 หลัก';
+                error.classList.add('show');
+                return false;
+            }
+            
+            input.classList.add('valid');
+            input.classList.remove('invalid');
+            error.classList.remove('show');
+            return true;
+        }
         
         // ==========================================
         // Mobile Functions
@@ -1617,23 +1748,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         function submitMobileForm() {
-            const name = document.getElementById('mobileNameInput').value.trim();
-            const phone = document.getElementById('mobilePhoneInput').value.trim();
+            const nameInput = document.getElementById('mobileNameInput');
+            const phoneInput = document.getElementById('mobilePhoneInput');
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
             
+            // Check room selection
             if (!selectedRoomData) {
-                alert('กรุณาเลือกห้องพัก');
+                alert('กรุณาเลือกห้องพักก่อนทำการจอง');
                 return;
             }
             
-            if (!name || name.length < 4) {
+            // Validate name
+            if (!name) {
+                nameInput.classList.add('invalid');
+                document.getElementById('mobileNameError').textContent = 'กรุณากรอกชื่อ-นามสกุล';
+                document.getElementById('mobileNameError').classList.add('show');
+                nameInput.focus();
                 alert('กรุณากรอกชื่อ-นามสกุล');
                 return;
             }
             
-            if (!phone || phone.length !== 10) {
-                alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก');
+            if (name.length < 4) {
+                nameInput.classList.add('invalid');
+                document.getElementById('mobileNameError').textContent = 'ชื่อ-นามสกุลต้องมีอย่างน้อย 4 ตัวอักษร';
+                document.getElementById('mobileNameError').classList.add('show');
+                nameInput.focus();
+                alert('กรุณากรอกชื่อ-นามสกุลให้ครบถ้วน (อย่างน้อย 4 ตัวอักษร)');
                 return;
             }
+            
+            if (!/^[\u0E00-\u0E7Fa-zA-Z\s]+$/.test(name)) {
+                nameInput.classList.add('invalid');
+                document.getElementById('mobileNameError').textContent = 'กรุณากรอกชื่อเป็นภาษาไทยหรืออังกฤษเท่านั้น';
+                document.getElementById('mobileNameError').classList.add('show');
+                nameInput.focus();
+                alert('กรุณากรอกชื่อเป็นภาษาไทยหรืออังกฤษเท่านั้น');
+                return;
+            }
+            
+            // Validate phone
+            if (!phone) {
+                phoneInput.classList.add('invalid');
+                document.getElementById('mobilePhoneError').textContent = 'กรุณากรอกเบอร์โทรศัพท์';
+                document.getElementById('mobilePhoneError').classList.add('show');
+                phoneInput.focus();
+                alert('กรุณากรอกเบอร์โทรศัพท์');
+                return;
+            }
+            
+            if (phone.length !== 10) {
+                phoneInput.classList.add('invalid');
+                document.getElementById('mobilePhoneError').textContent = `กรุณากรอกเบอร์โทรศัพท์ให้ครบ 10 หลัก (ป้อนแล้ว ${phone.length} หลัก)`;
+                document.getElementById('mobilePhoneError').classList.add('show');
+                phoneInput.focus();
+                alert('กรุณากรอกเบอร์โทรศัพท์ให้ครบ 10 หลัก');
+                return;
+            }
+            
+            if (!/^0[0-9]{9}$/.test(phone)) {
+                phoneInput.classList.add('invalid');
+                document.getElementById('mobilePhoneError').textContent = 'เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0 และมี 10 หลัก';
+                document.getElementById('mobilePhoneError').classList.add('show');
+                phoneInput.focus();
+                alert('เบอร์โทรศัพท์ไม่ถูกต้อง กรุณากรอกเบอร์ที่ขึ้นต้นด้วย 0 และมี 10 หลัก');
+                return;
+            }
+            
+            // All validations passed
+            nameInput.classList.add('valid');
+            nameInput.classList.remove('invalid');
+            phoneInput.classList.add('valid');
+            phoneInput.classList.remove('invalid');
             
             // Sync data to main form and submit
             const form = document.getElementById('bookingForm');
