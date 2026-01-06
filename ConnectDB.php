@@ -19,7 +19,6 @@ if (!function_exists('connectDB')) {
                 PDO::ATTR_PERSISTENT => false,
                 PDO::ATTR_TIMEOUT => 30,
                 PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8mb4",
-                PDO::MYSQL_ATTR_CONNECT_TIMEOUT => 30,
                 PDO::ATTR_EMULATE_PREPARES => false,
             ];
 
