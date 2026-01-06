@@ -1458,7 +1458,7 @@ try {
     display: none !important;
   }
   
-  /* Hide all labels when sidebar is collapsed */
+  /* Hide all labels when sidebar is collapsed - but show on mobile */
   aside.sidebar-collapsed .app-nav-label,
   aside.sidebar-collapsed .summary-label {
     display: none !important;
@@ -1467,6 +1467,16 @@ try {
   .app-sidebar.collapsed .app-nav-label,
   .app-sidebar.collapsed .summary-label {
     display: none !important;
+  }
+  
+  /* Show labels on mobile even if collapsed */
+  @media (max-width: 1024px) {
+    aside.sidebar-collapsed .app-nav-label,
+    aside.sidebar-collapsed .summary-label,
+    .app-sidebar.collapsed .app-nav-label,
+    .app-sidebar.collapsed .summary-label {
+      display: inline !important;
+    }
   }
   
   /* Show dropdown items as icon-only in vertical column when sidebar is collapsed */

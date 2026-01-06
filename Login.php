@@ -68,14 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode([
       'success' => $login_success,
       'error' => $login_error,
-      'redirect' => $login_success ? 'Reports/manage.php' : ''
+      'redirect' => $login_success ? 'Reports/dashboard.php' : ''
     ]);
     exit;
   }
   
   // If login success and not AJAX, redirect
   if ($login_success) {
-    header('Location: Reports/manage.php');
+    header('Location: Reports/dashboard.php');
     exit;
   }
   // If not AJAX and login failed, show error without reload (page stays as is)
@@ -845,7 +845,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         position: fixed;
         bottom: 30px;
         right: 30px;
-        z-index: 1000;
+        z-index: 9999;
         display: flex;
         flex-direction: column;
         align-items: flex-end;
@@ -853,20 +853,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
       .theme-menu {
-        display: flex;
+        display: none;
         flex-direction: column;
         gap: 8px;
         opacity: 0;
         visibility: hidden;
         transform: translateY(20px);
         transition: all 0.3s ease;
+        pointer-events: none;
+        z-index: 10000;
+        position: relative;
       }
 
-      .theme-switcher:hover .theme-menu,
       .theme-menu.show {
+        display: flex;
         opacity: 1;
         visibility: visible;
         transform: translateY(0);
+        pointer-events: auto;
       }
 
       .theme-menu-item {
@@ -936,29 +940,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
         transition: all 0.3s ease;
         animation: none;
+        outline: none;
+      }
+
+      .theme-switcher-btn:focus,
+      .theme-switcher-btn:focus-visible {
+        outline: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      }
+
+      .theme-switcher-btn:active {
+        transform: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       }
 
       .theme-switcher-btn svg {
         width: 28px;
         height: 28px;
-        stroke: #ffffff;
+        stroke: #667eea;
         stroke-dasharray: 100;
         stroke-dashoffset: 100;
         animation: iconDraw 0.8s ease forwards;
         transition: all 0.3s ease;
+        pointer-events: none;
+      }
+
+      .theme-switcher:hover .theme-switcher-btn {
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
       }
 
       .theme-switcher:hover .theme-switcher-btn svg {
         transform: scale(1.1) rotate(10deg);
-        filter: none;
         stroke: #667eea;
-      }
-
-      .theme-switcher:hover .theme-switcher-btn {
-        animation: none;
-        transform: scale(1.1);
-        background: #ffffff;
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
       }
 
       @keyframes btnPulse {
@@ -2758,16 +2771,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         });
       });
       
-      // Theme switch button - toggle menu on mobile or cycle through on click
+      // Theme switch button - toggle menu on click only
       document.getElementById('themeSwitchBtn').addEventListener('click', function(e) {
-        // On mobile, just toggle menu visibility
+        e.stopPropagation();
+        e.preventDefault();
         const menu = document.getElementById('themeMenu');
-        if (window.innerWidth <= 768) {
-          menu.classList.toggle('show');
-        } else {
-          // On desktop, cycle through themes
-          currentTheme = (currentTheme + 1) % themes.length;
-          applyTheme(themes[currentTheme].name);
+        menu.classList.toggle('show');
+      });
+
+      // Prevent space key from triggering button
+      document.getElementById('themeSwitchBtn').addEventListener('keydown', function(e) {
+        if (e.code === 'Space') {
+          e.preventDefault();
+        }
+      });
+
+      // Close menu when clicking outside
+      document.addEventListener('click', function(e) {
+        const themeSwitcher = document.getElementById('themeSwitcher');
+        const menu = document.getElementById('themeMenu');
+        if (!themeSwitcher.contains(e.target)) {
+          menu.classList.remove('show');
+        }
+      });
+
+      // Prevent menu from closing when clicking inside it
+      document.getElementById('themeMenu').addEventListener('click', function(e) {
+        if (e.target.closest('.theme-menu-item')) {
+          this.classList.remove('show');
         }
       });
 
