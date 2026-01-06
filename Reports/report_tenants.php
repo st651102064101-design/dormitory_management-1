@@ -35,7 +35,7 @@ try {
         LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status IN ('0', '2')
         LEFT JOIN room r ON c.room_id = r.room_id
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-        ORDER BY t.tnt_name ASC
+        ORDER BY t.tnt_ceatetime DESC
     ");
     $tenants = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
