@@ -1977,11 +1977,6 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                                   <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                                   ทำการซ่อม
                                 </button>
-                              <?php else: ?>
-                                <button type="button" class="btn-modern btn-primary" onclick="openScheduleModal(<?php echo (int)$r['repair_id']; ?>, '<?php echo htmlspecialchars($r['room_number'] ?? '-', ENT_QUOTES); ?>')" title="ต้องกำหนดนัดหมายก่อน" style="padding:0.5rem 0.9rem; font-size:0.85rem; opacity:0.8;">
-                                  <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
-                                  กำหนดนัดหมายก่อน
-                                </button>
                               <?php endif; ?>
                               <button type="button" class="btn-modern" onclick="updateRepairStatus(<?php echo (int)$r['repair_id']; ?>, '3')" style="padding:0.5rem 0.9rem; font-size:0.85rem; background:rgba(239,68,68,0.2); color:#f87171; border:1px solid rgba(239,68,68,0.3);">
                                 <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
