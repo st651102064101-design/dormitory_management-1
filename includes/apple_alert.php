@@ -2,7 +2,35 @@
 <!-- ใช้งาน: include_once __DIR__ . '/../includes/apple_alert.php'; -->
 <!-- แล้วเรียก: alert('ข้อความ'); หรือ showAppleAlert('ข้อความ', 'หัวข้อ'); -->
 
-<div id="appleAlert" class="apple-alert-overlay">
+<?php
+// Get system theme
+$appleAlertTheme = 'dark'; // default
+try {
+    if (isset($pdo) && $pdo instanceof PDO) {
+        $themeStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'public_theme' LIMIT 1");
+        $themeRow = $themeStmt->fetch(PDO::FETCH_ASSOC);
+        if ($themeRow) {
+            $appleAlertTheme = $themeRow['setting_value'];
+        }
+    }
+} catch (Exception $e) {
+    // Fallback to dark if error
+}
+
+// Get theme color
+$appleAlertColor = '#007AFF'; // iOS Blue default
+try {
+    if (isset($pdo) && $pdo instanceof PDO) {
+        $colorStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
+        $colorRow = $colorStmt->fetch(PDO::FETCH_ASSOC);
+        if ($colorRow && !empty($colorRow['setting_value'])) {
+            $appleAlertColor = $colorRow['setting_value'];
+        }
+    }
+} catch (Exception $e) {}
+?>
+
+<div id="appleAlert" class="apple-alert-overlay" data-theme="<?php echo htmlspecialchars($appleAlertTheme, ENT_QUOTES, 'UTF-8'); ?>">
     <div class="apple-alert-dialog">
         <div class="apple-alert-content">
             <div class="apple-alert-title" id="appleAlertTitle">แจ้งเตือน</div>
@@ -35,8 +63,95 @@
     display: flex;
 }
 
-.apple-alert-dialog {
+/* Light Theme (Default iOS Style) */
+.apple-alert-overlay[data-theme="light"] .apple-alert-dialog {
     background: rgba(255, 255, 255, 0.95);
+}
+
+.apple-alert-overlay[data-theme="light"] .apple-alert-title,
+.apple-alert-overlay[data-theme="light"] .apple-alert-message {
+    color: #000;
+}
+
+.apple-alert-overlay[data-theme="light"] .apple-alert-actions {
+    border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.apple-alert-overlay[data-theme="light"] .apple-alert-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.apple-alert-overlay[data-theme="light"] .apple-alert-btn:active {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme */
+.apple-alert-overlay[data-theme="dark"] .apple-alert-dialog {
+    background: rgba(28, 28, 30, 0.95);
+}
+
+.apple-alert-overlay[data-theme="dark"] .apple-alert-title,
+.apple-alert-overlay[data-theme="dark"] .apple-alert-message {
+    color: #fff;
+}
+
+.apple-alert-overlay[data-theme="dark"] .apple-alert-actions {
+    border-top: 0.5px solid rgba(255, 255, 255, 0.15);
+}
+
+.apple-alert-overlay[data-theme="dark"] .apple-alert-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.apple-alert-overlay[data-theme="dark"] .apple-alert-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* Auto Theme - follows time of day */
+.apple-alert-overlay[data-theme="auto"] .apple-alert-dialog {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.apple-alert-overlay[data-theme="auto"] .apple-alert-title,
+.apple-alert-overlay[data-theme="auto"] .apple-alert-message {
+    color: #000;
+}
+
+.apple-alert-overlay[data-theme="auto"] .apple-alert-actions {
+    border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+}
+
+.apple-alert-overlay[data-theme="auto"] .apple-alert-btn:hover {
+    background: rgba(0, 0, 0, 0.05);
+}
+
+.apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+/* Auto theme dark hours (18:00-6:00) */
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-dialog {
+    background: rgba(28, 28, 30, 0.95);
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-title,
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-message {
+    color: #fff;
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-actions {
+    border-top: 0.5px solid rgba(255, 255, 255, 0.15);
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.apple-alert-dialog {
     backdrop-filter: blur(30px);
     -webkit-backdrop-filter: blur(30px);
     border-radius: 14px;
@@ -56,20 +171,18 @@
 .apple-alert-title {
     font-size: 17px;
     font-weight: 600;
-    color: #000;
     margin-bottom: 8px;
     letter-spacing: -0.4px;
 }
 
 .apple-alert-message {
     font-size: 13px;
-    color: #000;
     line-height: 1.4;
     letter-spacing: -0.08px;
 }
 
 .apple-alert-actions {
-    border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+    /* border set by theme */
 }
 
 .apple-alert-btn {
@@ -77,21 +190,12 @@
     padding: 12px;
     background: transparent;
     border: none;
-    color: #007AFF;
+    color: <?php echo htmlspecialchars($appleAlertColor, ENT_QUOTES, 'UTF-8'); ?>;
     font-size: 17px;
     font-weight: 400;
     cursor: pointer;
     transition: background 0.15s;
     letter-spacing: -0.4px;
-}
-
-.apple-alert-btn:hover {
-    background: rgba(0, 0, 0, 0.05);
-}
-
-.apple-alert-btn:active {
-    background: rgba(0, 0, 0, 0.1);
-    transform: scale(0.98);
 }
 
 @keyframes appleAlertFadeIn {
@@ -111,30 +215,6 @@
     to {
         transform: scale(1);
         opacity: 1;
-    }
-}
-
-/* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .apple-alert-dialog {
-        background: rgba(50, 50, 50, 0.95);
-    }
-    
-    .apple-alert-title,
-    .apple-alert-message {
-        color: #fff;
-    }
-    
-    .apple-alert-actions {
-        border-top: 0.5px solid rgba(255, 255, 255, 0.1);
-    }
-    
-    .apple-alert-btn:hover {
-        background: rgba(255, 255, 255, 0.05);
-    }
-    
-    .apple-alert-btn:active {
-        background: rgba(255, 255, 255, 0.1);
     }
 }
 
@@ -179,8 +259,29 @@ if (typeof window !== 'undefined') {
     };
 }
 
-// Close on backdrop click
+// Handle auto theme time-based switching
+function updateAutoTheme() {
+    const alertEl = document.getElementById('appleAlert');
+    if (alertEl && alertEl.getAttribute('data-theme') === 'auto') {
+        const hour = new Date().getHours();
+        const isDark = hour >= 18 || hour < 6;
+        
+        if (isDark) {
+            document.body.classList.add('auto-dark');
+        } else {
+            document.body.classList.remove('auto-dark');
+        }
+    }
+}
+
+// Initialize and update auto theme
 document.addEventListener('DOMContentLoaded', function() {
+    updateAutoTheme();
+    
+    // Update every minute for auto theme
+    setInterval(updateAutoTheme, 60000);
+    
+    // Close on backdrop click
     const alertEl = document.getElementById('appleAlert');
     if (alertEl) {
         alertEl.addEventListener('click', function(e) {
