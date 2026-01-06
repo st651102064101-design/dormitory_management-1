@@ -88,7 +88,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.access_token,
                     e.exp_id, e.exp_total, e.exp_status,
                     COUNT(p.pay_id) as payment_count,
-                    SUM(IF(p.pay_status = '1', p.pay_amount, 0)) as paid_amount
+                    SUM(IF(p.pay_status = '1', p.pay_amount, 0)) as paid_amount,
+                    SUM(IF(p.pay_proof IS NOT NULL AND p.pay_proof != '', 1, 0)) as has_slip
                 FROM tenant t
                 LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                 LEFT JOIN room r ON b.room_id = r.room_id
@@ -108,6 +109,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 // แปลงค่า NULL เป็น 0 สำหรับการคำนวณ
                 $bookingInfo['ctr_deposit'] = floatval($bookingInfo['ctr_deposit'] ?? 0);
                 $bookingInfo['paid_amount'] = floatval($bookingInfo['paid_amount'] ?? 0);
+                $bookingInfo['payment_count'] = intval($bookingInfo['payment_count'] ?? 0);
+                $bookingInfo['has_slip'] = intval($bookingInfo['has_slip'] ?? 0);
                 $bookingInfo['type_price'] = floatval($bookingInfo['type_price'] ?? 0);
                 $searchMethod = 'found';
                 
@@ -151,9 +154,11 @@ if ($currentBkgStatus === '1' && $currentExpStatus === '1') {
 }
 
 // Build tracking steps (shipment-like) with dynamic state
-$hasPaymentProof = (($bookingInfo['paid_amount'] ?? 0) > 0) || $currentExpStatus === '1';
+$hasPaymentProof = ($bookingInfo['has_slip'] > 0) || $currentExpStatus === '1' || $currentExpStatus === '2';
+$hasPaymentRecord = ($bookingInfo['payment_count'] > 0);
 $progressStage = 1; // baseline: booking found
-if ($hasPaymentProof) $progressStage = 2;
+if ($hasPaymentRecord) $progressStage = 2; // มี payment record แล้ว (ไม่ว่าจะมีสลิปหรือไม่)
+if ($hasPaymentProof) $progressStage = 2.5; // มีสลิปแล้ว
 if ($currentExpStatus === '1') $progressStage = 3;
 if (!empty($bookingInfo['ctr_id']) && $currentExpStatus === '1') $progressStage = 4;
 if ($currentBkgStatus === '2') $progressStage = 5;
@@ -164,8 +169,8 @@ $trackingSteps = [
         'desc' => 'ระบบบันทึกคำจองแล้ว ' . (!empty($bookingInfo['bkg_date']) ? '(' . htmlspecialchars(thaiDate($bookingInfo['bkg_date'], 'd M Y')) . ')' : ''),
     ],
     [
-        'label' => 'ส่งหลักฐานมัดจำ',
-        'desc' => $hasPaymentProof ? 'รับสลิปแล้ว กำลังประมวลผล' : 'รออัปโหลดสลิปหรือใบเสร็จ',
+        'label' => 'ส่งหลักฐานค่ามัดจำ',
+        'desc' => $hasPaymentProof ? 'รับสลิปค่ามัดจำแล้ว กำลังตรวจสอบ' : ($hasPaymentRecord ? 'รออัปโหลดสลิปการชำระค่ามัดจำ ฿2,000' : 'รอบันทึกข้อมูลการชำระ'),
     ],
     [
         'label' => 'ตรวจสอบ/อนุมัติ',
@@ -1606,11 +1611,11 @@ if ($publicTheme === 'light') {
                 </div>
                 <div class="info-item">
                     <div class="info-label">มัดจำ</div>
-                    <div class="info-value highlight">฿<?php echo number_format($bookingInfo['ctr_deposit'] ?? 0); ?></div>
+                    <div class="info-value highlight">฿2,000</div>
                 </div>
                 <?php 
                   // Upcoming room fee due logic (simplified)
-                  $deposit = floatval($bookingInfo['ctr_deposit'] ?? 0);
+                  $deposit = 2000; // ค่ามัดจำคงที่
                   $paid = floatval($bookingInfo['paid_amount'] ?? 0);
                   $monthly = floatval($bookingInfo['type_price'] ?? 0);
                   $expStatus = $currentExpStatus; // 0=รอตรวจ,1=ตรวจแล้ว
@@ -1684,11 +1689,11 @@ if ($publicTheme === 'light') {
                             เปิดสัญญาเช่า
                         </a>
                         <div style="margin-top:10px; color:#94a3b8; font-size:14px; line-height:1.6;">
-                            คำแนะนำเกี่ยวกับสัญญาและหลักฐานการชำระเงิน:<br>
+                            คำแนะนำเกี่ยวกับสัญญาและหลักฐานการชำระค่ามัดจำ:<br>
                             1) ดาวน์โหลดสัญญา หากมีเครื่องปริ้นให้ปริ้นและเซ็นก่อนนำมาแสดงในวันเข้าพัก<br>
-                            2) หากคุณได้อัปโหลดหลักฐานการชำระเงิน (สลิป/ใบเสร็จ) ในระบบแล้ว ให้เตรียมแสดงไฟล์หรือแสดงบนมือถือเพื่อให้เจ้าหน้าที่ตรวจสอบได้สะดวก<br>
-                            3) หากยังไม่ได้อัปโหลดหลักฐาน กรุณานำใบเสร็จตัวจริง (เช่น สลิปโอน/ใบเสร็จเงินสด) และบัตรประชาชนของผู้ลงชื่อมาด้วยในวันเข้าพัก<br>
-                            4) ถ้าไม่สะดวกปริ้น สามารถมาลงชื่อเซ็นสัญญากับเจ้าหน้าที่ในวันเข้าพักได้
+                            2) หากคุณได้อัปโหลดสลิปการชำระค่ามัดจำ (฿2,000) ในระบบแล้ว ให้เตรียมแสดงสลิปบนมือถือเพื่อให้เจ้าหน้าที่ตรวจสอบได้สะดวก<br>
+                            3) หากยังไม่ได้อัปโหลดสลิป กรุณานำสลิปการโอนค่ามัดจำ ฿2,000 และบัตรประชาชนของผู้ลงชื่อมาด้วยในวันเข้าพัก<br>
+                            4) ถ้าไม่สะดวกปริ้นสัญญา สามารถมาลงชื่อเซ็นสัญญากับเจ้าหน้าที่ในวันเข้าพักได้
                         </div>
                     </div>
                 </div>
