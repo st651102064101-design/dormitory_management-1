@@ -181,19 +181,22 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"]::before {
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-actions {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
     position: relative;
     background: linear-gradient(
         to bottom,
         transparent,
-        rgba(255, 255, 255, 0.02)
+        rgba(96, 165, 250, 0.05)
     );
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-btn {
     position: relative;
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 18px;
     text-shadow: 0 0 20px var(--alert-theme-color);
+    color: #60a5fa !important; /* Bright blue for dark mode */
+    z-index: 3;
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-btn::before {
@@ -206,27 +209,29 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"]::before {
     border-radius: 50%;
     background: radial-gradient(
         circle,
-        var(--alert-theme-color) 0%,
+        #60a5fa 0%,
         transparent 70%
     );
     opacity: 0;
     transform: translate(-50%, -50%);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-btn:hover::before {
     width: 200px;
     height: 200px;
-    opacity: 0.15;
+    opacity: 0.2;
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(96, 165, 250, 0.15);
     transform: scale(1.02);
+    color: #93c5fd !important;
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-btn:active {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(96, 165, 250, 0.25);
     transform: scale(0.98);
 }
 
@@ -323,19 +328,22 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-title {
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-actions {
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
     position: relative;
     background: linear-gradient(
         to bottom,
         transparent,
-        rgba(255, 255, 255, 0.02)
+        rgba(96, 165, 250, 0.05)
     );
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn {
     position: relative;
-    font-weight: 500;
+    font-weight: 600;
+    font-size: 18px;
     text-shadow: 0 0 20px var(--alert-theme-color);
+    color: #60a5fa !important; /* Bright blue for dark mode */
+    z-index: 3;
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn::before {
@@ -348,27 +356,29 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn::before 
     border-radius: 50%;
     background: radial-gradient(
         circle,
-        var(--alert-theme-color) 0%,
+        #60a5fa 0%,
         transparent 70%
     );
     opacity: 0;
     transform: translate(-50%, -50%);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: -1;
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:hover::before {
     width: 200px;
     height: 200px;
-    opacity: 0.15;
+    opacity: 0.2;
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+    background: rgba(96, 165, 250, 0.15);
     transform: scale(1.02);
+    color: #93c5fd !important;
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(96, 165, 250, 0.25);
     transform: scale(0.98);
 }
 
