@@ -374,6 +374,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
             gap: 16px;
+            width: 100%;
         }
         
         .room-card {
@@ -1034,7 +1035,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             .room-grid {
-                grid-template-columns: repeat(2, 1fr);
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            
+            .room-card {
+                padding: 14px 12px;
+                border-radius: 12px;
+            }
+            
+            .room-number {
+                font-size: 1.5rem;
+                margin-bottom: 6px;
+            }
+            
+            .room-type {
+                font-size: 0.8rem;
+                margin-bottom: 8px;
+            }
+            
+            .room-price {
+                font-size: 0.9rem;
+            }
+            
+            .room-price span {
+                font-size: 0.7rem;
             }
             
             .page-title h1 {
@@ -1091,23 +1116,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         @media (max-width: 480px) {
             .room-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 12px;
+                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+                gap: 10px;
             }
             
             .room-card {
-                padding: 14px;
+                padding: 12px 10px;
+                border-radius: 10px;
             }
             
             .room-number {
-                font-size: 1.2rem;
+                font-size: 1.3rem;
+                margin-bottom: 4px;
             }
             
             .room-type {
-                font-size: 0.8rem;
+                font-size: 0.75rem;
+                margin-bottom: 6px;
             }
             
             .room-price {
+                font-size: 0.85rem;
+            }
+            
+            .room-price span {
+                font-size: 0.65rem;
+            }
                 font-size: 1rem;
             }
             
@@ -1183,33 +1217,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <!-- Quick Action Buttons -->
-                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 20px 0; position: relative; z-index: 10;">
-                    <button type="button" onclick="copyAllInfo()" style="background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); font-size: 14px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 20px 0; position: relative; z-index: 9999;">
+                    <button type="button" onclick="copyAllInfo(); return false;" style="background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); font-size: 14px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; position: relative; z-index: 9999; pointer-events: auto;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; pointer-events: none;">
                             <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
                             <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
                         </svg>
-                        <span>คัดลอกทั้งหมด</span>
+                        <span style="pointer-events: none;">คัดลอกทั้งหมด</span>
                     </button>
                     
-                    <button type="button" onclick="shareBookingInfo()" style="background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); font-size: 14px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                    <button type="button" onclick="shareBookingInfo(); return false;" style="background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); font-size: 14px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; position: relative; z-index: 9999; pointer-events: auto;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; pointer-events: none;">
                             <circle cx="18" cy="5" r="3"></circle>
                             <circle cx="6" cy="12" r="3"></circle>
                             <circle cx="18" cy="19" r="3"></circle>
                             <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
                             <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                         </svg>
-                        <span>แชร์ข้อมูล</span>
+                        <span style="pointer-events: none;">แชร์ข้อมูล</span>
                     </button>
                     
-                    <button type="button" onclick="saveToNotes()" style="background: #8b5cf6; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); font-size: 14px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0;">
+                    <button type="button" onclick="saveToNotes(); return false;" style="background: #8b5cf6; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); font-size: 14px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; position: relative; z-index: 9999; pointer-events: auto;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; pointer-events: none;">
                             <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                             <polyline points="17 21 17 13 7 13 7 21"></polyline>
                             <polyline points="7 3 7 8 15 8"></polyline>
                         </svg>
-                        <span>บันทึกข้อมูล</span>
+                        <span style="pointer-events: none;">บันทึกข้อมูล</span>
                     </button>
                 </div>
                 
@@ -1908,26 +1942,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             preselected.click();
         }
         
+        // Fallback copy function for HTTP context
+        function fallbackCopyToClipboard(text) {
+            const textArea = document.createElement('textarea');
+            textArea.value = text;
+            textArea.style.position = 'fixed';
+            textArea.style.left = '-999999px';
+            textArea.style.top = '-999999px';
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            try {
+                document.execCommand('copy');
+            } catch (err) {
+                console.error('Fallback: Could not copy text', err);
+            }
+            document.body.removeChild(textArea);
+        }
+        
         // Booking Reference Functions
         function copyBookingId() {
             const text = document.getElementById('bookingIdText')?.textContent;
             if (text) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showAppleAlert('คัดลอกเลขที่การจองแล้ว!', 'สำเร็จ');
-                }).catch(() => {
-                    showAppleAlert('ไม่สามารถคัดลอกได้ กรุณาจดบันทึกด้วยตนเอง', 'แจ้งเตือน');
-                });
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showAppleAlert('คัดลอกเลขที่การจองแล้ว!', 'สำเร็จ');
+                    }).catch(() => {
+                        fallbackCopyToClipboard(text);
+                        showAppleAlert('คัดลอกแล้ว!', 'สำเร็จ');
+                    });
+                } else {
+                    fallbackCopyToClipboard(text);
+                    showAppleAlert('คัดลอกแล้ว! กรุณาตรวจสอบ', 'สำเร็จ');
+                }
             }
         }
         
         function copyTenantId() {
             const text = document.getElementById('tenantIdText')?.textContent;
             if (text) {
-                navigator.clipboard.writeText(text).then(() => {
-                    showAppleAlert('คัดลอกรหัสผู้เช่าแล้ว!', 'สำเร็จ');
-                }).catch(() => {
-                    showAppleAlert('ไม่สามารถคัดลอกได้ กรุณาจดบันทึกด้วยตนเอง', 'แจ้งเตือน');
-                });
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(text).then(() => {
+                        showAppleAlert('คัดลอกรหัสผู้เช่าแล้ว!', 'สำเร็จ');
+                    }).catch(() => {
+                        fallbackCopyToClipboard(text);
+                        showAppleAlert('คัดลอกแล้ว!', 'สำเร็จ');
+                    });
+                } else {
+                    fallbackCopyToClipboard(text);
+                    showAppleAlert('คัดลอกแล้ว! กรุณาตรวจสอบ', 'สำเร็จ');
+                }
             }
         }
         
@@ -1940,37 +2004,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                          `⚠️ กรุณาเก็บข้อมูลนี้ไว้สำหรับตรวจสอบสถานะการจอง\n` +
                          `🔗 ตรวจสอบสถานะ: ${window.location.origin}/dormitory_management/Public/booking_status.php`;
             
-            navigator.clipboard.writeText(text).then(() => {
-                showAppleAlert('คัดลอกข้อมูลทั้งหมดแล้ว!\n\nสามารถนำไปวางใน Notes, LINE หรือแอปอื่นๆ ได้เลย', 'สำเร็จ');
-            }).catch(() => {
-                showAppleAlert('ไม่สามารถคัดลอกได้\n\nกรุณาจดบันทึกข้อมูลด้วยตนเอง:\n\n' + 
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showAppleAlert('คัดลอกข้อมูลทั้งหมดแล้ว!\n\nสามารถนำไปวางใน Notes, LINE หรือแอปอื่นๆ ได้เลย', 'สำเร็จ');
+                }).catch(() => {
+                    fallbackCopyToClipboard(text);
+                    showAppleAlert('คัดลอกแล้ว! กรุณาตรวจสอบ', 'สำเร็จ');
+                });
+            } else {
+                fallbackCopyToClipboard(text);
+                showAppleAlert('คัดลอกแล้ว!\n\nกรุณาตรวจสอบข้อมูล:\n\n' + 
                               `เลขที่การจอง: ${bookingId}\n` +
-                              `รหัสผู้เช่า: ${tenantId}`, 'แจ้งเตือน');
-            });
+                              `รหัสผู้เช่า: ${tenantId}`, 'สำเร็จ');
+            }
         }
         
         function shareBookingInfo() {
             const bookingId = document.getElementById('bookingIdText')?.textContent || '';
             const tenantId = document.getElementById('tenantIdText')?.textContent || '';
-            const text = `📋 ข้อมูลการจองห้องพัก\n\n` +
-                         `เลขที่การจอง: ${bookingId}\n` +
-                         `รหัสผู้เช่า: ${tenantId}\n\n` +
-                         `ตรวจสอบสถานะ: ${window.location.origin}/dormitory_management/Public/booking_status.php`;
+            const shareText = `📋 ข้อมูลการจองห้องพัก - Sangthian Dormitory\n\n` +
+                         `🔢 เลขที่การจอง: ${bookingId}\n` +
+                         `👤 รหัสผู้เช่า: ${tenantId}\n\n` +
+                         `🔗 ตรวจสอบสถานะที่:\n${window.location.origin}/dormitory_management/Public/booking_status.php`;
             
+            // ตรวจสอบว่าเบราว์เซอร์รองรับ Web Share API หรือไม่
             if (navigator.share) {
                 navigator.share({
-                    title: 'ข้อมูลการจองห้องพัก - Sangthian Dormitory',
-                    text: text
-                }).catch(() => {
-                    // User cancelled, do nothing
+                    title: '📋 ข้อมูลการจองห้องพัก',
+                    text: shareText
+                }).then(() => {
+                    console.log('✅ แชร์สำเร็จ');
+                }).catch((error) => {
+                    // ถ้ายกเลิกหรือ error ไม่แสดงอะไร
+                    if (error.name !== 'AbortError') {
+                        console.log('Share cancelled or failed:', error);
+                    }
                 });
             } else {
-                // Fallback: copy to clipboard
-                navigator.clipboard.writeText(text).then(() => {
-                    showAppleAlert('คัดลอกข้อมูลแล้ว!\n\nสามารถแชร์ไปยัง LINE, Facebook หรือแอปอื่นๆ ได้', 'สำเร็จ');
-                }).catch(() => {
-                    showAppleAlert('เบราว์เซอร์ไม่รองรับการแชร์\n\nกรุณาจดบันทึกข้อมูลด้วยตนเอง', 'แจ้งเตือน');
-                });
+                // เบราว์เซอร์ไม่รองรับการแชร์
+                showAppleAlert('เบราว์เซอร์ไม่รองรับการแชร์\n\nกรุณาใช้ปุ่ม "คัดลอกทั้งหมด" แทน แล้วนำไปวางในแอปที่ต้องการแชร์', 'แจ้งเตือน');
             }
         }
         
