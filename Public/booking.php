@@ -255,19 +255,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $payProof = uploadFile($_FILES['pay_proof'], $paymentDir, 'payment');
                         }
                         
-                        // บันทึก payment ถ้ามีหลักฐานการโอน
-                        if ($payProof) {
-                            $paymentId = (int)substr((string)time(), -9) + 3;
-                            $stmtPayment = $pdo->prepare("
-                                INSERT INTO payment (pay_id, pay_date, pay_amount, pay_proof, pay_status, exp_id)
-                                VALUES (?, NOW(), ?, ?, '0', ?)
-                            ");
-                            $stmtPayment->execute([$paymentId, $deposit, $payProof, $expenseId]);
-                            
-                            // อัพเดท expense status เป็น '2' (รอตรวจสอบ)
-                            $updateExpStatus = $pdo->prepare("UPDATE expense SET exp_status = '2' WHERE exp_id = ?");
-                            $updateExpStatus->execute([$expenseId]);
-                        }
+                        // บันทึก payment record (ค่ามัดจำ 2000 บาท) - บันทึกทุกครั้งแม้ยังไม่มีสลิป
+                        $paymentId = (int)substr((string)time(), -9) + 3;
+                        $depositAmount = 2000; // ค่ามัดจำคงที่
+                        $payStatus = $payProof ? '0' : '0'; // 0 = รอตรวจสอบ (ไม่ว่าจะมีสลิปหรือไม่)
+                        
+                        $stmtPayment = $pdo->prepare("
+                            INSERT INTO payment (pay_id, pay_date, pay_amount, pay_proof, pay_status, exp_id)
+                            VALUES (?, NOW(), ?, ?, ?, ?)
+                        ");
+                        $stmtPayment->execute([$paymentId, $depositAmount, $payProof, $payStatus, $expenseId]);
+                        
+                        // อัพเดท expense status: '2' ถ้ามีสลิป (รอตรวจสอบ), '0' ถ้ายังไม่มีสลิป (รอชำระ)
+                        $expStatus = $payProof ? '2' : '0';
+                        $updateExpStatus = $pdo->prepare("UPDATE expense SET exp_status = ? WHERE exp_id = ?");
+                        $updateExpStatus->execute([$expStatus, $expenseId]);
                         
                         $updateRoom = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
                         $updateRoom->execute([$roomId]);
@@ -869,10 +871,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .step-content {
             display: none;
+            visibility: hidden;
+            height: 0;
+            overflow: hidden;
+            position: absolute;
+            pointer-events: none;
         }
         
         .step-content.active {
             display: block;
+            visibility: visible;
+            height: auto;
+            position: relative;
+            pointer-events: auto;
             animation: fadeIn 0.3s ease-in;
         }
         
@@ -1749,16 +1760,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label class="form-label">เบอร์ผู้ปกครอง</label>
                                 <input type="tel" name="parentsphone" class="form-input" placeholder="0812345678" maxlength="10">
                             </div>
-                            
-                            <!-- Step Buttons -->
-                            <div class="step-buttons">
-                                <button type="button" class="btn-next" onclick="goToStep(2)">
-                                    <span>ถัดไป: ชำระเงิน</span>
-                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="9 18 15 12 9 6"/>
-                                    </svg>
-                                </button>
-                            </div>
+                        </div>
+                        
+                        <!-- Step Buttons -->
+                        <div class="step-buttons">
+                            <button type="button" class="btn-next" onclick="goToStep(2)">
+                                <span>ถัดไป: ชำระเงิน</span>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="9 18 15 12 9 6"/>
+                                </svg>
+                            </button>
+                        </div>
                         </div>
                         
                         <!-- Step 2: Payment -->
@@ -1777,7 +1789,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                                 <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
                                     <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px;">ค่ามัดจำ</div>
-                                    <div style="font-size: 1.2rem; font-weight: 700; color: #fbbf24;">฿<?php echo number_format($defaultDeposit); ?></div>
+                                    <div id="paymentAmountDisplay" style="font-size: 1.2rem; font-weight: 700; color: #fbbf24;">฿2,000</div>
+                                    <input type="hidden" name="payment_amount" id="paymentAmountInput" value="2000">
                                 </div>
                                 <?php if (!empty($bankAccountNumber)): ?>
                                 <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
@@ -1795,7 +1808,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div style="text-align: center; margin-bottom: 16px;">
                                 <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
                                     <img id="qrCodeImage" 
-                                         src="https://promptpay.io/<?php echo urlencode($promptpayNumber); ?>/<?php echo $defaultDeposit; ?>.png" 
+                                         src="https://promptpay.io/<?php echo urlencode($promptpayNumber); ?>/2000.png" 
                                          alt="PromptPay QR Code" 
                                          style="width: 180px; height: auto; display: block;">
                                 </div>
@@ -1816,7 +1829,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     อัพโหลดสลิปการโอนเงิน (ไม่บังคับ)
                                 </label>
                                 <div class="upload-zone" id="paymentUploadZone" style="border: 2px dashed rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(0,0,0,0.2);">
-                                    <input type="file" name="pay_proof" id="payProofInput" accept="image/*,.pdf" style="display: none;">
+                                    <input type="file" name="pay_proof" id="payProofInput" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" style="display: none;">
                                     <div id="uploadPlaceholder">
                                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" style="margin-bottom: 10px;">
                                             <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
@@ -2003,6 +2016,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 document.getElementById('selectedRoomDisplay').classList.add('show');
                 document.getElementById('selectedRoomName').textContent = 'ห้อง ' + roomNumber;
                 document.getElementById('selectedRoomPrice').textContent = '฿' + parseInt(price).toLocaleString() + '/เดือน';
+                
+                // Update payment amount
+                updatePaymentAmount();
             });
         });
         
@@ -2462,15 +2478,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return false;
             }
             
-            // Check dates
-            const startDate = document.querySelector('input[name="startdate"]')?.value;
-            const endDate = document.querySelector('input[name="enddate"]')?.value;
-            if (!startDate || !endDate) {
-                alert('กรุณาเลือกวันที่เข้าพักและวันสิ้นสุดสัญญา');
+            // Check contract dates
+            const ctrStart = document.getElementById('ctrStart')?.value;
+            const ctrEnd = document.getElementById('ctrEnd')?.value;
+            if (!ctrStart || !ctrEnd) {
+                alert('กรุณาเลือกวันที่เข้าพักและระยะเวลาสัญญา');
                 return false;
             }
             
             return true;
+        }
+        
+        // Update payment amount based on room price
+        function updatePaymentAmount() {
+            // ค่ามัดจำคงที่ 2000 บาท - ไม่เปลี่ยนตามห้องที่เลือก
+            const depositAmount = 2000;
+            
+            // Update display (already fixed at 2000)
+            const amountDisplay = document.getElementById('paymentAmountDisplay');
+            const amountInput = document.getElementById('paymentAmountInput');
+            if (amountDisplay) {
+                amountDisplay.textContent = '฿2,000';
+            }
+            if (amountInput) {
+                amountInput.value = depositAmount;
+            }
+            
+            // Update QR Code with fixed amount
+            const qrImage = document.getElementById('qrCodeImage');
+            if (qrImage) {
+                const promptpayNumber = '<?php echo addslashes($promptpayNumber ?? ''); ?>';
+                if (promptpayNumber) {
+                    qrImage.src = `https://promptpay.io/${encodeURIComponent(promptpayNumber)}/2000.png`;
+                }
+            }
         }
         
         // Mobile name input validation
