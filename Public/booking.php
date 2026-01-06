@@ -1159,24 +1159,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="success-message">ขอบคุณที่ไว้วางใจ เจ้าหน้าที่จะติดต่อกลับเพื่อยืนยันการจองภายใน 24 ชั่วโมง</p>
             
             <!-- Booking Reference Section -->
-            <div style="background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;" id="bookingReferenceSection">
+            <div style="background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; border-radius: 16px; padding: 16px; margin: 24px 0; text-align: center;" id="bookingReferenceSection">
                 <p style="color: #10b981; font-size: 14px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px;">📋 หมายเลขการจองของคุณ</p>
-                <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; max-width: 100%;">
                     <?php if ($lastBookingId): ?>
-                    <div style="background: rgba(255,255,255,0.1); padding: 16px 24px; border-radius: 12px; min-width: 200px; position: relative;">
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">เลขที่การจอง</div>
-                        <div style="font-size: 28px; font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 2px;" id="bookingIdText"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
-                        <button onclick="copyBookingId()" style="position: absolute; top: 8px; right: 8px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 11px; transition: all 0.2s;">
-                            📋 คัดลอก
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">เลขที่การจอง</div>
+                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="bookingIdText"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
+                        <button onclick="copyBookingId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s;">
+                            📋
                         </button>
                     </div>
                     <?php endif; ?>
                     <?php if ($lastTenantId): ?>
-                    <div style="background: rgba(255,255,255,0.1); padding: 16px 24px; border-radius: 12px; min-width: 200px; position: relative;">
-                        <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">รหัสผู้เช่า</div>
-                        <div style="font-size: 28px; font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 2px;" id="tenantIdText"><?php echo htmlspecialchars($lastTenantId); ?></div>
-                        <button onclick="copyTenantId()" style="position: absolute; top: 8px; right: 8px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 11px; transition: all 0.2s;">
-                            📋 คัดลอก
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
+                        <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">รหัสผู้เช่า</div>
+                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="tenantIdText"><?php echo htmlspecialchars($lastTenantId); ?></div>
+                        <button onclick="copyTenantId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s;">
+                            📋
                         </button>
                     </div>
                     <?php endif; ?>
