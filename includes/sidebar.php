@@ -1825,12 +1825,8 @@ try {
       pointer-events: auto;
     }
 
-    /* Hide hamburger button when sidebar is open on mobile */
-    body.sidebar-open #sidebar-toggle {
-      opacity: 0 !important;
-      pointer-events: none !important;
-      visibility: hidden !important;
-    }
+    /* Keep hamburger button always clickable - removed hiding behavior */
+    /* User should be able to close sidebar by clicking hamburger */
   }
   
   @media (max-width: 480px) {
@@ -2240,6 +2236,17 @@ function initSidebarToggle() {
   toggleBtn.addEventListener('click', function(e) {
     e.preventDefault();
     e.stopPropagation();
+
+    // If page_header.php already bound toggle event, skip this legacy handler
+    if (toggleBtn.__toggleBound) {
+      return;
+    }
+
+    // If page has __directSidebarToggle defined (in <head>), skip this legacy handler
+    // because onclick attribute already called it
+    if (typeof window.__directSidebarToggle === 'function') {
+      return;
+    }
 
     // If animate-ui has already handled toggle, skip this legacy handler
     if (window.__sidebarToggleHandled) {
