@@ -43,6 +43,10 @@ try {
 </div>
 
 <style>
+:root {
+    --alert-theme-color: <?php echo htmlspecialchars($appleAlertColor, ENT_QUOTES, 'UTF-8'); ?>;
+}
+
 .apple-alert-overlay {
     display: none;
     position: fixed;
@@ -61,6 +65,25 @@ try {
 
 .apple-alert-overlay.show {
     display: flex;
+}
+
+/* Animated gradient background for dark mode */
+.apple-alert-overlay[data-theme="dark"]::before,
+body.auto-dark .apple-alert-overlay[data-theme="auto"]::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(
+        circle at center,
+        var(--alert-theme-color) 0%,
+        transparent 60%
+    );
+    opacity: 0.08;
+    animation: gradientRotate 15s linear infinite;
+    pointer-events: none;
 }
 
 /* Light Theme (Default iOS Style) */
@@ -85,26 +108,126 @@ try {
     background: rgba(0, 0, 0, 0.1);
 }
 
-/* Dark Theme */
+/* Dark Theme - Premium Glass Morphism */
 .apple-alert-overlay[data-theme="dark"] .apple-alert-dialog {
-    background: rgba(28, 28, 30, 0.95);
+    background: linear-gradient(
+        135deg,
+        rgba(20, 20, 25, 0.98) 0%,
+        rgba(30, 30, 35, 0.95) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+        0 0 40px rgba(0, 0, 0, 0.6),
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 0 80px var(--alert-theme-color);
+    position: relative;
+    overflow: hidden;
+}
+
+/* Animated glow border for dark theme */
+.apple-alert-overlay[data-theme="dark"] .apple-alert-dialog::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+        45deg,
+        var(--alert-theme-color),
+        transparent,
+        var(--alert-theme-color)
+    );
+    border-radius: 16px;
+    opacity: 0.3;
+    z-index: -1;
+    animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* Shimmer effect */
+.apple-alert-overlay[data-theme="dark"] .apple-alert-dialog::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.03) 50%,
+        transparent 70%
+    );
+    animation: shimmer 3s linear infinite;
+    pointer-events: none;
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-title,
 .apple-alert-overlay[data-theme="dark"] .apple-alert-message {
     color: #fff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.apple-alert-overlay[data-theme="dark"] .apple-alert-title {
+    background: linear-gradient(
+        135deg,
+        #ffffff 0%,
+        rgba(255, 255, 255, 0.9) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-actions {
-    border-top: 0.5px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(255, 255, 255, 0.02)
+    );
+}
+
+.apple-alert-overlay[data-theme="dark"] .apple-alert-btn {
+    position: relative;
+    font-weight: 500;
+    text-shadow: 0 0 20px var(--alert-theme-color);
+}
+
+.apple-alert-overlay[data-theme="dark"] .apple-alert-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        var(--alert-theme-color) 0%,
+        transparent 70%
+    );
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.apple-alert-overlay[data-theme="dark"] .apple-alert-btn:hover::before {
+    width: 200px;
+    height: 200px;
+    opacity: 0.15;
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-btn:hover {
     background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.02);
 }
 
 .apple-alert-overlay[data-theme="dark"] .apple-alert-btn:active {
     background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.98);
 }
 
 /* Auto Theme - follows time of day */
@@ -129,26 +252,124 @@ try {
     background: rgba(0, 0, 0, 0.1);
 }
 
-/* Auto theme dark hours (18:00-6:00) */
+/* Auto theme dark hours (18:00-6:00) - Premium Glass Morphism */
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-dialog {
-    background: rgba(28, 28, 30, 0.95);
+    background: linear-gradient(
+        135deg,
+        rgba(20, 20, 25, 0.98) 0%,
+        rgba(30, 30, 35, 0.95) 100%
+    );
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 
+        0 0 40px rgba(0, 0, 0, 0.6),
+        0 8px 32px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05),
+        0 0 80px var(--alert-theme-color);
+    position: relative;
+    overflow: hidden;
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-dialog::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(
+        45deg,
+        var(--alert-theme-color),
+        transparent,
+        var(--alert-theme-color)
+    );
+    border-radius: 16px;
+    opacity: 0.3;
+    z-index: -1;
+    animation: borderGlow 3s ease-in-out infinite;
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-dialog::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.03) 50%,
+        transparent 70%
+    );
+    animation: shimmer 3s linear infinite;
+    pointer-events: none;
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-title,
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-message {
     color: #fff;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-title {
+    background: linear-gradient(
+        135deg,
+        #ffffff 0%,
+        rgba(255, 255, 255, 0.9) 100%
+    );
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-actions {
-    border-top: 0.5px solid rgba(255, 255, 255, 0.15);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    position: relative;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(255, 255, 255, 0.02)
+    );
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn {
+    position: relative;
+    font-weight: 500;
+    text-shadow: 0 0 20px var(--alert-theme-color);
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: radial-gradient(
+        circle,
+        var(--alert-theme-color) 0%,
+        transparent 70%
+    );
+    opacity: 0;
+    transform: translate(-50%, -50%);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:hover::before {
+    width: 200px;
+    height: 200px;
+    opacity: 0.15;
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:hover {
     background: rgba(255, 255, 255, 0.08);
+    transform: scale(1.02);
 }
 
 body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
     background: rgba(255, 255, 255, 0.15);
+    transform: scale(0.98);
 }
 
 .apple-alert-dialog {
@@ -159,13 +380,17 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
     max-width: 280px;
     box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
     overflow: hidden;
-    animation: appleAlertScaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    animation: appleAlertScaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
     transform-origin: center;
+    position: relative;
+    z-index: 1;
 }
 
 .apple-alert-content {
     padding: 20px 16px;
     text-align: center;
+    position: relative;
+    z-index: 2;
 }
 
 .apple-alert-title {
@@ -183,6 +408,8 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
 
 .apple-alert-actions {
     /* border set by theme */
+    position: relative;
+    z-index: 2;
 }
 
 .apple-alert-btn {
@@ -194,8 +421,11 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
     font-size: 17px;
     font-weight: 400;
     cursor: pointer;
-    transition: background 0.15s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     letter-spacing: -0.4px;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
 }
 
 @keyframes appleAlertFadeIn {
@@ -208,13 +438,56 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
 }
 
 @keyframes appleAlertScaleIn {
-    from {
+    0% {
         transform: scale(1.1);
         opacity: 0;
     }
-    to {
+    50% {
+        transform: scale(0.98);
+    }
+    100% {
         transform: scale(1);
         opacity: 1;
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes borderGlow {
+    0%, 100% {
+        opacity: 0.2;
+        filter: blur(10px);
+    }
+    50% {
+        opacity: 0.4;
+        filter: blur(20px);
+    }
+}
+
+@keyframes gradientRotate {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 0.6;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.05);
     }
 }
 
