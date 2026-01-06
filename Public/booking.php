@@ -1418,13 +1418,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <!-- Mobile Form Fields -->
                     <div class="form-group">
                         <label class="form-label">ชื่อ-นามสกุล <span class="required">*</span></label>
-                        <input type="text" id="mobileNameInput" class="form-input" placeholder="เช่น สมชาย ใจดี" required>
+                        <input type="text" id="mobileNameInput" class="form-input" placeholder="เช่น สมชาย ใจดี" autocomplete="name">
                         <div class="error-message" id="mobileNameError"></div>
                     </div>
                     
                     <div class="form-group">
                         <label class="form-label">เบอร์โทรศัพท์ <span class="required">*</span></label>
-                        <input type="tel" id="mobilePhoneInput" class="form-input" placeholder="0812345678" maxlength="10" required pattern="[0-9]{10}">
+                        <input type="tel" id="mobilePhoneInput" class="form-input" placeholder="0812345678" maxlength="10" autocomplete="tel" inputmode="numeric">
                         <div class="error-message" id="mobilePhoneError"></div>
                     </div>
                     
@@ -1467,7 +1467,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                     
-                    <button type="button" class="submit-btn" onclick="submitMobileForm()" style="margin-top: 24px;">
+                    <button type="button" class="submit-btn" id="mobileSubmitBtn" style="margin-top: 24px;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
                             <polyline points="22 4 12 14.01 9 11.01"/>
@@ -1852,6 +1852,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (e.target === this) {
                 closeMobileForm();
             }
+        });
+        
+        // Mobile submit button event listener
+        document.getElementById('mobileSubmitBtn')?.addEventListener('click', function(e) {
+            e.preventDefault();
+            submitMobileForm();
         });
         
         // Initialize
