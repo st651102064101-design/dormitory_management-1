@@ -2642,5 +2642,7 @@ if ($publicTheme === 'light') {
             window.open(googleMapsUrl, '_blank');
         }
     </script>
+    
+    <?php include_once __DIR__ . '/includes/apple_alert.php'; ?>
 </body>
 </html>

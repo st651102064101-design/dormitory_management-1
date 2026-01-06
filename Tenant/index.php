@@ -597,5 +597,7 @@ $contractStatusMap = [
             </a>
         </div>
     </nav>
+    
+    <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
 </body>
 </html>
