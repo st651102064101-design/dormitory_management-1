@@ -1379,6 +1379,14 @@ try {
             color: var(--primary);
         }
 
+        /* Header hide/show on scroll */
+        .header {
+            transition: transform 0.3s ease, background 0.3s ease;
+        }
+        .header.hide {
+            transform: translateY(-100%);
+        }
+
         /* ===== VIEW ALL BUTTON ===== */
         .view-all-wrapper {
             text-align: center;
@@ -1389,13 +1397,29 @@ try {
         @media (max-width: 768px) {
             .header {
                 flex-direction: column;
-                gap: 1rem;
-                padding: 1rem;
+                gap: 0.5rem;
+                padding: 0.75rem 1rem;
             }
             
             .nav-links {
-                flex-wrap: wrap;
-                justify-content: center;
+                width: 100%;
+                overflow-x: auto;
+                overflow-y: hidden;
+                display: flex;
+                flex-wrap: nowrap;
+                gap: 0.5rem;
+                padding: 0.25rem 0;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+            }
+            .nav-links::-webkit-scrollbar {
+                display: none;
+            }
+            .nav-links a {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
+                white-space: nowrap;
+                flex-shrink: 0;
             }
             
             .hero {
@@ -2371,14 +2395,30 @@ if ($publicTheme === 'light') {
     </footer>
 
     <script>
-        // Header scroll effect
+        // Header scroll effect with hide/show
+        let lastScrollTop = 0;
+        const header = document.getElementById('header');
+        
         window.addEventListener('scroll', function() {
-            const header = document.getElementById('header');
-            if (window.scrollY > 50) {
+            let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            
+            // Add scrolled class
+            if (scrollTop > 50) {
                 header.classList.add('scrolled');
             } else {
                 header.classList.remove('scrolled');
             }
+            
+            // Hide/show header based on scroll direction
+            if (scrollTop > lastScrollTop && scrollTop > 100) {
+                // Scrolling down
+                header.classList.add('hide');
+            } else {
+                // Scrolling up
+                header.classList.remove('hide');
+            }
+            
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
         });
 
         // Animate on scroll

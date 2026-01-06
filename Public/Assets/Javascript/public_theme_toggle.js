@@ -50,8 +50,23 @@
 
     var label = document.createElement('span');
     label.textContent = 'สลับธีม';
+    label.style.display = window.innerWidth <= 768 ? 'none' : 'inline';
+    label.className = 'theme-toggle-label';
     btn.appendChild(svg);
     btn.appendChild(label);
+
+    // Add media query listener to show/hide text on resize
+    function updateLabelVisibility() {
+      if (window.innerWidth <= 768) {
+        label.style.display = 'none';
+        btn.style.padding = '10px';
+      } else {
+        label.style.display = 'inline';
+        btn.style.padding = '10px 14px';
+      }
+    }
+
+    window.addEventListener('resize', updateLabelVisibility);
 
     // Append theme toggle at the end (billing pill will be above it)
     pillColumn.appendChild(btn);
