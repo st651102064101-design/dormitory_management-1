@@ -1660,6 +1660,564 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
           </style>
           <?php endif; ?>
 
+          <!-- Apple-Style Mobile Responsive CSS -->
+          <style>
+            /* ===== Apple-Inspired Mobile First Design ===== */
+            
+            /* Base Mobile Optimizations */
+            @media (max-width: 1024px) {
+              .reports-page .manage-panel {
+                padding: 1.5rem;
+                border-radius: 20px;
+                margin-top: 1.25rem;
+              }
+              
+              .panel-header {
+                gap: 0.875rem;
+              }
+              
+              .panel-icon {
+                width: 48px;
+                height: 48px;
+                border-radius: 14px;
+              }
+              
+              .panel-icon svg {
+                width: 24px;
+                height: 24px;
+              }
+              
+              .panel-title h1 {
+                font-size: 1.35rem;
+              }
+            }
+            
+            /* Tablet Breakpoint */
+            @media (max-width: 900px) {
+              .repair-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+              }
+              
+              .status-filters {
+                gap: 0.5rem;
+              }
+              
+              .status-filter-btn {
+                padding: 0.6rem 1rem;
+                font-size: 0.85rem;
+              }
+              
+              /* Table horizontal scroll */
+              .report-table {
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+              }
+              
+              .report-table table {
+                min-width: 800px;
+              }
+            }
+            
+            /* Mobile Breakpoint - iPhone Pro Max and below */
+            @media (max-width: 768px) {
+              /* Sidebar Adjustment */
+              .app-main {
+                padding: 1rem;
+              }
+              
+              /* Panel Mobile */
+              .reports-page .manage-panel {
+                padding: 1.25rem;
+                border-radius: 16px;
+                margin-top: 1rem;
+              }
+              
+              .panel-header {
+                flex-direction: row;
+                text-align: left;
+                gap: 0.75rem;
+              }
+              
+              .panel-icon {
+                width: 44px;
+                height: 44px;
+                border-radius: 12px;
+                flex-shrink: 0;
+              }
+              
+              .panel-icon svg {
+                width: 22px;
+                height: 22px;
+              }
+              
+              .panel-title h1 {
+                font-size: 1.15rem;
+                line-height: 1.3;
+              }
+              
+              .panel-title p {
+                font-size: 0.8rem;
+                line-height: 1.4;
+              }
+              
+              /* Stats Grid - 2 columns on mobile */
+              .repair-stats {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.75rem;
+              }
+              
+              .repair-stat-card {
+                padding: 1rem;
+                border-radius: 14px;
+              }
+              
+              .stat-card-header {
+                gap: 0.6rem;
+                margin-bottom: 0.75rem;
+              }
+              
+              .stat-card-icon {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+              }
+              
+              .stat-card-icon svg {
+                width: 20px;
+                height: 20px;
+              }
+              
+              .repair-stat-card h3 {
+                font-size: 0.75rem;
+              }
+              
+              .repair-stat-card .stat-number {
+                font-size: 1.75rem;
+              }
+              
+              /* Status Filters - Scrollable horizontal */
+              .status-filters {
+                display: flex;
+                gap: 0.5rem;
+                overflow-x: auto;
+                padding-bottom: 0.5rem;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                margin: 0 -1.25rem;
+                padding-left: 1.25rem;
+                padding-right: 1.25rem;
+              }
+              
+              .status-filters::-webkit-scrollbar {
+                display: none;
+              }
+              
+              .status-filter-btn {
+                padding: 0.55rem 0.9rem;
+                font-size: 0.8rem;
+                white-space: nowrap;
+                flex-shrink: 0;
+                border-radius: 100px;
+              }
+              
+              /* Sort Select */
+              .sort-select {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.85rem;
+                width: 100%;
+                margin-top: 0.75rem;
+              }
+              
+              /* Table - Card View on Mobile */
+              .report-table {
+                border-radius: 14px;
+                overflow: hidden;
+              }
+              
+              .report-table table {
+                min-width: unset;
+                width: 100%;
+              }
+              
+              .report-table thead {
+                display: none;
+              }
+              
+              .report-table tbody tr {
+                display: flex;
+                flex-direction: column;
+                padding: 1rem;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                gap: 0.75rem;
+                position: relative;
+              }
+              
+              .report-table tbody tr:last-child {
+                border-bottom: none;
+              }
+              
+              .report-table td {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                padding: 0;
+                border-bottom: none;
+              }
+              
+              .report-table td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                font-size: 0.75rem;
+                color: rgba(255,255,255,0.5);
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+                flex-shrink: 0;
+                margin-right: 1rem;
+                min-width: 80px;
+              }
+              
+              .report-table td.crud-column {
+                justify-content: flex-start;
+                padding-top: 0.75rem;
+                border-top: 1px solid rgba(255,255,255,0.05);
+                margin-top: 0.25rem;
+              }
+              
+              .report-table td.crud-column::before {
+                display: none;
+              }
+              
+              /* CRUD Actions on Mobile */
+              .crud-actions {
+                flex-wrap: wrap;
+                gap: 0.5rem;
+                width: 100%;
+              }
+              
+              .crud-actions button,
+              .crud-actions .btn-modern {
+                flex: 1;
+                min-width: calc(50% - 0.25rem);
+                justify-content: center;
+                padding: 0.6rem 0.75rem !important;
+                font-size: 0.8rem !important;
+              }
+              
+              /* Schedule Badge Mobile */
+              .schedule-badge {
+                max-width: none;
+                flex: 1;
+              }
+              
+              .btn-schedule {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.8rem;
+              }
+              
+              /* Status Badge Mobile */
+              .status-badge {
+                padding: 0.4rem 0.75rem;
+                font-size: 0.75rem;
+                min-width: auto;
+              }
+              
+              /* Time Badge Mobile */
+              .time-badge {
+                padding: 0.3rem 0.6rem;
+                font-size: 0.75rem;
+              }
+              
+              /* Image Thumbnail Mobile */
+              .repair-image-thumb {
+                width: 60px !important;
+                height: 60px !important;
+              }
+              
+              .image-placeholder {
+                width: 60px !important;
+                height: 60px !important;
+              }
+            }
+            
+            /* Small Mobile - iPhone SE / Mini */
+            @media (max-width: 480px) {
+              .app-main {
+                padding: 0.75rem;
+              }
+              
+              .reports-page .manage-panel {
+                padding: 1rem;
+                border-radius: 14px;
+              }
+              
+              .panel-header {
+                gap: 0.6rem;
+              }
+              
+              .panel-icon {
+                width: 40px;
+                height: 40px;
+              }
+              
+              .panel-title h1 {
+                font-size: 1.05rem;
+              }
+              
+              .panel-title p {
+                font-size: 0.75rem;
+              }
+              
+              /* Stats - Still 2 columns but tighter */
+              .repair-stats {
+                gap: 0.6rem;
+              }
+              
+              .repair-stat-card {
+                padding: 0.875rem;
+                border-radius: 12px;
+              }
+              
+              .stat-card-header {
+                gap: 0.5rem;
+              }
+              
+              .stat-card-icon {
+                width: 36px;
+                height: 36px;
+              }
+              
+              .stat-card-icon svg {
+                width: 18px;
+                height: 18px;
+              }
+              
+              .repair-stat-card h3 {
+                font-size: 0.7rem;
+              }
+              
+              .repair-stat-card .stat-number {
+                font-size: 1.5rem;
+              }
+              
+              /* Status Filters */
+              .status-filters {
+                margin: 0 -1rem;
+                padding-left: 1rem;
+                padding-right: 1rem;
+              }
+              
+              .status-filter-btn {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.75rem;
+              }
+              
+              .status-filter-btn svg {
+                width: 14px;
+                height: 14px;
+              }
+              
+              /* Table Card View */
+              .report-table tbody tr {
+                padding: 0.875rem;
+                gap: 0.6rem;
+              }
+              
+              .report-table td::before {
+                font-size: 0.7rem;
+                min-width: 70px;
+              }
+              
+              /* Buttons */
+              .crud-actions button,
+              .crud-actions .btn-modern {
+                padding: 0.5rem 0.6rem !important;
+                font-size: 0.75rem !important;
+              }
+              
+              .crud-actions button svg,
+              .crud-actions .btn-modern svg {
+                width: 14px !important;
+                height: 14px !important;
+              }
+              
+              /* Schedule Badge */
+              .schedule-details .date {
+                font-size: 0.8rem;
+              }
+              
+              .schedule-details .time,
+              .schedule-details .technician {
+                font-size: 0.7rem;
+              }
+              
+              /* Status Badge */
+              .status-badge {
+                padding: 0.35rem 0.6rem;
+                font-size: 0.7rem;
+              }
+              
+              .status-badge svg {
+                width: 12px !important;
+                height: 12px !important;
+              }
+            }
+            
+            /* Schedule Modal - Mobile Responsive */
+            @media (max-width: 768px) {
+              .schedule-modal-overlay {
+                align-items: flex-end;
+              }
+              
+              .schedule-modal {
+                width: 100%;
+                max-width: 100%;
+                border-radius: 24px 24px 0 0;
+                padding: 1.5rem;
+                max-height: 90vh;
+                margin: 0;
+              }
+              
+              .schedule-modal-overlay.active .schedule-modal {
+                transform: scale(1) translateY(0);
+              }
+              
+              .schedule-modal-header {
+                gap: 0.75rem;
+                margin-bottom: 1.25rem;
+                padding-bottom: 0.875rem;
+              }
+              
+              .schedule-modal-icon {
+                width: 44px;
+                height: 44px;
+              }
+              
+              .schedule-modal-icon svg {
+                width: 22px;
+                height: 22px;
+              }
+              
+              .schedule-modal-title h2 {
+                font-size: 1.15rem;
+              }
+              
+              .schedule-modal-title p {
+                font-size: 0.8rem;
+              }
+              
+              .schedule-modal-close {
+                width: 36px;
+                height: 36px;
+              }
+              
+              .schedule-form {
+                grid-template-columns: 1fr;
+                gap: 0.875rem;
+              }
+              
+              .schedule-form label {
+                font-size: 0.8rem;
+              }
+              
+              .schedule-form input,
+              .schedule-form textarea {
+                padding: 0.7rem 0.875rem;
+                font-size: 0.9rem;
+              }
+              
+              .schedule-info-box {
+                padding: 0.875rem;
+              }
+              
+              .schedule-info-box h4 {
+                font-size: 0.85rem;
+              }
+              
+              .schedule-info-box p {
+                font-size: 0.8rem;
+              }
+              
+              .schedule-form-actions {
+                flex-direction: column;
+                gap: 0.6rem;
+              }
+              
+              .schedule-form-actions button {
+                width: 100%;
+                justify-content: center;
+              }
+            }
+            
+            /* Touch Interaction Improvements */
+            @media (hover: none) and (pointer: coarse) {
+              .repair-stat-card:hover {
+                transform: none;
+              }
+              
+              .repair-stat-card:active {
+                transform: scale(0.98);
+              }
+              
+              .btn-modern:hover {
+                transform: none;
+              }
+              
+              .btn-modern:active {
+                transform: scale(0.96);
+              }
+              
+              .status-filter-btn:hover {
+                transform: none;
+              }
+              
+              .status-filter-btn:active {
+                transform: scale(0.96);
+              }
+              
+              .btn-schedule:hover {
+                transform: none;
+              }
+              
+              .btn-schedule:active {
+                transform: scale(0.96);
+              }
+            }
+            
+            /* Safe Area for notched devices */
+            @supports (padding-top: env(safe-area-inset-top)) {
+              .app-main {
+                padding-left: max(1rem, env(safe-area-inset-left));
+                padding-right: max(1rem, env(safe-area-inset-right));
+                padding-bottom: max(1rem, env(safe-area-inset-bottom));
+              }
+            }
+            
+            /* Dark Mode Table Card Labels */
+            @media (max-width: 768px) {
+              .report-table td[data-label]::before {
+                content: attr(data-label);
+              }
+            }
+            
+            /* Print Styles */
+            @media print {
+              .sidebar,
+              .toggle-btn,
+              .crud-actions,
+              .status-filters,
+              .btn-schedule {
+                display: none !important;
+              }
+              
+              .reports-page .manage-panel {
+                break-inside: avoid;
+                box-shadow: none;
+                border: 1px solid #ddd;
+              }
+            }
+          </style>
+
           <?php if (isset($_SESSION['success'])): ?>
             <div style="padding: 1rem 1.25rem; margin-bottom: 1.5rem; background: linear-gradient(135deg, #22c55e, #16a34a); color: white; border-radius: 14px; font-weight: 600; display: flex; align-items: center; gap: 0.75rem; box-shadow: 0 8px 25px rgba(34,197,94,0.25); animation: fadeInUp 0.5s ease forwards;">
               <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -1813,7 +2371,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                   <?php else: ?>
                     <?php foreach ($repairs as $r): ?>
                       <?php $status = (string)($r['repair_status'] ?? ''); ?>
-                      <tr data-repair-id="<?php echo (int)$r['repair_id']; ?>">
+                      <tr data-repair-id="<?php echo (int)$r['repair_id']; ?>" data-status="<?php echo htmlspecialchars($status); ?>">
                         <?php 
                           $repairDate = $r['repair_date'] ?? '';
                           $repairTime = $r['repair_time'] ?? '00:00:00';
@@ -1833,7 +2391,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                           $repairDateTime = trim($dateOnly . ' ' . $repairTime);
                           $timeInfo = relativeTimeInfo($repairDateTime);
                         ?>
-                        <td>
+                        <td data-label="วันที่">
                           <div style="display:flex; flex-direction:column; gap:0.2rem;">
                             <span class="time-badge relative-time <?php echo htmlspecialchars($timeInfo['class']); ?>" 
                                   data-timestamp="<?php 
@@ -1862,7 +2420,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                             </span>
                           </div>
                         </td>
-                        <td>
+                        <td data-label="รูปภาพ">
                           <div style="display:flex; align-items:center; justify-content:center; min-width:60px; min-height:60px;">
                             <?php if (!empty($r['repair_image'])): ?>
                               <img src="/dormitory_management/Public/Assets/Images/Repairs/<?php echo htmlspecialchars(basename($r['repair_image'])); ?>" 
@@ -1881,7 +2439,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                             <?php endif; ?>
                           </div>
                         </td>
-                        <td>
+                        <td data-label="ห้อง/ผู้แจ้ง">
                           <div style="display:flex; flex-direction:column; gap:0.25rem;">
                             <span style="font-weight:600; display:flex; align-items:center; gap:0.4rem;">
                               <svg style="width:14px;height:14px;opacity:0.6;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
@@ -1893,13 +2451,13 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                             </span>
                           </div>
                         </td>
-                        <td style="max-width:250px;">
+                        <td data-label="รายละเอียด" style="max-width:250px;">
                           <div style="line-height:1.5; color:rgba(255,255,255,0.8);">
                             <?php echo nl2br(htmlspecialchars($r['repair_desc'] ?? '-')); ?>
                           </div>
                         </td>
                         <!-- Schedule Column -->
-                        <td>
+                        <td data-label="นัดหมายซ่อม">
                           <?php 
                             $scheduledDate = $r['scheduled_date'] ?? null;
                             $scheduledTimeStart = $r['scheduled_time_start'] ?? null;
@@ -1955,7 +2513,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                             <?php endif; ?>
                           </div>
                         </td>
-                        <td>
+                        <td data-label="สถานะ">
                           <span class="status-badge" style="background: linear-gradient(135deg, <?php echo $statusColors[$status] ?? '#94a3b8'; ?>, <?php echo $statusColors[$status] ?? '#94a3b8'; ?>dd); padding:0.5rem 1rem; border-radius:100px; font-size:0.85rem; font-weight:600; display:inline-flex; align-items:center; gap:0.35rem; box-shadow: 0 4px 12px <?php echo $statusColors[$status] ?? '#94a3b8'; ?>40;">
                             <?php if ($status === '0'): ?>
                               <svg style="width:14px;height:14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
