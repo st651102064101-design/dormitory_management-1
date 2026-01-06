@@ -4,8 +4,8 @@ date_default_timezone_set('Asia/Bangkok');
 
 if (!function_exists('connectDB')) {
     function connectDB(){
-        $host = 'localhost';
-        $port = '3306';
+        $host = 'project.3bbddns.com';
+        $port = '36140';
         $db   = 'dormitory_management_db';
         $user = 'root';
         $pass = ''; 
