@@ -2208,81 +2208,74 @@ try {
   });
 })();
 
-// Global sidebar toggle (ทำงานทุกหน้า)
-// รอจน DOM โหลดเสร็จก่อนหาปุ่ม (เพราะ page_header.php อาจโหลดทีหลัง sidebar.php)
-function initSidebarToggle() {
-  const sidebar = document.querySelector('.app-sidebar');
-  const toggleBtn = document.getElementById('sidebar-toggle');
-  
-  // ถ้ายังไม่มีปุ่ม รอสักครู่แล้วลองใหม่
-  if (!toggleBtn) {
-    setTimeout(initSidebarToggle, 50);
+// Legacy sidebar toggle - only runs if sidebar_toggle.php is not loaded
+// This provides backward compatibility for pages that don't include sidebar_toggle.php
+(function() {
+  // Skip if new toggle system is already loaded
+  if (window.__sidebarToggleReady) {
+    console.debug('New sidebar toggle system loaded, skipping legacy handler');
     return;
   }
   
-  if (!sidebar) return;
-
-  // If animate-ui already set up sidebar toggle, skip binding duplicate handlers
-  if (window.__sidebarToggleHandled) {
-    console.debug('Sidebar toggle already handled by animate-ui; skipping legacy binding');
-    return;
-  }
-
-  // โหลดสถานะจาก localStorage (desktop เท่านั้น)
-  if (window.innerWidth > 1024 && localStorage.getItem('sidebarCollapsed') === 'true') {
-    sidebar.classList.add('collapsed');
-  }
-
-  toggleBtn.addEventListener('click', function(e) {
-    e.preventDefault();
-    e.stopPropagation();
-
-    // If page_header.php already bound toggle event, skip this legacy handler
-    if (toggleBtn.__toggleBound) {
+  function initLegacySidebarToggle() {
+    const sidebar = document.querySelector('.app-sidebar');
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    
+    if (!toggleBtn) {
+      setTimeout(initLegacySidebarToggle, 50);
       return;
     }
-
-    // If page has __directSidebarToggle defined (in <head>), skip this legacy handler
-    // because onclick attribute already called it
-    if (typeof window.__directSidebarToggle === 'function') {
+    
+    if (!sidebar) return;
+    
+    // Skip if already handled
+    if (toggleBtn.__toggleBound || window.__sidebarToggleHandled) {
       return;
     }
-
-    // If animate-ui has already handled toggle, skip this legacy handler
-    if (window.__sidebarToggleHandled) {
-      return;
-    }
-
+    
+    // Load saved state (desktop only)
     if (window.innerWidth > 1024) {
-      sidebar.style.transition = 'none';
-      void sidebar.offsetHeight;
-      sidebar.style.transition = '';
-
-      sidebar.classList.toggle('collapsed');
-      localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-    } else {
-      sidebar.classList.toggle('mobile-open');
-      document.body.classList.toggle('sidebar-open');
+      try {
+        if (localStorage.getItem('sidebarCollapsed') === 'true') {
+          sidebar.classList.add('collapsed');
+        }
+      } catch(e) {}
     }
-  });
-
-  // ปิด sidebar เมื่อคลิกนอก (mobile)
-  document.addEventListener('click', function(e) {
-    if (window.innerWidth <= 1024 && sidebar.classList.contains('mobile-open')) {
-      if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
-        sidebar.classList.remove('mobile-open');
-        document.body.classList.remove('sidebar-open');
+    
+    toggleBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (toggleBtn.__toggleBound || window.__sidebarToggleReady) return;
+      
+      if (window.innerWidth > 1024) {
+        sidebar.classList.toggle('collapsed');
+        try {
+          localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        } catch(e) {}
+      } else {
+        var isOpen = sidebar.classList.toggle('mobile-open');
+        document.body.classList.toggle('sidebar-open', isOpen);
       }
-    }
-  });
-}
-
-// เริ่มต้นเมื่อ DOM พร้อมหรือถ้าพร้อมแล้ว
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initSidebarToggle);
-} else {
-  initSidebarToggle();
-}
+    });
+    
+    // Close on outside click (mobile)
+    document.addEventListener('click', function(e) {
+      if (window.innerWidth <= 1024 && sidebar.classList.contains('mobile-open')) {
+        if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+          sidebar.classList.remove('mobile-open');
+          document.body.classList.remove('sidebar-open');
+        }
+      }
+    });
+  }
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initLegacySidebarToggle);
+  } else {
+    initLegacySidebarToggle();
+  }
+})();
 
 // Global function สำหรับปิด sidebar บนมือถือ (เรียกจากปุ่ม X)
 function closeSidebarMobile() {

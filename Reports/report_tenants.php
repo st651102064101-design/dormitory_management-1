@@ -77,6 +77,7 @@ $statusMap = [
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($siteName); ?> - รายงานผู้เช่า</title>
+    <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
@@ -657,22 +658,6 @@ $statusMap = [
             padding: 0.5rem 1rem !important;
         }
     </style>
-    <script>
-      // Ultra-early sidebar toggle fallback
-      window.__directSidebarToggle = function(event) {
-        if (event) { event.preventDefault(); event.stopPropagation(); }
-        const sidebar = document.querySelector('.app-sidebar');
-        if (!sidebar) return false;
-        const isMobile = window.innerWidth <= 1024;
-        if (isMobile) {
-          sidebar.classList.toggle('mobile-open');
-        } else {
-          sidebar.classList.toggle('collapsed');
-          try { localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed')); } catch(e) {}
-        }
-        return false;
-      };
-    </script>
 </head>
 <body>
     <div class="app-container">
