@@ -1159,23 +1159,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <p class="success-message">ขอบคุณที่ไว้วางใจ เจ้าหน้าที่จะติดต่อกลับเพื่อยืนยันการจองภายใน 24 ชั่วโมง</p>
             
             <!-- Booking Reference Section -->
-            <div style="background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;">
+            <div style="background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; border-radius: 16px; padding: 24px; margin: 24px 0; text-align: center;" id="bookingReferenceSection">
                 <p style="color: #10b981; font-size: 14px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px;">📋 หมายเลขการจองของคุณ</p>
                 <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px;">
                     <?php if ($lastBookingId): ?>
-                    <div style="background: rgba(255,255,255,0.1); padding: 16px 24px; border-radius: 12px; min-width: 200px;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 16px 24px; border-radius: 12px; min-width: 200px; position: relative;">
                         <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">เลขที่การจอง</div>
-                        <div style="font-size: 28px; font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 2px;"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
+                        <div style="font-size: 28px; font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 2px;" id="bookingIdText"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
+                        <button onclick="copyBookingId()" style="position: absolute; top: 8px; right: 8px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 11px; transition: all 0.2s;">
+                            📋 คัดลอก
+                        </button>
                     </div>
                     <?php endif; ?>
                     <?php if ($lastTenantId): ?>
-                    <div style="background: rgba(255,255,255,0.1); padding: 16px 24px; border-radius: 12px; min-width: 200px;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 16px 24px; border-radius: 12px; min-width: 200px; position: relative;">
                         <div style="font-size: 12px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">รหัสผู้เช่า</div>
-                        <div style="font-size: 28px; font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 2px;"><?php echo htmlspecialchars($lastTenantId); ?></div>
+                        <div style="font-size: 28px; font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 2px;" id="tenantIdText"><?php echo htmlspecialchars($lastTenantId); ?></div>
+                        <button onclick="copyTenantId()" style="position: absolute; top: 8px; right: 8px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px 10px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 11px; transition: all 0.2s;">
+                            📋 คัดลอก
+                        </button>
                     </div>
                     <?php endif; ?>
                 </div>
-                <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 0; line-height: 1.6;">
+                
+                <!-- Quick Action Buttons -->
+                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 20px 0;">
+                    <button onclick="copyAllInfo()" style="background: #10b981; color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                        </svg>
+                        คัดลอกทั้งหมด
+                    </button>
+                    
+                    <button onclick="shareBookingInfo()" style="background: #3b82f6; color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="18" cy="5" r="3"></circle>
+                            <circle cx="6" cy="12" r="3"></circle>
+                            <circle cx="18" cy="19" r="3"></circle>
+                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
+                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
+                        </svg>
+                        แชร์ข้อมูล
+                    </button>
+                    
+                    <button onclick="saveToNotes()" style="background: #8b5cf6; color: white; border: none; padding: 12px 24px; border-radius: 10px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                            <polyline points="7 3 7 8 15 8"></polyline>
+                        </svg>
+                        บันทึกข้อมูล
+                    </button>
+                </div>
+                
+                <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 16px 0 0 0; line-height: 1.6;">
                     💡 <strong>กรุณาบันทึกหมายเลขนี้</strong> เพื่อใช้ตรวจสอบสถานะการจองและข้อมูลการชำระเงินภายหลัง<br>
                     <a href="/dormitory_management/Public/booking_status.php" style="color: #10b981; text-decoration: underline; font-weight: 600;">คลิกที่นี่เพื่อตรวจสอบสถานะ</a>
                 </p>
@@ -1869,6 +1907,121 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (preselected) {
             preselected.click();
         }
+        
+        // Booking Reference Functions
+        function copyBookingId() {
+            const text = document.getElementById('bookingIdText')?.textContent;
+            if (text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showAppleAlert('คัดลอกเลขที่การจองแล้ว!', 'สำเร็จ');
+                }).catch(() => {
+                    showAppleAlert('ไม่สามารถคัดลอกได้ กรุณาจดบันทึกด้วยตนเอง', 'แจ้งเตือน');
+                });
+            }
+        }
+        
+        function copyTenantId() {
+            const text = document.getElementById('tenantIdText')?.textContent;
+            if (text) {
+                navigator.clipboard.writeText(text).then(() => {
+                    showAppleAlert('คัดลอกรหัสผู้เช่าแล้ว!', 'สำเร็จ');
+                }).catch(() => {
+                    showAppleAlert('ไม่สามารถคัดลอกได้ กรุณาจดบันทึกด้วยตนเอง', 'แจ้งเตือน');
+                });
+            }
+        }
+        
+        function copyAllInfo() {
+            const bookingId = document.getElementById('bookingIdText')?.textContent || '';
+            const tenantId = document.getElementById('tenantIdText')?.textContent || '';
+            const text = `📋 ข้อมูลการจองห้องพัก - Sangthian Dormitory\n\n` +
+                         `🔢 เลขที่การจอง: ${bookingId}\n` +
+                         `👤 รหัสผู้เช่า: ${tenantId}\n\n` +
+                         `⚠️ กรุณาเก็บข้อมูลนี้ไว้สำหรับตรวจสอบสถานะการจอง\n` +
+                         `🔗 ตรวจสอบสถานะ: ${window.location.origin}/dormitory_management/Public/booking_status.php`;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showAppleAlert('คัดลอกข้อมูลทั้งหมดแล้ว!\n\nสามารถนำไปวางใน Notes, LINE หรือแอปอื่นๆ ได้เลย', 'สำเร็จ');
+            }).catch(() => {
+                showAppleAlert('ไม่สามารถคัดลอกได้\n\nกรุณาจดบันทึกข้อมูลด้วยตนเอง:\n\n' + 
+                              `เลขที่การจอง: ${bookingId}\n` +
+                              `รหัสผู้เช่า: ${tenantId}`, 'แจ้งเตือน');
+            });
+        }
+        
+        function shareBookingInfo() {
+            const bookingId = document.getElementById('bookingIdText')?.textContent || '';
+            const tenantId = document.getElementById('tenantIdText')?.textContent || '';
+            const text = `📋 ข้อมูลการจองห้องพัก\n\n` +
+                         `เลขที่การจอง: ${bookingId}\n` +
+                         `รหัสผู้เช่า: ${tenantId}\n\n` +
+                         `ตรวจสอบสถานะ: ${window.location.origin}/dormitory_management/Public/booking_status.php`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'ข้อมูลการจองห้องพัก - Sangthian Dormitory',
+                    text: text
+                }).catch(() => {
+                    // User cancelled, do nothing
+                });
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(text).then(() => {
+                    showAppleAlert('คัดลอกข้อมูลแล้ว!\n\nสามารถแชร์ไปยัง LINE, Facebook หรือแอปอื่นๆ ได้', 'สำเร็จ');
+                }).catch(() => {
+                    showAppleAlert('เบราว์เซอร์ไม่รองรับการแชร์\n\nกรุณาจดบันทึกข้อมูลด้วยตนเอง', 'แจ้งเตือน');
+                });
+            }
+        }
+        
+        function saveToNotes() {
+            const bookingId = document.getElementById('bookingIdText')?.textContent || '';
+            const tenantId = document.getElementById('tenantIdText')?.textContent || '';
+            const text = `📋 ข้อมูลการจองห้องพัก - Sangthian Dormitory\n\n` +
+                         `🔢 เลขที่การจอง: ${bookingId}\n` +
+                         `👤 รหัสผู้เช่า: ${tenantId}\n\n` +
+                         `📅 วันที่จอง: ${new Date().toLocaleDateString('th-TH', {year: 'numeric', month: 'long', day: 'numeric'})}\n` +
+                         `⏰ เวลา: ${new Date().toLocaleTimeString('th-TH')}\n\n` +
+                         `⚠️ สำคัญ: กรุณาเก็บข้อมูลนี้ไว้สำหรับตรวจสอบสถานะการจอง\n\n` +
+                         `🔗 ลิงก์ตรวจสอบสถานะ:\n${window.location.origin}/dormitory_management/Public/booking_status.php`;
+            
+            // Create a downloadable text file
+            const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `booking_${bookingId}_${Date.now()}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showAppleAlert('บันทึกไฟล์แล้ว!\n\nไฟล์ข้อมูลการจองถูกบันทึกในอุปกรณ์ของคุณแล้ว', 'สำเร็จ');
+        }
+        
+        // Auto-save to localStorage when success page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            const bookingId = document.getElementById('bookingIdText')?.textContent;
+            const tenantId = document.getElementById('tenantIdText')?.textContent;
+            
+            if (bookingId && tenantId) {
+                // Save to localStorage as backup
+                const bookingData = {
+                    bookingId: bookingId,
+                    tenantId: tenantId,
+                    timestamp: Date.now(),
+                    date: new Date().toISOString()
+                };
+                
+                // Keep last 5 bookings
+                let savedBookings = JSON.parse(localStorage.getItem('dormitory_bookings') || '[]');
+                savedBookings.unshift(bookingData);
+                savedBookings = savedBookings.slice(0, 5);
+                localStorage.setItem('dormitory_bookings', JSON.stringify(savedBookings));
+                
+                console.log('✅ ข้อมูลการจองถูกบันทึกอัตโนมัติแล้ว');
+            }
+        });
     </script>
     
     <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
