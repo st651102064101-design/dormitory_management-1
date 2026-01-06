@@ -1740,6 +1740,96 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
             </div>
           </section>
 
+          <!-- Modern Toggle Button -->
+          <div style="margin: 1.75rem 0;">
+            <button type="button" id="toggleFormBtn" class="toggle-btn" onclick="toggleRepairForm()">
+              <svg id="toggleFormIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="6 9 12 15 18 9"/>
+              </svg>
+              <span id="toggleFormText">ซ่อนฟอร์มแจ้งซ่อม</span>
+            </button>
+          </div>
+
+          <!-- Add Repair Form Section -->
+          <section class="manage-panel" id="addRepairSection" style="--panel-accent: #3b82f6; --panel-accent-end: #6366f1;">
+            <div class="panel-header">
+              <div class="panel-icon" style="background: linear-gradient(135deg, #3b82f6, #6366f1);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"/>
+                  <line x1="5" y1="12" x2="19" y2="12"/>
+                </svg>
+              </div>
+              <div class="panel-title">
+                <h1>เพิ่มการแจ้งซ่อม</h1>
+                <p>เลือกห้อง/ผู้เช่า ระบุวันที่และรายละเอียดงานซ่อม</p>
+              </div>
+            </div>
+            <form action="../Manage/process_repair.php" method="post" id="repairForm" enctype="multipart/form-data">
+              <div class="repair-form">
+                <div class="form-group">
+                  <label for="ctr_id">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    สัญญา / ห้องพัก <span style="color:#f87171;">*</span>
+                  </label>
+                  <select id="ctr_id" name="ctr_id" required>
+                    <option value="">-- เลือกสัญญา --</option>
+                    <?php foreach ($contracts as $ctr): ?>
+                      <option value="<?php echo (int)$ctr['ctr_id']; ?>">
+                        ห้อง <?php echo htmlspecialchars((string)($ctr['room_number'] ?? '-')); ?> - <?php echo htmlspecialchars($ctr['tnt_name'] ?? 'ไม่ระบุ'); ?>
+                      </option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="repair_date">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    วันที่แจ้ง
+                  </label>
+                  <input type="text" id="repair_date" name="repair_date" readonly style="opacity:0.7; cursor:not-allowed;" value="<?php echo date('d/m/Y'); ?>" />
+                  <input type="hidden" id="repair_date_hidden" name="repair_date_hidden" value="<?php echo date('Y-m-d'); ?>" />
+                </div>
+                <div class="form-group">
+                  <label for="repair_time">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    เวลาแจ้ง
+                  </label>
+                  <input type="text" id="repair_time" name="repair_time" readonly style="opacity:0.7; cursor:not-allowed; font-weight:600; font-size:1.1rem;" value="<?php echo date('H:i:s'); ?>" />
+                  <input type="hidden" id="repair_time_hidden" name="repair_time_hidden" value="<?php echo date('H:i:s'); ?>" />
+                </div>
+                <input type="hidden" name="repair_status" value="0" />
+                <div class="form-group" style="grid-column:1 / -1;">
+                  <label for="repair_desc">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                    รายละเอียด <span style="color:#f87171;">*</span>
+                  </label>
+                  <textarea id="repair_desc" name="repair_desc" required placeholder="เช่น แอร์ไม่เย็น น้ำรั่ว ซิงค์อุดตัน"></textarea>
+                </div>
+                <div class="form-group" style="grid-column:1 / -1;">
+                  <label for="repair_image">
+                    <svg style="width:16px;height:16px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                    รูปภาพการซ่อม (ไม่จำเป็น)
+                  </label>
+                  <input type="file" id="repair_image" name="repair_image" accept="image/*" />
+                  <small style="color:rgba(255,255,255,0.5); display:block; margin-top:0.5rem;">
+                    <svg style="width:14px;height:14px;vertical-align:middle;margin-right:4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    สนับสนุน: JPG, PNG, WebP (ขนาดไม่เกิน 5MB)
+                  </small>
+                  <div id="image_preview" class="image-preview-container" style="display:none;"></div>
+                </div>
+                <div class="repair-form-actions">
+                  <button type="submit" class="btn-modern btn-primary" data-animate-ui-skip="true" data-no-modal="true" data-allow-submit="true" style="flex:2;">
+                    <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    บันทึกการแจ้งซ่อม
+                  </button>
+                  <button type="reset" class="btn-modern btn-secondary" style="flex:1;">
+                    <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                    ล้างข้อมูล
+                  </button>
+                </div>
+              </div>
+            </form>
+          </section>
+
           <!-- Repair List Section -->
           <section class="manage-panel" style="--panel-accent: #8b5cf6; --panel-accent-end: #a855f7;">
             <div class="panel-header" style="justify-content:space-between;flex-wrap:wrap;">
@@ -2388,12 +2478,62 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
         window.location.href = url.toString();
       }
 
+      // Toggle repair form visibility with modern animation
+      function toggleRepairForm() {
+        const section = document.getElementById('addRepairSection');
+        const icon = document.getElementById('toggleFormIcon');
+        const text = document.getElementById('toggleFormText');
+        const btn = document.getElementById('toggleFormBtn');
+        const isHidden = section.style.display === 'none';
+        
+        if (isHidden) {
+          section.style.display = '';
+          section.style.animation = 'fadeInUp 0.4s ease forwards';
+          icon.innerHTML = '<polyline points="6 9 12 15 18 9"/>';
+          text.textContent = 'ซ่อนฟอร์มแจ้งซ่อม';
+          btn.classList.remove('collapsed');
+          localStorage.setItem('repairFormVisible', 'true');
+        } else {
+          section.style.animation = 'fadeOutDown 0.3s ease forwards';
+          setTimeout(() => {
+            section.style.display = 'none';
+          }, 300);
+          icon.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+          text.textContent = 'แสดงฟอร์มแจ้งซ่อม';
+          btn.classList.add('collapsed');
+          localStorage.setItem('repairFormVisible', 'false');
+        }
+      }
+      
+      // Add fadeOutDown animation
+      const styleSheet = document.createElement('style');
+      styleSheet.textContent = `
+        @keyframes fadeOutDown {
+          from { opacity: 1; transform: translateY(0); }
+          to { opacity: 0; transform: translateY(20px); }
+        }
+      `;
+      document.head.appendChild(styleSheet);
+      
       document.addEventListener('DOMContentLoaded', () => {
         // Load saved filter status from localStorage
         const savedFilter = localStorage.getItem('repairFilterStatus') || 'all';
         
         // Apply saved filter or default
         filterByStatus(savedFilter);
+        
+        // Restore form visibility from localStorage
+        const isFormVisible = localStorage.getItem('repairFormVisible') !== 'false';
+        const section = document.getElementById('addRepairSection');
+        const icon = document.getElementById('toggleFormIcon');
+        const text = document.getElementById('toggleFormText');
+        const btn = document.getElementById('toggleFormBtn');
+        if (!isFormVisible) {
+          section.style.display = 'none';
+          icon.innerHTML = '<polyline points="9 18 15 12 9 6"/>';
+          text.textContent = 'แสดงฟอร์มแจ้งซ่อม';
+          btn.classList.add('collapsed');
+        }
 
         // Initialize DataTable
         const repairTableEl = document.querySelector('#table-repairs');
@@ -2420,6 +2560,51 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
           }
         }
         
+        const imageInput = document.getElementById('repair_image');
+        const imagePreview = document.getElementById('image_preview');
+        if (imageInput) {
+          imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            imagePreview.innerHTML = '';
+            imagePreview.style.display = 'none';
+            if (file) {
+              if (file.size > 5 * 1024 * 1024) {
+                imagePreview.style.display = 'block';
+                imagePreview.innerHTML = `
+                  <div style="display:flex; align-items:center; gap:0.5rem; color:#ef4444;">
+                    <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    ไฟล์ใหญ่เกินไป (ไม่เกิน 5MB)
+                  </div>`;
+                imageInput.value = '';
+                return;
+              }
+              if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+                imagePreview.style.display = 'block';
+                imagePreview.innerHTML = `
+                  <div style="display:flex; align-items:center; gap:0.5rem; color:#ef4444;">
+                    <svg style="width:20px;height:20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    ประเภทไฟล์ไม่ถูกต้อง
+                  </div>`;
+                imageInput.value = '';
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                imagePreview.style.display = 'block';
+                imagePreview.innerHTML = `
+                  <div style="display:flex; flex-direction:column; gap:0.75rem; align-items:flex-start;">
+                    <img src="${event.target.result}" alt="Preview" style="max-width:250px; max-height:250px; border-radius:12px; object-fit:contain; box-shadow: 0 8px 25px rgba(0,0,0,0.2);" />
+                    <div style="display:flex; align-items:center; gap:0.5rem; color:#22c55e; font-weight:500;">
+                      <svg style="width:18px;height:18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                      ${file.name}
+                    </div>
+                  </div>`;
+              };
+              reader.readAsDataURL(file);
+            }
+          });
+        }
+        
         // Add entrance animations for stat cards
         const statCards = document.querySelectorAll('.repair-stat-card');
         statCards.forEach((card, index) => {
@@ -2427,6 +2612,24 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
           card.style.animationDelay = `${index * 0.1}s`;
           card.style.opacity = '0';
         });
+      });
+
+      // Sync hidden fields on form submit
+      document.getElementById('repairForm').addEventListener('submit', function(e) {
+        const ctr_id = document.getElementById('ctr_id').value;
+        const repair_desc = document.getElementById('repair_desc').value.trim();
+        
+        console.log('Form submitting with:', {
+          ctr_id: ctr_id,
+          repair_desc: repair_desc,
+          repair_time: document.getElementById('repair_time_hidden').value
+        });
+        
+        if (!ctr_id || !repair_desc) {
+          console.warn('Form validation failed: ctr_id=' + ctr_id + ', desc=' + repair_desc);
+        }
+        
+        updateCurrentTime(); // Ensure latest time is in hidden fields
       });
       
       // Light theme detection - apply class to html element if theme color is light
