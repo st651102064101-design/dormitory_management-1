@@ -64,19 +64,33 @@ if ($filterStatus !== '') {
 $availableCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '0'));
 $occupiedCount = count(array_filter($rooms, fn($r) => $r['room_status'] === '1'));
 
-// ดึงห้องที่จะว่างใน 3 เดือนข้างหน้า
-$upcomingRooms = [];
+// ชื่อเดือนภาษาไทย
 $thaiMonths = [
     1 => 'ม.ค.', 2 => 'ก.พ.', 3 => 'มี.ค.', 4 => 'เม.ย.',
     5 => 'พ.ค.', 6 => 'มิ.ย.', 7 => 'ก.ค.', 8 => 'ส.ค.',
     9 => 'ก.ย.', 10 => 'ต.ค.', 11 => 'พ.ย.', 12 => 'ธ.ค.'
 ];
+$thaiMonthsFull = [
+    1 => 'มกราคม', 2 => 'กุมภาพันธ์', 3 => 'มีนาคม', 4 => 'เมษายน',
+    5 => 'พฤษภาคม', 6 => 'มิถุนายน', 7 => 'กรกฎาคม', 8 => 'สิงหาคม',
+    9 => 'กันยายน', 10 => 'ตุลาคม', 11 => 'พฤศจิกายน', 12 => 'ธันวาคม'
+];
+
+// รับค่าเดือนที่เลือกสำหรับดูห้องใกล้ว่าง
+$selectedMonth = $_GET['upcoming_month'] ?? date('Y-m');
+$selectedYear = (int)substr($selectedMonth, 0, 4);
+$selectedMonthNum = (int)substr($selectedMonth, 5, 2);
+$monthStart = $selectedMonth . '-01';
+$monthEnd = date('Y-m-t', strtotime($monthStart));
+$displayMonth = $thaiMonthsFull[$selectedMonthNum] . ' ' . ($selectedYear + 543);
+
+// ดึงห้องที่จะว่างในเดือนที่เลือก
+$upcomingRooms = [];
 try {
-    $threeMonthsLater = date('Y-m-d', strtotime('+3 months'));
     $stmt = $pdo->prepare("
         SELECT 
             r.room_id, r.room_number, r.room_status, r.room_image,
-            rt.type_name, rt.type_price,
+            rt.type_id, rt.type_name, rt.type_price,
             c.ctr_end,
             t.tnt_name
         FROM contract c
@@ -84,14 +98,25 @@ try {
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
         WHERE c.ctr_status = '0' 
-            AND c.ctr_end >= CURDATE()
-            AND c.ctr_end <= :end_date
+            AND c.ctr_end >= :month_start
+            AND c.ctr_end <= :month_end
         ORDER BY c.ctr_end ASC
-        LIMIT 6
     ");
-    $stmt->execute([':end_date' => $threeMonthsLater]);
+    $stmt->execute([':month_start' => $monthStart, ':month_end' => $monthEnd]);
     $upcomingRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
+
+// สร้างรายการเดือนสำหรับ dropdown (12 เดือนข้างหน้า)
+$monthOptions = [];
+for ($i = 0; $i < 12; $i++) {
+    $monthDate = date('Y-m', strtotime("+$i months"));
+    $y = (int)substr($monthDate, 0, 4);
+    $m = (int)substr($monthDate, 5, 2);
+    $monthOptions[] = [
+        'value' => $monthDate,
+        'label' => $thaiMonthsFull[$m] . ' ' . ($y + 543)
+    ];
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -658,6 +683,109 @@ try {
             gap: 0.3rem;
         }
 
+        /* Quick Stats */
+        .quick-stats {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .quick-stat {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 16px;
+            padding: 1rem 1.5rem;
+            text-align: center;
+            min-width: 120px;
+        }
+
+        .quick-stat.green { border-color: rgba(34, 197, 94, 0.3); background: rgba(34, 197, 94, 0.1); }
+        .quick-stat.orange { border-color: rgba(249, 115, 22, 0.3); background: rgba(249, 115, 22, 0.1); }
+        .quick-stat.blue { border-color: rgba(59, 130, 246, 0.3); background: rgba(59, 130, 246, 0.1); }
+
+        .quick-stat-number {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+        }
+
+        .quick-stat.green .quick-stat-number { color: #22c55e; }
+        .quick-stat.orange .quick-stat-number { color: #f97316; }
+        .quick-stat.blue .quick-stat-number { color: #3b82f6; }
+
+        .quick-stat-label {
+            font-size: 0.8rem;
+            color: rgba(255,255,255,0.6);
+        }
+
+        /* Month Buttons */
+        .month-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            padding: 0 0.5rem;
+        }
+
+        .month-btn {
+            padding: 0.5rem 0.9rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+            font-family: 'Prompt', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+
+        .month-btn:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: #f97316;
+            color: #fff;
+        }
+
+        .month-btn.active {
+            background: #f97316;
+            border-color: #f97316;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        /* Month Select Dropdown */
+        .month-select-wrapper {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .month-select-wrapper label {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .month-select {
+            padding: 0.6rem 1rem;
+            border-radius: 10px;
+            border: 1px solid rgba(255,255,255,0.15);
+            background: rgba(255,255,255,0.05);
+            color: #fff;
+            font-size: 0.9rem;
+            font-family: 'Prompt', sans-serif;
+            cursor: pointer;
+        }
+
+        .month-select option {
+            background: #1a1a2e;
+            color: #fff;
+        }
+
         @media (max-width: 768px) {
             .upcoming-header {
                 flex-direction: column;
@@ -667,6 +795,25 @@ try {
                 margin-left: 0;
                 width: 100%;
                 text-align: center;
+            }
+            .quick-stats {
+                gap: 0.75rem;
+            }
+            .quick-stat {
+                min-width: 100px;
+                padding: 0.75rem 1rem;
+            }
+            .quick-stat-number {
+                font-size: 1.5rem;
+            }
+            .month-buttons {
+                overflow-x: auto;
+                flex-wrap: nowrap;
+                justify-content: flex-start;
+                padding-bottom: 0.5rem;
+            }
+            .month-btn {
+                flex-shrink: 0;
             }
         }
 
@@ -1946,7 +2093,6 @@ if ($publicTheme === 'light') {
             </form>
         </section>
         
-        <?php if (!empty($upcomingRooms)): ?>
         <!-- Upcoming Available Section -->
         <section class="upcoming-section">
             <div class="upcoming-header">
@@ -1960,10 +2106,62 @@ if ($publicTheme === 'light') {
                 </div>
                 <div>
                     <h3>🗓️ ห้องที่จะว่างเร็วๆ นี้</h3>
-                    <p>สัญญาใกล้หมดใน 3 เดือนข้างหน้า</p>
+                    <p>ดูห้องที่สัญญาใกล้หมดในแต่ละเดือน</p>
                 </div>
-                <a href="/dormitory_management/Public/upcoming_available.php" class="view-all-btn">ดูทั้งหมด →</a>
             </div>
+            
+            <!-- Quick Stats -->
+            <div class="quick-stats">
+                <div class="quick-stat green">
+                    <div class="quick-stat-number"><?php echo $availableCount; ?></div>
+                    <div class="quick-stat-label">ว่างตอนนี้</div>
+                </div>
+                <div class="quick-stat orange">
+                    <div class="quick-stat-number"><?php echo count($upcomingRooms); ?></div>
+                    <div class="quick-stat-label">ว่างใน<?php echo $thaiMonths[$selectedMonthNum]; ?></div>
+                </div>
+                <div class="quick-stat blue">
+                    <div class="quick-stat-number"><?php echo $occupiedCount; ?></div>
+                    <div class="quick-stat-label">มีผู้เช่า</div>
+                </div>
+            </div>
+            
+            <!-- Month Quick Buttons -->
+            <div class="month-buttons">
+                <?php 
+                for ($i = 0; $i < 6; $i++): 
+                    $monthDate = date('Y-m', strtotime("+$i months"));
+                    $y = (int)substr($monthDate, 0, 4);
+                    $m = (int)substr($monthDate, 5, 2);
+                    $isActive = $monthDate === $selectedMonth;
+                    // Preserve other filters
+                    $queryParams = $_GET;
+                    $queryParams['upcoming_month'] = $monthDate;
+                    $queryString = http_build_query($queryParams);
+                ?>
+                <a href="?<?php echo $queryString; ?>" class="month-btn <?php echo $isActive ? 'active' : ''; ?>">
+                    <?php echo $thaiMonths[$m] . ' ' . ($y + 543 - 2500); ?>
+                </a>
+                <?php endfor; ?>
+            </div>
+            
+            <!-- Month Dropdown for more months -->
+            <div class="month-select-wrapper">
+                <label>หรือเลือกเดือน:</label>
+                <select class="month-select" onchange="updateMonth(this.value)">
+                    <?php foreach ($monthOptions as $option): ?>
+                    <option value="<?php echo $option['value']; ?>" <?php echo $option['value'] === $selectedMonth ? 'selected' : ''; ?>>
+                        <?php echo $option['label']; ?>
+                    </option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <?php if (!empty($upcomingRooms)): ?>
+            <!-- Upcoming Rooms Grid using existing room card style -->
+            <h4 style="margin: 1.5rem 0 1rem; font-size: 1rem; color: rgba(255,255,255,0.8);">
+                📅 ห้องที่จะว่างใน<?php echo $displayMonth; ?> (<?php echo count($upcomingRooms); ?> ห้อง)
+            </h4>
             <div class="upcoming-rooms">
                 <?php foreach ($upcomingRooms as $room): 
                     $endDate = new DateTime($room['ctr_end']);
@@ -1984,8 +2182,19 @@ if ($publicTheme === 'light') {
                 </div>
                 <?php endforeach; ?>
             </div>
+            <?php else: ?>
+            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:40px;height:40px;margin-bottom:0.5rem;opacity:0.5;">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <p>ไม่มีห้องที่จะว่างใน<?php echo $displayMonth; ?></p>
+                <p style="font-size:0.85rem;">ลองเลือกดูเดือนอื่น</p>
+            </div>
+            <?php endif; ?>
         </section>
-        <?php endif; ?>
         
         <div class="room-grid" id="roomsGrid" aria-live="polite">
             <?php if (count($rooms) > 0): ?>
@@ -2382,6 +2591,13 @@ if ($publicTheme === 'light') {
                 }
             });
         });
+
+        // ===== UPDATE MONTH FUNCTION =====
+        function updateMonth(monthValue) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('upcoming_month', monthValue);
+            window.location.href = url.toString();
+        }
     </script>
     
     <style>
