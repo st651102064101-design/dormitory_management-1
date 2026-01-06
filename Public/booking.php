@@ -131,6 +131,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $phone = substr($phone, -10);
     }
     
+    // Check if existing tenant was selected
+    $existingTenantId = trim($_POST['existing_tenant_id'] ?? '');
+    
     $ctrStart = $_POST['ctr_start'] ?? '';
     $ctrEnd = $_POST['ctr_end'] ?? '';
     $deposit = (int)($_POST['deposit'] ?? 2000);
@@ -166,29 +169,59 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'ขออภัย ห้องนี้ถูกจองไปแล้ว';
             } else {
                 $roomPrice = (int)($roomData['type_price'] ?? 1500);
-                // Generate shorter tenant ID: T + timestamp (10 digits)
-                $tenantId = 'T' . time();
                 
                 $pdo->beginTransaction();
                 try {
+                    // Skip existing booking/contract check if using existing tenant ID
+                    $skipCheck = !empty($existingTenantId);
+                    
                     $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM booking b JOIN tenant t ON b.tnt_id = t.tnt_id WHERE t.tnt_phone = ? AND b.bkg_status IN ('1','2')");
                     $checkStmt->execute([$phone]);
-                    $existing = (int)$checkStmt->fetchColumn();
+                    $existing = $skipCheck ? 0 : (int)$checkStmt->fetchColumn();
                     
                     $checkContract = $pdo->prepare("SELECT COUNT(*) FROM contract c JOIN tenant t ON c.tnt_id = t.tnt_id WHERE t.tnt_phone = ? AND c.ctr_status = '0'");
                     $checkContract->execute([$phone]);
-                    $existingContract = (int)$checkContract->fetchColumn();
+                    $existingContract = $skipCheck ? 0 : (int)$checkContract->fetchColumn();
                     
                     if ($existing > 0 || $existingContract > 0) {
                         $pdo->rollBack();
                         $error = 'เบอร์โทรศัพท์นี้มีการจองหรือสัญญาเช่าอยู่แล้ว';
                     } else {
-                        // Insert tenant without document files (simplified booking)
-                        $stmtTenant = $pdo->prepare("
-                            INSERT INTO tenant (tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status, tnt_ceatetime)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '3', NOW())
-                        ");
-                        $stmtTenant->execute([$tenantId, $name, $age ?: null, $address ?: null, $phone, $education ?: null, $faculty ?: null, $year ?: null, $vehicle ?: null, $parent ?: null, $parentsphone ?: null]);
+                        // Check if using existing tenant or creating new one
+                        if (!empty($existingTenantId)) {
+                            // Use existing tenant ID
+                            $tenantId = $existingTenantId;
+                            
+                            // Optionally update tenant info
+                            $stmtUpdateTenant = $pdo->prepare("
+                                UPDATE tenant SET 
+                                    tnt_name = ?, 
+                                    tnt_phone = ?,
+                                    tnt_age = COALESCE(?, tnt_age),
+                                    tnt_education = COALESCE(?, tnt_education),
+                                    tnt_parent = COALESCE(?, tnt_parent),
+                                    tnt_parentsphone = COALESCE(?, tnt_parentsphone),
+                                    tnt_status = '3'
+                                WHERE tnt_id = ?
+                            ");
+                            $stmtUpdateTenant->execute([
+                                $name, 
+                                $phone, 
+                                $age ?: null, 
+                                $education ?: null, 
+                                $parent ?: null, 
+                                $parentsphone ?: null, 
+                                $tenantId
+                            ]);
+                        } else {
+                            // Create new tenant
+                            $tenantId = 'T' . time();
+                            $stmtTenant = $pdo->prepare("
+                                INSERT INTO tenant (tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status, tnt_ceatetime)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '3', NOW())
+                            ");
+                            $stmtTenant->execute([$tenantId, $name, $age ?: null, $address ?: null, $phone, $education ?: null, $faculty ?: null, $year ?: null, $vehicle ?: null, $parent ?: null, $parentsphone ?: null]);
+                        }
                         
                         // Generate booking ID (use last 9 digits to fit INT(11) max: 2147483647)
                         $bookingId = (int)substr((string)time(), -9);
@@ -215,8 +248,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ");
                         $stmtExpense->execute([$expenseId, date('Y-m-01'), $rateElec, $rateWater, $roomPrice, $deposit, $contractId]);
                         
-                        // Note: Payment proof upload removed for simplified booking
-                        // Can be added later through admin panel if needed
+                        // อัพโหลดหลักฐานการชำระมัดจำ
+                        $paymentDir = __DIR__ . '/Assets/Images/Payments';
+                        $payProof = null;
+                        if (!empty($_FILES['pay_proof']['name'])) {
+                            $payProof = uploadFile($_FILES['pay_proof'], $paymentDir, 'payment');
+                        }
+                        
+                        // บันทึก payment ถ้ามีหลักฐานการโอน
+                        if ($payProof) {
+                            $paymentId = (int)substr((string)time(), -9) + 3;
+                            $stmtPayment = $pdo->prepare("
+                                INSERT INTO payment (pay_id, pay_date, pay_amount, pay_proof, pay_status, exp_id)
+                                VALUES (?, NOW(), ?, ?, '0', ?)
+                            ");
+                            $stmtPayment->execute([$paymentId, $deposit, $payProof, $expenseId]);
+                            
+                            // อัพเดท expense status เป็น '2' (รอตรวจสอบ)
+                            $updateExpStatus = $pdo->prepare("UPDATE expense SET exp_status = '2' WHERE exp_id = ?");
+                            $updateExpStatus->execute([$expenseId]);
+                        }
                         
                         $updateRoom = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
                         $updateRoom->execute([$roomId]);
@@ -542,6 +593,110 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             color: #64748b;
         }
         
+        /* Autocomplete Suggestions */
+        .autocomplete-suggestions {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(15, 23, 42, 0.98);
+            border: 1px solid rgba(96, 165, 250, 0.3);
+            border-radius: 12px;
+            margin-top: 4px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+            backdrop-filter: blur(10px);
+        }
+        
+        .autocomplete-item {
+            padding: 14px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.2s;
+        }
+        
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        
+        .autocomplete-item:hover {
+            background: rgba(96, 165, 250, 0.15);
+        }
+        
+        .autocomplete-item-name {
+            font-weight: 600;
+            color: #fff;
+            font-size: 1rem;
+            margin-bottom: 4px;
+        }
+        
+        .autocomplete-item-info {
+            font-size: 0.85rem;
+            color: #94a3b8;
+        }
+        
+        .autocomplete-item-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            margin-left: 8px;
+        }
+        
+        .autocomplete-item-status.active {
+            background: rgba(34, 197, 94, 0.2);
+            color: #22c55e;
+        }
+        
+        .autocomplete-item-status.inactive {
+            background: rgba(148, 163, 184, 0.2);
+            color: #94a3b8;
+        }
+        
+        .autocomplete-new {
+            padding: 14px 16px;
+            background: rgba(34, 197, 94, 0.1);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .autocomplete-new:hover {
+            background: rgba(34, 197, 94, 0.2);
+        }
+        
+        .autocomplete-new-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #22c55e;
+            font-weight: 600;
+        }
+        
+        .tenant-selected-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(34, 197, 94, 0.15);
+            color: #22c55e;
+            padding: 6px 12px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            margin-top: 8px;
+        }
+        
+        .tenant-selected-badge button {
+            background: none;
+            border: none;
+            color: #ef4444;
+            cursor: pointer;
+            padding: 2px;
+            display: flex;
+            align-items: center;
+        }
+
         /* Duration Pills */
         .duration-label {
             font-size: 0.9rem;
@@ -642,6 +797,156 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-weight: 600;
         }
         
+        /* Form Steps */
+        .form-steps {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 30px;
+            padding: 0 20px;
+        }
+        
+        .form-step {
+            flex: 1;
+            max-width: 200px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 12px;
+            transition: all 0.3s;
+        }
+        
+        .form-step.active {
+            background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.1));
+            border-color: #60a5fa;
+        }
+        
+        .form-step.completed {
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
+            border-color: #22c55e;
+        }
+        
+        .step-number {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            flex-shrink: 0;
+        }
+        
+        .form-step.active .step-number {
+            background: #60a5fa;
+            color: #fff;
+        }
+        
+        .form-step.completed .step-number {
+            background: #22c55e;
+            color: #fff;
+        }
+        
+        .step-label {
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        
+        .form-step.active .step-label {
+            color: #60a5fa;
+            font-weight: 600;
+        }
+        
+        .form-step.completed .step-label {
+            color: #22c55e;
+            font-weight: 600;
+        }
+        
+        .step-content {
+            display: none;
+        }
+        
+        .step-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .step-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            margin-top: 24px;
+        }
+        
+        .btn-prev,
+        .btn-next {
+            padding: 14px 28px;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: none;
+            font-size: 1rem;
+        }
+        
+        .btn-prev {
+            background: rgba(255,255,255,0.1);
+            color: #e2e8f0;
+        }
+        
+        .btn-prev:hover {
+            background: rgba(255,255,255,0.15);
+        }
+        
+        .btn-next {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: white;
+            margin-left: auto;
+        }
+        
+        .btn-next:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
+        }
+        
+        @media (max-width: 768px) {
+            .form-steps {
+                flex-direction: column;
+                gap: 8px;
+            }
+            
+            .form-step {
+                max-width: 100%;
+            }
+            
+            .step-buttons {
+                flex-direction: column;
+            }
+            
+            .btn-next {
+                margin-left: 0;
+            }
+        }
+
         /* Optional Toggle */
         .optional-toggle {
             display: flex;
@@ -1321,26 +1626,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Right: Booking Form -->
                 <div class="booking-sidebar">
                     <div class="booking-box">
-                        <h3 class="booking-box-title">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
-                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-                            </svg>
-                            ข้อมูลการจอง
-                        </h3>
-                        
-                        <!-- Selected Room Display -->
-                        <div class="selected-room-display" id="selectedRoomDisplay">
-                            <div class="selected-room-info">
-                                <span class="selected-room-name" id="selectedRoomName">ห้อง -</span>
-                                <span class="selected-room-price" id="selectedRoomPrice">฿0/เดือน</span>
+                        <!-- Form Steps Indicator -->
+                        <div class="form-steps">
+                            <div class="form-step active" data-step="1">
+                                <div class="step-number">1</div>
+                                <div class="step-label">ข้อมูลการจอง</div>
+                            </div>
+                            <div class="form-step" data-step="2">
+                                <div class="step-number">2</div>
+                                <div class="step-label">ชำระเงิน</div>
                             </div>
                         </div>
                         
-                        <!-- Name -->
-                        <div class="form-group">
+                        <!-- Step 1: Booking Information -->
+                        <div class="step-content active" data-step="1">
+                            <h3 class="booking-box-title">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
+                                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+                                </svg>
+                                ข้อมูลการจอง
+                            </h3>
+                            
+                            <!-- Selected Room Display -->
+                            <div class="selected-room-display" id="selectedRoomDisplay">
+                                <div class="selected-room-info">
+                                    <span class="selected-room-name" id="selectedRoomName">ห้อง -</span>
+                                    <span class="selected-room-price" id="selectedRoomPrice">฿0/เดือน</span>
+                                </div>
+                            </div>
+                        
+                        <!-- Name with Autocomplete -->
+                        <div class="form-group" style="position: relative;">
                             <label class="form-label">ชื่อ-นามสกุล <span class="required">*</span></label>
-                            <input type="text" name="name" class="form-input" placeholder="เช่น สมชาย ใจดี" required>
+                            <input type="text" name="name" id="tenantNameInput" class="form-input" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกชื่อใหม่" required autocomplete="off">
+                            <input type="hidden" name="existing_tenant_id" id="existingTenantId" value="">
+                            <div id="tenantSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
+                            <div class="form-hint" style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">
+                                💡 พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกข้อมูลใหม่ทั้งหมด
+                            </div>
                         </div>
                         
                         <!-- Phone -->
@@ -1425,6 +1749,104 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label class="form-label">เบอร์ผู้ปกครอง</label>
                                 <input type="tel" name="parentsphone" class="form-input" placeholder="0812345678" maxlength="10">
                             </div>
+                            
+                            <!-- Step Buttons -->
+                            <div class="step-buttons">
+                                <button type="button" class="btn-next" onclick="goToStep(2)">
+                                    <span>ถัดไป: ชำระเงิน</span>
+                                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="9 18 15 12 9 6"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Step 2: Payment -->
+                        <div class="step-content" data-step="2">
+                            <h3 class="booking-box-title">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                    <line x1="1" y1="10" x2="23" y2="10"/>
+                                </svg>
+                                ชำระค่ามัดจำ
+                            </h3>
+                            
+                        <!-- Payment Section -->
+                        <div class="payment-section" style="margin: 24px 0; padding: 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%); border-radius: 16px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                            <!-- Payment Info -->
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+                                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
+                                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px;">ค่ามัดจำ</div>
+                                    <div style="font-size: 1.2rem; font-weight: 700; color: #fbbf24;">฿<?php echo number_format($defaultDeposit); ?></div>
+                                </div>
+                                <?php if (!empty($bankAccountNumber)): ?>
+                                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
+                                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px;">เลขบัญชี</div>
+                                    <div style="font-size: 1rem; font-weight: 600; color: #fff; font-family: monospace;"><?php echo htmlspecialchars($bankAccountNumber); ?></div>
+                                    <?php if (!empty($bankName)): ?>
+                                    <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;"><?php echo htmlspecialchars($bankName); ?></div>
+                                    <?php endif; ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                            
+                            <?php if (!empty($promptpayNumber)): ?>
+                            <!-- PromptPay QR Code -->
+                            <div style="text-align: center; margin-bottom: 16px;">
+                                <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                    <img id="qrCodeImage" 
+                                         src="https://promptpay.io/<?php echo urlencode($promptpayNumber); ?>/<?php echo $defaultDeposit; ?>.png" 
+                                         alt="PromptPay QR Code" 
+                                         style="width: 180px; height: auto; display: block;">
+                                </div>
+                                <div style="margin-top: 8px; font-size: 0.8rem; color: #94a3b8;">
+                                    สแกน QR พร้อมเพย์: <span style="color: #fbbf24; font-weight: 600;"><?php echo htmlspecialchars($promptpayNumber); ?></span>
+                                </div>
+                            </div>
+                            <?php endif; ?>
+                            
+                            <!-- Upload Slip -->
+                            <div class="form-group" style="margin-bottom: 0;">
+                                <label class="form-label" style="color: #fbbf24; margin-bottom: 8px;">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                        <polyline points="17 8 12 3 7 8"/>
+                                        <line x1="12" y1="3" x2="12" y2="15"/>
+                                    </svg>
+                                    อัพโหลดสลิปการโอนเงิน (ไม่บังคับ)
+                                </label>
+                                <div class="upload-zone" id="paymentUploadZone" style="border: 2px dashed rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(0,0,0,0.2);">
+                                    <input type="file" name="pay_proof" id="payProofInput" accept="image/*,.pdf" style="display: none;">
+                                    <div id="uploadPlaceholder">
+                                        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" style="margin-bottom: 10px;">
+                                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                            <polyline points="17 8 12 3 7 8"/>
+                                            <line x1="12" y1="3" x2="12" y2="15"/>
+                                        </svg>
+                                        <p style="color: #e2e8f0; font-size: 0.9rem; margin-bottom: 4px;">คลิกเพื่อเลือกไฟล์</p>
+                                        <p style="color: #64748b; font-size: 0.75rem;">รองรับ JPG, PNG, PDF (ไม่เกิน 5MB)</p>
+                                    </div>
+                                    <div id="uploadPreview" style="display: none;">
+                                        <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                                            <img id="slipPreviewImg" src="" style="max-width: 120px; max-height: 120px; border-radius: 8px; display: none;">
+                                            <div id="pdfPreview" style="display: none; background: rgba(239, 68, 68, 0.1); padding: 15px 20px; border-radius: 8px;">
+                                                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                                    <polyline points="14 2 14 8 20 8"/>
+                                                </svg>
+                                                <div style="color: #ef4444; font-size: 0.75rem; margin-top: 4px;">PDF</div>
+                                            </div>
+                                        </div>
+                                        <div style="margin-top: 10px;">
+                                            <span id="uploadFileName" style="color: #22c55e; font-size: 0.85rem;"></span>
+                                            <button type="button" onclick="removePaymentFile()" style="background: none; border: none; color: #ef4444; cursor: pointer; margin-left: 10px; font-size: 0.8rem;">ลบ</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <p style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">
+                                    💡 ถ้ายังไม่มีสลิป สามารถอัพโหลดทีหลังผ่านหน้า "ตรวจสอบสถานะการจอง" ได้
+                                </p>
+                            </div>
                         </div>
                         
                         <!-- Submit Button -->
@@ -1451,6 +1873,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 </svg>
                                 ตอบกลับ 24 ชม.
                             </div>
+                        </div>
+                        
+                        <!-- Step Buttons -->
+                        <div class="step-buttons">
+                            <button type="button" class="btn-prev" onclick="goToStep(1)">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <polyline points="15 18 9 12 15 6"/>
+                                </svg>
+                                <span>กลับ</span>
+                            </button>
+                        </div>
                         </div>
                     </div>
                 </div>
@@ -1624,6 +2057,307 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             fields.classList.toggle('show');
         }
         
+        // ==========================================
+        // Tenant Autocomplete Feature
+        // ==========================================
+        let searchTimeout = null;
+        let selectedTenant = null;
+        
+        const tenantNameInput = document.getElementById('tenantNameInput');
+        const tenantSuggestions = document.getElementById('tenantSuggestions');
+        const existingTenantIdInput = document.getElementById('existingTenantId');
+        
+        if (tenantNameInput) {
+            // Input event for autocomplete
+            tenantNameInput.addEventListener('input', function() {
+                const query = this.value.trim();
+                
+                // Clear previous timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+                
+                // Reset selected tenant when typing
+                if (selectedTenant && query !== selectedTenant.name) {
+                    clearSelectedTenant();
+                }
+                
+                if (query.length < 2) {
+                    hideSuggestions();
+                    return;
+                }
+                
+                // Debounce search
+                searchTimeout = setTimeout(() => {
+                    searchTenants(query);
+                }, 300);
+            });
+            
+            // Close suggestions when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.form-group')) {
+                    hideSuggestions();
+                }
+            });
+        }
+        
+        async function searchTenants(query) {
+            try {
+                const response = await fetch(`/dormitory_management/Public/api_search_tenant.php?q=${encodeURIComponent(query)}`);
+                const result = await response.json();
+                
+                if (result.success && result.data.length > 0) {
+                    showSuggestions(result.data, query);
+                } else {
+                    showNoResults(query);
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+                hideSuggestions();
+            }
+        }
+        
+        function showSuggestions(tenants, query) {
+            let html = `
+                <div class="autocomplete-new" onclick="selectNewTenant('${escapeHtml(query)}')">
+                    <div class="autocomplete-new-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        เพิ่มผู้เช่าใหม่: "${escapeHtml(query)}"
+                    </div>
+                </div>
+            `;
+            
+            tenants.forEach(tenant => {
+                const statusClass = tenant.status === '1' ? 'active' : 'inactive';
+                html += `
+                    <div class="autocomplete-item" onclick='selectTenant(${JSON.stringify(tenant)})'>
+                        <div class="autocomplete-item-name">
+                            ${escapeHtml(tenant.name)}
+                            <span class="autocomplete-item-status ${statusClass}">${escapeHtml(tenant.statusText)}</span>
+                        </div>
+                        <div class="autocomplete-item-info">
+                            📱 ${tenant.phone || '-'} 
+                            ${tenant.education ? '• 🎓 ' + escapeHtml(tenant.education) : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            tenantSuggestions.innerHTML = html;
+            tenantSuggestions.style.display = 'block';
+        }
+        
+        function showNoResults(query) {
+            tenantSuggestions.innerHTML = `
+                <div class="autocomplete-new" onclick="selectNewTenant('${escapeHtml(query)}')">
+                    <div class="autocomplete-new-icon">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+                        </svg>
+                        เพิ่มผู้เช่าใหม่: "${escapeHtml(query)}"
+                    </div>
+                </div>
+                <div class="autocomplete-item" style="color: #94a3b8; cursor: default;">
+                    <div class="autocomplete-item-info">ไม่พบผู้เช่าที่ตรงกับ "${escapeHtml(query)}"</div>
+                </div>
+            `;
+            tenantSuggestions.style.display = 'block';
+        }
+        
+        function hideSuggestions() {
+            if (tenantSuggestions) {
+                tenantSuggestions.style.display = 'none';
+            }
+        }
+        
+        function selectTenant(tenant) {
+            selectedTenant = tenant;
+            
+            // Fill form fields
+            tenantNameInput.value = tenant.name;
+            existingTenantIdInput.value = tenant.id;
+            
+            // Fill phone
+            const phoneInput = document.querySelector('input[name="phone"]');
+            if (phoneInput && tenant.phone) {
+                phoneInput.value = tenant.phone;
+            }
+            
+            // Fill optional fields if available
+            const ageInput = document.querySelector('input[name="age"]');
+            if (ageInput && tenant.age) ageInput.value = tenant.age;
+            
+            const educationInput = document.querySelector('input[name="education"]');
+            if (educationInput && tenant.education) educationInput.value = tenant.education;
+            
+            const parentInput = document.querySelector('input[name="parent"]');
+            if (parentInput && tenant.parent) parentInput.value = tenant.parent;
+            
+            const parentsphoneInput = document.querySelector('input[name="parentsphone"]');
+            if (parentsphoneInput && tenant.parentsphone) parentsphoneInput.value = tenant.parentsphone;
+            
+            // Open optional fields if they have data
+            if (tenant.age || tenant.education || tenant.parent || tenant.parentsphone) {
+                const optionalFields = document.getElementById('optionalFields');
+                const toggle = document.querySelector('.optional-toggle');
+                if (optionalFields && !optionalFields.classList.contains('show')) {
+                    optionalFields.classList.add('show');
+                    toggle?.classList.add('open');
+                }
+            }
+            
+            // Show selected badge
+            showSelectedBadge(tenant);
+            
+            hideSuggestions();
+            
+            showAppleAlert(`เลือกผู้เช่า: ${tenant.name}\\n\\nข้อมูลถูกกรอกอัตโนมัติแล้ว`, 'สำเร็จ');
+        }
+        
+        function selectNewTenant(name) {
+            clearSelectedTenant();
+            tenantNameInput.value = name;
+            hideSuggestions();
+        }
+        
+        function clearSelectedTenant() {
+            selectedTenant = null;
+            existingTenantIdInput.value = '';
+            
+            // Remove badge
+            const badge = document.querySelector('.tenant-selected-badge');
+            if (badge) badge.remove();
+        }
+        
+        function showSelectedBadge(tenant) {
+            // Remove existing badge
+            const existingBadge = document.querySelector('.tenant-selected-badge');
+            if (existingBadge) existingBadge.remove();
+            
+            const badge = document.createElement('div');
+            badge.className = 'tenant-selected-badge';
+            badge.innerHTML = `
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                    <polyline points="22 4 12 14.01 9 11.01"/>
+                </svg>
+                ผู้เช่าเดิม: ${escapeHtml(tenant.name)}
+                <button type="button" onclick="clearSelectedTenant(); this.parentElement.remove();" title="ยกเลิกการเลือก">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                    </svg>
+                </button>
+            `;
+            
+            tenantNameInput.parentElement.appendChild(badge);
+        }
+        
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // ==========================================
+        // Payment Upload Feature
+        // ==========================================
+        const paymentUploadZone = document.getElementById('paymentUploadZone');
+        const payProofInput = document.getElementById('payProofInput');
+        const uploadPlaceholder = document.getElementById('uploadPlaceholder');
+        const uploadPreview = document.getElementById('uploadPreview');
+        const slipPreviewImg = document.getElementById('slipPreviewImg');
+        const pdfPreview = document.getElementById('pdfPreview');
+        const uploadFileName = document.getElementById('uploadFileName');
+        
+        if (paymentUploadZone && payProofInput) {
+            // Click to upload
+            paymentUploadZone.addEventListener('click', () => payProofInput.click());
+            
+            // Drag and drop
+            paymentUploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                paymentUploadZone.style.borderColor = '#f59e0b';
+                paymentUploadZone.style.background = 'rgba(245, 158, 11, 0.1)';
+            });
+            
+            paymentUploadZone.addEventListener('dragleave', () => {
+                paymentUploadZone.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                paymentUploadZone.style.background = 'rgba(0,0,0,0.2)';
+            });
+            
+            paymentUploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                paymentUploadZone.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                paymentUploadZone.style.background = 'rgba(0,0,0,0.2)';
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handlePaymentFile(files[0]);
+                }
+            });
+            
+            // File input change
+            payProofInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handlePaymentFile(e.target.files[0]);
+                }
+            });
+        }
+        
+        function handlePaymentFile(file) {
+            const maxSize = 5 * 1024 * 1024; // 5MB
+            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
+            
+            if (!allowedTypes.includes(file.type)) {
+                showAppleAlert('รองรับเฉพาะไฟล์ JPG, PNG, WEBP หรือ PDF', 'แจ้งเตือน');
+                return;
+            }
+            
+            if (file.size > maxSize) {
+                showAppleAlert('ขนาดไฟล์ต้องไม่เกิน 5MB', 'แจ้งเตือน');
+                return;
+            }
+            
+            // Create DataTransfer to set file to input
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            payProofInput.files = dt.files;
+            
+            // Show preview
+            uploadPlaceholder.style.display = 'none';
+            uploadPreview.style.display = 'block';
+            uploadFileName.textContent = file.name;
+            
+            if (file.type === 'application/pdf') {
+                slipPreviewImg.style.display = 'none';
+                pdfPreview.style.display = 'block';
+            } else {
+                pdfPreview.style.display = 'none';
+                slipPreviewImg.style.display = 'block';
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    slipPreviewImg.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+            
+            paymentUploadZone.style.borderColor = '#22c55e';
+        }
+        
+        function removePaymentFile() {
+            payProofInput.value = '';
+            uploadPlaceholder.style.display = 'block';
+            uploadPreview.style.display = 'none';
+            slipPreviewImg.src = '';
+            slipPreviewImg.style.display = 'none';
+            pdfPreview.style.display = 'none';
+            paymentUploadZone.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+        }
+
         // Form Validation
         document.getElementById('bookingForm')?.addEventListener('submit', function(e) {
             const roomSelected = document.querySelector('input[name="room_id"]:checked');
@@ -1663,6 +2397,81 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);
             validateMobilePhone();
         });
+        
+        // Step Navigation Functions
+        let currentStep = 1;
+        
+        function goToStep(stepNumber) {
+            // Validate before going to step 2
+            if (stepNumber === 2) {
+                if (!validateStep1()) {
+                    return;
+                }
+            }
+            
+            // Hide all steps
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            
+            // Show target step
+            const targetStep = document.querySelector(`.step-content[data-step="${stepNumber}"]`);
+            if (targetStep) {
+                targetStep.classList.add('active');
+            }
+            
+            // Update step indicators
+            document.querySelectorAll('.form-step').forEach(step => {
+                const stepNum = parseInt(step.dataset.step);
+                step.classList.remove('active', 'completed');
+                
+                if (stepNum === stepNumber) {
+                    step.classList.add('active');
+                } else if (stepNum < stepNumber) {
+                    step.classList.add('completed');
+                }
+            });
+            
+            currentStep = stepNumber;
+            
+            // Scroll to top of form
+            document.querySelector('.booking-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        
+        function validateStep1() {
+            // Check if room is selected
+            const selectedRoom = document.querySelector('input[name="room_id"]:checked');
+            if (!selectedRoom) {
+                alert('กรุณาเลือกห้องพัก');
+                return false;
+            }
+            
+            // Check tenant name
+            const tenantName = document.getElementById('tenantNameInput')?.value.trim();
+            if (!tenantName) {
+                alert('กรุณากรอกชื่อ-นามสกุล');
+                document.getElementById('tenantNameInput')?.focus();
+                return false;
+            }
+            
+            // Check phone
+            const phone = document.querySelector('input[name="phone"]')?.value.trim();
+            if (!phone || phone.length !== 10) {
+                alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก');
+                document.querySelector('input[name="phone"]')?.focus();
+                return false;
+            }
+            
+            // Check dates
+            const startDate = document.querySelector('input[name="startdate"]')?.value;
+            const endDate = document.querySelector('input[name="enddate"]')?.value;
+            if (!startDate || !endDate) {
+                alert('กรุณาเลือกวันที่เข้าพักและวันสิ้นสุดสัญญา');
+                return false;
+            }
+            
+            return true;
+        }
         
         // Mobile name input validation
         document.getElementById('mobileNameInput')?.addEventListener('input', function() {
