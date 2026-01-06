@@ -153,7 +153,7 @@ try {
         if (event) event.preventDefault();
         const sidebar = document.querySelector('.app-sidebar');
         if (!sidebar) return false;
-        const isMobile = window.innerWidth < 768;
+        const isMobile = window.innerWidth <= 1024;
         if (isMobile) {
           sidebar.classList.toggle('mobile-open');
           const expanded = sidebar.classList.contains('mobile-open').toString();
@@ -3673,7 +3673,7 @@ try {
       (() => {
         const SIDEBAR_KEY = 'sidebarCollapsed';
         const VIEW_KEY = 'bookingViewMode';
-        const isMobile = () => window.innerWidth < 768;
+        const isMobile = () => window.innerWidth <= 1024;
 
         const toggleSidebar = (btn) => {
           const sidebar = document.querySelector('.app-sidebar');
@@ -3775,7 +3775,7 @@ try {
         const safeSet = (key, value) => {
           try { localStorage.setItem(key, value); } catch (err) {}
         };
-        const isMobile = () => window.innerWidth < 768;
+        const isMobile = () => window.innerWidth <= 1024;
 
         // Sidebar toggle
         const handleSidebarToggle = (event) => {

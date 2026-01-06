@@ -663,7 +663,7 @@ $statusMap = [
         if (event) { event.preventDefault(); event.stopPropagation(); }
         const sidebar = document.querySelector('.app-sidebar');
         if (!sidebar) return false;
-        const isMobile = window.innerWidth < 768;
+        const isMobile = window.innerWidth <= 1024;
         if (isMobile) {
           sidebar.classList.toggle('mobile-open');
         } else {

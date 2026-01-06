@@ -225,6 +225,22 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title><?php echo htmlspecialchars($siteName); ?> - จดมิเตอร์น้ำไฟ</title>
+    <script>
+      // Ultra-early sidebar toggle fallback
+      window.__directSidebarToggle = function(event) {
+        if (event) { event.preventDefault(); event.stopPropagation(); }
+        const sidebar = document.querySelector('.app-sidebar');
+        if (!sidebar) return false;
+        const isMobile = window.innerWidth <= 1024;
+        if (isMobile) {
+          sidebar.classList.toggle('mobile-open');
+        } else {
+          sidebar.classList.toggle('collapsed');
+          try { localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed')); } catch(e) {}
+        }
+        return false;
+      };
+    </script>
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
@@ -785,6 +801,7 @@ $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'ม�
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         <main class="app-main">
+            <?php $pageTitle = 'จดมิเตอร์น้ำ-ไฟ'; include __DIR__ . '/../includes/page_header.php'; ?>
             <div class="utility-container">
                 <?php if (isset($_SESSION['success'])): ?>
                 <div class="success-toast" id="successToast">
