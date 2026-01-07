@@ -447,6 +447,10 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         <main class="app-main">
+            <?php 
+            $pageTitle = 'จดมิเตอร์';
+            include __DIR__ . '/../includes/page_header.php'; 
+            ?>
             <div class="meter-page">
                 
                 <?php if (isset($_SESSION['success'])): ?>
