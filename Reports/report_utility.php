@@ -74,34 +74,20 @@ try {
     <style>
       /* Mobile Responsive Styles */
       @media (max-width: 768px) {
-        /* Header Responsive */
-        header {
-          flex-direction: row !important;
-          gap: 0.5rem !important;
-          margin-bottom: 0.75rem !important;
-        }
-        
-        header > div {
-          flex: 1;
-          min-width: 0;
-        }
-        
-        header h2 {
-          font-size: 0.9rem !important;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-        
+        /* Toggle View Button Responsive */
         #toggle-view {
           padding: 0.5rem 0.75rem !important;
           font-size: 0.85rem !important;
-          margin-right: 0 !important;
         }
         
         #toggle-view svg {
           width: 14px !important;
           height: 14px !important;
+        }
+        
+        .app-main > div > div {
+          padding: 0 0.5rem !important;
+          margin-bottom: 0.75rem !important;
         }
         
         /* Section Header Responsive */
@@ -291,10 +277,6 @@ try {
       }
       
       @media (max-width: 480px) {
-        header h2 {
-          font-size: 0.85rem !important;
-        }
-        
         #toggle-view {
           padding: 0.4rem 0.6rem !important;
           font-size: 0.8rem !important;
@@ -338,13 +320,11 @@ try {
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main">
         <div style="width:100%;">
-          <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-            <div style="display:flex;align-items:center;gap:0.5rem">
-              <button id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" style="background:transparent;border:0;color:#fff;padding:0.6rem 0.85rem;border-radius:6px;cursor:pointer;font-size:1.25rem">☰</button>
-              <h2 style="margin:0;color:#fff;font-size:1.05rem">จัดการมิเตอร์น้ำ-ไฟ</h2>
-            </div>
-            <button id="toggle-view" aria-label="Toggle view" style="background:#334155;border:1px solid #475569;color:#fff;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;margin-right:1rem;display:inline-flex;align-items:center;gap:0.4rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด</button>
-          </header>
+          <?php $pageTitle = 'จัดการมิเตอร์น้ำ-ไฟ'; include __DIR__ . '/../includes/page_header.php'; ?>
+          
+          <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:1rem;padding:0 1rem;">
+            <button id="toggle-view" aria-label="Toggle view" style="background:#334155;border:1px solid #475569;color:#fff;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;display:inline-flex;align-items:center;gap:0.4rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด</button>
+          </div>
 
           <section class="manage-panel">
             <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
@@ -502,41 +482,6 @@ try {
     <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
     <script>
       (function() {
-        const sidebar = document.querySelector('.app-sidebar');
-        const toggleBtn = document.getElementById('sidebar-toggle');
-        
-        if (toggleBtn) {
-          toggleBtn.addEventListener('click', function(e) {
-            e.preventDefault();
-            e.stopPropagation();
-            
-            if (window.innerWidth > 1024) {
-              sidebar.style.transition = 'none';
-              void sidebar.offsetHeight;
-              sidebar.style.transition = '';
-              
-              sidebar.classList.toggle('collapsed');
-              localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-            } else {
-              sidebar.classList.toggle('mobile-open');
-              document.body.classList.toggle('sidebar-open');
-            }
-          });
-        }
-        
-        document.addEventListener('click', function(e) {
-          if (window.innerWidth <= 1024 && sidebar.classList.contains('mobile-open')) {
-            if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
-              sidebar.classList.remove('mobile-open');
-              document.body.classList.remove('sidebar-open');
-            }
-          }
-        });
-        
-        if (window.innerWidth > 1024 && localStorage.getItem('sidebarCollapsed') === 'true') {
-          sidebar.classList.add('collapsed');
-        }
-
         // View Toggle
         const viewToggle = document.getElementById('toggle-view');
         const cardView = document.getElementById('card-view');

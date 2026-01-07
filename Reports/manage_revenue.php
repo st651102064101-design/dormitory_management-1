@@ -58,19 +58,222 @@ try {
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
+    <style>
+      /* Mobile Responsive Styles */
+      @media (max-width: 768px) {
+        /* Toggle View Button */
+        #toggle-view {
+          padding: 0.5rem 0.75rem !important;
+          font-size: 0.85rem !important;
+        }
+        
+        #toggle-view svg {
+          width: 14px !important;
+          height: 14px !important;
+        }
+        
+        .app-main > div > div {
+          padding: 0 0.5rem !important;
+          margin-bottom: 0.75rem !important;
+        }
+        
+        /* Section Header */
+        .section-header {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          gap: 0.75rem !important;
+        }
+        
+        .section-header > div:first-child {
+          width: 100%;
+        }
+        
+        .section-header h1 {
+          font-size: 1.25rem !important;
+        }
+        
+        .section-header p {
+          font-size: 0.85rem !important;
+        }
+        
+        #sortSelect {
+          width: 100%;
+          padding: 0.5rem 0.75rem !important;
+          font-size: 0.9rem !important;
+        }
+        
+        /* Card View Responsive */
+        #card-view {
+          grid-template-columns: 1fr !important;
+          gap: 1rem !important;
+          margin-top: 1rem !important;
+        }
+        
+        #card-view > div {
+          padding: 1.25rem !important;
+        }
+        
+        /* Table View Mobile */
+        #table-view {
+          margin-top: 1rem !important;
+          overflow-x: visible !important;
+        }
+        
+        #table-revenue {
+          display: block !important;
+        }
+        
+        #table-revenue thead {
+          display: none !important;
+        }
+        
+        #table-revenue tbody {
+          display: block !important;
+        }
+        
+        #table-revenue tbody tr {
+          display: block !important;
+          background: #1e293b !important;
+          border: 1px solid #334155 !important;
+          border-radius: 8px !important;
+          margin-bottom: 1rem !important;
+          padding: 1rem !important;
+        }
+        
+        #table-revenue tbody td {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          padding: 0.75rem 0 !important;
+          border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+        }
+        
+        #table-revenue tbody td:last-child {
+          border-bottom: none !important;
+          padding-top: 1rem !important;
+          margin-top: 0.5rem !important;
+          border-top: 1px solid #475569 !important;
+        }
+        
+        #table-revenue tbody td::before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: #94a3b8;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        
+        /* DataTable Controls Mobile */
+        .datatable-top {
+          flex-direction: column !important;
+          gap: 0.75rem !important;
+          padding: 0 0 1rem 0 !important;
+        }
+        
+        .datatable-search {
+          width: 100% !important;
+          margin: 0 !important;
+        }
+        
+        .datatable-search input {
+          width: 100% !important;
+          padding: 0.6rem 1rem !important;
+          font-size: 0.9rem !important;
+        }
+        
+        .datatable-dropdown {
+          width: 100% !important;
+        }
+        
+        .datatable-selector {
+          width: 100% !important;
+          padding: 0.6rem 1rem !important;
+          font-size: 0.9rem !important;
+        }
+        
+        .datatable-bottom {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 0.75rem !important;
+        }
+        
+        .datatable-info {
+          text-align: center !important;
+          order: 1;
+          font-size: 0.85rem !important;
+        }
+        
+        .datatable-pagination {
+          margin: 0 !important;
+          order: 2;
+        }
+        
+        .datatable-pagination ul {
+          justify-content: center !important;
+          flex-wrap: wrap;
+        }
+        
+        .datatable-pagination li {
+          margin: 0.25rem !important;
+        }
+        
+        .datatable-pagination a {
+          padding: 0.4rem 0.7rem !important;
+          font-size: 0.85rem !important;
+          min-width: 32px !important;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        #toggle-view {
+          padding: 0.4rem 0.6rem !important;
+          font-size: 0.8rem !important;
+        }
+        
+        .section-header h1 {
+          font-size: 1.1rem !important;
+        }
+        
+        #card-view {
+          gap: 0.75rem !important;
+        }
+        
+        #card-view > div {
+          padding: 1rem !important;
+        }
+        
+        #table-revenue tbody tr {
+          padding: 0.875rem !important;
+        }
+        
+        #table-revenue tbody td {
+          padding: 0.625rem 0 !important;
+          font-size: 0.9rem !important;
+        }
+        
+        #table-revenue tbody td::before {
+          font-size: 0.75rem !important;
+        }
+        
+        .datatable-pagination a {
+          padding: 0.35rem 0.6rem !important;
+          font-size: 0.8rem !important;
+          min-width: 28px !important;
+        }
+      }
+    </style>
   </head>
   <body class="reports-page">
     <div class="app-shell">
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main">
         <div style="width:100%;">
-          <header style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
-            <div style="display:flex;align-items:center;gap:0.5rem">
-              <button id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" style="background:transparent;border:0;color:#fff;padding:0.6rem 0.85rem;border-radius:6px;cursor:pointer;font-size:1.25rem">☰</button>
-              <h2 style="margin:0;color:#fff;font-size:1.05rem">รายงานรายรับ</h2>
-            </div>
-            <button id="toggle-view" aria-label="Toggle view" style="background:#334155;border:1px solid #475569;color:#fff;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;margin-right:1rem;display:inline-flex;align-items:center;gap:0.4rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>ตาราง</button>
-          </header>
+          <?php $pageTitle = 'รายงานรายรับ'; include __DIR__ . '/../includes/page_header.php'; ?>
+          
+          <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:1rem;padding:0 1rem;">
+            <button id="toggle-view" aria-label="Toggle view" style="background:#334155;border:1px solid #475569;color:#fff;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;display:inline-flex;align-items:center;gap:0.4rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>ตาราง</button>
+          </div>
 
           <section style="margin:1rem;padding:1.25rem 1rem;border-radius:1rem;background:linear-gradient(180deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));color:#f5f8ff">
             <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
@@ -139,8 +342,8 @@ try {
                     $totalAmount = (int)($r['total_received'] ?? 0);
                   ?>
                   <tr style="border-bottom:1px solid #334155;background:#1e293b;">
-                    <td style="padding:0.75rem;color:#fff;"><?php echo $monthName; ?></td>
-                    <td style="padding:0.75rem;color:#0ea5e9;text-align:right;font-weight:700;font-size:1.1rem;">฿<?php echo number_format($totalAmount); ?></td>
+                    <td data-label="เดือน" style="padding:0.75rem;color:#fff;"><?php echo $monthName; ?></td>
+                    <td data-label="ยอดรับรวม" style="padding:0.75rem;color:#0ea5e9;text-align:right;font-weight:700;font-size:1.1rem;">฿<?php echo number_format($totalAmount); ?></td>
                   </tr>
 <?php endforeach; ?>
                 </tbody>

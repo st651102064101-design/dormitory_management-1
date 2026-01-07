@@ -49,19 +49,19 @@
 <style>
 /* Page Header Styles - Apple-style Auto-hide */
 .page-header-bar {
-  position: fixed;
+  position: sticky;
   top: 0;
-  left: 0;
-  right: 0;
   z-index: 10000;
   padding: 1rem 1.5rem;
   background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  margin: 0 0 1rem 0;
   transform: translateY(0);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -80,8 +80,7 @@
 }
 
 .page-header-spacer {
-  height: 72px;
-  flex-shrink: 0;
+  display: none;
 }
 
 .page-header-bar > div {
