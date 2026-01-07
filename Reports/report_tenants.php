@@ -893,27 +893,6 @@ $statusMap = [
             pointer-events: auto !important;
             cursor: pointer !important;
         }
-
-        /* Show only sidebar toggle button, hide header text */
-        header {
-            display: block !important;
-            position: static !important;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        header h2 {
-            display: none !important;
-        }
-        header div {
-            display: flex !important;
-            align-items: center !important;
-            height: auto !important;
-            margin: 0 !important;
-            padding: 0.5rem 1rem !important;
-        }
     </style>
 </head>
 <body>
