@@ -716,6 +716,12 @@ unset($step);
             margin-bottom: 2rem;
         }
         
+        @media (max-width: 640px) {
+            .status-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         .status-card {
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(20px);
@@ -801,6 +807,12 @@ unset($step);
             gap: 1.5rem;
         }
         
+        @media (max-width: 640px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        
         .info-item {
             padding: 1rem;
             background: rgba(255,255,255,0.05);
@@ -835,6 +847,15 @@ unset($step);
             gap: 10px;
             color: var(--text-primary);
         }
+        
+        @media (max-width: 640px) {
+            .upcoming-box .upcoming-content {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+        }
+        
         .upcoming-box .amount {
             font-size: 1.25rem;
             font-weight: 800;
@@ -844,6 +865,12 @@ unset($step);
             background-clip: text;
             letter-spacing: 0.25px;
             animation: amountPulse 2.4s ease-in-out infinite;
+        }
+        
+        @media (max-width: 640px) {
+            .upcoming-box .amount {
+                font-size: 1.1rem;
+            }
         }
         .upcoming-box .upcoming-pill {
             display: inline-flex;
@@ -1233,17 +1260,122 @@ unset($step);
         }
         
         @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
             .header {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 1rem;
+                margin-bottom: 1.5rem;
+            }
+            
+            .logo {
+                gap: 0.75rem;
+            }
+            
+            .logo img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .logo h1 {
+                font-size: 1.2rem;
             }
             
             .header-actions {
                 margin-left: 0;
+                width: 100%;
+            }
+            
+            .btn-back {
+                width: 100%;
+                justify-content: center;
+                padding: 10px 20px;
+                font-size: 0.9rem;
+            }
+            
+            .page-title h2 {
+                font-size: 1.5rem;
+            }
+            
+            .page-title p {
+                font-size: 0.9rem;
+            }
+            
+            .search-card {
+                padding: 1.5rem;
+            }
+            
+            .search-form {
+                flex-direction: column;
+                gap: 0.75rem;
+            }
+            
+            .search-form input {
+                min-width: 100%;
+                padding: 1rem 1.2rem;
+                font-size: 18px;
+                letter-spacing: 3px;
+            }
+            
+            .search-form button {
+                width: 100%;
+                padding: 1rem 1.5rem;
+                font-size: 1rem;
+            }
+            
+            .alert {
+                padding: 0.875rem 1.25rem;
+                font-size: 0.9rem;
             }
             
             .status-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .status-card {
+                padding: 1.5rem;
+            }
+            
+            .status-card-title {
+                font-size: 0.9rem;
+            }
+            
+            .status-card-value {
+                font-size: 1.25rem;
+            }
+            
+            .info-section {
+                padding: 1.5rem;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            
+            .info-item {
+                padding: 0.875rem;
+            }
+            
+            .info-label {
+                font-size: 0.85rem;
+            }
+            
+            .info-value {
+                font-size: 0.95rem;
+            }
+            
+            .progress-section {
+                padding: 1.5rem;
+            }
+            
+            .progress-title {
+                font-size: 1rem;
+                margin-bottom: 1.25rem;
             }
             
             .progress-steps {
@@ -1257,6 +1389,179 @@ unset($step);
                 right: auto;
                 width: 2px;
                 height: 100%;
+            }
+            
+            .progress-step {
+                display: flex;
+                align-items: center;
+                gap: 1rem;
+                text-align: left;
+            }
+            
+            .progress-step-number {
+                margin: 0;
+                flex-shrink: 0;
+            }
+            
+            .progress-step-label {
+                font-size: 0.9rem;
+            }
+            
+            .timeline {
+                padding-left: 1.5rem;
+            }
+            
+            .timeline::before {
+                left: 4px;
+            }
+            
+            .timeline-item::before {
+                left: -18px;
+                width: 12px;
+                height: 12px;
+            }
+            
+            .timeline-item-title {
+                font-size: 0.95rem;
+            }
+            
+            .timeline-item-date {
+                font-size: 0.85rem;
+            }
+            
+            .tracking-card {
+                padding: 1.5rem;
+            }
+            
+            .tracking-title {
+                font-size: 1.25rem;
+            }
+            
+            .tracking-kicker {
+                font-size: 0.85rem;
+            }
+            
+            .upcoming-box {
+                padding: 1rem;
+            }
+            
+            .upcoming-pill {
+                padding: 0.5rem 0.875rem;
+                font-size: 0.85rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 0.75rem;
+            }
+            
+            .header {
+                margin-bottom: 1rem;
+            }
+            
+            .logo img {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .logo h1 {
+                font-size: 1.1rem;
+            }
+            
+            .btn-back {
+                padding: 8px 16px;
+                font-size: 0.85rem;
+            }
+            
+            .page-title {
+                margin-bottom: 1.5rem;
+            }
+            
+            .page-title h2 {
+                font-size: 1.25rem;
+            }
+            
+            .page-title p {
+                font-size: 0.85rem;
+            }
+            
+            .search-card {
+                padding: 1.25rem;
+            }
+            
+            .search-form input {
+                padding: 0.875rem 1rem;
+                font-size: 16px;
+                letter-spacing: 2px;
+            }
+            
+            .search-form button {
+                padding: 0.875rem 1.25rem;
+                font-size: 0.95rem;
+            }
+            
+            .status-card,
+            .info-section,
+            .progress-section,
+            .tracking-card {
+                padding: 1.25rem;
+                margin-bottom: 1rem;
+            }
+            
+            .status-card-title {
+                font-size: 0.85rem;
+            }
+            
+            .status-card-value {
+                font-size: 1.1rem;
+            }
+            
+            .info-label {
+                font-size: 0.8rem;
+            }
+            
+            .info-value {
+                font-size: 0.9rem;
+            }
+            
+            .progress-title {
+                font-size: 0.95rem;
+            }
+            
+            .progress-step-number {
+                width: 35px;
+                height: 35px;
+            }
+            
+            .progress-step-label {
+                font-size: 0.85rem;
+            }
+            
+            .tracking-title {
+                font-size: 1.1rem;
+            }
+            
+            .track-node {
+                width: 45px;
+                height: 45px;
+            }
+            
+            .node-core {
+                width: 34px;
+                height: 34px;
+            }
+            
+            .node-number {
+                font-size: 0.85rem;
+            }
+            
+            .track-label {
+                font-size: 0.9rem;
+            }
+            
+            .track-desc {
+                font-size: 0.85rem;
             }
         }
     </style>
