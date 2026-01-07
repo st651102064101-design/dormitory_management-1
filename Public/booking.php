@@ -1510,14 +1510,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <!-- Booking Reference Section -->
             <div style="background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; border-radius: 16px; padding: 16px; margin: 24px 0; text-align: center;" id="bookingReferenceSection">
-                <p style="color: #10b981; font-size: 14px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px;">📋 หมายเลขการจองของคุณ</p>
+                <p style="color: #10b981; font-size: 14px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <svg class="animated-clipboard" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                    </svg>
+                    หมายเลขการจองของคุณ
+                </p>
                 <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; max-width: 100%;">
                     <?php if ($lastBookingId): ?>
                     <div style="background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
                         <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">เลขที่การจอง</div>
                         <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="bookingIdText"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
-                        <button onclick="copyBookingId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s;">
-                            📋
+                        <button onclick="copyBookingId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                            <svg class="animated-clipboard" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
                         </button>
                     </div>
                     <?php endif; ?>
@@ -1525,8 +1534,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <div style="background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
                         <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">รหัสผู้เช่า</div>
                         <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="tenantIdText"><?php echo htmlspecialchars($lastTenantId); ?></div>
-                        <button onclick="copyTenantId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 4px 8px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s;">
-                            📋
+                        <button onclick="copyTenantId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
+                            <svg class="animated-clipboard" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                            </svg>
                         </button>
                     </div>
                     <?php endif; ?>
@@ -1579,7 +1591,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php else: ?>
         <!-- Page Title -->
         <div class="page-title">
-            <h1>🏠 จองห้องพัก</h1>
+            <h1 style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                <svg class="animated-home" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                    <polyline points="9 22 9 12 15 12 15 22"/>
+                </svg>
+                จองห้องพัก
+            </h1>
             <p>เลือกห้องและกรอกข้อมูลเพียง 3 ขั้นตอนง่ายๆ</p>
         </div>
         
@@ -2155,9 +2173,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ${escapeHtml(tenant.name)}
                             <span class="autocomplete-item-status ${statusClass}">${escapeHtml(tenant.statusText)}</span>
                         </div>
-                        <div class="autocomplete-item-info">
-                            📱 ${tenant.phone || '-'} 
-                            ${tenant.education ? '• 🎓 ' + escapeHtml(tenant.education) : ''}
+                        <div class="autocomplete-item-info" style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                            <span style="display: inline-flex; align-items: center; gap: 4px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
+                                ${tenant.phone || '-'}
+                            </span>
+                            ${tenant.education ? '<span style="display: inline-flex; align-items: center; gap: 4px;">• <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg> ' + escapeHtml(tenant.education) + '</span>' : ''}
                         </div>
                     </div>
                 `;
@@ -2851,7 +2872,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const bookingId = document.getElementById('bookingIdText')?.textContent || '';
             const tenantId = document.getElementById('tenantIdText')?.textContent || '';
             const text = `📋 ข้อมูลการจองห้องพัก - Sangthian Dormitory\n\n` +
-                         `🔢 เลขที่การจอง: ${bookingId}\n` +
+                         `� เลขที่การจอง: ${bookingId}\n` +
                          `👤 รหัสผู้เช่า: ${tenantId}\n\n` +
                          `⚠️ กรุณาเก็บข้อมูลนี้ไว้สำหรับตรวจสอบสถานะการจอง\n` +
                          `🔗 ตรวจสอบสถานะ: ${window.location.origin}/dormitory_management/Public/booking_status.php`;
@@ -2875,7 +2896,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const bookingId = document.getElementById('bookingIdText')?.textContent || '';
             const tenantId = document.getElementById('tenantIdText')?.textContent || '';
             const shareText = `📋 ข้อมูลการจองห้องพัก - Sangthian Dormitory\n\n` +
-                         `🔢 เลขที่การจอง: ${bookingId}\n` +
+                         `� เลขที่การจอง: ${bookingId}\n` +
                          `👤 รหัสผู้เช่า: ${tenantId}\n\n` +
                          `🔗 ตรวจสอบสถานะที่:\n${window.location.origin}/dormitory_management/Public/booking_status.php`;
             
@@ -2902,7 +2923,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const bookingId = document.getElementById('bookingIdText')?.textContent || '';
             const tenantId = document.getElementById('tenantIdText')?.textContent || '';
             const text = `📋 ข้อมูลการจองห้องพัก - Sangthian Dormitory\n\n` +
-                         `🔢 เลขที่การจอง: ${bookingId}\n` +
+                         `� เลขที่การจอง: ${bookingId}\n` +
                          `👤 รหัสผู้เช่า: ${tenantId}\n\n` +
                          `📅 วันที่จอง: ${new Date().toLocaleDateString('th-TH', {year: 'numeric', month: 'long', day: 'numeric'})}\n` +
                          `⏰ เวลา: ${new Date().toLocaleTimeString('th-TH')}\n\n` +
@@ -2947,6 +2968,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         });
     </script>
+    
+    <style>
+        /* CSS Animations for SVG Icons */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.1); opacity: 0.8; }
+        }
+        
+        @keyframes wiggle {
+            0%, 100% { transform: rotate(0deg); }
+            25% { transform: rotate(-5deg); }
+            75% { transform: rotate(5deg); }
+        }
+        
+        .animated-home {
+            animation: bounce 2s ease-in-out infinite;
+        }
+        
+        .animated-clipboard {
+            animation: pulse 2s ease-in-out infinite;
+        }
+        
+        button:hover .animated-clipboard {
+            animation: wiggle 0.5s ease-in-out;
+        }
+    </style>
     
     <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
 </body>
