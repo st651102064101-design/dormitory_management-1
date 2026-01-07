@@ -446,6 +446,9 @@ try {
     background: var(--theme-bg-color) !important;
     scrollbar-width: none;
     -ms-overflow-style: none;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   aside.app-sidebar::-webkit-scrollbar { display: none; }
   
@@ -1444,6 +1447,9 @@ try {
     visibility: visible !important;
     transform: none !important;
     position: relative !important;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   /* Mobile: Override collapsed to full sidebar when open */
