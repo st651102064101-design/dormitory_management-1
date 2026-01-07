@@ -226,8 +226,9 @@
       </div>
       
       <div style="margin-top: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
-        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0;">
-          💡 การตั้งค่านี้จะมีผลกับทุกหน้าแอดมิน เช่น หน้าจัดการห้องพัก, หน้าจัดการผู้เช่า, หน้าจองห้อง เป็นต้น
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0; display: flex; align-items: center; gap: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+          การตั้งค่านี้จะมีผลกับทุกหน้าแอดมิน เช่น หน้าจัดการห้องพัก, หน้าจัดการผู้เช่า, หน้าจองห้อง เป็นต้น
         </p>
       </div>
     </div>
@@ -259,8 +260,9 @@
       </div>
       
       <div style="margin-top: 16px; padding: 12px; background: rgba(234, 179, 8, 0.1); border-radius: 10px; border: 1px solid rgba(234, 179, 8, 0.2);">
-        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0;">
-          ⚡ ระบบจะแจ้งเตือนเมื่อ FPS ต่ำกว่าค่านี้
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0; display: flex; align-items: center; gap: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#eab308" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+          ระบบจะแจ้งเตือนเมื่อ FPS ต่ำกว่าค่านี้
         </p>
       </div>
       

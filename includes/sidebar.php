@@ -2143,7 +2143,7 @@ try {
       const key = 'sidebar_details_' + e.target.id;
       const newState = e.target.open ? 'open' : 'closed';
       localStorage.setItem(key, newState);
-      console.log('💾 Saved:', key, '=', newState);
+      console.log('Saved:', key, '=', newState);
     }
   }, true);
   

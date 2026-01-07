@@ -56,7 +56,8 @@
       if (btn) btn.setAttribute('aria-expanded', isOpen.toString());
     } else {
       var isCollapsed = sidebar.classList.toggle('collapsed');
-      safeSet(STORAGE_KEY, isCollapsed.toString());
+      // บันทึกว่า sidebar เปิดอยู่หรือไม่ ('false' = เปิด/ไม่ collapsed)
+      safeSet(STORAGE_KEY, isCollapsed ? 'true' : 'false');
       
       // Update aria-expanded
       var btn = document.getElementById('sidebar-toggle');
@@ -87,8 +88,15 @@
     var sidebar = document.querySelector('.app-sidebar');
     if (!sidebar) return;
     
-    if (!isMobile() && safeGet(STORAGE_KEY) === 'true') {
-      sidebar.classList.add('collapsed');
+    // Default: sidebar collapsed (full screen content)
+    // Only show sidebar if explicitly saved as 'false' (not collapsed)
+    if (!isMobile()) {
+      var savedState = safeGet(STORAGE_KEY);
+      // ถ้า savedState เป็น 'false' หรือ null/undefined ให้ collapsed
+      // ถ้า savedState เป็น 'expanded' หรือ 'false' เท่านั้น ถึงจะแสดง sidebar
+      if (savedState !== 'false') {
+        sidebar.classList.add('collapsed');
+      }
     }
     
     // Bind outside click handler

@@ -1563,9 +1563,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </div>
                 
-                <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 16px 0 0 0; line-height: 1.6;">
-                    💡 <strong>กรุณาบันทึกหมายเลขนี้</strong> เพื่อใช้ตรวจสอบสถานะการจองและข้อมูลการชำระเงินภายหลัง<br>
-                    <a href="/dormitory_management/Public/booking_status.php" style="color: #10b981; text-decoration: underline; font-weight: 600;">คลิกที่นี่เพื่อตรวจสอบสถานะ</a>
+                <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 16px 0 0 0; line-height: 1.6; display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                    <span><strong>กรุณาบันทึกหมายเลขนี้</strong> เพื่อใช้ตรวจสอบสถานะการจองและข้อมูลการชำระเงินภายหลัง<br>
+                    <a href="/dormitory_management/Public/booking_status.php" style="color: #10b981; text-decoration: underline; font-weight: 600;">คลิกที่นี่เพื่อตรวจสอบสถานะ</a></span>
                 </p>
             </div>
             
@@ -1673,8 +1674,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="text" name="name" id="tenantNameInput" class="form-input" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกชื่อใหม่" required autocomplete="off">
                             <input type="hidden" name="existing_tenant_id" id="existingTenantId" value="">
                             <div id="tenantSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
-                            <div class="form-hint" style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px;">
-                                💡 พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกข้อมูลใหม่ทั้งหมด
+                            <div class="form-hint" style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+                                พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกข้อมูลใหม่ทั้งหมด
                             </div>
                         </div>
                         

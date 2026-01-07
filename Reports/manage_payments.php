@@ -54,7 +54,8 @@ try {
 
 // รับค่า filter จาก query parameter
 $filterStatus = isset($_GET['status']) ? $_GET['status'] : '';
-$filterMonth = isset($_GET['month']) ? $_GET['month'] : '';
+$filterMonth = isset($_GET['filter_month']) ? $_GET['filter_month'] : '';
+$filterYear = isset($_GET['filter_year']) ? $_GET['filter_year'] : '';
 $filterRoom = isset($_GET['room']) ? $_GET['room'] : '';
 
 // สร้าง WHERE clause
@@ -66,9 +67,16 @@ if ($filterStatus !== '') {
     $whereParams[] = $filterStatus;
 }
 
-if ($filterMonth !== '') {
-    $whereConditions[] = "DATE_FORMAT(p.pay_date, '%Y-%m') = ?";
+if ($filterMonth !== '' && $filterYear !== '') {
+    $whereConditions[] = "MONTH(p.pay_date) = ? AND YEAR(p.pay_date) = ?";
     $whereParams[] = $filterMonth;
+    $whereParams[] = $filterYear;
+} elseif ($filterMonth !== '') {
+    $whereConditions[] = "MONTH(p.pay_date) = ?";
+    $whereParams[] = $filterMonth;
+} elseif ($filterYear !== '') {
+    $whereConditions[] = "YEAR(p.pay_date) = ?";
+    $whereParams[] = $filterYear;
 }
 
 if ($filterRoom !== '') {
@@ -2471,14 +2479,23 @@ $roomPaymentSummary = $pdo->query("
                   <option value="">ทั้งหมด</option>
                   <?php 
                   $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-                  foreach ($availableMonths as $m): 
-                    $parts = explode('-', $m);
-                    $year = (int)$parts[0] + 543;
-                    $month = (int)$parts[1];
-                    $label = $thaiMonths[$month] . ' ' . $year;
+                  for ($m = 1; $m <= 12; $m++):
                   ?>
-                    <option value="<?php echo $m; ?>" <?php echo $filterMonth === $m ? 'selected' : ''; ?>><?php echo $label; ?></option>
-                  <?php endforeach; ?>
+                    <option value="<?php echo $m; ?>" <?php echo $filterMonth === (string)$m ? 'selected' : ''; ?>><?php echo $thaiMonths[$m]; ?></option>
+                  <?php endfor; ?>
+                </select>
+              </div>
+              <div class="filter-group">
+                <label>กรองตามปี</label>
+                <select id="filterYear" onchange="applyFilters()">
+                  <option value="">ทั้งหมด</option>
+                  <?php 
+                  $currentYear = (int)date('Y');
+                  for ($y = $currentYear - 2; $y <= $currentYear + 1; $y++):
+                    $thaiYear = $y + 543;
+                  ?>
+                    <option value="<?php echo $y; ?>" <?php echo $filterYear === (string)$y ? 'selected' : ''; ?>><?php echo $thaiYear; ?></option>
+                  <?php endfor; ?>
                 </select>
               </div>
               <div class="filter-group">
@@ -2489,7 +2506,7 @@ $roomPaymentSummary = $pdo->query("
               <div style="margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;display:flex;align-items:center;gap:0.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2  2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 กำลังแสดงเฉพาะห้อง <strong><?php echo htmlspecialchars($filterRoom); ?></strong>
-                <a href="?<?php echo http_build_query(array_filter(['status' => $filterStatus, 'month' => $filterMonth])); ?>" style="margin-left:auto;color:#f87171;text-decoration:none;">✕ ยกเลิก</a>
+                <a href="?<?php echo http_build_query(array_filter(['status' => $filterStatus, 'filter_month' => $filterMonth, 'filter_year' => $filterYear])); ?>" style="margin-left:auto;color:#f87171;text-decoration:none;">✕ ยกเลิก</a>
               </div>
             <?php endif; ?>
           </section>
@@ -2683,12 +2700,14 @@ $roomPaymentSummary = $pdo->query("
         const room = document.getElementById('filterRoom').value;
         const status = document.getElementById('filterStatus').value;
         const month = document.getElementById('filterMonth').value;
+        const year = document.getElementById('filterYear').value;
         
         let url = window.location.pathname + '?';
         const params = [];
         if (room !== '') params.push('room=' + encodeURIComponent(room));
         if (status !== '') params.push('status=' + status);
-        if (month !== '') params.push('month=' + month);
+        if (month !== '') params.push('filter_month=' + month);
+        if (year !== '') params.push('filter_year=' + year);
         
         window.location.href = url + params.join('&');
       }

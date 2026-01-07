@@ -644,7 +644,7 @@ document.addEventListener('DOMContentLoaded', () => {
       backupStatus.textContent = '✗ ' + error.message;
     } finally {
       backupBtn.disabled = false;
-      backupBtn.textContent = '💾 สำรองข้อมูล';
+      backupBtn.textContent = 'สำรองข้อมูล';
     }
   });
 
@@ -788,7 +788,7 @@ document.addEventListener('DOMContentLoaded', () => {
         showErrorToast('เกิดข้อผิดพลาด: ' + error.message);
       } finally {
         submitBtn.disabled = false;
-        submitBtn.textContent = '💾 บันทึกภาพพื้นหลัง';
+        submitBtn.textContent = 'บันทึกภาพพื้นหลัง';
       }
     });
   }
