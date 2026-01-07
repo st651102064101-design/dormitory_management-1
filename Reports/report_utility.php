@@ -71,6 +71,267 @@ try {
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
+    <style>
+      /* Mobile Responsive Styles */
+      @media (max-width: 768px) {
+        /* Header Responsive */
+        header {
+          flex-direction: row !important;
+          gap: 0.5rem !important;
+          margin-bottom: 0.75rem !important;
+        }
+        
+        header > div {
+          flex: 1;
+          min-width: 0;
+        }
+        
+        header h2 {
+          font-size: 0.9rem !important;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        
+        #toggle-view {
+          padding: 0.5rem 0.75rem !important;
+          font-size: 0.85rem !important;
+          margin-right: 0 !important;
+        }
+        
+        #toggle-view svg {
+          width: 14px !important;
+          height: 14px !important;
+        }
+        
+        /* Section Header Responsive */
+        .section-header {
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          gap: 0.75rem !important;
+        }
+        
+        .section-header > div:first-child {
+          width: 100%;
+        }
+        
+        .section-header h1 {
+          font-size: 1.25rem !important;
+        }
+        
+        .section-header p {
+          font-size: 0.85rem !important;
+        }
+        
+        #sortSelect {
+          width: 100%;
+          padding: 0.5rem 0.75rem !important;
+          font-size: 0.9rem !important;
+        }
+        
+        /* Card View Responsive */
+        #card-view {
+          grid-template-columns: 1fr !important;
+          gap: 1rem !important;
+          margin-top: 1rem !important;
+        }
+        
+        #card-view > div {
+          padding: 1rem !important;
+        }
+        
+        #card-view > div > div:first-child {
+          flex-direction: column;
+          align-items: flex-start !important;
+          gap: 0.75rem;
+        }
+        
+        #card-view > div > div:first-child > div:last-child {
+          text-align: left !important;
+        }
+        
+        #card-view > div > div:first-child > div:first-child > div:first-child {
+          font-size: 1.25rem !important;
+        }
+        
+        #card-view > div > div:first-child > div:last-child > div:last-child {
+          font-size: 0.95rem !important;
+        }
+        
+        /* Table View Mobile - Card Layout */
+        #table-view {
+          margin-top: 1rem !important;
+        }
+        
+        #table-view > div {
+          overflow-x: visible !important;
+          border: none !important;
+          background: transparent !important;
+        }
+        
+        #table-utility {
+          display: block !important;
+          min-width: 0 !important;
+        }
+        
+        #table-utility thead {
+          display: none !important;
+        }
+        
+        #table-utility tbody {
+          display: block !important;
+        }
+        
+        #table-utility tbody tr {
+          display: block !important;
+          background: #1e293b !important;
+          border: 1px solid #334155 !important;
+          border-radius: 8px !important;
+          margin-bottom: 1rem !important;
+          padding: 1rem !important;
+        }
+        
+        #table-utility tbody td {
+          display: flex !important;
+          justify-content: space-between !important;
+          align-items: center !important;
+          padding: 0.75rem 0 !important;
+          border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+          white-space: normal !important;
+        }
+        
+        #table-utility tbody td:last-child {
+          border-bottom: none !important;
+        }
+        
+        #table-utility tbody td::before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: #94a3b8;
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          flex-shrink: 0;
+          margin-right: 1rem;
+        }
+        
+        #table-utility tbody td:first-child {
+          border-bottom: 2px solid #475569 !important;
+          padding-bottom: 1rem !important;
+          margin-bottom: 0.5rem !important;
+        }
+        
+        #table-utility tbody td:first-child::before {
+          display: none;
+        }
+        
+        #table-utility tbody td > div {
+          text-align: right;
+        }
+        
+        /* DataTable Controls Mobile */
+        .datatable-top {
+          flex-direction: column !important;
+          gap: 0.75rem !important;
+          padding: 0 0 1rem 0 !important;
+        }
+        
+        .datatable-search {
+          width: 100% !important;
+          margin: 0 !important;
+        }
+        
+        .datatable-search input {
+          width: 100% !important;
+          padding: 0.6rem 1rem !important;
+          font-size: 0.9rem !important;
+        }
+        
+        .datatable-dropdown {
+          width: 100% !important;
+        }
+        
+        .datatable-selector {
+          width: 100% !important;
+          padding: 0.6rem 1rem !important;
+          font-size: 0.9rem !important;
+        }
+        
+        .datatable-bottom {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 0.75rem !important;
+        }
+        
+        .datatable-info {
+          text-align: center !important;
+          order: 1;
+          font-size: 0.85rem !important;
+        }
+        
+        .datatable-pagination {
+          margin: 0 !important;
+          order: 2;
+        }
+        
+        .datatable-pagination ul {
+          justify-content: center !important;
+          flex-wrap: wrap;
+        }
+        
+        .datatable-pagination li {
+          margin: 0.25rem !important;
+        }
+        
+        .datatable-pagination a {
+          padding: 0.4rem 0.7rem !important;
+          font-size: 0.85rem !important;
+          min-width: 32px !important;
+        }
+      }
+      
+      @media (max-width: 480px) {
+        header h2 {
+          font-size: 0.85rem !important;
+        }
+        
+        #toggle-view {
+          padding: 0.4rem 0.6rem !important;
+          font-size: 0.8rem !important;
+        }
+        
+        .section-header h1 {
+          font-size: 1.1rem !important;
+        }
+        
+        #card-view {
+          gap: 0.75rem !important;
+        }
+        
+        #card-view > div {
+          padding: 0.875rem !important;
+        }
+        
+        #table-utility tbody tr {
+          padding: 0.875rem !important;
+        }
+        
+        #table-utility tbody td {
+          padding: 0.625rem 0 !important;
+          font-size: 0.9rem !important;
+        }
+        
+        #table-utility tbody td::before {
+          font-size: 0.75rem !important;
+        }
+        
+        .datatable-pagination a {
+          padding: 0.35rem 0.6rem !important;
+          font-size: 0.8rem !important;
+          min-width: 28px !important;
+        }
+      }
+    </style>
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -209,23 +470,23 @@ try {
                     ?>
                     <tr style="border-bottom:1px solid #334155;background:#1e293b;">
                       <td style="padding:0.85rem;color:#fff;font-weight:600;white-space:nowrap;">#<?php echo str_pad((string)($util['utl_id'] ?? '0'), 4, '0', STR_PAD_LEFT); ?></td>
-                      <td style="padding:0.85rem;white-space:nowrap;">
+                      <td data-label="ห้อง/ผู้เช่า" style="padding:0.85rem;white-space:nowrap;">
                         <div style="color:#fff;font-weight:600;margin-bottom:0.25rem;">ห้อง <?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></div>
                         <div style="color:#94a3b8;font-size:0.875rem;"><?php echo htmlspecialchars($util['tnt_name'] ?? '-'); ?></div>
                       </td>
-                      <td style="padding:0.85rem;color:#cbd5e1;white-space:nowrap;"><?php echo $readDate; ?></td>
+                      <td data-label="วันที่อ่าน" style="padding:0.85rem;color:#cbd5e1;white-space:nowrap;"><?php echo $readDate; ?></td>
                       <!-- น้ำ: เริ่มต้น -->
-                      <td style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></td>
+                      <td data-label="น้ำ เริ่มต้น" style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></td>
                       <!-- น้ำ: สิ้นสุด -->
-                      <td style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></td>
+                      <td data-label="น้ำ สิ้นสุด" style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></td>
                       <!-- น้ำ: ใช้ไป -->
-                      <td style="padding:0.85rem;color:#22c55e;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:0.95rem;border-right:3px solid #475569;white-space:nowrap;"><?php echo number_format($waterUsage); ?></td>
+                      <td data-label="น้ำ ใช้ไป" style="padding:0.85rem;color:#22c55e;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:0.95rem;border-right:3px solid #475569;white-space:nowrap;"><?php echo number_format($waterUsage); ?></td>
                       <!-- ไฟ: เริ่มต้น -->
-                      <td style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></td>
+                      <td data-label="ไฟ เริ่มต้น" style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></td>
                       <!-- ไฟ: สิ้นสุด -->
-                      <td style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></td>
+                      <td data-label="ไฟ สิ้นสุด" style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></td>
                       <!-- ไฟ: ใช้ไป -->
-                      <td style="padding:0.85rem;color:#3b82f6;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format($elecUsage); ?></td>
+                      <td data-label="ไฟ ใช้ไป" style="padding:0.85rem;color:#3b82f6;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format($elecUsage); ?></td>
                     </tr>
 <?php endforeach; ?>
                   </tbody>
