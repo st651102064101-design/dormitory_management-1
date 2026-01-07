@@ -194,7 +194,9 @@ try {
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <style>
         .dashboard-grid {
             display: grid;
@@ -774,7 +776,8 @@ try {
                 <?php $pageTitle = 'แดชบอร์ด'; include __DIR__ . '/../includes/page_header.php'; ?>
 
             <!-- Today's Activity Widget -->
-            <div class="today-widget">
+            <div class="today-widget particle-wrapper">
+                <div class="particle-container" data-particles="8"></div>
                 <h3>
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                     กิจกรรมวันนี้ (<?php echo date('d M Y'); ?>)
@@ -812,7 +815,8 @@ try {
 
             <!-- Hero Stats with Occupancy Rate -->
             <div class="hero-stats">
-                <div class="hero-card gradient-blue">
+                <div class="hero-card gradient-blue particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <div class="hero-card-title">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                         อัตราการเข้าพัก
@@ -841,7 +845,8 @@ try {
                     </div>
                 </div>
                 
-                <div class="hero-card gradient-green">
+                <div class="hero-card gradient-green particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <div class="hero-card-title">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                         รายได้รวมทั้งหมด
@@ -853,7 +858,8 @@ try {
                     </div>
                 </div>
                 
-                <div class="hero-card gradient-purple">
+                <div class="hero-card gradient-purple particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <div class="hero-card-title">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         ผู้เช่าทั้งหมด
@@ -865,7 +871,8 @@ try {
                     </div>
                 </div>
                 
-                <div class="hero-card gradient-orange">
+                <div class="hero-card gradient-orange particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <div class="hero-card-title">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                         งานซ่อมที่รอ
@@ -880,42 +887,48 @@ try {
 
             <!-- สรุปข้อมูล Overview -->
             <div class="dashboard-grid">
-                <div class="stat-card info">
+                <div class="stat-card info particle-wrapper">
+                    <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon blue">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
                     <h3>ผู้เช่าทั้งหมด</h3>
                     <div class="number"><?php echo $tenant_active; ?></div>
                 </div>
-                <div class="stat-card success">
+                <div class="stat-card success particle-wrapper">
+                    <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon green">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                     </div>
                     <h3>ห้องว่าง</h3>
                     <div class="number"><?php echo $room_available; ?></div>
                 </div>
-                <div class="stat-card danger">
+                <div class="stat-card danger particle-wrapper">
+                    <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon red">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
                     </div>
                     <h3>ห้องที่ใช้</h3>
                     <div class="number"><?php echo $room_occupied; ?></div>
                 </div>
-                <div class="stat-card warning">
+                <div class="stat-card warning particle-wrapper">
+                    <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon orange">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
                     </div>
                     <h3>สัญญาที่ใช้งาน</h3>
                     <div class="number"><?php echo $contract_active; ?></div>
                 </div>
-                <div class="stat-card danger">
+                <div class="stat-card danger particle-wrapper">
+                    <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon red">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                     </div>
                     <h3>การแจ้งซ่อมรอดำเนินการ</h3>
                     <div class="number"><?php echo $repair_waiting; ?></div>
                 </div>
-                <div class="stat-card info">
+                <div class="stat-card info particle-wrapper">
+                    <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon cyan">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
                     </div>
@@ -926,21 +939,24 @@ try {
 
             <!-- Charts - Main Row -->
             <div class="charts-row">
-                <div class="chart-container">
+                <div class="chart-container particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <h3><span class="section-icon green"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>สถานะห้องพัก</h3>
                     <div class="chart-wrapper chart-sm">
                         <canvas id="roomStatusChart"></canvas>
                     </div>
                 </div>
 
-                <div class="chart-container">
+                <div class="chart-container particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <h3><span class="section-icon orange"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>สถานะการแจ้งซ่อม</h3>
                     <div class="chart-wrapper chart-sm">
                         <canvas id="repairStatusChart"></canvas>
                     </div>
                 </div>
 
-                <div class="chart-container">
+                <div class="chart-container particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <h3><span class="section-icon blue"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>สถานะการชำระเงิน</h3>
                     <div class="chart-wrapper chart-sm">
                         <canvas id="paymentStatusChart"></canvas>
@@ -949,7 +965,8 @@ try {
             </div>
 
             <!-- รายได้รายเดือน -->
-            <div class="chart-container">
+            <div class="chart-container particle-wrapper">
+                <div class="particle-container" data-particles="8"></div>
                 <h3><span class="section-icon purple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>รายได้รายเดือน</h3>
                 <div class="chart-wrapper chart-lg">
                     <canvas id="monthlyRevenueChart"></canvas>
@@ -958,21 +975,24 @@ try {
 
             <!-- Additional Analytics Row -->
             <div class="charts-row">
-                <div class="chart-container">
+                <div class="chart-container particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <h3><span class="section-icon indigo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>Booking Trend</h3>
                     <div class="chart-wrapper chart-sm">
                         <canvas id="bookingTrendChart"></canvas>
                     </div>
                 </div>
 
-                <div class="chart-container">
+                <div class="chart-container particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <h3><span class="section-icon teal"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/><line x1="12" y1="12" x2="12" y2="18"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span>Contract Status</h3>
                     <div class="chart-wrapper chart-sm">
                         <canvas id="contractStatusChart"></canvas>
                     </div>
                 </div>
 
-                <div class="chart-container">
+                <div class="chart-container particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <h3><span class="section-icon pink"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>Payment Trend</h3>
                     <div class="chart-wrapper chart-sm">
                         <canvas id="paymentTrendChart"></canvas>
@@ -982,13 +1002,15 @@ try {
 
             <!-- Two Column: Repair Distribution + Room Types -->
             <div class="charts-two-col">
-                <div class="chart-container">
+                <div class="chart-container particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <h3><span class="section-icon orange"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>Repair Status Distribution</h3>
                     <div class="chart-wrapper">
                         <canvas id="repairDistributionChart"></canvas>
                     </div>
                 </div>
-                <div class="chart-container">
+                <div class="chart-container particle-wrapper">
+                    <div class="particle-container" data-particles="5"></div>
                     <h3><span class="section-icon rose"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>ประเภทห้องพัก</h3>
                     <div class="chart-wrapper">
                         <canvas id="roomTypesChart"></canvas>
@@ -997,7 +1019,8 @@ try {
             </div>
 
             <!-- Utility Usage Trend -->
-            <div class="chart-container">
+            <div class="chart-container particle-wrapper">
+                <div class="particle-container" data-particles="8"></div>
                 <h3><span class="section-icon sky"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-4V4a2 2 0 0 0-4 0v6H6a2 2 0 0 0-2 2v8h16v-8a2 2 0 0 0-2-2z"/><path d="M8 20v-6"/><path d="M16 20v-6"/></svg></span>การใช้น้ำ-ไฟ (6 เดือนล่าสุด)</h3>
                 <div class="chart-wrapper chart-lg">
                     <canvas id="utilityTrendChart"></canvas>

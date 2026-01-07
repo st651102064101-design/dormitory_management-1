@@ -1,0 +1,280 @@
+/**
+ * Particle Effects - Floating Colorful Orbs
+ * สำหรับสร้าง effect ลูกไฟหลากสีที่ลอยอยู่
+ * 
+ * Usage:
+ * <div class="particle-container" data-particles="15"></div>
+ * หรือ
+ * <div class="has-particles"></div>
+ */
+
+/* Container for particles */
+.particle-container,
+.has-particles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Parent element must have position relative */
+.particle-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Particle base styles */
+.particle-orb {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  filter: drop-shadow(0 0 3px currentColor) brightness(1.2);
+  mix-blend-mode: screen;
+  will-change: transform, opacity;
+  z-index: 0;
+}
+
+/* Gradient colors - 12 สีสันสดใส */
+.particle-orb.color-1 {
+  background: radial-gradient(circle, rgba(59, 130, 246, 1) 0%, rgba(59, 130, 246, 0.8) 50%, rgba(37, 99, 235, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-2 {
+  background: radial-gradient(circle, rgba(139, 92, 246, 1) 0%, rgba(139, 92, 246, 0.8) 50%, rgba(124, 58, 237, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-3 {
+  background: radial-gradient(circle, rgba(236, 72, 153, 1) 0%, rgba(236, 72, 153, 0.8) 50%, rgba(219, 39, 119, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-4 {
+  background: radial-gradient(circle, rgba(34, 197, 94, 1) 0%, rgba(34, 197, 94, 0.8) 50%, rgba(22, 163, 74, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-5 {
+  background: radial-gradient(circle, rgba(14, 165, 233, 1) 0%, rgba(14, 165, 233, 0.8) 50%, rgba(2, 132, 199, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-6 {
+  background: radial-gradient(circle, rgba(251, 146, 60, 1) 0%, rgba(251, 146, 60, 0.8) 50%, rgba(249, 115, 22, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-7 {
+  background: radial-gradient(circle, rgba(244, 63, 94, 1) 0%, rgba(244, 63, 94, 0.8) 50%, rgba(225, 29, 72, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-8 {
+  background: radial-gradient(circle, rgba(168, 85, 247, 1) 0%, rgba(168, 85, 247, 0.8) 50%, rgba(147, 51, 234, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-9 {
+  background: radial-gradient(circle, rgba(20, 184, 166, 1) 0%, rgba(20, 184, 166, 0.8) 50%, rgba(13, 148, 136, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-10 {
+  background: radial-gradient(circle, rgba(250, 204, 21, 1) 0%, rgba(250, 204, 21, 0.8) 50%, rgba(234, 179, 8, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-11 {
+  background: radial-gradient(circle, rgba(99, 102, 241, 1) 0%, rgba(99, 102, 241, 0.8) 50%, rgba(79, 70, 229, 0.4) 80%, transparent 100%);
+}
+
+.particle-orb.color-12 {
+  background: radial-gradient(circle, rgba(239, 68, 68, 1) 0%, rgba(239, 68, 68, 0.8) 50%, rgba(220, 38, 38, 0.4) 80%, transparent 100%);
+}
+
+/* Floating animations - 6 variations */
+@keyframes floatUp1 {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.8);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-120vh) translateX(30px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes floatUp2 {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.9);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-120vh) translateX(-40px) scale(1.1);
+    opacity: 0;
+  }
+}
+
+@keyframes floatUp3 {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.7);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-120vh) translateX(20px) scale(1.3);
+    opacity: 0;
+  }
+}
+
+@keyframes floatUp4 {
+  0% {
+    transform: translateY(0) translateX(0) scale(1);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.7;
+  }
+  100% {
+    transform: translateY(-120vh) translateX(-30px) scale(0.9);
+    opacity: 0;
+  }
+}
+
+@keyframes floatUp5 {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.85);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(-120vh) translateX(50px) scale(1.15);
+    opacity: 0;
+  }
+}
+
+@keyframes floatUp6 {
+  0% {
+    transform: translateY(0) translateX(0) scale(0.95);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 0.65;
+  }
+  100% {
+    transform: translateY(-120vh) translateX(-20px) scale(1.05);
+    opacity: 0;
+  }
+}
+
+/* Pulse animation for extra glow */
+@keyframes particlePulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 3px currentColor) brightness(1.2);
+  }
+  50% {
+    filter: drop-shadow(0 0 5px currentColor) brightness(1.5);
+  }
+}
+
+/* Apply animations */
+.particle-orb.anim-1 {
+  animation: floatUp1 var(--duration, 15s) linear infinite;
+}
+
+.particle-orb.anim-2 {
+  animation: floatUp2 var(--duration, 18s) linear infinite;
+}
+
+.particle-orb.anim-3 {
+  animation: floatUp3 var(--duration, 20s) linear infinite;
+}
+
+.particle-orb.anim-4 {
+  animation: floatUp4 var(--duration, 16s) linear infinite;
+}
+
+.particle-orb.anim-5 {
+  animation: floatUp5 var(--duration, 19s) linear infinite;
+}
+
+.particle-orb.anim-6 {
+  animation: floatUp6 var(--duration, 17s) linear infinite;
+}
+
+/* Add pulse effect to some particles */
+.particle-orb.has-pulse {
+  animation: floatUp1 var(--duration, 15s) linear infinite, 
+             particlePulse 3s ease-in-out infinite;
+}
+
+/* Size variations */
+.particle-orb.size-sm {
+  width: 40px;
+  height: 40px;
+}
+
+.particle-orb.size-md {
+  width: 60px;
+  height: 60px;
+}
+
+.particle-orb.size-lg {
+  width: 80px;
+  height: 80px;
+}
+
+.particle-orb.size-xl {
+  width: 100px;
+  height: 100px;
+}
+
+/* Ensure content is above particles */
+.particle-container > *:not(.particle-orb),
+.has-particles > *:not(.particle-orb) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Dark mode adjustments */
+body.live-dark .particle-orb,
+body[data-theme="dark"] .particle-orb {
+  opacity: 0.6;
+}
+
+/* Light mode adjustments */
+body.live-light .particle-orb,
+body[data-theme="light"] .particle-orb {
+  opacity: 0.4;
+  filter: blur(10px);
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  .particle-orb {
+    animation: none !important;
+  }
+}
