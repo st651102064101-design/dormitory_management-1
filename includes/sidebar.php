@@ -522,6 +522,66 @@ try {
     border-top: 1px solid #e5e7eb !important;
   }
   
+  /* Sidebar Rail - hidden by default, shown when collapsed */
+  .sidebar-rail {
+    display: none;
+  }
+  
+  /* Desktop: Show rail when sidebar is collapsed */
+  @media (min-width: 1025px) {
+    aside.app-sidebar.collapsed .sidebar-rail,
+    aside.sidebar-collapsed .sidebar-rail {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: center !important;
+      gap: 0.5rem !important;
+      padding: 0.5rem 0 !important;
+    }
+    
+    aside.app-sidebar.collapsed .user-row,
+    aside.app-sidebar.collapsed .logout-btn,
+    aside.sidebar-collapsed .user-row,
+    aside.sidebar-collapsed .logout-btn {
+      display: none !important;
+    }
+    
+    .sidebar-rail .rail-user,
+    .sidebar-rail .rail-logout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+    
+    .sidebar-rail .rail-user:hover,
+    .sidebar-rail .rail-logout button:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .sidebar-rail .rail-logout button {
+      background: transparent;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 48px;
+      height: 48px;
+      border-radius: 8px;
+      transition: background 0.2s ease;
+    }
+    
+    .sidebar-rail .app-nav-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+  
   /* Sidebar Navigation - Light Mode */
   .app-nav a,
   details summary,
@@ -1372,6 +1432,29 @@ try {
     align-items: center !important;
     text-align: center !important;
   }
+  
+  /* Desktop: Collapsed sidebar shows as narrow rail (for screens > 1024px) */
+  aside.app-sidebar.collapsed,
+  aside.sidebar-collapsed {
+    width: 80px !important;
+    min-width: 80px !important;
+    max-width: 80px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    visibility: visible !important;
+    transform: none !important;
+    position: relative !important;
+  }
+  
+  /* Mobile: Override collapsed to full sidebar when open */
+  @media (max-width: 1024px) {
+    aside.app-sidebar.collapsed {
+      width: 260px !important;
+      min-width: 260px !important;
+      max-width: 260px !important;
+    }
+  }
+  
   aside.sidebar-collapsed * {
     text-align: center !important;
   }
@@ -1589,7 +1672,7 @@ try {
     }
     
     /* Mobile: sidebar as fixed overlay with slide animation */
-    .app-sidebar {
+    .app-sidebar:not(.collapsed) {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
@@ -1607,6 +1690,19 @@ try {
       margin: 0 !important;
       display: flex !important;
       flex-direction: column !important;
+      visibility: hidden;
+    }
+    
+    /* Mobile: collapsed sidebar is hidden completely */
+    .app-sidebar.collapsed {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      height: 100vh !important;
+      width: 260px !important;
+      z-index: 9999 !important;
+      background: #0b162a !important;
+      transform: translateX(-100%) !important;
       visibility: hidden;
     }
 

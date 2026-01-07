@@ -88,13 +88,11 @@
     var sidebar = document.querySelector('.app-sidebar');
     if (!sidebar) return;
     
-    // Default: sidebar collapsed (full screen content)
-    // Only show sidebar if explicitly saved as 'false' (not collapsed)
+    // Desktop: Check saved state, default is expanded (not collapsed)
     if (!isMobile()) {
       var savedState = safeGet(STORAGE_KEY);
-      // ถ้า savedState เป็น 'false' หรือ null/undefined ให้ collapsed
-      // ถ้า savedState เป็น 'expanded' หรือ 'false' เท่านั้น ถึงจะแสดง sidebar
-      if (savedState !== 'false') {
+      // Only collapse if explicitly saved as 'true'
+      if (savedState === 'true') {
         sidebar.classList.add('collapsed');
       }
     }
