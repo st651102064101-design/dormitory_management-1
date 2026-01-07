@@ -493,6 +493,87 @@ $statusMap = [
             color: white;
             flex-shrink: 0;
         }
+        
+        /* Mobile Table Responsive */
+        @media (max-width: 768px) {
+            #tenants-table {
+                display: block;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+            }
+            #tenants-table thead {
+                display: none;
+            }
+            #tenants-table tbody {
+                display: block;
+            }
+            #tenants-table tbody tr {
+                display: block;
+                background: linear-gradient(160deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));
+                border: 1px solid var(--glass-border);
+                border-radius: 12px;
+                margin-bottom: 1rem;
+                padding: 1rem;
+            }
+            #tenants-table tbody tr:hover {
+                background: linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,1));
+            }
+            #tenants-table tbody td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 0;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+            #tenants-table tbody td:last-child {
+                border-bottom: none;
+            }
+            #tenants-table tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--text-secondary);
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                flex-shrink: 0;
+                margin-right: 1rem;
+            }
+            #tenants-table tbody td:first-child {
+                margin-bottom: 0.5rem;
+                padding-bottom: 1rem;
+                border-bottom: 2px solid var(--glass-border);
+            }
+            #tenants-table tbody td:first-child::before {
+                display: none;
+            }
+            .table-tenant-name {
+                width: 100%;
+                justify-content: flex-start;
+            }
+            .table-avatar {
+                width: 48px;
+                height: 48px;
+                font-size: 1.2rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            #tenants-table tbody tr {
+                padding: 0.875rem;
+            }
+            #tenants-table tbody td {
+                padding: 0.625rem 0;
+                font-size: 0.9rem;
+            }
+            #tenants-table tbody td::before {
+                font-size: 0.75rem;
+            }
+            .table-avatar {
+                width: 40px;
+                height: 40px;
+                font-size: 1rem;
+            }
+        }
 
         /* ===== Search Box ===== */
         .search-box {
@@ -541,24 +622,133 @@ $statusMap = [
 
         /* ===== Responsive ===== */
         @media (max-width: 768px) {
+            .page-header {
+                padding: 1.25rem;
+                margin-bottom: 1.5rem;
+            }
             .page-header-content {
                 flex-direction: column;
                 align-items: flex-start;
+                gap: 1rem;
+            }
+            .page-title {
+                width: 100%;
+            }
+            .page-title-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 1.4rem;
+            }
+            .page-title h1 {
+                font-size: 1.4rem;
+            }
+            .page-title p {
+                font-size: 0.85rem;
             }
             .view-controls {
                 width: 100%;
-                justify-content: space-between;
+                flex-direction: column;
+                gap: 0.75rem;
             }
             .search-box {
                 max-width: 100%;
-                order: -1;
                 width: 100%;
+                order: 0;
+            }
+            .filter-select {
+                width: 100%;
+            }
+            .view-toggle {
+                width: 100%;
+                justify-content: center;
+            }
+            .view-btn {
+                flex: 1;
+                justify-content: center;
             }
             .stats-grid {
                 grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            .stat-card {
+                padding: 1.25rem;
+            }
+            .stat-value {
+                font-size: 2rem;
             }
             .tenants-grid {
                 grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+            .content-container {
+                padding: 1rem;
+                border-radius: 16px;
+            }
+            .main-content {
+                padding-bottom: 1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .page-header {
+                padding: 1rem;
+                border-radius: 16px;
+            }
+            .page-title-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+                border-radius: 12px;
+            }
+            .page-title h1 {
+                font-size: 1.2rem;
+            }
+            .stats-grid {
+                grid-template-columns: 1fr;
+                gap: 0.75rem;
+            }
+            .stat-card {
+                padding: 1rem;
+            }
+            .stat-icon {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            .stat-value {
+                font-size: 1.75rem;
+            }
+            .stat-label {
+                font-size: 0.85rem;
+            }
+            .tenant-card {
+                border-radius: 12px;
+            }
+            .tenant-card-header {
+                padding: 1rem;
+            }
+            .tenant-avatar {
+                width: 48px;
+                height: 48px;
+                font-size: 1.2rem;
+            }
+            .tenant-info h3 {
+                font-size: 1rem;
+            }
+            .tenant-card-body {
+                padding: 1rem;
+            }
+            .tenant-detail {
+                padding: 0.5rem 0;
+            }
+            .tenant-card-footer {
+                padding: 0.75rem 1rem;
+                flex-wrap: wrap;
+                gap: 0.5rem;
+            }
+            .view-btn {
+                padding: 0.5rem 1rem;
+                font-size: 0.85rem;
             }
         }
 
@@ -593,12 +783,79 @@ $statusMap = [
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            padding: 1rem 0;
         }
         .datatable-pagination {
             margin-left: auto !important;
         }
         .datatable-pagination ul {
             justify-content: flex-end !important;
+        }
+        .datatable-info {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+        
+        /* DataTable Mobile Responsive */
+        @media (max-width: 768px) {
+            .datatable-top {
+                flex-direction: column;
+                gap: 0.75rem;
+                padding: 0 0 1rem 0;
+            }
+            .datatable-search {
+                width: 100% !important;
+                margin: 0 !important;
+            }
+            .datatable-search input {
+                width: 100% !important;
+                padding: 0.6rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+            .datatable-dropdown {
+                width: 100% !important;
+            }
+            .datatable-selector {
+                width: 100% !important;
+                padding: 0.6rem 1rem !important;
+                font-size: 0.9rem !important;
+            }
+            .datatable-bottom {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.75rem;
+            }
+            .datatable-info {
+                text-align: center;
+                order: 1;
+                font-size: 0.85rem;
+            }
+            .datatable-pagination {
+                margin: 0 !important;
+                order: 2;
+            }
+            .datatable-pagination ul {
+                justify-content: center !important;
+                flex-wrap: wrap;
+            }
+            .datatable-pagination li {
+                margin: 0.25rem !important;
+            }
+            .datatable-pagination a {
+                padding: 0.4rem 0.7rem !important;
+                font-size: 0.85rem !important;
+                min-width: 32px !important;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .datatable-pagination a {
+                padding: 0.35rem 0.6rem !important;
+                font-size: 0.8rem !important;
+                min-width: 28px !important;
+            }
         }
 
         /* Fix sidebar and scroll */
@@ -664,7 +921,7 @@ $statusMap = [
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         
         <main class="main-content">
-            <?php include __DIR__ . '/../includes/page_header.php'; ?>
+            <?php $pageTitle = 'รายงานผู้เช่า'; include __DIR__ . '/../includes/page_header.php'; ?>
             <div style="margin: 1.5rem; margin-top: 0rem; padding-top: 0rem;">
                 
                 <!-- Page Header -->
@@ -842,24 +1099,24 @@ $statusMap = [
                                             <span><?php echo htmlspecialchars($tenant['tnt_name'] ?? 'ไม่ระบุ'); ?></span>
                                         </div>
                                     </td>
-                                    <td style="font-family: monospace; font-size: 0.85rem; color: var(--text-secondary);">
+                                    <td data-label="รหัส" style="font-family: monospace; font-size: 0.85rem; color: var(--text-secondary);">
                                         <?php echo htmlspecialchars($tenant['tnt_id'] ?? '-'); ?>
                                     </td>
-                                    <td><?php echo htmlspecialchars($tenant['tnt_phone'] ?? '-'); ?></td>
-                                    <td><?php echo $tenant['tnt_age'] ? $tenant['tnt_age'] . ' ปี' : '-'; ?></td>
-                                    <td>
+                                    <td data-label="เบอร์โทร"><?php echo htmlspecialchars($tenant['tnt_phone'] ?? '-'); ?></td>
+                                    <td data-label="อายุ"><?php echo $tenant['tnt_age'] ? $tenant['tnt_age'] . ' ปี' : '-'; ?></td>
+                                    <td data-label="ห้อง">
                                         <?php if ($tenant['room_number']): ?>
                                             <span class="room-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><?php echo htmlspecialchars($tenant['room_number']); ?></span>
                                         <?php else: ?>
                                             <span style="color: var(--text-secondary);">-</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
+                                    <td data-label="สถานะ">
                                         <span class="status-badge" style="background: <?php echo $statusInfo['bg']; ?>; color: <?php echo $statusInfo['color']; ?>;">
                                             <?php echo $statusInfo['label']; ?>
                                         </span>
                                     </td>
-                                    <td><?php echo $tenant['ctr_end'] ? date('d/m/Y', strtotime($tenant['ctr_end'])) : '-'; ?></td>
+                                    <td data-label="สัญญาถึง"><?php echo $tenant['ctr_end'] ? date('d/m/Y', strtotime($tenant['ctr_end'])) : '-'; ?></td>
                                 </tr>
                                 <?php endforeach; ?>
                             </tbody>
@@ -932,16 +1189,23 @@ $statusMap = [
             
             const table = document.getElementById('tenants-table');
             if (table && typeof simpleDatatables !== 'undefined') {
+                // Check if mobile view
+                const isMobile = window.innerWidth <= 768;
+                
                 dataTable = new simpleDatatables.DataTable(table, {
                     searchable: true,
                     fixedHeight: false,
-                    perPage: 10,
-                    perPageSelect: [5, 10, 25, 50],
+                    perPage: isMobile ? 5 : 10,
+                    perPageSelect: isMobile ? [5, 10, 25] : [5, 10, 25, 50],
                     labels: {
                         placeholder: 'ค้นหาผู้เช่า...',
                         perPage: 'รายการต่อหน้า',
                         noRows: 'ไม่พบข้อมูลผู้เช่า',
                         info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+                    },
+                    layout: {
+                        top: isMobile ? '' : '{select}{search}',
+                        bottom: '{info}{pager}'
                     }
                 });
             }
