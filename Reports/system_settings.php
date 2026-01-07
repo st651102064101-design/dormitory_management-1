@@ -38,6 +38,7 @@ include __DIR__ . '/settings/settings_data.php';
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
   <style>
     /* Force Prompt everywhere (Thai sans-serif, no serifs) */
     html, body, * {
@@ -121,44 +122,29 @@ include __DIR__ . '/settings/settings_data.php';
   <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>
   <script src="settings/apple-settings.js"></script>
   <script>
-  // Direct sidebar toggle - guaranteed to work
+  // Connect apple-menu-btn to global sidebar toggle
   (function() {
     const menuBtn = document.getElementById('apple-menu-btn');
-    const sidebar = document.querySelector('.app-sidebar');
-    let overlay = document.querySelector('.sidebar-overlay');
     
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.className = 'sidebar-overlay';
-      document.body.appendChild(overlay);
-    }
-    
-    if (menuBtn && sidebar) {
-      menuBtn.onclick = function(e) {
+    if (menuBtn) {
+      menuBtn.addEventListener('click', function(e) {
         e.preventDefault();
         e.stopPropagation();
         
-        const isOpen = sidebar.classList.contains('mobile-open');
-        
-        if (isOpen) {
-          sidebar.classList.remove('mobile-open');
-          document.body.classList.remove('sidebar-open');
-          overlay.classList.remove('active');
-          menuBtn.classList.remove('active');
-        } else {
-          sidebar.classList.add('mobile-open');
-          document.body.classList.add('sidebar-open');
-          overlay.classList.add('active');
-          menuBtn.classList.add('active');
+        // Use the global sidebar toggle function
+        if (typeof window.__directSidebarToggle === 'function') {
+          window.__directSidebarToggle(e);
         }
-      };
+      });
       
-      overlay.onclick = function() {
-        sidebar.classList.remove('mobile-open');
-        document.body.classList.remove('sidebar-open');
-        overlay.classList.remove('active');
-        menuBtn.classList.remove('active');
-      };
+      // Initialize sidebar state
+      if (typeof window.__initSidebarState === 'function') {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', window.__initSidebarState);
+        } else {
+          window.__initSidebarState();
+        }
+      }
     }
   })();
   </script>
