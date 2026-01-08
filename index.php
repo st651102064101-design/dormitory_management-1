@@ -1048,42 +1048,37 @@ try {
         
         .room-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-            gap: 2.5rem;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 320px));
+            gap: 1.5rem;
+            justify-content: center;
         }
         
-        @media (min-width: 1200px) {
+        @media (max-width: 700px) {
             .room-grid {
-                grid-template-columns: repeat(3, minmax(0, 1fr));
+                grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+                gap: 1rem;
             }
         }
         
-        @media (max-width: 768px) {
-            .room-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 1.5rem;
-            }
-        }
-        
-        @media (max-width: 480px) {
+        @media (max-width: 400px) {
             .room-grid {
                 grid-template-columns: 1fr;
-                max-width: 280px;
+                max-width: 300px;
                 margin-left: auto;
                 margin-right: auto;
-                gap: 1.5rem;
+                gap: 1.25rem;
             }
         }
 
         /* Room Card - Web3 Style */
         .room-card {
             position: relative;
-            border-radius: 24px;
+            border-radius: 20px;
             background: transparent;
-            box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+            box-shadow: 0 10px 25px rgba(3,7,18,0.3);
             color: #f5f8ff;
             aspect-ratio: 1137 / 1606;
-            min-height: 280px;
+            min-height: 220px;
             transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), filter 0.3s ease;
             will-change: transform, filter;
             animation: fadeInUp 0.6s ease-out backwards,
