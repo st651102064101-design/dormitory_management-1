@@ -199,6 +199,11 @@ try {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
     <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <style>
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -842,6 +847,22 @@ try {
         <main class="app-main">
             <div>
                 <?php $pageTitle = 'แดชบอร์ด'; include __DIR__ . '/../includes/page_header.php'; ?>
+
+            <?php if (!empty($_GET['google_success'])): ?>
+            <div class="alert alert-success" style="background: linear-gradient(135deg, #10B981, #059669); color: white; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; animation: slideDown 0.3s ease;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                <span><?php echo htmlspecialchars($_GET['google_success']); ?></span>
+                <button onclick="this.parentElement.remove()" style="margin-left: auto; background: none; border: none; color: white; cursor: pointer; padding: 4px;">✕</button>
+            </div>
+            <?php endif; ?>
+            
+            <?php if (!empty($_GET['google_error'])): ?>
+            <div class="alert alert-error" style="background: linear-gradient(135deg, #EF4444, #DC2626); color: white; padding: 16px 20px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; gap: 12px; animation: slideDown 0.3s ease;">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <span><?php echo htmlspecialchars($_GET['google_error']); ?></span>
+                <button onclick="this.parentElement.remove()" style="margin-left: auto; background: none; border: none; color: white; cursor: pointer; padding: 4px;">✕</button>
+            </div>
+            <?php endif; ?>
 
             <!-- Today's Activity Widget -->
             <div class="today-widget particle-wrapper">

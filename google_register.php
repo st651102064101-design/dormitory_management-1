@@ -70,8 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
         $insertTenant->execute([$tntId, $tntName, $tntPhone]);
         
         // Insert OAuth link
-        $insertOAuth = $pdo->prepare('INSERT INTO tenant_oauth (tnt_id, provider, provider_id, provider_email) VALUES (?, "google", ?, ?)');
-        $insertOAuth->execute([$tntId, $googleId, $email]);
+        $insertOAuth = $pdo->prepare('INSERT INTO tenant_oauth (tnt_id, provider, provider_id, provider_email, picture) VALUES (?, "google", ?, ?, ?)');
+        $insertOAuth->execute([$tntId, $googleId, $email, $picture]);
         
         $pdo->commit();
         

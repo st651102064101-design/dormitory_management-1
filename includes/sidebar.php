@@ -7,6 +7,8 @@ $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $themeColor = '#0f172a';
 $fontSize = '1';
+$adminGoogleLinked = false;
+$adminGoogleEmail = '';
 try {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
@@ -22,6 +24,21 @@ try {
     $themeColor = $sidebarSettings['theme_color'] ?? $themeColor;
     $fontSize = $sidebarSettings['font_size'] ?? $fontSize;
     $defaultViewMode = isset($sidebarSettings['default_view_mode']) && strtolower($sidebarSettings['default_view_mode']) === 'list' ? 'list' : 'grid';
+    
+    // ตรวจสอบว่า admin เชื่อม Google หรือยัง
+    if (!empty($_SESSION['admin_id'])) {
+        $googleCheckStmt = $pdo->prepare("SELECT provider_email, picture FROM admin_oauth WHERE admin_id = ? AND provider = 'google'");
+        $googleCheckStmt->execute([$_SESSION['admin_id']]);
+        $googleData = $googleCheckStmt->fetch(PDO::FETCH_ASSOC);
+        if ($googleData) {
+            $adminGoogleLinked = true;
+            $adminGoogleEmail = $googleData['provider_email'];
+            // อัพเดท picture ใน session ถ้ายังไม่มี
+            if (empty($_SESSION['admin_picture']) && !empty($googleData['picture'])) {
+                $_SESSION['admin_picture'] = $googleData['picture'];
+            }
+        }
+    }
 } catch (Exception $e) {
     // ใช้ค่า default ถ้า database error
 }
@@ -543,8 +560,10 @@ try {
     
     aside.app-sidebar.collapsed .user-row,
     aside.app-sidebar.collapsed .logout-btn,
+    aside.app-sidebar.collapsed .google-link-btn,
     aside.sidebar-collapsed .user-row,
-    aside.sidebar-collapsed .logout-btn {
+    aside.sidebar-collapsed .logout-btn,
+    aside.sidebar-collapsed .google-link-btn {
       display: none !important;
     }
     
@@ -631,6 +650,21 @@ try {
 
   .logout-btn svg {
     stroke: #374151 !important;
+  }
+  
+  /* Google Link Button - Light Mode */
+  .google-link-btn {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #374151 !important;
+  }
+  
+  .google-link-btn:hover {
+    background: #f3f4f6 !important;
+  }
+  
+  .google-link-btn.linked {
+    border-color: #34A853 !important;
   }
 
   .sidebar-nav-area::-webkit-scrollbar-thumb {
@@ -893,6 +927,73 @@ try {
     color: #111827 !important;
   }
   
+  /* Google Link Button - Light Mode Override */
+  .google-link-btn,
+  aside.app-sidebar .google-link-btn,
+  .app-sidebar .google-link-btn {
+    background: #ffffff !important;
+    border: 1px solid #e5e7eb !important;
+    color: #374151 !important;
+  }
+  
+  .google-link-btn:hover,
+  aside.app-sidebar .google-link-btn:hover {
+    background: #f3f4f6 !important;
+  }
+  
+  /* Google Linked Info - Light Mode */
+  .google-linked-info {
+    background: rgba(52, 168, 83, 0.08) !important;
+    border: 1px solid rgba(52, 168, 83, 0.4) !important;
+    color: #374151 !important;
+  }
+  
+  .google-linked-info .google-email {
+    color: #374151 !important;
+  }
+  
+  .google-unlink-btn {
+    background: rgba(239, 68, 68, 0.1) !important;
+    border: 1px solid rgba(239, 68, 68, 0.4) !important;
+    color: #dc2626 !important;
+  }
+  
+  .google-unlink-btn:hover {
+    background: rgba(239, 68, 68, 0.2) !important;
+    border-color: rgba(239, 68, 68, 0.6) !important;
+    color: #b91c1c !important;
+  }
+  
+  /* Apple-style Alert/Confirm Dialog - Light Mode */
+  body.live-light .apple-alert-dialog {
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  body.live-light .apple-alert-title {
+    color: #1f2937;
+  }
+  
+  body.live-light .apple-alert-message {
+    color: #6b7280;
+  }
+  
+  body.live-light .apple-alert-buttons {
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  body.live-light .apple-alert-button:not(:last-child) {
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
+  }
+  
+  body.live-light .apple-alert-button:hover {
+    background: rgba(0, 0, 0, 0.05);
+  }
+  
+  body.live-light .apple-alert-button:active {
+    background: rgba(0, 0, 0, 0.1);
+  }
+
   /* Dashboard Cards */
   .dashboard-grid .card {
     background: #ffffff !important;
@@ -1340,6 +1441,196 @@ try {
     padding: 0.75rem 0.5rem;
     border-top: 1px solid rgba(255,255,255,0.1);
   }
+  
+  /* Google Link Button - Base Styles */
+  .google-link-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .google-link-btn:hover {
+    background: rgba(255,255,255,0.12);
+    border-color: rgba(255,255,255,0.2);
+  }
+  
+  .google-link-btn .google-icon {
+    flex-shrink: 0;
+  }
+  
+  .google-link-btn .app-nav-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  /* Google Linked Info Section */
+  .google-linked-info {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 6px 10px;
+    background: rgba(52, 168, 83, 0.08);
+    border: 1px solid rgba(52, 168, 83, 0.3);
+    border-radius: 6px;
+    font-size: 11px;
+    color: rgba(255,255,255,0.75);
+  }
+  
+  .google-linked-info .google-icon {
+    flex-shrink: 0;
+  }
+  
+  .google-linked-info .google-email {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 11px;
+  }
+  
+  .google-unlink-btn {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    padding: 3px;
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 4px;
+    color: rgba(239, 68, 68, 0.9);
+    text-decoration: none;
+    transition: all 0.2s ease;
+    cursor: pointer;
+  }
+  
+  .google-unlink-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.5);
+    color: rgba(239, 68, 68, 1);
+  }
+  
+  /* Apple-style Alert/Confirm Dialog - Dark Mode */
+  .apple-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000;
+    opacity: 0;
+    animation: fadeIn 0.2s ease forwards;
+  }
+  
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+  
+  @keyframes fadeOut {
+    to { opacity: 0; }
+  }
+  
+  @keyframes scaleIn {
+    from {
+      transform: scale(1.1);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  .apple-alert-dialog {
+    background: rgba(30, 41, 59, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    width: 90%;
+    max-width: 320px;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  .apple-alert-content {
+    padding: 24px 20px;
+    text-align: center;
+  }
+  
+  .apple-alert-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 8px;
+    line-height: 1.4;
+  }
+  
+  .apple-alert-message {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+  }
+  
+  .apple-alert-buttons {
+    display: flex;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .apple-alert-button {
+    flex: 1;
+    padding: 14px 16px;
+    background: transparent;
+    border: none;
+    color: #3b82f6;
+    font-size: 17px;
+    font-weight: 400;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  }
+  
+  .apple-alert-button:not(:last-child) {
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+  }
+  
+  .apple-alert-button:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  
+  .apple-alert-button:active {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .apple-alert-button.primary {
+    font-weight: 600;
+    color: #60a5fa;
+  }
+  
+  .apple-alert-button.destructive {
+    color: #ef4444;
+    font-weight: 600;
+  }
+  
   .app-sidebar nav {
     margin: 0 !important;
     padding: 0 !important;
@@ -2101,19 +2392,66 @@ try {
   <div class="sidebar-footer">
     <div class="user-row">
       <div class="avatar">
-        <!-- user svg icon -->
-        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.06" />
-          <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
-          <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
-        </svg>
+        <?php if (!empty($_SESSION['admin_picture'])): ?>
+          <!-- Google avatar -->
+          <img src="<?php echo htmlspecialchars($_SESSION['admin_picture'], ENT_QUOTES, 'UTF-8'); ?>" 
+               alt="<?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?>" 
+               style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;" 
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display: none;">
+            <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.06" />
+            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
+            <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
+          </svg>
+        <?php else: ?>
+          <!-- Default user svg icon -->
+          <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.06" />
+            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
+            <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
+          </svg>
+        <?php endif; ?>
       </div>
       <div class="user-meta">
         <div class="name"><?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?></div>
         <div class="email"><?php echo htmlspecialchars($_SESSION['admin_username'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
       </div>
     </div>
-    <div style="margin-top:0.6rem">
+    
+    <!-- Google Link/Unlink Button -->
+    <div style="margin-top:0.5rem; margin-bottom:0.3rem;">
+      <?php if ($adminGoogleLinked): ?>
+        <div class="google-linked-info">
+          <svg class="google-icon" viewBox="0 0 24 24" width="14" height="14">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          <span class="google-email" title="<?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?></span>
+          <a href="../unlink_google.php" class="google-unlink-btn" title="ถอนการเชื่อมต่อบัญชี Google">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="3 6 5 6 21 6"></polyline>
+              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              <line x1="10" y1="11" x2="10" y2="17"></line>
+              <line x1="14" y1="11" x2="14" y2="17"></line>
+            </svg>
+          </a>
+        </div>
+      <?php else: ?>
+        <a href="../link_google.php?action=link" class="google-link-btn">
+          <svg class="google-icon" viewBox="0 0 24 24" width="16" height="16">
+            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+          </svg>
+          <span class="app-nav-label">เชื่อมบัญชี Google</span>
+        </a>
+      <?php endif; ?>
+    </div>
+    
+    <div style="margin-top:0.4rem">
       <form action="../logout.php" method="post" data-allow-submit>
         <button type="submit" class="logout-btn" aria-label="Log out">
           <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
@@ -2125,12 +2463,26 @@ try {
     <!-- Rail shown only when sidebar is collapsed: icon-only controls -->
     <div class="sidebar-rail">
       <div class="rail-user" title="<?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?>">
-        <span class="app-nav-icon" aria-hidden="true">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
-            <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
-          </svg>
-        </span>
+        <?php if (!empty($_SESSION['admin_picture'])): ?>
+          <!-- Google avatar for rail -->
+          <img src="<?php echo htmlspecialchars($_SESSION['admin_picture'], ENT_QUOTES, 'UTF-8'); ?>" 
+               alt="<?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?>" 
+               style="width: 20px; height: 20px; border-radius: 4px; object-fit: cover;" 
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
+          <span class="app-nav-icon" aria-hidden="true" style="display: none;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
+              <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
+            </svg>
+          </span>
+        <?php else: ?>
+          <span class="app-nav-icon" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
+              <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
+            </svg>
+          </span>
+        <?php endif; ?>
       </div>
       <form action="../logout.php" method="post" class="rail-logout" data-allow-submit>
         <button type="submit" class="app-nav-icon" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
@@ -2392,6 +2744,186 @@ function closeSidebarMobile() {
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Escape') {
     closeSidebarMobile();
+    // ปิด alert dialog ถ้ามี
+    const alertOverlay = document.querySelector('.apple-alert-overlay');
+    if (alertOverlay) {
+      alertOverlay.remove();
+    }
   }
 });
+
+// Apple-style Alert Function
+function appleAlert(message, title = 'project.3bbddns.com:36140 บอกว่า') {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'apple-alert-overlay';
+    
+    overlay.innerHTML = `
+      <div class="apple-alert-dialog">
+        <div class="apple-alert-content">
+          <div class="apple-alert-title">${title}</div>
+          <div class="apple-alert-message">${message}</div>
+        </div>
+        <div class="apple-alert-buttons">
+          <button class="apple-alert-button primary">ตกลง</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    const button = overlay.querySelector('.apple-alert-button');
+    button.addEventListener('click', () => {
+      overlay.style.animation = 'fadeOut 0.2s ease forwards';
+      setTimeout(() => {
+        overlay.remove();
+        resolve();
+      }, 200);
+    });
+    
+    // คลิกนอก dialog ก็ปิดได้
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.style.animation = 'fadeOut 0.2s ease forwards';
+        setTimeout(() => {
+          overlay.remove();
+          resolve();
+        }, 200);
+      }
+    });
+  });
+}
+
+// Apple-style Confirm Function
+function appleConfirm(message, title = 'project.3bbddns.com:36140 บอกว่า') {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'apple-alert-overlay';
+    
+    overlay.innerHTML = `
+      <div class="apple-alert-dialog">
+        <div class="apple-alert-content">
+          <div class="apple-alert-title">${title}</div>
+          <div class="apple-alert-message">${message}</div>
+        </div>
+        <div class="apple-alert-buttons">
+          <button class="apple-alert-button">ยกเลิก</button>
+          <button class="apple-alert-button destructive">ตกลง</button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(overlay);
+    
+    const buttons = overlay.querySelectorAll('.apple-alert-button');
+    
+    // ยกเลิก
+    buttons[0].addEventListener('click', () => {
+      overlay.style.animation = 'fadeOut 0.2s ease forwards';
+      setTimeout(() => {
+        overlay.remove();
+        resolve(false);
+      }, 200);
+    });
+    
+    // ตกลง
+    buttons[1].addEventListener('click', () => {
+      overlay.style.animation = 'fadeOut 0.2s ease forwards';
+      setTimeout(() => {
+        overlay.remove();
+        resolve(true);
+      }, 200);
+    });
+    
+    // คลิกนอก dialog = ยกเลิก
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.style.animation = 'fadeOut 0.2s ease forwards';
+        setTimeout(() => {
+          overlay.remove();
+          resolve(false);
+        }, 200);
+      }
+    });
+  });
+}
+
+// AJAX สำหรับลบบัญชี Google
+(function() {
+  const unlinkBtn = document.querySelector('.google-unlink-btn');
+  if (!unlinkBtn) return;
+  
+  unlinkBtn.addEventListener('click', async function(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const confirmed = await appleConfirm('คุณต้องการถอนการเชื่อมต่อบัญชี Google นี้หรือไม่?');
+    if (!confirmed) {
+      return;
+    }
+    
+    try {
+      // แสดง loading state
+      unlinkBtn.style.opacity = '0.5';
+      unlinkBtn.style.pointerEvents = 'none';
+      
+      const response = await fetch('../unlink_google.php', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // อัพเดทรูป avatar ให้เป็น default SVG
+        const avatarDiv = document.querySelector('.sidebar-footer .avatar');
+        if (avatarDiv) {
+          avatarDiv.innerHTML = `
+            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.06" />
+              <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
+              <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
+            </svg>
+          `;
+        }
+        
+        // แทนที่ส่วน Google linked info ด้วยปุ่ม "เชื่อมบัญชี Google"
+        const googleSection = unlinkBtn.closest('div[style*="margin-top"]');
+        if (googleSection) {
+          googleSection.innerHTML = `
+            <a href="../link_google.php?action=link" class="google-link-btn">
+              <svg class="google-icon" viewBox="0 0 24 24" width="16" height="16">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              <span class="app-nav-label">เชื่อมบัญชี Google</span>
+            </a>
+          `;
+        }
+      } else {
+        // แสดงข้อความ error
+        if (window.AnimateUI && typeof window.AnimateUI.showNotification === 'function') {
+          window.AnimateUI.showNotification(result.message, 'error');
+        } else {
+          await appleAlert('เกิดข้อผิดพลาด: ' + result.message);
+        }
+        
+        // คืนสถานะปุ่ม
+        unlinkBtn.style.opacity = '1';
+        unlinkBtn.style.pointerEvents = 'auto';
+      }
+    } catch (error) {
+      console.error('Error unlinking Google account:', error);
+      await appleAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+      
+      // คืนสถานะปุ่ม
+      unlinkBtn.style.opacity = '1';
+      unlinkBtn.style.pointerEvents = 'auto';
+    }
+  });
+})();
 </script>

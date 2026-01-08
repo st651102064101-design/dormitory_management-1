@@ -1626,7 +1626,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
                             <polyline points="9 22 9 12 15 12 15 22"/>
                         </svg>
-                        เลือกห้องพัก
+                        <?php echo $selectedRoom ? 'ห้องที่เลือก' : 'เลือกห้องพัก'; ?>
                     </h2>
                     
                     <?php if (empty($availableRooms)): ?>
@@ -1638,6 +1638,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </svg>
                         <h3>ไม่มีห้องว่างในขณะนี้</h3>
                         <p>กรุณาติดต่อเจ้าหน้าที่หรือกลับมาใหม่ภายหลัง</p>
+                    </div>
+                    <?php elseif ($selectedRoom): ?>
+                    <!-- แสดงเฉพาะห้องที่เลือก -->
+                    <div class="room-grid">
+                        <label class="room-card selected" 
+                               data-room-id="<?php echo $selectedRoom['room_id']; ?>"
+                               data-price="<?php echo $selectedRoom['type_price'] ?? 0; ?>"
+                               data-type="<?php echo htmlspecialchars($selectedRoom['type_name'] ?? 'ห้องมาตรฐาน'); ?>">
+                            <input type="radio" name="room_id" value="<?php echo $selectedRoom['room_id']; ?>" 
+                                   class="room-radio" checked>
+                            <div class="room-number"><?php echo htmlspecialchars($selectedRoom['room_number']); ?></div>
+                            <div class="room-type"><?php echo htmlspecialchars($selectedRoom['type_name'] ?? 'ห้องมาตรฐาน'); ?></div>
+                            <div class="room-price">
+                                ฿<?php echo number_format($selectedRoom['type_price'] ?? 0); ?> <span>/เดือน</span>
+                            </div>
+                        </label>
+                    </div>
+                    <div style="text-align: center; margin-top: 12px;">
+                        <a href="booking.php" style="color: var(--accent-color, #60a5fa); text-decoration: none; font-size: 14px; opacity: 0.8;">
+                            <svg style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <polyline points="15 18 9 12 15 6"/>
+                            </svg>
+                            ดูห้องอื่น
+                        </a>
                     </div>
                     <?php else: ?>
                     <div class="room-grid">

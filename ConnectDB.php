@@ -5,12 +5,12 @@ date_default_timezone_set('Asia/Bangkok');
 if (!function_exists('connectDB')) {
     function connectDB(){
         $host = 'localhost';
-        $port = '36140';
+        $port = '3306';
         $db   = 'dormitory_management_db';
         $user = 'root';
         $pass = ''; 
 
-        $dsn  = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
+        $dsn  = "mysql:host=$host;dbname=$db;charset=utf8mb4";
 
         try {
             $options = [
