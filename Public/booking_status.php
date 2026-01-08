@@ -1034,8 +1034,8 @@ unset($step);
         .tracking-rail::before {
             content: '';
             position: absolute;
-            left: 18px;
-            top: 0;
+            left: 50px;
+            top: 20px;
             bottom: 0;
             width: 2px;
             background: linear-gradient(180deg, rgba(99,102,241,0.5), rgba(45,212,191,0.4));
@@ -1880,11 +1880,13 @@ if ($publicTheme === 'light') {
                     <div class="status-icon" style="background: <?php 
                         echo match($currentExpStatus) {
                             '1' => 'rgba(52, 211, 153, 0.2)',
-                            '0' => 'rgba(251, 191, 36, 0.2)',
+                            '2' => 'rgba(251, 191, 36, 0.2)',
+                            '0' => 'rgba(248, 113, 113, 0.2)',
                             default => 'rgba(248, 113, 113, 0.2)'
                         };
                     ?>">
                         <?php if ($currentExpStatus === '1'): ?>
+                            <!-- ตรวจสอบแล้ว: ติ๊กถูก -->
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5">
                                 <circle cx="12" cy="12" r="10" stroke-dasharray="63" stroke-dashoffset="0">
                                     <animate attributeName="stroke-dashoffset" from="63" to="0" dur="0.8s" fill="freeze"/>
@@ -1893,7 +1895,8 @@ if ($publicTheme === 'light') {
                                     <animate attributeName="stroke-dashoffset" from="15" to="0" dur="0.6s" begin="0.4s" fill="freeze"/>
                                 </polyline>
                             </svg>
-                        <?php elseif ($currentExpStatus === '0'): ?>
+                        <?php elseif ($currentExpStatus === '2'): ?>
+                            <!-- รอตรวจสอบ: Icon นาฬิการอ -->
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2">
                                 <circle cx="12" cy="12" r="10">
                                     <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="3s" repeatCount="indefinite"/>
@@ -1901,6 +1904,15 @@ if ($publicTheme === 'light') {
                                 <polyline points="12 6 12 12 16 14">
                                     <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="2s" repeatCount="indefinite"/>
                                 </polyline>
+                            </svg>
+                        <?php elseif ($currentExpStatus === '0'): ?>
+                            <!-- รอชำระ: Icon บัตรเครดิต + X -->
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2"/>
+                                <line x1="1" y1="10" x2="23" y2="10"/>
+                                <line x1="6" y1="15" x2="10" y2="15" stroke-width="3"/>
+                                <line x1="4" y1="11" x2="20" y2="19" stroke-width="2.5"/>
+                                <line x1="20" y1="11" x2="4" y2="19" stroke-width="2.5"/>
                             </svg>
                         <?php else: ?>
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="2">

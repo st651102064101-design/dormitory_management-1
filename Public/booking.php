@@ -77,12 +77,18 @@ try {
 $selectedRoom = null;
 if (!empty($_GET['room'])) {
     $roomId = (int)$_GET['room'];
+    $_SESSION['last_selected_room'] = $roomId; // เก็บห้องที่เลือกไว้
     foreach ($availableRooms as $room) {
         if ($room['room_id'] == $roomId) {
             $selectedRoom = $room;
             break;
         }
     }
+} elseif (!empty($_SESSION['last_selected_room'])) {
+    // ถ้าไม่มี ?room= parameter แต่มีห้องที่เคยเลือกไว้ใน session
+    // ให้ redirect กลับไปที่ห้องนั้น
+    header('Location: booking.php?room=' . $_SESSION['last_selected_room']);
+    exit;
 }
 
 $success = false;
@@ -405,6 +411,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             grid-template-columns: 1fr 400px;
             gap: 32px;
             align-items: start;
+        }
+        
+        /* Fullscreen Layout (No Room Selected) */
+        .booking-layout-fullscreen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 60vh;
+            padding: 40px 20px;
+        }
+        
+        .room-section-fullscreen {
+            background: rgba(30, 41, 59, 0.5);
+            border-radius: 24px;
+            padding: 48px;
+            border: 1px solid rgba(255,255,255,0.1);
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .room-section-fullscreen .section-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+        }
+        
+        .room-section-fullscreen .section-title svg {
+            width: 28px;
+            height: 28px;
+            color: #60a5fa;
+        }
+        
+        .room-section-fullscreen .no-rooms {
+            padding: 40px 20px;
+        }
+        
+        .room-section-fullscreen .no-rooms svg {
+            width: 80px;
+            height: 80px;
+        }
+        
+        .room-section-fullscreen .no-rooms h3 {
+            font-size: 1.5rem;
+            margin-top: 24px;
+        }
+        
+        .room-section-fullscreen .no-rooms p {
+            font-size: 1rem;
+            margin-top: 12px;
         }
         
         /* Room Selection */
@@ -1618,6 +1678,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
         
         <form method="POST" enctype="multipart/form-data" id="bookingForm" novalidate>
+            <?php if (!isset($_GET['room'])): ?>
+            <!-- Fullscreen Layout: No Room Selected -->
+            <div class="booking-layout-fullscreen">
+                <div class="room-section-fullscreen">
+                    <h2 class="section-title">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                            <polyline points="9 22 9 12 15 12 15 22"/>
+                        </svg>
+                        เลือกห้องพัก
+                    </h2>
+                    
+                    <div class="no-rooms">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                            <path d="M9 21V12h6v9"/>
+                        </svg>
+                        <h3>ไม่มีห้องที่คุณเลือก</h3>
+                        <p>กรุณาเลือกห้องพักที่ต้องการจองก่อน</p>
+                        <a href="rooms.php" class="btn-primary" style="margin-top: 24px; text-decoration: none; display: inline-block; padding: 14px 32px; background: var(--accent-color, #60a5fa); color: white; border-radius: 12px; font-weight: 600; font-size: 1rem; transition: all 0.3s; box-shadow: 0 4px 12px rgba(96, 165, 250, 0.3);">
+                            <svg style="width: 20px; height: 20px; vertical-align: middle; margin-right: 8px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+                                <polyline points="9 22 9 12 15 12 15 22"/>
+                            </svg>
+                            ดูห้องพัก
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php else: ?>
+            <!-- Two Column Layout -->
             <div class="booking-layout">
                 <!-- Left: Room Selection -->
                 <div class="room-section">
@@ -1656,7 +1747,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </label>
                     </div>
                     <div style="text-align: center; margin-top: 12px;">
-                        <a href="booking.php" style="color: var(--accent-color, #60a5fa); text-decoration: none; font-size: 14px; opacity: 0.8;">
+                        <a href="rooms.php" style="color: var(--accent-color, #60a5fa); text-decoration: none; font-size: 14px; opacity: 0.8;">
                             <svg style="width: 14px; height: 14px; vertical-align: middle; margin-right: 4px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <polyline points="15 18 9 12 15 6"/>
                             </svg>
@@ -1685,6 +1776,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <!-- Right: Booking Form -->
+                <?php if (isset($_GET['room']) && $selectedRoom): ?>
                 <div class="booking-sidebar">
                     <div class="booking-box">
                         <!-- Form Steps Indicator -->
@@ -1959,7 +2051,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                 </div>
+                <?php endif; ?>
             </div>
+            <?php endif; ?>
         </form>
         
         <!-- Mobile Booking Bar -->
