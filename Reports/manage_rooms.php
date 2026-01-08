@@ -138,6 +138,8 @@ try {
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
@@ -800,15 +802,18 @@ try {
 
           <section class="manage-panel">
             <div class="rooms-stats">
-              <div class="room-stat-card">
+              <div class="room-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ห้องทั้งหมด</h3>
                 <div class="stat-value"><?php echo number_format($totalRooms); ?></div>
               </div>
-              <div class="room-stat-card">
+              <div class="room-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ห้องว่าง</h3>
                 <div class="stat-value"><?php echo number_format($vacant); ?></div>
               </div>
-              <div class="room-stat-card">
+              <div class="room-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>มีผู้เข้าพัก</h3>
                 <div class="stat-value"><?php echo number_format($occupied); ?></div>
               </div>

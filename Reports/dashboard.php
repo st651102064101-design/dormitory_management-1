@@ -30,11 +30,12 @@ try {
     $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
     $isLight = $brightness > 155;
     
-    // 1. รายงานข้อมูลการเข้าพัก (รอจอง = bkg_status 1 จองแล้ว/รอเข้าพัก)
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 1");
-    $booking_count = $stmt->fetch()['total'] ?? 0;
-    
+    // 1. รายงานข้อมูลการเข้าพัก
+    // bkg_status: 0=รอยืนยัน, 1=จองแล้ว/รอเข้าพัก, 2=เข้าพักแล้ว, 3=ยกเลิก
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 2");
+    $booking_checkedin = $stmt->fetch()['total'] ?? 0;
+    
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status IN (0, 1)");
     $booking_pending = $stmt->fetch()['total'] ?? 0;
     
     // 2. รายงานข้อมูลข่าวประชาสัมพันธ์
@@ -731,7 +732,7 @@ try {
 
         @media (max-width: 768px) {
             .dashboard-grid {
-                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                grid-template-columns: 1fr;
                 gap: 15px;
             }
 
@@ -754,6 +755,73 @@ try {
             .stat-icon svg {
                 width: 20px;
                 height: 20px;
+            }
+            
+            .hero-stats {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+            
+            .hero-card {
+                padding: 20px;
+            }
+            
+            .progress-ring-container {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .progress-ring {
+                margin-bottom: 15px;
+            }
+            
+            .chart-container {
+                padding: 15px;
+            }
+            
+            .chart-container h3 {
+                font-size: 14px;
+            }
+            
+            .today-widget {
+                padding: 20px;
+            }
+            
+            .today-stats {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .stat-card {
+                padding: 15px;
+            }
+            
+            .stat-card .number {
+                font-size: 20px;
+            }
+            
+            .hero-card-value {
+                font-size: 28px;
+            }
+            
+            .chart-wrapper {
+                height: 200px;
+            }
+            
+            .section-icon {
+                width: 30px;
+                height: 30px;
+            }
+            
+            .section-icon svg {
+                width: 14px;
+                height: 14px;
             }
         }
     </style>
@@ -1050,11 +1118,11 @@ try {
                             <div class="report-grid">
                                 <div class="report-item">
                                     <label>เข้าพักแล้ว</label>
-                                    <div class="value"><?php echo $booking_count; ?></div>
+                                    <div class="value"><?php echo $booking_checkedin ?: '-'; ?></div>
                                 </div>
                                 <div class="report-item">
                                     <label>จองอยู่</label>
-                                    <div class="value"><?php echo $booking_pending; ?></div>
+                                    <div class="value"><?php echo $booking_pending ?: '-'; ?></div>
                                 </div>
                             </div>
                             <div style="margin-top: 10px; text-align: center;">
@@ -1762,7 +1830,7 @@ try {
             data: {
                 labels: ['เข้าพักแล้ว', 'จองอยู่'],
                 datasets: [{
-                    data: [<?php echo $booking_count; ?>, <?php echo $booking_pending; ?>],
+                    data: [<?php echo $booking_checkedin; ?>, <?php echo $booking_pending; ?>],
                     backgroundColor: ['rgba(59, 130, 246, 0.8)', 'rgba(147, 197, 253, 0.8)'],
                     borderColor: ['rgb(59, 130, 246)', 'rgb(147, 197, 253)'],
                     borderWidth: 2

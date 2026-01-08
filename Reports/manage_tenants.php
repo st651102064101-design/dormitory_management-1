@@ -156,6 +156,8 @@ try {
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
@@ -255,31 +257,37 @@ try {
               </div>
             </div>
             <div class="tenant-stats">
-              <div class="tenant-stat-card">
+              <div class="tenant-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ผู้เช่าทั้งหมด</h3>
                 <div class="stat-value"><?php echo number_format($stats['total']); ?></div>
               </div>
-              <div class="tenant-stat-card">
+              <div class="tenant-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>พักอยู่</h3>
                 <div class="stat-value" style="color:#22c55e;"><?php echo number_format($stats['active']); ?></div>
                 <div class="stat-meta">สถานะ = 1</div>
               </div>
-              <div class="tenant-stat-card">
+              <div class="tenant-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>รอการเข้าพัก</h3>
                 <div class="stat-value" style="color:#93c5fd;"><?php echo number_format($stats['pending']); ?></div>
                 <div class="stat-meta">สถานะ = 2</div>
               </div>
-              <div class="tenant-stat-card">
+              <div class="tenant-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>จองห้อง</h3>
                 <div class="stat-value" style="color:#facc15;"><?php echo number_format($stats['booking']); ?></div>
                 <div class="stat-meta">สถานะ = 3</div>
               </div>
-              <div class="tenant-stat-card">
+              <div class="tenant-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ยกเลิกจองห้อง</h3>
                 <div class="stat-value" style="color:#fca5a5;"><?php echo number_format($stats['cancel_booking']); ?></div>
                 <div class="stat-meta">สถานะ = 4</div>
               </div>
-              <div class="tenant-stat-card">
+              <div class="tenant-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ย้ายออก</h3>
                 <div class="stat-value" style="color:#f87171;"><?php echo number_format($stats['inactive']); ?></div>
                 <div class="stat-meta">สถานะ = 0</div>

@@ -178,6 +178,8 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
@@ -2250,7 +2252,8 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
             </div>
             <div class="repair-stats">
               <!-- Pending Card -->
-              <div class="repair-stat-card pending">
+              <div class="repair-stat-card pending particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-particles">
                   <span></span><span></span><span></span><span></span>
                 </div>
@@ -2267,7 +2270,8 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
               </div>
               
               <!-- In Progress Card -->
-              <div class="repair-stat-card inprogress">
+              <div class="repair-stat-card inprogress particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-particles">
                   <span></span><span></span><span></span><span></span>
                 </div>
@@ -2284,7 +2288,8 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
               </div>
               
               <!-- Done Card -->
-              <div class="repair-stat-card done">
+              <div class="repair-stat-card done particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-particles">
                   <span></span><span></span><span></span><span></span>
                 </div>

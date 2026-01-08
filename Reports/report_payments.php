@@ -232,6 +232,8 @@ try {
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css" />
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/lottie-icons.css" />
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
@@ -583,7 +585,8 @@ try {
 
             <!-- สถิติภาพรวม -->
             <div class="payment-stats-grid">
-              <div class="stat-card">
+              <div class="stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-card-header">
                   <div class="lottie-icon purple">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
@@ -595,7 +598,8 @@ try {
               </div>
 
               <?php if ($hasPayStatus): ?>
-              <div class="stat-card">
+              <div class="stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-card-header">
                   <div class="lottie-icon orange">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -606,7 +610,8 @@ try {
                 <div class="stat-subtitle">รอดำเนินการ</div>
               </div>
 
-              <div class="stat-card">
+              <div class="stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-card-header">
                   <div class="lottie-icon green">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
@@ -619,7 +624,8 @@ try {
               <?php endif; ?>
 
               <?php if ($hasPayAmount && $summary['total'] !== null): ?>
-              <div class="stat-card">
+              <div class="stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-card-header">
                   <div class="lottie-icon yellow">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>

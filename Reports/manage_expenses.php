@@ -217,6 +217,8 @@ try {
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
@@ -493,17 +495,20 @@ try {
               </div>
             </div>
             <div class="expense-stats">
-              <div class="expense-stat-card">
+              <div class="expense-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ยังไม่ชำระ</h3>
                 <div class="stat-value" style="color:#ef4444;"><?php echo number_format($stats['unpaid']); ?></div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_unpaid']); ?></div>
               </div>
-              <div class="expense-stat-card">
+              <div class="expense-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ชำระแล้ว</h3>
                 <div class="stat-value" style="color:#22c55e;"><?php echo number_format($stats['paid']); ?></div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_paid']); ?></div>
               </div>
-              <div class="expense-stat-card">
+              <div class="expense-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ยอดรวมทั้งหมด</h3>
                 <div class="stat-value"><?php echo number_format($stats['unpaid'] + $stats['paid']); ?></div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_unpaid'] + $stats['total_paid']); ?></div>

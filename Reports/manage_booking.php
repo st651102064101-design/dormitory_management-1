@@ -145,6 +145,8 @@ try {
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css" />
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
@@ -3183,7 +3185,8 @@ try {
               </div>
             </div>
             <div class="booking-stats">
-              <div class="booking-stat-card">
+              <div class="booking-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-icon blue">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
@@ -3199,7 +3202,8 @@ try {
                   รวมทั้งหมด
                 </div>
               </div>
-              <div class="booking-stat-card">
+              <div class="booking-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-icon green">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
@@ -3216,7 +3220,8 @@ try {
                   รอเข้าพัก
                 </div>
               </div>
-              <div class="booking-stat-card">
+              <div class="booking-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-icon red">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>

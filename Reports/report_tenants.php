@@ -81,6 +81,8 @@ $statusMap = [
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css" />
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/lottie-icons.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
@@ -940,42 +942,48 @@ $statusMap = [
 
                 <!-- Stats Cards -->
                 <div class="stats-grid">
-                    <div class="stat-card blue">
+                    <div class="stat-card blue particle-wrapper">
+                        <div class="particle-container" data-particles="3"></div>
                         <div class="lottie-icon blue">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                         </div>
                         <div class="stat-value"><?php echo number_format($stats['total']); ?></div>
                         <div class="stat-label">ผู้เช่าทั้งหมด</div>
                     </div>
-                    <div class="stat-card green">
+                    <div class="stat-card green particle-wrapper">
+                        <div class="particle-container" data-particles="3"></div>
                         <div class="lottie-icon green">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                         </div>
                         <div class="stat-value"><?php echo number_format($stats['staying']); ?></div>
                         <div class="stat-label">กำลังพักอยู่</div>
                     </div>
-                    <div class="stat-card orange">
+                    <div class="stat-card orange particle-wrapper">
+                        <div class="particle-container" data-particles="3"></div>
                         <div class="lottie-icon orange">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                         </div>
                         <div class="stat-value"><?php echo number_format($stats['waiting']); ?></div>
                         <div class="stat-label">รอเข้าพัก</div>
                     </div>
-                    <div class="stat-card red">
+                    <div class="stat-card red particle-wrapper">
+                        <div class="particle-container" data-particles="3"></div>
                         <div class="lottie-icon red">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/><circle cx="15" cy="12" r="1"/></svg>
                         </div>
                         <div class="stat-value"><?php echo number_format($stats['moved_out']); ?></div>
                         <div class="stat-label">ย้ายออกแล้ว</div>
                     </div>
-                    <div class="stat-card" style="--stat-color: #3b82f6;">
+                    <div class="stat-card particle-wrapper" style="--stat-color: #3b82f6;">
+                        <div class="particle-container" data-particles="3"></div>
                         <div class="lottie-icon indigo">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
                         </div>
                         <div class="stat-value"><?php echo number_format($stats['booking']); ?></div>
                         <div class="stat-label">จองห้อง</div>
                     </div>
-                    <div class="stat-card" style="--stat-color: #6b7280;">
+                    <div class="stat-card particle-wrapper" style="--stat-color: #6b7280;">
+                        <div class="particle-container" data-particles="3"></div>
                         <div class="lottie-icon gray">
                           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                         </div>

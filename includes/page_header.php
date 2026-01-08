@@ -19,7 +19,7 @@
         <line x1="3" y1="18" x2="21" y2="18"/>
       </svg>
     </button>
-    <h2><?php echo htmlspecialchars($pageTitle ?? 'หน้าจัดการ', ENT_QUOTES, 'UTF-8'); ?></h2>
+    <h2><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></h2>
   </div>
 </header>
 <div class="page-header-spacer"></div>

@@ -79,6 +79,8 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <style>
         /* Force-hide animate-ui modal overlays on this page */
@@ -377,11 +379,13 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
 
           <section class="manage-panel">
             <div class="news-stats">
-              <div class="news-stat-card">
+              <div class="news-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ข่าวทั้งหมด</h3>
                 <div class="stat-value" id="totalNewsCount"><?php echo number_format($totalNews); ?></div>
               </div>
-              <div class="news-stat-card">
+              <div class="news-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
                 <h3>ข่าวใหม่ (30 วัน)</h3>
                 <div class="stat-value" id="recentNewsCount" style="color:#22c55e;"><?php echo number_format($recentNews); ?></div>
               </div>

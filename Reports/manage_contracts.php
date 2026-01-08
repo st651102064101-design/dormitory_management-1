@@ -123,6 +123,8 @@ foreach ($contracts as $c) {
     <title>จัดการสัญญา</title>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css">
     <!-- DataTable Modern -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
@@ -483,7 +485,8 @@ foreach ($contracts as $c) {
 
                 <!-- Statistics -->
                 <div class="contract-stats">
-                    <div class="contract-stat-card">
+                    <div class="contract-stat-card particle-wrapper">
+                        <div class="particle-container" data-particles="3"></div>
                         <div class="stat-value" style="color: #FF9800;"><?php echo $tenantStatusCounts['0']; ?></div>
                         <div class="stat-label">รอเข้าพัก</div>
                         <div class="stat-chip">
@@ -491,7 +494,8 @@ foreach ($contracts as $c) {
                             รอการเข้าพัก
                         </div>
                     </div>
-                    <div class="contract-stat-card">
+                    <div class="contract-stat-card particle-wrapper">
+                        <div class="particle-container" data-particles="3"></div>
                         <div class="stat-value" style="color: #4CAF50;"><?php echo $tenantStatusCounts['1']; ?></div>
                         <div class="stat-label">กำลังพักอยู่</div>
                         <div class="stat-chip">
@@ -499,7 +503,8 @@ foreach ($contracts as $c) {
                             พักอยู่
                         </div>
                     </div>
-                    <div class="contract-stat-card">
+                    <div class="contract-stat-card particle-wrapper">
+                        <div class="particle-container" data-particles="3"></div>
                         <div class="stat-value" style="color: #f44336;"><?php echo $tenantStatusCounts['2']; ?></div>
                         <div class="stat-label">ย้ายออก</div>
                         <div class="stat-chip">

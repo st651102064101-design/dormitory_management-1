@@ -199,6 +199,8 @@ $roomPaymentSummary = $pdo->query("
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
+    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
@@ -2068,7 +2070,8 @@ $roomPaymentSummary = $pdo->query("
               </div>
             </div>
             <div class="payment-stats">
-              <div class="payment-stat-card pending fade-in-up" style="animation-delay: 0s;">
+              <div class="payment-stat-card pending fade-in-up particle-wrapper" style="animation-delay: 0s;">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-particles">
                   <span></span><span></span><span></span><span></span>
                 </div>
@@ -2085,7 +2088,8 @@ $roomPaymentSummary = $pdo->query("
                 <div class="stat-money">฿<?php echo number_format($stats['total_pending']); ?></div>
               </div>
 
-              <div class="payment-stat-card verified fade-in-up" style="animation-delay: 0.1s;">
+              <div class="payment-stat-card verified fade-in-up particle-wrapper" style="animation-delay: 0.1s;">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-particles">
                   <span></span><span></span><span></span><span></span>
                 </div>
@@ -2101,7 +2105,8 @@ $roomPaymentSummary = $pdo->query("
                 <div class="stat-money">฿<?php echo number_format($stats['total_verified']); ?></div>
               </div>
 
-              <div class="payment-stat-card total fade-in-up" style="animation-delay: 0.2s;">
+              <div class="payment-stat-card total fade-in-up particle-wrapper" style="animation-delay: 0.2s;">
+                <div class="particle-container" data-particles="3"></div>
                 <div class="stat-particles">
                   <span></span><span></span><span></span><span></span>
                 </div>
