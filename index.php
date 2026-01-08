@@ -970,213 +970,554 @@ try {
             line-height: 1.6;
         }
 
-        /* ===== ROOM CARDS ===== */
-        .room-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-            gap: 2rem;
+        /* ===== WEB3 ROOM CARDS ===== */
+        
+        /* Animations */
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
         
+        @keyframes breathe {
+            0%, 100% { 
+                transform: scale(1) translateY(0);
+                filter: brightness(1);
+            }
+            50% { 
+                transform: scale(1.008) translateY(-3px);
+                filter: brightness(1.05);
+            }
+        }
+        
+        @keyframes floatOrbit {
+            0% { transform: translateY(0) translateX(0) rotate(0deg); }
+            25% { transform: translateY(-6px) translateX(3px) rotate(0.5deg); }
+            50% { transform: translateY(-2px) translateX(6px) rotate(0deg); }
+            75% { transform: translateY(-8px) translateX(3px) rotate(-0.5deg); }
+            100% { transform: translateY(0) translateX(0) rotate(0deg); }
+        }
+        
+        @keyframes auroraGlow {
+            0%, 100% { 
+                background-position: 0% 50%;
+                filter: hue-rotate(0deg) blur(15px);
+            }
+            25% { 
+                background-position: 50% 100%;
+                filter: hue-rotate(30deg) blur(18px);
+            }
+            50% { 
+                background-position: 100% 50%;
+                filter: hue-rotate(60deg) blur(20px);
+            }
+            75% { 
+                background-position: 50% 0%;
+                filter: hue-rotate(30deg) blur(18px);
+            }
+        }
+        
+        @keyframes pulseRing {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 0.4; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+        
+        @keyframes particleFloat {
+            0%, 100% { 
+                transform: translateY(0) translateX(0) scale(1); 
+                opacity: 0.7; 
+            }
+            25% { 
+                transform: translateY(-15px) translateX(10px) scale(1.1); 
+                opacity: 1; 
+            }
+            50% { 
+                transform: translateY(-25px) translateX(5px) scale(0.9); 
+                opacity: 0.8; 
+            }
+            75% { 
+                transform: translateY(-10px) translateX(-5px) scale(1.05); 
+                opacity: 0.9; 
+            }
+        }
+        
+        @keyframes iconBounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 2.5rem;
+        }
+        
+        @media (min-width: 1200px) {
+            .room-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .room-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 1.5rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .room-grid {
+                grid-template-columns: 1fr;
+                max-width: 280px;
+                margin-left: auto;
+                margin-right: auto;
+                gap: 1.5rem;
+            }
+        }
+
+        /* Room Card - Web3 Style */
         .room-card {
-            background: var(--bg-card);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            overflow: hidden;
-            border: 1px solid var(--border-color);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
+            border-radius: 24px;
+            background: transparent;
+            box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+            color: #f5f8ff;
+            aspect-ratio: 1137 / 1606;
+            min-height: 280px;
+            transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1), filter 0.3s ease;
+            will-change: transform, filter;
+            animation: fadeInUp 0.6s ease-out backwards,
+                       breathe 4s ease-in-out infinite,
+                       floatOrbit 12s ease-in-out infinite;
+            overflow: visible;
+            perspective: 1000px;
+        }
+        
+        .room-card:nth-child(odd) {
+            animation: fadeInUp 0.6s ease-out backwards,
+                       breathe 4.5s ease-in-out infinite,
+                       floatOrbit 14s ease-in-out infinite reverse;
+        }
+        
+        .room-card:nth-child(3n) {
+            animation: fadeInUp 0.6s ease-out backwards,
+                       breathe 5s ease-in-out infinite 0.5s,
+                       floatOrbit 16s ease-in-out infinite;
+        }
+        
+        .room-card:nth-child(1) { animation-delay: 0.1s, 0s, 0s; }
+        .room-card:nth-child(2) { animation-delay: 0.15s, 0.3s, 0.5s; }
+        .room-card:nth-child(3) { animation-delay: 0.2s, 0.6s, 1s; }
+        
+        /* Card Glow Effect */
+        .room-card::before {
+            content: '';
+            position: absolute;
+            inset: -4px;
+            border-radius: 28px;
+            background: linear-gradient(135deg, 
+                #667eea 0%, #764ba2 15%, 
+                #f093fb 30%, #f5576c 45%,
+                #4facfe 60%, #00f2fe 75%,
+                #43e97b 90%, #667eea 100%);
+            background-size: 300% 300%;
+            opacity: 0.3;
+            z-index: -1;
+            filter: blur(15px);
+            animation: auroraGlow 8s ease infinite;
+            transition: opacity 0.4s ease, filter 0.4s ease;
+        }
+        
+        .room-card:hover::before {
+            opacity: 0.6;
+            filter: blur(18px);
         }
         
         .room-card:hover {
-            transform: translateY(-10px);
-            border-color: var(--primary);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4), 0 0 40px var(--primary-glow);
-        }
-
-        .room-card-image-wrapper {
-            position: relative;
-            height: 200px;
-            overflow: hidden;
+            animation-play-state: paused;
+            transform: translateY(-8px) scale(1.02);
         }
         
-        .room-card-image {
+        .room-card.flipped {
+            animation-play-state: paused;
+        }
+        
+        /* Particle effects */
+        .room-card .card-particles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            overflow: visible;
+            border-radius: 24px;
+            z-index: 10;
+        }
+        
+        .room-card .card-particles::before,
+        .room-card .card-particles::after {
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle, rgba(255, 255, 255, 0.6) 0%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
+            border-radius: 50%;
+            animation: particleFloat 4s ease-in-out infinite;
+            filter: blur(2px);
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.4);
+        }
+        
+        .room-card .card-particles::before {
+            top: 10%;
+            left: 10%;
+            width: 18px;
+            height: 18px;
+            animation-delay: 0s;
+        }
+        
+        .room-card .card-particles::after {
+            bottom: 15%;
+            right: 10%;
+            width: 14px;
+            height: 14px;
+            animation-delay: 2s;
+            animation-duration: 5s;
+        }
+        
+        /* Card Inner - 3D flip */
+        .room-card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-radius: 24px;
+            transform-style: preserve-3d;
+            transition: transform 0.6s ease;
+        }
+        
+        .room-card.flipped .room-card-inner {
+            transform: rotateY(180deg);
+        }
+        
+        .room-card-face {
+            position: absolute;
+            inset: 0;
+            border-radius: 24px;
+            overflow: hidden;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .room-card-face.front {
+            background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+            border: 1px solid rgba(255,255,255,0.1);
+            z-index: 2;
+        }
+        
+        .room-card-face.back {
+            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+            border: 1px solid rgba(167, 139, 250, 0.2);
+            transform: rotateY(180deg);
+            z-index: 1;
+        }
+        
+        /* Front Card Styles */
+        .room-image-container {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
+        }
+        
+        .room-image-container img {
             width: 100%;
             height: 100%;
             object-fit: cover;
-            background: linear-gradient(135deg, #1e293b, #0f172a);
-            transition: transform 0.5s ease;
-            animation: imageZoom 0.6s ease forwards;
         }
         
-        @keyframes imageZoom {
-            from {
-                opacity: 0;
-                transform: scale(1.05);
-            }
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
+        .room-card-face.front::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 60%;
+            background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.5) 40%, transparent 100%);
+            pointer-events: none;
+            z-index: 1;
         }
         
-        .room-card-placeholder-svg {
-            width: 100%;
-            height: 100%;
-            animation: imageZoom 0.6s ease forwards;
-        }
-
-        .room-card:hover .room-card-image {
-            transform: scale(1.1);
+        .card-info-bottom {
+            position: absolute;
+            bottom: 1rem;
+            left: 1rem;
+            right: 1rem;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            gap: 0.15rem;
         }
         
-        .room-card:hover .room-card-placeholder-svg {
-            filter: brightness(1.1);
+        .room-number-web3 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
-
-        .room-status-badge {
+        
+        .room-type-web3 {
+            font-size: 0.9rem;
+            color: rgba(255,255,255,0.9);
+            text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        }
+        
+        .room-price-web3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            color: #ffffff;
+            margin-top: 0.15rem;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        
+        /* Status Badge */
+        .status-badge-web3 {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            padding: 0.4rem 1rem;
-            background: rgba(34, 197, 94, 0.9);
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.9), rgba(16, 185, 129, 0.9));
             backdrop-filter: blur(10px);
-            border-radius: 50px;
-            font-size: 0.8rem;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
             font-weight: 600;
-            color: #fff;
-            display: flex;
-            align-items: center;
-            gap: 0.3rem;
-        }
-
-        .room-status-badge::before {
-            content: '';
-            width: 6px;
-            height: 6px;
-            background: #fff;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
+            color: white;
+            z-index: 3;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            animation: pulseRing 2s ease-in-out infinite;
+            box-shadow: 0 0 15px rgba(34, 197, 94, 0.5),
+                        0 0 30px rgba(34, 197, 94, 0.3);
+            border: 1px solid rgba(255,255,255,0.3);
         }
         
-        .room-card-header {
-            background: linear-gradient(135deg, var(--primary), #1d4ed8);
-            padding: 1.25rem 1.5rem;
-            position: relative;
-        }
-
-        .room-card-header::before {
+        .status-badge-web3::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            inset: -2px;
+            border-radius: 22px;
+            background: linear-gradient(135deg, #22c55e, #10b981, #14b8a6);
+            z-index: -1;
+            opacity: 0.5;
+            filter: blur(4px);
+            animation: pulseRing 2s ease-in-out infinite 0.5s;
         }
         
-        .room-number {
-            font-size: 1.8rem;
-            font-weight: 700;
-            position: relative;
-        }
-        
-        .room-type {
-            opacity: 0.9;
-            font-size: 0.9rem;
-            position: relative;
-        }
-        
-        .room-card-body {
-            padding: 1.5rem;
-        }
-        
-        .room-price {
-            font-size: 2rem;
-            font-weight: 800;
-            color: #22c55e;
-            margin-bottom: 1rem;
+        /* Image Placeholder */
+        .room-image-placeholder {
+            width: 100%;
+            height: 100%;
             display: flex;
-            align-items: baseline;
-            gap: 0.3rem;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            color: rgba(255,255,255,0.5);
         }
         
-        .room-price span {
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-            font-weight: 400;
+        .room-image-placeholder svg {
+            width: 60px;
+            height: 60px;
+            opacity: 0.4;
         }
         
-        .room-features {
-            list-style: none;
-            margin-bottom: 1.5rem;
-            display: grid;
+        .room-image-placeholder span {
+            font-size: 0.8rem;
+            opacity: 0.6;
+        }
+        
+        /* Back Card Styles */
+        .back-card-content {
+            flex: 1;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            overflow-y: auto;
+            pointer-events: auto;
+        }
+        
+        .back-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
             gap: 0.5rem;
         }
         
-        .room-features li {
-            padding: 0.6rem 0;
-            color: var(--text-secondary);
+        .room-number-back {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            font-size: 0.95rem;
+            gap: 0.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #fff;
         }
         
-        .room-features li .feature-icon {
+        .room-number-back svg {
             width: 20px;
             height: 20px;
+            color: #a78bfa;
+        }
+        
+        .room-icon-animated {
+            animation: iconBounce 2s ease-in-out infinite;
+        }
+        
+        .availability-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            padding: 0.3rem 0.6rem;
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 20px;
+            font-size: 0.7rem;
+            color: #4ade80;
+            font-weight: 500;
+        }
+        
+        .back-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .back-details .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .back-details .detail-item.highlight {
+            background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(139, 92, 246, 0.1));
+            border-color: rgba(167, 139, 250, 0.2);
+        }
+        
+        .back-details .detail-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
             flex-shrink: 0;
         }
         
-        .room-features li .icon {
-            width: 28px;
-            height: 28px;
-            background: var(--glass-bg);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
+        .back-details .detail-icon svg {
+            width: 16px;
+            height: 16px;
+            color: #a78bfa;
         }
         
-        .btn-book {
-            width: 100%;
-            padding: 1rem;
-            background: linear-gradient(135deg, var(--primary), #1d4ed8);
+        .back-details .detail-text {
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+            min-width: 0;
+        }
+        
+        .back-details .detail-label {
+            font-size: 0.65rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .back-details .detail-value {
+            font-size: 0.85rem;
             color: #fff;
-            border: none;
-            border-radius: 12px;
-            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .back-details .detail-value.price {
+            color: #a78bfa;
             font-weight: 600;
-            cursor: pointer;
-            text-decoration: none;
+        }
+        
+        .back-features {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.4rem;
+            margin-top: auto;
+        }
+        
+        .feature-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.2rem;
+            padding: 0.15rem 0.4rem;
+            background: rgba(167, 139, 250, 0.15);
+            border-radius: 6px;
+            font-size: 0.55rem;
+            font-weight: 500;
+            color: #a78bfa;
+        }
+        
+        .feature-tag svg {
+            stroke: currentColor;
+            width: 9px;
+            height: 9px;
+        }
+        
+        .back-actions {
+            padding: 0.75rem 1rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .book-btn-back {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn-book::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
             width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            transition: left 0.5s ease;
+            padding: 0.75rem 1rem;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            font-family: inherit;
         }
         
-        .btn-book:hover {
+        .book-btn-back:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             transform: translateY(-2px);
-            box-shadow: 0 10px 30px var(--primary-glow);
+            box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
         }
-
-        .btn-book:hover::before {
-            left: 100%;
+        
+        /* Back card scrollbar */
+        .back-card-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .back-card-content::-webkit-scrollbar-track {
+            background: rgba(167, 139, 250, 0.1);
+            border-radius: 10px;
+            margin: 8px 0;
+        }
+        
+        .back-card-content::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, #a78bfa 0%, #8b5cf6 100%);
+            border-radius: 10px;
         }
 
         /* ===== NEWS CARDS ===== */
@@ -2042,26 +2383,30 @@ try {
         body.theme-light .news-card p {
             color: #64748b !important;
         }
-        /* Room card - all text must be dark/white based on context */
-        body.theme-light .room-card-header .room-number,
-        body.theme-light .room-card-header .room-type {
+        /* Web3 Room card - keep white text on dark cards */
+        body.theme-light .room-card .room-number-web3,
+        body.theme-light .room-card .room-type-web3,
+        body.theme-light .room-card .room-price-web3,
+        body.theme-light .room-card .status-badge-web3,
+        body.theme-light .room-card .room-number-back,
+        body.theme-light .room-card .room-number-back span,
+        body.theme-light .room-card .detail-value,
+        body.theme-light .room-card .availability-badge,
+        body.theme-light .room-card .feature-tag,
+        body.theme-light .room-card .book-btn-back {
             color: #fff !important;
         }
-        /* Room body text - must be dark */
-        body.theme-light .room-card-body .room-type {
-            color: #64748b !important;
+        body.theme-light .room-card .detail-label {
+            color: #94a3b8 !important;
         }
-        body.theme-light .room-card-body .room-price {
-            color: #1e293b !important;
+        body.theme-light .room-card .detail-value.price {
+            color: #a78bfa !important;
         }
-        body.theme-light .room-price span {
-            color: #64748b !important;
+        body.theme-light .room-card .availability-badge {
+            color: #4ade80 !important;
         }
-        body.theme-light .room-features li {
-            color: #475569 !important;
-        }
-        body.theme-light .btn-book {
-            color: #fff !important;
+        body.theme-light .room-card .feature-tag {
+            color: #a78bfa !important;
         }
         /* ENSURE ALL TEXT IS DARK IN LIGHT THEME */
         body.theme-light {
@@ -2377,56 +2722,151 @@ if ($publicTheme === 'light') {
         </div>
         
         <?php if (count($availableRooms) > 0): ?>
+        <?php
+        // Feature icons for room cards
+        $featureIcons = [
+            'ไฟฟ้า' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path></svg>',
+            'น้ำประปา' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg>',
+            'WiFi' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"></path></svg>',
+            'เฟอร์นิเจอร์' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="2" y="6" width="20" height="8" rx="2"></rect><path d="M4 14v4M20 14v4M2 10h20"></path></svg>',
+            'แอร์' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M8 16a4 4 0 0 1-4-4 4 4 0 0 1 4-4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H8zm0-8v12M16 8v12"></path></svg>',
+            'ตู้เย็น' => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><rect x="4" y="2" width="16" height="20" rx="2"></rect><line x1="4" y1="10" x2="20" y2="10"></line><line x1="10" y1="6" x2="10" y2="6"></line><line x1="10" y1="14" x2="10" y2="18"></line></svg>'
+        ];
+        $defaultFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi', 'เฟอร์นิเจอร์', 'แอร์', 'ตู้เย็น'];
+        ?>
         <div class="room-grid">
-            <?php foreach ($availableRooms as $room): ?>
-            <div class="room-card animate-on-scroll">
-                <div class="room-card-image-wrapper">
-                    <?php if (!empty($room['room_image'])): ?>
-                    <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" class="room-card-image">
-                    <?php else: ?>
-                    <svg class="room-card-placeholder-svg" viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
-                        <defs>
-                            <linearGradient id="roomGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" style="stop-color:rgba(30,41,59,1);stop-opacity:1" />
-                                <stop offset="100%" style="stop-color:rgba(15,23,42,1);stop-opacity:1" />
-                            </linearGradient>
-                        </defs>
-                        <rect width="400" height="300" fill="url(#roomGrad)"/>
-                        <!-- Room building -->
-                        <rect x="120" y="80" width="160" height="140" rx="10" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2"/>
-                        <path d="M 160 100 L 200 70 L 240 100 L 240 180 L 160 180 Z" fill="none" stroke="rgba(255,255,255,0.2)" stroke-width="2" stroke-linejoin="round"/>
-                        <!-- Windows -->
-                        <circle cx="185" cy="140" r="8" fill="none" stroke="rgba(96,165,250,0.4)" stroke-width="2"/>
-                        <circle cx="215" cy="140" r="8" fill="none" stroke="rgba(96,165,250,0.4)" stroke-width="2"/>
-                        <!-- Side windows -->
-                        <rect x="145" y="115" width="12" height="12" fill="none" stroke="rgba(96,165,250,0.3)" stroke-width="2" rx="2"/>
-                        <rect x="243" y="115" width="12" height="12" fill="none" stroke="rgba(96,165,250,0.3)" stroke-width="2" rx="2"/>
-                        <!-- Door -->
-                        <rect x="190" y="160" width="20" height="30" rx="3" fill="none" stroke="rgba(168,85,247,0.3)" stroke-width="2"/>
-                        <!-- Decorative elements -->
-                        <circle cx="80" cy="50" r="15" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
-                        <circle cx="320" cy="250" r="20" fill="none" stroke="rgba(255,255,255,0.15)" stroke-width="2"/>
-                        <path d="M 30 220 Q 50 200 70 220" fill="none" stroke="rgba(34,197,94,0.2)" stroke-width="2" stroke-linecap="round"/>
-                    </svg>
-                    <?php endif; ?>
-                    <div class="room-status-badge">ว่าง</div>
-                </div>
-                <div class="room-card-header">
-                    <div class="room-number">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></div>
-                    <div class="room-type"><?php echo htmlspecialchars($room['type_name'] ?? 'ห้องมาตรฐาน'); ?></div>
-                </div>
-                <div class="room-card-body">
-                    <div class="room-price">
-                        ฿<?php echo number_format($room['type_price'] ?? 0); ?> <span>/เดือน</span>
+            <?php foreach ($availableRooms as $index => $room): ?>
+            <div class="room-card animate-on-scroll" data-index="<?php echo $index; ?>" style="cursor: pointer;">
+                <!-- Particle effects -->
+                <div class="card-particles"></div>
+                
+                <div class="room-card-inner">
+                    <div class="room-card-face front">
+                        <!-- Status Badge -->
+                        <span class="status-badge-web3">ว่าง</span>
+                        
+                        <!-- Room Image Container -->
+                        <div class="room-image-container">
+                            <?php if (!empty($room['room_image'])): ?>
+                            <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
+                            <?php else: ?>
+                            <div class="room-image-placeholder" aria-label="ไม่มีรูปห้อง">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="4" width="18" height="14" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="9.5" r="1.5"></circle>
+                                    <path d="M21 15l-4.5-4.5a2 2 0 0 0-3 0L5 19"></path>
+                                </svg>
+                                <span>ไม่มีรูป</span>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        
+                        <!-- Info at bottom left -->
+                        <div class="card-info-bottom">
+                            <div class="room-number-web3">ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></div>
+                            <div class="room-type-web3"><?php echo htmlspecialchars($room['type_name'] ?? 'ห้องมาตรฐาน'); ?></div>
+                            <div class="room-price-web3"><?php echo number_format((int)($room['type_price'] ?? 0)); ?>/เดือน</div>
+                        </div>
                     </div>
-                    <ul class="room-features">
-                        <li><svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#60a5fa" stroke-width="2"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg> ชั้น <?php echo htmlspecialchars($room['room_floor'] ?? '-'); ?></li>
-                        <li><svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" stroke-width="2"><path d="M20 10c0-4.4-3.6-8-8-8s-8 3.6-8 8 3.6 8 8 8h8v-8z"/><path d="M4 18h2"/><path d="M18 18h2"/><path d="M12 18v2"/><path d="M4 14h2"/><path d="M4 10h2"/></svg> เฟอร์นิเจอร์ครบ</li>
-                        <li><svg class="feature-icon" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> พร้อมเข้าอยู่ทันที</li>
-                    </ul>
-                    <a href="Public/booking.php?room=<?php echo $room['room_id']; ?>" class="btn-book">
-                        <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> จองห้องนี้
-                    </a>
+                    
+                    <div class="room-card-face back">
+                        <!-- Enhanced Back Card with More Information -->
+                        <div class="back-card-content">
+                            <div class="back-header">
+                                <div class="room-number-back">
+                                    <svg class="room-icon-animated" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                                    </svg>
+                                    <span>ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></span>
+                                </div>
+                                <span class="availability-badge">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;">
+                                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                        <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                    </svg>
+                                    พร้อมให้เช่า
+                                </span>
+                            </div>
+                            
+                            <div class="back-details">
+                                <div class="detail-item">
+                                    <div class="detail-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                            <line x1="3" y1="9" x2="21" y2="9"></line>
+                                            <line x1="9" y1="21" x2="9" y2="9"></line>
+                                        </svg>
+                                    </div>
+                                    <div class="detail-text">
+                                        <span class="detail-label">ประเภทห้อง</span>
+                                        <span class="detail-value"><?php echo htmlspecialchars($room['type_name'] ?? 'ห้องมาตรฐาน'); ?></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="detail-item highlight">
+                                    <div class="detail-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <line x1="12" y1="1" x2="12" y2="23"></line>
+                                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                                        </svg>
+                                    </div>
+                                    <div class="detail-text">
+                                        <span class="detail-label">ค่าเช่ารายเดือน</span>
+                                        <span class="detail-value price">฿<?php echo number_format((int)($room['type_price'] ?? 0)); ?></span>
+                                    </div>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <div class="detail-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <circle cx="12" cy="12" r="10"></circle>
+                                            <polyline points="12 6 12 12 16 14"></polyline>
+                                        </svg>
+                                    </div>
+                                    <div class="detail-text">
+                                        <span class="detail-label">ค่ามัดจำ</span>
+                                        <span class="detail-value">฿2,000</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="detail-item">
+                                    <div class="detail-icon">
+                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                                            <polyline points="14 2 14 8 20 8"></polyline>
+                                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                                        </svg>
+                                    </div>
+                                    <div class="detail-text">
+                                        <span class="detail-label">สัญญาขั้นต่ำ</span>
+                                        <span class="detail-value">6 เดือน</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="back-features">
+                                <?php foreach ($defaultFeatures as $feature): 
+                                    $icon = $featureIcons[$feature] ?? '';
+                                ?>
+                                <span class="feature-tag"><?php echo $icon; ?> <?php echo htmlspecialchars($feature); ?></span>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                        
+                        <div class="back-actions">
+                            <a href="Public/booking.php?room=<?php echo $room['room_id']; ?>" class="book-btn-back">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:18px;height:18px;">
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                                </svg>
+                                จองห้องนี้
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </div>
             <?php endforeach; ?>
@@ -2610,6 +3050,44 @@ if ($publicTheme === 'light') {
                 }
             });
         });
+
+        // ===== CARD FLIP ON HOVER WITH DELAY =====
+        const flipDelay = 400;
+        const flipTimers = new WeakMap();
+        
+        function setupCardFlip() {
+            document.querySelectorAll('.room-card').forEach(card => {
+                if (card.dataset.flipSetup) return;
+                card.dataset.flipSetup = 'true';
+                
+                card.addEventListener('mouseenter', () => {
+                    // Clear any existing timer
+                    const existingTimer = flipTimers.get(card);
+                    if (existingTimer) clearTimeout(existingTimer);
+                    
+                    // Set timer to flip after delay
+                    const timer = setTimeout(() => {
+                        card.classList.add('flipped');
+                    }, flipDelay);
+                    flipTimers.set(card, timer);
+                });
+                
+                card.addEventListener('mouseleave', () => {
+                    // Clear timer if mouse leaves before delay
+                    const existingTimer = flipTimers.get(card);
+                    if (existingTimer) {
+                        clearTimeout(existingTimer);
+                        flipTimers.delete(card);
+                    }
+                    
+                    // Remove flipped class
+                    card.classList.remove('flipped');
+                });
+            });
+        }
+        
+        // Initialize card flip
+        setupCardFlip();
     </script>
 
     <!-- Leaflet Map (Open-source, no API key required) -->
