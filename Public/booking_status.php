@@ -66,6 +66,78 @@ $bookingInfo = null;
 $error = '';
 $searchMethod = '';
 
+// ตรวจสอบว่า tenant login ผ่าน Google หรือไม่
+$isLoggedIn = !empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id']);
+
+// Debug: แสดงสถานะ session
+if ($isLoggedIn) {
+    error_log("Tenant logged in: tenant_id=" . $_SESSION['tenant_id']);
+} else {
+    error_log("No tenant logged in. Session data: " . json_encode([
+        'tenant_logged_in' => $_SESSION['tenant_logged_in'] ?? 'not set',
+        'tenant_id' => $_SESSION['tenant_id'] ?? 'not set'
+    ]));
+}
+
+// ถ้า login แล้วให้ดึงข้อมูลการจองอัตโนมัติ
+if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    $tenantId = $_SESSION['tenant_id'];
+    try {
+        // ดึงเบอร์โทรของ tenant ที่ login
+        $phoneStmt = $pdo->prepare("SELECT tnt_phone FROM tenant WHERE tnt_id = ?");
+        $phoneStmt->execute([$tenantId]);
+        $phoneData = $phoneStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($phoneData && !empty($phoneData['tnt_phone'])) {
+            // ค้นหาการจองด้วยเบอร์โทรศัพท์ (เพื่อรองรับกรณีที่มี account หลายตัว)
+            $stmt = $pdo->prepare("
+                SELECT 
+                    t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_education, t.tnt_faculty, t.tnt_year,
+                    b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
+                    r.room_id, r.room_number, rt.type_name, rt.type_price,
+                    c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.access_token,
+                    e.exp_id, e.exp_total, e.exp_status,
+                    COUNT(p.pay_id) as payment_count,
+                    SUM(IF(p.pay_status = '1', p.pay_amount, 0)) as paid_amount,
+                    SUM(IF(p.pay_proof IS NOT NULL AND p.pay_proof != '', 1, 0)) as has_slip
+                FROM tenant t
+                LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
+                LEFT JOIN room r ON b.room_id = r.room_id
+                LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+                LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+                LEFT JOIN expense e ON c.ctr_id = e.ctr_id
+                LEFT JOIN payment p ON e.exp_id = p.exp_id
+                WHERE t.tnt_phone = ? AND (b.bkg_id IS NOT NULL OR c.ctr_id IS NOT NULL)
+                GROUP BY t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_education, t.tnt_faculty, t.tnt_year, b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status, r.room_id, r.room_number, rt.type_name, rt.type_price, c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.access_token, e.exp_id, e.exp_total, e.exp_status
+                ORDER BY b.bkg_date DESC, c.ctr_start DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$phoneData['tnt_phone']]);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Debug: log ข้อมูลที่ได้
+            if ($result) {
+                error_log("Booking found by phone: tnt_id=" . ($result['tnt_id'] ?? 'NULL') . ", bkg_id=" . ($result['bkg_id'] ?? 'NULL') . ", phone=" . $phoneData['tnt_phone']);
+            } else {
+                error_log("No booking found for phone: " . $phoneData['tnt_phone']);
+            }
+            
+            if ($result && ($result['bkg_id'] || $result['ctr_id'])) {
+                $bookingInfo = $result;
+                // แปลงค่า NULL เป็น 0 สำหรับการคำนวณ
+                $bookingInfo['ctr_deposit'] = floatval($bookingInfo['ctr_deposit'] ?? 0);
+                $bookingInfo['paid_amount'] = floatval($bookingInfo['paid_amount'] ?? 0);
+                $bookingInfo['payment_count'] = intval($bookingInfo['payment_count'] ?? 0);
+                $bookingInfo['has_slip'] = intval($bookingInfo['has_slip'] ?? 0);
+                $bookingInfo['type_price'] = floatval($bookingInfo['type_price'] ?? 0);
+                $searchMethod = 'auto';
+            }
+        }
+    } catch (PDOException $e) {
+        error_log("Auto booking status error: " . $e->getMessage());
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bookingRef = trim($_POST['booking_ref'] ?? '');
     $contactInfo = trim($_POST['contact_info'] ?? '');
@@ -138,8 +210,9 @@ $contractStatuses = [
 ];
 
 $paymentStatuses = [
-    '0' => ['label' => 'รอตรวจสอบ', 'class' => 'pending', 'color' => '#fbbf24'],
-    '1' => ['label' => 'ตรวจสอบแล้ว', 'class' => 'verified', 'color' => '#34d399']
+    '0' => ['label' => 'รอชำระ', 'class' => 'pending', 'color' => '#fbbf24'],
+    '1' => ['label' => 'ตรวจสอบแล้ว', 'class' => 'verified', 'color' => '#34d399'],
+    '2' => ['label' => 'รอตรวจสอบ', 'class' => 'pending', 'color' => '#fbbf24']
 ];
 
 $currentBkgStatus = $bookingInfo['bkg_status'] ?? null;
@@ -159,9 +232,10 @@ $hasPaymentRecord = ($bookingInfo['payment_count'] > 0);
 $progressStage = 1; // baseline: booking found
 if ($hasPaymentRecord) $progressStage = 2; // มี payment record แล้ว (ไม่ว่าจะมีสลิปหรือไม่)
 if ($hasPaymentProof) $progressStage = 2.5; // มีสลิปแล้ว
-if ($currentExpStatus === '1') $progressStage = 3;
-if (!empty($bookingInfo['ctr_id']) && $currentExpStatus === '1') $progressStage = 4;
-if ($currentBkgStatus === '2') $progressStage = 5;
+if ($currentExpStatus === '2') $progressStage = 3; // กำลังรอตรวจสอบ
+if ($currentExpStatus === '1') $progressStage = 4; // ตรวจสอบแล้ว
+if (!empty($bookingInfo['ctr_id']) && $currentExpStatus === '1') $progressStage = 5;
+if ($currentBkgStatus === '2') $progressStage = 6;
 
 $trackingSteps = [
     [
@@ -1652,10 +1726,18 @@ if ($publicTheme === 'light') {
         <!-- Page Title -->
         <div class="page-title">
             <h2>ตรวจสอบสถานะการจอง</h2>
-            <p>กรอกหมายเลขการจองและเบอร์โทรศัพท์ที่ใช้จอง</p>
+            <?php if ($isLoggedIn && $bookingInfo): ?>
+                <p>ข้อมูลการจองของคุณ</p>
+            <?php elseif ($isLoggedIn && !$bookingInfo): ?>
+                <p style="color: #fbbf24;">⚠️ ไม่พบข้อมูลการจองในบัญชีนี้</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">กรุณาติดต่อเจ้าหน้าที่เพื่อตรวจสอบข้อมูล</p>
+            <?php else: ?>
+                <p>กรอกหมายเลขการจองและเบอร์โทรศัพท์ที่ใช้จอง</p>
+            <?php endif; ?>
         </div>
         
-        <!-- Search Form -->
+        <!-- Search Form (ซ่อนถ้า login ผ่าน Google) -->
+        <?php if (!$isLoggedIn): ?>
         <div class="search-card">
             <form method="post" class="search-form" style="flex-direction: column; gap: 1rem;">
                 <div style="display: flex; flex-direction: column; gap: 0.5rem; width: 100%;">
@@ -1672,6 +1754,7 @@ if ($publicTheme === 'light') {
                 หมายเลขการจองอยู่ในข้อความ SMS หรือหน้ายืนยันการจองที่คุณได้รับ
             </p>
         </div>
+        <?php endif; ?>
         
         <?php if ($error): ?>
         <div class="alert alert-error">
@@ -1682,7 +1765,7 @@ if ($publicTheme === 'light') {
         </div>
         <?php endif; ?>
         
-        <?php if ($bookingInfo && $searchMethod === 'found'): ?>
+        <?php if ($bookingInfo && ($searchMethod === 'found' || $searchMethod === 'auto')): ?>
         
         <!-- Status Overview -->
         <div class="status-grid">

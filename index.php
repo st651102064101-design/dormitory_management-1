@@ -377,6 +377,130 @@ try {
         .btn-login::before {
             display: none !important;
         }
+        
+        /* Google Login Button */
+        .btn-login.btn-google {
+            background: linear-gradient(135deg, #4285F4, #34A853) !important;
+            box-shadow: 0 4px 20px rgba(66, 133, 244, 0.3);
+        }
+        
+        .btn-login.btn-google:hover {
+            box-shadow: 0 8px 30px rgba(66, 133, 244, 0.5);
+        }
+        
+        .btn-login.btn-google svg {
+            width: 18px;
+            height: 18px;
+        }
+        
+        /* Logout Button */
+        .btn-login.btn-logout {
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            box-shadow: 0 4px 20px rgba(239, 68, 68, 0.3);
+        }
+        
+        .btn-login.btn-logout:hover {
+            box-shadow: 0 8px 30px rgba(239, 68, 68, 0.5);
+        }
+        
+        /* User Avatar Dropdown */
+        .user-avatar-container {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            object-fit: cover;
+        }
+        
+        .user-avatar:hover {
+            border-color: rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .avatar-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            min-width: 200px;
+            padding: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+        
+        .avatar-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        
+        .avatar-dropdown::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: 15px;
+            width: 12px;
+            height: 12px;
+            background: rgba(17, 24, 39, 0.95);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            transform: rotate(45deg);
+        }
+        
+        .dropdown-header {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 8px;
+        }
+        
+        .dropdown-header .user-name {
+            font-weight: 600;
+            color: #fff;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .dropdown-header .user-email {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+        
+        .dropdown-item:hover {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .dropdown-item svg {
+            width: 18px;
+            height: 18px;
+        }
 
         /* ===== HERO SECTION ===== */
         .hero {
@@ -2076,7 +2200,30 @@ if ($publicTheme === 'light') {
             <a href="#news"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6m-6-4h6"/></svg> ข่าวสาร</a>
             <a href="Public/booking_status.php"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> ตรวจสอบสถานะการจอง</a>
             <a href="Public/booking.php"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg> จองห้อง</a>
+            <?php if (!empty($_SESSION['tenant_logged_in'])): ?>
+            <div class="user-avatar-container">
+                <img src="<?php echo htmlspecialchars($_SESSION['tenant_picture'] ?? '/dormitory_management/Public/Assets/Images/default-avatar.png'); ?>" 
+                     alt="<?php echo htmlspecialchars($_SESSION['tenant_name'] ?? 'User'); ?>" 
+                     class="user-avatar" 
+                     onclick="toggleAvatarDropdown()">
+                <div class="avatar-dropdown" id="avatarDropdown">
+                    <div class="dropdown-header">
+                        <div class="user-name"><?php echo htmlspecialchars($_SESSION['tenant_name'] ?? 'ผู้ใช้'); ?></div>
+                        <div class="user-email">ผู้เช่า</div>
+                    </div>
+                    <a href="tenant_logout.php" class="dropdown-item">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                            <polyline points="16 17 21 12 16 7"/>
+                            <line x1="21" y1="12" x2="9" y2="12"/>
+                        </svg>
+                        ออกจากระบบ
+                    </a>
+                </div>
+            </div>
+            <?php else: ?>
             <a href="Login.php" class="btn-login"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/><circle cx="12" cy="16" r="1"/></svg> เข้าสู่ระบบ</a>
+            <?php endif; ?>
         </nav>
     </header>
 
@@ -2388,7 +2535,11 @@ if ($publicTheme === 'light') {
                 <a href="Public/rooms.php">ห้องพัก</a>
                 <a href="Public/news.php">ข่าวสาร</a>
                 <a href="Public/booking.php">จองห้อง</a>
+                <?php if (!empty($_SESSION['tenant_logged_in'])): ?>
+                <a href="tenant_logout.php">ออกจากระบบ</a>
+                <?php else: ?>
                 <a href="Login.php">เข้าสู่ระบบ</a>
+                <?php endif; ?>
             </div>
             <p style="margin-top: 2rem;">© <?php echo date('Y'); ?> <?php echo htmlspecialchars($siteName); ?> - สงวนลิขสิทธิ์</p>
         </div>
@@ -2641,6 +2792,22 @@ if ($publicTheme === 'light') {
             const googleMapsUrl = `https://www.google.com/maps/search/?api=1&query=${latitude},${longitude}`;
             window.open(googleMapsUrl, '_blank');
         }
+        
+        // Avatar Dropdown Toggle
+        function toggleAvatarDropdown() {
+            const dropdown = document.getElementById('avatarDropdown');
+            dropdown.classList.toggle('show');
+        }
+        
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const container = document.querySelector('.user-avatar-container');
+            const dropdown = document.getElementById('avatarDropdown');
+            
+            if (container && dropdown && !container.contains(event.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
     </script>
     
     <?php include_once __DIR__ . '/includes/apple_alert.php'; ?>
