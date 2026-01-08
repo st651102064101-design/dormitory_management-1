@@ -34,9 +34,14 @@ $bankAccountName = '';
 $bankAccountNumber = '';
 $promptpayNumber = '';
 
+// Google OAuth settings
+$googleClientId = '';
+$googleClientSecret = '';
+$googleRedirectUri = '/dormitory_management/google_callback.php';
+
 // ดึงค่าตั้งค่าระบบจาก database
 try {
-    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'default_view_mode', 'fps_threshold')");
+    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'default_view_mode', 'fps_threshold', 'google_client_id', 'google_client_secret', 'google_redirect_uri')");
     $rawSettings = $settingsStmt->fetchAll(PDO::FETCH_ASSOC);
     $settings = [];
     foreach ($rawSettings as $setting) {
@@ -61,6 +66,11 @@ try {
     $bankAccountName = $settings['bank_account_name'] ?? $bankAccountName;
     $bankAccountNumber = $settings['bank_account_number'] ?? $bankAccountNumber;
     $promptpayNumber = $settings['promptpay_number'] ?? $promptpayNumber;
+    
+    // Google OAuth settings
+    $googleClientId = $settings['google_client_id'] ?? $googleClientId;
+    $googleClientSecret = $settings['google_client_secret'] ?? $googleClientSecret;
+    $googleRedirectUri = $settings['google_redirect_uri'] ?? $googleRedirectUri;
 
     // ถ้า table ว่าง ให้ insert default
     $checkStmt = $pdo->query("SELECT COUNT(*) as cnt FROM system_settings");

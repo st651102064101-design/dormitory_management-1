@@ -116,6 +116,7 @@ include __DIR__ . '/settings/settings_data.php';
         <?php include __DIR__ . '/settings/section_general.php'; ?>
         <?php include __DIR__ . '/settings/section_appearance.php'; ?>
         <?php include __DIR__ . '/settings/section_rates.php'; ?>
+        <?php include __DIR__ . '/settings/section_google_auth.php'; ?>
         <?php include __DIR__ . '/settings/section_system.php'; ?>
         
       </div>
