@@ -2,6 +2,7 @@
 /**
  * Google OAuth Login Initiator
  * เริ่มต้นกระบวนการ OAuth กับ Google
+ * ตรวจสอบอัตโนมัติว่าเป็น Admin หรือ Tenant
  */
 declare(strict_types=1);
 session_start();

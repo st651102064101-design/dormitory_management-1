@@ -609,6 +609,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         white-space: nowrap;
       }
 
+      /* Google Login Button - Additional Styles */
+      .google-login-note {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 12px;
+        color: #94a3b8;
+        font-size: 12px;
+      }
+
+      .google-login-note svg {
+        width: 14px;
+        height: 14px;
+        opacity: 0.7;
+      }
+
       .submit-btn.loading .btn-text {
         display: none;
       }
@@ -2438,7 +2455,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
         
         <?php if (!empty($googleClientId)): ?>
-        <!-- Google Login -->
+        <!-- Google Login (รองรับทั้ง Admin และ Tenant) -->
         <div class="login-divider">
           <span>หรือ</span>
         </div>
@@ -2452,6 +2469,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </svg>
           <span>เข้าสู่ระบบด้วย Google</span>
         </a>
+        
+        <p class="google-login-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="16" x2="12" y2="12"/>
+            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          </svg>
+          รองรับทั้งผู้ดูแลระบบและผู้เช่า
+        </p>
         <?php endif; ?>
         
         <!-- Success overlay -->

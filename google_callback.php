@@ -2,6 +2,7 @@
 /**
  * Google OAuth Callback
  * รับ callback จาก Google หลังจากผู้ใช้ยืนยันการเข้าสู่ระบบ
+ * ตรวจสอบอัตโนมัติว่าเป็น Admin หรือ Tenant
  */
 declare(strict_types=1);
 session_start();
@@ -113,8 +114,16 @@ try {
     $email = $userData['email'];
     $name = $userData['name'] ?? '';
     $picture = $userData['picture'] ?? '';
+    $phone = $userData['phone_number'] ?? ($userData['phone'] ?? ''); // พยายามดึงเบอร์โทร
     
-    // ค้นหา admin จากตาราง admin_oauth
+    // ล้างค่า login type จาก session (ถ้ามี)
+    unset($_SESSION['google_login_type']);
+    
+    // =============================================
+    // ตรวจสอบอัตโนมัติ: Admin ก่อน, ถ้าไม่พบก็ตรวจสอบ Tenant
+    // =============================================
+    
+    // 1. ตรวจสอบว่าเป็น Admin หรือไม่
     $stmt = $pdo->prepare('
         SELECT a.* 
         FROM admin a
@@ -150,10 +159,56 @@ try {
         // Redirect ไปหน้า dashboard
         header('Location: Reports/dashboard.php');
         exit;
-    } else {
-        // ไม่พบ admin ที่ผูกกับบัญชี Google นี้
-        redirectWithError('ไม่พบบัญชีผู้ดูแลที่ผูกกับ Google นี้ กรุณาติดต่อผู้ดูแลระบบเพื่อเพิ่มอีเมล ' . $email . ' ในระบบ');
     }
+    
+    // 2. ถ้าไม่ใช่ Admin, ตรวจสอบว่าเป็น Tenant หรือไม่
+    $stmt = $pdo->prepare('
+        SELECT t.* 
+        FROM tenant t
+        INNER JOIN tenant_oauth tao ON t.tnt_id = tao.tnt_id
+        WHERE tao.provider = "google" 
+        AND (tao.provider_id = :google_id OR tao.provider_email = :email)
+        LIMIT 1
+    ');
+    $stmt->execute([':google_id' => $googleId, ':email' => $email]);
+    $tenant = $stmt->fetch();
+    
+    if ($tenant) {
+        // อัพเดทข้อมูล OAuth ถ้ามีการเปลี่ยนแปลง
+        $updateOAuthStmt = $pdo->prepare('
+            UPDATE tenant_oauth 
+            SET provider_id = :google_id, 
+                provider_email = :email,
+                updated_at = NOW()
+            WHERE tnt_id = :tnt_id AND provider = "google"
+        ');
+        $updateOAuthStmt->execute([
+            ':google_id' => $googleId, 
+            ':email' => $email, 
+            ':tnt_id' => $tenant['tnt_id']
+        ]);
+        
+        // ตั้งค่า session สำหรับ tenant
+        $_SESSION['tenant_id'] = $tenant['tnt_id'];
+        $_SESSION['tenant_name'] = $tenant['tnt_name'] ?? '';
+        $_SESSION['tenant_picture'] = $picture;
+        $_SESSION['tenant_logged_in'] = true;
+        
+        // Redirect ไปหน้าหลัก
+        header('Location: index.php');
+        exit;
+    }
+    
+    // 3. ไม่พบทั้ง Admin และ Tenant - redirect ไปหน้าลงทะเบียน (สำหรับ Tenant ใหม่)
+    $_SESSION['google_register'] = [
+        'google_id' => $googleId,
+        'email' => $email,
+        'name' => $name,
+        'picture' => $picture,
+        'phone' => $phone
+    ];
+    header('Location: google_register.php');
+    exit;
     
 } catch (PDOException $e) {
     redirectWithError('เกิดข้อผิดพลาดในการเชื่อมต่อฐานข้อมูล');

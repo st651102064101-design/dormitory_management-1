@@ -38,6 +38,16 @@ try {
     }
 } catch (PDOException $e) {}
 
+// ดึงข้อมูล Tenant ที่ล็อกอินแล้ว (ถ้ามี)
+$loggedInTenant = null;
+if (!empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id'])) {
+    try {
+        $stmt = $pdo->prepare('SELECT tnt_name, tnt_phone FROM tenant WHERE tnt_id = ?');
+        $stmt->execute([$_SESSION['tenant_id']]);
+        $loggedInTenant = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
+
 // ดึงห้องว่าง
 $availableRooms = [];
 try {
@@ -244,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $expenseId = (int)substr((string)time(), -9) + 2;
                         $stmtExpense = $pdo->prepare("
                             INSERT INTO expense (exp_id, exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id)
-                            VALUES (?, ?, 0, 0, ?, ?, ?, 0, 0, ?, '0', ?)
+                            VALUES (?, ?, 0, 0, ?, ?, ?, 0, 0, ?, '2', ?)
                         ");
                         $stmtExpense->execute([$expenseId, date('Y-m-01'), $rateElec, $rateWater, $roomPrice, $deposit, $contractId]);
                         
@@ -266,10 +276,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         ");
                         $stmtPayment->execute([$paymentId, $depositAmount, $payProof, $payStatus, $expenseId]);
                         
-                        // อัพเดท expense status: '2' ถ้ามีสลิป (รอตรวจสอบ), '0' ถ้ายังไม่มีสลิป (รอชำระ)
-                        $expStatus = $payProof ? '2' : '0';
-                        $updateExpStatus = $pdo->prepare("UPDATE expense SET exp_status = ? WHERE exp_id = ?");
-                        $updateExpStatus->execute([$expStatus, $expenseId]);
+                        // exp_status = '2' (กำลังดำเนินการ) ตั้งแต่ตอนสร้างแล้ว ไม่ต้อง update อีก
                         
                         $updateRoom = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
                         $updateRoom->execute([$roomId]);
@@ -1689,19 +1696,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <!-- Name with Autocomplete -->
                         <div class="form-group" style="position: relative;">
                             <label class="form-label">ชื่อ-นามสกุล <span class="required">*</span></label>
-                            <input type="text" name="name" id="tenantNameInput" class="form-input" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกชื่อใหม่" required autocomplete="off">
+                            <input type="text" name="name" id="tenantNameInput" class="form-input" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกชื่อใหม่" 
+                                   value="<?php echo htmlspecialchars($loggedInTenant['tnt_name'] ?? ''); ?>" required autocomplete="off">
                             <input type="hidden" name="existing_tenant_id" id="existingTenantId" value="">
                             <div id="tenantSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
                             <div class="form-hint" style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
                                 พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกข้อมูลใหม่ทั้งหมด
+                                <?php if ($loggedInTenant): ?>
+                                <span style="color: #3b82f6;">💡 ข้อมูลจาก Google Account</span>
+                                <?php endif; ?>
                             </div>
                         </div>
                         
                         <!-- Phone -->
                         <div class="form-group">
                             <label class="form-label">เบอร์โทรศัพท์ <span class="required">*</span></label>
-                            <input type="tel" name="phone" class="form-input" placeholder="0812345678" maxlength="10" required>
+                            <input type="tel" name="phone" class="form-input" placeholder="0812345678" maxlength="10" 
+                                   value="<?php echo htmlspecialchars($loggedInTenant['tnt_phone'] ?? ''); ?>" required>
+                            <?php if ($loggedInTenant): ?>
+                            <div class="form-hint" style="font-size: 0.75rem; color: #3b82f6; margin-top: 4px;">💡 ข้อมูลจาก Google Account</div>
+                            <?php endif; ?>
                         </div>
                         
                         <!-- Start Month -->
@@ -2965,6 +2980,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 localStorage.setItem('dormitory_bookings', JSON.stringify(savedBookings));
                 
                 console.log('✅ ข้อมูลการจองถูกบันทึกอัตโนมัติแล้ว');
+                
+                // Show alert and redirect to booking_status.php after 3 seconds
+                setTimeout(function() {
+                    if (confirm('✅ จองห้องพักสำเร็จ!\n\n📋 กรุณาบันทึกหมายเลขการจอง:\n' + bookingId + '\n\n🔔 คลิก "ตกลง" เพื่อไปยังหน้าตรวจสอบสถานะการจอง')) {
+                        window.location.href = '/dormitory_management/Public/booking_status.php';
+                    }
+                }, 2000);
             }
         });
     </script>
