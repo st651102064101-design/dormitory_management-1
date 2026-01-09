@@ -8,10 +8,10 @@
 // ตั้งค่า IP / Domain สำหรับ QR Code
 // ===========================================
 // ใส่ IP Address หรือ Domain ของเซิร์ฟเวอร์
-// ตัวอย่าง: '192.168.1.106' หรือ 'yourdomain.com'
+// ตัวอย่าง: 'project.3bbddns.com:36140/' หรือ 'yourdomain.com'
 // ถ้าเว้นว่าง '' จะใช้ค่าอัตโนมัติ
 
-define('SITE_HOST', '192.168.1.106');
+define('SITE_HOST', 'project.3bbddns.com:36140/');
 
 // ===========================================
 // ตั้งค่า Protocol (http หรือ https)
