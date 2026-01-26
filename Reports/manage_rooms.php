@@ -297,6 +297,51 @@ try {
       .room-card:hover .room-card-image img {
         transform: scale(1.08);
       }
+
+      /* Image Upload Overlay */
+      .room-card-image-upload {
+        transition: all 0.3s ease;
+      }
+
+      .image-upload-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.7);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        z-index: 2;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        pointer-events: none;
+      }
+
+      .room-card-image-upload:hover .image-upload-overlay {
+        opacity: 1;
+      }
+
+      .upload-icon {
+        color: #ffffff;
+        animation: uploadBounce 0.8s ease-in-out infinite;
+      }
+
+      .upload-text {
+        color: #ffffff;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-align: center;
+      }
+
+      @keyframes uploadBounce {
+        0%, 100% {
+          transform: translateY(0);
+        }
+        50% {
+          transform: translateY(-4px);
+        }
+      }
       
       .room-card-content {
         padding: 1.25rem;
@@ -911,17 +956,30 @@ try {
               <div class="rooms-grid rooms-grid-view" id="roomsGrid">
                 <?php foreach ($rooms as $index => $room): ?>
                   <div class="room-card <?php echo $index >= 20 ? 'hidden-card' : ''; ?>" data-room-id="<?php echo $room['room_id']; ?>">
-                    <div class="room-card-image">
+                    <div class="room-card-image room-card-image-upload" onclick="triggerImageUpload(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" style="cursor: pointer; position: relative;" title="คลิกเพื่ออัปโหลดรูปภาพ">
                       <?php if (!empty($room['room_image'])): ?>
                         <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
                       <?php else: ?>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
-                          <path d="M6 12V7a2 2 0 0 1 2-2h2" />
-                          <path d="M2 16v-2" />
-                          <path d="M22 16v-2" />
-                        </svg>
+                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #94a3b8; flex-direction: column; gap: 0.5rem;">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
+                            <path d="M6 12V7a2 2 0 0 1 2-2h2" />
+                            <path d="M2 16v-2" />
+                            <path d="M22 16v-2" />
+                          </svg>
+                          <span style="font-size: 0.75rem; text-align: center;">คลิกเพื่ออัปโหลด</span>
+                        </div>
                       <?php endif; ?>
+                      <!-- Hover Overlay with Upload Icon -->
+                      <div class="image-upload-overlay">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                          <polyline points="17 8 12 3 7 8" />
+                          <line x1="12" y1="3" x2="12" y2="15" />
+                        </svg>
+                        <span class="upload-text">อัปโหลดรูป</span>
+                      </div>
+                      <input type="file" id="imageInput_<?php echo $room['room_id']; ?>" accept="image/*" style="display: none;" onchange="uploadRoomImage(<?php echo $room['room_id']; ?>, this)">
                     </div>
                     <div class="room-card-content">
                       <h3 class="room-card-number">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></h3>
@@ -1848,6 +1906,74 @@ try {
     <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
     <script src="/dormitory_management/Public/Assets/Javascript/confirm-modal.js"></script>
     <script>
+      // Image Upload Functions
+      function triggerImageUpload(roomId, roomNumber) {
+        const fileInput = document.getElementById('imageInput_' + roomId);
+        if (fileInput) {
+          fileInput.click();
+        }
+      }
+
+      function uploadRoomImage(roomId, fileInput) {
+        const file = fileInput.files[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+          showErrorToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น');
+          return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+          showErrorToast('ขนาดไฟล์ต้องไม่เกิน 5MB');
+          return;
+        }
+
+        const formData = new FormData();
+        formData.append('room_id', roomId);
+        formData.append('room_image', file);
+
+        // Show loading state
+        const imageDiv = fileInput.parentElement;
+        const originalContent = imageDiv.innerHTML;
+        imageDiv.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2-8.83"/></svg></div>';
+
+        fetch('../Manage/upload_room_image.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (!data.success) {
+            imageDiv.innerHTML = originalContent;
+            showErrorToast(data.error || 'เกิดข้อผิดพลาดในการอัปโหลด');
+            return;
+          }
+          
+          // Reload the page to show new image
+          showSuccessToast('อัปโหลดรูปภาพสำเร็จ');
+          setTimeout(() => location.reload(), 1000);
+        })
+        .catch(err => {
+          imageDiv.innerHTML = originalContent;
+          console.error('Upload error:', err);
+          showErrorToast('เกิดข้อผิดพลาดในการอัปโหลด');
+        });
+
+        // Reset file input
+        fileInput.value = '';
+      }
+
+      // CSS for spinner animation
+      const style = document.createElement('style');
+      style.textContent = `
+        @keyframes spin {
+          to { transform: rotate(360deg); }
+        }
+      `;
+      document.head.appendChild(style);
+
       // Restore all details elements state on this page
       (function() {
         // Restore immediately
