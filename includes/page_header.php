@@ -50,6 +50,7 @@
 /* Page Header Styles - Apple-style Auto-hide */
 .page-header-bar {
   position: sticky;
+  width: 100%;
   top: 0;
   z-index: 10000;
   padding: 1rem 1.5rem;

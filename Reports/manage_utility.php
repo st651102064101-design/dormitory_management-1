@@ -194,7 +194,21 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <style>
-        .meter-page { padding: 0; }
+        /* Override for full width */
+        .reports-page .app-main {
+            padding: 0 !important;
+        }
+        .meter-page { 
+            padding: 0; 
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+        }
+        #meterForm {
+            width: 100%;
+            max-width: 100%;
+            margin: 0;
+        }
         .meter-header {
             display: flex;
             justify-content: space-between;
@@ -203,6 +217,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
             gap: 1rem;
             padding: 1rem;
             border-bottom: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
         }
         .meter-title {
             font-size: 1.25rem;
@@ -283,18 +298,21 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
             flex-direction: column;
             gap: 0.5rem;
             padding: 1rem;
-            max-width: 1200px;
-            margin: 0 auto;
+            width: 100%;
+            margin: 0;
+            box-sizing: border-box;
         }
         .room-row {
             display: grid;
-            grid-template-columns: 90px 1fr 1fr auto;
+            grid-template-columns: 90px 1fr 1fr 140px auto;
             gap: 0.75rem;
             align-items: center;
             background: rgba(30, 41, 59, 0.8);
             padding: 1rem;
             border-radius: 10px;
             border: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            box-sizing: border-box;
         }
         .room-row.saved {
             border-color: rgba(34, 197, 94, 0.5);
@@ -361,6 +379,45 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         .room-status.saved { background: #22c55e; }
         .room-status.pending { background: rgba(251, 191, 36, 0.3); border: 2px solid #fbbf24; }
         
+        /* Room Total Summary */
+        .room-total-summary {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            padding: 0.5rem;
+            background: rgba(15, 23, 42, 0.6);
+            border-radius: 6px;
+            border: 1px solid rgba(255,255,255,0.05);
+        }
+        .cost-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+        }
+        .cost-label {
+            color: #94a3b8;
+            font-weight: 500;
+        }
+        .cost-value {
+            font-weight: 600;
+            color: #e2e8f0;
+        }
+        .water-cost-item .cost-value {
+            color: #60a5fa;
+        }
+        .elec-cost-item .cost-value {
+            color: #fbbf24;
+        }
+        .total-cost-item {
+            padding-top: 0.35rem;
+            border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .total-cost-item .cost-value.total {
+            color: #22c55e;
+            font-size: 0.85rem;
+        }
+        
         /* Save Button */
         .save-container {
             position: sticky;
@@ -368,6 +425,10 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
             background: linear-gradient(to top, rgba(15, 23, 42, 1), rgba(15, 23, 42, 0.95));
             padding: 1rem;
             border-top: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            left: 0;
+            right: 0;
+            border-radius: 12px;
         }
         .save-summary {
             display: flex;
@@ -436,10 +497,14 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         html.light-theme .save-container { background: linear-gradient(to top, rgba(255,255,255,1), rgba(255,255,255,0.95)); border-color: rgba(0,0,0,0.1); }
         
         @media (max-width: 500px) {
-            .room-row { grid-template-columns: 50px 1fr 1fr 24px; padding: 0.5rem; }
+            .room-row { grid-template-columns: 50px 1fr 1fr 100px 24px; padding: 0.5rem; gap: 0.5rem; }
             .room-num { font-size: 0.95rem; }
             .input-group input { padding: 0.4rem; font-size: 0.85rem; }
             .meter-header { flex-direction: column; align-items: flex-start; }
+            .room-total-summary { padding: 0.4rem; }
+            .cost-item { font-size: 0.7rem; }
+            .cost-value { font-size: 0.7rem; }
+            .total-cost-item .cost-value.total { font-size: 0.75rem; }
         }
     </style>
 </head>
@@ -447,12 +512,11 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         <main class="app-main">
-            <?php 
-            $pageTitle = 'จดมิเตอร์';
-            include __DIR__ . '/../includes/page_header.php'; 
-            ?>
             <div class="meter-page">
-                
+                <?php 
+                    $pageTitle = 'จดมิเตอร์';
+                    include __DIR__ . '/../includes/page_header.php'; 
+                ?>
                 <?php if (isset($_SESSION['success'])): ?>
                 <div class="toast success" id="toast"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
                 <script>setTimeout(() => document.getElementById('toast')?.remove(), 3000);</script>
@@ -530,7 +594,13 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                 <div class="room-tenant"><?php echo $room['tnt_name'] ?: 'ว่าง'; ?></div>
                             </div>
                             
-                            <?php if ($hasCtr): ?>
+                            <?php if ($hasCtr): 
+                                $waterUsed = $r['water_new'] ? ((int)$r['water_new'] - $r['water_old']) : 0;
+                                $elecUsed = $r['elec_new'] ? ((int)$r['elec_new'] - $r['elec_old']) : 0;
+                                $waterCost = $waterUsed * $waterRate;
+                                $elecCost = $elecUsed * $electricRate;
+                                $totalCost = $waterCost + $elecCost;
+                            ?>
                             <div class="input-group">
                                 <label><span class="water-dot" style="width:6px;height:6px"></span> น้ำ</label>
                                 <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" 
@@ -556,8 +626,30 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                 <div class="old-val">เดิม <?php echo number_format($r['elec_old']); ?></div>
                                 <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                             </div>
+                            
+                            <!-- Room Total Summary -->
+                            <div class="room-total-summary" id="roomSummary_<?php echo $room['room_id']; ?>">
+                                <div class="cost-item water-cost-item">
+                                    <span class="cost-label">น้ำ:</span>
+                                    <span class="cost-value" data-room="<?php echo $room['room_id']; ?>" data-type="water-cost">
+                                        <?php echo $waterCost > 0 ? number_format($waterCost) : '0'; ?> ฿
+                                    </span>
+                                </div>
+                                <div class="cost-item elec-cost-item">
+                                    <span class="cost-label">ไฟ:</span>
+                                    <span class="cost-value" data-room="<?php echo $room['room_id']; ?>" data-type="elec-cost">
+                                        <?php echo $elecCost > 0 ? number_format($elecCost) : '0'; ?> ฿
+                                    </span>
+                                </div>
+                                <div class="cost-item total-cost-item">
+                                    <span class="cost-label">รวม:</span>
+                                    <span class="cost-value total" data-room="<?php echo $room['room_id']; ?>" data-type="total-cost">
+                                        <?php echo $totalCost > 0 ? number_format($totalCost) : '0'; ?> ฿
+                                    </span>
+                                </div>
+                            </div>
                             <?php else: ?>
-                            <div style="grid-column: span 2; text-align: center; color: #64748b; font-size: 0.8rem;">ห้องว่าง</div>
+                            <div style="grid-column: span 3; text-align: center; color: #64748b; font-size: 0.8rem;">ห้องว่าง</div>
                             <?php endif; ?>
                             
                             <div class="room-status <?php echo $r['saved'] ? 'saved' : 'pending'; ?>">
@@ -624,7 +716,23 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         
         let totalWater = 0, totalElec = 0, readyCount = 0;
         
-        Object.values(roomsData).forEach(data => {
+        // Update each room's summary
+        Object.entries(roomsData).forEach(([roomId, data]) => {
+            const waterCostEl = document.querySelector(`[data-room="${roomId}"][data-type="water-cost"]`);
+            const elecCostEl = document.querySelector(`[data-room="${roomId}"][data-type="elec-cost"]`);
+            const totalCostEl = document.querySelector(`[data-room="${roomId}"][data-type="total-cost"]`);
+            
+            if (waterCostEl) {
+                waterCostEl.textContent = data.water.toLocaleString() + ' ฿';
+            }
+            if (elecCostEl) {
+                elecCostEl.textContent = data.electric.toLocaleString() + ' ฿';
+            }
+            if (totalCostEl) {
+                const roomTotal = data.water + data.electric;
+                totalCostEl.textContent = roomTotal.toLocaleString() + ' ฿';
+            }
+            
             if (data.hasWater && data.hasElec) {
                 totalWater += data.water;
                 totalElec += data.electric;
