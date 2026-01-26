@@ -910,7 +910,7 @@ try {
               <!-- Grid View -->
               <div class="rooms-grid rooms-grid-view" id="roomsGrid">
                 <?php foreach ($rooms as $index => $room): ?>
-                  <div class="room-card <?php echo $index >= 5 ? 'hidden-card' : ''; ?>" data-room-id="<?php echo $room['room_id']; ?>">
+                  <div class="room-card <?php echo $index >= 20 ? 'hidden-card' : ''; ?>" data-room-id="<?php echo $room['room_id']; ?>">
                     <div class="room-card-image">
                       <?php if (!empty($room['room_image'])): ?>
                         <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
@@ -957,11 +957,11 @@ try {
                 <?php endforeach; ?>
               </div>
 
-              <?php if (count($rooms) > 5): ?>
+              <?php if (count($rooms) > 20): ?>
               <div class="load-more-container">
                 <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreRooms()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
-                  <span id="loadMoreText">โหลดเพิ่มเติม (<span id="remainingCount"><?php echo count($rooms) - 5; ?></span> ห้อง)</span>
+                  <span id="loadMoreText">โหลดเพิ่มเติม (<span id="remainingCount"><?php echo count($rooms) - 20; ?></span> ห้อง)</span>
                 </button>
               </div>
               <?php endif; ?>
@@ -979,7 +979,7 @@ try {
                   </thead>
                   <tbody>
                     <?php foreach ($rooms as $index => $room): ?>
-                      <tr class="room-row <?php echo $index >= 5 ? 'hidden-row' : ''; ?>" data-index="<?php echo $index; ?>" data-room-id="<?php echo $room['room_id']; ?>">
+                      <tr class="room-row <?php echo $index >= 20 ? 'hidden-row' : ''; ?>" data-index="<?php echo $index; ?>" data-room-id="<?php echo $room['room_id']; ?>">
                         <td>
                           <div class="room-image-small">
                             <?php if (!empty($room['room_image'])): ?>
@@ -1758,8 +1758,8 @@ try {
       }
 
       // Load More Rooms Function (supports both grid and table views)
-      let visibleRooms = 5;
-      const ROOMS_PER_LOAD = 5;
+      let visibleRooms = 20;
+      const ROOMS_PER_LOAD = 10;
 
       function loadMoreRooms() {
         const loadMoreBtn = document.getElementById('loadMoreBtn');
