@@ -532,7 +532,7 @@ try {
                 </select>
                 <label for="monthFilter" style="color:#94a3b8;font-size:0.9rem;font-weight:600;">กรองตามเดือน:</label>
                 <select id="monthFilter" style="padding:0.5rem 0.75rem;border-radius:8px;background:rgba(15,23,42,0.9);color:#e2e8f0;border:1px solid rgba(148,163,184,0.35);font-size:0.9rem;min-width:150px;">
-                  <option value="">ทั้งหมด</option>
+                  <option value="" selected>ทั้งหมด</option>
                   <?php
                     // สร้างรายการเดือนที่มีข้อมูล
                     $months = [];
@@ -559,9 +559,8 @@ try {
                     
                     $isFirst = true;
                     foreach ($months as $key => $text) {
-                      $selected = $isFirst ? ' selected' : '';
-                      echo '<option value="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '"' . $selected . '>' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</option>';
-                      $isFirst = false;
+                      // ไม่ต้อง selected ที่เดือนล่าสุด ให้ selected เฉพาะ 'ทั้งหมด' ด้านบน
+                      echo '<option value="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</option>';
                     }
                   ?>
                 </select>
