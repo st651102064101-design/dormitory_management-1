@@ -98,7 +98,7 @@ try {
     $roomQuery = $pdo->prepare("
         SELECT r.*, rt.type_name, rt.type_price 
         FROM room r 
-        LEFT JOIN room_type rt ON r.type_id = rt.type_id 
+        LEFT JOIN roomtype rt ON r.type_id = rt.type_id 
         WHERE r.room_id = ?
     ");
     $roomQuery->execute([$room_id]);
