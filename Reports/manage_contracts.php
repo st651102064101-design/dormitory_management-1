@@ -269,6 +269,17 @@ foreach ($contracts as $c) {
         box-shadow: 0 0 4px rgba(255,255,255,0.1);
       }
       
+      /* Style for select options in dark mode */
+      .form-group select option {
+        background: #1e293b;
+        color: #e2e8f0;
+      }
+      
+      .form-group select option:checked {
+        background: #334155;
+        color: #e2e8f0;
+      }
+      
       /* Light theme overrides for form inputs */
       @media (prefers-color-scheme: light) {
         .form-group input,
@@ -282,6 +293,14 @@ foreach ($contracts as $c) {
         }
         .form-group label {
           color: #374151 !important;
+        }
+        .form-group select option {
+          background: #ffffff !important;
+          color: #1f2937 !important;
+        }
+        .form-group select option:checked {
+          background: #e5e7eb !important;
+          color: #1f2937 !important;
         }
       }
       
@@ -299,6 +318,16 @@ foreach ($contracts as $c) {
       
       html.light-theme .form-group label {
         color: #374151 !important;
+      }
+      
+      html.light-theme .form-group select option {
+        background: #ffffff !important;
+        color: #1f2937 !important;
+      }
+      
+      html.light-theme .form-group select option:checked {
+        background: #e5e7eb !important;
+        color: #1f2937 !important;
       }
       .form-actions {
         display: flex;

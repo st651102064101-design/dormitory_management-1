@@ -158,6 +158,19 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             50% { box-shadow: 0 0 40px rgba(0, 122, 255, 0.6); }
         }
 
+        .app-main {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+        }
+
+        .app-main main {
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+        }
+
         @keyframes floatParticle {
             0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
             10% { opacity: 0.3; }
@@ -170,6 +183,7 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             margin: 0 auto;
             padding: 30px;
             animation: fadeInUp 0.6s ease;
+            box-sizing: border-box;
         }
 
         .qr-header {
@@ -353,10 +367,12 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
 
         .qr-grid {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 24px;
+            width: 100%;
         }
 
+        @media (max-width: 1600px) { .qr-grid { grid-template-columns: repeat(4, 1fr); } }
         @media (max-width: 1400px) { .qr-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 1000px) { .qr-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 600px) { .qr-grid { grid-template-columns: 1fr; } }
@@ -766,7 +782,8 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
         @media print {
             .no-print { display: none !important; }
             body { background: white !important; }
-            .qr-wrapper { padding: 10px; }
+            .app-main { padding: 0 !important; }
+            .qr-wrapper { padding: 10px; width: 100%; }
             .qr-header, .stats-bar, .action-bar, .particles { display: none !important; }
             .qr-card {
                 break-inside: avoid;
