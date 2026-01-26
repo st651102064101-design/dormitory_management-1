@@ -1583,22 +1583,44 @@ try {
         
         updateSelectTheme();
         
-        // Month filter
+        // Month filter function
         function filterExpensesByMonth() {
+          console.log('filterExpensesByMonth called');
           const monthFilter = document.getElementById('monthFilter');
-          if (!monthFilter) return;
+          if (!monthFilter) {
+            console.log('monthFilter not found');
+            return;
+          }
           
           const selectedMonth = monthFilter.value;
+          console.log('Selected month:', selectedMonth);
+          
           const table = document.getElementById('table-expenses');
-          if (!table) return;
+          if (!table) {
+            console.log('Table not found');
+            return;
+          }
           
           const tbody = table.querySelector('tbody');
-          if (!tbody) return;
+          if (!tbody) {
+            console.log('Tbody not found');
+            return;
+          }
           
           const rows = tbody.querySelectorAll('tr');
+          console.log('Total rows:', rows.length);
           let visibleCount = 0;
           
-          rows.forEach(row => {
+          // selectedMonth format is already YYYY-MM (e.g., "2025-12", "2026-01")
+          // Convert to MM/YYYY for matching table format
+          let targetMonthYear = '';
+          if (selectedMonth) {
+            const [year, month] = selectedMonth.split('-');
+            targetMonthYear = month + '/' + year; // Format: MM/YYYY
+            console.log('Target month/year:', targetMonthYear);
+          }
+          
+          rows.forEach((row, index) => {
             // Skip special rows
             if (row.id === 'no-data-row' || row.id === 'no-data-filtered') {
               return;
@@ -1618,11 +1640,9 @@ try {
               const dateCell = row.cells[2];
               if (dateCell) {
                 const dateText = dateCell.textContent.trim();
-                const yearMonth = selectedMonth.split('-')[0] + '/' + selectedMonth.split('-')[1]; // YYYY/MM
-                const monthYear = selectedMonth.split('-')[1] + '/' + selectedMonth.split('-')[0]; // MM/YYYY
                 
-                // Check if this row matches the selected month (MM/YYYY format)
-                if (dateText === monthYear) {
+                // Check if this row matches the selected month
+                if (dateText === targetMonthYear) {
                   row.style.display = '';
                   visibleCount++;
                 } else {
@@ -1633,6 +1653,8 @@ try {
               }
             }
           });
+          
+          console.log('Visible rows:', visibleCount);
           
           // Show "no data" message if nothing visible
           const existingNoData = document.getElementById('no-data-filtered');
@@ -1648,9 +1670,34 @@ try {
           }
         }
         
-        const monthFilter = document.getElementById('monthFilter');
-        if (monthFilter) {
-          monthFilter.addEventListener('change', filterExpensesByMonth);
+        // Attach event listener and make function globally available
+        document.addEventListener('DOMContentLoaded', function() {
+          const monthFilter = document.getElementById('monthFilter');
+          if (monthFilter) {
+            // Remove existing listeners to prevent duplicates
+            monthFilter.removeEventListener('change', filterExpensesByMonth);
+            // Add the listener
+            monthFilter.addEventListener('change', filterExpensesByMonth);
+            console.log('Event listener attached to monthFilter');
+          }
+        });
+        
+        // If DOM is already loaded, attach listener now
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', function() {
+            const monthFilter = document.getElementById('monthFilter');
+            if (monthFilter) {
+              monthFilter.removeEventListener('change', filterExpensesByMonth);
+              monthFilter.addEventListener('change', filterExpensesByMonth);
+            }
+          });
+        } else {
+          const monthFilter = document.getElementById('monthFilter');
+          if (monthFilter) {
+            monthFilter.removeEventListener('change', filterExpensesByMonth);
+            monthFilter.addEventListener('change', filterExpensesByMonth);
+            console.log('Event listener attached to monthFilter (DOM already loaded)');
+          }
         }
         
         // Light theme detection - apply class to html element if theme color is light
