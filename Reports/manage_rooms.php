@@ -1951,9 +1951,37 @@ try {
             return;
           }
           
-          // Reload the page to show new image
+          // Update the image without reloading page
           showSuccessToast('อัปโหลดรูปภาพสำเร็จ');
-          setTimeout(() => location.reload(), 1000);
+          
+          // Create new image element
+          const newImageUrl = '/dormitory_management/Public/Assets/Images/Rooms/' + data.filename + '?t=' + Date.now();
+          const newImg = document.createElement('img');
+          newImg.src = newImageUrl;
+          newImg.style.width = '100%';
+          newImg.style.height = '100%';
+          newImg.style.objectFit = 'cover';
+          newImg.style.transition = 'transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+          
+          // Replace image content
+          imageDiv.innerHTML = '';
+          imageDiv.appendChild(newImg);
+          
+          // Re-add the overlay and file input
+          const overlay = document.createElement('div');
+          overlay.className = 'image-upload-overlay';
+          overlay.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <span class="upload-text">อัปโหลดรูป</span>
+          `;
+          imageDiv.appendChild(overlay);
+          
+          // Reset file input
+          fileInput.value = '';
         })
         .catch(err => {
           imageDiv.innerHTML = originalContent;

@@ -73,7 +73,11 @@ try {
     }
     
     // Generate unique filename
-    $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+    $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+    if (empty($ext)) {
+        // Default to jpg if no extension found
+        $ext = 'jpg';
+    }
     $filename = 'room_' . $room_id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
     $filepath = $upload_dir . '/' . $filename;
     
