@@ -516,104 +516,7 @@ try {
             </div>
           </section>
 
-          <!-- Toggle button for expense form -->
-          <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleExpenseFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleExpenseForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
-              <span id="toggleExpenseFormIcon">▼</span> <span id="toggleExpenseFormText">ซ่อนฟอร์ม</span>
-            </button>
-          </div>
 
-          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addExpenseSection">
-            <div class="section-header">
-              <div>
-                <h1>บันทึกค่าใช้จ่ายใหม่</h1>
-                <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">เลือกสัญญาและระบุค่าใช้จ่ายประจำเดือน</p>
-              </div>
-            </div>
-            <form action="../Manage/process_expense.php" method="post" id="expenseForm" data-allow-submit="true">
-              <div class="expense-form">
-                <div class="expense-form-group">
-                  <label for="ctr_id">สัญญา / ห้องพัก <span style="color:#f87171;">*</span></label>
-                  <select name="ctr_id" id="ctr_id" required>
-                    <option value="">-- เลือกสัญญา --</option>
-                    <?php foreach ($activeContracts as $ctr): ?>
-                      <option value="<?php echo (int)$ctr['ctr_id']; ?>" 
-                              data-room-price="<?php echo (int)($ctr['type_price'] ?? 0); ?>">
-                        ห้อง <?php echo htmlspecialchars((string)($ctr['room_number'] ?? '-')); ?> - 
-                        <?php echo htmlspecialchars($ctr['tnt_name'] ?? 'ไม่ระบุ'); ?>
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="expense-form-group">
-                  <label for="exp_month">เดือน/ปีที่เรียกเก็บ <span style="color:#f87171;">*</span></label>
-                  <input type="month" id="exp_month" name="exp_month" required value="<?php echo date('Y-m'); ?>" />
-                </div>
-                <div class="expense-form-group">
-                  <label for="exp_elec_unit">หน่วยไฟ <span style="color:#f87171;">*</span></label>
-                  <input type="number" id="exp_elec_unit" name="exp_elec_unit" min="0" step="1" required value="0" />
-                </div>
-                <div class="expense-form-group">
-                  <label for="rate_elec">อัตราค่าไฟ/หน่วย (บาท) <span style="color:#f87171;">*</span></label>
-                  <select id="rate_elec" name="rate_elec" required>
-                    <?php foreach ($electricRates as $rate): ?>
-                      <option value="<?php echo (float)($rate['rate_price'] ?? 0); ?>" data-rate-id="<?php echo (int)($rate['rate_id'] ?? 0); ?>">
-                        ฿<?php echo number_format((float)($rate['rate_price'] ?? 0), 2); ?> / หน่วย
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                <div class="expense-form-group">
-                  <label for="exp_water_unit">หน่วยน้ำ <span style="color:#f87171;">*</span></label>
-                  <input type="number" id="exp_water_unit" name="exp_water_unit" min="0" step="1" required value="0" />
-                </div>
-                <div class="expense-form-group">
-                  <div class="add-type-row">
-                    <label for="rate_water" style="margin:0;">อัตราค่าน้ำ/หน่วย (บาท) <span style="color:#f87171;">*</span></label>
-                    <div style="display:flex; gap:0.35rem;">
-                      <button type="button" class="add-type-btn" id="addRateBtn">+ เพิ่มเรต</button>
-                      <button type="button" class="add-type-btn delete-type-btn" id="deleteRateBtn">ลบเรต</button>
-                    </div>
-                  </div>
-                  <select id="rate_water" name="rate_water" required>
-                    <?php foreach ($waterRates as $rate): ?>
-                      <option value="<?php echo (float)($rate['rate_price'] ?? 0); ?>" data-rate-id="<?php echo (int)($rate['rate_id'] ?? 0); ?>">
-                        ฿<?php echo number_format((float)($rate['rate_price'] ?? 0), 2); ?> / หน่วย
-                      </option>
-                    <?php endforeach; ?>
-                  </select>
-                </div>
-                
-                <div class="calc-preview" id="calcPreview" style="display:none;">
-                  <h4><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;vertical-align:middle;margin-right:6px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>สรุปค่าใช้จ่าย</h4>
-                  <div class="calc-row">
-                    <span>ค่าห้องพัก:</span>
-                    <span id="preview_room">฿0</span>
-                  </div>
-                  <div class="calc-row">
-                    <span>ค่าไฟ (<span id="preview_elec_unit">0</span> หน่วย × <span id="preview_elec_rate">0</span>):</span>
-                    <span id="preview_elec">฿0</span>
-                  </div>
-                  <div class="calc-row">
-                    <span>ค่าน้ำ (<span id="preview_water_unit">0</span> หน่วย × <span id="preview_water_rate">0</span>):</span>
-                    <span id="preview_water">฿0</span>
-                  </div>
-                  <div class="calc-row total">
-                    <span>ยอดรวมทั้งหมด:</span>
-                    <span id="preview_total" style="color:#22c55e;">฿0</span>
-                  </div>
-                </div>
-
-                <div class="expense-form-actions">
-                  <button type="submit" class="animate-ui-add-btn" style="flex:2;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                    บันทึกค่าใช้จ่าย
-                  </button>
-                  <button type="reset" class="animate-ui-action-btn delete" style="flex:1;">ล้างข้อมูล</button>
-                </div>
-              </div>
-            </form>
-          </section>
 
           <section class="manage-panel">
             <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
@@ -1585,27 +1488,37 @@ try {
         function filterByMonth() {
           const selectedMonth = monthFilter.value;
           const rows = tableBody.querySelectorAll('tr');
+          let visibleCount = 0;
           
           rows.forEach(row => {
-            // ข้าม row ที่เป็นข้อความ "ยังไม่มีข้อมูล"
-            if (row.cells.length === 1) {
-              row.style.display = '';
+            // ข้าม row ที่เป็นข้อความ "ยังไม่มีข้อมูล" หรือ "ไม่พบข้อมูล"
+            if (row.id === 'no-data-row' || row.id === 'no-data-filtered' || row.cells.length <= 1) {
               return;
             }
             
             if (!selectedMonth) {
               // แสดงทั้งหมด
               row.style.display = '';
+              visibleCount++;
             } else {
               // ดึงข้อมูลเดือน/ปีจากคอลัมน์ที่ 3 (index 2)
               const dateCell = row.cells[2];
               if (dateCell) {
                 const dateText = dateCell.textContent.trim(); // format: MM/YYYY
-                const [month, year] = dateText.split('/');
-                const rowMonth = `${year}-${month}`; // format: YYYY-MM
                 
-                if (rowMonth === selectedMonth) {
-                  row.style.display = '';
+                // แปลง MM/YYYY เป็น YYYY-MM
+                const parts = dateText.split('/');
+                if (parts.length === 2) {
+                  const month = parts[0];
+                  const year = parts[1];
+                  const rowMonth = `${year}-${month}`; // format: YYYY-MM
+                  
+                  if (rowMonth === selectedMonth) {
+                    row.style.display = '';
+                    visibleCount++;
+                  } else {
+                    row.style.display = 'none';
+                  }
                 } else {
                   row.style.display = 'none';
                 }
@@ -1614,8 +1527,7 @@ try {
           });
           
           // ตรวจสอบว่ามีแถวที่แสดงหรือไม่
-          const visibleRows = Array.from(rows).filter(row => row.style.display !== 'none');
-          if (visibleRows.length === 0 && rows.length > 0) {
+          if (visibleCount === 0) {
             // ถ้าไม่มีแถวที่แสดง แสดงข้อความ
             const noDataRow = document.createElement('tr');
             noDataRow.id = 'no-data-filtered';
@@ -1636,7 +1548,16 @@ try {
         monthFilter.addEventListener('change', filterByMonth);
         
         // เรียกใช้ filter ทันทีเมื่อโหลดหน้า
-        if (monthFilter.value) {
+        document.addEventListener('DOMContentLoaded', function() {
+          if (monthFilter.value) {
+            filterByMonth();
+          }
+        });
+        
+        // ถ้าหน้าโหลดแล้ว ให้เรียกใช้ filter ทันที
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', filterByMonth);
+        } else {
           filterByMonth();
         }
         
@@ -1661,6 +1582,76 @@ try {
         }
         
         updateSelectTheme();
+        
+        // Month filter
+        function filterExpensesByMonth() {
+          const monthFilter = document.getElementById('monthFilter');
+          if (!monthFilter) return;
+          
+          const selectedMonth = monthFilter.value;
+          const table = document.getElementById('table-expenses');
+          if (!table) return;
+          
+          const tbody = table.querySelector('tbody');
+          if (!tbody) return;
+          
+          const rows = tbody.querySelectorAll('tr');
+          let visibleCount = 0;
+          
+          rows.forEach(row => {
+            // Skip special rows
+            if (row.id === 'no-data-row' || row.id === 'no-data-filtered') {
+              return;
+            }
+            
+            // Skip rows with less than 3 cells
+            if (row.cells.length < 3) {
+              return;
+            }
+            
+            if (!selectedMonth) {
+              // Show all
+              row.style.display = '';
+              visibleCount++;
+            } else {
+              // Get date from column 3 (index 2) - format is MM/YYYY
+              const dateCell = row.cells[2];
+              if (dateCell) {
+                const dateText = dateCell.textContent.trim();
+                const yearMonth = selectedMonth.split('-')[0] + '/' + selectedMonth.split('-')[1]; // YYYY/MM
+                const monthYear = selectedMonth.split('-')[1] + '/' + selectedMonth.split('-')[0]; // MM/YYYY
+                
+                // Check if this row matches the selected month (MM/YYYY format)
+                if (dateText === monthYear) {
+                  row.style.display = '';
+                  visibleCount++;
+                } else {
+                  row.style.display = 'none';
+                }
+              } else {
+                row.style.display = 'none';
+              }
+            }
+          });
+          
+          // Show "no data" message if nothing visible
+          const existingNoData = document.getElementById('no-data-filtered');
+          if (existingNoData) {
+            existingNoData.remove();
+          }
+          
+          if (visibleCount === 0 && rows.length > 0) {
+            const noDataRow = document.createElement('tr');
+            noDataRow.id = 'no-data-filtered';
+            noDataRow.innerHTML = '<td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">ไม่พบข้อมูลในเดือนที่เลือก</td>';
+            tbody.appendChild(noDataRow);
+          }
+        }
+        
+        const monthFilter = document.getElementById('monthFilter');
+        if (monthFilter) {
+          monthFilter.addEventListener('change', filterExpensesByMonth);
+        }
         
         // Light theme detection - apply class to html element if theme color is light
         function applyThemeClass() {
