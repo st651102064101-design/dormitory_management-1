@@ -89,6 +89,10 @@ if (!empty($_GET['room'])) {
     // ให้ redirect กลับไปที่ห้องนั้น
     header('Location: booking.php?room=' . $_SESSION['last_selected_room']);
     exit;
+} else {
+    // ถ้าไม่มีการเลือกห้องเลย ให้กลับไปหน้าเลือกห้อง
+    header('Location: rooms.php');
+    exit;
 }
 
 $success = false;

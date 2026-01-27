@@ -16,9 +16,13 @@ $error = '';
 
 // Get unpaid expenses
 $unpaidExpenses = [];
+$selectedExpense = null;
+$selectedExpId = isset($_GET['exp_id']) ? (int)$_GET['exp_id'] : 0;
+
 try {
     $stmt = $pdo->prepare("
-        SELECT e.*, r.room_number 
+        SELECT e.*, r.room_number,
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1') as paid_amount
         FROM expense e
         JOIN contract c ON e.ctr_id = c.ctr_id
         JOIN room r ON c.room_id = r.room_id
@@ -27,6 +31,16 @@ try {
     ");
     $stmt->execute([$contract['ctr_id']]);
     $unpaidExpenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // หา expense ที่เลือก
+    if ($selectedExpId > 0) {
+        foreach ($unpaidExpenses as $exp) {
+            if ($exp['exp_id'] == $selectedExpId) {
+                $selectedExpense = $exp;
+                break;
+            }
+        }
+    }
 } catch (PDOException $e) {}
 
 // Handle form submission
@@ -613,25 +627,50 @@ $paymentStatusMap = [
             <form method="POST" enctype="multipart/form-data" id="paymentForm">
                 <div class="form-group">
                     <label>เลือกบิลที่ต้องการชำระ *</label>
-                    <?php foreach ($unpaidExpenses as $expense): ?>
-                    <div class="bill-card" onclick="selectBill(<?php echo $expense['exp_id']; ?>, <?php echo $expense['exp_total']; ?>)">
-                        <input type="radio" name="exp_id" value="<?php echo $expense['exp_id']; ?>" style="display:none;" id="bill_<?php echo $expense['exp_id']; ?>">
-                        <div class="bill-header">
-                            <span class="bill-month"><span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <?php echo date('F Y', strtotime($expense['exp_month'])); ?></span>
-                            <span class="bill-total"><?php echo number_format($expense['exp_total']); ?> บาท</span>
-                        </div>
-                        <div class="bill-details">
-                            ค่าไฟ <?php echo number_format($expense['exp_elec_chg'] ?? 0); ?> | 
-                            ค่าน้ำ <?php echo number_format($expense['exp_water'] ?? 0); ?> | 
-                            ค่าห้อง <?php echo number_format($expense['room_price'] ?? 0); ?>
-                        </div>
+                    <select name="exp_id" id="exp_id" required onchange="updatePaymentAmount()">
+                        <option value="">-- เลือกบิล --</option>
+                        <?php foreach ($unpaidExpenses as $expense): ?>
+                        <?php 
+                            $paidAmount = (float)($expense['paid_amount'] ?? 0);
+                            $expTotal = (float)$expense['exp_total'];
+                            $remaining = $expTotal - $paidAmount;
+                        ?>
+                        <option value="<?php echo $expense['exp_id']; ?>" 
+                                data-total="<?php echo $expTotal; ?>"
+                                data-paid="<?php echo $paidAmount; ?>"
+                                data-remaining="<?php echo $remaining; ?>"
+                                <?php echo ($selectedExpId == $expense['exp_id']) ? 'selected' : ''; ?>>
+                            <?php echo date('m/Y', strtotime($expense['exp_month'])); ?> - 
+                            ยอดรวม <?php echo number_format($expTotal); ?> บาท
+                            <?php if ($paidAmount > 0): ?>
+                                (จ่ายแล้ว <?php echo number_format($paidAmount); ?> / คงเหลือ <?php echo number_format($remaining); ?>)
+                            <?php endif; ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                
+                <div class="form-group" id="payment-summary" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: #94a3b8;">ยอดรวมทั้งหมด:</span>
+                        <span id="summary-total" style="color: #f8fafc; font-weight: 600;">0 บาท</span>
                     </div>
-                    <?php endforeach; ?>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                        <span style="color: #10b981;">ชำระแล้ว:</span>
+                        <span id="summary-paid" style="color: #10b981; font-weight: 600;">0 บาท</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <span style="color: #ef4444; font-weight: 600;">คงเหลือ:</span>
+                        <span id="summary-remaining" style="color: #ef4444; font-weight: 700; font-size: 1.1rem;">0 บาท</span>
+                    </div>
                 </div>
                 
                 <div class="form-group">
-                    <label>จำนวนเงินที่ชำระ</label>
-                    <input type="number" name="pay_amount" id="pay_amount" placeholder="จะถูกกำหนดตามบิลที่เลือก" readonly>
+                    <label>จำนวนเงินที่ต้องการชำระ (บาท) *</label>
+                    <input type="number" name="pay_amount" id="pay_amount" min="1" step="1" placeholder="กรอกจำนวนเงิน" required>
+                    <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 0.25rem;">
+                        สามารถชำระเต็มจำนวนหรือบางส่วนได้
+                    </small>
                 </div>
                 
                 <div class="form-group">
@@ -698,15 +737,35 @@ $paymentStatusMap = [
     </nav>
     
     <script>
-    let selectedBill = null;
+    function updatePaymentAmount() {
+        const select = document.getElementById('exp_id');
+        const option = select.options[select.selectedIndex];
+        const summary = document.getElementById('payment-summary');
+        
+        if (option.value) {
+            const total = parseFloat(option.dataset.total) || 0;
+            const paid = parseFloat(option.dataset.paid) || 0;
+            const remaining = parseFloat(option.dataset.remaining) || 0;
+            
+            document.getElementById('summary-total').textContent = total.toLocaleString() + ' บาท';
+            document.getElementById('summary-paid').textContent = paid.toLocaleString() + ' บาท';
+            document.getElementById('summary-remaining').textContent = remaining.toLocaleString() + ' บาท';
+            
+            // ตั้งค่าจำนวนเงินเป็นยอดคงเหลือ
+            document.getElementById('pay_amount').value = remaining;
+            document.getElementById('pay_amount').max = remaining;
+            
+            summary.style.display = 'block';
+        } else {
+            summary.style.display = 'none';
+            document.getElementById('pay_amount').value = '';
+            document.getElementById('pay_amount').removeAttribute('max');
+        }
+    }
     
-    function selectBill(expId, amount) {
-        document.querySelectorAll('.bill-card').forEach(card => card.classList.remove('selected'));
-        event.currentTarget.classList.add('selected');
-        document.getElementById('bill_' + expId).checked = true;
-        document.getElementById('pay_amount').value = amount;
-        selectedBill = expId;
-        checkFormValid();
+    // เรียกใช้ทันทีถ้ามีการเลือกบิลมาแล้ว
+    if (document.getElementById('exp_id').value) {
+        updatePaymentAmount();
     }
     
     function previewImage(input) {
@@ -721,12 +780,6 @@ $paymentStatusMap = [
             };
             reader.readAsDataURL(input.files[0]);
         }
-        checkFormValid();
-    }
-    
-    function checkFormValid() {
-        const hasProof = document.getElementById('pay_proof').files.length > 0;
-        document.getElementById('submitBtn').disabled = !(selectedBill && hasProof);
     }
     
     function copyToClipboard(text) {

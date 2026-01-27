@@ -16,6 +16,7 @@ $expenses = [];
 try {
     $stmt = $pdo->prepare("
         SELECT e.*, 
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1') as paid_amount,
                (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id) as payment_count,
                (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status
         FROM expense e
@@ -35,10 +36,15 @@ $expenseStatusMap = [
 $totalPaid = 0;
 $totalUnpaid = 0;
 foreach ($expenses as $exp) {
+    $paidAmount = (float)($exp['paid_amount'] ?? 0);
+    $expTotal = (float)$exp['exp_total'];
+    $remaining = $expTotal - $paidAmount;
+    
     if ($exp['exp_status'] === '1') {
-        $totalPaid += $exp['exp_total'];
+        $totalPaid += $expTotal;
     } else {
-        $totalUnpaid += $exp['exp_total'];
+        // นับเฉพาะยอดที่ยังไม่ได้จ่าย
+        $totalUnpaid += $remaining;
     }
 }
 ?>
@@ -271,6 +277,11 @@ foreach ($expenses as $exp) {
         </div>
         <?php else: ?>
         <?php foreach ($expenses as $exp): ?>
+        <?php 
+            $paidAmount = (float)($exp['paid_amount'] ?? 0);
+            $expTotal = (float)$exp['exp_total'];
+            $remaining = $expTotal - $paidAmount;
+        ?>
         <div class="bill-card">
             <div class="bill-header">
                 <span class="bill-month"><span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <?php echo date('F Y', strtotime($exp['exp_month'])); ?></span>
@@ -292,12 +303,24 @@ foreach ($expenses as $exp) {
                     <span class="bill-value"><?php echo number_format($exp['exp_water'] ?? 0); ?> บาท</span>
                 </div>
                 <div class="bill-total">
-                    <span class="bill-label">รวมทั้งสิ้น</span>
-                    <span class="bill-value"><?php echo number_format($exp['exp_total'] ?? 0); ?> บาท</span>
+                    <span class="bill-label">ยอดรวม</span>
+                    <span class="bill-value"><?php echo number_format($expTotal); ?> บาท</span>
                 </div>
+                <?php if ($paidAmount > 0): ?>
+                <div class="bill-row" style="color: #10b981; font-size: 0.85rem; margin-top: 0.5rem;">
+                    <span class="bill-label" style="color: #10b981;">ชำระแล้ว</span>
+                    <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount); ?> บาท</span>
+                </div>
+                <?php endif; ?>
+                <?php if ($remaining > 0 && $exp['exp_status'] !== '1'): ?>
+                <div class="bill-row" style="color: #ef4444; font-size: 0.85rem;">
+                    <span class="bill-label" style="color: #ef4444;">ค้างชำระ</span>
+                    <span class="bill-value" style="color: #ef4444;"><?php echo number_format($remaining); ?> บาท</span>
+                </div>
+                <?php endif; ?>
             </div>
             <?php if ($exp['exp_status'] === '0'): ?>
-            <a href="payment.php?token=<?php echo urlencode($token); ?>" class="btn-pay"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ชำระเงิน</a>
+            <a href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo $exp['exp_id']; ?>" class="btn-pay"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ชำระเงิน</a>
             <?php endif; ?>
         </div>
         <?php endforeach; ?>

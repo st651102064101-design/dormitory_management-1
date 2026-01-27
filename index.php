@@ -3,6 +3,12 @@ declare(strict_types=1);
 ini_set('display_errors', '1');
 error_reporting(E_ALL);
 session_start();
+
+// เคลียร์ session ของห้องที่เลือกเมื่ออยู่หน้าแรก
+if (isset($_SESSION['last_selected_room'])) {
+    unset($_SESSION['last_selected_room']);
+}
+
 require_once __DIR__ . '/ConnectDB.php';
 
 $pdo = connectDB();
@@ -2538,7 +2544,9 @@ if ($publicTheme === 'light') {
             <a href="#services"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m15.364-6.364l-4.243 4.243m0 4.243l4.243 4.243M6.636 6.636l4.243 4.243m0 4.243l-4.243 4.243"/></svg> บริการ</a>
             <a href="#rooms"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> ห้องพัก</a>
             <a href="#news"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6m-6-4h6"/></svg> ข่าวสาร</a>
+            <?php if (!empty($_GET['room']) || !empty($_SESSION['last_selected_room'])): ?>
             <a href="Public/booking.php"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg> จองห้อง</a>
+            <?php endif; ?>
             <?php if (!empty($_SESSION['tenant_logged_in'])): ?>
             <div class="user-avatar-container">
                 <img src="<?php echo htmlspecialchars($_SESSION['tenant_picture'] ?? '/dormitory_management/Public/Assets/Images/default-avatar.png'); ?>" 
@@ -2588,9 +2596,11 @@ if ($publicTheme === 'light') {
         <p>หอพักคุณภาพระดับพรีเมียม สะอาด ปลอดภัย ใกล้แหล่งสิ่งอำนวยความสะดวก พร้อมระบบรักษาความปลอดภัยตลอด 24 ชั่วโมง</p>
         
         <div class="hero-buttons">
+            <?php if (!empty($_GET['room']) || !empty($_SESSION['last_selected_room'])): ?>
             <a href="Public/booking.php" class="btn btn-primary">
                 <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M12 14l2 2 4-4"/></svg> จองห้องพักเลย
             </a>
+            <?php endif; ?>
             <a href="#rooms" class="btn btn-secondary">
                 <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg> ดูห้องว่าง
             </a>
@@ -2622,6 +2632,7 @@ if ($publicTheme === 'light') {
         </div>
         
         <div class="quick-links">
+            <?php if (!empty($_GET['room']) || !empty($_SESSION['last_selected_room'])): ?>
             <a href="Public/booking.php" class="quick-link-card animate-on-scroll">
                 <div class="quick-link-icon animated-icon">
                     <div class="icon-glow"></div>
@@ -2643,7 +2654,7 @@ if ($publicTheme === 'light') {
                 <h4>จองห้องพัก</h4>
                 <p>จองห้องพักออนไลน์ ง่าย สะดวก รวดเร็ว ตลอด 24 ชั่วโมง</p>
             </a>
-            
+            <?php endif; ?>
             <a href="Public/rooms.php" class="quick-link-card animate-on-scroll">
                 <div class="quick-link-icon animated-icon">
                     <div class="icon-glow"></div>
@@ -2976,7 +2987,9 @@ if ($publicTheme === 'light') {
             <div class="footer-links">
                 <a href="Public/rooms.php">ห้องพัก</a>
                 <a href="Public/news.php">ข่าวสาร</a>
+                <?php if (!empty($_GET['room']) || !empty($_SESSION['last_selected_room'])): ?>
                 <a href="Public/booking.php">จองห้อง</a>
+                <?php endif; ?>
                 <?php if (!empty($_SESSION['tenant_logged_in'])): ?>
                 <a href="tenant_logout.php">ออกจากระบบ</a>
                 <?php else: ?>
