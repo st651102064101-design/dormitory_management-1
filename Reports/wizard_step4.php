@@ -1,0 +1,192 @@
+<?php
+declare(strict_types=1);
+session_start();
+
+if (empty($_SESSION['admin_username'])) {
+    header('Location: ../Login.php');
+    exit;
+}
+
+require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/wizard_helper.php';
+
+$conn = connectDB();
+
+$ctr_id = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
+
+if ($ctr_id <= 0) {
+    $_SESSION['error'] = 'ข้อมูลไม่ครบถ้วน';
+    header('Location: tenant_wizard.php');
+    exit;
+}
+
+$contract = getContractDetails($conn, $ctr_id);
+if (!$contract) {
+    $_SESSION['error'] = 'ไม่พบข้อมูลสัญญา';
+    header('Location: tenant_wizard.php');
+    exit;
+}
+
+$settingsStmt = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
+$themeColor = '#0f172a';
+if ($settingsStmt) {
+    $theme = $settingsStmt->fetch(PDO::FETCH_ASSOC);
+    if ($theme) $themeColor = htmlspecialchars($theme['setting_value'] ?? '#0f172a', ENT_QUOTES, 'UTF-8');
+}
+?>
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step 4: เช็คอิน</title>
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
+    <style>
+        :root { --theme-bg-color: <?php echo $themeColor; ?>; }
+        body { background: var(--bg-primary); color: var(--text-primary); }
+        .wizard-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            background: var(--card-bg);
+            border-radius: 12px;
+        }
+        .step-number {
+            width: 48px;
+            height: 48px;
+            background: #f59e0b;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 1rem;
+        }
+        .form-group label {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+        .form-group input, .form-group textarea {
+            padding: 0.75rem;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 6px;
+            background: rgba(255,255,255,0.05);
+            color: #e2e8f0;
+        }
+        .form-group textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        .btn {
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+        }
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div style="display: flex;">
+        <?php include '../includes/sidebar.php'; ?>
+        <main style="flex: 1; overflow-y: auto; height: 100vh;">
+            <div class="wizard-container">
+                <?php $pageTitle = 'Step 4: เช็คอิน'; include '../includes/page_header.php'; ?>
+
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <div class="step-number">4</div>
+                    <h2>เช็คอิน - บันทึกมิเตอร์และสภาพห้อง</h2>
+                </div>
+
+                <div style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 1.5rem;">
+                    <p><strong>ผู้เช่า:</strong> <?php echo htmlspecialchars($contract['tnt_name'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    <p><strong>ห้อง:</strong> <?php echo htmlspecialchars($contract['room_number'], ENT_QUOTES, 'UTF-8'); ?></p>
+                    <p><strong>สัญญา:</strong> <?php echo date('d/m/Y', strtotime($contract['ctr_start'])); ?> - <?php echo date('d/m/Y', strtotime($contract['ctr_end'])); ?></p>
+                </div>
+
+                <form method="POST" action="../Manage/process_wizard_step4.php" enctype="multipart/form-data">
+                    <input type="hidden" name="ctr_id" value="<?php echo $ctr_id; ?>">
+                    <input type="hidden" name="tnt_id" value="<?php echo htmlspecialchars($contract['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>">
+
+                    <div class="form-group">
+                        <label>วันที่เช็คอิน *</label>
+                        <input type="date" name="checkin_date" value="<?php echo date('Y-m-d'); ?>" required>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div class="form-group">
+                            <label>มิเตอร์น้ำเริ่มต้น *</label>
+                            <input type="number" name="water_meter_start" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>มิเตอร์ไฟเริ่มต้น *</label>
+                            <input type="number" name="elec_meter_start" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>เลขกุญแจ</label>
+                        <input type="text" name="key_number" placeholder="เช่น K-101">
+                    </div>
+
+                    <div class="form-group">
+                        <label>รูปสภาพห้อง (หลายรูป)</label>
+                        <input type="file" name="room_images[]" accept="image/*" multiple>
+                        <small style="color: rgba(255,255,255,0.6); margin-top: 0.25rem;">เลือกได้หลายรูป</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>หมายเหตุ</label>
+                        <textarea name="notes" placeholder="บันทึกข้อมูลเพิ่มเติม..."></textarea>
+                    </div>
+
+                    <div style="padding: 1rem; background: rgba(245, 158, 11, 0.1); border: 2px solid rgba(245, 158, 11, 0.3); border-radius: 8px; margin: 1.5rem 0;">
+                        <h4 style="margin-top: 0;">🔑 ระบบจะดำเนินการ:</h4>
+                        <ul style="padding-left: 1.5rem; line-height: 1.8;">
+                            <li>บันทึกเลขมิเตอร์เริ่มต้น (สำหรับคิดค่าน้ำ-ไฟ)</li>
+                            <li>บันทึกรูปสภาพห้องก่อนเข้าพัก</li>
+                            <li>อัปเดตสถานะผู้เช่าเป็น "พักอยู่"</li>
+                        </ul>
+                    </div>
+
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" onclick="window.location.href='tenant_wizard.php'">
+                            ← ย้อนกลับ
+                        </button>
+                        <button type="submit" class="btn btn-warning">
+                            ✓ บันทึกเช็คอิน
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+    <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
+</body>
+</html>
