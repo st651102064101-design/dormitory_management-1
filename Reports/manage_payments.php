@@ -912,6 +912,14 @@ $roomPaymentSummary = $pdo->query("
         transform: rotate(-90deg);
       }
 
+      /* Locked (cannot re-open) */
+      .toggle-form-btn.locked {
+        opacity: 0.5;
+        cursor: default;
+        box-shadow: none;
+        pointer-events: none;
+      }
+
       /* Light theme toggle button */
       html.light-theme .toggle-form-btn {
         background: rgba(0,0,0,0.05);
@@ -2262,16 +2270,16 @@ $roomPaymentSummary = $pdo->query("
 
           <!-- Toggle button for payment form -->
           <div style="margin:1.5rem 0;">
-            <button type="button" id="togglePaymentFormBtn" class="toggle-form-btn" onclick="togglePaymentForm()">
+            <button type="button" id="togglePaymentFormBtn" class="toggle-form-btn collapsed" onclick="togglePaymentForm(true)" aria-expanded="false" aria-pressed="true" title="ฟอร์มถูกปิดไว้">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon" id="togglePaymentFormIcon">
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
-              <span id="togglePaymentFormText">ซ่อนฟอร์ม</span>
+              <span id="togglePaymentFormText">ปิดแล้ว</span>
             </button>
           </div>
 
-          <!-- Add Payment Form -->
-          <section class="manage-panel payment-form-section fade-in-up" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addPaymentSection">
+          <!-- Add Payment Form (hidden by default) -->
+          <section class="manage-panel payment-form-section fade-in-up" style="display:none; background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addPaymentSection">
             <div class="section-header">
               <div class="panel-header">
                 <div class="panel-icon-animated add-payment">
@@ -2654,15 +2662,37 @@ $roomPaymentSummary = $pdo->query("
       }
 
       // Toggle payment form
-      function togglePaymentForm() {
+      /**
+       * Toggle payment form
+       * @param {boolean} lockOnly  If true, close and lock the UI so it cannot be re-opened
+       */
+      function togglePaymentForm(lockOnly = false) {
         const section = document.getElementById('addPaymentSection');
         const btn = document.getElementById('togglePaymentFormBtn');
         const text = document.getElementById('togglePaymentFormText');
-        
-        if (section.style.display === 'none') {
+
+        // If caller requested to lock/close the form, ensure it's hidden and disable reopening
+        if (lockOnly) {
+          section.style.opacity = '0';
+          section.style.transform = 'translateY(-10px)';
+          section.style.display = 'none';
+          btn.classList.add('collapsed', 'locked');
+          btn.setAttribute('aria-expanded', 'false');
+          btn.setAttribute('aria-pressed', 'true');
+          text.textContent = 'ปิดแล้ว';
+          // remove onclick to prevent reopening (defensive)
+          try { btn.onclick = null; } catch (e) {}
+          return;
+        }
+
+        // normal toggle (only runs when not locked)
+        if (btn.classList.contains('locked')) return;
+
+        if (section.style.display === 'none' || window.getComputedStyle(section).display === 'none') {
           section.style.display = 'block';
           btn.classList.remove('collapsed');
           text.textContent = 'ซ่อนฟอร์ม';
+          btn.setAttribute('aria-expanded', 'true');
           // Add slide down animation
           section.style.opacity = '0';
           section.style.transform = 'translateY(-10px)';
@@ -2678,6 +2708,7 @@ $roomPaymentSummary = $pdo->query("
             section.style.display = 'none';
             btn.classList.add('collapsed');
             text.textContent = 'แสดงฟอร์ม';
+            btn.setAttribute('aria-expanded', 'false');
           }, 300);
         }
       }
