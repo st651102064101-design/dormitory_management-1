@@ -967,6 +967,8 @@ unset($step);
                         radial-gradient(circle at 90% 90%, rgba(255,255,255,0.08), transparent 40%);
             opacity: 0;
             animation: pillGlow 3.2s ease-in-out infinite;
+            /* decorative only — must not intercept pointer events */
+            pointer-events: none;
         }
         @keyframes amountPulse {
             0%, 100% { transform: translateY(0); }
@@ -976,6 +978,19 @@ unset($step);
             0% { opacity: 0; }
             50% { opacity: 1; }
             100% { opacity: 0; }
+        }
+
+        /* Force actionable elements to accept pointer events and sit above decorative layers */
+        .info-section .status-badge {
+            pointer-events: auto !important;
+            position: relative;
+            z-index: 1200;
+        }
+        /* Ensure large decorative backdrops do not capture clicks */
+        .tracking-card::before,
+        .tracking-rail::before,
+        .progress-steps::before {
+            pointer-events: none;
         }
 
         /* Futuristic Tracking Steps */
@@ -2019,15 +2034,42 @@ if ($publicTheme === 'light') {
                   $ctrStart = $bookingInfo['ctr_start'] ?? null;
                   $bkgCheckin = $bookingInfo['bkg_checkin_date'] ?? null;
                   $dueBase = !empty($ctrStart) ? $ctrStart : $bkgCheckin;
+
+                  // Normalise due date and decide whether it is future / today / past
                   $dueDateStr = '-';
-                  if (!empty($dueBase)) { try { $dueDateStr = date_format(date_create($dueBase), 'd M Y'); } catch (Exception $e) {} }
-                  $showUpcoming = ($expStatus === '1' && $bkgStatus === '1' && $monthly > 0);
-                  $remainingColor = $showUpcoming ? '#fbbf24' : (($deposit - $paid > 0) ? '#f87171' : '#34d399');
+                  $dueTimestamp = null;
+                  if (!empty($dueBase)) {
+                      try {
+                          $dueTimestamp = @strtotime(substr($dueBase,0,10));
+                          $dueDateStr = date_format(date_create($dueBase), 'd M Y');
+                      } catch (Exception $e) { $dueTimestamp = null; }
+                  }
+
+                  $today = strtotime(date('Y-m-d'));
+                  $dueIsFuture = $dueTimestamp ? ($dueTimestamp > $today) : false;
+                  $dueIsPast   = $dueTimestamp ? ($dueTimestamp <= $today) : false;
+
+                  // Show "upcoming" only when the monthly charge is legitimate, booking is confirmed (but not yet checked-in)
+                  // AND the due date is actually in the future. If the due date is today/past, treat it as due/overdue instead.
+                  $showUpcoming = ($expStatus === '1' && $bkgStatus === '1' && $monthly > 0 && $dueIsFuture);
+
+                  // Determine the visible amount: if an upcoming/overdue monthly exists, show that; otherwise show deposit-remaining
+                  $amountToShow = ($showUpcoming || ($dueIsPast && $bkgStatus === '1' && $monthly > 0)) ? $monthly : max(0, $deposit - $paid);
+
+                  // Colour: upcoming = yellow, overdue = red, deposit-remaining = red if >0 otherwise green
+                  if ($showUpcoming) {
+                      $remainingColor = '#fbbf24';
+                  } elseif ($dueIsPast && $bkgStatus === '1' && $monthly > 0) {
+                      $remainingColor = '#ef4444';
+                  } else {
+                      $remainingColor = ($deposit - $paid > 0) ? '#f87171' : '#34d399';
+                  }
                 ?>
                 <div class="info-item upcoming-box">
                     <div class="info-label">คงเหลือ</div>
                     <div class="upcoming-content" style="--accent: <?php echo $remainingColor; ?>;">
-                        <span class="amount"><?php echo ($showUpcoming ? '฿' . number_format($monthly) : '฿' . number_format(max(0, $deposit - $paid))); ?></span>
+                        <span class="amount"><?php echo '฿' . number_format($amountToShow); ?></span>
+
                         <?php if ($showUpcoming): ?>
                         <span class="upcoming-pill">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
@@ -2036,13 +2078,90 @@ if ($publicTheme === 'light') {
                             </svg>
                             ที่กำลังมาถึง: <?php echo $dueDateStr; ?>
                         </span>
+
+                        <?php elseif ($dueIsPast && $bkgStatus === '1' && $monthly > 0): ?>
+                        <span class="upcoming-pill" style="background: rgba(248,113,113,0.06); color: #ef4444; border-color: rgba(248,113,113,0.12);">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#ef4444" stroke-width="2">
+                                <path d="M12 8v5" stroke-linecap="round"/>
+                                <path d="M12 15h.01" stroke-linecap="round"/>
+                            </svg>
+                            ถึงกำหนด: <?php echo $dueDateStr; ?>
+                        </span>
+
                         <?php endif; ?>
                     </div>
+                    <?php if (($deposit - $paid > 0) || $showUpcoming || ($dueIsPast && $bkgStatus === '1' && $monthly > 0)): ?>
+                    <div style="margin-top: 12px;">
+                        <a href="#payment-section" class="status-badge verified" role="button" tabindex="0" onclick="document.getElementById('payment-section')?.scrollIntoView({behavior: 'smooth', block: 'center'}); return false;" style="text-decoration:none; padding:10px 16px; display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: 600; position: relative; z-index: 1200; pointer-events: auto;">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
+                                <line x1="1" y1="10" x2="23" y2="10"/>
+                            </svg>
+                            ชำระเงิน
+                        </a>
+                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
 
         <!-- Next Steps for ผู้จอง -->
+        <div class="info-section" id="payment-section">
+            <h3>💳 ชำระค่ามัดจำ</h3>
+            <?php if (!empty($bankName) || !empty($promptpayNumber)): ?>
+            <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
+                <div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 1rem;">โอนเงินมาที่บัญชีด้านล่าง จำนวน <span style="color: #3b82f6; font-weight: 700; font-size: 1.1rem;">฿<?php echo number_format($deposit - $paid); ?></span></div>
+                
+                <?php if (!empty($bankName)): ?>
+                <div style="display: flex; align-items: start; gap: 1rem; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border-radius: 8px; margin-bottom: 0.75rem;">
+                    <div style="width: 40px; height: 40px; background: rgba(59, 130, 246, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+                            <path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/>
+                        </svg>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem;">ธนาคาร</div>
+                        <div style="color: #f8fafc; font-weight: 600;"><?php echo htmlspecialchars($bankName); ?></div>
+                        <?php if (!empty($bankAccountName)): ?>
+                        <div style="font-size: 0.85rem; color: #cbd5e1; margin-top: 0.25rem;"><?php echo htmlspecialchars($bankAccountName); ?></div>
+                        <?php endif; ?>
+                        <?php if (!empty($bankAccountNumber)): ?>
+                        <div style="font-size: 0.9rem; color: #3b82f6; margin-top: 0.25rem; font-weight: 600; letter-spacing: 1px;"><?php echo htmlspecialchars($bankAccountNumber); ?></div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <?php if (!empty($promptpayNumber)): ?>
+                <div style="display: flex; align-items: start; gap: 1rem; padding: 0.75rem; background: rgba(15, 23, 42, 0.6); border-radius: 8px;">
+                    <div style="width: 40px; height: 40px; background: rgba(16, 185, 129, 0.2); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2">
+                            <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
+                        </svg>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem;">พร้อมเพย์</div>
+                        <div style="color: #10b981; font-weight: 700; font-size: 1.1rem; letter-spacing: 1px;"><?php echo htmlspecialchars($promptpayNumber); ?></div>
+                    </div>
+                </div>
+                <?php endif; ?>
+                
+                <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 0.8rem; color: #94a3b8; line-height: 1.6;">
+                        ⚠️ หลังจากโอนเงินแล้ว กรุณาติดต่อเจ้าหน้าที่เพื่อยืนยันการโอนเงิน<br>
+                        📞 โทร: <?php echo htmlspecialchars($contactPhone ?? '-'); ?>
+                    </div>
+                </div>
+
+                <!-- Fallback CTA: visible inside payment section (always clickable) -->
+                <div style="margin-top:1rem; display:flex; gap:0.75rem; align-items:center;">
+                    <a href="#payment-section" onclick="document.getElementById('payment-section')?.scrollIntoView({behavior:'smooth', block:'center'}); return false;" class="status-badge verified" style="background: linear-gradient(135deg,#10b981 0%,#059669 100%); color:#fff; padding:10px 16px; font-weight:600; box-shadow: 0 8px 30px rgba(5,150,105,0.12);">ชำระตอนนี้</a>
+                    <button type="button" onclick="document.querySelector('html,body').scrollIntoView({}); document.getElementById('payment-section')?.scrollIntoView({behavior:'smooth', block:'center'});" class="status-badge" style="background: rgba(255,255,255,0.03); color:#94a3b8; padding:10px 14px;">ดูรายละเอียดการชำระ</button>
+                </div>
+            </div>
+            <?php endif; ?>
+        </div>
+        
         <div class="info-section">
             <h3>ขั้นตอนต่อไป</h3>
             <div class="info-grid">
@@ -2163,6 +2282,104 @@ if ($publicTheme === 'light') {
             } else {
                 console.error('❌ ไม่พบ input element!');
             }
+
+            /* Fallback: ensure internal hash-link to #payment-section always scrolls the correct container */
+            document.querySelectorAll('a[href="#payment-section"]').forEach(function(el){
+                el.addEventListener('click', function(ev){
+                    ev.preventDefault();
+
+                    // Try normal scroll first
+                    const target = document.getElementById('payment-section');
+                    if (!target) return;
+
+                    try {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const focusable = target.querySelector('a, button, input, select, textarea');
+                        if (focusable) focusable.focus({ preventScroll: true });
+                    } catch (err) {
+                        location.hash = '#payment-section';
+                    }
+
+                    // Robust fallback: if click didn't reach (e.g. overlay captured it), force a visible floating CTA
+                    setTimeout(function(){
+                        const rect = el.getBoundingClientRect();
+                        const topEl = document.elementFromPoint(rect.left + rect.width/2, rect.top + rect.height/2);
+                        if (topEl && (topEl !== el && !el.contains(topEl))) {
+                            // temporarily highlight blocker to help debugging and remove pointer-capture for a moment
+                            topEl.style.outline = '3px solid rgba(220,38,38,0.85)';
+                            topEl.style.transition = 'outline 200ms ease';
+                            setTimeout(()=> topEl.style.outline = '', 1000);
+
+                            // Also trigger programmatic scroll as last-resort
+                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                    }, 80);
+
+                    return false;
+                });
+
+                // Accessibility: allow keyboard activation
+                el.addEventListener('keydown', function(k){
+                    if (k.key === 'Enter' || k.key === ' ') {
+                        k.preventDefault();
+                        el.click();
+                    }
+                });
+
+                // Diagnostic: Shift+click will print topmost element at CTA center (developer aid)
+                el.addEventListener('click', function(ev){
+                    if (ev.shiftKey) {
+                        const r = el.getBoundingClientRect();
+                        const hit = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
+                        console.info('Diagnostic: topmost at CTA center ->', hit);
+                        if (hit) {
+                            hit.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.6)';
+                            setTimeout(()=> hit.style.boxShadow = '', 900);
+                        }
+                    }
+                });
+            });
+
+            // Capture-phase guard: if an overlay intercepts clicks, still activate scroll
+            (function(){
+                function scrollToPayment() {
+                    const target = document.getElementById('payment-section');
+                    if (!target) return false;
+                    try {
+                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const focusable = target.querySelector('a, button, input, select, textarea');
+                        if (focusable) focusable.focus({ preventScroll: true });
+                    } catch (err) {
+                        location.hash = '#payment-section';
+                    }
+                    return true;
+                }
+
+                document.addEventListener('pointerdown', function(ev){
+                    try {
+                        const cta = document.querySelector('a[href="#payment-section"]');
+                        if (!cta) return;
+                        const r = cta.getBoundingClientRect();
+                        const x = ev.clientX, y = ev.clientY;
+                        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
+                            // Prevent the overlay from swallowing the interaction and perform scroll
+                            ev.stopPropagation();
+                            ev.preventDefault();
+                            const done = scrollToPayment();
+                            // visual feedback for debugging on first capture
+                            cta.style.transition = 'box-shadow 180ms ease, transform 180ms ease';
+                            cta.style.boxShadow = '0 10px 30px rgba(2,132,90,0.18)';
+                            cta.style.transform = 'translateY(-2px)';
+                            setTimeout(()=>{ cta.style.boxShadow=''; cta.style.transform=''; }, 400);
+                            if (done) return;
+                        }
+                    } catch (err) {
+                        console.warn('pointerdown guard error', err);
+                    }
+                }, true);
+
+
+            })();
         });
     </script>
     
