@@ -138,6 +138,55 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     }
 }
 
+// Handle booking-payment upload from modal
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_booking_payment'])) {
+    $uploadError = '';
+    try {
+        $bkgId = (int)($_POST['bkg_id'] ?? 0);
+        if ($bkgId <= 0) throw new Exception('ข้อมูลการจองไม่ถูกต้อง');
+
+        if (empty($_FILES['bp_proof']['name'])) throw new Exception('กรุณาแนบสลิปการโอนเงิน');
+
+        $file = $_FILES['bp_proof'];
+        $maxFileSize = 5 * 1024 * 1024;
+        if ($file['size'] > $maxFileSize) throw new Exception('ไฟล์มีขนาดใหญ่เกินไป (ไม่เกิน 5MB)');
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        $allowed = ['image/jpeg','image/png','image/webp','application/pdf'];
+        if (!in_array($mime, $allowed)) throw new Exception('ประเภทไฟล์ไม่รองรับ');
+
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        $uploadsDir = __DIR__ . '/Assets/Images/Payments';
+        if (!is_dir($uploadsDir)) mkdir($uploadsDir, 0755, true);
+        $filename = 'booking_' . $bkgId . '_' . time() . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+        $target = $uploadsDir . '/' . $filename;
+        if (!move_uploaded_file($file['tmp_name'], $target)) throw new Exception('การอัพโหลดไฟล์ล้มเหลว');
+
+        // determine amount (deposit remaining)
+        $stmt = $pdo->prepare("SELECT SUM(IF(p.pay_status = '1', p.pay_amount, 0)) as paid_amount FROM payment p JOIN expense e ON p.exp_id = e.exp_id JOIN contract c ON e.ctr_id = c.ctr_id JOIN booking b ON c.tnt_id = b.tnt_id WHERE b.bkg_id = ? LIMIT 1");
+        $stmt->execute([$bkgId]);
+        $paidRow = $stmt->fetch(PDO::FETCH_ASSOC);
+        $paidAmount = floatval($paidRow['paid_amount'] ?? 0);
+        $depositAmount = 2000;
+        $amountToPost = max(0, $depositAmount - $paidAmount);
+
+        // insert booking_payment (pending)
+        $bpId = (int)substr((string)time(), -9) + rand(10,99);
+        $bpStatus = '0';
+        $ins = $pdo->prepare("INSERT INTO booking_payment (bp_id, bp_amount, bp_status, bp_payment_date, bp_proof, bkg_id) VALUES (?, ?, ?, NOW(), ?, ?)");
+        $ins->execute([$bpId, $amountToPost, $bpStatus, $filename, $bkgId]);
+
+        // redirect back to show updated state
+        header('Location: ' . $_SERVER['REQUEST_URI'] . '#payment-section');
+        exit;
+    } catch (Exception $e) {
+        $uploadError = $e->getMessage();
+        $error = $uploadError;
+    }
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bookingRef = trim($_POST['booking_ref'] ?? '');
     $contactInfo = trim($_POST['contact_info'] ?? '');
@@ -880,6 +929,36 @@ unset($step);
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 1.5rem;
         }
+
+        /* Modal (reused across public pages) */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(2,6,23,0.6);
+            backdrop-filter: blur(6px);
+            align-items: center;
+            justify-content: center;
+            z-index: 1400;
+            padding: 32px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-container {
+            background: linear-gradient(180deg, rgba(15,23,42,0.98), rgba(15,23,42,0.95));
+            border-radius: 14px;
+            width: 100%;
+            max-width: 820px;
+            box-shadow: 0 30px 80px rgba(2,6,23,0.6);
+            border: 1px solid rgba(255,255,255,0.04);
+            overflow: hidden;
+        }
+        .modal-header { display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:20px 24px; border-bottom:1px solid rgba(255,255,255,0.02); }
+        .modal-body { padding:20px 24px 28px; }
+        .modal-footer { padding:18px 24px; border-top:1px solid rgba(255,255,255,0.02); display:flex; justify-content:flex-end; gap:0.75rem; }
+        .modal-container .close-btn { background: rgba(255,255,255,0.03); border: none; color: #cbd5e1; width:36px; height:36px; border-radius:50%; cursor:pointer; }
+        .upload-zone { cursor: pointer; }
+        .upload-zone.dragover { outline: 3px dashed rgba(59,130,246,0.28); transform: translateY(-3px); }
+
         
         @media (max-width: 640px) {
             .info-grid {
@@ -2092,7 +2171,7 @@ if ($publicTheme === 'light') {
                     </div>
                     <?php if (($deposit - $paid > 0) || $showUpcoming || ($dueIsPast && $bkgStatus === '1' && $monthly > 0)): ?>
                     <div style="margin-top: 12px;">
-                        <a href="#payment-section" class="status-badge verified" role="button" tabindex="0" onclick="document.getElementById('payment-section')?.scrollIntoView({behavior: 'smooth', block: 'center'}); return false;" style="text-decoration:none; padding:10px 16px; display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: 600; position: relative; z-index: 1200; pointer-events: auto;">
+                        <a href="#payment-section" class="status-badge verified" role="button" tabindex="0" onclick="openPaymentModal(event); return false;" style="text-decoration:none; padding:10px 16px; display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: 600; position: relative; z-index: 1200; pointer-events: auto;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/>
                                 <line x1="1" y1="10" x2="23" y2="10"/>
@@ -2108,7 +2187,54 @@ if ($publicTheme === 'light') {
         <!-- Next Steps for ผู้จอง -->
         <div class="info-section" id="payment-section">
             <h3>💳 ชำระค่ามัดจำ</h3>
-            <?php if (!empty($bankName) || !empty($promptpayNumber)): ?>
+
+            <!-- Payment modal (used by CTA) -->
+            <div id="paymentModal" class="modal-overlay" aria-hidden="true" role="dialog" aria-modal="true" style="display:none;">
+                <div class="modal-container" role="document" style="max-width:760px;">
+                    <div class="modal-header">
+                        <h2 style="margin:0; display:flex; align-items:center; gap:.6rem;"><span style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:50%;background:#10b981;color:#042b22;font-weight:700;">฿</span> แจ้งชำระค่ามัดจำ</h2>
+                        <button type="button" class="close-btn" onclick="closePaymentModal()" aria-label="ปิด">✕</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="bookingPaymentForm" method="POST" enctype="multipart/form-data">
+                            <input type="hidden" name="upload_booking_payment" value="1">
+                            <input type="hidden" name="bkg_id" value="<?php echo htmlspecialchars($bookingInfo['bkg_id'] ?? 0); ?>">
+
+                            <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
+                                <div style="flex:1; min-width:220px;">
+                                    <div style="color:#94a3b8;font-size:0.85rem;margin-bottom:6px;">ยอดที่ต้องชำระ</div>
+                                    <div style="font-weight:700;font-size:1.25rem;color:#3b82f6;">฿<?php echo number_format(max(0, 2000 - ($bookingInfo['paid_amount'] ?? 0))); ?></div>
+                                </div>
+                                <div style="min-width:240px;">
+                                    <label style="display:block;color:#94a3b8;margin-bottom:6px;">อัพโหลดสลิปการโอน (JPG, PNG, PDF) *</label>
+                                    <div class="upload-zone" style="border:2px dashed rgba(255,255,255,0.06); padding:14px; border-radius:10px; text-align:center; background: rgba(255,255,255,0.02); cursor:pointer;" onclick="document.getElementById('bp_proof').click()">
+                                        <input type="file" id="bp_proof" name="bp_proof" accept="image/*,application/pdf" style="display:none;" onchange="previewBPFile(this)">
+                                        <div id="bp_placeholder">
+                                            <div style="color:#94a3b8;">คลิกเพื่อเลือกไฟล์หรือวางไฟล์ที่นี่</div>
+                                        </div>
+                                        <div id="bp_preview" style="display:none;margin-top:8px;"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style="margin-top:1rem; display:flex; gap:.75rem; justify-content:flex-end;">
+                                <button type="button" class="status-badge" onclick="closePaymentModal()" style="background: rgba(255,255,255,0.03); color:#94a3b8; padding:8px 14px;">ยกเลิก</button>
+                                <button type="submit" class="status-badge verified" style="background: linear-gradient(135deg,#10b981 0%,#059669 100%); color:#fff; padding:10px 16px;">ส่งสลิป &amp; แจ้งชำระ</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <script>
+    /* Payment modal helpers (scoped) */
+    function openPaymentModal(ev){ if (ev && ev.preventDefault) ev.preventDefault(); const m=document.getElementById('paymentModal'); if(!m) return; m.classList.add('active'); m.setAttribute('aria-hidden','false'); document.body.style.overflow='hidden'; setTimeout(()=>document.getElementById('bp_proof')?.focus(),60); }
+    function closePaymentModal(){ const m=document.getElementById('paymentModal'); if(!m) return; m.classList.remove('active'); m.setAttribute('aria-hidden','true'); document.body.style.overflow=''; }
+    function previewBPFile(input){ const container=document.getElementById('bp_preview'); const placeholder=document.getElementById('bp_placeholder'); if(!input.files||!input.files[0]) return; const f=input.files[0]; const url=URL.createObjectURL(f); placeholder.style.display='none'; container.innerHTML=''; if(/pdf/i.test(f.name)){ container.innerHTML='<div style="padding:12px 18px;border-radius:8px;background:rgba(239,68,68,0.06);color:#ef4444;display:inline-flex;align-items:center;gap:12px;">PDF &middot; '+(Math.round(f.size/1024))+' KB</div>'; } else { const img=document.createElement('img'); img.src=url; img.style.maxWidth='160px'; img.style.maxHeight='120px'; img.style.borderRadius='8px'; container.appendChild(img); } container.style.display='block'; }
+    document.addEventListener('DOMContentLoaded', function(){ const form=document.getElementById('bookingPaymentForm'); if(!form) return; form.addEventListener('submit', function(){ const btn=form.querySelector('button[type="submit"]'); if(btn){ btn.disabled=true; btn.textContent='กำลังส่ง...'; } }); document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closePaymentModal(); }); const modal=document.getElementById('paymentModal'); modal&&modal.addEventListener('click', function(ev){ if(ev.target===modal) closePaymentModal(); }); });
+</script>
+
+<?php if (!empty($bankName) || !empty($promptpayNumber)): ?>
             <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
                 <div style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 1rem;">โอนเงินมาที่บัญชีด้านล่าง จำนวน <span style="color: #3b82f6; font-weight: 700; font-size: 1.1rem;">฿<?php echo number_format($deposit - $paid); ?></span></div>
                 
