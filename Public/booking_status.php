@@ -2169,7 +2169,7 @@ if ($publicTheme === 'light') {
 
                         <?php endif; ?>
                     </div>
-                    <?php if (($deposit - $paid > 0) || $showUpcoming || ($dueIsPast && $bkgStatus === '1' && $monthly > 0)): ?>
+                    <?php if ($canPay): ?>
                     <div style="margin-top: 12px;">
                         <a href="#payment-section" class="status-badge verified" role="button" tabindex="0" onclick="openPaymentModal(event); return false;" style="text-decoration:none; padding:10px 16px; display:inline-flex; align-items:center; gap:8px; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; font-weight: 600; position: relative; z-index: 1200; pointer-events: auto;">
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2200,17 +2200,26 @@ if ($publicTheme === 'light') {
                             <input type="hidden" name="upload_booking_payment" value="1">
                             <input type="hidden" name="bkg_id" value="<?php echo htmlspecialchars($bookingInfo['bkg_id'] ?? 0); ?>">
 
+                            <?php
+                                $hasBooking = !empty($bookingInfo['bkg_id']);
+                                $amountToShow = floatval($amountToShow ?? 0);
+                                $canPay = $hasBooking && $amountToShow > 0;
+                            ?>
+
                             <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;">
                                 <div style="flex:1; min-width:220px;">
                                     <div style="color:#94a3b8;font-size:0.85rem;margin-bottom:6px;">ยอดที่ต้องชำระ</div>
-                                    <div style="font-weight:700;font-size:1.25rem;color:#3b82f6;">฿<?php echo number_format(max(0, 2000 - ($bookingInfo['paid_amount'] ?? 0))); ?></div>
+                                    <div style="font-weight:700;font-size:1.25rem;color:<?php echo $amountToShow>0 ? '#3b82f6' : '#94a3b8'; ?>;"><?php echo $amountToShow>0 ? '฿' . number_format($amountToShow) : 'ไม่มียอดคงเหลือ'; ?></div>
+                                    <?php if (!$hasBooking): ?>
+                                        <div style="color:#f87171; margin-top:6px;">ไม่พบข้อมูลการจอง — กรุณาตรวจสอบหมายเลขการจอง</div>
+                                    <?php endif; ?>
                                 </div>
                                 <div style="min-width:240px;">
-                                    <label style="display:block;color:#94a3b8;margin-bottom:6px;">อัพโหลดสลิปการโอน (JPG, PNG, PDF) *</label>
-                                    <div class="upload-zone" style="border:2px dashed rgba(255,255,255,0.06); padding:14px; border-radius:10px; text-align:center; background: rgba(255,255,255,0.02); cursor:pointer;" onclick="document.getElementById('bp_proof').click()">
-                                        <input type="file" id="bp_proof" name="bp_proof" accept="image/*,application/pdf" style="display:none;" onchange="previewBPFile(this)">
-                                        <div id="bp_placeholder">
-                                            <div style="color:#94a3b8;">คลิกเพื่อเลือกไฟล์หรือวางไฟล์ที่นี่</div>
+                                    <label style="display:block;color:#94a3b8;margin-bottom:6px;">อัพโหลดสลิปการโอน (JPG, PNG, PDF) <?php echo $canPay ? '<span style="color:#ef4444">*</span>' : ''; ?></label>
+                                    <div class="upload-zone" style="border:2px dashed rgba(255,255,255,0.06); padding:14px; border-radius:10px; text-align:center; background: rgba(255,255,255,0.02); cursor:<?php echo $canPay ? 'pointer' : 'not-allowed'; ?>;" <?php echo $canPay ? 'onclick="document.getElementById(\'bp_proof\').click()"' : ''; ?>>
+                                        <input type="file" id="bp_proof" name="bp_proof" accept="image/*,application/pdf" style="display:none;" onchange="previewBPFile(this)" <?php echo $canPay ? '' : 'disabled'; ?>>
+                                        <div id="bp_placeholder" style="color:<?php echo $canPay ? '#94a3b8' : '#6b7280'; ?>;">
+                                            <?php echo $canPay ? 'คลิกเพื่อเลือกไฟล์หรือวางไฟล์ที่นี่' : 'ไม่สามารถอัปโหลดได้ (ไม่มียอดชำระหรือข้อมูลการจองไม่ครบ)'; ?>
                                         </div>
                                         <div id="bp_preview" style="display:none;margin-top:8px;"></div>
                                     </div>
@@ -2219,7 +2228,7 @@ if ($publicTheme === 'light') {
 
                             <div style="margin-top:1rem; display:flex; gap:.75rem; justify-content:flex-end;">
                                 <button type="button" class="status-badge" onclick="closePaymentModal()" style="background: rgba(255,255,255,0.03); color:#94a3b8; padding:8px 14px;">ยกเลิก</button>
-                                <button type="submit" class="status-badge verified" style="background: linear-gradient(135deg,#10b981 0%,#059669 100%); color:#fff; padding:10px 16px;">ส่งสลิป &amp; แจ้งชำระ</button>
+                                <button type="submit" class="status-badge verified" style="background: linear-gradient(135deg,#10b981 0%,#059669 100%); color:#fff; padding:10px 16px;" <?php echo $canPay ? '' : 'disabled aria-disabled="true" title="ไม่สามารถชำระได้"'; ?>>ส่งสลิป &amp; แจ้งชำระ</button>
                             </div>
                         </form>
                     </div>
@@ -2233,6 +2242,23 @@ if ($publicTheme === 'light') {
     function previewBPFile(input){ const container=document.getElementById('bp_preview'); const placeholder=document.getElementById('bp_placeholder'); if(!input.files||!input.files[0]) return; const f=input.files[0]; const url=URL.createObjectURL(f); placeholder.style.display='none'; container.innerHTML=''; if(/pdf/i.test(f.name)){ container.innerHTML='<div style="padding:12px 18px;border-radius:8px;background:rgba(239,68,68,0.06);color:#ef4444;display:inline-flex;align-items:center;gap:12px;">PDF &middot; '+(Math.round(f.size/1024))+' KB</div>'; } else { const img=document.createElement('img'); img.src=url; img.style.maxWidth='160px'; img.style.maxHeight='120px'; img.style.borderRadius='8px'; container.appendChild(img); } container.style.display='block'; }
     document.addEventListener('DOMContentLoaded', function(){ const form=document.getElementById('bookingPaymentForm'); if(!form) return; form.addEventListener('submit', function(){ const btn=form.querySelector('button[type="submit"]'); if(btn){ btn.disabled=true; btn.textContent='กำลังส่ง...'; } }); document.addEventListener('keydown', function(ev){ if(ev.key==='Escape') closePaymentModal(); }); const modal=document.getElementById('paymentModal'); modal&&modal.addEventListener('click', function(ev){ if(ev.target===modal) closePaymentModal(); }); });
 </script>
+
+<!-- Fallback visible payment card (always shown even if no bank/PromptPay configured) -->
+<div style="margin-top:1rem;">
+  <div style="background: rgba(255,255,255,0.02); border:1px solid rgba(255,255,255,0.04); padding:14px; border-radius:12px; display:flex; gap:16px; align-items:center; justify-content:space-between;">
+    <div>
+      <div style="font-size:0.85rem; color:#94a3b8;">ยอดที่ต้องชำระ</div>
+      <div style="font-weight:700; font-size:1.15rem; color:#f59e0b;">฿<?php echo number_format($amountToShow); ?></div>
+      <div style="color:#94a3b8; font-size:0.85rem; margin-top:6px;">(แสดงยอดที่ต้องชำระ — ถ้ามี กรุณาชำระล่วงหน้าหรือเตรียมสลิป)</div>
+    </div>
+    <div style="display:flex; gap:12px; align-items:center;">
+      <?php if ($canPay): ?>
+      <button type="button" class="status-badge verified" onclick="openPaymentModal(event)" style="background: linear-gradient(135deg,#10b981 0%,#059669 100%); color:#fff; padding:10px 14px;">ชำระเงิน</button>
+      <?php endif; ?>
+      <div style="color:#94a3b8; font-size:0.86rem;">หากต้องการรายละเอียดการชำระ กรุณาตรวจสอบข้อมูลการติดต่อ</div>
+    </div>
+  </div>
+</div>
 
 <?php if (!empty($bankName) || !empty($promptpayNumber)): ?>
             <div style="background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 1.25rem; margin-bottom: 1rem;">
@@ -2281,7 +2307,9 @@ if ($publicTheme === 'light') {
 
                 <!-- Fallback CTA: visible inside payment section (always clickable) -->
                 <div style="margin-top:1rem; display:flex; gap:0.75rem; align-items:center;">
+                    <?php if ($canPay): ?>
                     <a href="#payment-section" onclick="document.getElementById('payment-section')?.scrollIntoView({behavior:'smooth', block:'center'}); return false;" class="status-badge verified" style="background: linear-gradient(135deg,#10b981 0%,#059669 100%); color:#fff; padding:10px 16px; font-weight:600; box-shadow: 0 8px 30px rgba(5,150,105,0.12);">ชำระตอนนี้</a>
+                    <?php endif; ?>
                     <button type="button" onclick="document.querySelector('html,body').scrollIntoView({}); document.getElementById('payment-section')?.scrollIntoView({behavior:'smooth', block:'center'});" class="status-badge" style="background: rgba(255,255,255,0.03); color:#94a3b8; padding:10px 14px;">ดูรายละเอียดการชำระ</button>
                 </div>
             </div>
