@@ -9,9 +9,13 @@ if (empty($_SESSION['admin_username'])) {
 $error = '';
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../Manage/auto_cancel_expired_contracts.php';
 
 // Initialize database connection
 $conn = connectDB();
+
+// ตรวจสอบและยกเลิกสัญญาที่หมดอายุอัตโนมัติ
+$autoCanceledContracts = autoCancelExpiredContracts($conn);
 
 // ดึง theme color จากการตั้งค่าระบบ
 $settingsStmt = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
@@ -490,7 +494,7 @@ foreach ($contracts as $c) {
         <main style="flex: 1; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem;">
             
             <div class="manage-panel">
-              <?php include '../includes/page_header.php'; ?>
+              <?php $pageTitle = 'จัดการสัญญาเช่า'; include '../includes/page_header.php'; ?>
 
                 <?php if (!empty($_SESSION['error'])): ?>
                   <div style="margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px;">
@@ -505,6 +509,27 @@ foreach ($contracts as $c) {
                 <?php if (!empty($error)): ?>
                   <div style="margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; border-radius: 6px;">
                     <?php echo htmlspecialchars($error, ENT_QUOTES, 'UTF-8'); ?>
+                  </div>
+                <?php endif; ?>
+                <?php if (!empty($autoCanceledContracts) && count($autoCanceledContracts) > 0): ?>
+                  <div style="margin: 0.5rem 0 1rem; padding: 1rem 1.25rem; background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; border-radius: 6px;">
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; font-weight: 600;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:#dc2626;">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      ยกเลิกสัญญาอัตโนมัติ (<?php echo count($autoCanceledContracts); ?> รายการ)
+                    </div>
+                    <div style="font-size: 0.9rem; line-height: 1.6;">
+                      <p style="margin: 0 0 0.5rem 0;">สัญญาต่อไปนี้ถูกยกเลิกอัตโนมัติเนื่องจากครบกำหนด:</p>
+                      <ul style="margin: 0; padding-left: 1.5rem;">
+                        <?php foreach($autoCanceledContracts as $contract): ?>
+                          <li>สัญญาเลขที่ <strong><?php echo htmlspecialchars((string)$contract['ctr_id'], ENT_QUOTES, 'UTF-8'); ?></strong> -
+                          ผู้เช่า: <?php echo htmlspecialchars($contract['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>,
+                          ห้อง: <?php echo htmlspecialchars($contract['room_number'], ENT_QUOTES, 'UTF-8'); ?>
+                          (หมดอายุวันที่: <?php echo date('d/m/Y', strtotime($contract['ctr_end'])); ?>)</li>
+                        <?php endforeach; ?>
+                      </ul>
+                    </div>
                   </div>
                 <?php endif; ?>
                 <div style="margin: 0.5rem 0 1rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.95rem;">
@@ -677,15 +702,16 @@ foreach ($contracts as $c) {
                         <div class="form-group" style="display: none;">
                             <input type="number" id="ctr_deposit" name="ctr_deposit" value="2000">
                         </div>
-                        <div class="form-group" style="grid-column: 1 / -1; padding: 1rem; background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.3); border-radius: 4px;">
+                        <div class="form-group" style="grid-column: 1 / -1; padding: 1rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 4px;">
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:#4CAF50;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                                <strong style="color: #4CAF50;">ข้อมูลที่จะถูกบันทึกอัตโนมัติ:</strong>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:#3b82f6;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                <strong style="color: #3b82f6;">หมายเหตุ:</strong>
                             </div>
                             <ul style="margin: 0; padding-left: 1.5rem; color: rgba(255,255,255,0.8);">
-                                <li>วันเริ่มสัญญา: <strong style="color: #4CAF50;">วันนี้ (<?php echo date('d/m/Y'); ?>)</strong></li>
-                                <li>วันสิ้นสุดสัญญา: <strong style="color: #4CAF50;" id="end_date_display">6 เดือนจากวันนี้</strong></li>
-                                <li>เงินประกัน: <strong style="color: #4CAF50;">2,000 บาท</strong></li>
+                                <li>วันเริ่มสัญญา: <strong style="color: #3b82f6;">วันนี้ (<?php echo date('d/m/Y'); ?>)</strong></li>
+                                <li>วันสิ้นสุดสัญญา: <strong style="color: #3b82f6;" id="end_date_display">6 เดือนจากวันนี้</strong></li>
+                                <li>เงินประกัน: <strong style="color: #3b82f6;">2,000 บาท</strong></li>
+                                <li><strong style="color: #f59e0b;">⚠️ ระบบจะยกเลิกสัญญาอัตโนมัติเมื่อครบกำหนด</strong></li>
                             </ul>
                         </div>
                     </div>
