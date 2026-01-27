@@ -43,18 +43,24 @@ if ($settingsStmt) {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <style>
         :root { --theme-bg-color: <?php echo $themeColor; ?>; }
-        body { background: var(--bg-primary); color: var(--text-primary); }
+        body { 
+            background: var(--bg-primary, linear-gradient(135deg, #0f172a 0%, #1e293b 100%)); 
+            color: var(--text-primary, #f8fafc); 
+        }
         .wizard-container {
             max-width: 800px;
             margin: 2rem auto;
             padding: 2rem;
-            background: var(--card-bg);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
         }
         .step-number {
             width: 48px;
             height: 48px;
-            background: #f59e0b;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
             color: white;
             border-radius: 50%;
             display: flex;
@@ -63,26 +69,51 @@ if ($settingsStmt) {
             font-size: 1.5rem;
             font-weight: bold;
             margin: 0 auto 1rem;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
         }
         .form-group {
             display: flex;
             flex-direction: column;
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
         .form-group label {
             margin-bottom: 0.5rem;
             font-weight: 500;
+            color: #f1f5f9;
+            font-size: 0.95rem;
         }
-        .form-group input, .form-group textarea {
+        .form-group input, 
+        .form-group textarea,
+        .form-group select {
             padding: 0.75rem;
-            border: 1px solid rgba(255,255,255,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.15);
             border-radius: 6px;
-            background: rgba(255,255,255,0.05);
-            color: #e2e8f0;
+            background: rgba(15, 23, 42, 0.6);
+            color: #f1f5f9;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+        .form-group input:focus, 
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #f59e0b;
+            background: rgba(15, 23, 42, 0.8);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+        .form-group input::placeholder,
+        .form-group textarea::placeholder {
+            color: rgba(241, 245, 249, 0.4);
         }
         .form-group textarea {
             min-height: 100px;
             resize: vertical;
+            font-family: inherit;
+        }
+        .form-group small {
+            color: rgba(241, 245, 249, 0.6);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
         }
         .btn {
             padding: 0.75rem 2rem;
@@ -92,23 +123,65 @@ if ($settingsStmt) {
             font-weight: 600;
             cursor: pointer;
             transition: all 0.2s;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
         }
         .btn-warning {
-            background: #f59e0b;
+            background: linear-gradient(135deg, #f59e0b, #d97706);
             color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
         }
         .btn-warning:hover {
-            background: #d97706;
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
         }
         .btn-secondary {
-            background: rgba(255,255,255,0.1);
-            color: var(--text-primary);
+            background: rgba(255, 255, 255, 0.1);
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
         }
         .btn-group {
             display: flex;
             gap: 1rem;
             justify-content: center;
             margin-top: 2rem;
+        }
+        .info-box {
+            padding: 1rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+        .info-box p {
+            margin: 0.5rem 0;
+            color: #e2e8f0;
+        }
+        .info-box strong {
+            color: #60a5fa;
+        }
+        .alert-box {
+            padding: 1rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+        .alert-box h4 {
+            margin-top: 0;
+            color: #fbbf24;
+        }
+        .alert-box ul {
+            color: #e2e8f0;
+            line-height: 1.8;
         }
     </style>
 </head>
@@ -121,10 +194,11 @@ if ($settingsStmt) {
 
                 <div style="text-align: center; margin-bottom: 2rem;">
                     <div class="step-number">4</div>
-                    <h2>เช็คอิน - บันทึกมิเตอร์และสภาพห้อง</h2>
+                    <h2 style="color: #f8fafc; margin: 0.5rem 0;">เช็คอิน - บันทึกมิเตอร์และสภาพห้อง</h2>
+                    <p style="color: rgba(241, 245, 249, 0.7); margin: 0;">บันทึกข้อมูลเริ่มต้นก่อนผู้เช่าเข้าพัก</p>
                 </div>
 
-                <div style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; margin-bottom: 1.5rem;">
+                <div class="info-box">
                     <p><strong>ผู้เช่า:</strong> <?php echo htmlspecialchars($contract['tnt_name'], ENT_QUOTES, 'UTF-8'); ?></p>
                     <p><strong>ห้อง:</strong> <?php echo htmlspecialchars($contract['room_number'], ENT_QUOTES, 'UTF-8'); ?></p>
                     <p><strong>สัญญา:</strong> <?php echo date('d/m/Y', strtotime($contract['ctr_start'])); ?> - <?php echo date('d/m/Y', strtotime($contract['ctr_end'])); ?></p>
@@ -157,8 +231,8 @@ if ($settingsStmt) {
 
                     <div class="form-group">
                         <label>รูปสภาพห้อง (หลายรูป)</label>
-                        <input type="file" name="room_images[]" accept="image/*" multiple>
-                        <small style="color: rgba(255,255,255,0.6); margin-top: 0.25rem;">เลือกได้หลายรูป</small>
+                        <input type="file" name="room_images[]" accept="image/*" multiple style="color: #f1f5f9;">
+                        <small>เลือกได้หลายรูป</small>
                     </div>
 
                     <div class="form-group">
@@ -166,9 +240,9 @@ if ($settingsStmt) {
                         <textarea name="notes" placeholder="บันทึกข้อมูลเพิ่มเติม..."></textarea>
                     </div>
 
-                    <div style="padding: 1rem; background: rgba(245, 158, 11, 0.1); border: 2px solid rgba(245, 158, 11, 0.3); border-radius: 8px; margin: 1.5rem 0;">
-                        <h4 style="margin-top: 0;">🔑 ระบบจะดำเนินการ:</h4>
-                        <ul style="padding-left: 1.5rem; line-height: 1.8;">
+                    <div class="alert-box">
+                        <h4>🔑 ระบบจะดำเนินการ:</h4>
+                        <ul style="padding-left: 1.5rem;">
                             <li>บันทึกเลขมิเตอร์เริ่มต้น (สำหรับคิดค่าน้ำ-ไฟ)</li>
                             <li>บันทึกรูปสภาพห้องก่อนเข้าพัก</li>
                             <li>อัปเดตสถานะผู้เช่าเป็น "พักอยู่"</li>

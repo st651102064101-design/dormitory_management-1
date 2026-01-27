@@ -275,18 +275,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $paymentId = (int)substr((string)time(), -9) + 3;
                         $depositAmount = 2000; // ค่ามัดจำคงที่
                         $payStatus = $payProof ? '0' : '0'; // 0 = รอตรวจสอบ (ไม่ว่าจะมีสลิปหรือไม่)
-                        
+
                         $stmtPayment = $pdo->prepare("
                             INSERT INTO payment (pay_id, pay_date, pay_amount, pay_proof, pay_status, exp_id)
                             VALUES (?, NOW(), ?, ?, ?, ?)
                         ");
                         $stmtPayment->execute([$paymentId, $depositAmount, $payProof, $payStatus, $expenseId]);
+
+                        // บันทึก booking_payment สำหรับระบบ Wizard
+                        $bookingPaymentId = (int)substr((string)time(), -9) + 5;
+                        $bookingPaymentStatus = $payProof ? '0' : '0'; // 0 = รอตรวจสอบ
+                        $stmtBookingPayment = $pdo->prepare("
+                            INSERT INTO booking_payment (bp_id, bp_amount, bp_status, bp_payment_date, bp_proof, bkg_id)
+                            VALUES (?, ?, ?, NOW(), ?, ?)
+                        ");
+                        $stmtBookingPayment->execute([$bookingPaymentId, $depositAmount, $bookingPaymentStatus, $payProof, $bookingId]);
                         
                         // exp_status = '2' (กำลังดำเนินการ) ตั้งแต่ตอนสร้างแล้ว ไม่ต้อง update อีก
                         
                         $updateRoom = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
                         $updateRoom->execute([$roomId]);
-                        
+
+                        // สร้าง tenant_workflow สำหรับระบบ Wizard
+                        // เนื่องจากระบบจองสร้างสัญญาให้อัตโนมัติแล้ว จึงข้ามไป step 4 (เช็คอิน)
+                        $workflowId = (int)substr((string)time(), -9) + 4;
+                        $stmtWorkflow = $pdo->prepare("
+                            INSERT INTO tenant_workflow (
+                                id, tnt_id, bkg_id, ctr_id,
+                                step_1_confirmed, step_1_date, step_1_by,
+                                step_2_confirmed, step_2_date, step_2_by,
+                                step_3_confirmed, step_3_date, step_3_by,
+                                current_step, completed
+                            ) VALUES (?, ?, ?, ?, 1, NOW(), 'System', 1, NOW(), 'System', 1, NOW(), 'System', 4, 0)
+                        ");
+                        $stmtWorkflow->execute([$workflowId, $tenantId, $bookingId, $contractId]);
+
                         $pdo->commit();
                         $success = true;
                         // Store IDs for success page display
@@ -1977,7 +2000,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <polyline points="17 8 12 3 7 8"/>
                                         <line x1="12" y1="3" x2="12" y2="15"/>
                                     </svg>
-                                    อัพโหลดสลิปการโอนเงิน (ไม่บังคับ)
+                                    อัพโหลดสลิปการโอนเงิน <span style="color: #ef4444;">*</span>
                                 </label>
                                 <div class="upload-zone" id="paymentUploadZone" style="border: 2px dashed rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(0,0,0,0.2);">
                                     <input type="file" name="pay_proof" id="payProofInput" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" style="display: none;">
@@ -2008,7 +2031,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                 </div>
                                 <p style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">
-                                    💡 ถ้ายังไม่มีสลิป สามารถอัพโหลดทีหลังผ่านหน้า "ตรวจสอบสถานะการจอง" ได้
+                                    💡 กรุณาอัพโหลดสลิปการโอนเงินเพื่อยืนยันการจอง
                                 </p>
                             </div>
                         </div>
@@ -2535,22 +2558,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const roomSelected = document.querySelector('input[name="room_id"]:checked');
             const name = document.querySelector('input[name="name"]').value.trim();
             const phone = document.querySelector('input[name="phone"]').value.trim();
-            
+            const payProof = document.getElementById('payProofInput');
+
             if (!roomSelected) {
                 e.preventDefault();
                 alert('กรุณาเลือกห้องพัก');
                 return;
             }
-            
+
             if (!name || name.length < 4) {
                 e.preventDefault();
                 alert('กรุณากรอกชื่อ-นามสกุล');
                 return;
             }
-            
+
             if (!phone || phone.length !== 10) {
                 e.preventDefault();
                 alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก');
+                return;
+            }
+
+            if (!payProof || !payProof.files || payProof.files.length === 0) {
+                e.preventDefault();
+                alert('กรุณาอัพโหลดสลิปการโอนเงิน');
+                // Scroll to upload zone
+                document.getElementById('paymentUploadZone')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
         });

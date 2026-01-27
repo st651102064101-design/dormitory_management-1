@@ -37,11 +37,12 @@ try {
             r.room_number,
             rt.type_name,
             rt.type_price,
-            c.ctr_id,
+            COALESCE(c.ctr_id, tw.ctr_id) as ctr_id,
             c.ctr_start,
             c.ctr_end,
             c.ctr_status,
             tw.id as workflow_id,
+            tw.ctr_id as workflow_ctr_id,
             tw.current_step,
             tw.step_1_confirmed,
             tw.step_1_date,
@@ -187,6 +188,8 @@ try {
             font-size: 0.9rem;
             font-weight: 500;
             transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
         }
 
         .btn-primary {
@@ -241,6 +244,207 @@ try {
             height: 64px;
             margin-bottom: 1rem;
             opacity: 0.5;
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.75);
+            backdrop-filter: blur(8px);
+            z-index: 9998;
+            animation: fadeIn 0.3s;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ซ่อน header เมื่อ modal เปิด */
+        body.modal-open .page-header-bar,
+        body.modal-open .page-header-spacer {
+            display: none !important;
+        }
+
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        .modal-container {
+            background: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            animation: slideUp 0.3s;
+            position: relative;
+        }
+
+        .modal-header {
+            padding: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            position: sticky;
+            top: 0;
+            background: rgba(15, 23, 42, 0.98);
+            backdrop-filter: blur(10px);
+            z-index: 10;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #fff;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover {
+            background: rgba(255, 77, 79, 0.2);
+            transform: rotate(90deg);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { 
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to { 
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: #f1f5f9;
+        }
+
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            background: rgba(15, 23, 42, 0.6);
+            color: #f1f5f9;
+            transition: all 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #f59e0b;
+            background: rgba(15, 23, 42, 0.8);
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .info-box-modal {
+            padding: 1rem;
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+        }
+
+        .info-box-modal p {
+            margin: 0.5rem 0;
+            color: #e2e8f0;
+        }
+
+        .alert-box-modal {
+            padding: 1rem;
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid rgba(245, 158, 11, 0.3);
+            border-radius: 8px;
+            margin: 1.5rem 0;
+        }
+
+        .alert-box-modal h4 {
+            margin-top: 0;
+            color: #fbbf24;
+        }
+
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            background: rgba(15, 23, 42, 0.98);
+            position: sticky;
+            bottom: 0;
+        }
+
+        .btn-modal {
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-modal-primary {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+        }
+
+        .btn-modal-primary:hover {
+            background: linear-gradient(135deg, #d97706, #b45309);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
+        }
+
+        .btn-modal-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f1f5f9;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-modal-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
         }
     </style>
 </head>
@@ -330,34 +534,15 @@ try {
                                     </td>
                                     <td>
                                         <?php if ($currentStep == 1): ?>
-                                            <form method="GET" action="wizard_step1.php" style="display: inline;">
-                                                <input type="hidden" name="bkg_id" value="<?php echo $tenant['bkg_id']; ?>">
-                                                <input type="hidden" name="tnt_id" value="<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>">
-                                                <button type="submit" class="action-btn btn-primary">ยืนยันจอง</button>
-                                            </form>
+                                            <a href="wizard_step1.php?bkg_id=<?php echo $tenant['bkg_id']; ?>&tnt_id=<?php echo urlencode($tenant['tnt_id']); ?>" class="action-btn btn-primary">ยืนยันจอง</a>
                                         <?php elseif ($currentStep == 2): ?>
-                                            <form method="GET" action="wizard_step2.php" style="display: inline;">
-                                                <input type="hidden" name="bp_id" value="<?php echo $tenant['bp_id']; ?>">
-                                                <input type="hidden" name="bkg_id" value="<?php echo $tenant['bkg_id']; ?>">
-                                                <button type="submit" class="action-btn btn-primary">ยืนยันชำระเงินจอง</button>
-                                            </form>
+                                            <a href="wizard_step2.php?bp_id=<?php echo $tenant['bp_id']; ?>&bkg_id=<?php echo $tenant['bkg_id']; ?>" class="action-btn btn-primary">ยืนยันชำระเงินจอง</a>
                                         <?php elseif ($currentStep == 3): ?>
-                                            <form method="GET" action="wizard_step3.php" style="display: inline;">
-                                                <input type="hidden" name="tnt_id" value="<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>">
-                                                <input type="hidden" name="room_id" value="<?php echo $tenant['room_id']; ?>">
-                                                <input type="hidden" name="bkg_id" value="<?php echo $tenant['bkg_id']; ?>">
-                                                <button type="submit" class="action-btn btn-primary">สร้างสัญญา</button>
-                                            </form>
+                                            <a href="wizard_step3.php?tnt_id=<?php echo urlencode($tenant['tnt_id']); ?>&room_id=<?php echo $tenant['room_id']; ?>&bkg_id=<?php echo $tenant['bkg_id']; ?>" class="action-btn btn-primary">สร้างสัญญา</a>
                                         <?php elseif ($currentStep == 4): ?>
-                                            <form method="GET" action="wizard_step4.php" style="display: inline;">
-                                                <input type="hidden" name="ctr_id" value="<?php echo $tenant['ctr_id']; ?>">
-                                                <button type="submit" class="action-btn btn-primary">เช็คอิน</button>
-                                            </form>
+                                            <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo $tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now')); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now')); ?>')">เช็คอิน</button>
                                         <?php elseif ($currentStep == 5): ?>
-                                            <form method="GET" action="wizard_step5.php" style="display: inline;">
-                                                <input type="hidden" name="ctr_id" value="<?php echo $tenant['ctr_id']; ?>">
-                                                <button type="submit" class="action-btn btn-success">เริ่มบิลรายเดือน</button>
-                                            </form>
+                                            <button type="button" class="action-btn btn-success" onclick="openBillingModal(<?php echo $tenant['ctr_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>)">เริ่มบิลรายเดือน</button>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -383,3 +568,233 @@ try {
     <script src="/dormitory_management/Public/Assets/Javascript/main.js" defer></script>
 </body>
 </html>
+<!-- เพิ่มโค้ดนี้ก่อน </div> ของ main และก่อน <script> tags -->
+
+    <!-- Modal สำหรับเช็คอิน -->
+    <div id="checkinModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closeCheckinModal()">&times;</button>
+                <div style="text-align: center;">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 1rem; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">4</div>
+                    <h2 style="color: #f8fafc; margin: 0.5rem 0;">เช็คอิน - บันทึกมิเตอร์และสภาพห้อง</h2>
+                    <p style="color: rgba(241, 245, 249, 0.7); margin: 0;">บันทึกข้อมูลเริ่มต้นก่อนผู้เช่าเข้าพัก</p>
+                </div>
+            </div>
+            
+            <div class="modal-body">
+                <div class="info-box-modal" id="tenantInfo"></div>
+
+                <form id="checkinForm" method="POST" action="../Manage/process_wizard_step4.php" enctype="multipart/form-data">
+                    <input type="hidden" name="ctr_id" id="modal_ctr_id">
+                    <input type="hidden" name="tnt_id" id="modal_tnt_id">
+
+                    <div class="form-group">
+                        <label>วันที่เช็คอิน *</label>
+                        <input type="date" name="checkin_date" value="<?php echo date('Y-m-d'); ?>" required>
+                    </div>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>มิเตอร์น้ำเริ่มต้น *</label>
+                            <input type="number" name="water_meter_start" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                        <div class="form-group">
+                            <label>มิเตอร์ไฟเริ่มต้น *</label>
+                            <input type="number" name="elec_meter_start" step="0.01" min="0" required placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>เลขกุญแจ</label>
+                        <input type="text" name="key_number" placeholder="เช่น K-101">
+                    </div>
+
+                    <div class="form-group">
+                        <label>รูปสภาพห้อง (หลายรูป)</label>
+                        <input type="file" name="room_images[]" accept="image/*" multiple style="color: #f1f5f9;">
+                        <small style="color: rgba(241, 245, 249, 0.6); font-size: 0.85rem; display: block; margin-top: 0.25rem;">เลือกได้หลายรูป</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label>หมายเหตุ</label>
+                        <textarea name="notes" placeholder="บันทึกข้อมูลเพิ่มเติม..." rows="4" style="resize: vertical; font-family: inherit;"></textarea>
+                    </div>
+
+                    <div class="alert-box-modal">
+                        <h4>🔑 ระบบจะดำเนินการ:</h4>
+                        <ul style="padding-left: 1.5rem; line-height: 1.8; color: #e2e8f0;">
+                            <li>บันทึกเลขมิเตอร์เริ่มต้น (สำหรับคิดค่าน้ำ-ไฟ)</li>
+                            <li>บันทึกรูปสภาพห้องก่อนเข้าพัก</li>
+                            <li>อัปเดตสถานะผู้เช่าเป็น "พักอยู่"</li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-modal-secondary" onclick="closeCheckinModal()">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-modal-primary" onclick="document.getElementById('checkinForm').submit()">✓ บันทึกเช็คอิน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับเริ่มบิลรายเดือน (Step 5) -->
+    <div id="billingModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between;">
+                <h2 style="margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #22c55e; border-radius: 50%; font-size: 1.2rem;">5</span>
+                    เริ่มบิลรายเดือน
+                </h2>
+                <button type="button" class="close-btn" onclick="closeBillingModal()" style="background: rgba(255,255,255,0.1); border: none; color: white; font-size: 1.5rem; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div style="text-align: center; margin-bottom: 1.5rem; color: rgba(255,255,255,0.7);">
+                    <p>🎉 ขั้นตอนสุดท้าย - เปิดระบบเรียกเก็บค่าบริการรายเดือน</p>
+                </div>
+
+                <div class="info-box-modal" id="billingTenantInfo"></div>
+
+                <form id="billingForm" method="POST" action="../Manage/process_wizard_step5.php">
+                    <input type="hidden" name="ctr_id" id="modal_billing_ctr_id">
+                    <input type="hidden" name="tnt_id" id="modal_billing_tnt_id">
+                    <input type="hidden" name="room_price" id="modal_billing_room_price">
+                    <input type="hidden" name="rate_water" id="modal_billing_rate_water">
+                    <input type="hidden" name="rate_elec" id="modal_billing_rate_elec">
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin: 1.5rem 0;">
+                        <div style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">รอบบิลแรก</div>
+                            <div id="nextMonthDisplay" style="font-size: 1.1rem; font-weight: 600; color: #22c55e;"></div>
+                        </div>
+                        <div style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">อัตราค่าน้ำ</div>
+                            <div id="waterRateDisplay" style="font-size: 1.1rem; font-weight: 600; color: #3b82f6;">฿0.00/หน่วย</div>
+                        </div>
+                        <div style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">อัตราค่าไฟ</div>
+                            <div id="elecRateDisplay" style="font-size: 1.1rem; font-weight: 600; color: #f59e0b;">฿0.00/หน่วย</div>
+                        </div>
+                    </div>
+
+                    <div class="alert-box-modal">
+                        <h4>ℹ️ ระบบจะดำเนินการ:</h4>
+                        <ul style="padding-left: 1.5rem; line-height: 1.8; color: #e2e8f0;">
+                            <li>สร้างบิลรายเดือนแรก (เดือนถัดไป)</li>
+                            <li>เปิดใช้งานระบบคำนวณค่าน้ำ-ไฟอัตโนมัติ</li>
+                            <li>ตั้งรอบการออกบิลทุกต้นเดือน</li>
+                            <li>เปิดใช้งานระบบแจ้งเตือนการชำระเงิน</li>
+                            <li><strong style="color: #22c55e;">เสร็จสิ้นกระบวนการ Wizard ทั้งหมด!</strong></li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-modal-secondary" onclick="closeBillingModal()">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-modal-primary" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);" onclick="document.getElementById('billingForm').submit()">🎉 เริ่มบิลรายเดือนและเสร็จสิ้น</button>
+            </div>
+        </div>
+    </div>
+
+<!-- เพิ่ม JavaScript นี้ก่อน </body> -->
+<script>
+    function openCheckinModal(ctrId, tntId, tntName, roomNumber, ctrStart, ctrEnd) {
+        document.getElementById('modal_ctr_id').value = ctrId;
+        document.getElementById('modal_tnt_id').value = tntId;
+        
+        document.getElementById('tenantInfo').innerHTML = `
+            <p><strong style="color: #60a5fa;">ผู้เช่า:</strong> ${tntName}</p>
+            <p><strong style="color: #60a5fa;">ห้อง:</strong> ${roomNumber}</p>
+            <p><strong style="color: #60a5fa;">สัญญา:</strong> ${ctrStart} - ${ctrEnd}</p>
+        `;
+        
+        document.getElementById('checkinModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+    }
+
+    function closeCheckinModal() {
+        document.getElementById('checkinModal').classList.remove('active');
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+        document.getElementById('checkinForm').reset();
+    }
+
+    // ปิด modal เมื่อคลิกนอก modal
+    document.getElementById('checkinModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeCheckinModal();
+        }
+    });
+
+    document.getElementById('billingModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeBillingModal();
+        }
+    });
+
+    // ปิด modal เมื่อกด ESC
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeCheckinModal();
+            closeBillingModal();
+        }
+    });
+
+    // Functions สำหรับ Billing Modal
+    function openBillingModal(ctrId, tntId, tntName, roomNumber, roomType, roomPrice) {
+        // ตั้งค่า hidden fields
+        document.getElementById('modal_billing_ctr_id').value = ctrId;
+        document.getElementById('modal_billing_tnt_id').value = tntId;
+        document.getElementById('modal_billing_room_price').value = roomPrice;
+        
+        // แสดงข้อมูลผู้เช่า
+        document.getElementById('billingTenantInfo').innerHTML = `
+            <p><strong style="color: #60a5fa;">ผู้เช่า:</strong> ${tntName}</p>
+            <p><strong style="color: #60a5fa;">ห้อง:</strong> ${roomNumber} (${roomType})</p>
+            <p><strong style="color: #60a5fa;">ค่าห้อง:</strong> ฿${Number(roomPrice).toLocaleString()}/เดือน</p>
+        `;
+
+        // คำนวณเดือนถัดไป
+        const now = new Date();
+        const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        document.getElementById('nextMonthDisplay').textContent = 
+            `${monthNames[nextMonth.getMonth()]} ${nextMonth.getFullYear()}`;
+
+        // โหลดอัตราค่าน้ำ-ไฟจาก API หรือใช้ค่าคงที่
+        fetch('../Manage/get_latest_rate.php')
+            .then(response => response.json())
+            .then(data => {
+                const waterRate = data.rate_water || 0;
+                const elecRate = data.rate_elec || 0;
+                
+                document.getElementById('modal_billing_rate_water').value = waterRate;
+                document.getElementById('modal_billing_rate_elec').value = elecRate;
+                document.getElementById('waterRateDisplay').textContent = `฿${Number(waterRate).toFixed(2)}/หน่วย`;
+                document.getElementById('elecRateDisplay').textContent = `฿${Number(elecRate).toFixed(2)}/หน่วย`;
+            })
+            .catch(() => {
+                // ใช้ค่า default ถ้าโหลดไม่ได้
+                document.getElementById('modal_billing_rate_water').value = 18;
+                document.getElementById('modal_billing_rate_elec').value = 8;
+                document.getElementById('waterRateDisplay').textContent = '฿18.00/หน่วย';
+                document.getElementById('elecRateDisplay').textContent = '฿8.00/หน่วย';
+            });
+        
+        document.getElementById('billingModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+    }
+
+    function closeBillingModal() {
+        document.getElementById('billingModal').classList.remove('active');
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+        document.getElementById('billingForm').reset();
+    }
+</script>
