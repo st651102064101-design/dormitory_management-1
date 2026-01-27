@@ -40,6 +40,7 @@ $newsCount = safeCount($pdo, "SELECT COUNT(*) FROM news");
 $paymentPendingCount = safeCount($pdo, "SELECT COUNT(*) FROM payment WHERE pay_status = '0'");
 $utilityCount = safeCount($pdo, "SELECT COUNT(*) FROM utility");
 $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status IN ('0', '2')");
+$wizardCount = safeCount($pdo, "SELECT COUNT(*) FROM tenant_workflow WHERE completed = FALSE");
 ?>
 <!doctype html>
 <html lang="th">
@@ -127,6 +128,36 @@ $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status I
       .manage-card:nth-child(9) { --card-accent: #ef4444; --card-accent-end: #f87171; }
       .manage-card:nth-child(10) { --card-accent: #6366f1; --card-accent-end: #818cf8; }
       .manage-card:nth-child(11) { --card-accent: #14b8a6; --card-accent-end: #2dd4bf; }
+      
+      /* Wizard Card - Featured */
+      .manage-card:nth-child(12) { 
+        --card-accent: #ff006e; 
+        --card-accent-end: #ff4d6d;
+        grid-column: 1 / -1;
+        padding: 2.5rem;
+      }
+      
+      .manage-card:nth-child(12) .manage-card-icon {
+        width: 72px;
+        height: 72px;
+        border-radius: 18px;
+        box-shadow: 0 12px 30px rgba(255, 0, 110, 0.4);
+        animation: pulse-glow 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+      
+      @keyframes pulse-glow {
+        0%, 100% { box-shadow: 0 12px 30px rgba(255, 0, 110, 0.4); }
+        50% { box-shadow: 0 12px 40px rgba(255, 0, 110, 0.6); }
+      }
+      
+      .manage-card:nth-child(12) .manage-card-title {
+        font-size: 1.5rem;
+      }
+      
+      .manage-card:nth-child(12):hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 35px 60px rgba(255, 0, 110, 0.2), 0 0 0 1px rgba(255, 0, 110, 0.2);
+      }
       
       .manage-card-icon {
         width: 56px;
@@ -261,6 +292,16 @@ $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status I
               <p>เลือกเมนูที่ต้องการจัดการ</p>
             </div>
 
+            <a href="tenant_wizard.php" class="manage-card">
+              <div class="manage-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
+              <div class="manage-card-title">จัดการผู้เช่า (Wizard)</div>
+              <div class="manage-card-desc">ตรวจสอบสถานะการจัดการผู้เช่าตามขั้นตอน</div>
+              <div class="manage-card-count">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span><?php echo number_format($wizardCount); ?> กำลังดำเนินการ</span>
+              </div>
+            </a>
+
             <div class="manage-grid">
               <a href="manage_news.php" class="manage-card">
                 <div class="manage-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg></div>
@@ -371,6 +412,7 @@ $qrCodeCount = safeCount($pdo, "SELECT COUNT(*) FROM contract WHERE ctr_status I
                   <span><?php echo number_format($qrCodeCount); ?> ห้องที่มี QR</span>
                 </div>
               </a>
+
             </div>
           </section>
         </div>

@@ -1,7 +1,8 @@
 -- ===================================================================
--- SQL สำหรับอัปเดต Database เพื่อรองรับระบบ Wizard 5 ขั้นตอน
+-- SQL สำหรับอัปเดต Database เพื่อรองรับระบบ Wizard 5 ขั้นตอน (Final Version)
 -- ===================================================================
 -- วันที่สร้าง: 2026-01-27
+-- แก้ไข: ใช้ utf8mb4_general_ci ให้ตรงกับตารางเดิม
 -- ===================================================================
 
 -- 1. สร้างตารางสำหรับเก็บข้อมูลการชำระเงินจอง
@@ -15,10 +16,9 @@ CREATE TABLE IF NOT EXISTS booking_payment (
     bkg_id INT NOT NULL COMMENT 'FK ไปยังตาราง booking',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (bkg_id) REFERENCES booking(bkg_id) ON DELETE CASCADE,
     INDEX idx_bkg_id (bkg_id),
     INDEX idx_bp_status (bp_status)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บข้อมูลการชำระเงินจอง';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='ตารางเก็บข้อมูลการชำระเงินจอง';
 
 -- 2. สร้างตารางสำหรับเก็บข้อมูลการเช็คอิน
 CREATE TABLE IF NOT EXISTS checkin_record (
@@ -33,10 +33,9 @@ CREATE TABLE IF NOT EXISTS checkin_record (
     created_by VARCHAR(100) NULL COMMENT 'ผู้บันทึก',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    FOREIGN KEY (ctr_id) REFERENCES contract(ctr_id) ON DELETE CASCADE,
     INDEX idx_ctr_id (ctr_id),
     INDEX idx_checkin_date (checkin_date)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางเก็บข้อมูลการเช็คอิน';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='ตารางเก็บข้อมูลการเช็คอิน';
 
 -- 3. สร้างตารางสำหรับติดตามสถานะ Workflow ของผู้เช่า
 CREATE TABLE IF NOT EXISTS tenant_workflow (
@@ -46,65 +45,69 @@ CREATE TABLE IF NOT EXISTS tenant_workflow (
     ctr_id INT NULL COMMENT 'FK ไปยังตาราง contract',
 
     -- สถานะแต่ละขั้นตอน
-    step_1_confirmed BOOLEAN DEFAULT FALSE COMMENT 'Step 1: ยืนยันจอง',
+    step_1_confirmed TINYINT(1) DEFAULT 0 COMMENT 'Step 1: ยืนยันจอง',
     step_1_date DATETIME NULL COMMENT 'วันที่ทำ Step 1',
     step_1_by VARCHAR(100) NULL COMMENT 'ผู้ทำ Step 1',
 
-    step_2_confirmed BOOLEAN DEFAULT FALSE COMMENT 'Step 2: ยืนยันชำระเงินจอง',
+    step_2_confirmed TINYINT(1) DEFAULT 0 COMMENT 'Step 2: ยืนยันชำระเงินจอง',
     step_2_date DATETIME NULL COMMENT 'วันที่ทำ Step 2',
     step_2_by VARCHAR(100) NULL COMMENT 'ผู้ทำ Step 2',
 
-    step_3_confirmed BOOLEAN DEFAULT FALSE COMMENT 'Step 3: สร้างสัญญา',
+    step_3_confirmed TINYINT(1) DEFAULT 0 COMMENT 'Step 3: สร้างสัญญา',
     step_3_date DATETIME NULL COMMENT 'วันที่ทำ Step 3',
     step_3_by VARCHAR(100) NULL COMMENT 'ผู้ทำ Step 3',
 
-    step_4_confirmed BOOLEAN DEFAULT FALSE COMMENT 'Step 4: เช็คอิน',
+    step_4_confirmed TINYINT(1) DEFAULT 0 COMMENT 'Step 4: เช็คอิน',
     step_4_date DATETIME NULL COMMENT 'วันที่ทำ Step 4',
     step_4_by VARCHAR(100) NULL COMMENT 'ผู้ทำ Step 4',
 
-    step_5_confirmed BOOLEAN DEFAULT FALSE COMMENT 'Step 5: เริ่มบิลรายเดือน',
+    step_5_confirmed TINYINT(1) DEFAULT 0 COMMENT 'Step 5: เริ่มบิลรายเดือน',
     step_5_date DATETIME NULL COMMENT 'วันที่ทำ Step 5',
     step_5_by VARCHAR(100) NULL COMMENT 'ผู้ทำ Step 5',
 
     current_step INT DEFAULT 1 COMMENT 'ขั้นตอนปัจจุบัน (1-5)',
-    completed BOOLEAN DEFAULT FALSE COMMENT 'เสร็จสิ้นทุกขั้นตอนแล้ว',
+    completed TINYINT(1) DEFAULT 0 COMMENT 'เสร็จสิ้นทุกขั้นตอนแล้ว',
 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
 
-    FOREIGN KEY (tnt_id) REFERENCES tenant(tnt_id) ON DELETE CASCADE,
-    FOREIGN KEY (bkg_id) REFERENCES booking(bkg_id) ON DELETE SET NULL,
-    FOREIGN KEY (ctr_id) REFERENCES contract(ctr_id) ON DELETE SET NULL,
     INDEX idx_tnt_id (tnt_id),
     INDEX idx_bkg_id (bkg_id),
     INDEX idx_ctr_id (ctr_id),
     INDEX idx_current_step (current_step),
     INDEX idx_completed (completed)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='ตารางติดตามสถานะ Workflow ของผู้เช่า';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='ตารางติดตามสถานะ Workflow ของผู้เช่า';
 
--- 4. เพิ่มฟิลด์ใหม่ในตาราง contract
-ALTER TABLE contract
-ADD COLUMN IF NOT EXISTS contract_pdf_path VARCHAR(255) NULL COMMENT 'path ไปยังไฟล์ PDF สัญญา' AFTER access_token,
-ADD COLUMN IF NOT EXISTS contract_created_date DATETIME NULL COMMENT 'วันที่สร้างสัญญา' AFTER contract_pdf_path;
+-- 4. เพิ่มฟิลด์ใหม่ในตาราง contract (ถ้ายังไม่มี)
+SET @dbname = DATABASE();
+SET @tablename = 'contract';
+SET @columnname1 = 'contract_pdf_path';
+SET @columnname2 = 'contract_created_date';
 
--- 5. เพิ่ม Index ให้ตาราง booking สำหรับการค้นหาที่เร็วขึ้น
-ALTER TABLE booking
-ADD INDEX IF NOT EXISTS idx_bkg_status (bkg_status),
-ADD INDEX IF NOT EXISTS idx_tnt_id (tnt_id),
-ADD INDEX IF NOT EXISTS idx_room_id (room_id);
+SET @preparedStatement1 = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+   WHERE TABLE_SCHEMA=@dbname AND TABLE_NAME=@tablename AND COLUMN_NAME=@columnname1) > 0,
+  'SELECT 1',
+  'ALTER TABLE contract ADD COLUMN contract_pdf_path VARCHAR(255) NULL COMMENT ''path ไปยังไฟล์ PDF สัญญา'''
+));
+PREPARE alterIfNotExists1 FROM @preparedStatement1;
+EXECUTE alterIfNotExists1;
+DEALLOCATE PREPARE alterIfNotExists1;
 
--- 6. เพิ่ม Index ให้ตาราง contract
-ALTER TABLE contract
-ADD INDEX IF NOT EXISTS idx_ctr_status (ctr_status),
-ADD INDEX IF NOT EXISTS idx_tnt_id (tnt_id),
-ADD INDEX IF NOT EXISTS idx_room_id (room_id);
+SET @preparedStatement2 = (SELECT IF(
+  (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+   WHERE TABLE_SCHEMA=@dbname AND TABLE_NAME=@tablename AND COLUMN_NAME=@columnname2) > 0,
+  'SELECT 1',
+  'ALTER TABLE contract ADD COLUMN contract_created_date DATETIME NULL COMMENT ''วันที่สร้างสัญญา'''
+));
+PREPARE alterIfNotExists2 FROM @preparedStatement2;
+EXECUTE alterIfNotExists2;
+DEALLOCATE PREPARE alterIfNotExists2;
 
--- 7. อัปเดตค่า room_status ใหม่ (ถ้ายังไม่มี)
--- 0 = ว่าง, 1 = ไม่ว่าง, 2 = จองแล้ว (รอชำระเงิน)
--- ไม่ต้อง ALTER เพราะ room_status เป็น VARCHAR อยู่แล้ว
+-- 5. สร้าง View สำหรับดูข้อมูล Wizard แบบรวม
+DROP VIEW IF EXISTS vw_tenant_wizard;
 
--- 8. สร้าง View สำหรับดูข้อมูล Wizard แบบรวม
-CREATE OR REPLACE VIEW vw_tenant_wizard AS
+CREATE VIEW vw_tenant_wizard AS
 SELECT
     t.tnt_id,
     t.tnt_name,
@@ -121,6 +124,7 @@ SELECT
     c.ctr_start,
     c.ctr_end,
     c.ctr_status,
+    tw.id as workflow_id,
     tw.current_step,
     tw.step_1_confirmed,
     tw.step_1_date,
@@ -138,7 +142,7 @@ SELECT
     cr.checkin_id,
     cr.checkin_date
 FROM tenant t
-LEFT JOIN tenant_workflow tw ON t.tnt_id = tw.tnt_id
+LEFT JOIN tenant_workflow tw ON t.tnt_id COLLATE utf8mb4_general_ci = tw.tnt_id COLLATE utf8mb4_general_ci
 LEFT JOIN booking b ON tw.bkg_id = b.bkg_id
 LEFT JOIN room r ON b.room_id = r.room_id
 LEFT JOIN roomtype rt ON r.type_id = rt.type_id
@@ -153,6 +157,8 @@ ORDER BY tw.current_step ASC, tw.updated_at DESC;
 -- ===================================================================
 
 -- ตรวจสอบว่าสร้างตารางสำเร็จหรือไม่
+SELECT 'สำเร็จ! ตารางถูกสร้างแล้ว' AS status;
+
 SELECT
     'booking_payment' AS table_name,
     COUNT(*) AS record_count
