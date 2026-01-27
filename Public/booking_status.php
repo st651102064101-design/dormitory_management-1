@@ -179,7 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['upload_booking_paymen
         $ins->execute([$bpId, $amountToPost, $bpStatus, $filename, $bkgId]);
 
         // redirect back to show updated state
-        header('Location: ' . $_SERVER['REQUEST_URI'] . '#payment-section');
+        header('Location: ' . $_SERVER['REQUEST_URI']);
         exit;
     } catch (Exception $e) {
         $uploadError = $e->getMessage();
@@ -2241,7 +2241,7 @@ if ($publicTheme === 'light') {
                     <?php if ($canPay): ?>
                     <!-- payment CTA removed -->
                     <?php endif; ?>
-                    <button type="button" onclick="document.querySelector('html,body').scrollIntoView({}); document.getElementById('payment-section')?.scrollIntoView({behavior:'smooth', block:'center'});" class="status-badge" style="background: rgba(255,255,255,0.03); color:#94a3b8; padding:10px 14px;">ดูรายละเอียดการชำระ</button>
+                    <!-- payment details button removed -->
                 </div>
             </div>
             <?php endif; ?>
@@ -2368,103 +2368,8 @@ if ($publicTheme === 'light') {
                 console.error('❌ ไม่พบ input element!');
             }
 
-            /* payment-section handlers removed */
-            // removed: anchors linking to #payment-section no longer exist */
-                el.addEventListener('click', function(ev){
-                    ev.preventDefault();
-
-                    // Try normal scroll first
-                    const target = document.getElementById('payment-section');
-                    if (!target) return;
-
-                    try {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        const focusable = target.querySelector('a, button, input, select, textarea');
-                        if (focusable) focusable.focus({ preventScroll: true });
-                    } catch (err) {
-                        location.hash = '#payment-section';
-                    }
-
-                    // Robust fallback: if click didn't reach (e.g. overlay captured it), force a visible floating CTA
-                    setTimeout(function(){
-                        const rect = el.getBoundingClientRect();
-                        const topEl = document.elementFromPoint(rect.left + rect.width/2, rect.top + rect.height/2);
-                        if (topEl && (topEl !== el && !el.contains(topEl))) {
-                            // temporarily highlight blocker to help debugging and remove pointer-capture for a moment
-                            topEl.style.outline = '3px solid rgba(220,38,38,0.85)';
-                            topEl.style.transition = 'outline 200ms ease';
-                            setTimeout(()=> topEl.style.outline = '', 1000);
-
-                            // Also trigger programmatic scroll as last-resort
-                            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        }
-                    }, 80);
-
-                    return false;
-                });
-
-                // Accessibility: allow keyboard activation
-                el.addEventListener('keydown', function(k){
-                    if (k.key === 'Enter' || k.key === ' ') {
-                        k.preventDefault();
-                        el.click();
-                    }
-                });
-
-                // Diagnostic: Shift+click will print topmost element at CTA center (developer aid)
-                el.addEventListener('click', function(ev){
-                    if (ev.shiftKey) {
-                        const r = el.getBoundingClientRect();
-                        const hit = document.elementFromPoint(r.left + r.width/2, r.top + r.height/2);
-                        console.info('Diagnostic: topmost at CTA center ->', hit);
-                        if (hit) {
-                            hit.style.boxShadow = '0 0 0 3px rgba(59,130,246,0.6)';
-                            setTimeout(()=> hit.style.boxShadow = '', 900);
-                        }
-                    }
-                });
-            });
-
-            // Capture-phase guard: if an overlay intercepts clicks, still activate scroll
-            (function(){
-                function scrollToPayment() {
-                    const target = document.getElementById('payment-section');
-                    if (!target) return false;
-                    try {
-                        target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                        const focusable = target.querySelector('a, button, input, select, textarea');
-                        if (focusable) focusable.focus({ preventScroll: true });
-                    } catch (err) {
-                        location.hash = '#payment-section';
-                    }
-                    return true;
-                }
-
-                document.addEventListener('pointerdown', function(ev){
-                    try {
-                        const cta = document.querySelector('a[href="#payment-section"]');
-                        if (!cta) return;
-                        const r = cta.getBoundingClientRect();
-                        const x = ev.clientX, y = ev.clientY;
-                        if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
-                            // Prevent the overlay from swallowing the interaction and perform scroll
-                            ev.stopPropagation();
-                            ev.preventDefault();
-                            const done = scrollToPayment();
-                            // visual feedback for debugging on first capture
-                            cta.style.transition = 'box-shadow 180ms ease, transform 180ms ease';
-                            cta.style.boxShadow = '0 10px 30px rgba(2,132,90,0.18)';
-                            cta.style.transform = 'translateY(-2px)';
-                            setTimeout(()=>{ cta.style.boxShadow=''; cta.style.transform=''; }, 400);
-                            if (done) return;
-                        }
-                    } catch (err) {
-                        console.warn('pointerdown guard error', err);
-                    }
-                }, true);
-
-
-            })();
+            /* payment-related JS removed to prevent references to removed DOM nodes */
+            // (payment-section, modal and CTAs have been removed)
         });
     </script>
     
