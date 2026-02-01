@@ -297,8 +297,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         
                         // exp_status = '2' (กำลังดำเนินการ) ตั้งแต่ตอนสร้างแล้ว ไม่ต้อง update อีก
                         
-                        $updateRoom = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
-                        $updateRoom->execute([$roomId]);
+                        // NOTE: ยังไม่ปรับสถานะห้องเป็น '1' (ไม่ว่าง) จนกว่าจะ Check-in ตาม Requirement
+                        // $updateRoom = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
+                        // $updateRoom->execute([$roomId]);
 
                         // สร้าง tenant_workflow สำหรับระบบ Wizard
                         // เริ่มต้นที่ step 1 (รอเจ้าหน้าที่ยืนยันการจอง)
