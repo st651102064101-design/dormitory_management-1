@@ -918,4 +918,78 @@ try {
         document.body.classList.remove('modal-open');
         document.getElementById('billingForm').reset();
     }
+
+    // Functions สำหรับ Payment Modal (Step 2)
+    function openPaymentModal(bpId, bkgId, tntId, tntName, roomNumber, bpAmount, bpProof) {
+        document.getElementById('modal_payment_bp_id').value = bpId;
+        document.getElementById('modal_payment_bkg_id').value = bkgId;
+        document.getElementById('modal_payment_tnt_id').value = tntId;
+        
+        document.getElementById('paymentInfo').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ผู้เช่า</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${tntName}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ห้องพัก</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${roomNumber}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">จำนวนเงินจอง</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #22c55e;">฿${Number(bpAmount).toLocaleString()}</div>
+                </div>
+            </div>
+        `;
+        
+        const proofContainer = document.getElementById('paymentProofContainer');
+        if (bpProof) {
+            // Check if bpProof already contains the path or just filename
+            // Typically in DB it's stored relative to project root or full path?
+            // In wizard_step2.php: href="/<?php echo htmlspecialchars($payment['bp_proof']... "
+            // The path in DB seems to be relative to web root or include 'dormitory_management'?
+            // Usually DB stores 'Public/Assets/Images/Payments/filename.jpg'.
+            // So '/dormitory_management/' + bpProof might be safer if running in subdir.
+            
+            // If proof is just filename, we might need to prepend path.
+            // Let's assume it's the stored path.
+            // But we need to make sure the image URL is correct.
+            // If stored path starts with 'Public/...', we need '/dormitory_management/Public/...' or just '/Public/...' depending on setup.
+            // From wizard_step2.php: href="/<?php echo ... ?>" implies absolute path from root.
+            
+            // Let's try adding /dormitory_management/ if it doesn't start with /
+            let proofUrl = bpProof;
+            if (!proofUrl.startsWith('/')) {
+                proofUrl = '/' + proofUrl;
+            }
+             // Actually, let's just use what's passed and let the caller handle format or assume relative to domain root if starting with /
+             // Or relative to current page if not.
+             // Best to inspect what's in DB. Usually 'Public/Assets/Images/Payments/filename.jpg'.
+             // So '/dormitory_management/' + bpProof might be safer if running in subdir.
+             
+             // Check if bpProof already has 'dormitory_management'
+             if (!bpProof.includes('dormitory_management')) {
+                 proofUrl = '/dormitory_management/' + bpProof.replace(/^\//, '');
+             } else {
+                 proofUrl = bpProof;
+                 if (!proofUrl.startsWith('/')) proofUrl = '/' + proofUrl;
+             }
+            
+            document.getElementById('paymentProofImg').src = proofUrl;
+            document.getElementById('paymentProofLink').href = proofUrl;
+            proofContainer.style.display = 'block';
+        } else {
+            proofContainer.style.display = 'none';
+        }
+        
+        document.getElementById('paymentModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+    }
+
+    function closePaymentModal() {
+        document.getElementById('paymentModal').classList.remove('active');
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+    }
 </script>
