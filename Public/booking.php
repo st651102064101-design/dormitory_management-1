@@ -2651,6 +2651,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         // Form Validation
         document.getElementById('bookingForm')?.addEventListener('submit', function(e) {
+            // Prevent double submission
+            if (this.dataset.submitting === 'true') {
+                e.preventDefault();
+                return;
+            }
+            
             const roomSelected = document.querySelector('input[name="room_id"]:checked');
             const name = document.querySelector('input[name="name"]').value.trim();
             const phone = document.querySelector('input[name="phone"]').value.trim();
@@ -2682,8 +2688,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return;
             }
 
-            // Clear saved step on successful submission
+            // Mark as submitting
+            this.dataset.submitting = 'true';
+            const submitBtn = document.getElementById('submitBtn');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+            }
+
+            // Clear saved step and allow form submission
             clearSavedStep();
+            // Allow form to submit normally (no preventDefault)
         });
         
         // Phone number format
@@ -2780,6 +2794,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     goToStep(savedStep);
                 }
             }
+            
+            // Reset form submission state after page load
+            const bookingForm = document.getElementById('bookingForm');
+            if (bookingForm) {
+                bookingForm.dataset.submitting = 'false';
+            }
+            
+            // Update button state
+            updateSubmitButtonState();
         });
         
         function validateStep1() {
