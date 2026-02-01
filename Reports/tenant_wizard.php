@@ -957,7 +957,7 @@ try {
             // Let's assume it's the stored path.
             // But we need to make sure the image URL is correct.
             // If stored path starts with 'Public/...', we need '/dormitory_management/Public/...' or just '/Public/...' depending on setup.
-            // From wizard_step2.php: href="/<?php echo ... ?>" implies absolute path from root.
+            // From wizard_step2.php: href="/(path)" implies absolute path from root.
             
             // Let's try adding /dormitory_management/ if it doesn't start with /
             let proofUrl = bpProof;
