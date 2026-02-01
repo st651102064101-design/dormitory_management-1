@@ -301,7 +301,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $updateRoom->execute([$roomId]);
 
                         // สร้าง tenant_workflow สำหรับระบบ Wizard
-                        // เนื่องจากระบบจองสร้างสัญญาให้อัตโนมัติแล้ว จึงข้ามไป step 4 (เช็คอิน)
+                        // เริ่มต้นที่ step 2 (รอตรวจสอบการชำระเงิน)
                         $workflowId = (int)substr((string)time(), -9) + 4;
                         $stmtWorkflow = $pdo->prepare("
                             INSERT INTO tenant_workflow (
@@ -310,7 +310,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 step_2_confirmed, step_2_date, step_2_by,
                                 step_3_confirmed, step_3_date, step_3_by,
                                 current_step, completed
-                            ) VALUES (?, ?, ?, ?, 1, NOW(), 'System', 1, NOW(), 'System', 1, NOW(), 'System', 4, 0)
+                            ) VALUES (?, ?, ?, ?, 1, NOW(), 'System', 0, NULL, NULL, 0, NULL, NULL, 2, 0)
                         ");
                         $stmtWorkflow->execute([$workflowId, $tenantId, $bookingId, $contractId]);
 
