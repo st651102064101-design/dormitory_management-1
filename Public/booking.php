@@ -2634,9 +2634,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             clearPaymentError();
             updateSubmitButtonState();
-            
-            // Show success notification
-            showAppleAlert('✓ อัพโหลดไฟล์เรียบร้อย', 'สำเร็จ');
         }
         
         function removePaymentFile() {
