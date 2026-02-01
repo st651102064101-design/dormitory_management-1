@@ -2803,6 +2803,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Update button state
             updateSubmitButtonState();
+            
+            // Re-enable button if there's an error message (form validation failed at backend)
+            const errorMessage = document.querySelector('.message.error');
+            if (errorMessage && bookingForm) {
+                bookingForm.dataset.submitting = 'false';
+                updateSubmitButtonState();
+            }
         });
         
         function validateStep1() {
