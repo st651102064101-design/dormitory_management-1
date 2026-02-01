@@ -612,11 +612,44 @@ try {
         </main>
     </div>
 
-    <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
-    <script src="/dormitory_management/Public/Assets/Javascript/main.js" defer></script>
-</body>
-</html>
-<!-- เพิ่มโค้ดนี้ก่อน </div> ของ main และก่อน <script> tags -->
+    <!-- Modal สำหรับยืนยันการจอง (Step 1) -->
+    <div id="bookingModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closeBookingModal()">&times;</button>
+                <div style="text-align: center;">
+                    <div style="width: 48px; height: 48px; background: #3b82f6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 1rem; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">1</div>
+                    <h2 style="color: #f8fafc; margin: 0.5rem 0;">ยืนยันการจอง</h2>
+                    <p style="color: rgba(241, 245, 249, 0.7); margin: 0;">ตรวจสอบข้อมูลและยืนยันการจองห้องพัก</p>
+                </div>
+            </div>
+            
+            <div class="modal-body">
+                <div class="info-box-modal" id="bookingInfo"></div>
+
+                <div class="alert-box-modal" style="background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3);">
+                    <h4 style="color: #22c55e;">✓ การดำเนินการ:</h4>
+                    <ul style="padding-left: 1.5rem; line-height: 1.8; color: #e2e8f0;">
+                        <li>ล็อกห้องพักไม่ให้คนอื่นจองซ้ำ</li>
+                        <li>สร้างยอดเงินจอง 2,000 บาท</li>
+                        <li>อัปเดตสถานะผู้เช่าเป็น "จองห้อง"</li>
+                        <li>บันทึก Workflow เพื่อติดตามขั้นตอนถัดไป</li>
+                    </ul>
+                </div>
+
+                <form id="bookingForm" method="POST" action="../Manage/process_wizard_step1.php">
+                    <input type="hidden" name="bkg_id" id="modal_bkg_id">
+                    <input type="hidden" name="tnt_id" id="modal_booking_tnt_id">
+                    <input type="hidden" name="room_id" id="modal_room_id">
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-modal-secondary" onclick="closeBookingModal()">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-modal-primary" style="background: #3b82f6;" onclick="document.getElementById('bookingForm').submit()">✓ ยืนยันการจอง</button>
+            </div>
+        </div>
+    </div>
 
     <!-- Modal สำหรับเช็คอิน -->
     <div id="checkinModal" class="modal-overlay">
@@ -791,6 +824,46 @@ try {
             closeBillingModal();
         }
     });
+
+    // Functions สำหรับ Booking Modal
+    function openBookingModal(bkgId, tntId, roomId, tntName, tntPhone, roomNumber, typeName, typePrice, bkgDate) {
+        document.getElementById('modal_bkg_id').value = bkgId;
+        document.getElementById('modal_booking_tnt_id').value = tntId;
+        document.getElementById('modal_room_id').value = roomId;
+        
+        document.getElementById('bookingInfo').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ผู้เช่า</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${tntName}</div>
+                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${tntPhone}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ห้องพัก</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${roomNumber}</div>
+                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${typeName}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ราคา</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #3b82f6;">฿${Number(typePrice).toLocaleString()}/เดือน</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">วันที่จอง</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${bkgDate}</div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('bookingModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+    }
+
+    function closeBookingModal() {
+        document.getElementById('bookingModal').classList.remove('active');
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+    }
 
     // Functions สำหรับ Billing Modal
     function openBillingModal(ctrId, tntId, tntName, roomNumber, roomType, roomPrice) {
