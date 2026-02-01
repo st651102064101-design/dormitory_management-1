@@ -2681,6 +2681,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 document.getElementById('paymentUploadZone')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 return;
             }
+
+            // Clear saved step on successful submission
+            clearSavedStep();
         });
         
         // Phone number format
@@ -2700,6 +2703,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Step Navigation Functions
         let currentStep = 1;
+        
+        // Function to save current step to localStorage
+        function saveCurrentStep(stepNumber) {
+            try {
+                localStorage.setItem('bookingCurrentStep', stepNumber.toString());
+            } catch (e) {
+                console.warn('Cannot save to localStorage:', e);
+            }
+        }
+        
+        // Function to load saved step from localStorage
+        function loadSavedStep() {
+            try {
+                const savedStep = localStorage.getItem('bookingCurrentStep');
+                return savedStep ? parseInt(savedStep) : 1;
+            } catch (e) {
+                console.warn('Cannot load from localStorage:', e);
+                return 1;
+            }
+        }
+        
+        // Function to clear saved step (on successful submission)
+        function clearSavedStep() {
+            try {
+                localStorage.removeItem('bookingCurrentStep');
+            } catch (e) {
+                console.warn('Cannot clear localStorage:', e);
+            }
+        }
         
         function goToStep(stepNumber) {
             // Validate before going to step 2
@@ -2733,10 +2765,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
             
             currentStep = stepNumber;
+            saveCurrentStep(stepNumber);
             
             // Scroll to top of form
             document.querySelector('.booking-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+        
+        // Load saved step on page load
+        window.addEventListener('load', function() {
+            const savedStep = loadSavedStep();
+            if (savedStep > 1) {
+                // Only restore if it's a valid step (1 or 2)
+                if (savedStep <= 2) {
+                    goToStep(savedStep);
+                }
+            }
+        });
         
         function validateStep1() {
             // Check if room is selected
