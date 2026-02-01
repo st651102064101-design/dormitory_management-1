@@ -62,6 +62,17 @@ try {
     // อัปเดตสถานะผู้เช่าเป็น "พักอยู่" (1)
     $stmt = $pdo->prepare("UPDATE tenant SET tnt_status = '1' WHERE tnt_id = ?");
     $stmt->execute([$tnt_id]);
+    
+    // อัปเดตสถานะห้องเป็น "ไม่ว่าง" (1) เมื่อเช็คอิน
+    // ดึง room_id จาก contract
+    $stmt = $pdo->prepare("SELECT room_id FROM contract WHERE ctr_id = ?");
+    $stmt->execute([$ctr_id]);
+    $contract = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($contract) {
+        $stmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
+        $stmt->execute([$contract['room_id']]);
+    }
 
     // อัปเดต Workflow Step 4
     updateWorkflowStep($pdo, $tnt_id, 4, $_SESSION['admin_username']);
