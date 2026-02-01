@@ -48,8 +48,9 @@ try {
     $stmt->execute([$bkg_id]);
 
     // 2. อัปเดตสถานะห้อง เป็น "จองแล้ว" (2)
-    $stmt = $pdo->prepare("UPDATE room SET room_status = '2' WHERE room_id = ?");
-    $stmt->execute([$room_id]);
+    // NOTE: ตาม Requirement ให้ห้องยังคงสถานะเดิมจนกว่าจะ Check-in
+    // $stmt = $pdo->prepare("UPDATE room SET room_status = '2' WHERE room_id = ?");
+    // $stmt->execute([$room_id]);
 
     // 3. อัปเดตสถานะผู้เช่า เป็น "จองห้อง" (3)
     $stmt = $pdo->prepare("UPDATE tenant SET tnt_status = '3' WHERE tnt_id = ?");
