@@ -58,6 +58,8 @@ try {
             bp.bp_status AS booking_payment_status,
             bp.bp_receipt_no,
             bp.bp_id,
+            bp.bp_amount,
+            bp.bp_proof,
             cr.checkin_id,
             cr.checkin_date
         FROM tenant t
@@ -584,7 +586,7 @@ try {
                                         <?php if ($currentStep == 1): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>, '<?php echo date('d/m/Y', strtotime($tenant['bkg_date'])); ?>')">ยืนยันจอง</button>
                                         <?php elseif ($currentStep == 2): ?>
-                                            <a href="wizard_step2.php?bp_id=<?php echo $tenant['bp_id']; ?>&bkg_id=<?php echo $tenant['bkg_id']; ?>" class="action-btn btn-primary">ยืนยันชำระเงินจอง</a>
+                                            <button type="button" class="action-btn btn-primary" onclick="openPaymentModal(<?php echo $tenant['bp_id']; ?>, <?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['bp_amount'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['bp_proof'] ?? '', ENT_QUOTES, 'UTF-8'); ?>')">ยืนยันชำระเงินจอง</button>
                                         <?php elseif ($currentStep == 3): ?>
                                             <a href="wizard_step3.php?tnt_id=<?php echo urlencode($tenant['tnt_id']); ?>&room_id=<?php echo $tenant['room_id']; ?>&bkg_id=<?php echo $tenant['bkg_id']; ?>" class="action-btn btn-primary">สร้างสัญญา</a>
                                         <?php elseif ($currentStep == 4): ?>
