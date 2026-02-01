@@ -152,6 +152,54 @@ try {
             justify-content: center;
             font-size: 0.85rem;
             font-weight: 600;
+            position: relative;
+            cursor: help;
+        }
+        
+        /* Tooltip Styles */
+        .step-circle::before {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%) translateY(5px);
+            padding: 6px 10px;
+            background: rgba(15, 23, 42, 0.95);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: 400;
+            border-radius: 6px;
+            white-space: nowrap;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .step-circle::after {
+            content: '';
+            position: absolute;
+            bottom: 115%;
+            left: 50%;
+            transform: translateX(-50%) translateY(5px);
+            border-width: 5px;
+            border-style: solid;
+            border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .step-circle:hover::before,
+        .step-circle:hover::after {
+            opacity: 1;
+            visibility: visible;
+            transform: translateX(-50%) translateY(0);
         }
 
         .step-circle.completed {
@@ -511,23 +559,23 @@ try {
                                     </td>
                                     <td>
                                         <div class="step-indicator">
-                                            <div class="step-circle <?php echo $step1 ? 'completed' : ($currentStep == 1 ? 'current' : 'pending'); ?>">
+                                            <div class="step-circle <?php echo $step1 ? 'completed' : ($currentStep == 1 ? 'current' : 'pending'); ?>" data-tooltip="1. ยืนยันจอง">
                                                 <?php echo $step1 ? '✓' : '1'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step2 ? 'completed' : ($currentStep == 2 ? 'current' : 'pending'); ?>">
+                                            <div class="step-circle <?php echo $step2 ? 'completed' : ($currentStep == 2 ? 'current' : 'pending'); ?>" data-tooltip="2. ยืนยันชำระเงินจอง">
                                                 <?php echo $step2 ? '✓' : '2'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step3 ? 'completed' : ($currentStep == 3 ? 'current' : 'pending'); ?>">
+                                            <div class="step-circle <?php echo $step3 ? 'completed' : ($currentStep == 3 ? 'current' : 'pending'); ?>" data-tooltip="3. สร้างสัญญา">
                                                 <?php echo $step3 ? '✓' : '3'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step4 ? 'completed' : ($currentStep == 4 ? 'current' : 'pending'); ?>">
+                                            <div class="step-circle <?php echo $step4 ? 'completed' : ($currentStep == 4 ? 'current' : 'pending'); ?>" data-tooltip="4. เช็คอิน">
                                                 <?php echo $step4 ? '✓' : '4'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step5 ? 'completed' : ($currentStep == 5 ? 'current' : 'pending'); ?>">
+                                            <div class="step-circle <?php echo $step5 ? 'completed' : ($currentStep == 5 ? 'current' : 'pending'); ?>" data-tooltip="5. เริ่มบิลรายเดือน">
                                                 <?php echo $step5 ? '✓' : '5'; ?>
                                             </div>
                                         </div>
