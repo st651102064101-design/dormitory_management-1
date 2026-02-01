@@ -56,12 +56,18 @@ try {
     $stmt = $pdo->prepare("UPDATE tenant SET tnt_status = '3' WHERE tnt_id = ?");
     $stmt->execute([$tnt_id]);
 
-    // 4. สร้างรายการชำระเงินจอง
-    $stmt = $pdo->prepare("
-        INSERT INTO booking_payment (bp_amount, bp_status, bkg_id)
-        VALUES (2000.00, '0', ?)
-    ");
+    // 4. สร้างรายการชำระเงินจอง (ตรวจสอบก่อนว่ามีอยู่แล้วหรือไม่)
+    $stmt = $pdo->prepare("SELECT bp_id FROM booking_payment WHERE bkg_id = ? LIMIT 1");
     $stmt->execute([$bkg_id]);
+    $existingPayment = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$existingPayment) {
+        $stmt = $pdo->prepare("
+            INSERT INTO booking_payment (bp_amount, bp_status, bkg_id)
+            VALUES (2000.00, '0', ?)
+        ");
+        $stmt->execute([$bkg_id]);
+    }
 
     // 5. สร้างหรืออัปเดต Workflow
     if (!workflowExists($pdo, $tnt_id)) {
