@@ -582,7 +582,7 @@ try {
                                     </td>
                                     <td>
                                         <?php if ($currentStep == 1): ?>
-                                            <a href="wizard_step1.php?bkg_id=<?php echo $tenant['bkg_id']; ?>&tnt_id=<?php echo urlencode($tenant['tnt_id']); ?>" class="action-btn btn-primary">ยืนยันจอง</a>
+                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>, '<?php echo date('d/m/Y', strtotime($tenant['bkg_date'])); ?>')">ยืนยันจอง</button>
                                         <?php elseif ($currentStep == 2): ?>
                                             <a href="wizard_step2.php?bp_id=<?php echo $tenant['bp_id']; ?>&bkg_id=<?php echo $tenant['bkg_id']; ?>" class="action-btn btn-primary">ยืนยันชำระเงินจอง</a>
                                         <?php elseif ($currentStep == 3): ?>
