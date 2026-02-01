@@ -2041,7 +2041,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <!-- Submit Button -->
-                        <button type="submit" class="submit-btn" id="submitBtn">
+                        <button type="submit" class="submit-btn" id="submitBtn" disabled style="opacity: 0.5; cursor: not-allowed;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
                                 <polyline points="22 4 12 14.01 9 11.01"/>
@@ -2470,6 +2470,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         const slipPreviewImg = document.getElementById('slipPreviewImg');
         const pdfPreview = document.getElementById('pdfPreview');
         const uploadFileName = document.getElementById('uploadFileName');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Configuration
+        const PAYMENT_VALIDATION = {
+            maxSize: 5 * 1024 * 1024, // 5MB
+            allowedTypes: ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'],
+            allowedExtensions: ['.jpg', '.jpeg', '.png', '.webp', '.pdf']
+        };
+        
+        // Create error message container
+        function createErrorContainer() {
+            const container = document.createElement('div');
+            container.id = 'paymentFileError';
+            container.style.cssText = `
+                display: none;
+                margin-top: 8px;
+                padding: 10px 12px;
+                background: rgba(239, 68, 68, 0.1);
+                border: 1px solid rgba(239, 68, 68, 0.3);
+                border-radius: 8px;
+                color: #ef4444;
+                font-size: 0.8rem;
+                border-left: 3px solid #ef4444;
+            `;
+            if (paymentUploadZone?.parentElement) {
+                paymentUploadZone.parentElement.appendChild(container);
+            }
+            return container;
+        }
+        
+        const errorContainer = createErrorContainer();
+        
+        function showPaymentError(message) {
+            if (errorContainer) {
+                errorContainer.textContent = message;
+                errorContainer.style.display = 'block';
+            }
+        }
+        
+        function clearPaymentError() {
+            if (errorContainer) {
+                errorContainer.style.display = 'none';
+                errorContainer.textContent = '';
+            }
+        }
+        
+        function updateSubmitButtonState() {
+            if (submitBtn) {
+                const hasFile = payProofInput?.files && payProofInput.files.length > 0;
+                submitBtn.disabled = !hasFile;
+                submitBtn.style.opacity = hasFile ? '1' : '0.5';
+                submitBtn.style.cursor = hasFile ? 'pointer' : 'not-allowed';
+            }
+        }
         
         if (paymentUploadZone && payProofInput) {
             // Click to upload
@@ -2504,19 +2558,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     handlePaymentFile(e.target.files[0]);
                 }
             });
+            
+            // Initialize button state
+            updateSubmitButtonState();
+        }
+        
+        function validatePaymentFile(file) {
+            // Check file type
+            if (!PAYMENT_VALIDATION.allowedTypes.includes(file.type)) {
+                showPaymentError('❌ รองรับเฉพาะไฟล์: JPG, PNG, WEBP หรือ PDF เท่านั้น');
+                return false;
+            }
+            
+            // Check file size
+            if (file.size > PAYMENT_VALIDATION.maxSize) {
+                const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+                showPaymentError(`❌ ขนาดไฟล์ ${fileSizeMB}MB เกินขีดจำกัด 5MB`);
+                return false;
+            }
+            
+            // Check file size minimum (at least 1KB)
+            if (file.size < 1024) {
+                showPaymentError('⚠️ ไฟล์มีขนาดน้อยเกินไป กรุณาเลือกไฟล์อื่น');
+                return false;
+            }
+            
+            clearPaymentError();
+            return true;
         }
         
         function handlePaymentFile(file) {
-            const maxSize = 5 * 1024 * 1024; // 5MB
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'application/pdf'];
-            
-            if (!allowedTypes.includes(file.type)) {
-                showAppleAlert('รองรับเฉพาะไฟล์ JPG, PNG, WEBP หรือ PDF', 'แจ้งเตือน');
-                return;
-            }
-            
-            if (file.size > maxSize) {
-                showAppleAlert('ขนาดไฟล์ต้องไม่เกิน 5MB', 'แจ้งเตือน');
+            // Validate file
+            if (!validatePaymentFile(file)) {
+                payProofInput.value = ''; // Clear invalid file
+                updateSubmitButtonState();
                 return;
             }
             
@@ -2528,7 +2603,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Show preview
             uploadPlaceholder.style.display = 'none';
             uploadPreview.style.display = 'block';
-            uploadFileName.textContent = file.name;
+            
+            // Format file size
+            const fileSizeKB = (file.size / 1024).toFixed(2);
+            const fileSizeDisplay = file.size > 1024 * 1024 
+                ? ((file.size / (1024 * 1024)).toFixed(2) + ' MB')
+                : (fileSizeKB + ' KB');
+            
+            uploadFileName.innerHTML = `
+                <span style="color: #22c55e; font-weight: 600;">✓ ${escapeHtml(file.name)}</span>
+                <span style="color: #94a3b8; font-size: 0.75rem; margin-left: 6px;">(${fileSizeDisplay})</span>
+            `;
             
             if (file.type === 'application/pdf') {
                 slipPreviewImg.style.display = 'none';
@@ -2545,6 +2630,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             paymentUploadZone.style.borderColor = '#22c55e';
+            paymentUploadZone.style.background = 'rgba(34, 197, 94, 0.05)';
+            
+            clearPaymentError();
+            updateSubmitButtonState();
+            
+            // Show success notification
+            showAppleAlert('✓ อัพโหลดไฟล์เรียบร้อย', 'สำเร็จ');
         }
         
         function removePaymentFile() {
@@ -2555,6 +2647,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             slipPreviewImg.style.display = 'none';
             pdfPreview.style.display = 'none';
             paymentUploadZone.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+            paymentUploadZone.style.background = 'rgba(0,0,0,0.2)';
+            clearPaymentError();
+            updateSubmitButtonState();
         }
 
         // Form Validation
