@@ -245,17 +245,17 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo)) {
                 b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
                 r.room_number, rt.type_name, rt.type_price,
                 c.ctr_id, c.ctr_deposit, c.access_token,
-                e.exp_status,
-                COALESCE(SUM(IF(p.pay_status = '1', p.pay_amount, 0)), 0) as paid_amount
+                (SELECT exp_status FROM expense WHERE ctr_id = c.ctr_id ORDER BY exp_month DESC LIMIT 1) as exp_status,
+                COALESCE(tw.current_step, 1) as current_step,
+                COALESCE(tw.completed, 0) as workflow_completed,
+                (SELECT COALESCE(SUM(IF(pay_status = '1', pay_amount, 0)), 0) FROM payment WHERE exp_id IN (SELECT exp_id FROM expense WHERE ctr_id = c.ctr_id)) as paid_amount
             FROM tenant t
             LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
             LEFT JOIN room r ON b.room_id = r.room_id
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
             LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
-            LEFT JOIN expense e ON c.ctr_id = e.ctr_id
-            LEFT JOIN payment p ON e.exp_id = p.exp_id
+            LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
             WHERE t.tnt_id = ? AND b.bkg_id = ?
-            GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
             LIMIT 1
         ");
         $stmt->execute([$resolvedTenantId, $bookingRef]);
@@ -282,17 +282,17 @@ if (!empty($bookingRef) && (!empty($contactInfo) || $isTenantLoggedIn)) {
                     b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
                     r.room_number, rt.type_name, rt.type_price,
                     c.ctr_id, c.ctr_deposit, c.access_token,
-                    e.exp_status,
-                    COALESCE(SUM(IF(p.pay_status = '1', p.pay_amount, 0)), 0) as paid_amount
+                    (SELECT exp_status FROM expense WHERE ctr_id = c.ctr_id ORDER BY exp_month DESC LIMIT 1) as exp_status,
+                    COALESCE(tw.current_step, 1) as current_step,
+                    COALESCE(tw.completed, 0) as workflow_completed,
+                    (SELECT COALESCE(SUM(IF(pay_status = '1', pay_amount, 0)), 0) FROM payment WHERE exp_id IN (SELECT exp_id FROM expense WHERE ctr_id = c.ctr_id)) as paid_amount
                 FROM tenant t
                 LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                 LEFT JOIN room r ON b.room_id = r.room_id
                 LEFT JOIN roomtype rt ON r.type_id = rt.type_id
                 LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
-                LEFT JOIN expense e ON c.ctr_id = e.ctr_id
-                LEFT JOIN payment p ON e.exp_id = p.exp_id
+                LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
                 WHERE t.tnt_id = ? AND b.bkg_id = ?
-                GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
                 LIMIT 1
             ");
             $stmt->execute([$resolvedTenantId, $bookingRef]);
@@ -303,17 +303,17 @@ if (!empty($bookingRef) && (!empty($contactInfo) || $isTenantLoggedIn)) {
                     b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
                     r.room_number, rt.type_name, rt.type_price,
                     c.ctr_id, c.ctr_deposit, c.access_token,
-                    e.exp_status,
-                    COALESCE(SUM(IF(p.pay_status = '1', p.pay_amount, 0)), 0) as paid_amount
+                    (SELECT exp_status FROM expense WHERE ctr_id = c.ctr_id ORDER BY exp_month DESC LIMIT 1) as exp_status,
+                    COALESCE(tw.current_step, 1) as current_step,
+                    COALESCE(tw.completed, 0) as workflow_completed,
+                    (SELECT COALESCE(SUM(IF(pay_status = '1', pay_amount, 0)), 0) FROM payment WHERE exp_id IN (SELECT exp_id FROM expense WHERE ctr_id = c.ctr_id)) as paid_amount
                 FROM tenant t
                 LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                 LEFT JOIN room r ON b.room_id = r.room_id
                 LEFT JOIN roomtype rt ON r.type_id = rt.type_id
                 LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
-                LEFT JOIN expense e ON c.ctr_id = e.ctr_id
-                LEFT JOIN payment p ON e.exp_id = p.exp_id
+                LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
                 WHERE (b.bkg_id = ? OR t.tnt_id = ?) AND t.tnt_phone = ?
-                GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
                 LIMIT 1
             ");
             $stmt->execute([$bookingRef, $bookingRef, $contactInfo]);
@@ -861,13 +861,14 @@ if ($currentStatus === '1' && $expStatus === '1') {
             
             <!-- Progress Steps -->
             <?php
-            $steps = ['รับคำจอง', 'ชำระมัดจำ', 'ตรวจสอบ', 'สัญญา', 'เข้าพัก'];
-            $currentStep = 1;
-            if ($paid > 0) $currentStep = 2;
-            if ($expStatus === '2') $currentStep = 3;
-            if ($expStatus === '1') $currentStep = 4;
-            if (!empty($bookingInfo['ctr_id']) && $expStatus === '1') $currentStep = 4;
-            if ($currentStatus === '2') $currentStep = 5;
+            $steps = ['ยืนยันจอง', 'ยืนยันชำระเงินจอง', 'สร้างสัญญา', 'เช็คอิน', 'เริ่มบิลรายเดือน'];
+            // Use current_step from tenant_workflow table (which is now fetched from database)
+            $currentStep = intval($bookingInfo['current_step'] ?? 1);
+            $workflowCompleted = intval($bookingInfo['workflow_completed'] ?? 0);
+            // Ensure currentStep doesn't exceed 5 if workflow is completed
+            if ($workflowCompleted === 1 && $currentStep > 5) {
+                $currentStep = 5;
+            }
             ?>
             <div class="progress-steps">
                 <?php foreach ($steps as $idx => $step): 
@@ -875,9 +876,9 @@ if ($currentStatus === '1' && $expStatus === '1') {
                     $isCompleted = $stepNum < $currentStep;
                     $isActive = $stepNum === $currentStep;
                 ?>
-                <div class="step <?php echo $isCompleted ? 'completed' : ($isActive ? 'active' : ''); ?>">
+                <div class="step <?php echo $isCompleted ? 'completed' : ($isActive ? 'current' : ''); ?>">
                     <div class="step-dot">
-                        <?php if ($isCompleted || $isActive): ?>
+                        <?php if ($isCompleted): ?>
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
                             <polyline points="20 6 9 17 4 12"/>
                         </svg>

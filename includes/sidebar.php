@@ -39,6 +39,15 @@ try {
             }
         }
     }
+
+    // ดึงจำนวนผู้เช่าที่ยังไม่ครบ 5 ขั้นตอน ใน wizard
+    $wizardCountStmt = $pdo->query("
+        SELECT COUNT(*) as incomplete_count FROM booking b
+        LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
+        WHERE (tw.id IS NULL OR tw.completed = 0)
+    ");
+    $wizardCountResult = $wizardCountStmt->fetch(PDO::FETCH_ASSOC);
+    $wizardIncompleteCount = (int)($wizardCountResult['incomplete_count'] ?? 0);
 } catch (Exception $e) {
     // ใช้ค่า default ถ้า database error
 }
@@ -2373,7 +2382,15 @@ try {
           <span class="chev chev-toggle" data-target="nav-management" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
         <!-- manage_stay.php removed; link intentionally omitted -->
-        <a class="" href="tenant_wizard.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg></span><span class="app-nav-label">จัดการผู้เช่า (Wizard)</span></a>
+        <a class="wizard-nav-item" href="tenant_wizard.php" style="position: relative; background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%); border-left: 4px solid #3b82f6; margin: 0.5rem 0; border-radius: 8px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);">
+            <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg></span>
+            <span class="app-nav-label" style="font-weight: 600; color: #60a5fa;">จัดการผู้เช่า <br> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Wizard)</span>
+            <?php if ($wizardIncompleteCount > 0): ?>
+            <span style="position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);">
+                <?php echo $wizardIncompleteCount; ?>
+            </span>
+            <?php endif; ?>
+        </a>
         <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label">ผู้เช่า</span></a>
         <a class="" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span></a>
         <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span></a>

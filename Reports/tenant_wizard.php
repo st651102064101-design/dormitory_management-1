@@ -24,7 +24,10 @@ if ($settingsStmt) {
 
 // ดึงข้อมูลผู้เช่าที่อยู่ในกระบวนการ Wizard
 try {
-    $stmt = $conn->query("
+    // Check if completion filter is applied
+    $completedFilter = isset($_GET['completed']) ? (int)$_GET['completed'] : 0;
+    
+    $sql = "
         SELECT
             t.tnt_id,
             t.tnt_name,
@@ -65,20 +68,31 @@ try {
             bp.bp_proof,
             cr.checkin_id,
             cr.checkin_date
-        FROM tenant t
-        LEFT JOIN tenant_workflow tw ON t.tnt_id = tw.tnt_id
-        LEFT JOIN booking b ON tw.bkg_id = b.bkg_id
+        FROM booking b
+        INNER JOIN tenant t ON b.tnt_id = t.tnt_id
+        LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
         LEFT JOIN room r ON b.room_id = r.room_id
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id
         LEFT JOIN contract c ON tw.ctr_id = c.ctr_id
         LEFT JOIN booking_payment bp ON b.bkg_id = bp.bkg_id
         LEFT JOIN checkin_record cr ON c.ctr_id = cr.ctr_id
-        WHERE tw.id IS NOT NULL AND tw.completed = FALSE
-        ORDER BY tw.current_step ASC, tw.updated_at DESC
-    ");
+        WHERE (tw.id IS NULL OR tw.completed = " . $completedFilter . ")
+        ORDER BY COALESCE(tw.current_step, 1) ASC, b.bkg_date DESC";
+    
+    $stmt = $conn->query($sql);
     $wizardTenants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    // Count completed workflows for button visibility
+    $completedCountStmt = $conn->query("
+        SELECT COUNT(*) as completed_count FROM tenant_workflow tw
+        LEFT JOIN booking b ON tw.bkg_id = b.bkg_id
+        WHERE tw.id IS NOT NULL AND tw.completed = 1
+    ");
+    $completedCountResult = $completedCountStmt->fetch(PDO::FETCH_ASSOC);
+    $hasCompletedTenants = (int)($completedCountResult['completed_count'] ?? 0) > 0;
 } catch (Exception $e) {
     $wizardTenants = [];
+    $hasCompletedTenants = false;
     $error = "เกิดข้อผิดพลาดในการดึงข้อมูล: " . $e->getMessage();
 }
 ?>
@@ -538,6 +552,14 @@ try {
                     </p>
                 </div>
 
+                <!-- Completion Status Filter Buttons -->
+                <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
+                    <a href="tenant_wizard.php?completed=0" style="padding: 0.75rem 1.5rem; background: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>; color: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white' : '#3b82f6'; ?>; border: 2px solid #3b82f6; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3b82f6'; this.style.color='white';" onmouseout="this.style.background='<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>'; this.style.color='<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white' : '#3b82f6'; ?>';">⏳ ยังไม่ครบ 5 ขั้นตอน</a>
+                    <?php if ($hasCompletedTenants): ?>
+                    <a href="tenant_wizard.php?completed=1" style="padding: 0.75rem 1.5rem; background: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>; color: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>; border: 2px solid #22c55e; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#22c55e'; this.style.color='white';" onmouseout="this.style.background='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>'; this.style.color='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>';">✅ ครบ 5 ขั้นตอนแล้ว</a>
+                    <?php endif; ?>
+                </div>
+
                 <?php if (count($wizardTenants) > 0): ?>
                     <table class="wizard-table">
                         <thead>
@@ -551,8 +573,10 @@ try {
                         <tbody>
                             <?php foreach ($wizardTenants as $tenant): ?>
                                 <?php
-                                $currentStep = (int)$tenant['current_step'];
-                                $step1 = $tenant['step_1_confirmed'];
+                                // If no workflow exists, default to step 2 (since booking already means step 1 is done)
+                                $currentStep = ($tenant['workflow_id'] === null) ? 2 : (int)$tenant['current_step'];
+                                // If no workflow, step 1 is implicitly completed (booking exists)
+                                $step1 = ($tenant['workflow_id'] === null) ? 1 : $tenant['step_1_confirmed'];
                                 $step2 = $tenant['step_2_confirmed'];
                                 $step3 = $tenant['step_3_confirmed'];
                                 $step4 = $tenant['step_4_confirmed'];
@@ -596,7 +620,10 @@ try {
                                         </div>
                                     </td>
                                     <td>
-                                        <?php if ($currentStep == 1): ?>
+                                        <?php if ($tenant['workflow_id'] === null): ?>
+                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>, '<?php echo date('d/m/Y', strtotime($tenant['bkg_date'])); ?>')">ยืนยันจอง</button>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
+                                        <?php elseif ($currentStep == 1): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>, '<?php echo date('d/m/Y', strtotime($tenant['bkg_date'])); ?>')">ยืนยันจอง</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
                                         <?php elseif ($currentStep == 2): ?>
@@ -741,72 +768,129 @@ try {
 
     <!-- Modal สำหรับเช็คอิน -->
     <div id="checkinModal" class="modal-overlay">
-        <div class="modal-container">
+        <div class="modal-container" style="max-width: 700px;">
             <div class="modal-header">
                 <button class="modal-close" onclick="closeCheckinModal()">&times;</button>
                 <div style="text-align: center;">
-                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 1rem; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);">4</div>
-                    <h2 style="color: #f8fafc; margin: 0.5rem 0;">เช็คอิน - บันทึกมิเตอร์และสภาพห้อง</h2>
+                    <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #f59e0b, #d97706); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: bold; margin: 0 auto 1rem; box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);">4</div>
+                    <h2 style="color: #f8fafc; margin: 0.5rem 0; font-size: 1.5rem;">🏠 เช็คอินผู้เช่า</h2>
                     <p style="color: rgba(241, 245, 249, 0.7); margin: 0;">บันทึกข้อมูลเริ่มต้นก่อนผู้เช่าเข้าพัก</p>
                 </div>
             </div>
             
             <div class="modal-body">
-                <div class="info-box-modal" id="tenantInfo"></div>
+                <!-- Tenant Info Card -->
+                <div id="tenantInfo" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;"></div>
 
                 <form id="checkinForm" method="POST" action="../Manage/process_wizard_step4.php" enctype="multipart/form-data">
                     <input type="hidden" name="ctr_id" id="modal_ctr_id">
                     <input type="hidden" name="tnt_id" id="modal_tnt_id">
 
-                    <div class="form-group">
-                        <label>วันที่เช็คอิน *</label>
-                        <input type="date" name="checkin_date" value="<?php echo date('Y-m-d'); ?>" required>
+                    <!-- Validation Error Message -->
+                    <div id="validationError" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 10px; padding: 1rem; margin-bottom: 1.5rem; color: #fca5a5; display: none; font-size: 0.9rem;">
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">⚠️ กรุณากรอกข้อมูลให้ครบถ้วน:</div>
+                        <ul id="errorList" style="margin: 0; padding-left: 1.25rem;"></ul>
                     </div>
 
-                    <div class="form-grid">
-                        <div class="form-group">
-                            <label>มิเตอร์น้ำเริ่มต้น *</label>
-                            <input type="number" name="water_meter_start" step="0.01" min="0" required placeholder="0.00">
+                    <!-- Section 1: วันที่เช็คอิน -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <span style="background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">1</span>
+                            <span style="font-weight: 600; color: #f1f5f9;">วันที่เช็คอิน</span>
                         </div>
-                        <div class="form-group">
-                            <label>มิเตอร์ไฟเริ่มต้น *</label>
-                            <input type="number" name="elec_meter_start" step="0.01" min="0" required placeholder="0.00">
+                        <input type="date" name="checkin_date" value="<?php echo date('Y-m-d'); ?>" required style="width: 100%; padding: 0.875rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;">
+                    </div>
+
+                    <!-- Section 2: มิเตอร์ -->
+                    <div style="margin-bottom: 1.5rem; background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.2); border-radius: 12px; padding: 1.25rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                            <span style="background: #22c55e; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">2</span>
+                            <span style="font-weight: 600; color: #f1f5f9;">⚡ บันทึกมิเตอร์เริ่มต้น</span>
+                            <span style="font-size: 0.75rem; background: rgba(34, 197, 94, 0.2); color: #4ade80; padding: 0.25rem 0.5rem; border-radius: 4px;">สำคัญ</span>
+                        </div>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0 0 1rem 0;">📌 ใช้คำนวณค่าน้ำ-ไฟรายเดือน กรุณากรอกตัวเลขจากมิเตอร์จริง</p>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.9rem;">💧 มิเตอร์น้ำ (หน่วย)</label>
+                                <input type="number" name="water_meter_start" step="0.01" min="0" required placeholder="เช่น 1234.56" style="width: 100%; padding: 0.875rem 1rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1.1rem; font-weight: 500;">
+                            </div>
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.9rem;">⚡ มิเตอร์ไฟ (หน่วย)</label>
+                                <input type="number" name="elec_meter_start" step="0.01" min="0" required placeholder="เช่น 5678.90" style="width: 100%; padding: 0.875rem 1rem; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1.1rem; font-weight: 500;">
+                            </div>
                         </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>เลขกุญแจ</label>
-                        <input type="text" name="key_number" placeholder="เช่น K-101">
+                    <!-- Section 3: ข้อมูลเพิ่มเติม -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 1rem;">
+                            <span style="background: #8b5cf6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">3</span>
+                            <span style="font-weight: 600; color: #f1f5f9;">🔑 ข้อมูลเพิ่มเติม</span>
+                            <span style="font-size: 0.75rem; color: rgba(255,255,255,0.5);">(ไม่บังคับ)</span>
+                        </div>
+                        
+                        <div style="margin-bottom: 1rem;">
+                            <label style="display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.9rem;">เลขกุญแจ</label>
+                            <input type="text" name="key_number" placeholder="เช่น K-101, ชุดที่ 2" style="width: 100%; padding: 0.75rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9;">
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>รูปสภาพห้อง (หลายรูป)</label>
-                        <input type="file" name="room_images[]" accept="image/*" multiple style="color: #f1f5f9;">
-                        <small style="color: rgba(241, 245, 249, 0.6); font-size: 0.85rem; display: block; margin-top: 0.25rem;">เลือกได้หลายรูป</small>
+                    <!-- Section 4: รูปสภาพห้อง -->
+                    <div style="margin-bottom: 1.5rem; background: rgba(139, 92, 246, 0.08); border: 1px solid rgba(139, 92, 246, 0.2); border-radius: 12px; padding: 1.25rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <span style="background: #a855f7; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">4</span>
+                            <span style="font-weight: 600; color: #f1f5f9;">📸 รูปสภาพห้องก่อนเข้าพัก</span>
+                        </div>
+                        <p style="color: rgba(255,255,255,0.6); font-size: 0.85rem; margin: 0 0 1rem 0;">เก็บหลักฐานสภาพห้องก่อนผู้เช่าเข้าอยู่ เพื่อเปรียบเทียบตอนย้ายออก</p>
+                        <div style="border: 2px dashed rgba(139, 92, 246, 0.3); border-radius: 10px; padding: 1.5rem; text-align: center; background: rgba(139, 92, 246, 0.05);">
+                            <input type="file" name="room_images[]" accept="image/*" multiple id="roomImagesInput" style="display: none;">
+                            <label for="roomImagesInput" style="cursor: pointer;">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📷</div>
+                                <div style="color: #a855f7; font-weight: 500; margin-bottom: 0.25rem;">คลิกเพื่อเลือกรูป</div>
+                                <div style="color: rgba(255,255,255,0.5); font-size: 0.85rem;">เลือกได้หลายรูป (JPG, PNG)</div>
+                            </label>
+                            <div id="selectedFilesInfo" style="margin-top: 0.75rem; color: #4ade80; font-size: 0.85rem; display: none;"></div>
+                        </div>
                     </div>
 
-                    <div class="form-group">
-                        <label>หมายเหตุ</label>
-                        <textarea name="notes" placeholder="บันทึกข้อมูลเพิ่มเติม..." rows="4" style="resize: vertical; font-family: inherit;"></textarea>
+                    <!-- Section 5: หมายเหตุ -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <label style="display: block; margin-bottom: 0.5rem; color: #94a3b8; font-size: 0.9rem;">📝 หมายเหตุ</label>
+                        <textarea name="notes" placeholder="บันทึกข้อมูลเพิ่มเติม เช่น สภาพห้องมีรอยตำหนิ, อุปกรณ์ที่มอบให้..." rows="3" style="width: 100%; padding: 0.75rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; resize: vertical; font-family: inherit;"></textarea>
                     </div>
 
-                    <div class="alert-box-modal">
-                        <h4>🔑 ระบบจะดำเนินการ:</h4>
-                        <ul style="padding-left: 1.5rem; line-height: 1.8; color: #e2e8f0;">
-                            <li>บันทึกเลขมิเตอร์เริ่มต้น (สำหรับคิดค่าน้ำ-ไฟ)</li>
-                            <li>บันทึกรูปสภาพห้องก่อนเข้าพัก</li>
-                            <li>อัปเดตสถานะผู้เช่าเป็น "พักอยู่"</li>
+                    <!-- Summary Box -->
+                    <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(234, 88, 12, 0.08)); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 1rem 1.25rem;">
+                        <h4 style="margin: 0 0 0.75rem 0; color: #fbbf24; font-size: 1rem;">✅ ระบบจะดำเนินการ:</h4>
+                        <ul style="padding-left: 1.25rem; margin: 0; line-height: 1.8; color: #e2e8f0; font-size: 0.9rem;">
+                            <li>บันทึกเลขมิเตอร์เริ่มต้น → <span style="color: #4ade80;">ใช้คำนวณค่าน้ำ-ไฟ</span></li>
+                            <li>บันทึกรูปสภาพห้อง → <span style="color: #4ade80;">หลักฐานก่อนเข้าพัก</span></li>
+                            <li>อัปเดตสถานะห้อง → <span style="color: #4ade80;">"มีผู้เช่า"</span></li>
+                            <li>อัปเดตสถานะผู้เช่า → <span style="color: #4ade80;">"พักอยู่"</span></li>
                         </ul>
                     </div>
                 </form>
             </div>
 
-            <div class="modal-footer">
-                <button type="button" class="btn-modal btn-modal-secondary" onclick="closeCheckinModal()">ยกเลิก</button>
-                <button type="button" class="btn-modal btn-modal-primary" onclick="document.getElementById('checkinForm').submit()">✓ บันทึกเช็คอิน</button>
+            <div class="modal-footer" style="display: flex; gap: 1rem; justify-content: flex-end; padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
+                <button type="button" class="btn-modal btn-modal-secondary" onclick="closeCheckinModal()" style="padding: 0.875rem 1.5rem;">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-modal-primary" onclick="validateAndSubmitCheckin()" style="padding: 0.875rem 2rem; background: linear-gradient(135deg, #f59e0b, #d97706); font-weight: 600;">🏠 บันทึกเช็คอิน</button>
             </div>
         </div>
     </div>
+
+    <script>
+    // Show selected files info
+    document.getElementById('roomImagesInput')?.addEventListener('change', function(e) {
+        const fileInfo = document.getElementById('selectedFilesInfo');
+        if (this.files.length > 0) {
+            fileInfo.style.display = 'block';
+            fileInfo.textContent = '✓ เลือกแล้ว ' + this.files.length + ' รูป';
+        } else {
+            fileInfo.style.display = 'none';
+        }
+    });
+    </script>
 
     <!-- Modal สำหรับเริ่มบิลรายเดือน (Step 5) -->
     <div id="billingModal" class="modal-overlay">
@@ -919,10 +1003,36 @@ try {
         document.getElementById('modal_ctr_id').value = ctrId;
         document.getElementById('modal_tnt_id').value = tntId;
         
+        // Format dates to Thai format
+        const formatDate = (dateStr) => {
+            const date = new Date(dateStr);
+            const months = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 
+                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+            const day = date.getDate();
+            const month = months[date.getMonth()];
+            const year = date.getFullYear() + 543; // Thai Buddhist year
+            return `${day} ${month} ${year}`;
+        };
+        
         document.getElementById('tenantInfo').innerHTML = `
-            <p><strong style="color: #60a5fa;">ผู้เช่า:</strong> ${tntName}</p>
-            <p><strong style="color: #60a5fa;">ห้อง:</strong> ${roomNumber}</p>
-            <p><strong style="color: #60a5fa;">สัญญา:</strong> ${ctrStart} - ${ctrEnd}</p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; color: #e2e8f0;">
+                <div>
+                    <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem;">👤 ชื่อผู้เช่า</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #60a5fa;">${tntName}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem;">🚪 เลขห้อง</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #60a5fa;">${roomNumber}</div>
+                </div>
+            </div>
+            <div style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid rgba(96, 165, 250, 0.3);">
+                <div style="font-size: 0.85rem; color: #94a3b8; margin-bottom: 0.25rem;">📋 ระยะเวลาสัญญา</div>
+                <div style="font-size: 0.95rem; color: #cbd5e1;">
+                    <span style="color: #4ade80;">✓ ${ctrStart}</span> 
+                    <span style="color: #94a3b8;"> ถึง </span>
+                    <span style="color: #f87171;">${ctrEnd}</span>
+                </div>
+            </div>
         `;
         
         document.getElementById('checkinModal').classList.add('active');
@@ -930,11 +1040,82 @@ try {
         document.body.classList.add('modal-open');
     }
 
+    function validateAndSubmitCheckin() {
+        const form = document.getElementById('checkinForm');
+        const errorContainer = document.getElementById('validationError');
+        const errorList = document.getElementById('errorList');
+        const errors = [];
+
+        // 1. Validate วันที่เช็คอิน
+        const checkinDate = form.checkin_date.value.trim();
+        if (!checkinDate) {
+            errors.push('กรุณาระบุวันที่เช็คอิน');
+        } else {
+            const date = new Date(checkinDate);
+            if (isNaN(date.getTime())) {
+                errors.push('วันที่เช็คอิน ไม่ถูกต้อง');
+            }
+        }
+
+        // 2. Validate มิเตอร์น้ำ
+        const waterMeter = form.water_meter_start.value.trim();
+        if (!waterMeter) {
+            errors.push('กรุณาระบุเลขมิเตอร์น้ำ');
+        } else {
+            const water = parseFloat(waterMeter);
+            if (isNaN(water) || water < 0) {
+                errors.push('เลขมิเตอร์น้ำ ต้องเป็นตัวเลขที่มากกว่าหรือเท่ากับ 0');
+            }
+        }
+
+        // 3. Validate มิเตอร์ไฟ
+        const elecMeter = form.elec_meter_start.value.trim();
+        if (!elecMeter) {
+            errors.push('กรุณาระบุเลขมิเตอร์ไฟฟ้า');
+        } else {
+            const elec = parseFloat(elecMeter);
+            if (isNaN(elec) || elec < 0) {
+                errors.push('เลขมิเตอร์ไฟฟ้า ต้องเป็นตัวเลขที่มากกว่าหรือเท่ากับ 0');
+            }
+        }
+
+        // 4. Validate รูปภาพ (ต้องมีอย่างน้อย 1 รูป)
+        const imageInput = document.getElementById('roomImagesInput');
+        if (!imageInput.files || imageInput.files.length === 0) {
+            errors.push('กรุณาเลือกรูปภาพห้องอย่างน้อย 1 รูป');
+        } else {
+            // Validate file types
+            for (let file of imageInput.files) {
+                if (!file.type.startsWith('image/')) {
+                    errors.push(`ไฟล์ "${file.name}" ไม่ใช่รูปภาพ`);
+                }
+            }
+        }
+
+        // 5. Validate หมายเหตุ (ยังไม่บังคับแต่ให้ warning ถ้าว่าง)
+        // ข้ามการตรวจสอบเพราะเป็นไม่บังคับ
+
+        // 6. Validate เลขกุญแจ (ไม่บังคับ)
+        // ข้ามการตรวจสอบเพราะเป็นไม่บังคับ
+
+        // Display errors or submit
+        if (errors.length > 0) {
+            errorList.innerHTML = errors.map(err => `<li>${err}</li>`).join('');
+            errorContainer.style.display = 'block';
+            // Scroll to error
+            errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            errorContainer.style.display = 'none';
+            form.submit();
+        }
+    }
+
     function closeCheckinModal() {
         document.getElementById('checkinModal').classList.remove('active');
         document.body.style.overflow = '';
         document.body.classList.remove('modal-open');
         document.getElementById('checkinForm').reset();
+        document.getElementById('validationError').style.display = 'none';
     }
 
     // ปิด modal เมื่อคลิกนอก modal

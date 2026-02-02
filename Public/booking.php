@@ -301,7 +301,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         $stmtTenant->execute([$tenantId, $name, $age ?: null, $address ?: null, $phone, $education ?: null, $faculty ?: null, $year ?: null, $vehicle ?: null, $parent ?: null, $parentsphone ?: null]);
                                     } catch (PDOException $e) {
                                         if (strpos($e->getMessage(), 'Duplicate entry') !== false && strpos($e->getMessage(), 'tnt_phone') !== false) {
-                                            $error = 'เบอร์โทรศัพท์นี้มีผู้ใช้งานอยู่แล้ว (' . htmlspecialchars($phone) . ')';\n                                        } else {\n                                            $error = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage();\n                                        }\n                                    }\n                                }\n                            } else {\n                                $tenantId = 'T' . time();\n                                $stmtTenant = $pdo->prepare(\"\n                                    INSERT INTO tenant (tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status, tnt_ceatetime)\n                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '3', NOW())\n                                \");\n                                $stmtTenant->execute([$tenantId, $name, $age ?: null, $address ?: null, $phone, $education ?: null, $faculty ?: null, $year ?: null, $vehicle ?: null, $parent ?: null, $parentsphone ?: null]);\n                            }\n                        }
+                                            $error = 'เบอร์โทรศัพท์นี้มีผู้ใช้งานอยู่แล้ว (' . htmlspecialchars($phone) . ')';
+                                        } else {
+                                            $error = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage();
+                                        }
+                                    }
+                                }
+                            } else {
+                                $tenantId = 'T' . time();
+                                $stmtTenant = $pdo->prepare("
+                                    INSERT INTO tenant (tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status, tnt_ceatetime)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '3', NOW())
+                                ");
+                                $stmtTenant->execute([$tenantId, $name, $age ?: null, $address ?: null, $phone, $education ?: null, $faculty ?: null, $year ?: null, $vehicle ?: null, $parent ?: null, $parentsphone ?: null]);
+                            }
+                        }
+
+                        if (!empty($error)) {
+                            $pdo->rollBack();
+                        } else {
                         
                         // Generate booking ID (use last 9 digits to fit INT(11) max: 2147483647)
                         $bookingId = (int)substr((string)time(), -9);
@@ -381,6 +399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['last_booking_id'] = $bookingId;
                         $_SESSION['last_tenant_id'] = $tenantId;
                         $_SESSION['last_booking_time'] = time();
+                        }
                     }
                 } catch (PDOException $e) {
                     if ($pdo->inTransaction()) $pdo->rollBack();
