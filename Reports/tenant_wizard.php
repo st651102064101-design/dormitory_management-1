@@ -263,6 +263,16 @@ try {
             background: #16a34a;
         }
 
+        .btn-danger {
+            background: #ef4444;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            transform: translateY(-1px);
+        }
+
         .btn-disabled {
             background: rgba(255,255,255,0.1);
             color: rgba(255,255,255,0.3);
@@ -587,12 +597,16 @@ try {
                                     <td>
                                         <?php if ($currentStep == 1): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>, '<?php echo date('d/m/Y', strtotime($tenant['bkg_date'])); ?>')">ยืนยันจอง</button>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
                                         <?php elseif ($currentStep == 2): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openPaymentModal(<?php echo $tenant['bp_id']; ?>, <?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['bp_amount'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['bp_proof'] ?? '', ENT_QUOTES, 'UTF-8'); ?>')">ยืนยันชำระเงินจอง</button>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
                                         <?php elseif ($currentStep == 3): ?>
                                             <a href="wizard_step3.php?tnt_id=<?php echo urlencode($tenant['tnt_id']); ?>&room_id=<?php echo $tenant['room_id']; ?>&bkg_id=<?php echo $tenant['bkg_id']; ?>" class="action-btn btn-primary">สร้างสัญญา</a>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
                                         <?php elseif ($currentStep == 4): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo $tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now')); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now')); ?>')">เช็คอิน</button>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
                                         <?php elseif ($currentStep == 5): ?>
                                             <button type="button" class="action-btn btn-success" onclick="openBillingModal(<?php echo $tenant['ctr_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>)">เริ่มบิลรายเดือน</button>
                                         <?php endif; ?>
@@ -1040,5 +1054,58 @@ try {
         document.getElementById('paymentModal').classList.remove('active');
         document.body.style.overflow = '';
         document.body.classList.remove('modal-open');
+    }
+
+    // Function สำหรับยกเลิกการจอง
+    async function cancelBooking(bkgId, tntId, tntName) {
+        let confirmed = false;
+        if (typeof showConfirmDialog === 'function') {
+            confirmed = await showConfirmDialog(
+                'ยืนยันการยกเลิกการจอง',
+                `คุณต้องการยกเลิกการจองของ "${tntName}" หรือไม่?\n\n⚠️ ข้อมูลที่จะถูกลบ:\n• ข้อมูลการจอง\n• ข้อมูลการชำระเงินมัดจำ\n• ข้อมูลสัญญา (ถ้ามี)\n• ข้อมูลค่าใช้จ่าย (ถ้ามี)\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้!`,
+                'delete'
+            );
+        } else {
+            confirmed = confirm(`คุณต้องการยกเลิกการจองของ "${tntName}" หรือไม่?\n\nข้อมูลทั้งหมดที่เกี่ยวข้องจะถูกลบ!`);
+        }
+        
+        if (confirmed) {
+            await doCancelBooking(bkgId, tntId);
+        }
+    }
+
+    async function doCancelBooking(bkgId, tntId) {
+        try {
+            const formData = new FormData();
+            formData.append('bkg_id', bkgId);
+            formData.append('tnt_id', tntId);
+
+            const response = await fetch('../Manage/cancel_booking.php', {
+                method: 'POST',
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast(data.message || 'ยกเลิกการจองเรียบร้อยแล้ว');
+                }
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast(data.error || 'เกิดข้อผิดพลาด');
+                } else {
+                    alert(data.error || 'เกิดข้อผิดพลาด');
+                }
+            }
+        } catch (err) {
+            console.error(err);
+            if (typeof showErrorToast === 'function') {
+                showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            } else {
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+            }
+        }
     }
 </script>
