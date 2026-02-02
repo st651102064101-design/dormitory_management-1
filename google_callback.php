@@ -250,8 +250,9 @@ try {
         
         // Try to find by phone if available (common in Thai systems)
         if (!empty($phone)) {
+            error_log("Searching tenant by phone: $phone");
             $stmt = $pdo->prepare('
-                SELECT tnt_id, tnt_name
+                SELECT tnt_id, tnt_name, tnt_phone
                 FROM tenant
                 WHERE tnt_phone = ?
                 LIMIT 1
@@ -260,8 +261,8 @@ try {
             $existingTenant = $stmt->fetch(PDO::FETCH_ASSOC);
             
             if ($existingTenant) {
+                error_log("Found tenant by phone: " . $existingTenant['tnt_id']);
                 $tenantId = $existingTenant['tnt_id'];
-                error_log("Found tenant by phone: $tenantId");
                 
                 // Insert into tenant_oauth
                 $insertStmt = $pdo->prepare('
@@ -282,12 +283,42 @@ try {
                 // Set tenant variable with existing tenant data
                 $tenant = $existingTenant;
                 $tenant['oauth_picture'] = $picture;
+            } else {
+                error_log("No tenant found with phone: $phone");
             }
+        } else {
+            error_log("Phone number not provided from Google, skipping phone lookup");
         }
     }
     
     if ($tenant) {
-        // อัพเดทข้อมูล OAuth ถ้ามีการเปลี่ยนแปลง
+        error_log("Tenant found: " . $tenant['tnt_id']);
+        
+        // ตรวจสอบว่า OAuth record มีอยู่หรือไม่
+        $checkOAuthStmt = $pdo->prepare('
+            SELECT oauth_id FROM tenant_oauth 
+            WHERE tnt_id = ? AND provider = "google"
+        ');
+        $checkOAuthStmt->execute([$tenant['tnt_id']]);
+        $existingOAuth = $checkOAuthStmt->fetch();
+        
+        if (!$existingOAuth) {
+            error_log("Creating new OAuth record for: " . $tenant['tnt_id']);
+            // Insert new OAuth record if doesn't exist
+            $insertOAuthStmt = $pdo->prepare('
+                INSERT INTO tenant_oauth (tnt_id, provider, provider_id, provider_email, created_at, updated_at)
+                VALUES (?, "google", ?, ?, NOW(), NOW())
+            ');
+            try {
+                $insertOAuthStmt->execute([$tenant['tnt_id'], $googleId, $email]);
+            } catch (PDOException $e) {
+                error_log("Error inserting OAuth: " . $e->getMessage());
+            }
+        } else {
+            error_log("Updating existing OAuth record for: " . $tenant['tnt_id']);
+        }
+        
+        // Update OAuth record
         $updateOAuthStmt = $pdo->prepare('
             UPDATE tenant_oauth 
             SET provider_id = :google_id, 
@@ -312,9 +343,45 @@ try {
         $_SESSION['tenant_picture'] = $tenant['oauth_picture'] ?? $picture;
         $_SESSION['tenant_logged_in'] = true;
         
-        // Redirect ไปหน้าหลัก
-        header('Location: index.php');
-        exit;
+        error_log("Session set for tenant: " . $_SESSION['tenant_id']);
+        
+        // Check booking count to decide where to redirect
+        try {
+            $bookingStmt = $pdo->prepare('
+                SELECT bkg_id, bkg_date
+                FROM booking
+                WHERE tnt_id = ? AND bkg_status IN ("1","2")
+                ORDER BY bkg_date DESC
+            ');
+            $bookingStmt->execute([$tenant['tnt_id']]);
+            $bookings = $bookingStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("Tenant has " . count($bookings) . " active booking(s)");
+            
+            // ถ้าจองไว้เพียง 1 ห้อง ให้ redirect ไปหน้า booking_status.php พร้อมแสดงข้อมูลเลย
+            if (count($bookings) === 1) {
+                error_log("Redirecting to booking_status.php with auto-fill");
+                header('Location: Public/booking_status.php?auto=1&ref=' . urlencode($bookings[0]['bkg_id']));
+                exit;
+            }
+            // ถ้าจองหลายห้อง ให้ไปหน้า booking_status.php ให้เลือก
+            else if (count($bookings) > 1) {
+                error_log("Redirecting to booking_status.php for selection");
+                header('Location: Public/booking_status.php?auto=1');
+                exit;
+            }
+            // ถ้าไม่มีการจอง ให้ไปหน้าแรก
+            else {
+                error_log("No active bookings, redirecting to home");
+                header('Location: index.php');
+                exit;
+            }
+        } catch (Exception $e) {
+            error_log("Error checking bookings: " . $e->getMessage());
+            // Fallback ไปหน้าแรก
+            header('Location: index.php');
+            exit;
+        }
     }
     
     // 3. ไม่พบทั้ง Admin และ Tenant - redirect ไปหน้าลงทะเบียน (สำหรับ Tenant ใหม่)

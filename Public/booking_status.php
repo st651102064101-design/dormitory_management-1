@@ -81,8 +81,9 @@ error_log("  resolvedTenantId: " . $resolvedTenantId);
 error_log("  isTenantLoggedIn: " . ($isTenantLoggedIn ? 'YES' : 'NO'));
 
 // รับค่าจาก GET หรือ POST
-$bookingRef = trim($_GET['id'] ?? $_POST['booking_ref'] ?? '');
+$bookingRef = trim($_GET['id'] ?? $_POST['booking_ref'] ?? $_GET['ref'] ?? '');
 $contactInfo = trim($_GET['phone'] ?? $_POST['contact_info'] ?? '');
+$autoRedirect = !empty($_GET['auto']);
 
 // ถ้าเป็นผู้เช่าที่ล็อกอิน ให้ดึงข้อมูลอัตโนมัติและรองรับหลายการจอง
 if ($isTenantLoggedIn) {
@@ -102,11 +103,12 @@ if ($isTenantLoggedIn) {
         }
 
         $stmtBookings = $pdo->prepare("\
-            SELECT bkg_id, bkg_date, bkg_checkin_date
+            SELECT bkg_id, bkg_date, bkg_checkin_date, bkg_status
             FROM booking
             WHERE tnt_id = ? AND bkg_status IN ('1','2')
             ORDER BY bkg_date DESC
         ");
+        error_log("SQL: SELECT bkg_id, bkg_date FROM booking WHERE tnt_id = '$tenantId'");
         $stmtBookings->execute([$tenantId]);
         $tenantBookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC) ?: [];
         
@@ -118,6 +120,11 @@ if ($isTenantLoggedIn) {
                 $bookingRef = (string)$tenantBookings[0]['bkg_id'];
                 $autoFilled = true;
                 error_log("Auto-filled bookingRef: $bookingRef");
+                
+                // Auto-submit form for single booking
+                if ($autoRedirect) {
+                    error_log("Auto-redirecting for single booking");
+                }
             } elseif (count($tenantBookings) === 0 && !empty($contactInfo)) {
                 $noBookingForTenant = true;
             }
@@ -624,7 +631,7 @@ if ($currentStatus === '1' && $expStatus === '1') {
                 <div class="form-group">
                     <label>หมายเลขการจอง</label>
                     <?php if ($isTenantLoggedIn && !empty($tenantBookings)): ?>
-                        <select name="booking_ref" class="form-control" required>
+                        <select name="booking_ref" class="form-control" required onchange="this.form.submit()">
                             <option value="">เลือกหมายเลขการจอง</option>
                             <?php foreach ($tenantBookings as $tb): ?>
                                 <option value="<?php echo htmlspecialchars($tb['bkg_id']); ?>" <?php echo ((string)$bookingRef === (string)$tb['bkg_id']) ? 'selected' : ''; ?> >
@@ -877,6 +884,27 @@ if ($currentStatus === '1' && $expStatus === '1') {
                 alert('คัดลอกแล้ว: ' + text);
             });
         }
+        
+        // Auto-submit form when user selects from dropdown (for multi-booking case)
+        document.addEventListener('DOMContentLoaded', function() {
+            const select = document.querySelector('select[name="booking_ref"]');
+            if (select) {
+                select.addEventListener('change', function() {
+                    if (this.value) {
+                        this.form.submit();
+                    }
+                });
+            }
+            
+            // Auto-show result if redirected from Google login with single booking
+            <?php if ($autoRedirect && !empty($bookingRef) && $isTenantLoggedIn && count($tenantBookings) === 1 && $autoFilled): ?>
+            console.log('Auto-submitting form for single booking...');
+            const form = document.querySelector('form');
+            if (form) {
+                setTimeout(() => form.submit(), 300);
+            }
+            <?php endif; ?>
+        });
     </script>
 </body>
 </html>
