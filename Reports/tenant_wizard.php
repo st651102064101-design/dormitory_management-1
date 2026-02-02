@@ -60,6 +60,8 @@ try {
             bp.bp_id,
             bp.bp_amount,
             bp.bp_proof,
+            bp.bp_amount,
+            bp.bp_proof,
             cr.checkin_id,
             cr.checkin_date
         FROM tenant t
