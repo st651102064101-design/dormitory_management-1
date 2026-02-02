@@ -106,14 +106,27 @@ try {
     $upcomingRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
 
-// สร้างรายการเดือนสำหรับ dropdown (12 เดือนข้างหน้า)
+// ดึงเดือนที่มีห้องจะว่าง (contract สิ้นสุด)
+$availableMonths = [];
+try {
+    $stmt = $pdo->prepare("
+        SELECT DISTINCT DATE_FORMAT(ctr_end, '%Y-%m') as month_key
+        FROM contract
+        WHERE ctr_status = '0'
+        ORDER BY ctr_end ASC
+        LIMIT 24
+    ");
+    $stmt->execute();
+    $availableMonths = $stmt->fetchAll(PDO::FETCH_COLUMN);
+} catch (PDOException $e) {}
+
+// สร้างรายการเดือนสำหรับ dropdown (เฉพาะเดือนที่มีห้องจะว่าง)
 $monthOptions = [];
-for ($i = 0; $i < 12; $i++) {
-    $monthDate = date('Y-m', strtotime("+$i months"));
-    $y = (int)substr($monthDate, 0, 4);
-    $m = (int)substr($monthDate, 5, 2);
+foreach ($availableMonths as $monthKey) {
+    $y = (int)substr($monthKey, 0, 4);
+    $m = (int)substr($monthKey, 5, 2);
     $monthOptions[] = [
-        'value' => $monthDate,
+        'value' => $monthKey,
         'label' => $thaiMonthsFull[$m] . ' ' . ($y + 543)
     ];
 }
@@ -2123,8 +2136,9 @@ if ($publicTheme === 'light') {
             <!-- Month Quick Buttons -->
             <div class="month-buttons">
                 <?php 
-                for ($i = 0; $i < 6; $i++): 
-                    $monthDate = date('Y-m', strtotime("+$i months"));
+                // แสดง 6 เดือนแรกที่มีห้องจะว่าง (หรือน้อยกว่าถ้าไม่ถึง 6)
+                for ($i = 0; $i < min(6, count($availableMonths)); $i++): 
+                    $monthDate = $availableMonths[$i];
                     $y = (int)substr($monthDate, 0, 4);
                     $m = (int)substr($monthDate, 5, 2);
                     $isActive = $monthDate === $selectedMonth;
