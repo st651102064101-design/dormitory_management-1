@@ -340,6 +340,7 @@ if (!empty($bookingRef) && (!empty($contactInfo) || $isTenantLoggedIn)) {
 $deposit = 2000;
 $paid = floatval($bookingInfo['paid_amount'] ?? 0);
 $remaining = max(0, $deposit - $paid);
+$paidColor = $paid > 0 ? 'var(--success)' : 'var(--danger)';
 
 // สถานะการจอง
 $statusLabels = [
@@ -839,7 +840,7 @@ if ($currentStatus === '1' && $expStatus === '1') {
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <div>
                     <div style="color: var(--text-muted); font-size: 0.875rem;">📋 หมายเลขการจอง</div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); letter-spacing: 1px;">
+                    <div style="font-size: 1.5rem; font-weight: 700; color: #f8fafc; letter-spacing: 1px;">
                         <?php echo htmlspecialchars($bookingInfo['bkg_id']); ?>
                     </div>
                 </div>
@@ -852,7 +853,7 @@ if ($currentStatus === '1' && $expStatus === '1') {
             <?php if ($isTenantLoggedIn): ?>
             <div style="background: var(--bg); padding: 14px; border-radius: 10px; margin-bottom: 16px; border-left: 4px solid var(--primary);">
                 <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">🎫 เลขที่การจองของคุณ</div>
-                <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary); font-family: 'Courier New', monospace; letter-spacing: 2px;">
+                <div style="font-size: 1.1rem; font-weight: 700; color: #f8fafc; font-family: 'Courier New', monospace; letter-spacing: 2px;">
                     <?php echo htmlspecialchars($bookingInfo['bkg_id']); ?>
                 </div>
             </div>
@@ -892,8 +893,8 @@ if ($currentStatus === '1' && $expStatus === '1') {
         
         <!-- Payment Card -->
         <div class="card">
-            <div class="card-title">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="<?php echo $themeColor; ?>" stroke-width="2">
+            <div class="card-title" style="color: var(--text-muted);">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <rect x="1" y="4" width="22" height="16" rx="2"/>
                     <line x1="1" y1="10" x2="23" y2="10"/>
                 </svg>
@@ -914,7 +915,7 @@ if ($currentStatus === '1' && $expStatus === '1') {
                 </div>
                 <div style="text-align: right;">
                     <span style="color: var(--text-muted);">ชำระแล้ว</span>
-                    <div style="font-weight: 600; color: var(--success);">฿<?php echo number_format($paid); ?></div>
+                    <div style="font-weight: 600; color: <?php echo $paidColor; ?>;">฿<?php echo number_format($paid); ?></div>
                 </div>
             </div>
             
