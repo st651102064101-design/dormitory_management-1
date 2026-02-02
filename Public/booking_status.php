@@ -49,42 +49,51 @@ $bookingInfo = null;
 $error = '';
 $showResult = false;
 $autoFilled = false;
+$isTenantLoggedIn = !empty($_SESSION['tenant_id']);
+$tenantPhone = '';
+$tenantBookings = [];
+$autoFillError = false;
+$noBookingForTenant = false;
 
 // รับค่าจาก GET หรือ POST
 $bookingRef = trim($_GET['id'] ?? $_POST['booking_ref'] ?? '');
 $contactInfo = trim($_GET['phone'] ?? $_POST['contact_info'] ?? '');
 
-// ถ้าเป็นผู้เช่าที่ล็อกอินด้วย Google ให้ดึงข้อมูลอัตโนมัติ
-if (empty($bookingRef) && empty($contactInfo) && !empty($_SESSION['tenant_id'])) {
+// ถ้าเป็นผู้เช่าที่ล็อกอิน ให้ดึงข้อมูลอัตโนมัติและรองรับหลายการจอง
+if ($isTenantLoggedIn) {
     try {
-        $stmtAuto = $pdo->prepare("\
-            SELECT 
-                t.tnt_phone,
-                (
-                    SELECT bkg_id
-                    FROM booking
-                    WHERE tnt_id = t.tnt_id AND bkg_status IN ('1','2')
-                    ORDER BY bkg_date DESC
-                    LIMIT 1
-                ) AS bkg_id
-            FROM tenant t
-            WHERE t.tnt_id = ?
-            LIMIT 1
-        ");
-        $stmtAuto->execute([$_SESSION['tenant_id']]);
-        $autoData = $stmtAuto->fetch(PDO::FETCH_ASSOC);
+        $tenantId = $_SESSION['tenant_id'];
 
-        if ($autoData && !empty($autoData['tnt_phone'])) {
-            $contactInfo = $autoData['tnt_phone'];
+        $stmtTenant = $pdo->prepare("SELECT tnt_phone FROM tenant WHERE tnt_id = ? LIMIT 1");
+        $stmtTenant->execute([$tenantId]);
+        $tenantRow = $stmtTenant->fetch(PDO::FETCH_ASSOC);
+        if ($tenantRow && !empty($tenantRow['tnt_phone'])) {
+            $tenantPhone = $tenantRow['tnt_phone'];
+            if (empty($contactInfo)) {
+                $contactInfo = $tenantPhone;
+            }
         }
-        if ($autoData && !empty($autoData['bkg_id']) && !empty($autoData['tnt_phone'])) {
-            $bookingRef = (string)$autoData['bkg_id'];
-            $autoFilled = true;
-        } else {
-            $error = 'ไม่พบข้อมูลการจองสำหรับบัญชีนี้';
+
+        $stmtBookings = $pdo->prepare("\
+            SELECT bkg_id, bkg_date, bkg_checkin_date
+            FROM booking
+            WHERE tnt_id = ? AND bkg_status IN ('1','2')
+            ORDER BY bkg_date DESC
+        ");
+        $stmtBookings->execute([$tenantId]);
+        $tenantBookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+        if (empty($bookingRef)) {
+            if (count($tenantBookings) === 1) {
+                $bookingRef = (string)$tenantBookings[0]['bkg_id'];
+                $autoFilled = true;
+            } elseif (count($tenantBookings) === 0 && !empty($contactInfo)) {
+                $noBookingForTenant = true;
+            }
         }
     } catch (PDOException $e) {
-        $error = 'เกิดข้อผิดพลาดในการดึงข้อมูลผู้เช่า';
+        error_log('Booking status auto-fill error: ' . $e->getMessage());
+        $autoFillError = true;
     }
 }
 
@@ -537,14 +546,22 @@ if ($currentStatus === '1' && $expStatus === '1') {
             <p>กรอกข้อมูลเพื่อดูสถานะการจองของคุณ</p>
         </div>
         
-        <?php if ($error): ?>
+        <?php if ($error || $noBookingForTenant): ?>
         <div class="alert alert-error">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="10"/>
                 <line x1="12" y1="8" x2="12" y2="12"/>
                 <line x1="12" y1="16" x2="12.01" y2="16"/>
             </svg>
-            <?php echo htmlspecialchars($error); ?>
+            <?php echo htmlspecialchars($noBookingForTenant ? 'ยังไม่มีรายการจองในบัญชีนี้' : $error); ?>
+        </div>
+        <?php endif; ?>
+
+        <?php if ($noBookingForTenant): ?>
+        <div style="text-align: center; margin-bottom: 16px;">
+            <a href="../Public/booking.php" class="btn" style="display: inline-flex; align-items: center; gap: 8px;">
+                ไปหน้าจองห้อง
+            </a>
         </div>
         <?php endif; ?>
         
@@ -552,11 +569,30 @@ if ($currentStatus === '1' && $expStatus === '1') {
             <form method="post">
                 <div class="form-group">
                     <label>หมายเลขการจอง</label>
-                    <input type="text" name="booking_ref" class="form-control" placeholder="เช่น 770004930" value="<?php echo htmlspecialchars($bookingRef); ?>" required>
+                    <?php if ($isTenantLoggedIn && !empty($tenantBookings)): ?>
+                        <select name="booking_ref" class="form-control" required>
+                            <option value="">เลือกหมายเลขการจอง</option>
+                            <?php foreach ($tenantBookings as $tb): ?>
+                                <option value="<?php echo htmlspecialchars($tb['bkg_id']); ?>" <?php echo ((string)$bookingRef === (string)$tb['bkg_id']) ? 'selected' : ''; ?> >
+                                    <?php echo htmlspecialchars($tb['bkg_id']); ?>
+                                    <?php if (!empty($tb['bkg_checkin_date'])): ?> (เข้าพัก <?php echo htmlspecialchars(date('d/m/Y', strtotime($tb['bkg_checkin_date']))); ?>)<?php endif; ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    <?php else: ?>
+                        <input type="text" name="booking_ref" class="form-control" placeholder="เช่น 770004930" value="<?php echo htmlspecialchars($bookingRef); ?>" required>
+                    <?php endif; ?>
                 </div>
                 <div class="form-group">
                     <label>เบอร์โทรศัพท์</label>
-                    <input type="tel" name="contact_info" class="form-control" placeholder="เช่น 0812345678" value="<?php echo htmlspecialchars($contactInfo); ?>" maxlength="10" required>
+                    <?php if ($isTenantLoggedIn && !empty($contactInfo)): ?>
+                        <input type="hidden" name="contact_info" value="<?php echo htmlspecialchars($contactInfo); ?>">
+                        <div class="form-control" style="background: rgba(255,255,255,0.05); color: var(--text-muted);">
+                            <?php echo htmlspecialchars($contactInfo); ?>
+                        </div>
+                    <?php else: ?>
+                        <input type="tel" name="contact_info" class="form-control" placeholder="เช่น 0812345678" value="<?php echo htmlspecialchars($contactInfo); ?>" maxlength="10" required>
+                    <?php endif; ?>
                 </div>
                 <button type="submit" class="btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
