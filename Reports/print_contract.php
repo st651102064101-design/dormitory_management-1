@@ -372,7 +372,42 @@ function nameWithoutNickname($fullName) {
             .screen-watermark { display: none; }
             body { background: white; padding: 0; }
             .print-container { box-shadow: none; margin: 0; }
+            .no-print { display: none !important; }
+            .print-only { display: inline-flex !important; }
         }
+        
+        /* Signature button styles */
+        .sign-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 18px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+            transition: all 0.2s;
+            font-family: Tahoma, Arial, sans-serif;
+        }
+        
+        .sign-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+        }
+        
+        .sign-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        
+        .print-only {
+            display: none;
+        }
+        
         .underline { display: inline-flex; align-items: flex-end; justify-content: center; vertical-align: baseline; min-width: 40px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: center; line-height: 1; color: #0066cc; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
         .underline-long { min-width: 120px; }
         .underline-mid { min-width: 90px; }
@@ -487,7 +522,48 @@ function nameWithoutNickname($fullName) {
         <div class="signatures">
             <div class="signature-box">
                 <div class="signature-row">
-                    <span class="signature-line"></span>
+                    <?php
+                    // Check if tenant has already signed
+                    $tenantSignature = null;
+                    $tenantSignedAt = null;
+                    try {
+                        $sigStmt = $pdo->prepare("SELECT signature_file, signed_at FROM signature_logs WHERE contract_id = ? AND signer_type = 'tenant' ORDER BY signed_at DESC LIMIT 1");
+                        $sigStmt->execute([$ctr_id]);
+                        $tenantSig = $sigStmt->fetch(PDO::FETCH_ASSOC);
+                        if ($tenantSig) {
+                            $tenantSignature = $tenantSig['signature_file'];
+                            $tenantSignedAt = $tenantSig['signed_at'];
+                        }
+                    } catch (Exception $e) {
+                        // Table might not exist yet
+                    }
+                    ?>
+                    <?php if (!empty($tenantSignature)): ?>
+                    <div class="signature-protected" style="margin-left: 5rem; margin-right: 3rem;">
+                        <img src="/dormitory_management/Public/Assets/Signatures/<?php echo htmlspecialchars($tenantSignature); ?>" 
+                             alt="ลายเซ็นผู้เช่า" 
+                             style="height: 50px; max-width: 150px; object-fit: contain;"
+                             oncontextmenu="return false;"
+                             ondragstart="return false;">
+                        <div class="signature-watermark" style="font-size: 8px;">
+                            <?php echo date('d/m/Y H:i', strtotime($tenantSignedAt)); ?>
+                        </div>
+                    </div>
+                    <?php else: ?>
+                    <button type="button" class="sign-btn no-print" onclick="openSignatureModal({
+                        contractId: <?php echo $ctr_id; ?>,
+                        signerType: 'tenant',
+                        signerName: '<?php echo addslashes(h(nameWithoutNickname($contract['tnt_name'] ?? ''))); ?>',
+                        documentName: 'สัญญาเช่าห้อง <?php echo addslashes(h($contract['room_number'] ?? '')); ?>'
+                    })">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+                            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+                        </svg>
+                        คลิกเพื่อลงลายมือชื่อ
+                    </button>
+                    <span class="signature-line print-only"></span>
+                    <?php endif; ?>
                     <span class="signature-label">ผู้เช่า</span>
                 </div>
                 <div class="signature-row">
@@ -608,5 +684,8 @@ function nameWithoutNickname($fullName) {
             });
         }
     </script>
+    
+    <!-- Include Signature Modal -->
+    <?php include_once __DIR__ . '/../includes/signature_modal.php'; ?>
 </body>
 </html>
