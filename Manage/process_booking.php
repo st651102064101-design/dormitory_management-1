@@ -78,9 +78,9 @@ try {
     ");
     $stmt->execute([$bkg_date, $bkg_checkin_date, $room_id, $tnt_id]);
     
-    // อัพเดทสถานะห้องเป็นไม่ว่าง (1) เพื่อกันการจองซ้ำ (schema: 1 = ไม่ว่าง, 0 = ว่าง)
-    $updateStmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
-    $updateStmt->execute([$room_id]);
+    // NOTE: ห้องจะเปลี่ยนเป็น "ไม่ว่าง" เมื่อเช็คอิน เท่านั้น
+    // $updateStmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
+    // $updateStmt->execute([$room_id]);
     
     // อัพเดทสถานะผู้เช่าเป็น '3' (จองห้อง)
     $updateTenant = $pdo->prepare("UPDATE tenant SET tnt_status = '3' WHERE tnt_id = ?");

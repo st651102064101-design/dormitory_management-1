@@ -42,9 +42,9 @@ try {
 
     $ctr_id = (int)$pdo->lastInsertId();
 
-    // อัปเดตสถานะห้อง เป็น "ไม่ว่าง" (1)
-    $stmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
-    $stmt->execute([$room_id]);
+    // NOTE: ห้องจะเปลี่ยนเป็น "ไม่ว่าง" เมื่อเช็คอิน (Step 4) เท่านั้น
+    // $stmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
+    // $stmt->execute([$room_id]);
 
     // อัปเดตสถานะผู้เช่า เป็น "รอเข้าพัก" (2)
     $stmt = $pdo->prepare("UPDATE tenant SET tnt_status = '2' WHERE tnt_id = ?");
