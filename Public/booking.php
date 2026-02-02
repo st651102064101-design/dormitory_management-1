@@ -158,8 +158,8 @@ function uploadFile($file, $uploadDir, $prefix = 'file') {
     $filepath = $uploadDir . '/' . $filename;
     
     if (move_uploaded_file($file['tmp_name'], $filepath)) {
-        // Return relative path from web root
-        return 'Public/Assets/Images/Payments/' . $filename;
+        // Return only filename (relative path will be built by display layer)
+        return $filename;
     }
     
     error_log("Failed to move uploaded file to: {$filepath}");
