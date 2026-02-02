@@ -2450,6 +2450,10 @@ $roomPaymentSummary = $pdo->query("
                   <label for="pay_proof">หลักฐานการชำระ <span style="color:#f87171;">*</span></label>
                   <input type="file" id="pay_proof" name="pay_proof" accept="image/*,.pdf" style="padding:0.5rem;" required />
                 </div>
+                <div class="payment-form-group">
+                  <label for="pay_remark">หมายเหตุ</label>
+                  <input type="text" id="pay_remark" name="pay_remark" placeholder="เช่น มัดจำ, ค่าเช่าล่วงหน้า" style="padding:0.75rem;" />
+                </div>
               </div>
               <div style="padding:1rem 0;">
                 <button type="submit" id="submitPaymentBtn" class="btn btn-primary submit-btn-animated" style="padding:0.75rem 2rem;font-size:1rem;background:linear-gradient(135deg,#22c55e,#16a34a) !important;border:none;border-radius:10px;font-weight:600;cursor:pointer;box-shadow:0 4px 12px rgba(34,197,94,0.3);transition:all 0.2s;display:inline-flex;align-items:center;gap:0.5rem;color:#ffffff !important;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 6px 16px rgba(34,197,94,0.4)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 12px rgba(34,197,94,0.3)'">
@@ -2551,6 +2555,7 @@ $roomPaymentSummary = $pdo->query("
                     <th>วันที่ชำระ</th>
                     <th>จำนวนเงิน</th>
                     <th>หลักฐาน</th>
+                    <th>หมายเหตุ</th>
                     <th>สถานะ</th>
                     <th>การดำเนินการ</th>
                   </tr>
@@ -2558,7 +2563,7 @@ $roomPaymentSummary = $pdo->query("
                 <tbody>
                   <?php if (empty($payments)): ?>
                     <tr>
-                      <td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">ยังไม่มีข้อมูลการชำระเงิน</td>
+                      <td colspan="10" style="text-align:center;padding:2rem;color:#64748b;">ยังไม่มีข้อมูลการชำระเงิน</td>
                     </tr>
                   <?php else: ?>
                     <?php foreach ($payments as $pay): ?>
@@ -2574,6 +2579,13 @@ $roomPaymentSummary = $pdo->query("
                             <span class="proof-link" onclick="showProof('<?php echo htmlspecialchars($pay['pay_proof'], ENT_QUOTES, 'UTF-8'); ?>')">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ดูหลักฐาน
                             </span>
+                          <?php else: ?>
+                            <span style="color:#64748b;">-</span>
+                          <?php endif; ?>
+                        </td>
+                        <td>
+                          <?php if (!empty($pay['pay_remark'])): ?>
+                            <span style="color:#f59e0b;font-weight:500;"><?php echo htmlspecialchars($pay['pay_remark']); ?></span>
                           <?php else: ?>
                             <span style="color:#64748b;">-</span>
                           <?php endif; ?>
