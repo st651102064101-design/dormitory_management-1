@@ -112,7 +112,14 @@ try {
 
 // ฟังก์ชันสำหรับอัพโหลดไฟล์
 function uploadFile($file, $uploadDir, $prefix = 'file') {
-    if (!isset($file) || $file['error'] !== UPLOAD_ERR_OK) {
+    // ถ้าไม่มีการอัพโหลดไฟล์เลย
+    if (!isset($file) || !isset($file['tmp_name']) || empty($file['tmp_name'])) {
+        return null;
+    }
+    
+    // ตรวจสอบ error
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        error_log("Upload error for {$prefix}: " . $file['error']);
         return null;
     }
     
@@ -121,10 +128,12 @@ function uploadFile($file, $uploadDir, $prefix = 'file') {
     $maxSize = 5 * 1024 * 1024;
     
     if (!in_array($ext, $allowedExt)) {
+        error_log("Invalid file extension: {$ext}");
         return null;
     }
     
     if ($file['size'] > $maxSize) {
+        error_log("File too large: {$file['size']} bytes");
         return null;
     }
     
@@ -139,6 +148,8 @@ function uploadFile($file, $uploadDir, $prefix = 'file') {
         // Return relative path from web root
         return 'Public/Assets/Images/Payments/' . $filename;
     }
+    
+    error_log("Failed to move uploaded file to: {$filepath}");
     return null;
 }
 
