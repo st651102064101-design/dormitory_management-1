@@ -261,6 +261,8 @@ try {
         // ตั้งค่า session สำหรับ tenant
         $_SESSION['tenant_id'] = $tenant['tnt_id'];
         $_SESSION['tenant_name'] = $tenant['tnt_name'] ?? '';
+        $_SESSION['tenant_phone'] = $tenant['tnt_phone'] ?? '';
+        $_SESSION['tenant_email'] = $email;
         // ใช้ picture จาก OAuth table ถ้ามี ถ้าไม่ใช้ picture จาก Google API
         $_SESSION['tenant_picture'] = $tenant['oauth_picture'] ?? $picture;
         $_SESSION['tenant_logged_in'] = true;
