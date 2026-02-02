@@ -2608,8 +2608,6 @@ $roomPaymentSummary = $pdo->query("
                           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
                             <?php if ($pay['pay_status'] === '0'): ?>
                               <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
-                            <?php else: ?>
-                              <button type="button" class="action-btn btn-reject" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '0', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg> ยกเลิก</button>
                             <?php endif; ?>
                           </div>
                         </td>
