@@ -136,7 +136,8 @@ function uploadFile($file, $uploadDir, $prefix = 'file') {
     $filepath = $uploadDir . '/' . $filename;
     
     if (move_uploaded_file($file['tmp_name'], $filepath)) {
-        return $filename;
+        // Return relative path from web root
+        return 'Public/Assets/Images/Payments/' . $filename;
     }
     return null;
 }
