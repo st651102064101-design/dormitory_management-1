@@ -48,10 +48,45 @@ function thaiDateFormat($dateStr) {
 $bookingInfo = null;
 $error = '';
 $showResult = false;
+$autoFilled = false;
 
 // รับค่าจาก GET หรือ POST
 $bookingRef = trim($_GET['id'] ?? $_POST['booking_ref'] ?? '');
 $contactInfo = trim($_GET['phone'] ?? $_POST['contact_info'] ?? '');
+
+// ถ้าเป็นผู้เช่าที่ล็อกอินด้วย Google ให้ดึงข้อมูลอัตโนมัติ
+if (empty($bookingRef) && empty($contactInfo) && !empty($_SESSION['tenant_id'])) {
+    try {
+        $stmtAuto = $pdo->prepare("\
+            SELECT 
+                t.tnt_phone,
+                (
+                    SELECT bkg_id
+                    FROM booking
+                    WHERE tnt_id = t.tnt_id AND bkg_status IN ('1','2')
+                    ORDER BY bkg_date DESC
+                    LIMIT 1
+                ) AS bkg_id
+            FROM tenant t
+            WHERE t.tnt_id = ?
+            LIMIT 1
+        ");
+        $stmtAuto->execute([$_SESSION['tenant_id']]);
+        $autoData = $stmtAuto->fetch(PDO::FETCH_ASSOC);
+
+        if ($autoData && !empty($autoData['tnt_phone'])) {
+            $contactInfo = $autoData['tnt_phone'];
+        }
+        if ($autoData && !empty($autoData['bkg_id']) && !empty($autoData['tnt_phone'])) {
+            $bookingRef = (string)$autoData['bkg_id'];
+            $autoFilled = true;
+        } else {
+            $error = 'ไม่พบข้อมูลการจองสำหรับบัญชีนี้';
+        }
+    } catch (PDOException $e) {
+        $error = 'เกิดข้อผิดพลาดในการดึงข้อมูลผู้เช่า';
+    }
+}
 
 // ถ้ามีการส่งข้อมูลมา
 if (!empty($bookingRef) && !empty($contactInfo)) {
