@@ -782,6 +782,51 @@ try {
         </div>
     </div>
 
+    <!-- Modal สำหรับยืนยันชำระเงินจอง (Step 2) -->
+    <div id="paymentModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closePaymentModal()">&times;</button>
+                <div style="text-align: center;">
+                    <div style="width: 48px; height: 48px; background: #22c55e; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 1rem; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);">2</div>
+                    <h2 style="color: #f8fafc; margin: 0.5rem 0;">ยืนยันการชำระเงินจอง</h2>
+                    <p style="color: rgba(241, 245, 249, 0.7); margin: 0;">ตรวจสอบหลักฐานและยืนยันการชำระเงินจอง</p>
+                </div>
+            </div>
+            
+            <div class="modal-body">
+                <div class="info-box-modal" id="paymentInfo"></div>
+                <div id="paymentProofContainer" style="margin: 1rem 0; text-align: center; display: none;">
+                    <p style="color: rgba(255,255,255,0.7); margin-bottom: 0.5rem;">หลักฐานการชำระเงิน:</p>
+                    <a id="paymentProofLink" href="#" target="_blank">
+                        <img id="paymentProofImg" src="" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                    </a>
+                </div>
+
+                <div class="alert-box-modal" style="background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3);">
+                    <h4 style="color: #22c55e;">✓ การดำเนินการ:</h4>
+                    <ul style="padding-left: 1.5rem; line-height: 1.8; color: #e2e8f0;">
+                        <li>บันทึกวันที่ชำระเงินจอง</li>
+                        <li>สร้างเลขที่ใบเสร็จอัตโนมัติ</li>
+                        <li>ทำเครื่องหมายการชำระเงินเสร็จสิ้น</li>
+                        <li>พร้อมสำหรับขั้นตอนถัดไป: สร้างสัญญา</li>
+                    </ul>
+                </div>
+
+                <form id="paymentForm" method="POST" action="../Manage/process_wizard_step2.php">
+                    <input type="hidden" name="bp_id" id="modal_payment_bp_id">
+                    <input type="hidden" name="bkg_id" id="modal_payment_bkg_id">
+                    <input type="hidden" name="tnt_id" id="modal_payment_tnt_id">
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-modal-secondary" onclick="closePaymentModal()">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-modal-primary" style="background: #22c55e;" onclick="document.getElementById('paymentForm').submit()">✓ ยืนยันการชำระเงิน</button>
+            </div>
+        </div>
+    </div>
+
 <!-- เพิ่ม JavaScript นี้ก่อน </body> -->
 <script>
     function openCheckinModal(ctrId, tntId, tntName, roomNumber, ctrStart, ctrEnd) {
