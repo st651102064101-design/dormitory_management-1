@@ -32,6 +32,7 @@ try {
             t.tnt_status,
             b.bkg_id,
             b.bkg_date,
+            b.bkg_checkin_date,
             b.bkg_status,
             r.room_id,
             r.room_number,
@@ -602,7 +603,19 @@ try {
                                             <button type="button" class="action-btn btn-primary" onclick="openPaymentModal(<?php echo $tenant['bp_id']; ?>, <?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['bp_amount'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['bp_proof'] ?? '', ENT_QUOTES, 'UTF-8'); ?>')">ยืนยันชำระเงินจอง</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
                                         <?php elseif ($currentStep == 3): ?>
-                                            <a href="wizard_step3.php?tnt_id=<?php echo urlencode($tenant['tnt_id']); ?>&room_id=<?php echo $tenant['room_id']; ?>&bkg_id=<?php echo $tenant['bkg_id']; ?>" class="action-btn btn-primary">สร้างสัญญา</a>
+                                            <button type="button" class="action-btn btn-primary" onclick="openContractModal(
+                                                '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>',
+                                                <?php echo $tenant['room_id']; ?>,
+                                                <?php echo $tenant['bkg_id']; ?>,
+                                                '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>',
+                                                '<?php echo htmlspecialchars($tenant['room_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
+                                                '<?php echo htmlspecialchars($tenant['type_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
+                                                <?php echo $tenant['type_price'] ?? 0; ?>,
+                                                '<?php echo htmlspecialchars($tenant['bkg_checkin_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
+                                                '<?php echo htmlspecialchars($tenant['ctr_start'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
+                                                '<?php echo htmlspecialchars($tenant['ctr_end'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
+                                                <?php echo $tenant['bp_amount'] ?? 0; ?>
+                                            )">สร้างสัญญา</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
                                         <?php elseif ($currentStep == 4): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo $tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now')); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now')); ?>')">เช็คอิน</button>
@@ -665,6 +678,63 @@ try {
             <div class="modal-footer">
                 <button type="button" class="btn-modal btn-modal-secondary" onclick="closeBookingModal()">ยกเลิก</button>
                 <button type="button" class="btn-modal btn-modal-primary" style="background: #3b82f6;" onclick="document.getElementById('bookingForm').submit()">✓ ยืนยันการจอง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal สำหรับสร้างสัญญา (Step 3) -->
+    <div id="contractModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <button class="modal-close" onclick="closeContractModal()">&times;</button>
+                <div style="text-align: center;">
+                    <div style="width: 48px; height: 48px; background: #8b5cf6; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 1rem; box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);">3</div>
+                    <h2 style="color: #f8fafc; margin: 0.5rem 0;">สร้างสัญญาเช่า</h2>
+                    <p style="color: rgba(241, 245, 249, 0.7); margin: 0;">กำหนดรายละเอียดสัญญาและสร้างเอกสาร</p>
+                </div>
+            </div>
+            
+            <div class="modal-body">
+                <div class="info-box-modal" id="contractInfo"></div>
+
+                <form id="contractForm" method="POST" action="../Manage/process_wizard_step3.php">
+                    <input type="hidden" name="tnt_id" id="modal_contract_tnt_id">
+                    <input type="hidden" name="room_id" id="modal_contract_room_id">
+                    <input type="hidden" name="bkg_id" id="modal_contract_bkg_id">
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>วันเริ่มสัญญา *</label>
+                            <input type="date" name="ctr_start" id="modal_contract_start" required>
+                        </div>
+                        <div class="form-group">
+                            <label>ระยะเวลาสัญญา *</label>
+                            <select name="contract_duration" id="modal_contract_duration" required>
+                                <option value="3">3 เดือน</option>
+                                <option value="6" selected>6 เดือน</option>
+                                <option value="12">12 เดือน</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>เงินประกัน (บาท) *</label>
+                            <input type="number" name="ctr_deposit" id="modal_contract_deposit" min="0" step="0.01" required readonly>
+                        </div>
+                    </div>
+
+                    <div class="alert-box-modal" style="background: rgba(139, 92, 246, 0.1); border-color: rgba(139, 92, 246, 0.3);">
+                        <h4 style="color: #c4b5fd;">📄 ระบบจะดำเนินการ:</h4>
+                        <ul style="padding-left: 1.5rem; line-height: 1.8; color: #e2e8f0;">
+                            <li>บันทึกข้อมูลสัญญาลงฐานข้อมูล</li>
+                            <li>สร้างไฟล์ PDF สัญญา (ถ้ามีระบบ)</li>
+                            <li>อัปเดตสถานะผู้เช่าเป็น "รอเข้าพัก"</li>
+                        </ul>
+                    </div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn-modal btn-modal-secondary" onclick="closeContractModal()">ยกเลิก</button>
+                <button type="button" class="btn-modal btn-modal-primary" style="background: #8b5cf6;" onclick="document.getElementById('contractForm').submit()">✓ สร้างสัญญา</button>
             </div>
         </div>
     </div>
@@ -874,6 +944,12 @@ try {
         }
     });
 
+    document.getElementById('contractModal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            closeContractModal();
+        }
+    });
+
     document.getElementById('billingModal').addEventListener('click', function(e) {
         if (e.target === this) {
             closeBillingModal();
@@ -883,6 +959,7 @@ try {
     // ปิด modal เมื่อกด ESC
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
+            closeContractModal();
             closeCheckinModal();
             closeBillingModal();
         }
@@ -926,6 +1003,58 @@ try {
         document.getElementById('bookingModal').classList.remove('active');
         document.body.style.overflow = '';
         document.body.classList.remove('modal-open');
+    }
+
+    // Functions สำหรับ Contract Modal (Step 3)
+    function openContractModal(tntId, roomId, bkgId, tntName, roomNumber, typeName, typePrice, bkgCheckinDate, ctrStart, ctrEnd, bookingAmount) {
+        document.getElementById('modal_contract_tnt_id').value = tntId;
+        document.getElementById('modal_contract_room_id').value = roomId;
+        document.getElementById('modal_contract_bkg_id').value = bkgId;
+
+        const today = new Date();
+        const yyyy = today.getFullYear();
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const dd = String(today.getDate()).padStart(2, '0');
+        const defaultStart = `${yyyy}-${mm}-${dd}`;
+
+        const startDate = bkgCheckinDate || ctrStart || defaultStart;
+        document.getElementById('modal_contract_start').value = startDate;
+
+        let durationMonths = 6;
+        if (ctrStart && ctrEnd) {
+            const start = new Date(ctrStart);
+            const end = new Date(ctrEnd);
+            if (!isNaN(start) && !isNaN(end)) {
+                const months = (end.getFullYear() - start.getFullYear()) * 12 + (end.getMonth() - start.getMonth());
+                if (months > 0) durationMonths = months;
+            }
+        }
+        const durationSelect = document.getElementById('modal_contract_duration');
+        if ([3, 6, 12].includes(durationMonths)) {
+            durationSelect.value = String(durationMonths);
+        } else {
+            durationSelect.value = '6';
+        }
+
+        const depositValue = Number(bookingAmount) > 0 ? Number(bookingAmount) : 2000;
+        document.getElementById('modal_contract_deposit').value = depositValue;
+
+        document.getElementById('contractInfo').innerHTML = `
+            <p><strong style="color: #a78bfa;">ผู้เช่า:</strong> ${tntName}</p>
+            <p><strong style="color: #a78bfa;">ห้อง:</strong> ${roomNumber} (${typeName})</p>
+            <p><strong style="color: #a78bfa;">ค่าห้อง:</strong> ฿${Number(typePrice).toLocaleString()}/เดือน</p>
+        `;
+
+        document.getElementById('contractModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+    }
+
+    function closeContractModal() {
+        document.getElementById('contractModal').classList.remove('active');
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
+        document.getElementById('contractForm').reset();
     }
 
     // Functions สำหรับ Billing Modal
