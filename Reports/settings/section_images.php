@@ -171,13 +171,102 @@
       <!-- Upload new -->
       <div class="apple-input-group">
         <label class="apple-input-label">อัพโหลดลายเซ็น</label>
-        <div class="apple-upload-area" onclick="document.getElementById('signatureInput').click()">
+        
+        <!-- Preview ของไฟล์ที่เลือก -->
+        <div id="signatureUploadPreview" style="display: none; background: #f5f5f7; border-radius: 12px; padding: 20px; margin-bottom: 12px; text-align: center;">
+          <img id="signatureUploadPreviewImg" src="" alt="Preview" style="max-width: 200px; max-height: 80px; object-fit: contain; margin-bottom: 10px;">
+          <p style="font-size: 13px; color: #666; margin: 5px 0;"><strong id="signatureFileName"></strong></p>
+          <p style="font-size: 12px; color: #999; margin: 0;">กำลังอัพโหลด...</p>
+        </div>
+        
+        <!-- Hidden file input -->
+        <input type="file" id="signatureInput" accept="image/png" style="display: none;" onchange="handleSignatureFileSelect(this)">
+        
+        <div class="apple-upload-area" id="signatureUploadArea" 
+             onclick="document.getElementById('signatureInput').click()"
+             ondragover="event.preventDefault(); this.classList.add('dragover');"
+             ondragleave="this.classList.remove('dragover');"
+             ondrop="event.preventDefault(); this.classList.remove('dragover'); handleSignatureDrop(event);">
           <div class="apple-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/></svg></div>
           <p class="apple-upload-text">คลิกเพื่อเลือกรูปลายเซ็น</p>
           <p class="apple-upload-hint">รองรับ PNG (แนะนำพื้นหลังโปร่งใส)</p>
-          <input type="file" id="signatureInput" accept="image/png">
+          <p class="apple-upload-hint" style="margin-top: 8px; font-size: 12px;">หรือลากไฟล์มาวางที่นี่</p>
         </div>
       </div>
+      
+      <script>
+      // Inline script for immediate signature upload handling
+      function handleSignatureFileSelect(input) {
+        const file = input.files[0];
+        if (file) {
+          processSignatureFile(file);
+        }
+      }
+      
+      function handleSignatureDrop(event) {
+        const file = event.dataTransfer.files[0];
+        if (file) {
+          processSignatureFile(file);
+        }
+      }
+      
+      function processSignatureFile(file) {
+        console.log('Processing file:', file.name, file.type);
+        
+        // Validate PNG
+        if (file.type !== 'image/png') {
+          alert('กรุณาเลือกไฟล์ PNG เท่านั้น');
+          return;
+        }
+        
+        // Show preview
+        const previewContainer = document.getElementById('signatureUploadPreview');
+        const previewImg = document.getElementById('signatureUploadPreviewImg');
+        const fileNameSpan = document.getElementById('signatureFileName');
+        const uploadArea = document.getElementById('signatureUploadArea');
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          previewImg.src = e.target.result;
+          fileNameSpan.textContent = file.name;
+          previewContainer.style.display = 'block';
+          uploadArea.style.display = 'none';
+        };
+        reader.readAsDataURL(file);
+        
+        // Upload file
+        const formData = new FormData();
+        formData.append('signature', file);
+        
+        fetch('/dormitory_management/Manage/save_system_settings.php', {
+          method: 'POST',
+          body: formData
+        })
+        .then(response => response.json())
+        .then(result => {
+          console.log('Upload result:', result);
+          if (result.success) {
+            // Show success
+            if (typeof appleSettings !== 'undefined' && appleSettings.showToast) {
+              appleSettings.showToast('อัพโหลดลายเซ็นสำเร็จ', 'success');
+            } else {
+              alert('อัพโหลดลายเซ็นสำเร็จ!');
+            }
+            // Reload page after short delay
+            setTimeout(() => location.reload(), 1000);
+          } else {
+            throw new Error(result.error || 'เกิดข้อผิดพลาด');
+          }
+        })
+        .catch(error => {
+          console.error('Upload error:', error);
+          alert('เกิดข้อผิดพลาด: ' + error.message);
+          // Reset UI
+          previewContainer.style.display = 'none';
+          uploadArea.style.display = 'block';
+        });
+      }
+      </script>
       
       <?php if (!empty($ownerSignature)): ?>
       <!-- Delete Button -->
