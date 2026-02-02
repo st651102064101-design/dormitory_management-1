@@ -36,20 +36,44 @@ try {
         exit;
     }
 
-    $update = $pdo->prepare('UPDATE tenant SET tnt_name = ?, tnt_age = ?, tnt_address = ?, tnt_phone = ?, tnt_education = ?, tnt_faculty = ?, tnt_year = ?, tnt_vehicle = ?, tnt_parent = ?, tnt_parentsphone = ? WHERE tnt_id = ?');
-    $update->execute([
-        $tnt_name,
-        $tnt_age,
-        $tnt_address,
-        $tnt_phone,
-        $tnt_education,
-        $tnt_faculty,
-        $tnt_year,
-        $tnt_vehicle,
-        $tnt_parent,
-        $tnt_parentsphone,
-        $tnt_id_original,
-    ]);
+    // ตรวจสอบเบอร์โทรศัพท์ซ้ำ (ถ้าระบบไว้ และไม่ใช่หมายเลขเดิม)
+    if (!empty($tnt_phone)) {
+        $stmtPhoneCheck = $pdo->prepare('SELECT COUNT(*) FROM tenant WHERE tnt_phone = ? AND tnt_id != ?');
+        $stmtPhoneCheck->execute([$tnt_phone, $tnt_id_original]);
+        if ((int)$stmtPhoneCheck->fetchColumn() > 0) {
+            $_SESSION['error'] = 'เบอร์โทรศัพท์นี้มีผู้ใช้งานอยู่แล้ว (' . htmlspecialchars($tnt_phone) . ')';
+            error_log("ERROR: Duplicate phone number in update - '$tnt_phone'");
+            header('Location: ../Reports/manage_tenants.php');
+            exit;
+        }
+    }
+
+    try {
+        $update = $pdo->prepare('UPDATE tenant SET tnt_name = ?, tnt_age = ?, tnt_address = ?, tnt_phone = ?, tnt_education = ?, tnt_faculty = ?, tnt_year = ?, tnt_vehicle = ?, tnt_parent = ?, tnt_parentsphone = ? WHERE tnt_id = ?');
+        $update->execute([
+            $tnt_name,
+            $tnt_age,
+            $tnt_address,
+            $tnt_phone,
+            $tnt_education,
+            $tnt_faculty,
+            $tnt_year,
+            $tnt_vehicle,
+            $tnt_parent,
+            $tnt_parentsphone,
+            $tnt_id_original,
+        ]);
+    } catch (PDOException $updateException) {
+        if (strpos($updateException->getMessage(), 'Duplicate entry') !== false && strpos($updateException->getMessage(), 'tnt_phone') !== false) {
+            $_SESSION['error'] = 'เบอร์โทรศัพท์นี้มีผู้ใช้งานอยู่แล้ว (' . htmlspecialchars($tnt_phone) . ')';
+            error_log("ERROR: Duplicate phone caught in update: " . $updateException->getMessage());
+        } else {
+            $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $updateException->getMessage();
+            error_log("ERROR: Update failed: " . $updateException->getMessage());
+        }
+        header('Location: ../Reports/manage_tenants.php');
+        exit;
+    }
 
     $_SESSION['success'] = 'แก้ไขข้อมูลผู้เช่าเรียบร้อยแล้ว';
     header('Location: ../Reports/manage_tenants.php');
