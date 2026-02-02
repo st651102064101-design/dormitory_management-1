@@ -901,8 +901,9 @@ if ($currentStatus === '1' && $expStatus === '1') {
             <div class="progress-steps">
                 <?php foreach ($steps as $idx => $step): 
                     $stepNum = $idx + 1;
-                    $isCompleted = $stepNum < $currentStep;
-                    $isActive = $stepNum === $currentStep;
+                    // Step เป็น completed เมื่อ: stepNum น้อยกว่า currentStep หรือ workflow completed และ stepNum <= currentStep
+                    $isCompleted = $stepNum < $currentStep || ($workflowCompleted === 1 && $stepNum <= $currentStep);
+                    $isActive = $stepNum === $currentStep && $workflowCompleted !== 1;
                 ?>
                 <div class="step <?php echo $isCompleted ? 'completed' : ($isActive ? 'current' : ''); ?>">
                     <div class="step-dot">
@@ -1100,6 +1101,29 @@ if ($currentStatus === '1' && $expStatus === '1') {
                     </div>
                     <a href="../Tenant/contract.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank" style="color: var(--success); text-decoration: none; font-size: 0.875rem; font-weight: 500;">
                         ดูสัญญาและเซ็นชื่อ →
+                    </a>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        
+        <!-- Payment Link (แสดงเมื่อ step >= 5 หรือเมื่อมีสัญญา) -->
+        <?php if (!empty($bookingInfo['access_token']) && $currentStep >= 4): ?>
+        <div class="card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), transparent); border-color: var(--primary);">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 48px; height: 48px; background: var(--primary); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <rect x="1" y="4" width="22" height="16" rx="2"/>
+                        <line x1="1" y1="10" x2="23" y2="10"/>
+                    </svg>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600;">ชำระค่าเช่ารายเดือน</div>
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin: 4px 0 8px;">
+                        แจ้งชำระเงินค่าเช่าและค่าบริการรายเดือน
+                    </div>
+                    <a href="../Tenant/payment.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank" style="color: white; text-decoration: none; font-size: 0.875rem; font-weight: 500;">
+                        เข้าสู่หน้าชำระเงิน →
                     </a>
                 </div>
             </div>
