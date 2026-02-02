@@ -66,6 +66,26 @@ if (empty($resolvedTenantId) && !empty($_SESSION['tenant_email'])) {
     } catch (PDOException $e) {
         error_log('Booking status resolve tenant_id error: ' . $e->getMessage());
     }
+$autoRedirect = !empty($_GET['auto']);
+if (empty($resolvedTenantId) && $autoRedirect && !empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_name'])) {
+    try {
+        $stmtTenantByName = $pdo->prepare("\
+            SELECT t.tnt_id
+            FROM tenant t
+            INNER JOIN booking b ON t.tnt_id = b.tnt_id
+            WHERE t.tnt_name = ? AND b.bkg_status IN ('1','2')
+            ORDER BY b.bkg_date DESC
+            LIMIT 1
+        ");
+        $stmtTenantByName->execute([$_SESSION['tenant_name']]);
+        $tenantByName = $stmtTenantByName->fetch(PDO::FETCH_ASSOC);
+        if ($tenantByName && !empty($tenantByName['tnt_id'])) {
+            $resolvedTenantId = $tenantByName['tnt_id'];
+            $_SESSION['tenant_id'] = $resolvedTenantId;
+        }
+    } catch (PDOException $e) {
+        error_log('Booking status resolve tenant_id by name error: ' . $e->getMessage());
+    }
 }
 $isTenantLoggedIn = !empty($resolvedTenantId);
 $tenantPhone = '';
@@ -83,7 +103,6 @@ error_log("  isTenantLoggedIn: " . ($isTenantLoggedIn ? 'YES' : 'NO'));
 // รับค่าจาก GET หรือ POST
 $bookingRef = trim($_GET['id'] ?? $_POST['booking_ref'] ?? $_GET['ref'] ?? '');
 $contactInfo = trim($_GET['phone'] ?? $_POST['contact_info'] ?? '');
-$autoRedirect = !empty($_GET['auto']);
 
 // ถ้าเป็นผู้เช่าที่ล็อกอิน ให้ดึงข้อมูลอัตโนมัติและรองรับหลายการจอง
 if ($isTenantLoggedIn) {
