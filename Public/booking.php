@@ -281,8 +281,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $payStatus = $payProof ? '0' : '0'; // 0 = รอตรวจสอบ (ไม่ว่าจะมีสลิปหรือไม่)
 
                         $stmtPayment = $pdo->prepare("
-                            INSERT INTO payment (pay_id, pay_date, pay_amount, pay_proof, pay_status, exp_id)
-                            VALUES (?, NOW(), ?, ?, ?, ?)
+                            INSERT INTO payment (pay_id, pay_date, pay_amount, pay_proof, pay_status, exp_id, pay_remark)
+                            VALUES (?, NOW(), ?, ?, ?, ?, 'มัดจำ')
                         ");
                         $stmtPayment->execute([$paymentId, $depositAmount, $payProof, $payStatus, $expenseId]);
 
@@ -290,8 +290,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $bookingPaymentId = (int)substr((string)time(), -9) + 5;
                         $bookingPaymentStatus = $payProof ? '0' : '0'; // 0 = รอตรวจสอบ
                         $stmtBookingPayment = $pdo->prepare("
-                            INSERT INTO booking_payment (bp_id, bp_amount, bp_status, bp_payment_date, bp_proof, bkg_id)
-                            VALUES (?, ?, ?, NOW(), ?, ?)
+                            INSERT INTO booking_payment (bp_id, bp_amount, bp_status, bp_payment_date, bp_proof, bkg_id, bp_remark)
+                            VALUES (?, ?, ?, NOW(), ?, ?, 'มัดจำ')
                         ");
                         $stmtBookingPayment->execute([$bookingPaymentId, $depositAmount, $bookingPaymentStatus, $payProof, $bookingId]);
                         

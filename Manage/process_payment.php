@@ -88,16 +88,20 @@ try {
         }
     }
 
+    // รับค่าหมายเหตุ
+    $pay_remark = trim($_POST['pay_remark'] ?? '');
+
     // บันทึกข้อมูลการชำระเงิน (สถานะ 0 = รอตรวจสอบ)
     $insert = $pdo->prepare("
-        INSERT INTO payment (pay_date, pay_amount, pay_proof, pay_status, exp_id)
-        VALUES (?, ?, ?, '0', ?)
+        INSERT INTO payment (pay_date, pay_amount, pay_proof, pay_status, exp_id, pay_remark)
+        VALUES (?, ?, ?, '0', ?, ?)
     ");
     $insert->execute([
         $pay_date,
         $pay_amount,
         $pay_proof,
-        $exp_id
+        $exp_id,
+        $pay_remark ?: null
     ]);
 
     // อัพเดทสถานะของ expense เป็น '2' (รอตรวจสอบ)
