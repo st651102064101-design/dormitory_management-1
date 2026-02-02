@@ -373,8 +373,8 @@ try {
         $_SESSION['tenant_logged_in'] = true;
         
         error_log("✓ Tenant session set: " . $_SESSION['tenant_id']);
-        // หลังล็อกอิน Google ให้กลับหน้า index ตามที่ต้องการ
-        header('Location: /dormitory_management/index.php');
+        // หลังล็อกอิน Google ให้ไปหน้าตรวจสอบสถานะการจอง
+        header('Location: /dormitory_management/Public/booking_status.php?auto=1');
         exit;
     }
     

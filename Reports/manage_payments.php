@@ -2723,6 +2723,7 @@ $roomPaymentSummary = $pdo->query("
       }
 
       // Auto-fill amount when selecting expense
+      // สำคัญ: ต้องใช้ค่าเต็มจาก exp_total ไม่หักมัดจำหรือค่าอื่นๆ
       document.getElementById('exp_id')?.addEventListener('change', function() {
         const selected = this.options[this.selectedIndex];
         const amount = selected.dataset.amount || '';

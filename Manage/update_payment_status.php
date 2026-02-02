@@ -61,7 +61,8 @@ try {
         $expTotal = (int)($expense['exp_total'] ?? 0);
         
         // คำนวณยอดที่ชำระแล้วทั้งหมด (เฉพาะที่ยืนยันแล้ว pay_status='1')
-        $paidStmt = $pdo->prepare("SELECT SUM(pay_amount) as total_paid FROM payment WHERE exp_id = ? AND pay_status = '1'");
+        // สำคัญ: ไม่นับรวมยอดที่มี pay_remark = 'มัดจำ' เพราะมัดจำไม่ใช่ค่าใช้จ่ายรายเดือน
+        $paidStmt = $pdo->prepare("SELECT SUM(pay_amount) as total_paid FROM payment WHERE exp_id = ? AND pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')");
         $paidStmt->execute([$expId]);
         $paidResult = $paidStmt->fetch(PDO::FETCH_ASSOC);
         $totalPaid = (int)($paidResult['total_paid'] ?? 0);
@@ -71,9 +72,13 @@ try {
             // ชำระครบแล้ว -> exp_status = '1' (ชำระแล้ว)
             $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = '1' WHERE exp_id = ?");
             $updateExpStmt->execute([$expId]);
-        } else {
+        } else if ($totalPaid > 0) {
             // ชำระยังไม่ครบ -> exp_status = '3' (ชำระยังไม่ครบ)
             $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = '3' WHERE exp_id = ?");
+            $updateExpStmt->execute([$expId]);
+        } else {
+            // ยังไม่ได้ชำระเลย -> exp_status = '0' (ยังไม่ชำระ)
+            $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = '0' WHERE exp_id = ?");
             $updateExpStmt->execute([$expId]);
         }
     }

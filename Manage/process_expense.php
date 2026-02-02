@@ -49,9 +49,10 @@ try {
 
     $room_price = (int)($contract['type_price'] ?? 0);
 
-    // คำนวณค่าใช้จ่าย
+    // คำนวณค่าใช้จ่าย (ค่ามัดจำ 2000 ไม่เกี่ยวข้อง ใช้สำหรับบิลเดือนเท่านั้น)
     $exp_elec_chg = (int)round($exp_elec_unit * $rate_elec);
     $exp_water = (int)round($exp_water_unit * $rate_water);
+    // IMPORTANT: ยอดรวม = ค่าห้อง + ค่าไฟ + ค่าน้ำ ไม่หักมัดจำ
     $exp_total = $room_price + $exp_elec_chg + $exp_water;
 
     // ตรวจสอบว่ามีการบันทึกค่าใช้จ่ายของเดือนนี้แล้วหรือไม่
