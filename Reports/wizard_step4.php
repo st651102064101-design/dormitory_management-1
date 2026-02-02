@@ -47,15 +47,46 @@ if ($settingsStmt) {
             background: var(--bg-primary, linear-gradient(135deg, #0f172a 0%, #1e293b 100%)); 
             color: var(--text-primary, #f8fafc); 
         }
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(2, 6, 23, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            z-index: 9999;
+        }
         .wizard-container {
-            max-width: 800px;
-            margin: 2rem auto;
+            max-width: 900px;
+            width: 100%;
+            margin: 0;
             padding: 2rem;
             background: rgba(15, 23, 42, 0.8);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-height: 90vh;
+            overflow: auto;
+            position: relative;
+        }
+        .modal-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            font-size: 1.25rem;
+            line-height: 1;
+            cursor: pointer;
+        }
+        .modal-close:hover {
+            background: rgba(255, 255, 255, 0.16);
         }
         .step-number {
             width: 48px;
@@ -186,11 +217,9 @@ if ($settingsStmt) {
     </style>
 </head>
 <body>
-    <div style="display: flex;">
-        <?php include '../includes/sidebar.php'; ?>
-        <main style="flex: 1; overflow-y: auto; height: 100vh;">
-            <div class="wizard-container">
-                <?php $pageTitle = 'Step 4: เช็คอิน'; include '../includes/page_header.php'; ?>
+    <div class="modal-backdrop">
+        <div class="wizard-container">
+            <button type="button" class="modal-close" onclick="window.location.href='tenant_wizard.php'" aria-label="ปิด">×</button>
 
                 <div style="text-align: center; margin-bottom: 2rem;">
                     <div class="step-number">4</div>
@@ -258,8 +287,7 @@ if ($settingsStmt) {
                         </button>
                     </div>
                 </form>
-            </div>
-        </main>
+        </div>
     </div>
     <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
 </body>
