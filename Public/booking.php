@@ -138,7 +138,20 @@ function uploadFile($file, $uploadDir, $prefix = 'file') {
     }
     
     if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
+        if (!mkdir($uploadDir, 0777, true)) {
+            error_log("Failed to create directory: {$uploadDir}");
+            return null;
+        }
+        chmod($uploadDir, 0777); // Ensure directory has full permissions
+    }
+    
+    // Ensure directory is writable
+    if (!is_writable($uploadDir)) {
+        chmod($uploadDir, 0777);
+        if (!is_writable($uploadDir)) {
+            error_log("Directory is not writable: {$uploadDir}");
+            return null;
+        }
     }
     
     $filename = $prefix . '_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
