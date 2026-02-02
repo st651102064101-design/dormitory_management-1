@@ -1049,6 +1049,39 @@ unset($step);
             /* decorative only — must not intercept pointer events */
             pointer-events: none;
         }
+
+        .upcoming-box .payment-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-left: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .upcoming-box .payment-btn:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .upcoming-box .payment-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(239, 68, 68, 0.2);
+        }
+
+        .upcoming-box .payment-btn svg {
+            width: 16px;
+            height: 16px;
+        }
+        }
         @keyframes amountPulse {
             0%, 100% { transform: translateY(0); }
             50% { transform: translateY(-2px); }
@@ -2166,6 +2199,14 @@ if ($publicTheme === 'light') {
                             </svg>
                             ถึงกำหนด: <?php echo $dueDateStr; ?>
                         </span>
+                        <button class="payment-btn" onclick="openPaymentModal('<?php echo htmlspecialchars($ctrId, ENT_QUOTES); ?>', <?php echo (int)$monthly; ?>, '<?php echo htmlspecialchars($dueDateStr, ENT_QUOTES); ?>')">
+                            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="16"/>
+                                <line x1="8" y1="12" x2="16" y2="12"/>
+                            </svg>
+                            ชำระเงิน
+                        </button>
 
                         <?php endif; ?>
                     </div>
