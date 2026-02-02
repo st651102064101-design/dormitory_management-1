@@ -248,7 +248,8 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo)) {
                 (SELECT exp_status FROM expense WHERE ctr_id = c.ctr_id ORDER BY exp_month DESC LIMIT 1) as exp_status,
                 COALESCE(tw.current_step, 1) as current_step,
                 COALESCE(tw.completed, 0) as workflow_completed,
-                (SELECT COALESCE(SUM(IF(pay_status = '1', pay_amount, 0)), 0) FROM payment WHERE exp_id IN (SELECT exp_id FROM expense WHERE ctr_id = c.ctr_id)) as paid_amount
+                (SELECT COALESCE(SUM(IF(pay_status = '1', pay_amount, 0)), 0) FROM payment WHERE exp_id IN (SELECT exp_id FROM expense WHERE ctr_id = c.ctr_id)) as paid_amount,
+                (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
             FROM tenant t
             LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
             LEFT JOIN room r ON b.room_id = r.room_id
@@ -285,7 +286,8 @@ if (!empty($bookingRef) && (!empty($contactInfo) || $isTenantLoggedIn)) {
                     (SELECT exp_status FROM expense WHERE ctr_id = c.ctr_id ORDER BY exp_month DESC LIMIT 1) as exp_status,
                     COALESCE(tw.current_step, 1) as current_step,
                     COALESCE(tw.completed, 0) as workflow_completed,
-                    (SELECT COALESCE(SUM(IF(pay_status = '1', pay_amount, 0)), 0) FROM payment WHERE exp_id IN (SELECT exp_id FROM expense WHERE ctr_id = c.ctr_id)) as paid_amount
+                    (SELECT COALESCE(SUM(IF(pay_status = '1', pay_amount, 0)), 0) FROM payment WHERE exp_id IN (SELECT exp_id FROM expense WHERE ctr_id = c.ctr_id)) as paid_amount,
+                    (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
                 FROM tenant t
                 LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                 LEFT JOIN room r ON b.room_id = r.room_id
@@ -306,7 +308,8 @@ if (!empty($bookingRef) && (!empty($contactInfo) || $isTenantLoggedIn)) {
                     (SELECT exp_status FROM expense WHERE ctr_id = c.ctr_id ORDER BY exp_month DESC LIMIT 1) as exp_status,
                     COALESCE(tw.current_step, 1) as current_step,
                     COALESCE(tw.completed, 0) as workflow_completed,
-                    (SELECT COALESCE(SUM(IF(pay_status = '1', pay_amount, 0)), 0) FROM payment WHERE exp_id IN (SELECT exp_id FROM expense WHERE ctr_id = c.ctr_id)) as paid_amount
+                    (SELECT COALESCE(SUM(IF(pay_status = '1', pay_amount, 0)), 0) FROM payment WHERE exp_id IN (SELECT exp_id FROM expense WHERE ctr_id = c.ctr_id)) as paid_amount,
+                    (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
                 FROM tenant t
                 LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                 LEFT JOIN room r ON b.room_id = r.room_id
@@ -916,8 +919,12 @@ if ($currentStatus === '1' && $expStatus === '1') {
                 <?php endforeach; ?>
             </div>
             
-            <!-- Alert สำหรับเตือนให้เซ็นสัญญา (แสดงเมื่อ step 3 และยังไม่ถึง 4) -->
-            <?php if ($currentStep === 3 && !empty($bookingInfo['access_token']) && $expStatus === '1'): ?>
+            <!-- Alert สำหรับเตือนให้เซ็นสัญญา (แสดงเมื่อ step >= 3 และยังไม่มีลายเซ็น) -->
+            <?php 
+            $hasSignature = !empty($bookingInfo['has_signature']) && intval($bookingInfo['has_signature']) > 0;
+            $needsSignature = $currentStep >= 3 && !empty($bookingInfo['access_token']) && $expStatus === '1' && !$hasSignature;
+            if ($needsSignature): 
+            ?>
             <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 16px; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2); animation: pulse-warning 2s ease-in-out infinite;">
                 <div style="display: flex; align-items: start; gap: 16px;">
                     <div style="width: 48px; height: 48px; background: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: bounce-gentle 1.5s ease-in-out infinite;">
@@ -929,10 +936,14 @@ if ($currentStatus === '1' && $expStatus === '1') {
                     </div>
                     <div style="flex: 1;">
                         <div style="font-size: 1.125rem; font-weight: 700; color: #92400e; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
-                            <span>⚠️ จำเป็นต้องเซ็นสัญญา!</span>
+                            <span>⚠️ <?php echo $currentStep > 3 ? 'คุณยังไม่ได้เซ็นสัญญา!' : 'จำเป็นต้องเซ็นสัญญา!'; ?></span>
                         </div>
                         <div style="font-size: 0.9375rem; color: #78350f; margin-bottom: 16px; line-height: 1.6;">
-                            คุณต้องเข้าไปเพิ่ม<strong>ลายเซ็นของคุณ</strong>ในสัญญาเช่าก่อนที่จะดำเนินการขั้นตอนต่อไป กรุณาคลิกปุ่มด้านล่างเพื่อไปยังหน้าสัญญาและเซ็นชื่อ
+                            <?php if ($currentStep > 3): ?>
+                                <strong>สำคัญ!</strong> แม้ว่าระบบจะดำเนินการไปถึงขั้นตอนที่ <?php echo $currentStep; ?> แล้ว แต่คุณ<strong>ยังไม่ได้เซ็นสัญญา</strong> กรุณาคลิกปุ่มด้านล่างเพื่อเข้าไปเซ็นสัญญาให้เรียบร้อย
+                            <?php else: ?>
+                                คุณต้องเข้าไปเพิ่ม<strong>ลายเซ็นของคุณ</strong>ในสัญญาเช่าก่อนที่จะดำเนินการขั้นตอนต่อไป กรุณาคลิกปุ่มด้านล่างเพื่อไปยังหน้าสัญญาและเซ็นชื่อ
+                            <?php endif; ?>
                         </div>
                         <a href="../Tenant/contract.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank" style="display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 0.9375rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: all 0.3s ease; border: 2px solid #b45309;">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
@@ -942,7 +953,7 @@ if ($currentStatus === '1' && $expStatus === '1') {
                                 <line x1="16" y1="17" x2="8" y2="17"/>
                                 <polyline points="10 9 9 9 8 9"/>
                             </svg>
-                            <span>เข้าไปเซ็นสัญญาเลย</span>
+                            <span><?php echo $currentStep > 3 ? 'เซ็นสัญญาด่วน!' : 'เข้าไปเซ็นสัญญาเลย'; ?></span>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
                                 <polyline points="9 18 15 12 9 6"/>
                             </svg>
