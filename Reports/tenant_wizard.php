@@ -1027,16 +1027,9 @@ try {
             }
              // Actually, let's just use what's passed and let the caller handle format or assume relative to domain root if starting with /
              // Or relative to current page if not.
-             // Best to inspect what's in DB. Usually 'Public/Assets/Images/Payments/filename.jpg'.
-             // So '/dormitory_management/' + bpProof might be safer if running in subdir.
-             
-             // Check if bpProof already has 'dormitory_management'
-             if (!bpProof.includes('dormitory_management')) {
-                 proofUrl = '/dormitory_management/' + bpProof.replace(/^\//, '');
-             } else {
-                 proofUrl = bpProof;
-                 if (!proofUrl.startsWith('/')) proofUrl = '/' + proofUrl;
-             }
+             // bpProof is just filename (e.g., 'payment_1770004240_d69375905c6f0f51.png')
+             // Build full path: /dormitory_management/Public/Assets/Images/Payments/filename
+             proofUrl = '/dormitory_management/Public/Assets/Images/Payments/' + bpProof;
             
             document.getElementById('paymentProofImg').src = proofUrl;
             document.getElementById('paymentProofLink').href = proofUrl;
