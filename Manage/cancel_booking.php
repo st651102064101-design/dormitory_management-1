@@ -70,6 +70,24 @@ try {
     
     // ========== เริ่มลบข้อมูลตามลำดับ (เพื่อไม่ให้ติด foreign key constraint) ==========
     
+    // 4.0 ดึงข้อมูลไฟล์รูปภาพสลิปเพื่อลบ
+    $filesToDelete = [];
+    
+    // ดึงไฟล์จาก payment
+    if (!empty($exp_ids)) {
+        $placeholders = implode(',', array_fill(0, count($exp_ids), '?'));
+        $stmtGetPayFiles = $pdo->prepare("SELECT pay_proof FROM payment WHERE exp_id IN ($placeholders) AND pay_proof IS NOT NULL");
+        $stmtGetPayFiles->execute($exp_ids);
+        $payFiles = $stmtGetPayFiles->fetchAll(PDO::FETCH_COLUMN);
+        $filesToDelete = array_merge($filesToDelete, $payFiles);
+    }
+    
+    // ดึงไฟล์จาก booking_payment
+    $stmtGetBPFiles = $pdo->prepare("SELECT bp_proof FROM booking_payment WHERE bkg_id = ? AND bp_proof IS NOT NULL");
+    $stmtGetBPFiles->execute([$bkg_id]);
+    $bpFiles = $stmtGetBPFiles->fetchAll(PDO::FETCH_COLUMN);
+    $filesToDelete = array_merge($filesToDelete, $bpFiles);
+    
     // 4.1 ลบ payment ที่เกี่ยวข้องกับ expense
     if (!empty($exp_ids)) {
         $placeholders = implode(',', array_fill(0, count($exp_ids), '?'));
@@ -126,6 +144,17 @@ try {
     $stmtUpdateRoom->execute([$room_id]);
     
     $pdo->commit();
+    
+    // 6. ลบไฟล์รูปภาพสลิป (หลัง commit แล้วถึงลบไฟล์)
+    $uploadBaseDir = __DIR__ . '/../';
+    foreach ($filesToDelete as $filePath) {
+        if (!empty($filePath)) {
+            $fullPath = $uploadBaseDir . $filePath;
+            if (file_exists($fullPath)) {
+                @unlink($fullPath);
+            }
+        }
+    }
     
     echo json_encode([
         'success' => true,
