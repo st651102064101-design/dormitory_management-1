@@ -28,7 +28,7 @@ try {
     $pdo->beginTransaction();
     
     // 1. ดึงข้อมูลที่เกี่ยวข้องจาก booking
-    $stmtBooking = $pdo->prepare("SELECT room_id FROM booking WHERE bkg_id = ?");
+    $stmtBooking = $pdo->prepare("SELECT room_id, tnt_id FROM booking WHERE bkg_id = ?");
     $stmtBooking->execute([$bkg_id]);
     $booking = $stmtBooking->fetch(PDO::FETCH_ASSOC);
     
@@ -38,12 +38,26 @@ try {
     }
     
     $room_id = $booking['room_id'];
+    $tnt_id = $tnt_id ?: $booking['tnt_id']; // ใช้จาก booking ถ้าไม่ได้ส่งมา
     
     // 2. ดึง contract_id จาก tenant_workflow (ถ้ามี)
+    $ctr_id = null;
     $stmtWorkflow = $pdo->prepare("SELECT id, ctr_id FROM tenant_workflow WHERE bkg_id = ?");
     $stmtWorkflow->execute([$bkg_id]);
     $workflow = $stmtWorkflow->fetch(PDO::FETCH_ASSOC);
-    $ctr_id = $workflow['ctr_id'] ?? null;
+    if ($workflow && $workflow['ctr_id']) {
+        $ctr_id = $workflow['ctr_id'];
+    }
+    
+    // 2.1 ถ้าไม่มีใน workflow ลองหาจาก contract โดยตรง (ผ่าน tnt_id และ room_id)
+    if (!$ctr_id && $tnt_id && $room_id) {
+        $stmtContract = $pdo->prepare("SELECT ctr_id FROM contract WHERE tnt_id = ? AND room_id = ? ORDER BY ctr_id DESC LIMIT 1");
+        $stmtContract->execute([$tnt_id, $room_id]);
+        $contract = $stmtContract->fetch(PDO::FETCH_ASSOC);
+        if ($contract) {
+            $ctr_id = $contract['ctr_id'];
+        }
+    }
     
     // 3. ดึง expense_id จาก contract (ถ้ามี)
     $exp_ids = [];
@@ -54,40 +68,46 @@ try {
         $exp_ids = $expenses;
     }
     
-    // 4. ลบข้อมูลตามลำดับ (เพื่อไม่ให้ติด foreign key constraint)
+    // ========== เริ่มลบข้อมูลตามลำดับ (เพื่อไม่ให้ติด foreign key constraint) ==========
     
-    // ลบ payment ที่เกี่ยวข้อง
+    // 4.1 ลบ payment ที่เกี่ยวข้องกับ expense
     if (!empty($exp_ids)) {
         $placeholders = implode(',', array_fill(0, count($exp_ids), '?'));
         $stmtDelPayment = $pdo->prepare("DELETE FROM payment WHERE exp_id IN ($placeholders)");
         $stmtDelPayment->execute($exp_ids);
     }
     
-    // ลบ booking_payment
+    // 4.2 ลบ booking_payment
     $stmtDelBP = $pdo->prepare("DELETE FROM booking_payment WHERE bkg_id = ?");
     $stmtDelBP->execute([$bkg_id]);
     
-    // ลบ expense ที่เกี่ยวข้อง
+    // 4.3 ลบ checkin_record (ถ้ามี ctr_id)
+    if ($ctr_id) {
+        $stmtDelCheckin = $pdo->prepare("DELETE FROM checkin_record WHERE ctr_id = ?");
+        $stmtDelCheckin->execute([$ctr_id]);
+    }
+    
+    // 4.4 ลบ expense ที่เกี่ยวข้อง
     if ($ctr_id) {
         $stmtDelExpense = $pdo->prepare("DELETE FROM expense WHERE ctr_id = ?");
         $stmtDelExpense->execute([$ctr_id]);
     }
     
-    // ลบ tenant_workflow
+    // 4.5 ลบ tenant_workflow
     $stmtDelWorkflow = $pdo->prepare("DELETE FROM tenant_workflow WHERE bkg_id = ?");
     $stmtDelWorkflow->execute([$bkg_id]);
     
-    // ลบ contract (ถ้ามี)
+    // 4.6 ลบ contract (ถ้ามี)
     if ($ctr_id) {
         $stmtDelContract = $pdo->prepare("DELETE FROM contract WHERE ctr_id = ?");
         $stmtDelContract->execute([$ctr_id]);
     }
     
-    // ลบ booking
+    // 4.7 ลบ booking
     $stmtDelBooking = $pdo->prepare("DELETE FROM booking WHERE bkg_id = ?");
     $stmtDelBooking->execute([$bkg_id]);
     
-    // ลบ tenant (ถ้าต้องการ - optional, อาจเก็บไว้สำหรับประวัติ)
+    // 4.8 ลบ tenant (ถ้าไม่มี booking อื่น)
     if (!empty($tnt_id)) {
         // ตรวจสอบว่า tenant มี booking อื่นหรือไม่
         $stmtCheckTenant = $pdo->prepare("SELECT COUNT(*) FROM booking WHERE tnt_id = ?");
