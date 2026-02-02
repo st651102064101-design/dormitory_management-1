@@ -2145,6 +2145,7 @@ if ($publicTheme === 'light') {
                   $monthly = floatval($bookingInfo['type_price'] ?? 0);
                   $expStatus = $currentExpStatus; // 0=รอตรวจ,1=ตรวจแล้ว
                   $bkgStatus = $currentBkgStatus; // 1=จองแล้ว,2=เข้าพักแล้ว
+                  $ctrId = $bookingInfo['ctr_id'] ?? null;
                   $ctrStart = $bookingInfo['ctr_start'] ?? null;
                   $bkgCheckin = $bookingInfo['bkg_checkin_date'] ?? null;
                   $dueBase = !empty($ctrStart) ? $ctrStart : $bkgCheckin;
@@ -2212,7 +2213,17 @@ if ($publicTheme === 'light') {
 
                         <?php endif; ?>
                     </div>
-                    <!-- payment CTA removed (server-side guard retained elsewhere) -->
+                    <!-- payment CTA -->
+                    <div style="margin-top: 1rem; padding: 1rem; background: linear-gradient(135deg, rgba(239,68,68,0.15) 0%, rgba(220,38,38,0.1) 100%); border: 2px solid rgba(239,68,68,0.4); border-radius: 8px;">
+                        <button onclick="redirectToPayment('<?php echo htmlspecialchars($ctrId ?? $bookingInfo['ctr_id'] ?? 'unknown', ENT_QUOTES); ?>')" style="width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-size: 1rem; font-weight: 600; cursor: pointer; transition: all 0.3s ease;">
+                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"/>
+                                <line x1="12" y1="8" x2="12" y2="16"/>
+                                <line x1="8" y1="12" x2="16" y2="12"/>
+                            </svg>
+                            ชำระเงินค่าห้องพักและค่าใช้งาน
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>
