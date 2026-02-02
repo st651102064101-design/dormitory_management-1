@@ -178,6 +178,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Check if existing tenant was selected
     $existingTenantId = trim($_POST['existing_tenant_id'] ?? '');
+    if (empty($existingTenantId) && !empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id'])) {
+        $existingTenantId = $_SESSION['tenant_id'];
+    }
     
     $ctrStart = $_POST['ctr_start'] ?? '';
     $ctrEnd = $_POST['ctr_end'] ?? '';
@@ -1867,7 +1870,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <label class="form-label">ชื่อ-นามสกุล <span class="required">*</span></label>
                             <input type="text" name="name" id="tenantNameInput" class="form-input" placeholder="พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกชื่อใหม่" 
                                    value="<?php echo htmlspecialchars($loggedInTenant['tnt_name'] ?? ''); ?>" required autocomplete="off">
-                            <input type="hidden" name="existing_tenant_id" id="existingTenantId" value="">
+                            <input type="hidden" name="existing_tenant_id" id="existingTenantId" value="<?php echo htmlspecialchars($_SESSION['tenant_id'] ?? ''); ?>">
                             <div id="tenantSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
                             <div class="form-hint" style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>

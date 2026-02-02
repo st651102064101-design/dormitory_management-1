@@ -69,6 +69,12 @@ try {
     
     if ($otherExpenses === 0) {
         // No other expenses, delete contract
+        // ลบข้อมูลที่อ้างถึงสัญญา (utility/checkin_record) ก่อนลบ contract
+        $deleteUtility = $pdo->prepare("DELETE FROM utility WHERE ctr_id = ?");
+        $deleteUtility->execute([$contractId]);
+        $deleteCheckin = $pdo->prepare("DELETE FROM checkin_record WHERE ctr_id = ?");
+        $deleteCheckin->execute([$contractId]);
+
         $deleteContract = $pdo->prepare("DELETE FROM contract WHERE ctr_id = ?");
         $deleteContract->execute([$contractId]);
         $deletedItems['contract'] = 1;
