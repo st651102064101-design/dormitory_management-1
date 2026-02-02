@@ -81,6 +81,8 @@ if (empty($resolvedTenantId) && !empty($_SESSION['tenant_email'])) {
     } catch (PDOException $e) {
         error_log('Booking status resolve tenant_id error: ' . $e->getMessage());
     }
+}
+$autoRedirect = !empty($_GET['auto']);
 $autoRedirect = !empty($_GET['auto']);
 if (empty($resolvedTenantId) && $autoRedirect && !empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_name'])) {
     try {
@@ -103,6 +105,19 @@ if (empty($resolvedTenantId) && $autoRedirect && !empty($_SESSION['tenant_logged
     }
 }
 $isTenantLoggedIn = !empty($resolvedTenantId);
+if (empty($resolvedTenantId) && $autoRedirect && !empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_phone'])) {
+    try {
+        $stmtTenantByPhone = $pdo->prepare("SELECT tnt_id FROM tenant WHERE tnt_phone = ? LIMIT 1");
+        $stmtTenantByPhone->execute([$_SESSION['tenant_phone']]);
+        $tenantByPhone = $stmtTenantByPhone->fetch(PDO::FETCH_ASSOC);
+        if ($tenantByPhone && !empty($tenantByPhone['tnt_id'])) {
+            $resolvedTenantId = $tenantByPhone['tnt_id'];
+            $_SESSION['tenant_id'] = $resolvedTenantId;
+        }
+    } catch (PDOException $e) {
+        error_log('Booking status resolve tenant_id by phone error: ' . $e->getMessage());
+    }
+}
 $tenantPhone = '';
 $tenantBookings = [];
 $autoFillError = false;
@@ -123,7 +138,7 @@ $contactInfo = trim($_GET['phone'] ?? $_POST['contact_info'] ?? '');
 if ($isTenantLoggedIn) {
     try {
         $tenantId = $resolvedTenantId;
-        
+        $isTenantLoggedIn = !empty($_SESSION['tenant_logged_in']) && !empty($resolvedTenantId);
         error_log("Fetching tenant data for: $tenantId");
 
         $stmtTenant = $pdo->prepare("SELECT tnt_phone FROM tenant WHERE tnt_id = ? LIMIT 1");
@@ -154,11 +169,6 @@ if ($isTenantLoggedIn) {
                 $bookingRef = (string)$tenantBookings[0]['bkg_id'];
                 $autoFilled = true;
                 error_log("Auto-filled bookingRef: $bookingRef");
-                
-                // Auto-submit form for single booking
-                if ($autoRedirect) {
-                    error_log("Auto-redirecting for single booking");
-                }
             } elseif (count($tenantBookings) === 0 && !empty($contactInfo)) {
                 $noBookingForTenant = true;
             }
@@ -166,6 +176,41 @@ if ($isTenantLoggedIn) {
     } catch (PDOException $e) {
         error_log('Booking status auto-fill error: ' . $e->getMessage());
         $autoFillError = true;
+    }
+}
+
+// ถ้าเป็นผู้ใช้ที่ล็อกอินและมีหมายเลขการจอง ให้โหลดข้อมูลอัตโนมัติ
+if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo)) {
+    $bookingRef = preg_replace('/[^0-9a-zA-Z]/', '', $bookingRef);
+
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                t.tnt_id, t.tnt_name, t.tnt_phone,
+                b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
+                r.room_number, rt.type_name, rt.type_price,
+                c.ctr_id, c.ctr_deposit, c.access_token,
+                e.exp_status,
+                COALESCE(SUM(IF(p.pay_status = '1', p.pay_amount, 0)), 0) as paid_amount
+            FROM tenant t
+            LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
+            LEFT JOIN room r ON b.room_id = r.room_id
+            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+            LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+            LEFT JOIN expense e ON c.ctr_id = e.ctr_id
+            LEFT JOIN payment p ON e.exp_id = p.exp_id
+            WHERE t.tnt_id = ? AND b.bkg_id = ?
+            GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
+            LIMIT 1
+        ");
+        $stmt->execute([$resolvedTenantId, $bookingRef]);
+        $bookingInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($bookingInfo && !empty($bookingInfo['bkg_id'])) {
+            $showResult = true;
+        }
+    } catch (PDOException $e) {
+        error_log('Auto-load booking error: ' . $e->getMessage());
     }
 }
 
@@ -652,6 +697,15 @@ if ($currentStatus === '1' && $expStatus === '1') {
         </div>
         <?php endif; ?>
 
+        <?php if ($isTenantLoggedIn && !empty($_SESSION['tenant_id'])): ?>
+        <div class="alert" style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--success); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--success); margin-right: 8px; display: inline-block; vertical-align: middle;">
+                <polyline points="20 6 9 17 4 12"></polyline>
+            </svg>
+            <span style="color: var(--success); font-weight: 600;">✓ ล็อกอินสำเร็จ <?php echo htmlspecialchars($_SESSION['tenant_name'] ?? $_SESSION['tenant_email'] ?? ''); ?></span>
+        </div>
+        <?php endif; ?>
+
         <?php if ($noBookingForTenant): ?>
         <div style="text-align: center; margin-bottom: 16px;">
             <a href="../Public/booking.php" class="btn" style="display: inline-flex; align-items: center; gap: 8px;">
@@ -661,7 +715,7 @@ if ($currentStatus === '1' && $expStatus === '1') {
         <?php endif; ?>
         
         <div class="card">
-            <form method="post">
+            <form method="post" id="bookingForm">
                 <div class="form-group">
                     <label>หมายเลขการจอง</label>
                     <?php if ($isTenantLoggedIn && !empty($tenantBookings)): ?>
@@ -674,6 +728,18 @@ if ($currentStatus === '1' && $expStatus === '1') {
                                 </option>
                             <?php endforeach; ?>
                         </select>
+                        <?php if (count($tenantBookings) === 1 && !$showResult): ?>
+                        <script>
+                            // Auto-select first booking if only one exists
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const select = document.querySelector('select[name="booking_ref"]');
+                                if (select) {
+                                    select.value = '<?php echo htmlspecialchars($tenantBookings[0]['bkg_id']); ?>';
+                                    select.form.submit();
+                                }
+                            });
+                        </script>
+                        <?php endif; ?>
                     <?php else: ?>
                         <input type="text" name="booking_ref" class="form-control" placeholder="เช่น 770004930" value="<?php echo htmlspecialchars($bookingRef); ?>" required>
                     <?php endif; ?>
@@ -709,13 +775,25 @@ if ($currentStatus === '1' && $expStatus === '1') {
         <div class="card">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
                 <div>
-                    <div style="color: var(--text-muted); font-size: 0.875rem;">หมายเลขจอง</div>
-                    <div style="font-size: 1.25rem; font-weight: 700;">#<?php echo htmlspecialchars($bookingInfo['bkg_id']); ?></div>
+                    <div style="color: var(--text-muted); font-size: 0.875rem;">📋 หมายเลขการจอง</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary); letter-spacing: 1px;">
+                        <?php echo htmlspecialchars($bookingInfo['bkg_id']); ?>
+                    </div>
                 </div>
                 <span class="status-badge" style="background: <?php echo $statusLabels[$currentStatus]['color']; ?>20; color: <?php echo $statusLabels[$currentStatus]['color']; ?>;">
                     <?php echo $statusLabels[$currentStatus]['text']; ?>
                 </span>
             </div>
+            
+            <!-- Booking Details Alert -->
+            <?php if ($isTenantLoggedIn): ?>
+            <div style="background: var(--bg); padding: 14px; border-radius: 10px; margin-bottom: 16px; border-left: 4px solid var(--primary);">
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">🎫 เลขที่การจองของคุณ</div>
+                <div style="font-size: 1.1rem; font-weight: 700; color: var(--primary); font-family: 'Courier New', monospace; letter-spacing: 2px;">
+                    <?php echo htmlspecialchars($bookingInfo['bkg_id']); ?>
+                </div>
+            </div>
+            <?php endif; ?>
             
             <!-- Progress Steps -->
             <?php

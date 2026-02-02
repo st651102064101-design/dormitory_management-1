@@ -40,6 +40,7 @@ foreach ($contracts as $contract) {
       $rate_elec = (int)($rateRow['rate_elec'] ?? 7);
       $rate_water = (int)($rateRow['rate_water'] ?? 20);
       // สร้างรายการใหม่ (หน่วยไฟ/น้ำ = 0)
+      // IMPORTANT: ยอดรวม = ค่าห้อง ไม่หักมัดจำ 2000 บาท (มัดจำเป็นเรื่องแยกต่างหาก)
       $insert = $pdo->prepare("INSERT INTO expense (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id) VALUES (?, 0, 0, ?, ?, ?, 0, 0, ?, '0', ?)");
       $exp_total = $room_price;
       $insert->execute([
@@ -99,11 +100,12 @@ $expStmt = $pdo->query("
 $expenses = $expStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ดึงข้อมูล payment สำหรับแต่ละ expense (เฉพาะที่อนุมัติแล้ว pay_status = '1')
+// สำคัญ: ไม่นับรวม payment ที่มี pay_remark = 'มัดจำ' เพราะมัดจำไม่ใช่การชำระค่าใช้จ่ายรายเดือน
 $paymentsByExp = [];
 $paymentStmt = $pdo->query("
-  SELECT exp_id, pay_id, pay_date, pay_amount, pay_status
+  SELECT exp_id, pay_id, pay_date, pay_amount, pay_status, pay_remark
   FROM payment
-  WHERE pay_status = '1'
+  WHERE pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')
   ORDER BY pay_date ASC
 ");
 while ($pay = $paymentStmt->fetch(PDO::FETCH_ASSOC)) {
@@ -621,7 +623,14 @@ try {
                           <div class="expense-meta">฿<?php echo number_format($waterRate, 2); ?> / หน่วย</div>
                           <div class="expense-meta">ยอดการใช้น้ำ: ฿<?php echo number_format($waterTotal); ?></div>
                         </td>
-                        <td style="text-align:right;"><strong style="color:#22c55e;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></strong></td>
+                        <td style="text-align:right;">
+                          <?php 
+                            $status = (string)($exp['exp_status'] ?? '');
+                            // ยอดรวมเป็นสีแดง ถ้าสถานะเป็น "ยังไม่ชำระ" หรือ "ชำระยังไม่ครบ"
+                            $totalColor = (in_array($status, ['0', '3'])) ? '#ef4444' : '#22c55e';
+                          ?>
+                          <strong style="color:<?php echo $totalColor; ?>;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></strong>
+                        </td>
                         <td>
                           <?php $status = (string)($exp['exp_status'] ?? ''); ?>
                           <span class="status-badge" style="background: <?php echo $statusColors[$status] ?? '#94a3b8'; ?>;">
@@ -632,29 +641,73 @@ try {
                           <?php
                             // ใช้ข้อมูล payment ที่ดึงมาแล้ว
                             $expId = (int)$exp['exp_id'];
-                            $payData = $paymentsByExp[$expId] ?? ['total_paid' => 0, 'count' => 0, 'payments' => []];
-                            $paidAmount = $payData['total_paid'];
-                            $paymentCount = $payData['count'];
+                            
+                            // ดึงยอดมัดจำและค่าห้องแยกกัน
+                            $depositStmt = $pdo->prepare("
+                              SELECT 
+                                COALESCE(SUM(CASE WHEN pay_remark = 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as deposit_paid,
+                                COALESCE(SUM(CASE WHEN pay_remark IS NULL OR pay_remark != 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as charges_paid
+                              FROM payment
+                              WHERE exp_id = ? AND pay_status = '1'
+                            ");
+                            $depositStmt->execute([$expId]);
+                            $depositData = $depositStmt->fetch(PDO::FETCH_ASSOC);
+                            $depositPaid = (int)($depositData['deposit_paid'] ?? 0);
+                            $chargesPaid = (int)($depositData['charges_paid'] ?? 0);
+                            
+                            // ดึงยอดรวมค่าห้อง
                             $expTotal = (int)($exp['exp_total'] ?? 0);
-                            $remainAmount = $expTotal - $paidAmount;
+                            $chargesRemain = $expTotal - $chargesPaid;
+                            
+                            // เงินมัดจำคงที่ 2000 บาท
+                            $depositTotal = 2000;
+                            $depositRemain = max(0, $depositTotal - $depositPaid);
+                            
+                            // นับจำนวนการชำระค่าห้อง (ไม่รวมมัดจำ)
+                            $chargesCountStmt = $pdo->prepare("
+                              SELECT COUNT(*) as count FROM payment
+                              WHERE exp_id = ? AND pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')
+                            ");
+                            $chargesCountStmt->execute([$expId]);
+                            $chargesCount = (int)($chargesCountStmt->fetchColumn() ?? 0);
                           ?>
-                          <div style="font-size:0.85rem;line-height:1.6;">
-                            <div style="display:flex;align-items:center;gap:0.35rem;">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                              ชำระแล้ว: <strong style="color:#22c55e;">฿<?php echo number_format($paidAmount); ?></strong>
+                          <div style="font-size:0.85rem;line-height:1.8;">
+                            <!-- มัดจำ -->
+                            <div style="margin-bottom:0.5rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(255,255,255,0.1);">
+                              <div style="color:#94a3b8;font-weight:600;margin-bottom:0.25rem;font-size:0.8rem;cursor:help;position:relative;display:inline-block;" title="มัดจำมาจากการจองห้อง">
+                                💰 มัดจำ (฿<?php echo number_format($depositTotal); ?>)
+                                <span style="font-size:0.7rem;color:#64748b;margin-left:0.25rem;">*จองห้อง</span>
+                              </div>
+                              <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.2rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <span style="font-size:0.8rem;"><strong style="color:#22c55e;">ชำระแล้ว:</strong> <strong style="color:#22c55e;">฿<?php echo number_format($depositPaid); ?></strong></span>
+                              </div>
+                              <div style="display:flex;align-items:center;gap:0.35rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                <span style="font-size:0.8rem;"><strong style="color:#ef4444;">ยังไม่ชำระ:</strong> <strong style="color:<?php echo $depositRemain > 0 ? '#ef4444' : '#22c55e'; ?>;">฿<?php echo number_format($depositRemain); ?></strong></span>
+                              </div>
                             </div>
-                            <div style="color:#94a3b8;margin-top:0.2rem;display:flex;align-items:center;gap:0.35rem;">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                              ค้างชำระ: <strong style="color:<?php echo $remainAmount > 0 ? '#ef4444' : '#22c55e'; ?>;">฿<?php echo number_format($remainAmount); ?></strong>
+                            
+                            <!-- ค่าห้อง -->
+                            <div>
+                              <div style="color:#94a3b8;font-weight:600;margin-bottom:0.25rem;font-size:0.8rem;">🏠 ค่าห้อง (฿<?php echo number_format($expTotal); ?>)</div>
+                              <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.2rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                <span style="font-size:0.8rem;"><strong style="color:#22c55e;">ชำระแล้ว:</strong> <strong style="color:#22c55e;">฿<?php echo number_format($chargesPaid); ?></strong></span>
+                              </div>
+                              <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.3rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                <span style="font-size:0.8rem;"><strong style="color:#ef4444;">ยังไม่ชำระ:</strong> <strong style="color:<?php echo $chargesRemain > 0 ? '#ef4444' : '#22c55e'; ?>;">฿<?php echo number_format($chargesRemain); ?></strong></span>
+                              </div>
+                              <?php if ($chargesCount > 0): ?>
+                              <div style="padding:0.35rem 0.5rem;background:rgba(34,197,94,0.1);border-radius:6px;display:inline-flex;align-items:center;gap:0.3rem;">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
+                                <span style="color:#22c55e;font-size:0.8rem;"><?php echo $chargesCount; ?> ครั้ง</span>
+                              </div>
+                              <?php else: ?>
+                              <div style="color:#64748b;font-size:0.8rem;">ยังไม่มีการชำระ</div>
+                              <?php endif; ?>
                             </div>
-                            <?php if ($paymentCount > 0): ?>
-                            <div style="margin-top:0.35rem;padding:0.35rem 0.5rem;background:rgba(34,197,94,0.1);border-radius:6px;display:inline-flex;align-items:center;gap:0.3rem;">
-                              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                              <span style="color:#22c55e;font-size:0.8rem;"><?php echo $paymentCount; ?> ครั้ง</span>
-                            </div>
-                            <?php else: ?>
-                            <div style="margin-top:0.35rem;color:#64748b;font-size:0.8rem;">ยังไม่มีการชำระ</div>
-                            <?php endif; ?>
                           </div>
                         </td>
                       </tr>
