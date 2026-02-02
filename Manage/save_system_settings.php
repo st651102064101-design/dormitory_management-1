@@ -377,6 +377,73 @@ try {
         }
     }
 
+    // จัดการ Signature Upload (ลายเซ็นเจ้าของหอ)
+    if (!empty($_FILES['signature'])) {
+        $file = $_FILES['signature'];
+        $allowedTypes = ['image/png']; // รองรับเฉพาะ PNG เพื่อให้มีพื้นหลังโปร่งใส
+        $maxSize = 2 * 1024 * 1024; // 2MB
+
+        if (!in_array($file['type'], $allowedTypes)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ PNG (แนะนำพื้นหลังโปร่งใส)']);
+            exit;
+        }
+
+        if ($file['size'] > $maxSize) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ขนาดไฟล์ไม่ควรเกิน 2MB']);
+            exit;
+        }
+
+        $uploadsDir = __DIR__ . '//dormitory_management/Public/Assets/Images/';
+        if (!is_dir($uploadsDir)) {
+            mkdir($uploadsDir, 0755, true);
+        }
+
+        // สร้างชื่อไฟล์ลายเซ็น
+        $filename = 'owner_signature_' . date('Ymd_His') . '.png';
+        $filepath = $uploadsDir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['owner_signature', $filename, $filename]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'อัพโหลดลายเซ็นสำเร็จ', 'filename' => $filename]);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัพโหลดไฟล์']);
+            exit;
+        }
+    }
+
+    // ลบลายเซ็น
+    if (isset($_POST['delete_signature'])) {
+        // ดึงชื่อไฟล์ลายเซ็นปัจจุบัน
+        $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'owner_signature'");
+        $stmt->execute();
+        $currentSignature = $stmt->fetchColumn();
+
+        if ($currentSignature) {
+            $uploadsDir = __DIR__ . '//dormitory_management/Public/Assets/Images/';
+            $signaturePath = $uploadsDir . $currentSignature;
+
+            // ลบไฟล์ (ถ้ามี)
+            if (file_exists($signaturePath)) {
+                @unlink($signaturePath);
+            }
+
+            // ลบค่าใน database
+            $stmt = $pdo->prepare("DELETE FROM system_settings WHERE setting_key = 'owner_signature'");
+            $stmt->execute();
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'ลบลายเซ็นสำเร็จ']);
+        exit;
+    }
+
     // บันทึกเบอร์โทร
     if (!empty($_POST['contact_phone'])) {
         $phone = trim($_POST['contact_phone']);

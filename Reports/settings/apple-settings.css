@@ -337,21 +337,39 @@ body.apple-settings-page {
   min-height: 100vh;
 }
 
+/* Desktop Layout - sidebar visible */
 body.apple-settings-page .app-shell {
-  display: block !important;
+  display: flex !important;
+  flex-direction: row;
   background: var(--apple-bg) !important;
   min-height: 100vh;
   transition: background-color 0.3s ease;
+  position: relative;
 }
 
 body.apple-settings-page .app-main {
+  flex: 1 1 auto;
+  display: block;
   background: var(--apple-bg) !important;
   transition: background-color 0.3s ease;
-  margin-left: 0 !important;
-  width: 100% !important;
-  max-width: 100% !important;
   min-height: 100vh;
   padding: 0 !important;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* Mobile Layout - stack vertically, sidebar hidden */
+@media (max-width: 1024px) {
+  body.apple-settings-page .app-shell {
+    display: block !important;
+    flex-direction: column;
+  }
+
+  body.apple-settings-page .app-main {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-left: 0 !important;
+  }
 }
 
 /* Hide original manage-panel */
@@ -1954,7 +1972,7 @@ body.apple-settings-page header.page-header {
   background: var(--apple-card) !important;
   border: none !important;
   cursor: pointer !important;
-  z-index: 9999 !important;
+  z-index: 10001 !important;
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
