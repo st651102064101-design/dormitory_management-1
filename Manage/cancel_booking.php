@@ -110,6 +110,12 @@ try {
         $stmtDelExpense = $pdo->prepare("DELETE FROM expense WHERE ctr_id = ?");
         $stmtDelExpense->execute([$ctr_id]);
     }
+
+    // 4.4.1 ลบ utility ที่เกี่ยวข้อง (กัน foreign key constraint)
+    if ($ctr_id) {
+        $stmtDelUtility = $pdo->prepare("DELETE FROM utility WHERE ctr_id = ?");
+        $stmtDelUtility->execute([$ctr_id]);
+    }
     
     // 4.5 ลบ tenant_workflow
     $stmtDelWorkflow = $pdo->prepare("DELETE FROM tenant_workflow WHERE bkg_id = ?");
