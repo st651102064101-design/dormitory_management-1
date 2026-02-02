@@ -1,5 +1,4 @@
 <?php
-declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/../ConnectDB.php';
 
@@ -9,648 +8,307 @@ $pdo = connectDB();
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $themeColor = '#1e40af';
-$bgFilename = 'bg.jpg';
-$publicTheme = 'dark';
-$useBgImage = '0';
 $bankName = '';
 $bankAccountName = '';
 $bankAccountNumber = '';
 $promptpayNumber = '';
 $contactPhone = '';
-$contactEmail = '';
 
 try {
     $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
-        switch ($row['setting_key']) {
-            case 'site_name': $siteName = $row['setting_value']; break;
-            case 'logo_filename': $logoFilename = $row['setting_value']; break;
-            case 'theme_color': if (!empty($row['setting_value'])) $themeColor = $row['setting_value']; break;
-            case 'bg_filename': if (!empty($row['setting_value'])) $bgFilename = $row['setting_value']; break;
-            case 'public_theme': if (!empty($row['setting_value'])) $publicTheme = $row['setting_value']; break;
-            case 'use_bg_image': if ($row['setting_value'] !== null) $useBgImage = $row['setting_value']; break;
-            case 'bank_name': $bankName = $row['setting_value'] ?? ''; break;
-            case 'bank_account_name': $bankAccountName = $row['setting_value'] ?? ''; break;
-            case 'bank_account_number': $bankAccountNumber = $row['setting_value'] ?? ''; break;
-            case 'promptpay_number': $promptpayNumber = $row['setting_value'] ?? ''; break;
-            case 'contact_phone': $contactPhone = $row['setting_value'] ?? ''; break;
-            case 'contact_email': $contactEmail = $row['setting_value'] ?? ''; break;
-        }
+        if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
+        if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+        if ($row['setting_key'] === 'theme_color' && !empty($row['setting_value'])) $themeColor = $row['setting_value'];
+        if ($row['setting_key'] === 'bank_name') $bankName = $row['setting_value'] ?? '';
+        if ($row['setting_key'] === 'bank_account_name') $bankAccountName = $row['setting_value'] ?? '';
+        if ($row['setting_key'] === 'bank_account_number') $bankAccountNumber = $row['setting_value'] ?? '';
+        if ($row['setting_key'] === 'promptpay_number') $promptpayNumber = $row['setting_value'] ?? '';
+        if ($row['setting_key'] === 'contact_phone' && !empty($row['setting_value'])) $contactPhone = $row['setting_value'];
+        if ($row['setting_key'] === 'dormitory_phone' && !empty($row['setting_value']) && empty($contactPhone)) $contactPhone = $row['setting_value'];
+    }
+    // ถ้ายังไม่มีเบอร์โทร ใช้ promptpay number
+    if (empty($contactPhone) && !empty($promptpayNumber)) {
+        $contactPhone = $promptpayNumber;
     }
 } catch (PDOException $e) {}
 
-// Helper: Thai date formatter
-function thaiDate(?string $dateStr, string $format = 'd M Y') {
-    if (empty($dateStr)) return '';
+// Thai date formatter
+function thaiDateFormat($dateStr) {
+    if (empty($dateStr)) return '-';
     $ts = strtotime($dateStr);
-    if ($ts === false) return '';
+    if ($ts === false) return '-';
     $day = date('j', $ts);
     $monthNum = (int)date('n', $ts);
     $yearBE = (int)date('Y', $ts) + 543;
-    $thaiMonthsShort = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-    $thaiMonthsFull = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-    $monthShort = $thaiMonthsShort[$monthNum - 1] ?? '';
-    $monthFull = $thaiMonthsFull[$monthNum - 1] ?? '';
-    $out = $format;
-    $out = str_replace('d', str_pad((string)$day, 2, '0', STR_PAD_LEFT), $out);
-    $out = str_replace('j', (string)$day, $out);
-    $out = str_replace('M', $monthShort, $out);
-    $out = str_replace('F', $monthFull, $out);
-    $out = str_replace('Y', (string)$yearBE, $out);
-    return $out;
+    $months = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+    return $day . ' ' . $months[$monthNum - 1] . ' ' . $yearBE;
 }
 
 $bookingInfo = null;
 $error = '';
-$searchMethod = '';
+$showResult = false;
 
-// ตรวจสอบว่า tenant login หรือไม่
-$isLoggedIn = !empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id']);
+// รับค่าจาก GET หรือ POST
+$bookingRef = trim($_GET['id'] ?? $_POST['booking_ref'] ?? '');
+$contactInfo = trim($_GET['phone'] ?? $_POST['contact_info'] ?? '');
 
-// ถ้า login แล้วให้ดึงข้อมูลการจองอัตโนมัติ
-if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] !== 'POST') {
-    $tenantId = $_SESSION['tenant_id'];
-    try {
-        $phoneStmt = $pdo->prepare("SELECT tnt_phone FROM tenant WHERE tnt_id = ?");
-        $phoneStmt->execute([$tenantId]);
-        $phoneData = $phoneStmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($phoneData && !empty($phoneData['tnt_phone'])) {
-            $stmt = $pdo->prepare("
-                SELECT 
-                    t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_education, t.tnt_faculty, t.tnt_year,
-                    b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
-                    r.room_id, r.room_number, rt.type_name, rt.type_price,
-                    c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.access_token,
-                    e.exp_id, e.exp_total, e.exp_status,
-                    COUNT(p.pay_id) as payment_count,
-                    SUM(IF(p.pay_status = '1', p.pay_amount, 0)) as paid_amount,
-                    SUM(IF(p.pay_proof IS NOT NULL AND p.pay_proof != '', 1, 0)) as has_slip
-                FROM tenant t
-                LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
-                LEFT JOIN room r ON b.room_id = r.room_id
-                LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-                LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
-                LEFT JOIN expense e ON c.ctr_id = e.ctr_id
-                LEFT JOIN payment p ON e.exp_id = p.exp_id
-                WHERE t.tnt_phone = ? AND (b.bkg_id IS NOT NULL OR c.ctr_id IS NOT NULL)
-                GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
-                ORDER BY b.bkg_date DESC, c.ctr_start DESC
-                LIMIT 1
-            ");
-            $stmt->execute([$phoneData['tnt_phone']]);
-            $result = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if ($result && ($result['bkg_id'] || $result['ctr_id'])) {
-                $bookingInfo = $result;
-                $bookingInfo['ctr_deposit'] = floatval($bookingInfo['ctr_deposit'] ?? 0);
-                $bookingInfo['paid_amount'] = floatval($bookingInfo['paid_amount'] ?? 0);
-                $bookingInfo['payment_count'] = intval($bookingInfo['payment_count'] ?? 0);
-                $bookingInfo['has_slip'] = intval($bookingInfo['has_slip'] ?? 0);
-                $bookingInfo['type_price'] = floatval($bookingInfo['type_price'] ?? 0);
-                $searchMethod = 'auto';
-            }
-        }
-    } catch (PDOException $e) {}
-}
-
-// Handle POST search
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $bookingRef = trim($_POST['booking_ref'] ?? '');
-    $contactInfo = trim($_POST['contact_info'] ?? '');
-    
+// ถ้ามีการส่งข้อมูลมา
+if (!empty($bookingRef) && !empty($contactInfo)) {
     $bookingRef = preg_replace('/[^0-9a-zA-Z]/', '', $bookingRef);
+    $contactInfo = preg_replace('/[^0-9]/', '', $contactInfo);
     
+    try {
+        $stmt = $pdo->prepare("
+            SELECT 
+                t.tnt_id, t.tnt_name, t.tnt_phone,
+                b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
+                r.room_number, rt.type_name, rt.type_price,
+                c.ctr_id, c.ctr_deposit, c.access_token,
+                e.exp_status,
+                COALESCE(SUM(IF(p.pay_status = '1', p.pay_amount, 0)), 0) as paid_amount
+            FROM tenant t
+            LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
+            LEFT JOIN room r ON b.room_id = r.room_id
+            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+            LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+            LEFT JOIN expense e ON c.ctr_id = e.ctr_id
+            LEFT JOIN payment p ON e.exp_id = p.exp_id
+            WHERE (b.bkg_id = ? OR t.tnt_id = ?) AND t.tnt_phone = ?
+            GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
+            LIMIT 1
+        ");
+        $stmt->execute([$bookingRef, $bookingRef, $contactInfo]);
+        $bookingInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($bookingInfo && !empty($bookingInfo['bkg_id'])) {
+            $showResult = true;
+        } else {
+            $error = 'ไม่พบข้อมูลการจอง กรุณาตรวจสอบหมายเลขการจองและเบอร์โทรศัพท์';
+        }
+    } catch (PDOException $e) {
+        $error = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($bookingRef)) {
         $error = 'กรุณากรอกหมายเลขการจอง';
     } elseif (empty($contactInfo)) {
         $error = 'กรุณากรอกเบอร์โทรศัพท์';
-    } else {
-        try {
-            $stmt = $pdo->prepare("
-                SELECT 
-                    t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_education, t.tnt_faculty, t.tnt_year,
-                    b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
-                    r.room_id, r.room_number, rt.type_name, rt.type_price,
-                    c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_deposit, c.ctr_status, c.access_token,
-                    e.exp_id, e.exp_total, e.exp_status,
-                    COUNT(p.pay_id) as payment_count,
-                    SUM(IF(p.pay_status = '1', p.pay_amount, 0)) as paid_amount,
-                    SUM(IF(p.pay_proof IS NOT NULL AND p.pay_proof != '', 1, 0)) as has_slip
-                FROM tenant t
-                LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
-                LEFT JOIN room r ON b.room_id = r.room_id
-                LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-                LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
-                LEFT JOIN expense e ON c.ctr_id = e.ctr_id
-                LEFT JOIN payment p ON e.exp_id = p.exp_id
-                WHERE (b.bkg_id = ? OR t.tnt_id = ?) AND t.tnt_phone = ?
-                GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
-            ");
-            $stmt->execute([$bookingRef, $bookingRef, $contactInfo]);
-            $bookingInfo = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            if (!$bookingInfo || !$bookingInfo['bkg_id']) {
-                $error = 'ไม่พบข้อมูลการจอง กรุณาตรวจสอบหมายเลขการจองและเบอร์โทรศัพท์';
-            } else {
-                $bookingInfo['ctr_deposit'] = floatval($bookingInfo['ctr_deposit'] ?? 0);
-                $bookingInfo['paid_amount'] = floatval($bookingInfo['paid_amount'] ?? 0);
-                $bookingInfo['payment_count'] = intval($bookingInfo['payment_count'] ?? 0);
-                $bookingInfo['has_slip'] = intval($bookingInfo['has_slip'] ?? 0);
-                $bookingInfo['type_price'] = floatval($bookingInfo['type_price'] ?? 0);
-                $searchMethod = 'found';
-            }
-        } catch (PDOException $e) {
-            $error = 'เกิดข้อผิดพลาด กรุณาลองใหม่';
-        }
     }
 }
 
-// Determine status
-$bookingStatuses = [
-    '0' => ['label' => 'ยกเลิก', 'class' => 'cancelled', 'icon' => 'x-circle'],
-    '1' => ['label' => 'รอยืนยัน', 'class' => 'pending', 'icon' => 'clock'],
-    '2' => ['label' => 'เข้าพักแล้ว', 'class' => 'success', 'icon' => 'check-circle']
-];
-
-$currentBkgStatus = $bookingInfo['bkg_status'] ?? null;
-$currentCtrStatus = $bookingInfo['ctr_status'] ?? null;
-$currentExpStatus = $bookingInfo['exp_status'] ?? null;
-
-// Progress calculation
-$hasPaymentProof = ($bookingInfo['has_slip'] ?? 0) > 0 || $currentExpStatus === '1' || $currentExpStatus === '2';
-$progressStage = 1;
-if (($bookingInfo['payment_count'] ?? 0) > 0) $progressStage = 2;
-if ($hasPaymentProof) $progressStage = 2.5;
-if ($currentExpStatus === '2') $progressStage = 3;
-if ($currentExpStatus === '1') $progressStage = 4;
-if (!empty($bookingInfo['ctr_id']) && $currentExpStatus === '1') $progressStage = 5;
-if ($currentBkgStatus === '2') $progressStage = 6;
-
-// Steps for progress
-$steps = [
-    ['id' => 1, 'label' => 'รับคำจอง', 'icon' => 'clipboard-check'],
-    ['id' => 2, 'label' => 'ชำระมัดจำ', 'icon' => 'credit-card'],
-    ['id' => 3, 'label' => 'ตรวจสอบ', 'icon' => 'search'],
-    ['id' => 4, 'label' => 'ออกสัญญา', 'icon' => 'file-text'],
-    ['id' => 5, 'label' => 'เข้าพัก', 'icon' => 'home']
-];
-
-// Calculate amounts
+// คำนวณค่ามัดจำ
 $deposit = 2000;
 $paid = floatval($bookingInfo['paid_amount'] ?? 0);
 $remaining = max(0, $deposit - $paid);
 
-$themeClass = $publicTheme === 'light' ? 'theme-light' : '';
+// สถานะการจอง
+$statusLabels = [
+    '0' => ['text' => 'ยกเลิก', 'color' => '#ef4444'],
+    '1' => ['text' => 'รอยืนยัน', 'color' => '#f59e0b'],
+    '2' => ['text' => 'เข้าพักแล้ว', 'color' => '#22c55e']
+];
+$currentStatus = $bookingInfo['bkg_status'] ?? '1';
+$expStatus = $bookingInfo['exp_status'] ?? '0';
+
+// ถ้าชำระมัดจำแล้ว ให้แสดงว่าจองสำเร็จ
+if ($currentStatus === '1' && $expStatus === '1') {
+    $statusLabels['1'] = ['text' => 'จองสำเร็จ', 'color' => '#22c55e'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <title>ตรวจสอบสถานะการจอง - <?php echo htmlspecialchars($siteName); ?></title>
-    <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
+    <link rel="icon" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         
         :root {
-            --primary: <?php echo htmlspecialchars($themeColor); ?>;
-            --primary-light: <?php echo htmlspecialchars($themeColor); ?>22;
-            --bg: #0f0f1a;
-            --bg-card: #1a1a2e;
-            --bg-card-hover: #252542;
-            --text: #ffffff;
-            --text-secondary: #a0a0b0;
-            --border: rgba(255, 255, 255, 0.08);
+            --primary: <?php echo $themeColor; ?>;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --card-hover: #334155;
+            --text: #f8fafc;
+            --text-muted: #94a3b8;
+            --border: #334155;
             --success: #22c55e;
-            --success-bg: rgba(34, 197, 94, 0.1);
             --warning: #f59e0b;
-            --warning-bg: rgba(245, 158, 11, 0.1);
             --danger: #ef4444;
-            --danger-bg: rgba(239, 68, 68, 0.1);
-            --radius: 16px;
-            --radius-sm: 12px;
-            --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-        }
-        
-        .theme-light {
-            --bg: #f8fafc;
-            --bg-card: #ffffff;
-            --bg-card-hover: #f1f5f9;
-            --text: #0f172a;
-            --text-secondary: #64748b;
-            --border: rgba(0, 0, 0, 0.08);
-            --shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
         }
         
         body {
-            font-family: 'Prompt', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Prompt', sans-serif;
             background: var(--bg);
             color: var(--text);
             min-height: 100vh;
-            line-height: 1.5;
+            line-height: 1.6;
         }
         
-        /* Container */
         .container {
-            max-width: 640px;
+            max-width: 600px;
             margin: 0 auto;
-            padding: 16px;
-            padding-bottom: 100px;
-        }
-        
-        @media (min-width: 768px) {
-            .container {
-                padding: 24px;
-                padding-bottom: 40px;
-            }
+            padding: 20px;
         }
         
         /* Header */
         .header {
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            padding: 12px 0;
+            gap: 16px;
+            padding: 16px 0;
             margin-bottom: 24px;
         }
         
-        .header-left {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
         .back-btn {
-            width: 40px;
-            height: 40px;
+            width: 44px;
+            height: 44px;
             display: flex;
             align-items: center;
             justify-content: center;
-            background: var(--bg-card);
+            background: var(--card);
             border: 1px solid var(--border);
             border-radius: 12px;
             color: var(--text);
             text-decoration: none;
-            transition: all 0.2s;
-        }
-        
-        .back-btn:hover {
-            background: var(--bg-card-hover);
-            transform: scale(1.05);
         }
         
         .logo {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
             border-radius: 10px;
-            object-fit: cover;
         }
         
         .site-name {
-            font-size: 1rem;
+            font-size: 1.1rem;
             font-weight: 600;
         }
         
-        /* Hero Section */
+        /* Hero */
         .hero {
             text-align: center;
-            margin-bottom: 32px;
+            padding: 40px 20px;
         }
         
         .hero-icon {
-            width: 64px;
-            height: 64px;
-            margin: 0 auto 16px;
-            background: var(--primary-light);
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 20px;
+            background: rgba(99, 102, 241, 0.1);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
-        .hero-icon svg {
-            width: 32px;
-            height: 32px;
-            color: var(--primary);
-        }
-        
         .hero h1 {
             font-size: 1.5rem;
-            font-weight: 600;
             margin-bottom: 8px;
         }
         
         .hero p {
-            color: var(--text-secondary);
-            font-size: 0.95rem;
+            color: var(--text-muted);
         }
         
-        /* Search Card */
-        .search-card {
-            background: var(--bg-card);
+        /* Card */
+        .card {
+            background: var(--card);
             border: 1px solid var(--border);
-            border-radius: var(--radius);
+            border-radius: 16px;
             padding: 24px;
-            margin-bottom: 24px;
-            box-shadow: var(--shadow);
-        }
-        
-        .input-group {
             margin-bottom: 16px;
         }
         
-        .input-group label {
-            display: block;
-            font-size: 0.875rem;
-            font-weight: 500;
-            margin-bottom: 8px;
-            color: var(--text-secondary);
+        .card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .input-field {
+        /* Form */
+        .form-group {
+            margin-bottom: 16px;
+        }
+        
+        .form-group label {
+            display: block;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+        
+        .form-control {
             width: 100%;
             padding: 14px 16px;
             background: var(--bg);
             border: 2px solid var(--border);
-            border-radius: var(--radius-sm);
+            border-radius: 12px;
             color: var(--text);
             font-size: 1rem;
             font-family: inherit;
-            transition: all 0.2s;
         }
         
-        .input-field:focus {
+        .form-control:focus {
             outline: none;
             border-color: var(--primary);
-            box-shadow: 0 0 0 4px var(--primary-light);
         }
         
-        .input-field::placeholder {
-            color: var(--text-secondary);
-            opacity: 0.6;
-        }
-        
-        .btn-primary {
+        .btn {
             width: 100%;
-            padding: 16px 24px;
+            padding: 16px;
             background: var(--primary);
             color: white;
             border: none;
-            border-radius: var(--radius-sm);
+            border-radius: 12px;
             font-size: 1rem;
             font-weight: 600;
             font-family: inherit;
             cursor: pointer;
-            transition: all 0.2s;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
         }
         
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
-        }
-        
-        .btn-primary:active {
-            transform: translateY(0);
+        .btn:hover {
+            opacity: 0.9;
         }
         
         /* Alert */
         .alert {
             padding: 16px;
-            border-radius: var(--radius-sm);
-            margin-bottom: 24px;
+            border-radius: 12px;
+            margin-bottom: 16px;
             display: flex;
-            align-items: flex-start;
+            align-items: center;
             gap: 12px;
         }
         
         .alert-error {
-            background: var(--danger-bg);
+            background: rgba(239, 68, 68, 0.1);
             border: 1px solid var(--danger);
-            color: var(--danger);
+            color: #fca5a5;
         }
         
-        .alert-icon {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            margin-top: 2px;
-        }
-        
-        /* Status Hero */
-        .status-hero {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 16px;
-            box-shadow: var(--shadow);
-        }
-        
-        .status-hero-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        
-        .booking-ref {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
-        
-        .booking-ref strong {
-            color: var(--text);
-            font-weight: 600;
-        }
-        
+        /* Status Badge */
         .status-badge {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 8px 12px;
+            padding: 8px 16px;
             border-radius: 20px;
             font-size: 0.875rem;
             font-weight: 500;
         }
         
-        .status-badge.pending {
-            background: var(--warning-bg);
-            color: var(--warning);
-        }
-        
-        .status-badge.success {
-            background: var(--success-bg);
-            color: var(--success);
-        }
-        
-        .status-badge.cancelled {
-            background: var(--danger-bg);
-            color: var(--danger);
-        }
-        
-        .status-badge svg {
-            width: 16px;
-            height: 16px;
-        }
-        
-        /* Progress Steps - Horizontal Timeline */
-        .progress-wrapper {
-            margin: 24px 0;
-        }
-        
-        .progress-steps {
-            display: flex;
-            justify-content: space-between;
-            position: relative;
-        }
-        
-        .progress-line {
-            position: absolute;
-            top: 18px;
-            left: 20px;
-            right: 20px;
-            height: 3px;
-            background: var(--border);
-            border-radius: 2px;
-            z-index: 1;
-        }
-        
-        .progress-line-fill {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            background: var(--success);
-            border-radius: 2px;
-            transition: width 0.5s ease;
-        }
-        
-        .progress-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            z-index: 2;
-            flex: 1;
-        }
-        
-        .step-dot {
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            background: var(--bg-card);
-            border: 3px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 8px;
-            transition: all 0.3s;
-        }
-        
-        .step-dot svg {
-            width: 16px;
-            height: 16px;
-            color: var(--text-secondary);
-            opacity: 0.5;
-        }
-        
-        .progress-step.completed .step-dot {
-            background: var(--success);
-            border-color: var(--success);
-        }
-        
-        .progress-step.completed .step-dot svg {
-            color: white;
-            opacity: 1;
-        }
-        
-        .progress-step.current .step-dot {
-            border-color: var(--primary);
-            background: var(--primary-light);
-            animation: pulse 2s infinite;
-        }
-        
-        .progress-step.current .step-dot svg {
-            color: var(--primary);
-            opacity: 1;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { box-shadow: 0 0 0 0 var(--primary-light); }
-            50% { box-shadow: 0 0 0 8px transparent; }
-        }
-        
-        .step-label {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            text-align: center;
-            max-width: 60px;
-        }
-        
-        .progress-step.completed .step-label,
-        .progress-step.current .step-label {
-            color: var(--text);
-            font-weight: 500;
-        }
-        
-        @media (max-width: 480px) {
-            .step-label {
-                font-size: 0.65rem;
-                max-width: 50px;
-            }
-            .step-dot {
-                width: 32px;
-                height: 32px;
-            }
-            .step-dot svg {
-                width: 14px;
-                height: 14px;
-            }
-        }
-        
-        /* Info Cards */
-        .info-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            margin-bottom: 16px;
-            overflow: hidden;
-            box-shadow: var(--shadow);
-        }
-        
-        .info-card-header {
-            padding: 16px 20px;
-            border-bottom: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-        
-        .info-card-header h3 {
-            font-size: 1rem;
-            font-weight: 600;
-        }
-        
-        .info-card-header svg {
-            width: 20px;
-            height: 20px;
-            color: var(--primary);
-        }
-        
-        .info-card-body {
-            padding: 20px;
-        }
-        
+        /* Info Grid */
         .info-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -658,9 +316,9 @@ $themeClass = $publicTheme === 'light' ? 'theme-light' : '';
         }
         
         .info-item {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: 10px;
         }
         
         .info-item.full {
@@ -669,9 +327,9 @@ $themeClass = $publicTheme === 'light' ? 'theme-light' : '';
         
         .info-label {
             font-size: 0.75rem;
-            color: var(--text-secondary);
+            color: var(--text-muted);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            margin-bottom: 4px;
         }
         
         .info-value {
@@ -679,129 +337,91 @@ $themeClass = $publicTheme === 'light' ? 'theme-light' : '';
             font-weight: 500;
         }
         
-        .info-value.highlight {
-            color: var(--success);
-            font-size: 1.25rem;
+        .info-value.large {
+            font-size: 1.5rem;
             font-weight: 700;
         }
         
-        .info-value.danger {
-            color: var(--danger);
-        }
+        .info-value.success { color: var(--success); }
+        .info-value.warning { color: var(--warning); }
+        .info-value.danger { color: var(--danger); }
         
-        /* Payment Card - Special Design */
-        .payment-card {
-            background: linear-gradient(135deg, var(--bg-card) 0%, var(--bg-card-hover) 100%);
-            border: 2px solid var(--border);
-            border-radius: var(--radius);
-            padding: 24px;
-            margin-bottom: 16px;
+        /* Progress */
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            margin: 24px 0;
             position: relative;
-            overflow: hidden;
         }
         
-        .payment-card::before {
+        .progress-steps::before {
             content: '';
             position: absolute;
-            top: 0;
-            right: 0;
-            width: 150px;
-            height: 150px;
-            background: var(--primary);
-            opacity: 0.05;
-            border-radius: 50%;
-            transform: translate(30%, -30%);
+            top: 16px;
+            left: 20px;
+            right: 20px;
+            height: 3px;
+            background: var(--border);
         }
         
-        .payment-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        
-        .payment-header h3 {
-            font-size: 1rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .payment-header svg {
-            width: 20px;
-            height: 20px;
-            color: var(--primary);
-        }
-        
-        .payment-amount {
-            text-align: center;
-            padding: 24px 0;
-            border-top: 1px dashed var(--border);
-            border-bottom: 1px dashed var(--border);
-            margin: 16px 0;
-        }
-        
-        .payment-amount-label {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-            margin-bottom: 8px;
-        }
-        
-        .payment-amount-value {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--danger);
-            line-height: 1;
-        }
-        
-        .payment-amount-value.paid {
-            color: var(--success);
-        }
-        
-        .payment-details {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 16px;
-            font-size: 0.875rem;
-        }
-        
-        .payment-detail {
+        .step {
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            align-items: center;
+            position: relative;
+            z-index: 1;
         }
         
-        .payment-detail span:first-child {
-            color: var(--text-secondary);
-        }
-        
-        .payment-detail span:last-child {
-            font-weight: 600;
-        }
-        
-        /* Bank Transfer Info */
-        .bank-info {
-            margin-top: 20px;
-            padding: 16px;
-            background: var(--bg);
-            border-radius: var(--radius-sm);
-            border: 1px solid var(--border);
-        }
-        
-        .bank-info-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 12px;
+        .step-dot {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--card);
+            border: 3px solid var(--border);
             display: flex;
             align-items: center;
-            gap: 8px;
+            justify-content: center;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .step.completed .step-dot {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+        
+        .step.active .step-dot {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+        
+        .step-label {
+            font-size: 0.7rem;
+            color: var(--text-muted);
+            text-align: center;
+            max-width: 60px;
+        }
+        
+        .step.completed .step-label,
+        .step.active .step-label {
+            color: var(--text);
+        }
+        
+        /* Bank Info */
+        .bank-info {
+            background: var(--bg);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 16px;
         }
         
         .bank-row {
             display: flex;
-            align-items: center;
             justify-content: space-between;
+            align-items: center;
             padding: 10px 0;
             border-bottom: 1px solid var(--border);
         }
@@ -810,39 +430,14 @@ $themeClass = $publicTheme === 'light' ? 'theme-light' : '';
             border-bottom: none;
         }
         
-        .bank-row-label {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
-        
-        .bank-row-value {
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
         .copy-btn {
-            width: 32px;
-            height: 32px;
+            padding: 8px 12px;
+            background: var(--card);
             border: none;
-            background: var(--bg-card);
             border-radius: 8px;
+            color: var(--text);
+            font-size: 0.75rem;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-        
-        .copy-btn:hover {
-            background: var(--bg-card-hover);
-        }
-        
-        .copy-btn svg {
-            width: 16px;
-            height: 16px;
-            color: var(--text-secondary);
         }
         
         /* Quick Actions */
@@ -857,187 +452,48 @@ $themeClass = $publicTheme === 'light' ? 'theme-light' : '';
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
             gap: 8px;
-            padding: 20px 16px;
-            background: var(--bg-card);
+            padding: 20px;
+            background: var(--card);
             border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
+            border-radius: 12px;
             text-decoration: none;
             color: var(--text);
-            transition: all 0.2s;
         }
         
         .quick-action:hover {
-            background: var(--bg-card-hover);
-            transform: translateY(-2px);
-            box-shadow: var(--shadow);
+            background: var(--card-hover);
         }
         
-        .quick-action svg {
-            width: 24px;
-            height: 24px;
-            color: var(--primary);
-        }
-        
-        .quick-action span {
-            font-size: 0.875rem;
-            font-weight: 500;
-        }
-        
-        /* Help Section */
-        .help-section {
-            margin-top: 24px;
-            padding: 20px;
-            background: var(--bg-card);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-        }
-        
-        .help-title {
-            font-size: 0.875rem;
-            font-weight: 600;
-            margin-bottom: 12px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-        
-        .help-title svg {
-            width: 18px;
-            height: 18px;
-            color: var(--warning);
-        }
-        
-        .help-list {
-            list-style: none;
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
-        
-        .help-list li {
-            padding: 8px 0;
-            display: flex;
-            align-items: flex-start;
-            gap: 10px;
-        }
-        
-        .help-list li::before {
-            content: '•';
-            color: var(--primary);
-            font-weight: bold;
-        }
-        
-        /* Contract Link */
-        .contract-banner {
-            background: linear-gradient(135deg, var(--success-bg) 0%, transparent 100%);
-            border: 2px solid var(--success);
-            border-radius: var(--radius);
-            padding: 20px;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-        }
-        
-        .contract-banner-icon {
-            width: 48px;
-            height: 48px;
-            background: var(--success);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        
-        .contract-banner-icon svg {
-            width: 24px;
-            height: 24px;
-            color: white;
-        }
-        
-        .contract-banner-content {
-            flex: 1;
-        }
-        
-        .contract-banner-content h4 {
-            font-size: 1rem;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-        
-        .contract-banner-content p {
-            font-size: 0.875rem;
-            color: var(--text-secondary);
-        }
-        
-        .contract-banner a {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            color: var(--success);
-            font-weight: 600;
-            text-decoration: none;
-        }
-        
-        .contract-banner a:hover {
-            text-decoration: underline;
-        }
-        
-        /* Animations */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        
-        .fade-in {
-            animation: fadeIn 0.4s ease;
-        }
-        
-        .fade-in-delay-1 { animation-delay: 0.1s; animation-fill-mode: both; }
-        .fade-in-delay-2 { animation-delay: 0.2s; animation-fill-mode: both; }
-        .fade-in-delay-3 { animation-delay: 0.3s; animation-fill-mode: both; }
-        
-        /* Tooltip */
-        .tooltip {
-            position: fixed;
-            background: var(--text);
-            color: var(--bg);
-            padding: 8px 12px;
-            border-radius: 8px;
-            font-size: 0.875rem;
-            z-index: 1000;
-            pointer-events: none;
-            animation: fadeIn 0.2s ease;
+        @media (max-width: 480px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            .step-label {
+                font-size: 0.6rem;
+                max-width: 50px;
+            }
         }
     </style>
 </head>
-<body class="<?php echo $themeClass; ?>">
+<body>
     <div class="container">
         <!-- Header -->
-        <div class="header fade-in">
-            <div class="header-left">
-                <a href="../index.php" class="back-btn">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M19 12H5M12 19l-7-7 7-7"/>
-                    </svg>
-                </a>
-                <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="" class="logo">
-                <span class="site-name"><?php echo htmlspecialchars($siteName); ?></span>
-            </div>
+        <div class="header">
+            <a href="../index.php" class="back-btn">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
+            </a>
+            <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="" class="logo">
+            <span class="site-name"><?php echo htmlspecialchars($siteName); ?></span>
         </div>
         
-        <?php 
-        // ตรวจสอบว่ามีข้อมูลจริงๆ หรือไม่
-        $hasBookingData = !empty($bookingInfo) && !empty($bookingInfo['bkg_id']) && ($searchMethod === 'found' || $searchMethod === 'auto');
-        ?>
-        
-        <?php if (!$hasBookingData && empty($error)): ?>
+        <?php if (!$showResult): ?>
         <!-- Search Form -->
-        <div class="hero fade-in">
+        <div class="hero">
             <div class="hero-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="<?php echo $themeColor; ?>" stroke-width="2">
                     <circle cx="11" cy="11" r="8"/>
                     <path d="m21 21-4.35-4.35"/>
                 </svg>
@@ -1046,18 +502,29 @@ $themeClass = $publicTheme === 'light' ? 'theme-light' : '';
             <p>กรอกข้อมูลเพื่อดูสถานะการจองของคุณ</p>
         </div>
         
-        <div class="search-card fade-in fade-in-delay-1">
+        <?php if ($error): ?>
+        <div class="alert alert-error">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <?php echo htmlspecialchars($error); ?>
+        </div>
+        <?php endif; ?>
+        
+        <div class="card">
             <form method="post">
-                <div class="input-group">
+                <div class="form-group">
                     <label>หมายเลขการจอง</label>
-                    <input type="text" name="booking_ref" class="input-field" placeholder="เช่น 767830691" required>
+                    <input type="text" name="booking_ref" class="form-control" placeholder="เช่น 770004930" value="<?php echo htmlspecialchars($bookingRef); ?>" required>
                 </div>
-                <div class="input-group">
+                <div class="form-group">
                     <label>เบอร์โทรศัพท์</label>
-                    <input type="tel" name="contact_info" class="input-field" placeholder="เช่น 0812345678" required maxlength="10" inputmode="tel">
+                    <input type="tel" name="contact_info" class="form-control" placeholder="เช่น 0812345678" value="<?php echo htmlspecialchars($contactInfo); ?>" maxlength="10" required>
                 </div>
-                <button type="submit" class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
+                <button type="submit" class="btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>
                         <path d="m21 21-4.35-4.35"/>
                     </svg>
@@ -1065,244 +532,112 @@ $themeClass = $publicTheme === 'light' ? 'theme-light' : '';
                 </button>
             </form>
         </div>
-        <?php endif; ?>
         
-        <?php if ($error): ?>
-        <div class="alert alert-error fade-in">
-            <svg class="alert-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="12" y1="8" x2="12" y2="12"/>
-                <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            <span><?php echo htmlspecialchars($error); ?></span>
-        </div>
+        <?php else: ?>
+        <!-- Booking Result -->
         
-        <!-- Show search form again after error -->
-        <div class="search-card fade-in">
-            <form method="post">
-                <div class="input-group">
-                    <label>หมายเลขการจอง</label>
-                    <input type="text" name="booking_ref" class="input-field" placeholder="เช่น 767830691" required>
+        <!-- Status Card -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                <div>
+                    <div style="color: var(--text-muted); font-size: 0.875rem;">หมายเลขจอง</div>
+                    <div style="font-size: 1.25rem; font-weight: 700;">#<?php echo htmlspecialchars($bookingInfo['bkg_id']); ?></div>
                 </div>
-                <div class="input-group">
-                    <label>เบอร์โทรศัพท์</label>
-                    <input type="tel" name="contact_info" class="input-field" placeholder="เช่น 0812345678" required maxlength="10" inputmode="tel">
-                </div>
-                <button type="submit" class="btn-primary">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20">
-                        <circle cx="11" cy="11" r="8"/>
-                        <path d="m21 21-4.35-4.35"/>
-                    </svg>
-                    ค้นหาอีกครั้ง
-                </button>
-            </form>
-        </div>
-        <?php endif; ?>
-        
-        <?php if ($hasBookingData): ?>
-        
-        <!-- Status Hero -->
-        <div class="status-hero fade-in">
-            <div class="status-hero-header">
-                <div class="booking-ref">
-                    หมายเลขจอง: <strong>#<?php echo htmlspecialchars($bookingInfo['bkg_id'] ?? '-'); ?></strong>
-                </div>
-                <?php
-                // กำหนดค่า badge
-                if ($currentBkgStatus === '0') {
-                    $badgeClass = 'cancelled';
-                } elseif ($currentBkgStatus === '2') {
-                    $badgeClass = 'success';
-                } else {
-                    $badgeClass = 'pending';
-                }
-                $badgeLabel = $bookingStatuses[$currentBkgStatus]['label'] ?? 'ไม่ทราบ';
-                if ($currentBkgStatus === '1' && $currentExpStatus === '1') {
-                    $badgeLabel = 'จองสำเร็จ';
-                    $badgeClass = 'success';
-                }
-                ?>
-                <span class="status-badge <?php echo $badgeClass; ?>">
-                    <?php if ($badgeClass === 'success'): ?>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
-                        <polyline points="22 4 12 14.01 9 11.01"/>
-                    </svg>
-                    <?php elseif ($badgeClass === 'pending'): ?>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <polyline points="12 6 12 12 16 14"/>
-                    </svg>
-                    <?php else: ?>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="10"/>
-                        <line x1="15" y1="9" x2="9" y2="15"/>
-                        <line x1="9" y1="9" x2="15" y2="15"/>
-                    </svg>
-                    <?php endif; ?>
-                    <?php echo $badgeLabel; ?>
+                <span class="status-badge" style="background: <?php echo $statusLabels[$currentStatus]['color']; ?>20; color: <?php echo $statusLabels[$currentStatus]['color']; ?>;">
+                    <?php echo $statusLabels[$currentStatus]['text']; ?>
                 </span>
             </div>
             
             <!-- Progress Steps -->
-            <div class="progress-wrapper">
-                <div class="progress-steps">
-                    <div class="progress-line">
-                        <?php 
-                        // คำนวณ progress percent
-                        if ($progressStage >= 6) {
-                            $progressPercent = 100;
-                        } elseif ($progressStage >= 5) {
-                            $progressPercent = 80;
-                        } elseif ($progressStage >= 4) {
-                            $progressPercent = 60;
-                        } elseif ($progressStage >= 3) {
-                            $progressPercent = 45;
-                        } elseif ($progressStage >= 2) {
-                            $progressPercent = 25;
-                        } else {
-                            $progressPercent = 0;
-                        }
-                        ?>
-                        <div class="progress-line-fill" style="width: <?php echo $progressPercent; ?>%"></div>
+            <?php
+            $steps = ['รับคำจอง', 'ชำระมัดจำ', 'ตรวจสอบ', 'สัญญา', 'เข้าพัก'];
+            $currentStep = 1;
+            if ($paid > 0) $currentStep = 2;
+            if ($expStatus === '2') $currentStep = 3;
+            if ($expStatus === '1') $currentStep = 4;
+            if (!empty($bookingInfo['ctr_id']) && $expStatus === '1') $currentStep = 4;
+            if ($currentStatus === '2') $currentStep = 5;
+            ?>
+            <div class="progress-steps">
+                <?php foreach ($steps as $idx => $step): 
+                    $stepNum = $idx + 1;
+                    $isCompleted = $stepNum < $currentStep;
+                    $isActive = $stepNum === $currentStep;
+                ?>
+                <div class="step <?php echo $isCompleted ? 'completed' : ($isActive ? 'active' : ''); ?>">
+                    <div class="step-dot">
+                        <?php if ($isCompleted || $isActive): ?>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                        <?php else: ?>
+                        <?php echo $stepNum; ?>
+                        <?php endif; ?>
                     </div>
-                    <?php foreach ($steps as $idx => $step): 
-                        $stepClass = '';
-                        if ($progressStage > $step['id']) {
-                            $stepClass = 'completed';
-                        } elseif (floor($progressStage) == $step['id']) {
-                            $stepClass = 'current';
-                        }
-                    ?>
-                    <div class="progress-step <?php echo $stepClass; ?>">
-                        <div class="step-dot">
-                            <?php if ($stepClass === 'completed'): ?>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
-                                <polyline points="20 6 9 17 4 12"/>
-                            </svg>
-                            <?php else: ?>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                            <?php endif; ?>
-                        </div>
-                        <span class="step-label"><?php echo $step['label']; ?></span>
-                    </div>
-                    <?php endforeach; ?>
+                    <span class="step-label"><?php echo $step; ?></span>
                 </div>
+                <?php endforeach; ?>
             </div>
         </div>
-        
-        <!-- Contract Banner (if available) -->
-        <?php if (!empty($bookingInfo['ctr_id']) && !empty($bookingInfo['access_token']) && ($currentExpStatus === '1' || $currentBkgStatus === '2')): ?>
-        <div class="contract-banner fade-in fade-in-delay-1">
-            <div class="contract-banner-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-                    <polyline points="14 2 14 8 20 8"/>
-                    <line x1="16" y1="13" x2="8" y2="13"/>
-                    <line x1="16" y1="17" x2="8" y2="17"/>
-                </svg>
-            </div>
-            <div class="contract-banner-content">
-                <h4>สัญญาเช่าพร้อมแล้ว</h4>
-                <p>คุณสามารถดูหรือดาวน์โหลดสัญญาได้</p>
-                <a href="../Tenant/contract.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank">
-                    ดูสัญญา
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-                        <polyline points="15 3 21 3 21 9"/>
-                        <line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                </a>
-            </div>
-        </div>
-        <?php endif; ?>
         
         <!-- Payment Card -->
-        <div class="payment-card fade-in fade-in-delay-1">
-            <div class="payment-header">
-                <h3>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="1" y="4" width="22" height="16" rx="2"/>
-                        <line x1="1" y1="10" x2="23" y2="10"/>
-                    </svg>
-                    ค่ามัดจำ
-                </h3>
-                <?php if ($remaining <= 0): ?>
-                <span class="status-badge success">ชำระแล้ว</span>
-                <?php elseif ($currentExpStatus === '2'): ?>
-                <span class="status-badge pending">รอตรวจสอบ</span>
-                <?php else: ?>
-                <span class="status-badge cancelled">รอชำระ</span>
-                <?php endif; ?>
+        <div class="card">
+            <div class="card-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="<?php echo $themeColor; ?>" stroke-width="2">
+                    <rect x="1" y="4" width="22" height="16" rx="2"/>
+                    <line x1="1" y1="10" x2="23" y2="10"/>
+                </svg>
+                ค่ามัดจำ
             </div>
             
-            <div class="payment-amount">
-                <div class="payment-amount-label">ยอดที่ต้องชำระ</div>
-                <div class="payment-amount-value <?php echo $remaining <= 0 ? 'paid' : ''; ?>">
+            <div style="text-align: center; padding: 20px 0; border-top: 1px dashed var(--border); border-bottom: 1px dashed var(--border); margin: 16px 0;">
+                <div style="color: var(--text-muted); margin-bottom: 8px;">ยอดคงเหลือ</div>
+                <div class="info-value large <?php echo $remaining > 0 ? 'danger' : 'success'; ?>">
                     ฿<?php echo number_format($remaining); ?>
                 </div>
             </div>
             
-            <div class="payment-details">
-                <div class="payment-detail">
-                    <span>ค่ามัดจำทั้งหมด</span>
-                    <span>฿<?php echo number_format($deposit); ?></span>
+            <div style="display: flex; justify-content: space-between; font-size: 0.875rem;">
+                <div>
+                    <span style="color: var(--text-muted);">ค่ามัดจำ</span>
+                    <div style="font-weight: 600;">฿<?php echo number_format($deposit); ?></div>
                 </div>
-                <div class="payment-detail">
-                    <span>ชำระแล้ว</span>
-                    <span style="color: var(--success);">฿<?php echo number_format($paid); ?></span>
+                <div style="text-align: right;">
+                    <span style="color: var(--text-muted);">ชำระแล้ว</span>
+                    <div style="font-weight: 600; color: var(--success);">฿<?php echo number_format($paid); ?></div>
                 </div>
             </div>
             
             <?php if ($remaining > 0 && (!empty($bankName) || !empty($promptpayNumber))): ?>
             <div class="bank-info">
-                <div class="bank-info-title">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18">
-                        <path d="M3 21h18M3 10h18M5 6l7-3 7 3M4 10v11M20 10v11M8 14v3M12 14v3M16 14v3"/>
-                    </svg>
-                    ช่องทางการชำระเงิน
-                </div>
-                
+                <div style="font-weight: 600; margin-bottom: 12px;">ช่องทางชำระเงิน</div>
                 <?php if (!empty($bankName)): ?>
                 <div class="bank-row">
-                    <span class="bank-row-label">ธนาคาร</span>
-                    <span class="bank-row-value"><?php echo htmlspecialchars($bankName); ?></span>
+                    <span style="color: var(--text-muted);">ธนาคาร</span>
+                    <span><?php echo htmlspecialchars($bankName); ?></span>
                 </div>
                 <?php if (!empty($bankAccountName)): ?>
                 <div class="bank-row">
-                    <span class="bank-row-label">ชื่อบัญชี</span>
-                    <span class="bank-row-value"><?php echo htmlspecialchars($bankAccountName); ?></span>
+                    <span style="color: var(--text-muted);">ชื่อบัญชี</span>
+                    <span><?php echo htmlspecialchars($bankAccountName); ?></span>
                 </div>
                 <?php endif; ?>
                 <?php if (!empty($bankAccountNumber)): ?>
                 <div class="bank-row">
-                    <span class="bank-row-label">เลขบัญชี</span>
-                    <span class="bank-row-value">
+                    <span style="color: var(--text-muted);">เลขบัญชี</span>
+                    <span style="display: flex; align-items: center; gap: 8px;">
                         <?php echo htmlspecialchars($bankAccountNumber); ?>
-                        <button class="copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($bankAccountNumber); ?>')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2"/>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                            </svg>
-                        </button>
+                        <button class="copy-btn" onclick="copyText('<?php echo htmlspecialchars($bankAccountNumber); ?>')">คัดลอก</button>
                     </span>
                 </div>
                 <?php endif; ?>
                 <?php endif; ?>
-                
                 <?php if (!empty($promptpayNumber)): ?>
                 <div class="bank-row">
-                    <span class="bank-row-label">พร้อมเพย์</span>
-                    <span class="bank-row-value" style="color: var(--success);">
+                    <span style="color: var(--text-muted);">พร้อมเพย์</span>
+                    <span style="display: flex; align-items: center; gap: 8px; color: var(--success);">
                         <?php echo htmlspecialchars($promptpayNumber); ?>
-                        <button class="copy-btn" onclick="copyToClipboard('<?php echo htmlspecialchars($promptpayNumber); ?>')">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2"/>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
-                            </svg>
-                        </button>
+                        <button class="copy-btn" onclick="copyText('<?php echo htmlspecialchars($promptpayNumber); ?>')">คัดลอก</button>
                     </span>
                 </div>
                 <?php endif; ?>
@@ -1310,140 +645,113 @@ $themeClass = $publicTheme === 'light' ? 'theme-light' : '';
             <?php endif; ?>
         </div>
         
-        <!-- Room & Booking Info -->
-        <div class="info-card fade-in fade-in-delay-2">
-            <div class="info-card-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Room Info -->
+        <div class="card">
+            <div class="card-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="<?php echo $themeColor; ?>" stroke-width="2">
                     <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
                     <polyline points="9 22 9 12 15 12 15 22"/>
                 </svg>
-                <h3>ข้อมูลห้องพัก</h3>
+                ข้อมูลห้องพัก
             </div>
-            <div class="info-card-body">
-                <div class="info-grid">
-                    <div class="info-item">
-                        <span class="info-label">ห้อง</span>
-                        <span class="info-value"><?php echo htmlspecialchars($bookingInfo['room_number'] ?? '-'); ?></span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">ประเภท</span>
-                        <span class="info-value"><?php echo htmlspecialchars($bookingInfo['type_name'] ?? '-'); ?></span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">ค่าห้อง/เดือน</span>
-                        <span class="info-value highlight">฿<?php echo number_format($bookingInfo['type_price'] ?? 0); ?></span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">วันเข้าพัก</span>
-                        <span class="info-value"><?php echo !empty($bookingInfo['bkg_checkin_date']) ? thaiDate($bookingInfo['bkg_checkin_date'], 'j F Y') : '-'; ?></span>
-                    </div>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">ห้อง</div>
+                    <div class="info-value"><?php echo htmlspecialchars($bookingInfo['room_number'] ?? '-'); ?></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">ประเภท</div>
+                    <div class="info-value"><?php echo htmlspecialchars($bookingInfo['type_name'] ?? '-'); ?></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">ค่าห้อง/เดือน</div>
+                    <div class="info-value success">฿<?php echo number_format(floatval($bookingInfo['type_price'] ?? 0)); ?></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">วันเข้าพัก</div>
+                    <div class="info-value"><?php echo thaiDateFormat($bookingInfo['bkg_checkin_date'] ?? ''); ?></div>
                 </div>
             </div>
         </div>
         
-        <!-- Personal Info -->
-        <div class="info-card fade-in fade-in-delay-2">
-            <div class="info-card-header">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <!-- Tenant Info -->
+        <div class="card">
+            <div class="card-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="<?php echo $themeColor; ?>" stroke-width="2">
                     <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                     <circle cx="12" cy="7" r="4"/>
                 </svg>
-                <h3>ข้อมูลผู้จอง</h3>
+                ข้อมูลผู้จอง
             </div>
-            <div class="info-card-body">
-                <div class="info-grid">
-                    <div class="info-item full">
-                        <span class="info-label">ชื่อ-นามสกุล</span>
-                        <span class="info-value"><?php echo htmlspecialchars($bookingInfo['tnt_name'] ?? '-'); ?></span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">เบอร์โทร</span>
-                        <span class="info-value"><?php echo htmlspecialchars($bookingInfo['tnt_phone'] ?? '-'); ?></span>
-                    </div>
-                    <div class="info-item">
-                        <span class="info-label">วันที่จอง</span>
-                        <span class="info-value"><?php echo !empty($bookingInfo['bkg_date']) ? thaiDate($bookingInfo['bkg_date'], 'j F Y') : '-'; ?></span>
-                    </div>
+            <div class="info-grid">
+                <div class="info-item full">
+                    <div class="info-label">ชื่อ-นามสกุล</div>
+                    <div class="info-value"><?php echo htmlspecialchars($bookingInfo['tnt_name'] ?? '-'); ?></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">เบอร์โทร</div>
+                    <div class="info-value"><?php echo htmlspecialchars($bookingInfo['tnt_phone'] ?? '-'); ?></div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">วันที่จอง</div>
+                    <div class="info-value"><?php echo thaiDateFormat($bookingInfo['bkg_date'] ?? ''); ?></div>
                 </div>
             </div>
         </div>
         
+        <!-- Contract Link -->
+        <?php if (!empty($bookingInfo['access_token']) && $expStatus === '1'): ?>
+        <div class="card" style="background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), transparent); border-color: var(--success);">
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <div style="width: 48px; height: 48px; background: var(--success); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                        <polyline points="14 2 14 8 20 8"/>
+                    </svg>
+                </div>
+                <div style="flex: 1;">
+                    <div style="font-weight: 600;">สัญญาเช่าพร้อมแล้ว</div>
+                    <a href="../Tenant/contract.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank" style="color: var(--success); text-decoration: none; font-size: 0.875rem;">
+                        ดูสัญญา →
+                    </a>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        
         <!-- Quick Actions -->
-        <div class="quick-actions fade-in fade-in-delay-3">
+        <div class="quick-actions">
             <a href="tel:<?php echo htmlspecialchars($contactPhone); ?>" class="quick-action">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                    <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72"/>
                 </svg>
-                <span>โทรหาเรา</span>
+                <span style="font-size: 0.875rem;">โทรหาเรา</span>
             </a>
             <a href="https://maps.google.com/?q=<?php echo urlencode($siteName); ?>" target="_blank" class="quick-action">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
                     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
                     <circle cx="12" cy="10" r="3"/>
                 </svg>
-                <span>นำทาง</span>
+                <span style="font-size: 0.875rem;">นำทาง</span>
             </a>
         </div>
         
-        <!-- Help Section -->
-        <div class="help-section fade-in fade-in-delay-3">
-            <div class="help-title">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"/>
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
-                    <line x1="12" y1="17" x2="12.01" y2="17"/>
-                </svg>
-                สิ่งที่ต้องเตรียม
-            </div>
-            <ul class="help-list">
-                <li>บัตรประชาชนตัวจริง</li>
-                <li>หลักฐานการชำระค่ามัดจำ (สลิป)</li>
-                <li>ค่าห้องเดือนแรก ฿<?php echo number_format($bookingInfo['type_price'] ?? 0); ?></li>
-                <li>เอกสารเพิ่มเติมตามที่เจ้าหน้าที่แจ้ง</li>
-            </ul>
+        <!-- Search Again -->
+        <div style="text-align: center; margin-top: 24px;">
+            <a href="booking_status.php" style="color: var(--text-muted); text-decoration: none; font-size: 0.875rem;">
+                ← ค้นหาการจองอื่น
+            </a>
         </div>
         
         <?php endif; ?>
     </div>
     
     <script>
-        function copyToClipboard(text) {
+        function copyText(text) {
             navigator.clipboard.writeText(text).then(() => {
-                showTooltip('คัดลอกแล้ว!');
-            }).catch(() => {
-                // Fallback for older browsers
-                const input = document.createElement('input');
-                input.value = text;
-                document.body.appendChild(input);
-                input.select();
-                document.execCommand('copy');
-                document.body.removeChild(input);
-                showTooltip('คัดลอกแล้ว!');
+                alert('คัดลอกแล้ว: ' + text);
             });
         }
-        
-        function showTooltip(message) {
-            const tooltip = document.createElement('div');
-            tooltip.className = 'tooltip';
-            tooltip.textContent = message;
-            tooltip.style.left = '50%';
-            tooltip.style.bottom = '100px';
-            tooltip.style.transform = 'translateX(-50%)';
-            document.body.appendChild(tooltip);
-            
-            setTimeout(() => {
-                tooltip.remove();
-            }, 2000);
-        }
-        
-        // Phone number formatting
-        document.querySelectorAll('input[type="tel"]').forEach(input => {
-            input.addEventListener('input', function(e) {
-                this.value = this.value.replace(/\D/g, '').slice(0, 10);
-            });
-        });
     </script>
-    
-    <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
 </body>
 </html>
