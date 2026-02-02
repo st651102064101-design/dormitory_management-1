@@ -2,7 +2,22 @@
 session_start();
 require_once __DIR__ . '/../ConnectDB.php';
 
-$pdo = connectDB();
+$debugMode = isset($_GET['debug']) && $_GET['debug'] === '1';
+ini_set('display_errors', $debugMode ? '1' : '0');
+ini_set('log_errors', '1');
+ini_set('error_log', __DIR__ . '/../booking_status_debug.log');
+error_reporting(E_ALL);
+
+try {
+    $pdo = connectDB();
+} catch (Throwable $e) {
+    error_log('booking_status.php DB error: ' . $e->getMessage());
+    if ($debugMode) {
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'DB Error: ' . $e->getMessage();
+    }
+    exit;
+}
 
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
