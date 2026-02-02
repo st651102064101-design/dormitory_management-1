@@ -230,6 +230,7 @@ try {
     }
     
     // 2. ถ้าไม่ใช่ Admin, ตรวจสอบว่าเป็น Tenant หรือไม่
+    // First try: ตรวจสอบ tenant_oauth
     $stmt = $pdo->prepare('
         SELECT t.*, tao.picture as oauth_picture 
         FROM tenant t
@@ -240,6 +241,50 @@ try {
     ');
     $stmt->execute([':google_id' => $googleId, ':email' => $email]);
     $tenant = $stmt->fetch();
+    
+    // If not found in tenant_oauth, create new tenant_oauth record
+    // This handles the case where customer is already registered but without OAuth
+    if (!$tenant) {
+        error_log("Tenant not found in tenant_oauth with email: $email");
+        error_log("Google ID: $googleId, Name: $name, Phone: $phone");
+        
+        // Try to find by phone if available (common in Thai systems)
+        if (!empty($phone)) {
+            $stmt = $pdo->prepare('
+                SELECT tnt_id, tnt_name
+                FROM tenant
+                WHERE tnt_phone = ?
+                LIMIT 1
+            ');
+            $stmt->execute([$phone]);
+            $existingTenant = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($existingTenant) {
+                $tenantId = $existingTenant['tnt_id'];
+                error_log("Found tenant by phone: $tenantId");
+                
+                // Insert into tenant_oauth
+                $insertStmt = $pdo->prepare('
+                    INSERT INTO tenant_oauth (tnt_id, provider, provider_id, provider_email, created_at, updated_at)
+                    VALUES (?, "google", ?, ?, NOW(), NOW())
+                    ON DUPLICATE KEY UPDATE 
+                        provider_id = VALUES(provider_id),
+                        provider_email = VALUES(provider_email),
+                        updated_at = NOW()
+                ');
+                try {
+                    $insertStmt->execute([$tenantId, $googleId, $email]);
+                    error_log("OAuth record created for tenant: $tenantId");
+                } catch (PDOException $e) {
+                    error_log("Error creating OAuth record: " . $e->getMessage());
+                }
+                
+                // Set tenant variable with existing tenant data
+                $tenant = $existingTenant;
+                $tenant['oauth_picture'] = $picture;
+            }
+        }
+    }
     
     if ($tenant) {
         // อัพเดทข้อมูล OAuth ถ้ามีการเปลี่ยนแปลง

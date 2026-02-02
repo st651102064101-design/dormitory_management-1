@@ -49,11 +49,36 @@ $bookingInfo = null;
 $error = '';
 $showResult = false;
 $autoFilled = false;
-$isTenantLoggedIn = !empty($_SESSION['tenant_id']);
+$resolvedTenantId = $_SESSION['tenant_id'] ?? '';
+if (empty($resolvedTenantId) && !empty($_SESSION['tenant_email'])) {
+    try {
+        error_log("Resolving tenant_id from email: " . $_SESSION['tenant_email']);
+        $stmtOauth = $pdo->prepare("SELECT tnt_id FROM tenant_oauth WHERE provider = 'google' AND provider_email = ? LIMIT 1");
+        $stmtOauth->execute([$_SESSION['tenant_email']]);
+        $oauthRow = $stmtOauth->fetch(PDO::FETCH_ASSOC);
+        if ($oauthRow && !empty($oauthRow['tnt_id'])) {
+            $resolvedTenantId = $oauthRow['tnt_id'];
+            $_SESSION['tenant_id'] = $resolvedTenantId;
+            error_log("Resolved tenant_id: $resolvedTenantId");
+        } else {
+            error_log("Could not resolve tenant_id from email");
+        }
+    } catch (PDOException $e) {
+        error_log('Booking status resolve tenant_id error: ' . $e->getMessage());
+    }
+}
+$isTenantLoggedIn = !empty($resolvedTenantId);
 $tenantPhone = '';
 $tenantBookings = [];
 $autoFillError = false;
 $noBookingForTenant = false;
+
+// DEBUG
+error_log("booking_status.php DEBUG - Session:");
+error_log("  tenant_id: " . ($_SESSION['tenant_id'] ?? 'NOT SET'));
+error_log("  tenant_email: " . ($_SESSION['tenant_email'] ?? 'NOT SET'));
+error_log("  resolvedTenantId: " . $resolvedTenantId);
+error_log("  isTenantLoggedIn: " . ($isTenantLoggedIn ? 'YES' : 'NO'));
 
 // รับค่าจาก GET หรือ POST
 $bookingRef = trim($_GET['id'] ?? $_POST['booking_ref'] ?? '');
@@ -62,7 +87,9 @@ $contactInfo = trim($_GET['phone'] ?? $_POST['contact_info'] ?? '');
 // ถ้าเป็นผู้เช่าที่ล็อกอิน ให้ดึงข้อมูลอัตโนมัติและรองรับหลายการจอง
 if ($isTenantLoggedIn) {
     try {
-        $tenantId = $_SESSION['tenant_id'];
+        $tenantId = $resolvedTenantId;
+        
+        error_log("Fetching tenant data for: $tenantId");
 
         $stmtTenant = $pdo->prepare("SELECT tnt_phone FROM tenant WHERE tnt_id = ? LIMIT 1");
         $stmtTenant->execute([$tenantId]);
@@ -82,11 +109,15 @@ if ($isTenantLoggedIn) {
         ");
         $stmtBookings->execute([$tenantId]);
         $tenantBookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        
+        error_log("Found " . count($tenantBookings) . " bookings for tenant: $tenantId");
+        error_log("Bookings: " . json_encode($tenantBookings, JSON_UNESCAPED_UNICODE));
 
         if (empty($bookingRef)) {
             if (count($tenantBookings) === 1) {
                 $bookingRef = (string)$tenantBookings[0]['bkg_id'];
                 $autoFilled = true;
+                error_log("Auto-filled bookingRef: $bookingRef");
             } elseif (count($tenantBookings) === 0 && !empty($contactInfo)) {
                 $noBookingForTenant = true;
             }
@@ -98,31 +129,54 @@ if ($isTenantLoggedIn) {
 }
 
 // ถ้ามีการส่งข้อมูลมา
-if (!empty($bookingRef) && !empty($contactInfo)) {
+if (!empty($bookingRef) && (!empty($contactInfo) || $isTenantLoggedIn)) {
     $bookingRef = preg_replace('/[^0-9a-zA-Z]/', '', $bookingRef);
     $contactInfo = preg_replace('/[^0-9]/', '', $contactInfo);
-    
+
     try {
-        $stmt = $pdo->prepare("
-            SELECT 
-                t.tnt_id, t.tnt_name, t.tnt_phone,
-                b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
-                r.room_number, rt.type_name, rt.type_price,
-                c.ctr_id, c.ctr_deposit, c.access_token,
-                e.exp_status,
-                COALESCE(SUM(IF(p.pay_status = '1', p.pay_amount, 0)), 0) as paid_amount
-            FROM tenant t
-            LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
-            LEFT JOIN room r ON b.room_id = r.room_id
-            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-            LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
-            LEFT JOIN expense e ON c.ctr_id = e.ctr_id
-            LEFT JOIN payment p ON e.exp_id = p.exp_id
-            WHERE (b.bkg_id = ? OR t.tnt_id = ?) AND t.tnt_phone = ?
-            GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
-            LIMIT 1
-        ");
-        $stmt->execute([$bookingRef, $bookingRef, $contactInfo]);
+        if ($isTenantLoggedIn) {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    t.tnt_id, t.tnt_name, t.tnt_phone,
+                    b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
+                    r.room_number, rt.type_name, rt.type_price,
+                    c.ctr_id, c.ctr_deposit, c.access_token,
+                    e.exp_status,
+                    COALESCE(SUM(IF(p.pay_status = '1', p.pay_amount, 0)), 0) as paid_amount
+                FROM tenant t
+                LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
+                LEFT JOIN room r ON b.room_id = r.room_id
+                LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+                LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+                LEFT JOIN expense e ON c.ctr_id = e.ctr_id
+                LEFT JOIN payment p ON e.exp_id = p.exp_id
+                WHERE t.tnt_id = ? AND b.bkg_id = ?
+                GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
+                LIMIT 1
+            ");
+            $stmt->execute([$resolvedTenantId, $bookingRef]);
+        } else {
+            $stmt = $pdo->prepare("
+                SELECT 
+                    t.tnt_id, t.tnt_name, t.tnt_phone,
+                    b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
+                    r.room_number, rt.type_name, rt.type_price,
+                    c.ctr_id, c.ctr_deposit, c.access_token,
+                    e.exp_status,
+                    COALESCE(SUM(IF(p.pay_status = '1', p.pay_amount, 0)), 0) as paid_amount
+                FROM tenant t
+                LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
+                LEFT JOIN room r ON b.room_id = r.room_id
+                LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+                LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+                LEFT JOIN expense e ON c.ctr_id = e.ctr_id
+                LEFT JOIN payment p ON e.exp_id = p.exp_id
+                WHERE (b.bkg_id = ? OR t.tnt_id = ?) AND t.tnt_phone = ?
+                GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
+                LIMIT 1
+            ");
+            $stmt->execute([$bookingRef, $bookingRef, $contactInfo]);
+        }
         $bookingInfo = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($bookingInfo && !empty($bookingInfo['bkg_id'])) {
@@ -136,7 +190,7 @@ if (!empty($bookingRef) && !empty($contactInfo)) {
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($bookingRef)) {
         $error = 'กรุณากรอกหมายเลขการจอง';
-    } elseif (empty($contactInfo)) {
+    } elseif (empty($contactInfo) && !$isTenantLoggedIn) {
         $error = 'กรุณากรอกเบอร์โทรศัพท์';
     }
 }
@@ -585,10 +639,10 @@ if ($currentStatus === '1' && $expStatus === '1') {
                 </div>
                 <div class="form-group">
                     <label>เบอร์โทรศัพท์</label>
-                    <?php if ($isTenantLoggedIn && !empty($contactInfo)): ?>
+                    <?php if ($isTenantLoggedIn): ?>
                         <input type="hidden" name="contact_info" value="<?php echo htmlspecialchars($contactInfo); ?>">
                         <div class="form-control" style="background: rgba(255,255,255,0.05); color: var(--text-muted);">
-                            <?php echo htmlspecialchars($contactInfo); ?>
+                            <?php echo !empty($contactInfo) ? htmlspecialchars($contactInfo) : 'ไม่พบเบอร์โทรในระบบ'; ?>
                         </div>
                     <?php else: ?>
                         <input type="tel" name="contact_info" class="form-control" placeholder="เช่น 0812345678" value="<?php echo htmlspecialchars($contactInfo); ?>" maxlength="10" required>
