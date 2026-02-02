@@ -993,7 +993,7 @@ try {
         if (bpProof) {
             // Check if bpProof already contains the path or just filename
             // Typically in DB it's stored relative to project root or full path?
-            // In wizard_step2.php: href="/<?php echo htmlspecialchars($payment['bp_proof']... "
+            // In wizard_step2.php: href="..."
             // The path in DB seems to be relative to web root or include 'dormitory_management'?
             // Usually DB stores 'Public/Assets/Images/Payments/filename.jpg'.
             // So '/dormitory_management/' + bpProof might be safer if running in subdir.
@@ -1002,7 +1002,7 @@ try {
             // Let's assume it's the stored path.
             // But we need to make sure the image URL is correct.
             // If stored path starts with 'Public/...', we need '/dormitory_management/Public/...' or just '/Public/...' depending on setup.
-            // From wizard_step2.php: href="/<?php echo ... ?>" implies absolute path from root.
+            // From wizard_step2.php: href="..." implies absolute path from root.
             
             // Let's try adding /dormitory_management/ if it doesn't start with /
             let proofUrl = bpProof;
