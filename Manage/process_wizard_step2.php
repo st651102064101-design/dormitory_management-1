@@ -41,6 +41,38 @@ try {
     ");
     $stmt->execute([$receiptNo, $bp_id]);
 
+    // Update Main Payment System (payment table)
+    // 1. Get ctr_id
+    $stmt = $pdo->prepare("SELECT ctr_id FROM tenant_workflow WHERE bkg_id = ?");
+    $stmt->execute([$bkg_id]);
+    $workflow = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($workflow && $workflow['ctr_id']) {
+        $ctr_id = $workflow['ctr_id'];
+        
+        // 2. Find the deposit expense (created during booking)
+        $stmt = $pdo->prepare("SELECT exp_id FROM expense WHERE ctr_id = ? AND exp_status = '2' ORDER BY exp_id ASC LIMIT 1");
+        $stmt->execute([$ctr_id]);
+        $expense = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($expense) {
+            $exp_id = $expense['exp_id'];
+            
+            // 3. Update payment record to '1' (Confirmed)
+            $stmt = $pdo->prepare("
+                UPDATE payment 
+                SET pay_status = '1', 
+                    pay_date = NOW()
+                WHERE exp_id = ?
+            ");
+            $stmt->execute([$exp_id]);
+            
+            // 4. Update expense status to '1' (Paid)
+            $stmt = $pdo->prepare("UPDATE expense SET exp_status = '1' WHERE exp_id = ?");
+            $stmt->execute([$exp_id]);
+        }
+    }
+
     // อัปเดต Workflow Step 2
     updateWorkflowStep($pdo, $tnt_id, 2, $_SESSION['admin_username']);
 
