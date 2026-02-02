@@ -41,29 +41,32 @@ try {
     $tnt_id = $tnt_id ?: $booking['tnt_id']; // ใช้จาก booking ถ้าไม่ได้ส่งมา
     
     // 2. ดึง contract_id จาก tenant_workflow (ถ้ามี)
-    $ctr_id = null;
+    $ctr_ids = [];
     $stmtWorkflow = $pdo->prepare("SELECT id, ctr_id FROM tenant_workflow WHERE bkg_id = ?");
     $stmtWorkflow->execute([$bkg_id]);
     $workflow = $stmtWorkflow->fetch(PDO::FETCH_ASSOC);
     if ($workflow && $workflow['ctr_id']) {
-        $ctr_id = $workflow['ctr_id'];
+        $ctr_ids[] = (int)$workflow['ctr_id'];
     }
     
-    // 2.1 ถ้าไม่มีใน workflow ลองหาจาก contract โดยตรง (ผ่าน tnt_id และ room_id)
-    if (!$ctr_id && $tnt_id && $room_id) {
-        $stmtContract = $pdo->prepare("SELECT ctr_id FROM contract WHERE tnt_id = ? AND room_id = ? ORDER BY ctr_id DESC LIMIT 1");
+    // 2.1 ดึง contract ที่เกี่ยวข้องทั้งหมด (ผ่าน tnt_id และ room_id)
+    if ($tnt_id && $room_id) {
+        $stmtContract = $pdo->prepare("SELECT ctr_id FROM contract WHERE tnt_id = ? AND room_id = ? ORDER BY ctr_id DESC");
         $stmtContract->execute([$tnt_id, $room_id]);
-        $contract = $stmtContract->fetch(PDO::FETCH_ASSOC);
-        if ($contract) {
-            $ctr_id = $contract['ctr_id'];
+        $contracts = $stmtContract->fetchAll(PDO::FETCH_COLUMN);
+        foreach ($contracts as $cid) {
+            $ctr_ids[] = (int)$cid;
         }
     }
+
+    $ctr_ids = array_values(array_unique(array_filter($ctr_ids, fn($v) => $v > 0)));
     
     // 3. ดึง expense_id จาก contract (ถ้ามี)
     $exp_ids = [];
-    if ($ctr_id) {
-        $stmtExpense = $pdo->prepare("SELECT exp_id FROM expense WHERE ctr_id = ?");
-        $stmtExpense->execute([$ctr_id]);
+    if (!empty($ctr_ids)) {
+        $placeholders = implode(',', array_fill(0, count($ctr_ids), '?'));
+        $stmtExpense = $pdo->prepare("SELECT exp_id FROM expense WHERE ctr_id IN ($placeholders)");
+        $stmtExpense->execute($ctr_ids);
         $expenses = $stmtExpense->fetchAll(PDO::FETCH_COLUMN);
         $exp_ids = $expenses;
     }
@@ -100,21 +103,24 @@ try {
     $stmtDelBP->execute([$bkg_id]);
     
     // 4.3 ลบ checkin_record (ถ้ามี ctr_id)
-    if ($ctr_id) {
-        $stmtDelCheckin = $pdo->prepare("DELETE FROM checkin_record WHERE ctr_id = ?");
-        $stmtDelCheckin->execute([$ctr_id]);
+    if (!empty($ctr_ids)) {
+        $placeholders = implode(',', array_fill(0, count($ctr_ids), '?'));
+        $stmtDelCheckin = $pdo->prepare("DELETE FROM checkin_record WHERE ctr_id IN ($placeholders)");
+        $stmtDelCheckin->execute($ctr_ids);
     }
     
     // 4.4 ลบ expense ที่เกี่ยวข้อง
-    if ($ctr_id) {
-        $stmtDelExpense = $pdo->prepare("DELETE FROM expense WHERE ctr_id = ?");
-        $stmtDelExpense->execute([$ctr_id]);
+    if (!empty($ctr_ids)) {
+        $placeholders = implode(',', array_fill(0, count($ctr_ids), '?'));
+        $stmtDelExpense = $pdo->prepare("DELETE FROM expense WHERE ctr_id IN ($placeholders)");
+        $stmtDelExpense->execute($ctr_ids);
     }
 
     // 4.4.1 ลบ utility ที่เกี่ยวข้อง (กัน foreign key constraint)
-    if ($ctr_id) {
-        $stmtDelUtility = $pdo->prepare("DELETE FROM utility WHERE ctr_id = ?");
-        $stmtDelUtility->execute([$ctr_id]);
+    if (!empty($ctr_ids)) {
+        $placeholders = implode(',', array_fill(0, count($ctr_ids), '?'));
+        $stmtDelUtility = $pdo->prepare("DELETE FROM utility WHERE ctr_id IN ($placeholders)");
+        $stmtDelUtility->execute($ctr_ids);
     }
     
     // 4.5 ลบ tenant_workflow
@@ -122,9 +128,10 @@ try {
     $stmtDelWorkflow->execute([$bkg_id]);
     
     // 4.6 ลบ contract (ถ้ามี)
-    if ($ctr_id) {
-        $stmtDelContract = $pdo->prepare("DELETE FROM contract WHERE ctr_id = ?");
-        $stmtDelContract->execute([$ctr_id]);
+    if (!empty($ctr_ids)) {
+        $placeholders = implode(',', array_fill(0, count($ctr_ids), '?'));
+        $stmtDelContract = $pdo->prepare("DELETE FROM contract WHERE ctr_id IN ($placeholders)");
+        $stmtDelContract->execute($ctr_ids);
     }
     
     // 4.7 ลบ booking
