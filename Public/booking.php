@@ -2568,6 +2568,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Check file type
             if (!PAYMENT_VALIDATION.allowedTypes.includes(file.type)) {
                 showPaymentError('❌ รองรับเฉพาะไฟล์: JPG, PNG, WEBP หรือ PDF เท่านั้น');
+                showAppleAlert('รองรับเฉพาะไฟล์: JPG, PNG, WEBP หรือ PDF เท่านั้น', 'รูปแบบไฟล์ไม่ถูกต้อง');
                 return false;
             }
             
@@ -2575,12 +2576,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (file.size > PAYMENT_VALIDATION.maxSize) {
                 const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
                 showPaymentError(`❌ ขนาดไฟล์ ${fileSizeMB}MB เกินขีดจำกัด 5MB`);
+                showAppleAlert(`ขนาดไฟล์ ${fileSizeMB}MB เกินขีดจำกัด 5MB\n\nกรุณาเลือกไฟล์ที่มีขนาดไม่เกิน 5MB`, 'ขนาดไฟล์ใหญ่เกินไป');
                 return false;
             }
             
             // Check file size minimum (at least 1KB)
             if (file.size < 1024) {
                 showPaymentError('⚠️ ไฟล์มีขนาดน้อยเกินไป กรุณาเลือกไฟล์อื่น');
+                showAppleAlert('ไฟล์มีขนาดน้อยเกินไป\n\nกรุณาเลือกไฟล์อื่นที่สมบูรณ์', 'ขนาดไฟล์ผิดปกติ');
                 return false;
             }
             
