@@ -62,8 +62,38 @@ if (!empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id'])) {
     }
 }
 
-// ดึงห้องว่าง
+// ถ้ามีการเลือกห้องมา
+$selectedRoom = null;
 $availableRooms = [];
+
+if (!empty($_GET['room'])) {
+    // มีการเลือกห้องจากหน้า rooms.php
+    $roomId = (int)$_GET['room'];
+    $_SESSION['last_selected_room'] = $roomId;
+    
+    // ดึงข้อมูลห้องที่เลือกโดยตรง ไม่สนใจว่าว่างหรือไม่
+    try {
+        $stmt = $pdo->prepare("
+            SELECT r.*, rt.type_name, rt.type_price
+            FROM room r
+            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+            WHERE r.room_id = ?
+        ");
+        $stmt->execute([$roomId]);
+        $selectedRoom = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+} elseif (!empty($_SESSION['last_selected_room'])) {
+    // ถ้าไม่มี ?room= parameter แต่มีห้องที่เคยเลือกไว้ใน session
+    // ให้ redirect กลับไปที่ห้องนั้น
+    header('Location: booking.php?room=' . $_SESSION['last_selected_room']);
+    exit;
+} else {
+    // ถ้าไม่มีการเลือกห้องเลย ให้กลับไปหน้าเลือกห้อง
+    header('Location: rooms.php');
+    exit;
+}
+
+// ดึงห้องว่าง (สำหรับการแสดงตอนไม่มีการเลือก)
 try {
     $stmt = $pdo->prepare("
         SELECT r.*, rt.type_name, rt.type_price
@@ -85,28 +115,6 @@ try {
         $stmt = $pdo->query("SELECT r.*, rt.type_name, rt.type_price FROM room r LEFT JOIN roomtype rt ON r.type_id = rt.type_id WHERE r.room_status = '0' ORDER BY CAST(r.room_number AS UNSIGNED) ASC");
         $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {}
-}
-
-// ถ้ามีการเลือกห้องมา
-$selectedRoom = null;
-if (!empty($_GET['room'])) {
-    $roomId = (int)$_GET['room'];
-    $_SESSION['last_selected_room'] = $roomId; // เก็บห้องที่เลือกไว้
-    foreach ($availableRooms as $room) {
-        if ($room['room_id'] == $roomId) {
-            $selectedRoom = $room;
-            break;
-        }
-    }
-} elseif (!empty($_SESSION['last_selected_room'])) {
-    // ถ้าไม่มี ?room= parameter แต่มีห้องที่เคยเลือกไว้ใน session
-    // ให้ redirect กลับไปที่ห้องนั้น
-    header('Location: booking.php?room=' . $_SESSION['last_selected_room']);
-    exit;
-} else {
-    // ถ้าไม่มีการเลือกห้องเลย ให้กลับไปหน้าเลือกห้อง
-    header('Location: rooms.php');
-    exit;
 }
 
 $success = false;

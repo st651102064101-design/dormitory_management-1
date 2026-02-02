@@ -104,7 +104,7 @@ if (empty($resolvedTenantId) && $autoRedirect && !empty($_SESSION['tenant_logged
         error_log('Booking status resolve tenant_id by name error: ' . $e->getMessage());
     }
 }
-$isTenantLoggedIn = !empty($resolvedTenantId);
+// ย้ายการเช็ค isTenantLoggedIn มาหลังจากค้นหา tenant_id เสร็จแล้ว
 if (empty($resolvedTenantId) && $autoRedirect && !empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_phone'])) {
     try {
         $stmtTenantByPhone = $pdo->prepare("SELECT tnt_id FROM tenant WHERE tnt_phone = ? LIMIT 1");
@@ -118,6 +118,10 @@ if (empty($resolvedTenantId) && $autoRedirect && !empty($_SESSION['tenant_logged
         error_log('Booking status resolve tenant_id by phone error: ' . $e->getMessage());
     }
 }
+
+// ตั้งค่า isTenantLoggedIn หลังจากค้นหา tenant_id ทั้งหมดเสร็จแล้ว
+$isTenantLoggedIn = !empty($resolvedTenantId) || !empty($_SESSION['tenant_logged_in']);
+
 $tenantPhone = '';
 $tenantBookings = [];
 $autoFillError = false;
@@ -137,8 +141,7 @@ $contactInfo = trim($_GET['phone'] ?? $_POST['contact_info'] ?? '');
 // ถ้าเป็นผู้เช่าที่ล็อกอิน ให้ดึงข้อมูลอัตโนมัติและรองรับหลายการจอง
 if ($isTenantLoggedIn) {
     try {
-        $tenantId = $resolvedTenantId;
-        $isTenantLoggedIn = !empty($_SESSION['tenant_logged_in']) && !empty($resolvedTenantId);
+        $tenantId = $resolvedTenantId ?: $_SESSION['tenant_id'] ?? '';
         error_log("Fetching tenant data for: $tenantId");
 
         $stmtTenant = $pdo->prepare("SELECT tnt_phone FROM tenant WHERE tnt_id = ? LIMIT 1");
@@ -150,15 +153,23 @@ if ($isTenantLoggedIn) {
                 $contactInfo = $tenantPhone;
             }
         }
+        
+        // ถ้าไม่มี phone จาก tenant ให้ใช้จาก session
+        if (empty($tenantPhone) && !empty($_SESSION['tenant_phone'])) {
+            $tenantPhone = $_SESSION['tenant_phone'];
+            $contactInfo = $tenantPhone;
+        }
 
-        $stmtBookings = $pdo->prepare("\
-            SELECT bkg_id, bkg_date, bkg_checkin_date, bkg_status
-            FROM booking
-            WHERE tnt_id = ? AND bkg_status IN ('1','2')
-            ORDER BY bkg_date DESC
+        // ค้นหา booking จาก tenant_id หรือ phone number
+        $stmtBookings = $pdo->prepare("
+            SELECT DISTINCT b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status
+            FROM booking b
+            JOIN tenant t ON b.tnt_id = t.tnt_id
+            WHERE (b.tnt_id = ? OR t.tnt_phone = ?) AND b.bkg_status IN ('1','2')
+            ORDER BY b.bkg_date DESC
         ");
-        error_log("SQL: SELECT bkg_id, bkg_date FROM booking WHERE tnt_id = '$tenantId'");
-        $stmtBookings->execute([$tenantId]);
+        error_log("SQL: SELECT bkg_id FROM booking WHERE tnt_id = '$tenantId' OR phone = '$tenantPhone'");
+        $stmtBookings->execute([$tenantId, $tenantPhone]);
         $tenantBookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC) ?: [];
         
         error_log("Found " . count($tenantBookings) . " bookings for tenant: $tenantId");
@@ -169,13 +180,57 @@ if ($isTenantLoggedIn) {
                 $bookingRef = (string)$tenantBookings[0]['bkg_id'];
                 $autoFilled = true;
                 error_log("Auto-filled bookingRef: $bookingRef");
+                error_log("Single booking found, will auto-load");
+            } elseif (count($tenantBookings) > 1) {
+                error_log("Multiple bookings found: " . count($tenantBookings));
             } elseif (count($tenantBookings) === 0 && !empty($contactInfo)) {
                 $noBookingForTenant = true;
+                error_log("No bookings found for tenant: $tenantId");
             }
         }
     } catch (PDOException $e) {
         error_log('Booking status auto-fill error: ' . $e->getMessage());
         $autoFillError = true;
+    }
+}
+
+// ถ้ามีการจองเพียงรายเดียว ให้โหลดข้อมูลโดยอัตโนมัติ
+if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo) && $autoFilled) {
+    error_log("Auto-loading booking for logged-in user: $bookingRef, phone: $tenantPhone");
+    $bookingRef = preg_replace('/[^0-9a-zA-Z]/', '', $bookingRef);
+
+    try {
+        // ค้นหา booking โดยใช้ bkg_id โดยตรง (เพราะ bkg_id มาจากการค้นหาก่อนหน้าแล้ว)
+        $stmt = $pdo->prepare("
+            SELECT 
+                t.tnt_id, t.tnt_name, t.tnt_phone,
+                b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
+                r.room_number, rt.type_name, rt.type_price,
+                c.ctr_id, c.ctr_deposit, c.access_token,
+                e.exp_status,
+                COALESCE(SUM(IF(p.pay_status = '1', p.pay_amount, 0)), 0) as paid_amount
+            FROM booking b
+            JOIN tenant t ON b.tnt_id = t.tnt_id
+            LEFT JOIN room r ON b.room_id = r.room_id
+            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+            LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+            LEFT JOIN expense e ON c.ctr_id = e.ctr_id
+            LEFT JOIN payment p ON e.exp_id = p.exp_id
+            WHERE b.bkg_id = ?
+            GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
+            LIMIT 1
+        ");
+        $stmt->execute([$bookingRef]);
+        $bookingInfo = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($bookingInfo && !empty($bookingInfo['bkg_id'])) {
+            $showResult = true;
+            error_log("✓ Booking info loaded: " . $bookingInfo['bkg_id']);
+        } else {
+            error_log("✗ Failed to load booking info for bkg_id: $bookingRef");
+        }
+    } catch (PDOException $e) {
+        error_log('Auto-load booking error: ' . $e->getMessage());
     }
 }
 
@@ -697,15 +752,6 @@ if ($currentStatus === '1' && $expStatus === '1') {
         </div>
         <?php endif; ?>
 
-        <?php if ($isTenantLoggedIn && !empty($_SESSION['tenant_id'])): ?>
-        <div class="alert" style="background: rgba(34, 197, 94, 0.1); border: 1px solid var(--success); padding: 16px; border-radius: 12px; margin-bottom: 16px;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--success); margin-right: 8px; display: inline-block; vertical-align: middle;">
-                <polyline points="20 6 9 17 4 12"></polyline>
-            </svg>
-            <span style="color: var(--success); font-weight: 600;">✓ ล็อกอินสำเร็จ <?php echo htmlspecialchars($_SESSION['tenant_name'] ?? $_SESSION['tenant_email'] ?? ''); ?></span>
-        </div>
-        <?php endif; ?>
-
         <?php if ($noBookingForTenant): ?>
         <div style="text-align: center; margin-bottom: 16px;">
             <a href="../Public/booking.php" class="btn" style="display: inline-flex; align-items: center; gap: 8px;">
@@ -714,6 +760,7 @@ if ($currentStatus === '1' && $expStatus === '1') {
         </div>
         <?php endif; ?>
         
+        <?php if (!$noBookingForTenant): ?>
         <div class="card">
             <form method="post" id="bookingForm">
                 <div class="form-group">
@@ -741,7 +788,22 @@ if ($currentStatus === '1' && $expStatus === '1') {
                         </script>
                         <?php endif; ?>
                     <?php else: ?>
-                        <input type="text" name="booking_ref" class="form-control" placeholder="เช่น 770004930" value="<?php echo htmlspecialchars($bookingRef); ?>" required>
+                        <input type="text" name="booking_ref" class="form-control" placeholder="เช่น 770004930" value="<?php echo htmlspecialchars($bookingRef); ?>" required id="bookingRefInput">
+                        <?php if (!empty($bookingRef) && $isTenantLoggedIn && !$showResult): ?>
+                        <script>
+                            // Auto-submit form when booking ref is auto-filled for logged-in user
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const input = document.getElementById('bookingRefInput');
+                                const form = input?.form;
+                                if (input && input.value && form) {
+                                    console.log('Auto-submitting form with booking ref: ' + input.value);
+                                    setTimeout(function() {
+                                        form.submit();
+                                    }, 100);
+                                }
+                            });
+                        </script>
+                        <?php endif; ?>
                     <?php endif; ?>
                 </div>
                 <div class="form-group">
@@ -767,6 +829,7 @@ if ($currentStatus === '1' && $expStatus === '1') {
                 </button>
             </form>
         </div>
+        <?php endif; ?>
         
         <?php else: ?>
         <!-- Booking Result -->

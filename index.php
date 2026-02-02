@@ -4,6 +4,13 @@ ini_set('display_errors', '1');
 error_reporting(E_ALL);
 session_start();
 
+// Debug session
+error_log("=== index.php session debug ===");
+error_log("tenant_logged_in: " . ($_SESSION['tenant_logged_in'] ?? 'NOT SET'));
+error_log("tenant_id: " . ($_SESSION['tenant_id'] ?? 'NOT SET'));
+error_log("tenant_name: " . ($_SESSION['tenant_name'] ?? 'NOT SET'));
+error_log("All session vars: " . json_encode($_SESSION, JSON_UNESCAPED_UNICODE));
+
 // เคลียร์ session ของห้องที่เลือกเมื่ออยู่หน้าแรก
 if (isset($_SESSION['last_selected_room'])) {
     unset($_SESSION['last_selected_room']);
@@ -2546,6 +2553,16 @@ if ($publicTheme === 'light') {
             <a href="#news"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6m-6-4h6"/></svg> ข่าวสาร</a>
             <?php if (!empty($_GET['room']) || !empty($_SESSION['last_selected_room'])): ?>
             <a href="Public/booking.php"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/></svg> จองห้อง</a>
+            <?php endif; ?>
+            <!-- DEBUG: Session Status -->
+            <?php if (isset($_GET['debug_session'])): ?>
+            <div style="position: fixed; top: 100px; right: 20px; background: rgba(0,0,0,0.8); color: #fff; padding: 10px; border-radius: 5px; font-size: 12px; max-width: 300px; z-index: 9999;">
+                <strong>Session Debug:</strong><br>
+                tenant_logged_in: <?php echo $_SESSION['tenant_logged_in'] ? 'YES ✓' : 'NO ✗'; ?><br>
+                tenant_id: <?php echo $_SESSION['tenant_id'] ?? 'NOT SET'; ?><br>
+                tenant_name: <?php echo $_SESSION['tenant_name'] ?? 'NOT SET'; ?><br>
+                tenant_picture: <?php echo !empty($_SESSION['tenant_picture']) ? 'YES' : 'NO'; ?><br>
+            </div>
             <?php endif; ?>
             <?php if (!empty($_SESSION['tenant_logged_in'])): ?>
             <div class="user-avatar-container">

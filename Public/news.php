@@ -764,6 +764,135 @@ try {
         body.theme-light a[class*="btn"] {
             color: #fff !important;
         }
+
+        /* User Avatar Dropdown */
+        .user-avatar-container {
+            position: relative;
+            display: inline-block;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            transition: all 0.3s ease;
+            object-fit: cover;
+        }
+
+        .user-avatar:hover {
+            border-color: rgba(255, 255, 255, 0.8);
+            transform: scale(1.05);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .avatar-dropdown {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            background: rgba(17, 24, 39, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            min-width: 200px;
+            padding: 8px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .avatar-dropdown.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .avatar-dropdown::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            right: 15px;
+            width: 12px;
+            height: 12px;
+            background: rgba(17, 24, 39, 0.95);
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            transform: rotate(45deg);
+        }
+
+        .dropdown-header {
+            padding: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            margin-bottom: 8px;
+        }
+
+        .dropdown-header .user-name {
+            font-weight: 600;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .dropdown-header .user-email {
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.6);
+            margin-top: 4px;
+        }
+
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px 12px;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+
+        .dropdown-item svg {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+
+        body.theme-light .avatar-dropdown {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        body.theme-light .avatar-dropdown::before {
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        body.theme-light .dropdown-header {
+            border-bottom-color: rgba(148, 163, 184, 0.2);
+        }
+
+        body.theme-light .dropdown-header .user-name {
+            color: #1e293b;
+        }
+
+        body.theme-light .dropdown-header .user-email {
+            color: #64748b;
+        }
+
+        body.theme-light .dropdown-item {
+            color: #64748b;
+        }
+
+        body.theme-light .dropdown-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+            color: #6366f1;
+        }
     </style>
 </head>
 <?php
@@ -817,6 +946,21 @@ if ($publicTheme === 'light') {
             <a href="../index.php"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> หน้าแรก</a>
             <a href="rooms.php"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg> ห้องพัก</a>
             <a href="news.php"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6m-6-4h6"/></svg> ข่าวสาร</a>
+            <?php if (!empty($_SESSION['tenant_logged_in'])): ?>
+            <div class="user-avatar-container">
+                <img src="<?php echo htmlspecialchars($_SESSION['tenant_picture'] ?? '/dormitory_management/Public/Assets/Images/default-avatar.png'); ?>" class="user-avatar" onclick="toggleAvatarDropdown()">
+                <div class="avatar-dropdown" id="avatarDropdown">
+                    <div class="dropdown-header">
+                        <div class="user-name"><?php echo htmlspecialchars($_SESSION['tenant_name'] ?? 'ผู้เช่า'); ?></div>
+                        <div class="user-email">ผู้เช่า</div>
+                    </div>
+                    <a href="booking_status.php?auto=1">ตรวจสอบสถานะการจอง</a>
+                    <a href="../tenant_logout.php">ออกจากระบบ</a>
+                </div>
+            </div>
+            <?php else: ?>
+            <a href="../Login.php" class="btn-login">เข้าสู่ระบบ</a>
+            <?php endif; ?>
         </nav>
     </header>
 
@@ -907,6 +1051,24 @@ if ($publicTheme === 'light') {
         document.querySelectorAll('.news-card').forEach(card => {
             card.style.animationPlayState = 'paused';
             observer.observe(card);
+        });
+
+        // Toggle avatar dropdown
+        function toggleAvatarDropdown() {
+            const dropdown = document.getElementById('avatarDropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('show');
+            }
+        }
+
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(e) {
+            const container = document.querySelector('.user-avatar-container');
+            const dropdown = document.getElementById('avatarDropdown');
+            
+            if (container && dropdown && !container.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
         });
     </script>
 </body>
