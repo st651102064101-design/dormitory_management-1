@@ -46,6 +46,20 @@ if (!empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id'])) {
         $stmt->execute([$_SESSION['tenant_id']]);
         $loggedInTenant = $stmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {}
+
+    if (!$loggedInTenant) {
+        $loggedInTenant = [
+            'tnt_name' => $_SESSION['tenant_name'] ?? '',
+            'tnt_phone' => $_SESSION['tenant_phone'] ?? ''
+        ];
+    } else {
+        if (empty($loggedInTenant['tnt_name']) && !empty($_SESSION['tenant_name'])) {
+            $loggedInTenant['tnt_name'] = $_SESSION['tenant_name'];
+        }
+        if (empty($loggedInTenant['tnt_phone']) && !empty($_SESSION['tenant_phone'])) {
+            $loggedInTenant['tnt_phone'] = $_SESSION['tenant_phone'];
+        }
+    }
 }
 
 // ดึงห้องว่าง
@@ -348,6 +362,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Store IDs for success page display
                         $_SESSION['last_booking_id'] = $bookingId;
                         $_SESSION['last_tenant_id'] = $tenantId;
+                        $_SESSION['last_booking_time'] = time();
                     }
                 } catch (PDOException $e) {
                     if ($pdo->inTransaction()) $pdo->rollBack();
@@ -1618,8 +1633,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php
         $lastBookingId = $_SESSION['last_booking_id'] ?? '';
         $lastTenantId = $_SESSION['last_tenant_id'] ?? '';
-        // Clear session data after retrieval
-        unset($_SESSION['last_booking_id'], $_SESSION['last_tenant_id']);
+        $lastBookingTime = $_SESSION['last_booking_time'] ?? time();
+        // Clear session data if older than 10 minutes
+        if (time() - $lastBookingTime > 600) {
+            unset($_SESSION['last_booking_id'], $_SESSION['last_tenant_id'], $_SESSION['last_booking_time']);
+            $lastBookingId = '';
+            $lastTenantId = '';
+        }
         ?>
         <!-- Success Page -->
         <div class="success-page">
@@ -1707,6 +1727,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <div class="success-actions">
                 <a href="/dormitory_management/" class="success-btn primary">กลับหน้าหลัก</a>
+                <a href="/dormitory_management/Public/booking_status.php" class="success-btn secondary">ดูสถานะการจอง</a>
                 <a href="/dormitory_management/Public/booking.php" class="success-btn secondary">จองห้องอื่น</a>
             </div>
         </div>
