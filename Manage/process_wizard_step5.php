@@ -55,7 +55,7 @@ try {
     $pdo->commit();
 
     $_SESSION['success'] = "🎉 เสร็จสิ้นกระบวนการทั้งหมด! ผู้เช่าพร้อมเข้าพักและเริ่มบิลรายเดือนแล้ว";
-    header('Location: ../Reports/tenant_wizard.php');
+    header('Location: ../Reports/tenant_wizard.php?completed=1');
     exit;
 
 } catch (Exception $e) {
