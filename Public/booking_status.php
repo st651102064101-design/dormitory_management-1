@@ -1053,17 +1053,19 @@ unset($step);
         .upcoming-box .payment-btn {
             display: inline-flex;
             align-items: center;
+            justify-content: center;
             gap: 0.5rem;
             background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
+            padding: 0.6rem 1.2rem;
             border-radius: 0.5rem;
             font-size: 0.875rem;
             font-weight: 600;
             cursor: pointer;
-            margin-left: 0.75rem;
             transition: all 0.3s ease;
+            white-space: nowrap;
+            margin-left: 0.5rem;
         }
 
         .upcoming-box .payment-btn:hover {
