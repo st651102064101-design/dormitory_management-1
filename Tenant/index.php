@@ -71,6 +71,14 @@ try {
     $latestExpense = $expStmt->fetch(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
 
+// ดึงบิลค้างชำระสำหรับชำระค่าเช่าเดือนแรก
+$firstUnpaidExpense = null;
+try {
+    $unpaidStmt = $pdo->prepare("SELECT * FROM expense WHERE ctr_id = ? AND exp_status = '0' ORDER BY exp_month ASC LIMIT 1");
+    $unpaidStmt->execute([$contract['ctr_id']]);
+    $firstUnpaidExpense = $unpaidStmt->fetch(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {}
+
 // ดึงข่าวประชาสัมพันธ์ล่าสุด
 $latestNews = [];
 try {
@@ -453,6 +461,24 @@ $contractStatusMap = [
             font-size: 0.8rem;
             opacity: 0.9;
         }
+
+        .alert-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 8px 14px;
+            background: #ef4444;
+            color: #fff;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .alert-btn:hover {
+            background: #dc2626;
+        }
         
         .view-all-link {
             display: block;
@@ -488,12 +514,15 @@ $contractStatusMap = [
         </div>
         
         <!-- Alert for unpaid bill -->
-        <?php if ($latestExpense && $latestExpense['exp_status'] === '0'): ?>
+        <?php if ($firstUnpaidExpense): ?>
         <div class="alert-unpaid">
             <div class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
             <div class="alert-content">
                 <h3>มีบิลค้างชำระ</h3>
-                <p>ยอดรวม <?php echo number_format($latestExpense['exp_total']); ?> บาท</p>
+                <p>ยอดรวม <?php echo number_format($firstUnpaidExpense['exp_total']); ?> บาท</p>
+                <a class="alert-btn" href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo (int)$firstUnpaidExpense['exp_id']; ?>">
+                    ชำระค่าเช่าเดือนแรก
+                </a>
             </div>
         </div>
         <?php endif; ?>
@@ -504,6 +533,10 @@ $contractStatusMap = [
             <a href="profile.php?token=<?php echo urlencode($token); ?>" class="menu-item">
                 <div class="menu-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                 <div class="menu-label">ข้อมูลส่วนตัว</div>
+            </a>
+            <a href="checkin.php?token=<?php echo urlencode($token); ?>" class="menu-item">
+                <div class="menu-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+                <div class="menu-label">ข้อมูลเช็คอิน</div>
             </a>
             <a href="repair.php?token=<?php echo urlencode($token); ?>" class="menu-item">
                 <div class="menu-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
