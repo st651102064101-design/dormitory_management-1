@@ -20,6 +20,27 @@ require_once __DIR__ . '/ConnectDB.php';
 
 $pdo = connectDB();
 
+// ถ้า user login Google และมีสัญญาแล้ว ให้ redirect ไป Tenant/index.php
+if (!empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id'])) {
+    try {
+        $chkStmt = $pdo->prepare("
+            SELECT c.access_token 
+            FROM contract c 
+            WHERE c.tnt_id = ? AND c.ctr_status IN ('0', '2')
+            ORDER BY c.ctr_id DESC
+            LIMIT 1
+        ");
+        $chkStmt->execute([$_SESSION['tenant_id']]);
+        $contractCheck = $chkStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($contractCheck && !empty($contractCheck['access_token'])) {
+            // มีสัญญา ให้ redirect ไป Tenant/index.php
+            header('Location: Tenant/index.php?token=' . urlencode($contractCheck['access_token']));
+            exit;
+        }
+    } catch (PDOException $e) {}
+}
+
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';

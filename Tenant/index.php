@@ -11,33 +11,68 @@ $pdo = connectDB();
 
 // รับ token จาก URL
 $token = $_GET['token'] ?? '';
+$contractData = null;
 
-if (empty($token)) {
-    http_response_code(403);
-    die('<div style="text-align:center;padding:50px;font-family:sans-serif;"><h1>⚠️ ไม่พบ Token</h1><p>กรุณาสแกน QR Code ที่ได้รับจากหอพัก</p></div>');
+// ก่อนอื่นตรวจสอบ token (QR Code / Token)
+if (!empty($token)) {
+    try {
+        $stmt = $pdo->prepare("
+            SELECT c.*, 
+                   t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
+                   r.room_id, r.room_number, r.room_image,
+                   rt.type_name, rt.type_price
+            FROM contract c
+            JOIN tenant t ON c.tnt_id = t.tnt_id
+            JOIN room r ON c.room_id = r.room_id
+            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+            WHERE c.access_token = ? AND c.ctr_status IN ('0', '2')
+            LIMIT 1
+        ");
+        $stmt->execute([$token]);
+        $contractData = $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
 }
 
-// ตรวจสอบ token และดึงข้อมูลสัญญา
-try {
-    $stmt = $pdo->prepare("
-        SELECT c.*, 
-               t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
-               r.room_id, r.room_number, r.room_image,
-               rt.type_name, rt.type_price
-        FROM contract c
-        JOIN tenant t ON c.tnt_id = t.tnt_id
-        JOIN room r ON c.room_id = r.room_id
-        LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-        WHERE c.access_token = ? AND c.ctr_status IN ('0', '2')
-        LIMIT 1
-    ");
-    $stmt->execute([$token]);
-    $contract = $stmt->fetch(PDO::FETCH_ASSOC);
-    
-    if (!$contract) {
+// ถ้าไม่มี token หรือ token ไม่ถูกต้อง ลองเอาจาก session ของ Google OAuth
+if (!$contractData && !empty($_SESSION['tenant_logged_in'])) {
+    try {
+        $tenantId = $_SESSION['tenant_id'] ?? '';
+        if (!empty($tenantId)) {
+            $stmt = $pdo->prepare("
+                SELECT c.*, 
+                       t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
+                       r.room_id, r.room_number, r.room_image,
+                       rt.type_name, rt.type_price
+                FROM contract c
+                JOIN tenant t ON c.tnt_id = t.tnt_id
+                JOIN room r ON c.room_id = r.room_id
+                LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+                WHERE c.tnt_id = ? AND c.ctr_status IN ('0', '2')
+                ORDER BY c.ctr_id DESC
+                LIMIT 1
+            ");
+            $stmt->execute([$tenantId]);
+            $contractData = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // ถ้าพบสัญญา ให้สร้าง token หรือเก็บ token ที่มีอยู่
+            if ($contractData && !empty($contractData['access_token'])) {
+                $token = $contractData['access_token'];
+            }
+        }
+    } catch (PDOException $e) {}
+}
+
+if (!$contractData) {
+    if (!empty($token)) {
         http_response_code(403);
         die('<div style="text-align:center;padding:50px;font-family:sans-serif;"><h1>⚠️ Token ไม่ถูกต้องหรือหมดอายุ</h1><p>กรุณาติดต่อผู้ดูแลหอพัก</p></div>');
+    } else {
+        http_response_code(403);
+        die('<div style="text-align:center;padding:50px;font-family:sans-serif;"><h1>⚠️ ไม่พบ Token</h1><p>กรุณาสแกน QR Code หรือเข้าสู่ระบบก่อน</p></div>');
     }
+}
+
+$contract = $contractData;
     
     // เก็บข้อมูลใน session สำหรับหน้าอื่นๆ
     $_SESSION['tenant_token'] = $token;
