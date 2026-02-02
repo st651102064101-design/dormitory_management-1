@@ -2199,7 +2199,7 @@ if ($publicTheme === 'light') {
                             </svg>
                             ถึงกำหนด: <?php echo $dueDateStr; ?>
                         </span>
-                        <button class="payment-btn" onclick="openPaymentModal('<?php echo htmlspecialchars($ctrId, ENT_QUOTES); ?>', <?php echo (int)$monthly; ?>, '<?php echo htmlspecialchars($dueDateStr, ENT_QUOTES); ?>')">
+                        <button class="payment-btn" onclick="redirectToPayment('<?php echo htmlspecialchars($ctrId, ENT_QUOTES); ?>')">
                             <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                                 <circle cx="12" cy="12" r="10"/>
                                 <line x1="12" y1="8" x2="12" y2="16"/>
@@ -2412,6 +2412,11 @@ if ($publicTheme === 'light') {
             /* payment-related JS removed to prevent references to removed DOM nodes */
             // (payment-section, modal and CTAs have been removed)
         });
+
+        // Redirect to manage payments page for overdue payment
+        function redirectToPayment(ctrId) {
+            window.location.href = '/dormitory_management/Reports/manage_payments.php?filter_ctr=' + encodeURIComponent(ctrId);
+        }
     </script>
     
     <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
