@@ -395,7 +395,7 @@ try {
             exit;
         }
 
-        $uploadsDir = __DIR__ . '//dormitory_management/Public/Assets/Images/';
+        $uploadsDir = __DIR__ . '/../Public/Assets/Images/';
         if (!is_dir($uploadsDir)) {
             mkdir($uploadsDir, 0755, true);
         }
@@ -413,7 +413,7 @@ try {
             exit;
         } else {
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัพโหลดไฟล์']);
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัพโหลดไฟล์: ' . error_get_last()['message']]);
             exit;
         }
     }
@@ -426,7 +426,7 @@ try {
         $currentSignature = $stmt->fetchColumn();
 
         if ($currentSignature) {
-            $uploadsDir = __DIR__ . '//dormitory_management/Public/Assets/Images/';
+            $uploadsDir = __DIR__ . '/../Public/Assets/Images/';
             $signaturePath = $uploadsDir . $currentSignature;
 
             // ลบไฟล์ (ถ้ามี)

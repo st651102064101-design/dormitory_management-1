@@ -472,6 +472,8 @@ class AppleSettings {
 
   // ===== Image Upload =====
   initImageUploads() {
+    console.log('initImageUploads called');
+    
     // Logo upload
     const logoInput = document.getElementById('logoInput');
     if (logoInput) {
@@ -506,10 +508,35 @@ class AppleSettings {
 
     // Signature upload
     const signatureInput = document.getElementById('signatureInput');
+    const signatureUploadArea = document.getElementById('signatureUploadArea');
+    
+    console.log('signatureInput element:', signatureInput);
+    console.log('signatureUploadArea element:', signatureUploadArea);
+    
+    // Click on upload area to trigger file input
+    if (signatureUploadArea && signatureInput) {
+      signatureUploadArea.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Upload area clicked');
+        signatureInput.click();
+      });
+    }
+    
     if (signatureInput) {
       signatureInput.addEventListener('change', (e) => {
-        this.handleSignatureUpload(e.target.files[0]);
+        console.log('Signature file selected:', e.target.files);
+        const file = e.target.files[0];
+        if (file) {
+          console.log('File details:', file.name, file.type, file.size);
+          // แสดง preview ทันที
+          this.showSignaturePreview(file);
+          // จากนั้นค่อยอัพโหลด
+          this.handleSignatureUpload(file);
+        }
       });
+    } else {
+      console.warn('signatureInput not found!');
     }
 
     // Delete signature button
@@ -577,12 +604,38 @@ class AppleSettings {
     }
   }
 
+  showSignaturePreview(file) {
+    const previewContainer = document.getElementById('signatureUploadPreview');
+    const previewImg = document.getElementById('signatureUploadPreviewImg');
+    const fileNameSpan = document.getElementById('signatureFileName');
+    const uploadArea = document.getElementById('signatureUploadArea');
+    
+    if (previewContainer && previewImg && fileNameSpan) {
+      // อ่านไฟล์และแสดง preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        previewImg.src = e.target.result;
+        fileNameSpan.textContent = file.name;
+        previewContainer.style.display = 'block';
+        if (uploadArea) {
+          uploadArea.style.display = 'none';
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  }
+
   async handleSignatureUpload(file) {
     if (!file) return;
 
     // Validate file type - only PNG allowed for transparent signature
     if (file.type !== 'image/png') {
       this.showToast('กรุณาเลือกไฟล์ PNG เท่านั้น', 'error');
+      // ซ่อน preview ถ้าไฟล์ไม่ถูกต้อง
+      const previewContainer = document.getElementById('signatureUploadPreview');
+      const uploadArea = document.getElementById('signatureUploadArea');
+      if (previewContainer) previewContainer.style.display = 'none';
+      if (uploadArea) uploadArea.style.display = 'block';
       return;
     }
 

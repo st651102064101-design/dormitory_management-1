@@ -446,7 +446,7 @@ function nameWithoutNickname($fullName) {
             <div class="signature-box owner" style="max-width: 60%; margin: 0 auto;">
                 <div class="signature-row">
                     <?php if (!empty($ownerSignature)): ?>
-                    <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($ownerSignature); ?>" alt="ลายเซ็น" style="height: 50px; max-width: 150px; object-fit: contain;">
+                    <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($ownerSignature); ?>" alt="ลายเซ็น" style="height: 50px; max-width: 150px; object-fit: contain;margin-left: 5rem;margin-right: 5rem;">
                     <?php else: ?>
                     <span class="signature-line"></span>
                     <?php endif; ?>
