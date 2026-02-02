@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 /**
  * Google OAuth Callback
  * รับ callback จาก Google หลังจากผู้ใช้ยืนยันการเข้าสู่ระบบ
@@ -6,23 +7,22 @@
  */
 
 // Set error handling
-$debugMode = isset($_GET['debug']) && $_GET['debug'] === '1';
-ini_set('display_errors', $debugMode ? '1' : '0');
-ini_set('log_errors', '1');
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 error_reporting(E_ALL);
 
 session_start();
 require_once __DIR__ . '/ConnectDB.php';
 
 // ฟังก์ชันสำหรับ redirect พร้อม error
-function redirectWithError($error) {
+function redirectWithError(string $error): void {
     error_log("Redirecting with error: " . $error);
     header('Location: /dormitory_management/Login.php?google_error=' . urlencode($error));
     exit;
 }
 
 // ดึงค่าตั้งค่า Google OAuth จากฐานข้อมูล
-function getGoogleSettings($pdo) {
+function getGoogleSettings($pdo): array {
     $settings = [];
     try {
         $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('google_client_id', 'google_client_secret', 'google_redirect_uri')");
@@ -83,9 +83,6 @@ try {
     $code = $_GET['code'];
     
     // Exchange code for access token
-    if (!function_exists('curl_init')) {
-        redirectWithError('เซิร์ฟเวอร์ไม่ได้ติดตั้ง cURL');
-    }
     $tokenUrl = 'https://oauth2.googleapis.com/token';
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $tokenUrl);
@@ -373,9 +370,48 @@ try {
         $_SESSION['tenant_logged_in'] = true;
         
         error_log("✓ Tenant session set: " . $_SESSION['tenant_id']);
-        // หลังล็อกอิน Google ให้กลับหน้า index ตามที่ต้องการ
-        header('Location: /dormitory_management/index.php');
-        exit;
+        
+        // Check booking count to decide where to redirect
+        try {
+            $bookingStmt = $pdo->prepare('
+                SELECT bkg_id, bkg_date
+                FROM booking
+                WHERE tnt_id = ? AND bkg_status IN ("1","2")
+                ORDER BY bkg_date DESC
+            ');
+            $bookingStmt->execute([$tenant['tnt_id']]);
+            $bookings = $bookingStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("Tenant has " . count($bookings) . " active booking(s)");
+            
+            // ถ้าจองไว้เพียง 1 ห้อง ให้ redirect ไปหน้า booking_status.php พร้อมแสดงข้อมูลเลย
+            if (count($bookings) === 1) {
+                error_log("Redirecting to booking_status.php with auto-fill");
+                $redirectUrl = '/dormitory_management/Public/booking_status.php?auto=1&ref=' . urlencode($bookings[0]['bkg_id']);
+                error_log("Redirect URL: " . $redirectUrl);
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+            // ถ้าจองหลายห้อง ให้ไปหน้า booking_status.php ให้เลือก
+            else if (count($bookings) > 1) {
+                error_log("Redirecting to booking_status.php for selection");
+                $redirectUrl = '/dormitory_management/Public/booking_status.php?auto=1';
+                error_log("Redirect URL: " . $redirectUrl);
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+            // ถ้าไม่มีการจอง ให้ไปหน้าแรก
+            else {
+                error_log("No active bookings, redirecting to home");
+                header('Location: /dormitory_management/index.php');
+                exit;
+            }
+        } catch (Exception $e) {
+            error_log("Error checking bookings: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            header('Location: /dormitory_management/index.php');
+            exit;
+        }
     }
     
     // 3. ไม่พบทั้ง Admin และ Tenant - redirect ไปหน้าลงทะเบียน (สำหรับ Tenant ใหม่)

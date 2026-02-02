@@ -4,43 +4,28 @@
  * รับ callback จาก Google หลังจากผู้ใช้ยืนยันการเข้าสู่ระบบ
  * ตรวจสอบอัตโนมัติว่าเป็น Admin หรือ Tenant
  */
-
-// Set error handling
-$debugMode = isset($_GET['debug']) && $_GET['debug'] === '1';
-ini_set('display_errors', $debugMode ? '1' : '0');
-ini_set('log_errors', '1');
-error_reporting(E_ALL);
-
+declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/ConnectDB.php';
 
 // ฟังก์ชันสำหรับ redirect พร้อม error
 function redirectWithError($error) {
-    error_log("Redirecting with error: " . $error);
-    header('Location: /dormitory_management/Login.php?google_error=' . urlencode($error));
+    header('Location: Login.php?google_error=' . urlencode($error));
     exit;
 }
 
 // ดึงค่าตั้งค่า Google OAuth จากฐานข้อมูล
 function getGoogleSettings($pdo) {
     $settings = [];
-    try {
-        $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('google_client_id', 'google_client_secret', 'google_redirect_uri')");
-        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $settings[$row['setting_key']] = $row['setting_value'];
-        }
-    } catch (Exception $e) {
-        error_log("Error getting Google settings: " . $e->getMessage());
+    $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('google_client_id', 'google_client_secret', 'google_redirect_uri')");
+    while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+        $settings[$row['setting_key']] = $row['setting_value'];
     }
     return $settings;
 }
 
 try {
-    error_log("=== Google Callback Started ===");
-    
     $pdo = connectDB();
-    error_log("✓ Database connected");
-    
     $settings = getGoogleSettings($pdo);
     
     $clientId = $settings['google_client_id'] ?? '';
@@ -56,66 +41,50 @@ try {
     $host = $_SERVER['HTTP_HOST'];
     $fullRedirectUri = $protocol . '://' . $host . $redirectUri;
     
-    error_log("Full redirect URI: " . $fullRedirectUri);
-    
     // ตรวจสอบว่ามี error จาก Google หรือไม่
     if (isset($_GET['error'])) {
-        error_log("Google error: " . $_GET['error']);
         redirectWithError('Google ปฏิเสธการเข้าถึง: ' . $_GET['error']);
     }
     
     // ตรวจสอบว่ามี code หรือไม่
     if (!isset($_GET['code'])) {
-        error_log("No code from Google");
         redirectWithError('ไม่พบรหัสยืนยันจาก Google');
     }
     
-    error_log("✓ Got code from Google");
-    
     // ตรวจสอบ state เพื่อป้องกัน CSRF
     if (!isset($_GET['state']) || !isset($_SESSION['google_state']) || $_GET['state'] !== $_SESSION['google_state']) {
-        error_log("Invalid state token");
         redirectWithError('Invalid state token');
     }
-    
-    error_log("✓ State token verified");
+    unset($_SESSION['google_state']);
     
     $code = $_GET['code'];
     
-    // Exchange code for access token
-    if (!function_exists('curl_init')) {
-        redirectWithError('เซิร์ฟเวอร์ไม่ได้ติดตั้ง cURL');
-    }
+    // แลกเปลี่ยน code เป็น access token
     $tokenUrl = 'https://oauth2.googleapis.com/token';
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, $tokenUrl);
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_POSTFIELDS, [
+    $tokenData = [
         'code' => $code,
         'client_id' => $clientId,
         'client_secret' => $clientSecret,
         'redirect_uri' => $fullRedirectUri,
         'grant_type' => 'authorization_code'
-    ]);
+    ];
+    
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $tokenUrl);
+    curl_setopt($ch, CURLOPT_POST, true);
+    curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($tokenData));
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
-    
-    $response = curl_exec($ch);
+    $tokenResponse = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
     curl_close($ch);
     
     if ($httpCode !== 200) {
-        error_log("Token exchange failed: HTTP $httpCode");
-        error_log("Response: " . $response);
-        redirectWithError('ไม่สามารถแลกเปลี่ยน code เป็น token ได้');
+        redirectWithError('ไม่สามารถรับ token จาก Google ได้');
     }
     
-    error_log("✓ Got access token");
-    
-    $tokenData = json_decode($response, true);
-    
+    $tokenData = json_decode($tokenResponse, true);
     if (!isset($tokenData['access_token'])) {
-        error_log("No access token in response");
         redirectWithError('ไม่พบ access token');
     }
     
@@ -133,15 +102,11 @@ try {
     curl_close($ch);
     
     if ($httpCode !== 200) {
-        error_log("User info fetch failed: HTTP $httpCode");
         redirectWithError('ไม่สามารถดึงข้อมูลผู้ใช้จาก Google ได้');
     }
     
-    error_log("✓ Got user info from Google");
-    
     $userData = json_decode($userResponse, true);
     if (!isset($userData['id']) || !isset($userData['email'])) {
-        error_log("Incomplete user data: " . json_encode($userData));
         redirectWithError('ข้อมูลผู้ใช้จาก Google ไม่ครบถ้วน');
     }
     
@@ -149,12 +114,7 @@ try {
     $email = $userData['email'];
     $name = $userData['name'] ?? '';
     $picture = $userData['picture'] ?? '';
-    $phone = $userData['phone_number'] ?? ($userData['phone'] ?? '');
-    
-    error_log("User: $email (ID: $googleId)");
-    
-    // ล้างค่า state จาก session
-    unset($_SESSION['google_state']);
+    $phone = $userData['phone_number'] ?? ($userData['phone'] ?? ''); // พยายามดึงเบอร์โทร
     
     // =============================================
     // ตรวจสอบว่าเป็นการ Link Account หรือไม่
@@ -163,43 +123,49 @@ try {
         $adminId = $_SESSION['google_link_admin_id'];
         $action = $_SESSION['google_link_action'] ?? 'link';
         
+        // ล้าง session
         unset($_SESSION['google_link_mode']);
         unset($_SESSION['google_link_admin_id']);
         unset($_SESSION['google_link_action']);
         
+        // ตรวจสอบว่า Google account นี้ถูกใช้กับ admin อื่นหรือไม่
         $checkStmt = $pdo->prepare('SELECT admin_id FROM admin_oauth WHERE provider = "google" AND provider_id = ? AND admin_id != ?');
         $checkStmt->execute([$googleId, $adminId]);
-        
         if ($checkStmt->fetch()) {
-            header('Location: /dormitory_management/Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้ดูแลระบบอื่นแล้ว'));
+            header('Location: Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้ดูแลระบบอื่นแล้ว'));
             exit;
         }
         
+        // ตรวจสอบว่า Google account นี้ถูกใช้กับ tenant หรือไม่
         $checkTenantStmt = $pdo->prepare('SELECT tnt_id FROM tenant_oauth WHERE provider = "google" AND (provider_id = ? OR provider_email = ?)');
         $checkTenantStmt->execute([$googleId, $email]);
         if ($checkTenantStmt->fetch()) {
-            header('Location: /dormitory_management/Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้เช่าอยู่แล้ว ไม่สามารถใช้กับบัญชีผู้ดูแลระบบได้'));
+            header('Location: Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้เช่าอยู่แล้ว ไม่สามารถใช้กับบัญชีผู้ดูแลระบบได้'));
             exit;
         }
         
+        // ถ้าเป็น relink ให้ลบ record เก่าก่อน
         if ($action === 'relink') {
             $deleteStmt = $pdo->prepare('DELETE FROM admin_oauth WHERE admin_id = ? AND provider = "google"');
             $deleteStmt->execute([$adminId]);
         }
         
+        // ตรวจสอบว่ามี record อยู่แล้วหรือไม่
         $existingStmt = $pdo->prepare('SELECT oauth_id FROM admin_oauth WHERE admin_id = ? AND provider = "google"');
         $existingStmt->execute([$adminId]);
         $existingOAuth = $existingStmt->fetch();
         
         if ($existingOAuth) {
+            // อัพเดท record ที่มีอยู่
             $updateStmt = $pdo->prepare('
-                UPDATE admin_oauth
+                UPDATE admin_oauth 
                 SET provider_id = ?, provider_email = ?, picture = ?, updated_at = NOW()
                 WHERE admin_id = ? AND provider = "google"
             ');
             $updateStmt->execute([$googleId, $email, $picture, $adminId]);
             $message = 'เปลี่ยนบัญชี Google เป็น ' . $email . ' สำเร็จ';
         } else {
+            // สร้าง record ใหม่
             $insertStmt = $pdo->prepare('
                 INSERT INTO admin_oauth (admin_id, provider, provider_id, provider_email, picture, created_at, updated_at)
                 VALUES (?, "google", ?, ?, ?, NOW(), NOW())
@@ -208,22 +174,26 @@ try {
             $message = 'เชื่อมบัญชี Google ' . $email . ' สำเร็จ';
         }
         
+        // อัพเดท session picture
         $_SESSION['admin_picture'] = $picture;
-        header('Location: /dormitory_management/Reports/dashboard.php?google_success=' . urlencode($message));
+        
+        header('Location: Reports/dashboard.php?google_success=' . urlencode($message));
         exit;
     }
     
+    // ล้างค่า login type จาก session (ถ้ามี)
     unset($_SESSION['google_login_type']);
     
     // =============================================
     // ตรวจสอบอัตโนมัติ: Admin ก่อน, ถ้าไม่พบก็ตรวจสอบ Tenant
     // =============================================
+    
     // 1. ตรวจสอบว่าเป็น Admin หรือไม่
     $stmt = $pdo->prepare('
-        SELECT a.*, ao.picture as oauth_picture
+        SELECT a.*, ao.picture as oauth_picture 
         FROM admin a
         INNER JOIN admin_oauth ao ON a.admin_id = ao.admin_id
-        WHERE ao.provider = "google"
+        WHERE ao.provider = "google" 
         AND (ao.provider_id = :google_id OR ao.provider_email = :email)
         LIMIT 1
     ');
@@ -231,31 +201,31 @@ try {
     $admin = $stmt->fetch();
     
     if ($admin) {
-        error_log("Admin found, updating OAuth");
-        
+        // อัพเดทข้อมูล OAuth ถ้ามีการเปลี่ยนแปลง
         $updateOAuthStmt = $pdo->prepare('
-            UPDATE admin_oauth
-            SET provider_id = :google_id,
+            UPDATE admin_oauth 
+            SET provider_id = :google_id, 
                 provider_email = :email,
                 picture = :picture,
                 updated_at = NOW()
             WHERE admin_id = :admin_id AND provider = "google"
         ');
         $updateOAuthStmt->execute([
-            ':google_id' => $googleId,
+            ':google_id' => $googleId, 
             ':email' => $email,
             ':picture' => $picture,
             ':admin_id' => $admin['admin_id']
         ]);
         
+        // ตั้งค่า session
         $_SESSION['admin_id'] = $admin['admin_id'];
         $_SESSION['admin_username'] = $admin['admin_username'];
         $_SESSION['admin_name'] = $admin['admin_name'] ?? '';
+        // ใช้ picture จาก OAuth table ถ้ามี ถ้าไม่ใช้ picture จาก Google API
         $_SESSION['admin_picture'] = $admin['oauth_picture'] ?? $picture;
         
-        error_log("✓ Admin logged in: " . $admin['admin_id']);
-        
-        header('Location: /dormitory_management/Reports/dashboard.php');
+        // Redirect ไปหน้า dashboard
+        header('Location: Reports/dashboard.php');
         exit;
     }
     
@@ -369,17 +339,57 @@ try {
         $_SESSION['tenant_name'] = $tenant['tnt_name'] ?? '';
         $_SESSION['tenant_phone'] = $tenant['tnt_phone'] ?? '';
         $_SESSION['tenant_email'] = $email;
+        // ใช้ picture จาก OAuth table ถ้ามี ถ้าไม่ใช้ picture จาก Google API
         $_SESSION['tenant_picture'] = $tenant['oauth_picture'] ?? $picture;
         $_SESSION['tenant_logged_in'] = true;
         
-        error_log("✓ Tenant session set: " . $_SESSION['tenant_id']);
-        // หลังล็อกอิน Google ให้กลับหน้า index ตามที่ต้องการ
-        header('Location: /dormitory_management/index.php');
-        exit;
+        error_log("Session set for tenant: " . $_SESSION['tenant_id']);
+        
+        // Check booking count to decide where to redirect
+        try {
+            $bookingStmt = $pdo->prepare('
+                SELECT bkg_id, bkg_date
+                FROM booking
+                WHERE tnt_id = ? AND bkg_status IN ("1","2")
+                ORDER BY bkg_date DESC
+            ');
+            $bookingStmt->execute([$tenant['tnt_id']]);
+            $bookings = $bookingStmt->fetchAll(PDO::FETCH_ASSOC);
+            
+            error_log("Tenant has " . count($bookings) . " active booking(s)");
+            
+            // ถ้าจองไว้เพียง 1 ห้อง ให้ redirect ไปหน้า booking_status.php พร้อมแสดงข้อมูลเลย
+            if (count($bookings) === 1) {
+                error_log("Redirecting to booking_status.php with auto-fill");
+                $redirectUrl = '/dormitory_management/Public/booking_status.php?auto=1&ref=' . urlencode($bookings[0]['bkg_id']);
+                error_log("Redirect URL: " . $redirectUrl);
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+            // ถ้าจองหลายห้อง ให้ไปหน้า booking_status.php ให้เลือก
+            else if (count($bookings) > 1) {
+                error_log("Redirecting to booking_status.php for selection");
+                $redirectUrl = '/dormitory_management/Public/booking_status.php?auto=1';
+                error_log("Redirect URL: " . $redirectUrl);
+                header('Location: ' . $redirectUrl);
+                exit;
+            }
+            // ถ้าไม่มีการจอง ให้ไปหน้าแรก
+            else {
+                error_log("No active bookings, redirecting to home");
+                header('Location: /dormitory_management/index.php');
+                exit;
+            }
+        } catch (Exception $e) {
+            error_log("Error checking bookings: " . $e->getMessage());
+            error_log("Stack trace: " . $e->getTraceAsString());
+            // Fallback ไปหน้าแรก
+            header('Location: /dormitory_management/index.php');
+            exit;
+        }
     }
     
     // 3. ไม่พบทั้ง Admin และ Tenant - redirect ไปหน้าลงทะเบียน (สำหรับ Tenant ใหม่)
-    error_log("No tenant found, redirecting to registration");
     $_SESSION['google_register'] = [
         'google_id' => $googleId,
         'email' => $email,
@@ -387,10 +397,11 @@ try {
         'picture' => $picture,
         'phone' => $phone
     ];
-    header('Location: /dormitory_management/google_register.php');
+    header('Location: google_register.php');
     exit;
     
 } catch (PDOException $e) {
+    // DEBUG: แสดง error จริง
     error_log("PDOException in google_callback.php: " . $e->getMessage());
     error_log("Stack trace: " . $e->getTraceAsString());
     redirectWithError('Database Error: ' . $e->getMessage());

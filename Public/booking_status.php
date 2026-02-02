@@ -655,6 +655,9 @@ if ($currentStatus === '1' && $expStatus === '1') {
                         <input type="tel" name="contact_info" class="form-control" placeholder="เช่น 0812345678" value="<?php echo htmlspecialchars($contactInfo); ?>" maxlength="10" required>
                     <?php endif; ?>
                 </div>
+                <?php if ($isTenantLoggedIn && !empty($bookingRef)): ?>
+                    <input type="hidden" name="auto_submit" value="1">
+                <?php endif; ?>
                 <button type="submit" class="btn">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <circle cx="11" cy="11" r="8"/>
@@ -897,13 +900,15 @@ if ($currentStatus === '1' && $expStatus === '1') {
             }
             
             // Auto-show result if redirected from Google login with single booking
-            <?php if ($autoRedirect && !empty($bookingRef) && $isTenantLoggedIn && count($tenantBookings) === 1 && $autoFilled): ?>
-            console.log('Auto-submitting form for single booking...');
             const form = document.querySelector('form');
-            if (form) {
-                setTimeout(() => form.submit(), 300);
+            const autoSubmitField = form ? form.querySelector('input[name="auto_submit"]') : null;
+            
+            if (autoSubmitField && form) {
+                console.log('Auto-submitting form for single booking...');
+                setTimeout(() => {
+                    form.submit();
+                }, 100);
             }
-            <?php endif; ?>
         });
     </script>
 </body>
