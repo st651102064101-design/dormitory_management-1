@@ -503,6 +503,22 @@ class AppleSettings {
         this.previewBgSelect(e.target.value);
       });
     }
+
+    // Signature upload
+    const signatureInput = document.getElementById('signatureInput');
+    if (signatureInput) {
+      signatureInput.addEventListener('change', (e) => {
+        this.handleSignatureUpload(e.target.files[0]);
+      });
+    }
+
+    // Delete signature button
+    const deleteSignatureBtn = document.getElementById('deleteSignatureBtn');
+    if (deleteSignatureBtn) {
+      deleteSignatureBtn.addEventListener('click', () => {
+        this.deleteSignature();
+      });
+    }
   }
 
   async handleLogoUpload(file) {
@@ -553,6 +569,93 @@ class AppleSettings {
         if (preview) {
           preview.src = `/dormitory_management/Public/Assets/Images/${result.filename}?t=${Date.now()}`;
         }
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async handleSignatureUpload(file) {
+    if (!file) return;
+
+    // Validate file type - only PNG allowed for transparent signature
+    if (file.type !== 'image/png') {
+      this.showToast('กรุณาเลือกไฟล์ PNG เท่านั้น', 'error');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('signature', file);
+
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('อัพโหลดลายเซ็นสำเร็จ', 'success');
+        
+        const newTimestamp = Date.now();
+        const newSrc = `/dormitory_management/Public/Assets/Images/${result.filename}?t=${newTimestamp}`;
+        
+        // Update preview in sheet
+        const preview = document.getElementById('signaturePreviewImg');
+        if (preview) {
+          if (preview.tagName === 'IMG') {
+            preview.src = newSrc;
+          } else {
+            // Replace placeholder with actual image
+            preview.outerHTML = `<img id="signaturePreviewImg" src="${newSrc}" alt="Signature" style="max-width: 200px; max-height: 80px; object-fit: contain;">`;
+          }
+        }
+        
+        // Update preview in row
+        const rowImg = document.getElementById('signatureRowImg');
+        if (rowImg) {
+          if (rowImg.tagName === 'IMG') {
+            rowImg.src = newSrc;
+          } else {
+            // Replace span with image
+            rowImg.outerHTML = `<img id="signatureRowImg" src="${newSrc}" alt="Signature" style="max-width: 60px; max-height: 24px; object-fit: contain; border-radius: 4px;">`;
+          }
+        }
+        
+        // Update info text
+        const infoP = document.querySelector('#sheet-signature .apple-image-info p');
+        if (infoP) {
+          infoP.textContent = result.filename;
+        }
+        
+        // Reload page to show delete button if it wasn't there before
+        setTimeout(() => location.reload(), 500);
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async deleteSignature() {
+    if (!confirm('คุณต้องการลบลายเซ็นนี้หรือไม่?')) return;
+
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'delete_signature=1'
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        this.showToast('ลบลายเซ็นสำเร็จ', 'success');
+        
+        // Reload page to update UI
+        setTimeout(() => location.reload(), 500);
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
       }

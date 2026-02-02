@@ -214,6 +214,16 @@ if (!$contract) {
     die('ไม่พบข้อมูลสัญญา ID: ' . $ctr_id);
 }
 
+// ดึงลายเซ็นเจ้าของหอ (ถ้ามี)
+$ownerSignature = '';
+$ownerName = 'นางรุ่งทิพย์ ชิ้นจอหอ';
+$stmtSettings = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('owner_signature', 'site_name')");
+while ($row = $stmtSettings->fetch(PDO::FETCH_ASSOC)) {
+    if ($row['setting_key'] === 'owner_signature') {
+        $ownerSignature = $row['setting_value'] ?? '';
+    }
+}
+
 function formatThaiDate($dateStr) {
     if (!$dateStr) return '-';
     $months = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
@@ -240,7 +250,7 @@ $datePartsStart = formatThaiDateParts($contract['ctr_start'] ?? null);
 $datePartsEnd = formatThaiDateParts($contract['ctr_end'] ?? null);
 
 function h($value) {
-    if ($value === null) return '';
+    if ($value === null || $value === '') return '-';
     return htmlspecialchars((string)$value);
 }
 
@@ -335,7 +345,7 @@ function nameWithoutNickname($fullName) {
                 อายุ <span class="underline underline-short"><?php echo h($contract['tnt_age'] ?? ''); ?></span> ปี
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                เลขประจำตัวบัตรประชาชน <span class="underline underline-mid"></span>
+                เลขประจำตัวบัตรประชาชน <span class="underline underline-mid"><?php echo h($contract['tnt_idcard'] ?? ''); ?></span>
                 สถานศึกษา <span class="underline underline-long"><?php echo h($contract['tnt_education'] ?? ''); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
@@ -346,7 +356,7 @@ function nameWithoutNickname($fullName) {
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
                 เบอร์โทร <span class="underline underline-phone"><?php echo h($contract['tnt_phone'] ?? ''); ?></span>
                 เบอร์โทรผู้ปกครอง <span class="underline underline-phone"><?php echo h($contract['tnt_parentsphone'] ?? ''); ?></span>
-                บัตรประจำตัวประชาชน <span class="underline underline-long"></span>
+                บัตรประจำตัวประชาชน <span class="underline underline-long"><?php echo h($contract['tnt_idcard'] ?? ''); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left; display: flex; align-items: flex-end; gap: 6px;">
                 ที่อยู่ตามบัตร <span class="underline underline-xl" style="flex: 1; justify-content: flex-start; text-align: left; color: #0066cc;"><?php echo h($contract['tnt_address'] ?? ''); ?></span>
@@ -416,7 +426,7 @@ function nameWithoutNickname($fullName) {
                 <span class="underline underline-xl" style="color: #000;">กำหนดเมื่อผู้เช่ากระทำผิดระเบียบของหอพัก คู่สัญญาได้อ่านและเข้าใจข้อความดีแล้ว จึงลงลายมือชื่อไว้เป็นสำคัญ</span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                ข้อ 5. ถ้ามีสิ่งใดเสียหายผู้เช่ายินดีชดใช้ และให้หักเงินประกั
+                ข้อ 5. ถ้ามีสิ่งใดเสียหายผู้เช่ายินดีชดใช้ และให้หักเงินประกัน
             </div>
         </div>
         <div class="signatures">
@@ -435,12 +445,16 @@ function nameWithoutNickname($fullName) {
             </div>
             <div class="signature-box owner" style="max-width: 60%; margin: 0 auto;">
                 <div class="signature-row">
+                    <?php if (!empty($ownerSignature)): ?>
+                    <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($ownerSignature); ?>" alt="ลายเซ็น" style="height: 50px; max-width: 150px; object-fit: contain;">
+                    <?php else: ?>
                     <span class="signature-line"></span>
+                    <?php endif; ?>
                     <span class="signature-label">ผู้ให้เช่า</span>
                 </div>
                 <div class="signature-row">
                     <span class="signature-paren">(</span>
-                    <span class="signature-line" style="width: 220px; text-align: center; line-height: 1.4;">นางรุ่งทิพย์ ชิ้นจอหอ</span>
+                    <span class="signature-line" style="width: 220px; text-align: center; line-height: 1.4;"><?php echo htmlspecialchars($ownerName); ?></span>
                     <span class="signature-paren">)</span>
                 </div>
             </div>

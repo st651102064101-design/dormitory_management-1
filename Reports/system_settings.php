@@ -24,7 +24,7 @@ $pdo = connectDB();
 include __DIR__ . '/settings/settings_data.php';
 ?>
 <!doctype html>
-<html lang="th">
+<html lang="th" class="apple-settings-html">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -35,12 +35,24 @@ include __DIR__ . '/settings/settings_data.php';
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
   <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/lottie-icons.css">
-  <link rel="stylesheet" href="settings/apple-settings.css">
+  <link rel="stylesheet" href="/dormitory_management/Reports/settings/apple-settings.css">
   <!-- Explicit Prompt font load to ensure Thai sans-serif (no serifs) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
+  <?php
+    $hex = ltrim((string)$themeColor, '#');
+    $themeIsLight = false;
+    if (strlen($hex) === 6) {
+      $r = hexdec(substr($hex, 0, 2));
+      $g = hexdec(substr($hex, 2, 2));
+      $b = hexdec(substr($hex, 4, 2));
+      $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+      $themeIsLight = $brightness > 155;
+    }
+    $fallbackTextColor = $themeIsLight ? '#111827' : '#f1f5f9';
+  ?>
   <style>
     /* Force Prompt everywhere (Thai sans-serif, no serifs) */
     html, body, * {
@@ -48,20 +60,220 @@ include __DIR__ . '/settings/settings_data.php';
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
+
+    /* Fallback text color if settings CSS fails to load */
+    body.apple-settings-page {
+      color: var(--apple-text, <?php echo $fallbackTextColor; ?>);
+    }
+
+    /* ===== CRITICAL FIX: Desktop & Mobile Responsive Layout ===== */
+    
+    /* Override animate-ui.css overflow hidden */
+    html.apple-settings-html,
+    body.apple-settings-page {
+      overflow: visible !important;
+      overflow-y: auto !important;
+      height: auto !important;
+      min-height: 100vh !important;
+    }
+    
+    /* Hide any default manage-panel that may exist */
+    body.apple-settings-page .manage-panel {
+      display: none !important;
+    }
+
+    /* Override animate-ui.css flex display on .app-main */
+    body.apple-settings-page .app-main {
+      display: block !important;
+      flex: 1 1 auto !important;
+      height: auto !important;
+      min-height: 100vh !important;
+      overflow-y: auto !important;
+      overflow-x: hidden !important;
+      box-sizing: border-box !important;
+      padding: 0 !important;
+      gap: 0 !important;
+      align-items: stretch !important;
+    }
+
+    /* Override .app-main > div rules from page_header.php */
+    body.apple-settings-page .app-main > .apple-settings-wrapper {
+      padding-left: 0 !important;
+      padding-right: 0 !important;
+      width: 100% !important;
+    }
+
+    /* Desktop - flex layout with sidebar */
+    body.apple-settings-page .app-shell {
+      display: flex !important;
+      flex-direction: row !important;
+      height: auto !important;
+      min-height: 100vh !important;
+      position: relative !important;
+      width: 100% !important;
+    }
+
+    /* Ensure content is visible */
+    body.apple-settings-page .apple-settings-wrapper {
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 40px 24px 100px;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+
+    /* Mobile - sidebar hidden, full width content */
+    @media (max-width: 1024px) {
+      body.apple-settings-page .app-shell {
+        display: block !important;
+        flex-direction: column !important;
+      }
+
+      body.apple-settings-page .app-main {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin-left: 0 !important;
+        padding: 0 !important;
+      }
+
+      body.apple-settings-page .apple-settings-wrapper {
+        padding: 60px 16px 100px !important;
+        max-width: 100% !important;
+      }
+    }
+
+    /* Desktop - content next to sidebar */
+    @media (min-width: 1025px) {
+      body.apple-settings-page .app-main {
+        margin-left: 0 !important;
+        width: auto !important;
+        max-width: none !important;
+      }
+
+      body.apple-settings-page .apple-settings-wrapper {
+        max-width: 700px !important;
+        margin: 0 auto !important;
+        padding: 40px 24px 100px !important;
+      }
+    }
   </style>
 </head>
 <body class="reports-page apple-settings-page" data-theme-color="<?php echo htmlspecialchars($themeColor); ?>">
   <div class="app-shell">
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     
-    <!-- Floating Menu Button -->
-    <button class="apple-menu-btn" id="apple-menu-btn" aria-label="เปิดเมนู">
+    <!-- Critical Layout Override - After Sidebar CSS -->
+    <style>
+      /* Hide Sidebar Completely for Apple Settings Page */
+      body.apple-settings-page .app-sidebar {
+        display: none !important;
+      }
+      
+      /* Hide Menu Button - No Sidebar Needed */
+      body.apple-settings-page .apple-menu-btn {
+        display: none !important;
+      }
+      
+      /* Override sidebar.php CSS for apple-settings-page */
+      body.apple-settings-page,
+      html.apple-settings-html {
+        overflow: visible !important;
+        overflow-y: auto !important;
+        height: auto !important;
+        min-height: 100vh !important;
+      }
+      
+      body.apple-settings-page .app-shell {
+        display: block !important;
+        height: auto !important;
+        min-height: 100vh !important;
+      }
+      
+      body.apple-settings-page .app-main {
+        display: block !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: auto !important;
+        min-height: 100vh !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+      }
+      
+      body.apple-settings-page .apple-settings-wrapper {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        max-width: 900px !important;
+        margin: 0 auto !important;
+        padding: 40px 24px 100px !important;
+      }
+      
+      /* Mobile adjustments */
+      @media (max-width: 768px) {
+        body.apple-settings-page .apple-settings-wrapper {
+          padding: 60px 16px 100px !important;
+        }
+      }
+      
+      /* Back Button Style */
+      .apple-back-btn {
+        position: fixed !important;
+        top: 20px !important;
+        left: 20px !important;
+        width: 48px !important;
+        height: 48px !important;
+        border-radius: 14px !important;
+        background: var(--apple-card) !important;
+        border: none !important;
+        cursor: pointer !important;
+        z-index: 10001 !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        text-decoration: none !important;
+      }
+      
+      .apple-back-btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+        background: var(--apple-blue) !important;
+      }
+      
+      .apple-back-btn:hover svg {
+        stroke: #ffffff !important;
+      }
+      
+      .apple-back-btn:active {
+        transform: scale(0.95);
+      }
+      
+      .apple-back-btn svg {
+        width: 22px;
+        height: 22px;
+        stroke: var(--apple-text);
+        stroke-width: 2.5;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        transition: stroke 0.2s ease;
+      }
+    </style>
+    
+    <!-- Back Button -->
+    <a href="/dormitory_management/Reports/dashboard.php" class="apple-back-btn" aria-label="ย้อนกลับ">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <line x1="3" y1="6" x2="21" y2="6"></line>
-        <line x1="3" y1="12" x2="21" y2="12"></line>
-        <line x1="3" y1="18" x2="21" y2="18"></line>
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
       </svg>
-    </button>
+    </a>
     
     <main class="app-main">
       <!-- Apple Settings UI -->
@@ -126,8 +338,88 @@ include __DIR__ . '/settings/settings_data.php';
   <!-- Scripts -->
   <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
   <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>
-  <script src="settings/apple-settings.js"></script>
+  <script src="/dormitory_management/Reports/settings/apple-settings.js"></script>
   <script>
+  // Force layout fix for desktop
+  (function() {
+    function forceLayoutFix() {
+      const html = document.documentElement;
+      const body = document.body;
+      const appShell = document.querySelector('.app-shell');
+      const appMain = document.querySelector('.app-main');
+      const wrapper = document.querySelector('.apple-settings-wrapper');
+      
+      // Force override styles
+      if (html) {
+        html.style.overflow = 'visible';
+        html.style.overflowY = 'auto';
+        html.style.height = 'auto';
+        html.style.minHeight = '100vh';
+      }
+      
+      if (body) {
+        body.style.overflow = 'visible';
+        body.style.overflowY = 'auto';
+        body.style.height = 'auto';
+        body.style.minHeight = '100vh';
+      }
+      
+      if (appShell) {
+        appShell.style.display = 'flex';
+        appShell.style.flexDirection = 'row';
+        appShell.style.minHeight = '100vh';
+        appShell.style.height = 'auto';
+      }
+      
+      if (appMain) {
+        appMain.style.display = 'block';
+        appMain.style.flex = '1 1 auto';
+        appMain.style.minHeight = '100vh';
+        appMain.style.height = 'auto';
+        appMain.style.overflowY = 'auto';
+        appMain.style.visibility = 'visible';
+        appMain.style.opacity = '1';
+      }
+      
+      if (wrapper) {
+        wrapper.style.display = 'block';
+        wrapper.style.visibility = 'visible';
+        wrapper.style.opacity = '1';
+      }
+      
+      // Mobile adjustments
+      if (window.innerWidth <= 1024) {
+        if (appShell) {
+          appShell.style.display = 'block';
+          appShell.style.flexDirection = 'column';
+        }
+        if (appMain) {
+          appMain.style.width = '100%';
+          appMain.style.maxWidth = '100%';
+          appMain.style.marginLeft = '0';
+        }
+      }
+    }
+    
+    // Run on DOM ready and after a short delay
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', forceLayoutFix);
+    } else {
+      forceLayoutFix();
+    }
+    
+    // Also run after window load to catch late-loading CSS
+    window.addEventListener('load', forceLayoutFix);
+    
+    // Run on resize for responsive adjustments
+    window.addEventListener('resize', forceLayoutFix);
+    
+    // Run immediately as well
+    setTimeout(forceLayoutFix, 0);
+    setTimeout(forceLayoutFix, 100);
+    setTimeout(forceLayoutFix, 500);
+  })();
+  
   // Connect apple-menu-btn to global sidebar toggle
   (function() {
     const menuBtn = document.getElementById('apple-menu-btn');
