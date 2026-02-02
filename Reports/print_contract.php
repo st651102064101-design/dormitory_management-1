@@ -298,7 +298,7 @@ function nameWithoutNickname($fullName) {
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Cordia New', Tahoma, serif; font-size: 14px; line-height: 1.6; background: #f5f5f5; padding: 20px; font-weight: normal; -webkit-font-smoothing: antialiased; }
         @page { size: A4; margin: 0; font-family: 'Cordia New', Tahoma, serif; }
-        .print-container { width: 210mm; min-height: 297mm; height: auto; padding: 20mm 12.7mm 20mm 20.32mm; background: white; margin: 20px auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
+        .print-container { width: 210mm; min-height: 297mm; height: auto; padding: 20mm 12.7mm 20mm 20.32mm; background: white; margin: 20px auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-family: 'Cordia New', Tahoma, serif; font-weight: normal; position: relative; }
         .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #000; font-family: 'Cordia New', Tahoma, serif; }
         .header h1 { font-size: 18px; margin-bottom: 5px; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
         .header p { font-size: 13px; margin: 2px 0; font-family: 'Cordia New', Tahoma, serif; }
@@ -318,6 +318,61 @@ function nameWithoutNickname($fullName) {
         .signature-label { white-space: nowrap; font-family: 'Cordia New', Tahoma, serif; }
         .signature-paren { white-space: nowrap; font-family: 'Cordia New', Tahoma, serif; }
         .clause-line { margin-bottom: 10px; font-family: 'Cordia New', Tahoma, serif; }
+        
+        /* ===== SECURITY: Prevent signature theft ===== */
+        /* Disable image selection and dragging */
+        img { 
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+            pointer-events: none;
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-drag: none;
+        }
+        
+        /* Watermark overlay on signature */
+        .signature-protected {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .signature-watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 9px;
+            color: rgba(0, 0, 0, 0.15);
+            font-weight: bold;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 10;
+            text-shadow: 0 0 1px rgba(255,255,255,0.5);
+        }
+        
+        /* Screen watermark (hidden on print) */
+        .screen-watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) rotate(-45deg);
+            font-size: 72px;
+            color: rgba(0, 0, 0, 0.05);
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 9999;
+            white-space: nowrap;
+        }
+        
+        @media print {
+            .screen-watermark { display: none; }
+            body { background: white; padding: 0; }
+            .print-container { box-shadow: none; margin: 0; }
+        }
         .underline { display: inline-flex; align-items: flex-end; justify-content: center; vertical-align: baseline; min-width: 40px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: center; line-height: 1; color: #0066cc; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
         .underline-long { min-width: 120px; }
         .underline-mid { min-width: 90px; }
@@ -446,7 +501,17 @@ function nameWithoutNickname($fullName) {
             <div class="signature-box owner" style="max-width: 60%; margin: 0 auto;">
                 <div class="signature-row">
                     <?php if (!empty($ownerSignature)): ?>
-                    <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($ownerSignature); ?>" alt="ลายเซ็น" style="height: 50px; max-width: 150px; object-fit: contain;margin-left: 5rem;margin-right: 5rem;">
+                    <div class="signature-protected">
+                        <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($ownerSignature); ?>" 
+                             alt="ลายเซ็น" 
+                             style="height: 50px; max-width: 150px; object-fit: contain;margin-left: 5.5rem;margin-right: 4.5rem;"
+                             oncontextmenu="return false;"
+                             ondragstart="return false;">
+                        <div class="signature-watermark">
+                            <?php echo htmlspecialchars(nameWithoutNickname($contract['tnt_name'] ?? '')); ?><br>
+                            #<?php echo str_pad((string)$ctr_id, 4, '0', STR_PAD_LEFT); ?>
+                        </div>
+                    </div>
                     <?php else: ?>
                     <span class="signature-line"></span>
                     <?php endif; ?>
@@ -460,7 +525,52 @@ function nameWithoutNickname($fullName) {
             </div>
         </div>
     </div>
+    
+    <!-- Screen watermark (hidden on print) -->
+    <div class="screen-watermark">
+        สัญญา #<?php echo str_pad((string)$ctr_id, 4, '0', STR_PAD_LEFT); ?> - <?php echo htmlspecialchars(nameWithoutNickname($contract['tnt_name'] ?? '')); ?>
+    </div>
+    
     <script>
+        // Security: Disable right-click context menu
+        document.addEventListener('contextmenu', function(e) {
+            e.preventDefault();
+            return false;
+        });
+        
+        // Security: Disable common screenshot shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Disable F12, Ctrl+Shift+I, Ctrl+Shift+C, Ctrl+U
+            if (e.keyCode === 123 || 
+                (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 67)) ||
+                (e.ctrlKey && e.keyCode === 85)) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Disable Print Screen (partially - can't fully block)
+            if (e.keyCode === 44) {
+                e.preventDefault();
+                alert('การจับภาพหน้าจอถูกปิดใช้งานเพื่อความปลอดภัยของเอกสาร');
+                return false;
+            }
+            
+            // Disable Ctrl+P (print) - force use browser print button instead
+            if (e.ctrlKey && e.keyCode === 80) {
+                e.preventDefault();
+                window.print();
+                return false;
+            }
+        });
+        
+        // Disable drag and drop for all images
+        document.querySelectorAll('img').forEach(function(img) {
+            img.addEventListener('dragstart', function(e) {
+                e.preventDefault();
+                return false;
+            });
+        });
+        
         // Toggle card/table view on list page
         const toggleBtn = document.getElementById('toggle-view');
         const gridView = document.querySelector('.grid');
