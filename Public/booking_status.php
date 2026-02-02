@@ -381,6 +381,25 @@ if ($currentStatus === '1' && $expStatus === '1') {
             --danger: #ef4444;
         }
         
+        /* Animations */
+        @keyframes pulse-warning {
+            0%, 100% {
+                box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2);
+            }
+            50% {
+                box-shadow: 0 8px 32px rgba(245, 158, 11, 0.4);
+            }
+        }
+        
+        @keyframes bounce-gentle {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
+        }
+        
         body {
             font-family: 'Prompt', sans-serif;
             background: var(--bg);
@@ -705,6 +724,12 @@ if ($currentStatus === '1' && $expStatus === '1') {
             background: var(--card-hover);
         }
         
+        /* Warning Alert Button Hover */
+        a[href*="contract.php"][style*="linear-gradient"]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5) !important;
+        }
+        
         @media (max-width: 480px) {
             .info-grid {
                 grid-template-columns: 1fr;
@@ -890,6 +915,42 @@ if ($currentStatus === '1' && $expStatus === '1') {
                 </div>
                 <?php endforeach; ?>
             </div>
+            
+            <!-- Alert สำหรับเตือนให้เซ็นสัญญา (แสดงเมื่อ step 3 และยังไม่ถึง 4) -->
+            <?php if ($currentStep === 3 && !empty($bookingInfo['access_token']) && $expStatus === '1'): ?>
+            <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 16px; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2); animation: pulse-warning 2s ease-in-out infinite;">
+                <div style="display: flex; align-items: start; gap: 16px;">
+                    <div style="width: 48px; height: 48px; background: #f59e0b; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; animation: bounce-gentle 1.5s ease-in-out infinite;">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                    </div>
+                    <div style="flex: 1;">
+                        <div style="font-size: 1.125rem; font-weight: 700; color: #92400e; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                            <span>⚠️ จำเป็นต้องเซ็นสัญญา!</span>
+                        </div>
+                        <div style="font-size: 0.9375rem; color: #78350f; margin-bottom: 16px; line-height: 1.6;">
+                            คุณต้องเข้าไปเพิ่ม<strong>ลายเซ็นของคุณ</strong>ในสัญญาเช่าก่อนที่จะดำเนินการขั้นตอนต่อไป กรุณาคลิกปุ่มด้านล่างเพื่อไปยังหน้าสัญญาและเซ็นชื่อ
+                        </div>
+                        <a href="../Tenant/contract.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank" style="display: inline-flex; align-items: center; gap: 10px; padding: 14px 24px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 0.9375rem; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3); transition: all 0.3s ease; border: 2px solid #b45309;">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                                <polyline points="14 2 14 8 20 8"/>
+                                <line x1="16" y1="13" x2="8" y2="13"/>
+                                <line x1="16" y1="17" x2="8" y2="17"/>
+                                <polyline points="10 9 9 9 8 9"/>
+                            </svg>
+                            <span>เข้าไปเซ็นสัญญาเลย</span>
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         
         <!-- Payment Card -->
@@ -1023,8 +1084,11 @@ if ($currentStatus === '1' && $expStatus === '1') {
                 </div>
                 <div style="flex: 1;">
                     <div style="font-weight: 600;">สัญญาเช่าพร้อมแล้ว</div>
-                    <a href="../Tenant/contract.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank" style="color: var(--success); text-decoration: none; font-size: 0.875rem;">
-                        ดูสัญญา →
+                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin: 4px 0 8px;">
+                        กรุณาคลิกเพื่อดูและเพิ่มลายเซ็นของคุณในสัญญา
+                    </div>
+                    <a href="../Tenant/contract.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank" style="color: var(--success); text-decoration: none; font-size: 0.875rem; font-weight: 500;">
+                        ดูสัญญาและเซ็นชื่อ →
                     </a>
                 </div>
             </div>
