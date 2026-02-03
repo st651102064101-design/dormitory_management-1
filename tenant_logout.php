@@ -16,6 +16,6 @@ unset($_SESSION['tenant_logged_in']);
 // Destroy entire session
 session_destroy();
 
-// Redirect กลับไปหน้าหลัก
-header('Location: /dormitory_management/index.php');
+// Redirect ไปหน้า Login
+header('Location: /dormitory_management/Login.php');
 exit;

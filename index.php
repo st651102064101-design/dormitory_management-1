@@ -20,8 +20,8 @@ require_once __DIR__ . '/ConnectDB.php';
 
 $pdo = connectDB();
 
-// ถ้า user login Google และมีสัญญาแล้ว ให้ redirect ไป Tenant/index.php
-if (!empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id'])) {
+// ถ้า user login Google และมีสัญญาแล้ว ให้ redirect ไป Tenant/index.php (เฉพาะเมื่อไม่ได้อยู่ใน Tenant folder)
+if (!empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id']) && strpos($_SERVER['REQUEST_URI'], '/Tenant/') === false) {
     try {
         $chkStmt = $pdo->prepare("
             SELECT c.access_token 
@@ -35,10 +35,12 @@ if (!empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id'])) {
         
         if ($contractCheck && !empty($contractCheck['access_token'])) {
             // มีสัญญา ให้ redirect ไป Tenant/index.php
-            header('Location: Tenant/index.php?token=' . urlencode($contractCheck['access_token']));
+            header('Location: /dormitory_management/Tenant/index.php?token=' . urlencode($contractCheck['access_token']), true, 302);
             exit;
         }
-    } catch (PDOException $e) {}
+    } catch (Exception $e) {
+        error_log("Redirect error: " . $e->getMessage());
+    }
 }
 
 // ดึงค่าตั้งค่าระบบ
