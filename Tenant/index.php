@@ -73,19 +73,14 @@ if (!$contractData) {
 }
 
 $contract = $contractData;
-    
-    // เก็บข้อมูลใน session สำหรับหน้าอื่นๆ
-    $_SESSION['tenant_token'] = $token;
-    $_SESSION['tenant_ctr_id'] = $contract['ctr_id'];
-    $_SESSION['tenant_tnt_id'] = $contract['tnt_id'];
-    $_SESSION['tenant_room_id'] = $contract['room_id'];
-    $_SESSION['tenant_room_number'] = $contract['room_number'];
-    $_SESSION['tenant_name'] = $contract['tnt_name'];
-    
-} catch (PDOException $e) {
-    http_response_code(500);
-    die('<div style="text-align:center;padding:50px;font-family:sans-serif;"><h1>❌ เกิดข้อผิดพลาด</h1><p>กรุณาลองใหม่อีกครั้ง</p></div>');
-}
+
+// เก็บข้อมูลใน session สำหรับหน้าอื่นๆ
+$_SESSION['tenant_token'] = $token;
+$_SESSION['tenant_ctr_id'] = $contract['ctr_id'];
+$_SESSION['tenant_tnt_id'] = $contract['tnt_id'];
+$_SESSION['tenant_room_id'] = $contract['room_id'];
+$_SESSION['tenant_room_number'] = $contract['room_number'];
+$_SESSION['tenant_name'] = $contract['tnt_name'];
 
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';

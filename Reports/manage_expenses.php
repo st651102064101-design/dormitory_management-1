@@ -609,9 +609,9 @@ try {
                             $elecTotal = (int)($exp['exp_elec_chg'] ?? 0);
                             $elecRate = $elecUnits > 0 ? $elecTotal / $elecUnits : 0;
                           ?>
-                          <div><strong>ใช้ไฟ <?php echo number_format($elecUnits); ?></strong> หน่วย</div>
+                          <div style="color:#ffffff;font-weight:600;">ยอดการใช้ไฟ: ฿<?php echo number_format($elecTotal); ?></div>
+                          <div class="expense-meta"><strong>ใช้ไฟ <?php echo number_format($elecUnits); ?></strong> หน่วย</div>
                           <div class="expense-meta">฿<?php echo number_format($elecRate, 2); ?> / หน่วย</div>
-                          <div class="expense-meta">ยอดการใช้ไฟ: ฿<?php echo number_format($elecTotal); ?></div>
                         </td>
                         <td style="text-align:right;">
                           <?php
@@ -619,22 +619,72 @@ try {
                             $waterTotal = (int)($exp['exp_water'] ?? 0);
                             $waterRate = $waterUnits > 0 ? $waterTotal / $waterUnits : 0;
                           ?>
-                          <div><strong><?php echo number_format($waterUnits); ?></strong> หน่วย</div>
+                          <div style="color:#ffffff;font-weight:600;">ยอดการใช้น้ำ: ฿<?php echo number_format($waterTotal); ?></div>
+                          <div class="expense-meta"><strong><?php echo number_format($waterUnits); ?></strong> หน่วย</div>
                           <div class="expense-meta">฿<?php echo number_format($waterRate, 2); ?> / หน่วย</div>
-                          <div class="expense-meta">ยอดการใช้น้ำ: ฿<?php echo number_format($waterTotal); ?></div>
                         </td>
                         <td style="text-align:right;">
                           <?php 
-                            $status = (string)($exp['exp_status'] ?? '');
+                            // Calculate status based on actual payments, not database field
+                            $expId = (int)$exp['exp_id'];
+                            
+                            // Get deposit and charges payment info
+                            $statusStmt = $pdo->prepare("
+                              SELECT 
+                                COALESCE(SUM(CASE WHEN pay_remark = 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as deposit_paid,
+                                COALESCE(SUM(CASE WHEN pay_remark IS NULL OR pay_remark != 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as charges_paid
+                              FROM payment
+                              WHERE exp_id = ? AND pay_status = '1'
+                            ");
+                            $statusStmt->execute([$expId]);
+                            $statusData = $statusStmt->fetch(PDO::FETCH_ASSOC);
+                            $statusDepositPaid = (int)($statusData['deposit_paid'] ?? 0);
+                            $statusChargesPaid = (int)($statusData['charges_paid'] ?? 0);
+                            
+                            $statusDepositTotal = 2000;
+                            $statusChargesTotal = (int)($exp['exp_total'] ?? 0);
+                            
+                            // Determine status based on payments
+                            if ($statusDepositPaid >= $statusDepositTotal && $statusChargesPaid >= $statusChargesTotal) {
+                              $status = '1'; // ชำระแล้ว
+                            } elseif ($statusDepositPaid > 0 || $statusChargesPaid > 0) {
+                              $status = '3'; // ชำระยังไม่ครบ
+                            } else {
+                              $status = '0'; // ยังไม่ชำระ
+                            }
+                            
                             // ยอดรวมเป็นสีแดง ถ้าสถานะเป็น "ยังไม่ชำระ" หรือ "ชำระยังไม่ครบ"
                             $totalColor = (in_array($status, ['0', '3'])) ? '#ef4444' : '#22c55e';
                           ?>
                           <strong style="color:<?php echo $totalColor; ?>;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></strong>
                         </td>
                         <td>
-                          <?php $status = (string)($exp['exp_status'] ?? ''); ?>
+                          <?php
+                            // Determine what's unpaid
+                            $unpaidItems = [];
+                            $depositRemainStatus = $statusDepositTotal - $statusDepositPaid;
+                            $chargesRemainStatus = $statusChargesTotal - $statusChargesPaid;
+                            
+                            if ($depositRemainStatus > 0) {
+                              $unpaidItems[] = 'มัดจำ';
+                            }
+                            if ($chargesRemainStatus > 0) {
+                              $unpaidItems[] = 'ค่าห้อง';
+                            }
+                            
+                            $unpaidText = '';
+                            if ($status === '1') {
+                              $unpaidText = $statusMap[$status] ?? 'ไม่ระบุ';
+                            } elseif ($status === '0') {
+                              $unpaidText = 'ยังไม่ชำระ: ' . implode(' + ', $unpaidItems);
+                            } elseif ($status === '3') {
+                              $unpaidText = 'ชำระยังไม่ครบ: ' . implode(' + ', $unpaidItems);
+                            } else {
+                              $unpaidText = $statusMap[$status] ?? 'ไม่ระบุ';
+                            }
+                          ?>
                           <span class="status-badge" style="background: <?php echo $statusColors[$status] ?? '#94a3b8'; ?>;">
-                            <?php echo $statusMap[$status] ?? 'ไม่ระบุ'; ?>
+                            <?php echo $unpaidText; ?>
                           </span>
                         </td>
                         <td class="crud-column">
@@ -690,14 +740,20 @@ try {
                             
                             <!-- ค่าห้อง -->
                             <div>
-                              <div style="color:#94a3b8;font-weight:600;margin-bottom:0.25rem;font-size:0.8rem;">🏠 ค่าห้อง (฿<?php echo number_format($expTotal); ?>)</div>
+                              <?php 
+                                $roomPrice = (int)($exp['room_price'] ?? 0);
+                                $elecChg = (int)($exp['exp_elec_chg'] ?? 0);
+                                $waterChg = (int)($exp['exp_water'] ?? 0);
+                                $totalCharge = $roomPrice + $elecChg + $waterChg;
+                              ?>
+                              <div style="color:#94a3b8;font-weight:600;margin-bottom:0.25rem;font-size:0.8rem;cursor:help;" title="ประกอบด้วย: ค่าห้อง ฿<?php echo number_format($roomPrice); ?> + น้ำ ฿<?php echo number_format($waterChg); ?> + ไฟ ฿<?php echo number_format($elecChg); ?>">🏠 ค่าห้อง (฿<?php echo number_format($totalCharge); ?>) <span style="font-size:0.7rem;color:#64748b;">*+น้ำ+ไฟ</span></div>
                               <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.2rem;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                                 <span style="font-size:0.8rem;"><strong style="color:#22c55e;">ชำระแล้ว:</strong> <strong style="color:#22c55e;">฿<?php echo number_format($chargesPaid); ?></strong></span>
                               </div>
                               <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.3rem;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                <span style="font-size:0.8rem;"><strong style="color:#ef4444;">ยังไม่ชำระ:</strong> <strong style="color:<?php echo $chargesRemain > 0 ? '#ef4444' : '#22c55e'; ?>;">฿<?php echo number_format($chargesRemain); ?></strong></span>
+                                <span style="font-size:0.8rem;"><strong style="color:#ef4444;">ยังไม่ชำระ:</strong> <strong style="color:#ef4444;">฿<?php echo number_format($chargesRemain); ?></strong></span>
                               </div>
                               <?php if ($chargesCount > 0): ?>
                               <div style="padding:0.35rem 0.5rem;background:rgba(34,197,94,0.1);border-radius:6px;display:inline-flex;align-items:center;gap:0.3rem;">

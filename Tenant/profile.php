@@ -288,6 +288,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="header-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="back-btn">←</a>
             <h1 class="header-title">ข้อมูลส่วนตัว</h1>
+            <?php if (!empty($_SESSION['tenant_logged_in'])): ?>
+            <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                <a href="../index.php" style="padding: 0.5rem 1rem; background: rgba(99, 102, 241, 0.2); color: #818cf8; border-radius: 8px; text-decoration: none; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>
+                        <polyline points="9 22 9 12 15 12 15 22"/>
+                    </svg>
+                    หน้าหลัก
+                </a>
+                <a href="../tenant_logout.php" style="padding: 0.5rem 1rem; background: rgba(239, 68, 68, 0.2); color: #f87171; border-radius: 8px; text-decoration: none; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    ออกจากระบบ
+                </a>
+            </div>
+            <?php endif; ?>
         </div>
     </header>
     

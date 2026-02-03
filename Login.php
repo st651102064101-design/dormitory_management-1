@@ -533,6 +533,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         to { transform: rotate(360deg); }
       }
 
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+
+      @keyframes bounce {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-3px); }
+      }
+
+      @keyframes swing {
+        0%, 100% { transform: rotate(0deg); }
+        50% { transform: rotate(10deg); }
+      }
+
       /* Button States */
       .submit-btn .btn-text,
       .submit-btn .btn-loading {
@@ -2422,6 +2437,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <circle cx="12" cy="7" r="4"/>
               </svg>
             </div>
+            <small style="display: flex; align-items: center; gap: 6px; margin-top: 6px; font-size: 0.75rem; color: #94a3b8;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation: bounce 1s ease-in-out infinite;">
+                <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+                <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+              </svg>
+              สำหรับเจ้าของหอพักเท่านั้น
+            </small>
           </div>
           
           <div class="form-group">
@@ -2471,12 +2493,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </a>
         
         <p class="google-login-note">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="16" x2="12" y2="12"/>
-            <line x1="12" y1="8" x2="12.01" y2="8"/>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14" style="animation: swing 1s ease-in-out infinite; transform-origin: top center;">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
           </svg>
-          รองรับทั้งผู้ดูแลระบบและผู้เช่า
+          สำหรับผู้เช่า และ เจ้าของหอพัก
         </p>
         <?php endif; ?>
         
