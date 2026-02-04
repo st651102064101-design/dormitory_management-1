@@ -606,26 +606,26 @@ function nameWithoutNickname($fullName) {
                 ข้าพเจ้า นางรุ่งทิพย์ ชิ้นจอหอ ผู้จัดการหอพักแสงเทียน ซึ่งต่อไปนี้เรียกว่า "ผู้ให้เช่า" ฝ่ายหนึ่ง กับข้าพเจ้า
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.&nbsp;&nbsp; ชื่อ <span class="editable-field underline-long <?php echo (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_name" data-type="firstname" data-placeholder="กรอกชื่อ..."><?php echo h(firstNameWithoutSurname($contract['tnt_name'] ?? '')); ?></span>
-                สกุล <span class="editable-field underline-long <?php echo (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_name" data-type="lastname" data-placeholder="กรอกนามสกุล..."><?php echo h(surnameFromFullName($contract['tnt_name'] ?? '')); ?></span>
-                อายุ <span class="editable-field underline-short <?php echo (empty($contract['tnt_age']) || $contract['tnt_age'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_age" data-placeholder="..."><?php echo h($contract['tnt_age'] ?? ''); ?></span> ปี
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.&nbsp;&nbsp; ชื่อ <span class="editable-field underline-long <?php echo (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_name" data-type="firstname" data-placeholder="กรอกชื่อ..."><?php $fn = firstNameWithoutSurname($contract['tnt_name'] ?? ''); echo ($fn === '-' ? '' : h($fn)); ?></span>
+                สกุล <span class="editable-field underline-long <?php echo (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_name" data-type="lastname" data-placeholder="กรอกนามสกุล..."><?php $ln = surnameFromFullName($contract['tnt_name'] ?? ''); echo ($ln === '-' ? '' : h($ln)); ?></span>
+                อายุ <span class="editable-field underline-short <?php echo (empty($contract['tnt_age']) || $contract['tnt_age'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_age" data-placeholder="..." data-maxlength="3" data-minlength="2" data-type-validate="number"><?php $age = $contract['tnt_age'] ?? ''; echo ($age === '-' ? '' : h($age)); ?></span> ปี
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                เลขประจำตัวบัตรประชาชน <span class="editable-field underline-mid <?php echo (empty($contract['tnt_idcard']) || $contract['tnt_idcard'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_idcard" data-placeholder="กรอกเลขบัตร..." id="idcard-primary"><?php echo h($contract['tnt_idcard'] ?? ''); ?></span>
-                สถานศึกษา <span class="editable-field underline-long <?php echo (empty($contract['tnt_education']) || $contract['tnt_education'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_education" data-placeholder="กรอกสถานศึกษา..."><?php echo h($contract['tnt_education'] ?? ''); ?></span>
+                เลขประจำตัวบัตรประชาชน <span class="editable-field underline-mid <?php echo (empty($contract['tnt_idcard']) || $contract['tnt_idcard'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_idcard" data-placeholder="กรอกเลขบัตร..." id="idcard-primary" data-maxlength="13" data-minlength="13" data-type-validate="number"><?php $idc = $contract['tnt_idcard'] ?? ''; echo ($idc === '-' ? '' : h($idc)); ?></span>
+                สถานศึกษา <span class="editable-field underline-long <?php echo (empty($contract['tnt_education']) || $contract['tnt_education'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_education" data-placeholder="กรอกสถานศึกษา..."><?php $edu = $contract['tnt_education'] ?? ''; echo ($edu === '-' ? '' : h($edu)); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                คณะ <span class="editable-field underline-long <?php echo (empty($contract['tnt_faculty']) || $contract['tnt_faculty'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_faculty" data-placeholder="กรอกคณะ..."><?php echo h($contract['tnt_faculty'] ?? ''); ?></span>
-                ปีที่ <span class="editable-field underline-short <?php echo (empty($contract['tnt_year']) || $contract['tnt_year'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_year" data-placeholder="..."><?php echo h(formatYearValue($contract['tnt_year'] ?? '')); ?></span>
-                มีรถจักรยานยนต์หมายเลขทะเบียน <span class="editable-field underline-wide <?php echo (empty($contract['tnt_vehicle']) || $contract['tnt_vehicle'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_vehicle" data-placeholder="กรอกเลขทะเบียน..."><?php echo h($contract['tnt_vehicle'] ?? ''); ?></span>
+                คณะ <span class="editable-field underline-long <?php echo (empty($contract['tnt_faculty']) || $contract['tnt_faculty'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_faculty" data-placeholder="กรอกคณะ..."><?php $fac = $contract['tnt_faculty'] ?? ''; echo ($fac === '-' ? '' : h($fac)); ?></span>
+                ปีที่ <span class="editable-field underline-short <?php echo (empty($contract['tnt_year']) || $contract['tnt_year'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_year" data-placeholder="..."><?php $yr = formatYearValue($contract['tnt_year'] ?? ''); echo ($yr === '-' ? '' : h($yr)); ?></span>
+                มีรถจักรยานยนต์หมายเลขทะเบียน <span class="editable-field underline-wide <?php echo (empty($contract['tnt_vehicle']) || $contract['tnt_vehicle'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_vehicle" data-placeholder="กรอกเลขทะเบียน..."><?php $veh = $contract['tnt_vehicle'] ?? ''; echo ($veh === '-' ? '' : h($veh)); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                เบอร์โทร <span class="editable-field underline-phone <?php echo (empty($contract['tnt_phone']) || $contract['tnt_phone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_phone" data-placeholder="กรอกเบอร์..."><?php echo h($contract['tnt_phone'] ?? ''); ?></span>
-                เบอร์โทรผู้ปกครอง <span class="editable-field underline-phone <?php echo (empty($contract['tnt_parentsphone']) || $contract['tnt_parentsphone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_parentsphone" data-placeholder="กรอกเบอร์..."><?php echo h($contract['tnt_parentsphone'] ?? ''); ?></span>
-                บัตรประจำตัวประชาชน <span class="underline underline-long" id="idcard-secondary"><?php echo h($contract['tnt_idcard'] ?? ''); ?></span>
+                เบอร์โทร <span class="editable-field underline-phone <?php echo (empty($contract['tnt_phone']) || $contract['tnt_phone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_phone" data-placeholder="กรอกเบอร์..." data-maxlength="10" data-minlength="10" data-type-validate="number"><?php $phone = $contract['tnt_phone'] ?? ''; echo ($phone === '-' ? '' : h($phone)); ?></span>
+                เบอร์โทรผู้ปกครอง <span class="editable-field underline-phone <?php echo (empty($contract['tnt_parentsphone']) || $contract['tnt_parentsphone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_parentsphone" data-placeholder="กรอกเบอร์..." data-maxlength="10" data-minlength="10" data-type-validate="number"><?php $pphone = $contract['tnt_parentsphone'] ?? ''; echo ($pphone === '-' ? '' : h($pphone)); ?></span>
+                บัตรประจำตัวประชาชน <span class="underline underline-long" id="idcard-secondary"><?php $idc2 = $contract['tnt_idcard'] ?? ''; echo ($idc2 === '-' ? '' : h($idc2)); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left; display: flex; align-items: flex-end; gap: 6px;">
-                ที่อยู่ตามบัตร <span class="editable-field underline-xl <?php echo (empty($contract['tnt_address']) || $contract['tnt_address'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_address" data-placeholder="กรอกที่อยู่..." style="flex: 1; justify-content: flex-start; text-align: left;"><?php echo h($contract['tnt_address'] ?? ''); ?></span>
+                ที่อยู่ตามบัตร <span class="editable-field underline-xl <?php echo (empty($contract['tnt_address']) || $contract['tnt_address'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_address" data-placeholder="กรอกที่อยู่..." style="flex: 1; justify-content: flex-start; text-align: left;"><?php $addr = $contract['tnt_address'] ?? ''; echo ($addr === '-' ? '' : h($addr)); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
                 ซึ่งต่อไปนี้ในสัญญานี้เรียกว่า "ผู้เช่า" อีกฝ่ายหนึ่ง ทั้งสองฝ่ายตกลงทำสัญญากันดังนี้มีข้อความต่อไปนี้ คือ
@@ -952,61 +952,6 @@ function nameWithoutNickname($fullName) {
                 }, 2000);
             }
         }
-            }
-            
-            el.classList.add('saving');
-            showHint(el, '💾 กำลังบันทึก...');
-            
-            try {
-                const formData = new FormData();
-                formData.append('ajax_update', '1');
-                formData.append('field', field);
-                formData.append('value', value);
-                
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                const result = await response.json();
-                
-                el.classList.remove('saving');
-                
-                if (result.success) {
-                    el.classList.add('saved');
-                    el.classList.remove('needs-input');
-                    showHint(el, '✓ บันทึกแล้ว');
-                    setTimeout(() => {
-                        el.classList.remove('saved');
-                        hideHint();
-                    }, 1500);
-                    
-                    // Update linked fields (e.g., ID card shown twice)
-                    if (field === 'tnt_idcard') {
-                        document.querySelectorAll('.underline').forEach(span => {
-                            if (span.textContent.trim() === '-' || span.previousSibling?.textContent?.includes('บัตรประจำตัวประชาชน')) {
-                                // Don't update static fields
-                            }
-                        });
-                    }
-                } else {
-                    el.classList.add('error');
-                    showHint(el, '❌ เกิดข้อผิดพลาด');
-                    setTimeout(() => {
-                        el.classList.remove('error');
-                        hideHint();
-                    }, 2000);
-                }
-            } catch (err) {
-                el.classList.remove('saving');
-                el.classList.add('error');
-                showHint(el, '❌ บันทึกไม่สำเร็จ');
-                setTimeout(() => {
-                    el.classList.remove('error');
-                    hideHint();
-                }, 2000);
-            }
-        }
         
         // Setup editable fields
         editableFields.forEach(el => {
@@ -1023,15 +968,62 @@ function nameWithoutNickname($fullName) {
             el.addEventListener('blur', function() {
                 hideHint();
                 if (this.textContent.trim() === '') {
-                    this.textContent = '-';
                     this.classList.add('needs-input');
                 } else {
                     saveField(this);
                 }
             });
             
-            // Auto-save after typing stops
-            el.addEventListener('input', function() {
+            // Auto-save after typing stops + validate maxlength
+            el.addEventListener('input', function(e) {
+                const maxLength = this.dataset.maxlength ? parseInt(this.dataset.maxlength) : null;
+                const minLength = this.dataset.minlength ? parseInt(this.dataset.minlength) : null;
+                const typeValidate = this.dataset.typeValidate;
+                
+                let text = this.textContent;
+                let needsUpdate = false;
+                
+                // Remove non-numeric characters if number-only field
+                if (typeValidate === 'number') {
+                    const cleanText = text.replace(/[^0-9]/g, '');
+                    if (cleanText !== text) {
+                        text = cleanText;
+                        needsUpdate = true;
+                    }
+                }
+                
+                // Enforce maxlength
+                if (maxLength && text.length > maxLength) {
+                    text = text.substring(0, maxLength);
+                    needsUpdate = true;
+                    showHint(this, `❌ กรอกได้สูงสุด ${maxLength} หลัก`);
+                    setTimeout(() => hideHint(), 1500);
+                }
+                
+                // Update text if changed
+                if (needsUpdate) {
+                    // Save current selection
+                    const sel = window.getSelection();
+                    const cursorPos = Math.min(sel.anchorOffset || 0, text.length);
+                    
+                    // Update content
+                    this.textContent = text;
+                    
+                    // Restore cursor position
+                    if (this.firstChild) {
+                        try {
+                            const range = document.createRange();
+                            range.setStart(this.firstChild, cursorPos);
+                            range.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                        } catch (e) {
+                            // Ignore range errors
+                        }
+                    }
+                }
+                
+                // Auto-save after typing stops
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(() => {
                     if (this.textContent.trim() !== '' && this.textContent.trim() !== '-') {
@@ -1040,12 +1032,69 @@ function nameWithoutNickname($fullName) {
                 }, 1500);
             });
             
-            // Prevent Enter key from creating new lines
+            // Prevent Enter key from creating new lines and validate input
             el.addEventListener('keydown', function(e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
                     this.blur();
+                    return;
                 }
+                
+                // Check maxlength before allowing keypress
+                const maxLength = parseInt(this.dataset.maxlength);
+                if (maxLength && this.textContent.length >= maxLength) {
+                    // Allow: backspace, delete, tab, escape, arrow keys, select all
+                    if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Tab' || 
+                        e.key === 'Escape' || e.key.startsWith('Arrow') || 
+                        (e.ctrlKey && e.key === 'a') || (e.metaKey && e.key === 'a') ||
+                        e.ctrlKey || e.metaKey) {
+                        return;
+                    }
+                    e.preventDefault();
+                    showHint(this, `❌ กรอกได้สูงสุด ${maxLength} หลัก`);
+                    setTimeout(() => hideHint(), 1500);
+                    return;
+                }
+                
+                // Validate number-only fields
+                if (this.dataset.typeValidate === 'number') {
+                    // Allow: backspace, delete, tab, escape, arrow keys, numbers
+                    if (e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Tab' || 
+                        e.key === 'Escape' || e.key.startsWith('Arrow') || e.ctrlKey || e.metaKey) {
+                        return;
+                    }
+                    // Check if it's a number
+                    if (!/^[0-9]$/.test(e.key)) {
+                        e.preventDefault();
+                        showHint(this, '❌ กรอกได้เฉพาะตัวเลข');
+                        setTimeout(() => hideHint(), 1500);
+                    }
+                }
+            });
+            
+            // Handle paste event
+            el.addEventListener('paste', function(e) {
+                e.preventDefault();
+                const text = (e.clipboardData || window.clipboardData).getData('text');
+                const maxLength = parseInt(this.dataset.maxlength);
+                const typeValidate = this.dataset.typeValidate;
+                
+                let cleanText = text;
+                
+                // Remove non-numeric if number-only
+                if (typeValidate === 'number') {
+                    cleanText = cleanText.replace(/[^0-9]/g, '');
+                }
+                
+                // Limit to maxlength
+                if (maxLength && cleanText.length > maxLength) {
+                    cleanText = cleanText.substring(0, maxLength);
+                    showHint(this, `❌ กรอกได้สูงสุด ${maxLength} หลัก`);
+                    setTimeout(() => hideHint(), 1500);
+                }
+                
+                // Insert cleaned text
+                document.execCommand('insertText', false, cleanText);
             });
             
             // Show hint on hover for empty fields
@@ -1061,6 +1110,140 @@ function nameWithoutNickname($fullName) {
                 }
             });
         });
+
+        // === SPECIFIC VALIDATION FOR ID CARD FIELD (max 13 digits) ===
+        const idcardField = document.getElementById('idcard-primary');
+        if (idcardField) {
+            // Clear "-" and limit to 13 digits on focus
+            idcardField.addEventListener('focus', function(e) {
+                // Remove "-" or any non-digit
+                let text = this.textContent.replace(/[^0-9]/g, '');
+                if (text.length > 13) {
+                    text = text.substring(0, 13);
+                }
+                if (this.textContent !== text) {
+                    this.textContent = text;
+                }
+                showHint(this, '✏️ พิมพ์ข้อมูลแล้วคลิกที่อื่นเพื่อบันทึก');
+            }, true); // capture phase
+            
+            // Force max 13 digits on every input - use capture phase
+            idcardField.addEventListener('input', function(e) {
+                // Remove ALL non-digit characters (including "-")
+                let text = this.textContent.replace(/[^0-9]/g, '');
+                
+                // Limit to 13 digits
+                if (text.length > 13) {
+                    text = text.substring(0, 13);
+                    showHint(this, '❌ เลขบัตรประชาชนต้องไม่เกิน 13 หลัก');
+                    setTimeout(() => hideHint(), 1500);
+                }
+                
+                // Update if changed
+                if (this.textContent !== text) {
+                    this.textContent = text;
+                    // Move cursor to end
+                    if (text.length > 0) {
+                        const range = document.createRange();
+                        const sel = window.getSelection();
+                        range.selectNodeContents(this);
+                        range.collapse(false); // collapse to end
+                        sel.removeAllRanges();
+                        sel.addRange(range);
+                    }
+                }
+                
+                // Auto-save after typing stops
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    if (this.textContent.trim() !== '' && this.textContent.trim() !== '-') {
+                        saveField(this);
+                    }
+                }, 1500);
+            }, true); // capture phase - runs first
+            
+            // Save on blur
+            idcardField.addEventListener('blur', function() {
+                hideHint();
+                if (this.textContent.trim() === '' || this.textContent.trim() === '-') {
+                    this.classList.add('needs-input');
+                } else {
+                    saveField(this);
+                    // Also sync to secondary field
+                    const secondary = document.getElementById('idcard-secondary');
+                    if (secondary) {
+                        secondary.textContent = this.textContent;
+                    }
+                }
+            }, true);
+            
+            // Block input if already 13 digits or non-digit
+            idcardField.addEventListener('keydown', function(e) {
+                // Allow control keys
+                if (['Backspace', 'Delete', 'Tab', 'Escape', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Home', 'End'].includes(e.key) ||
+                    e.ctrlKey || e.metaKey) {
+                    return;
+                }
+                
+                // Block Enter
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                    return;
+                }
+                
+                // Block non-digits
+                if (!/^[0-9]$/.test(e.key)) {
+                    e.preventDefault();
+                    showHint(this, '❌ กรอกได้เฉพาะตัวเลข');
+                    setTimeout(() => hideHint(), 1500);
+                    return;
+                }
+                
+                // Get current digits only
+                const currentDigits = this.textContent.replace(/[^0-9]/g, '');
+                
+                // Block if already 13 digits
+                if (currentDigits.length >= 13) {
+                    e.preventDefault();
+                    showHint(this, '❌ เลขบัตรประชาชนต้องไม่เกิน 13 หลัก');
+                    setTimeout(() => hideHint(), 1500);
+                }
+            }, true); // capture phase
+            
+            // Handle paste - limit to 13 digits
+            idcardField.addEventListener('paste', function(e) {
+                e.preventDefault();
+                
+                let pastedText = (e.clipboardData || window.clipboardData).getData('text');
+                // Remove non-digits and limit to 13
+                pastedText = pastedText.replace(/[^0-9]/g, '').substring(0, 13);
+                
+                // Clear current content and insert
+                this.textContent = pastedText;
+                
+                // Move cursor to end
+                if (pastedText.length > 0) {
+                    const range = document.createRange();
+                    const sel = window.getSelection();
+                    range.selectNodeContents(this);
+                    range.collapse(false);
+                    sel.removeAllRanges();
+                    sel.addRange(range);
+                }
+                
+                showHint(this, '✓ วางข้อความแล้ว');
+                setTimeout(() => hideHint(), 1000);
+                
+                // Auto-save
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    if (this.textContent.trim() !== '') {
+                        saveField(this);
+                    }
+                }, 1500);
+            }, true); // capture phase
+        }
 
         // Auto-print when page loads for single contract view only
         if (!toggleBtn && !<?php echo $isTenantAccess ? 'true' : 'false'; ?>) {
