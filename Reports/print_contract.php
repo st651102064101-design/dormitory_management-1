@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+error_reporting(E_ALL);
+ini_set('display_errors', '1');
+
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
@@ -199,9 +202,10 @@ if ($ctr_id === 0) {
 
 // Page 2: Print single contract
 $stmt = $pdo->prepare("
-    SELECT c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_status,
+    SELECT c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_status, c.tnt_id,
            t.tnt_name, t.tnt_phone, t.tnt_age, t.tnt_address, t.tnt_education, 
            t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone,
+           t.tnt_idcard,
            r.room_number,
            rt.type_name, rt.type_price
     FROM contract c
@@ -216,6 +220,58 @@ $contract = $stmt->fetch(PDO::FETCH_ASSOC);
 if (!$contract) {
     header('HTTP/1.0 404 Not Found');
     die('ไม่พบข้อมูลสัญญา ID: ' . $ctr_id);
+}
+
+// Ensure tenant_id is available for updates
+if (!isset($contract['tenant_id'])) {
+    $contract['tenant_id'] = $contract['tnt_id'] ?? 0;
+}
+
+// Ensure all required fields have values (set to empty string if null)
+$contract['tnt_name'] = $contract['tnt_name'] ?? '';
+$contract['tnt_phone'] = $contract['tnt_phone'] ?? '';
+$contract['tnt_age'] = $contract['tnt_age'] ?? '';
+$contract['tnt_address'] = $contract['tnt_address'] ?? '';
+$contract['tnt_education'] = $contract['tnt_education'] ?? '';
+$contract['tnt_faculty'] = $contract['tnt_faculty'] ?? '';
+$contract['tnt_year'] = $contract['tnt_year'] ?? '';
+$contract['tnt_vehicle'] = $contract['tnt_vehicle'] ?? '';
+$contract['tnt_parentsphone'] = $contract['tnt_parentsphone'] ?? '';
+$contract['tnt_idcard'] = $contract['tnt_idcard'] ?? ''; // Separate ID card field
+$contract['room_number'] = $contract['room_number'] ?? '-';
+$contract['type_name'] = $contract['type_name'] ?? '-';
+$contract['type_price'] = $contract['type_price'] ?? 0;
+$contract['ctr_start'] = $contract['ctr_start'] ?? null;
+$contract['ctr_end'] = $contract['ctr_end'] ?? null;
+
+// Handle AJAX update for tenant data
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_update'])) {
+    header('Content-Type: application/json');
+    
+    $field = $_POST['field'] ?? '';
+    $value = trim($_POST['value'] ?? '');
+    $tenantId = $contract['tenant_id'] ?? $contract['tnt_id'] ?? '';
+    
+    // Allowed fields to update
+    $allowedFields = [
+        'tnt_name', 'tnt_age', 'tnt_idcard', 'tnt_education', 
+        'tnt_faculty', 'tnt_year', 'tnt_vehicle', 'tnt_address',
+        'tnt_phone', 'tnt_parentsphone', 'tnt_parent'
+    ];
+    
+    if (!in_array($field, $allowedFields) || empty($tenantId)) {
+        echo json_encode(['success' => false, 'error' => 'Invalid field or tenant']);
+        exit;
+    }
+    
+    try {
+        $updateStmt = $pdo->prepare("UPDATE tenant SET {$field} = ? WHERE tnt_id = ?");
+        $updateStmt->execute([$value, $tenantId]);
+        echo json_encode(['success' => true]);
+    } catch (PDOException $e) {
+        echo json_encode(['success' => false, 'error' => $e->getMessage()]);
+    }
+    exit;
 }
 
 // ดึงลายเซ็นเจ้าของหอ (ถ้ามี)
@@ -252,6 +308,10 @@ function formatThaiDateParts($dateStr) {
 }
 $datePartsStart = formatThaiDateParts($contract['ctr_start'] ?? null);
 $datePartsEnd = formatThaiDateParts($contract['ctr_end'] ?? null);
+
+// Ensure date parts have values
+$datePartsStart = array_merge(['day' => '', 'month' => '', 'year' => ''], $datePartsStart ?? []);
+$datePartsEnd = array_merge(['day' => '', 'month' => '', 'year' => ''], $datePartsEnd ?? []);
 
 function h($value) {
     if ($value === null || $value === '') return '-';
@@ -412,6 +472,118 @@ function nameWithoutNickname($fullName) {
             display: none;
         }
         
+        /* Editable fields styling */
+        .editable-field {
+            display: inline-flex;
+            align-items: flex-end;
+            justify-content: center;
+            vertical-align: baseline;
+            min-width: 40px;
+            border-bottom: 1px dotted #000;
+            padding: 0 4px 0;
+            text-align: center;
+            line-height: 1;
+            color: #0066cc;
+            font-family: 'Cordia New', Tahoma, serif;
+            font-weight: normal;
+            cursor: text;
+            outline: none;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+        
+        .editable-field:empty::before,
+        .editable-field.needs-input:empty::before {
+            content: attr(data-placeholder);
+            color: #999;
+            font-style: italic;
+        }
+        
+        /* Hide placeholder when focused or has content */
+        .editable-field:focus::before,
+        .editable-field:not(:empty)::before {
+            content: '' !important;
+            display: none !important;
+        }
+        
+        .editable-field.needs-input {
+            background: linear-gradient(90deg, transparent, rgba(249, 115, 22, 0.08), transparent);
+            animation: pulse-hint 2s ease-in-out infinite;
+        }
+        
+        /* Stop animation when focused */
+        .editable-field:focus.needs-input {
+            animation: none;
+            background: rgba(59, 130, 246, 0.15);
+        }
+        
+        @keyframes pulse-hint {
+            0%, 100% { background-color: rgba(249, 115, 22, 0.05); }
+            50% { background-color: rgba(249, 115, 22, 0.15); }
+        }
+        
+        .editable-field:hover {
+            background: rgba(59, 130, 246, 0.1);
+            border-bottom-color: #3b82f6;
+        }
+        
+        .editable-field:focus {
+            background: rgba(59, 130, 246, 0.15);
+            border-bottom: 2px solid #3b82f6;
+            color: #000;
+        }
+        
+        .editable-field.saving {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .editable-field.saved {
+            animation: save-flash 0.5s ease;
+        }
+        
+        @keyframes save-flash {
+            0%, 100% { background: transparent; }
+            50% { background: rgba(34, 197, 94, 0.3); }
+        }
+        
+        .editable-field.error {
+            border-bottom-color: #ef4444;
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        /* Tooltip for editable fields */
+        .editable-hint {
+            position: fixed;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            pointer-events: none;
+            z-index: 1000;
+            white-space: nowrap;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        
+        .editable-hint.show {
+            opacity: 1;
+        }
+        
+        @media print {
+            .editable-field {
+                cursor: default;
+                background: transparent !important;
+                animation: none !important;
+            }
+            .editable-field:empty::before,
+            .editable-field.needs-input::before {
+                content: '';
+            }
+            .editable-hint { display: none !important; }
+        }
+        
         .underline { display: inline-flex; align-items: flex-end; justify-content: center; vertical-align: baseline; min-width: 40px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: center; line-height: 1; color: #0066cc; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
         .underline-long { min-width: 120px; }
         .underline-mid { min-width: 90px; }
@@ -434,26 +606,26 @@ function nameWithoutNickname($fullName) {
                 ข้าพเจ้า นางรุ่งทิพย์ ชิ้นจอหอ ผู้จัดการหอพักแสงเทียน ซึ่งต่อไปนี้เรียกว่า "ผู้ให้เช่า" ฝ่ายหนึ่ง กับข้าพเจ้า
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.&nbsp;&nbsp; ชื่อ <span class="underline underline-long"><?php echo h(firstNameWithoutSurname($contract['tnt_name'] ?? '')); ?></span>
-                สกุล <span class="underline underline-long"><?php echo h(surnameFromFullName($contract['tnt_name'] ?? '')); ?></span>
-                อายุ <span class="underline underline-short"><?php echo h($contract['tnt_age'] ?? ''); ?></span> ปี
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.&nbsp;&nbsp; ชื่อ <span class="editable-field underline-long <?php echo (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_name" data-type="firstname" data-placeholder="กรอกชื่อ..."><?php echo h(firstNameWithoutSurname($contract['tnt_name'] ?? '')); ?></span>
+                สกุล <span class="editable-field underline-long <?php echo (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_name" data-type="lastname" data-placeholder="กรอกนามสกุล..."><?php echo h(surnameFromFullName($contract['tnt_name'] ?? '')); ?></span>
+                อายุ <span class="editable-field underline-short <?php echo (empty($contract['tnt_age']) || $contract['tnt_age'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_age" data-placeholder="..."><?php echo h($contract['tnt_age'] ?? ''); ?></span> ปี
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                เลขประจำตัวบัตรประชาชน <span class="underline underline-mid"><?php echo h($contract['tnt_idcard'] ?? ''); ?></span>
-                สถานศึกษา <span class="underline underline-long"><?php echo h($contract['tnt_education'] ?? ''); ?></span>
+                เลขประจำตัวบัตรประชาชน <span class="editable-field underline-mid <?php echo (empty($contract['tnt_idcard']) || $contract['tnt_idcard'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_idcard" data-placeholder="กรอกเลขบัตร..." id="idcard-primary"><?php echo h($contract['tnt_idcard'] ?? ''); ?></span>
+                สถานศึกษา <span class="editable-field underline-long <?php echo (empty($contract['tnt_education']) || $contract['tnt_education'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_education" data-placeholder="กรอกสถานศึกษา..."><?php echo h($contract['tnt_education'] ?? ''); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                คณะ <span class="underline underline-long"><?php echo h($contract['tnt_faculty'] ?? ''); ?></span>
-                ปีที่ <span class="underline underline-short"><?php echo h(formatYearValue($contract['tnt_year'] ?? '')); ?></span>
-                มีรถจักรยานยนต์หมายเลขทะเบียน <span class="underline underline-wide"><?php echo h($contract['tnt_vehicle'] ?? ''); ?></span>
+                คณะ <span class="editable-field underline-long <?php echo (empty($contract['tnt_faculty']) || $contract['tnt_faculty'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_faculty" data-placeholder="กรอกคณะ..."><?php echo h($contract['tnt_faculty'] ?? ''); ?></span>
+                ปีที่ <span class="editable-field underline-short <?php echo (empty($contract['tnt_year']) || $contract['tnt_year'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_year" data-placeholder="..."><?php echo h(formatYearValue($contract['tnt_year'] ?? '')); ?></span>
+                มีรถจักรยานยนต์หมายเลขทะเบียน <span class="editable-field underline-wide <?php echo (empty($contract['tnt_vehicle']) || $contract['tnt_vehicle'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_vehicle" data-placeholder="กรอกเลขทะเบียน..."><?php echo h($contract['tnt_vehicle'] ?? ''); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                เบอร์โทร <span class="underline underline-phone"><?php echo h($contract['tnt_phone'] ?? ''); ?></span>
-                เบอร์โทรผู้ปกครอง <span class="underline underline-phone"><?php echo h($contract['tnt_parentsphone'] ?? ''); ?></span>
-                บัตรประจำตัวประชาชน <span class="underline underline-long"><?php echo h($contract['tnt_idcard'] ?? ''); ?></span>
+                เบอร์โทร <span class="editable-field underline-phone <?php echo (empty($contract['tnt_phone']) || $contract['tnt_phone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_phone" data-placeholder="กรอกเบอร์..."><?php echo h($contract['tnt_phone'] ?? ''); ?></span>
+                เบอร์โทรผู้ปกครอง <span class="editable-field underline-phone <?php echo (empty($contract['tnt_parentsphone']) || $contract['tnt_parentsphone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_parentsphone" data-placeholder="กรอกเบอร์..."><?php echo h($contract['tnt_parentsphone'] ?? ''); ?></span>
+                บัตรประจำตัวประชาชน <span class="underline underline-long" id="idcard-secondary"><?php echo h($contract['tnt_idcard'] ?? ''); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left; display: flex; align-items: flex-end; gap: 6px;">
-                ที่อยู่ตามบัตร <span class="underline underline-xl" style="flex: 1; justify-content: flex-start; text-align: left; color: #0066cc;"><?php echo h($contract['tnt_address'] ?? ''); ?></span>
+                ที่อยู่ตามบัตร <span class="editable-field underline-xl <?php echo (empty($contract['tnt_address']) || $contract['tnt_address'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_address" data-placeholder="กรอกที่อยู่..." style="flex: 1; justify-content: flex-start; text-align: left;"><?php echo h($contract['tnt_address'] ?? ''); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
                 ซึ่งต่อไปนี้ในสัญญานี้เรียกว่า "ผู้เช่า" อีกฝ่ายหนึ่ง ทั้งสองฝ่ายตกลงทำสัญญากันดังนี้มีข้อความต่อไปนี้ คือ
@@ -678,6 +850,217 @@ function nameWithoutNickname($fullName) {
                 readMoreBtn.classList.add('hidden');
             });
         }
+
+        // ===== EDITABLE FIELDS AUTO-SAVE =====
+        const editableFields = document.querySelectorAll('.editable-field');
+        let saveTimeout = null;
+        let hint = null;
+        
+        // Create hint tooltip
+        function createHint() {
+            if (!hint) {
+                hint = document.createElement('div');
+                hint.className = 'editable-hint';
+                document.body.appendChild(hint);
+            }
+            return hint;
+        }
+        
+        // Show hint near element
+        function showHint(el, message) {
+            const h = createHint();
+            const rect = el.getBoundingClientRect();
+            h.textContent = message;
+            h.style.left = rect.left + 'px';
+            h.style.top = (rect.bottom + 8) + 'px';
+            h.classList.add('show');
+        }
+        
+        function hideHint() {
+            if (hint) hint.classList.remove('show');
+        }
+        
+        // Save field value via AJAX
+        async function saveField(el) {
+            const field = el.dataset.field;
+            let value = el.textContent.trim();
+            
+            // Handle name fields specially (combine firstname + lastname)
+            if (field === 'tnt_name') {
+                const type = el.dataset.type;
+                const firstnameEl = document.querySelector('.editable-field[data-field="tnt_name"][data-type="firstname"]');
+                const lastnameEl = document.querySelector('.editable-field[data-field="tnt_name"][data-type="lastname"]');
+                const firstname = firstnameEl ? firstnameEl.textContent.trim() : '';
+                const lastname = lastnameEl ? lastnameEl.textContent.trim() : '';
+                value = (firstname + ' ' + lastname).trim();
+            }
+            
+            // Skip if empty placeholder
+            if (value === '-' || value === '' || value === el.dataset.placeholder) {
+                return;
+            }
+            
+            el.classList.add('saving');
+            showHint(el, '💾 กำลังบันทึก...');
+            
+            try {
+                const formData = new FormData();
+                formData.append('ajax_update', '1');
+                formData.append('field', field);
+                formData.append('value', value);
+                
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                el.classList.remove('saving');
+                
+                if (result.success) {
+                    el.classList.add('saved');
+                    el.classList.remove('needs-input');
+                    showHint(el, '✓ บันทึกแล้ว');
+                    setTimeout(() => {
+                        el.classList.remove('saved');
+                        hideHint();
+                    }, 1500);
+                    
+                    // Sync ID card fields
+                    if (field === 'tnt_idcard') {
+                        const secondaryIdCard = document.getElementById('idcard-secondary');
+                        if (secondaryIdCard) {
+                            secondaryIdCard.textContent = value;
+                        }
+                    }
+                } else {
+                    el.classList.add('error');
+                    showHint(el, '❌ เกิดข้อผิดพลาด');
+                    setTimeout(() => {
+                        el.classList.remove('error');
+                        hideHint();
+                    }, 2000);
+                }
+            } catch (err) {
+                el.classList.remove('saving');
+                el.classList.add('error');
+                showHint(el, '❌ บันทึกไม่สำเร็จ');
+                setTimeout(() => {
+                    el.classList.remove('error');
+                    hideHint();
+                }, 2000);
+            }
+        }
+            }
+            
+            el.classList.add('saving');
+            showHint(el, '💾 กำลังบันทึก...');
+            
+            try {
+                const formData = new FormData();
+                formData.append('ajax_update', '1');
+                formData.append('field', field);
+                formData.append('value', value);
+                
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                el.classList.remove('saving');
+                
+                if (result.success) {
+                    el.classList.add('saved');
+                    el.classList.remove('needs-input');
+                    showHint(el, '✓ บันทึกแล้ว');
+                    setTimeout(() => {
+                        el.classList.remove('saved');
+                        hideHint();
+                    }, 1500);
+                    
+                    // Update linked fields (e.g., ID card shown twice)
+                    if (field === 'tnt_idcard') {
+                        document.querySelectorAll('.underline').forEach(span => {
+                            if (span.textContent.trim() === '-' || span.previousSibling?.textContent?.includes('บัตรประจำตัวประชาชน')) {
+                                // Don't update static fields
+                            }
+                        });
+                    }
+                } else {
+                    el.classList.add('error');
+                    showHint(el, '❌ เกิดข้อผิดพลาด');
+                    setTimeout(() => {
+                        el.classList.remove('error');
+                        hideHint();
+                    }, 2000);
+                }
+            } catch (err) {
+                el.classList.remove('saving');
+                el.classList.add('error');
+                showHint(el, '❌ บันทึกไม่สำเร็จ');
+                setTimeout(() => {
+                    el.classList.remove('error');
+                    hideHint();
+                }, 2000);
+            }
+        }
+        
+        // Setup editable fields
+        editableFields.forEach(el => {
+            // Clear placeholder text or "-" on focus
+            el.addEventListener('focus', function() {
+                const currentText = this.textContent.trim();
+                if (currentText === '-' || currentText === '') {
+                    this.textContent = '';
+                }
+                showHint(this, '✏️ พิมพ์ข้อมูลแล้วคลิกที่อื่นเพื่อบันทึก');
+            });
+            
+            // Save on blur
+            el.addEventListener('blur', function() {
+                hideHint();
+                if (this.textContent.trim() === '') {
+                    this.textContent = '-';
+                    this.classList.add('needs-input');
+                } else {
+                    saveField(this);
+                }
+            });
+            
+            // Auto-save after typing stops
+            el.addEventListener('input', function() {
+                clearTimeout(saveTimeout);
+                saveTimeout = setTimeout(() => {
+                    if (this.textContent.trim() !== '' && this.textContent.trim() !== '-') {
+                        saveField(this);
+                    }
+                }, 1500);
+            });
+            
+            // Prevent Enter key from creating new lines
+            el.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.blur();
+                }
+            });
+            
+            // Show hint on hover for empty fields
+            el.addEventListener('mouseenter', function() {
+                if (this.classList.contains('needs-input') || this.textContent.trim() === '-') {
+                    showHint(this, '👆 คลิกเพื่อกรอกข้อมูล');
+                }
+            });
+            
+            el.addEventListener('mouseleave', function() {
+                if (!this.matches(':focus')) {
+                    hideHint();
+                }
+            });
+        });
 
         // Auto-print when page loads for single contract view only
         if (!toggleBtn && !<?php echo $isTenantAccess ? 'true' : 'false'; ?>) {
