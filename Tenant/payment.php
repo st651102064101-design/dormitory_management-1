@@ -24,9 +24,14 @@ try {
         SELECT e.*, r.room_number,
                (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1') as paid_amount
         FROM expense e
+        JOIN (
+            SELECT MAX(exp_id) AS exp_id
+            FROM expense
+            WHERE ctr_id = ? AND exp_status = '0'
+            GROUP BY exp_month
+        ) latest ON e.exp_id = latest.exp_id
         JOIN contract c ON e.ctr_id = c.ctr_id
         JOIN room r ON c.room_id = r.room_id
-        WHERE e.ctr_id = ? AND e.exp_status = '0'
         ORDER BY e.exp_month DESC
     ");
     $stmt->execute([$contract['ctr_id']]);
@@ -107,9 +112,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $pdo->prepare("
                 SELECT e.*, r.room_number 
                 FROM expense e
+                JOIN (
+                    SELECT MAX(exp_id) AS exp_id
+                    FROM expense
+                    WHERE ctr_id = ? AND exp_status = '0'
+                    GROUP BY exp_month
+                ) latest ON e.exp_id = latest.exp_id
                 JOIN contract c ON e.ctr_id = c.ctr_id
                 JOIN room r ON c.room_id = r.room_id
-                WHERE e.ctr_id = ? AND e.exp_status = '0'
                 ORDER BY e.exp_month DESC
             ");
             $stmt->execute([$contract['ctr_id']]);
@@ -665,7 +675,7 @@ $paymentStatusMap = [
                     </div>
                 </div>
                 
-                <div class="form-group">
+                <div class="form-group" id="pay-amount-group" style="display: none;">
                     <label>จำนวนเงินที่ต้องการชำระ (บาท) *</label>
                     <input type="number" name="pay_amount" id="pay_amount" min="1" step="1" placeholder="กรอกจำนวนเงิน" required>
                     <small style="color: #94a3b8; font-size: 0.75rem; display: block; margin-top: 0.25rem;">
@@ -673,7 +683,7 @@ $paymentStatusMap = [
                     </small>
                 </div>
                 
-                <div class="form-group">
+                <div class="form-group" id="pay-proof-group" style="display: none;">
                     <label>หลักฐานการชำระเงิน (สลิป) *</label>
                     <div class="file-upload" onclick="document.getElementById('pay_proof').click()">
                         <input type="file" name="pay_proof" id="pay_proof" accept="image/jpeg,image/png,image/webp" onchange="previewImage(this)" required>
@@ -742,6 +752,11 @@ $paymentStatusMap = [
         const option = select.options[select.selectedIndex];
         const summary = document.getElementById('payment-summary');
         
+        const payAmountGroup = document.getElementById('pay-amount-group');
+        const payProofGroup = document.getElementById('pay-proof-group');
+        const previewContainer = document.getElementById('preview-container');
+        const payProofInput = document.getElementById('pay_proof');
+        
         if (option.value) {
             const total = parseFloat(option.dataset.total) || 0;
             const paid = parseFloat(option.dataset.paid) || 0;
@@ -756,10 +771,20 @@ $paymentStatusMap = [
             document.getElementById('pay_amount').max = remaining;
             
             summary.style.display = 'block';
+            payAmountGroup.style.display = 'block';
+            payProofGroup.style.display = 'block';
         } else {
             summary.style.display = 'none';
             document.getElementById('pay_amount').value = '';
             document.getElementById('pay_amount').removeAttribute('max');
+            payAmountGroup.style.display = 'none';
+            payProofGroup.style.display = 'none';
+            if (payProofInput) {
+                payProofInput.value = '';
+            }
+            if (previewContainer) {
+                previewContainer.style.display = 'none';
+            }
         }
     }
     

@@ -667,12 +667,19 @@ foreach ($availableMonths as $monthKey) {
             padding: 1rem;
             transition: all 0.3s ease;
             flex-shrink: 0;
+            cursor: pointer;
         }
 
         .upcoming-card:hover {
             transform: translateY(-3px);
             border-color: rgba(249, 115, 22, 0.4);
             background: rgba(249, 115, 22, 0.1);
+        }
+
+        .upcoming-card.active {
+            border-color: rgba(249, 115, 22, 0.7);
+            background: rgba(249, 115, 22, 0.15);
+            box-shadow: 0 10px 30px rgba(249, 115, 22, 0.25);
         }
 
         .upcoming-room-number {
@@ -694,6 +701,54 @@ foreach ($availableMonths as $monthKey) {
             display: flex;
             align-items: center;
             gap: 0.3rem;
+        }
+
+        .status-badge-web3.upcoming {
+            background: linear-gradient(135deg, rgba(249, 115, 22, 0.95), rgba(234, 88, 12, 0.95));
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.5),
+                        0 0 30px rgba(249, 115, 22, 0.3);
+        }
+
+        .status-badge-web3.upcoming::before {
+            background: linear-gradient(135deg, #f97316, #ea580c, #fb923c);
+        }
+
+        .room-card.upcoming-highlight {
+            outline: 2px solid rgba(249, 115, 22, 0.6);
+            box-shadow: 0 15px 45px rgba(249, 115, 22, 0.25);
+        }
+
+        .selected-upcoming-wrapper {
+            margin: 1.5rem 0 2rem;
+            padding: 1rem;
+            border: 1px dashed rgba(249, 115, 22, 0.35);
+            border-radius: 16px;
+            background: rgba(249, 115, 22, 0.06);
+        }
+
+        .selected-upcoming-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: rgba(255,255,255,0.85);
+            margin-bottom: 0.75rem;
+        }
+
+        .selected-upcoming-card {
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+
+        .selected-upcoming-card .room-card,
+        .selected-upcoming-card .upcoming-card {
+            max-width: 420px;
+            margin: 0 auto;
+            display: block !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            position: relative !important;
+            min-width: 0 !important;
+            flex-shrink: 1 !important;
         }
 
         /* Quick Stats */
@@ -2336,7 +2391,9 @@ if ($publicTheme === 'light') {
                     $endDate = new DateTime($room['ctr_end']);
                     $thaiEndDate = $endDate->format('j') . ' ' . $thaiMonths[(int)$endDate->format('n')] . ' ' . ($endDate->format('Y') + 543);
                 ?>
-                <div class="upcoming-card">
+                <div class="upcoming-card" role="button" tabindex="0"
+                     data-room-id="<?php echo (int)$room['room_id']; ?>"
+                     data-available-date="<?php echo htmlspecialchars($thaiEndDate); ?>">
                     <div class="upcoming-room-number">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></div>
                     <div class="upcoming-price">฿<?php echo number_format((float)($room['type_price'] ?? 0)); ?>/เดือน</div>
                     <div class="upcoming-date">
@@ -2350,6 +2407,10 @@ if ($publicTheme === 'light') {
                     </div>
                 </div>
                 <?php endforeach; ?>
+            </div>
+            <div id="selected-upcoming-wrapper" class="selected-upcoming-wrapper" style="display: none;">
+                <div class="selected-upcoming-title">ห้องที่เลือก</div>
+                <div id="selected-upcoming-card" class="selected-upcoming-card"></div>
             </div>
             <?php else: ?>
             <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">
@@ -2382,7 +2443,7 @@ if ($publicTheme === 'light') {
                 ];
                 ?>
                 <?php foreach ($rooms as $index => $room): ?>
-                <div class="room-card <?php echo $index >= 10 ? 'hidden-room' : ''; ?>" data-index="<?php echo $index; ?>" style="cursor: <?php echo $room['room_status'] === '0' ? 'pointer' : 'default'; ?>;">
+                <div class="room-card <?php echo $index >= 10 ? 'hidden-room' : ''; ?>" data-index="<?php echo $index; ?>" data-room-id="<?php echo (int)$room['room_id']; ?>" style="cursor: <?php echo $room['room_status'] === '0' ? 'pointer' : 'default'; ?>;">
                     <!-- Particle effects -->
                     <div class="card-particles"></div>
                     
@@ -2698,6 +2759,91 @@ if ($publicTheme === 'light') {
             }
         }
 
+        function setupUpcomingSelection() {
+            const upcomingCards = document.querySelectorAll('.upcoming-card[data-room-id]');
+            if (!upcomingCards.length) return;
+
+            const roomCards = document.querySelectorAll('.room-card[data-room-id]');
+            const previewWrapper = document.getElementById('selected-upcoming-wrapper');
+            const previewContainer = document.getElementById('selected-upcoming-card');
+
+            roomCards.forEach(card => {
+                const badge = card.querySelector('.status-badge-web3');
+                if (badge && !badge.dataset.originalText) {
+                    badge.dataset.originalText = badge.textContent.trim();
+                    badge.dataset.originalClass = badge.className;
+                }
+            });
+
+            function resetRoomCards() {
+                roomCards.forEach(card => {
+                    card.classList.remove('upcoming-highlight');
+                    const badge = card.querySelector('.status-badge-web3');
+                    if (badge && badge.dataset.originalText) {
+                        badge.className = badge.dataset.originalClass;
+                        badge.textContent = badge.dataset.originalText;
+                        badge.removeAttribute('title');
+                    }
+                });
+            }
+
+            function selectUpcoming(roomId, availableDate, sourceCard) {
+                upcomingCards.forEach(c => c.classList.remove('active'));
+                if (sourceCard) sourceCard.classList.add('active');
+
+                resetRoomCards();
+
+                const target = document.querySelector(`.room-card[data-room-id="${roomId}"]`);
+                if (!target) {
+                    // If the full room card isn't in the grid, still show a preview from the upcoming card
+                    if (previewWrapper && previewContainer && sourceCard) {
+                        const clone = sourceCard.cloneNode(true);
+                        clone.classList.remove('active');
+                        clone.style.minWidth = '0';
+                        clone.style.width = '100%';
+                        previewContainer.innerHTML = '';
+                        previewContainer.appendChild(clone);
+                        previewWrapper.style.display = 'block';
+                    }
+                    return;
+                }
+
+                target.classList.add('upcoming-highlight');
+                const badge = target.querySelector('.status-badge-web3');
+                if (badge) {
+                    badge.classList.add('upcoming');
+                    badge.textContent = `ว่าง ${availableDate}`;
+                    badge.setAttribute('title', `ห้องนี้จะว่าง ${availableDate}`);
+                }
+
+                if (previewWrapper && previewContainer) {
+                    const clone = target.cloneNode(true);
+                    clone.classList.remove('hidden-room');
+                    clone.style.display = 'block';
+                    clone.style.opacity = '1';
+                    previewContainer.innerHTML = '';
+                    previewContainer.appendChild(clone);
+                    previewWrapper.style.display = 'block';
+                    
+                    // Scroll to preview wrapper instead of the room card
+                    previewWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+
+            upcomingCards.forEach(card => {
+                const handler = () => {
+                    selectUpcoming(card.dataset.roomId, card.dataset.availableDate || '', card);
+                };
+                card.addEventListener('click', handler);
+                card.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        handler();
+                    }
+                });
+            });
+        }
+
         // ===== INITIALIZE ON DOM READY =====
         document.addEventListener('DOMContentLoaded', function() {
             // Setup card flip
@@ -2744,6 +2890,8 @@ if ($publicTheme === 'light') {
                 });
                 gridObserver.observe(roomGrid, { childList: true, subtree: true });
             }
+
+            setupUpcomingSelection();
 
             console.log('✅ Room cards initialized with animations');
         });

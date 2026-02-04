@@ -3,7 +3,11 @@ declare(strict_types=1);
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
-if (empty($_SESSION['admin_username'])) {
+
+// Check if accessed by tenant (has tenant_logged_in session) - allow without admin check
+$isTenantAccess = !empty($_SESSION['tenant_logged_in']) || !empty($_SESSION['tenant_token']) || !empty($_GET['from_tenant']);
+
+if (!$isTenantAccess && empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
     exit;
 }
@@ -676,7 +680,7 @@ function nameWithoutNickname($fullName) {
         }
 
         // Auto-print when page loads for single contract view only
-        if (!toggleBtn) {
+        if (!toggleBtn && !<?php echo $isTenantAccess ? 'true' : 'false'; ?>) {
             window.addEventListener('load', function() {
                 setTimeout(function() {
                     window.print();

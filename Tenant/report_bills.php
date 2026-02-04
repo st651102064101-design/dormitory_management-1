@@ -20,7 +20,12 @@ try {
                (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id) as payment_count,
                (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status
         FROM expense e
-        WHERE e.ctr_id = ?
+        JOIN (
+            SELECT MAX(exp_id) AS exp_id
+            FROM expense
+            WHERE ctr_id = ?
+            GROUP BY exp_month
+        ) latest ON e.exp_id = latest.exp_id
         ORDER BY e.exp_month DESC
     ");
     $stmt->execute([$contract['ctr_id']]);
@@ -29,7 +34,8 @@ try {
 
 $expenseStatusMap = [
     '0' => ['label' => 'ค้างชำระ', 'color' => '#ef4444', 'bg' => 'rgba(239, 68, 68, 0.2)'],
-    '1' => ['label' => 'ชำระแล้ว', 'color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.2)']
+    '1' => ['label' => 'ชำระแล้ว', 'color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.2)'],
+    '3' => ['label' => 'ชำระยังไม่ครบ', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)']
 ];
 
 // Calculate totals
@@ -38,9 +44,9 @@ $totalUnpaid = 0;
 foreach ($expenses as $exp) {
     $paidAmount = (float)($exp['paid_amount'] ?? 0);
     $expTotal = (float)$exp['exp_total'];
-    $remaining = $expTotal - $paidAmount;
+    $remaining = max(0, $expTotal - $paidAmount);
     
-    if ($exp['exp_status'] === '1') {
+    if ($paidAmount >= $expTotal && $expTotal > 0) {
         $totalPaid += $expTotal;
     } else {
         // นับเฉพาะยอดที่ยังไม่ได้จ่าย
@@ -254,6 +260,18 @@ foreach ($expenses as $exp) {
         <div class="header-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="back-btn">←</a>
             <h1 class="header-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></span> บิลค่าใช้จ่าย</h1>
+            <?php if (!empty($_SESSION['tenant_logged_in'])): ?>
+            <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                <a href="../tenant_logout.php" style="padding: 0.5rem 1rem; background: rgba(239, 68, 68, 0.2); color: #f87171; border-radius: 8px; text-decoration: none; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+                        <polyline points="16 17 21 12 16 7"/>
+                        <line x1="21" y1="12" x2="9" y2="12"/>
+                    </svg>
+                    ออกจากระบบ
+                </a>
+            </div>
+            <?php endif; ?>
         </div>
     </header>
     
@@ -280,13 +298,19 @@ foreach ($expenses as $exp) {
         <?php 
             $paidAmount = (float)($exp['paid_amount'] ?? 0);
             $expTotal = (float)$exp['exp_total'];
-            $remaining = $expTotal - $paidAmount;
+            $remaining = max(0, $expTotal - $paidAmount);
+            $statusKey = '0';
+            if ($paidAmount >= $expTotal && $expTotal > 0) {
+                $statusKey = '1';
+            } elseif ($paidAmount > 0) {
+                $statusKey = '3';
+            }
         ?>
         <div class="bill-card">
             <div class="bill-header">
                 <span class="bill-month"><span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <?php echo date('F Y', strtotime($exp['exp_month'])); ?></span>
-                <span class="bill-status" style="background: <?php echo $expenseStatusMap[$exp['exp_status'] ?? '0']['bg']; ?>; color: <?php echo $expenseStatusMap[$exp['exp_status'] ?? '0']['color']; ?>">
-                    <?php echo $expenseStatusMap[$exp['exp_status'] ?? '0']['label']; ?>
+                <span class="bill-status" style="background: <?php echo $expenseStatusMap[$statusKey]['bg']; ?>; color: <?php echo $expenseStatusMap[$statusKey]['color']; ?>">
+                    <?php echo $expenseStatusMap[$statusKey]['label']; ?>
                 </span>
             </div>
             <div class="bill-details">
@@ -312,7 +336,7 @@ foreach ($expenses as $exp) {
                     <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount); ?> บาท</span>
                 </div>
                 <?php endif; ?>
-                <?php if ($remaining > 0 && $exp['exp_status'] !== '1'): ?>
+                <?php if ($remaining > 0): ?>
                 <div class="bill-row" style="color: #ef4444; font-size: 0.85rem;">
                     <span class="bill-label" style="color: #ef4444;">ค้างชำระ</span>
                     <span class="bill-value" style="color: #ef4444;"><?php echo number_format($remaining); ?> บาท</span>
