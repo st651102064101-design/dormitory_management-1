@@ -83,10 +83,11 @@ switch ($sortBy) {
     $orderBy = 'e.exp_id DESC';
 }
 
-// ดึงข้อมูลค่าใช้จ่าย
+// ดึงข้อมูลค่าใช้จ่าย - เฉพาะสัญญาที่ active (ctr_status = '0')
+// และป้องกัน duplicate โดยใช้ DISTINCT on expense.exp_id
 $expStmt = $pdo->query("
   SELECT e.*,
-         c.ctr_id, c.ctr_start, c.ctr_end,
+         c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_status,
          t.tnt_name, t.tnt_phone,
          r.room_number, r.room_id,
          rt.type_name
@@ -95,6 +96,8 @@ $expStmt = $pdo->query("
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
   LEFT JOIN room r ON c.room_id = r.room_id
   LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+  WHERE c.ctr_status = '0'
+  GROUP BY e.exp_id
   ORDER BY $orderBy
 ");
 $expenses = $expStmt->fetchAll(PDO::FETCH_ASSOC);

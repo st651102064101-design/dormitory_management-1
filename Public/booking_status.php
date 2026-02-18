@@ -920,10 +920,10 @@ if ($currentStatus === '1' && $expStatus === '1') {
                 <?php endforeach; ?>
             </div>
             
-            <!-- Alert สำหรับเตือนให้เซ็นสัญญา (แสดงเมื่อ step >= 3 และยังไม่มีลายเซ็น) -->
+            <!-- Alert สำหรับเตือนให้เซ็นสัญญา (แสดงเมื่อ step >= 4 คือสร้างสัญญาเสร็จแล้ว และยังไม่มีลายเซ็น) -->
             <?php 
             $hasSignature = !empty($bookingInfo['has_signature']) && intval($bookingInfo['has_signature']) > 0;
-            $needsSignature = $currentStep >= 3 && !empty($bookingInfo['access_token']) && $expStatus === '1' && !$hasSignature;
+            $needsSignature = $currentStep >= 4 && !empty($bookingInfo['access_token']) && $expStatus === '1' && !$hasSignature;
             if ($needsSignature): 
             ?>
             <div style="margin-top: 20px; padding: 20px; background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border: 2px solid #f59e0b; border-radius: 16px; box-shadow: 0 8px 24px rgba(245, 158, 11, 0.2); animation: pulse-warning 2s ease-in-out infinite;">

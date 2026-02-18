@@ -14,6 +14,41 @@ error_reporting(E_ALL);
 session_start();
 require_once __DIR__ . '/ConnectDB.php';
 
+function buildGoogleRedirectUri(string $redirectUri): string {
+    $redirectUri = trim($redirectUri);
+    if ($redirectUri === '') {
+        $redirectUri = '/dormitory_management/google_callback.php';
+    }
+
+    if (preg_match('#^https?://#i', $redirectUri) === 1) {
+        return $redirectUri;
+    }
+
+    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    $serverName = trim((string)($_SERVER['SERVER_NAME'] ?? ''));
+
+    if ($serverName === '' || $serverName === '_') {
+        $httpHost = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
+        $serverName = explode(':', $httpHost)[0];
+    }
+
+    if ($serverName === '') {
+        $serverName = 'localhost';
+    }
+
+    $serverPort = (int)($_SERVER['SERVER_PORT'] ?? 0);
+    $portPart = '';
+    if (($protocol === 'http' && $serverPort > 0 && $serverPort !== 80) || ($protocol === 'https' && $serverPort > 0 && $serverPort !== 443)) {
+        $portPart = ':' . $serverPort;
+    }
+
+    if ($redirectUri[0] !== '/') {
+        $redirectUri = '/' . $redirectUri;
+    }
+
+    return $protocol . '://' . $serverName . $portPart . $redirectUri;
+}
+
 // ฟังก์ชันสำหรับ redirect พร้อม error
 function redirectWithError($error) {
     error_log("Redirecting with error: " . $error);
@@ -51,10 +86,8 @@ try {
         redirectWithError('Google OAuth ยังไม่ได้ตั้งค่า');
     }
     
-    // สร้าง full redirect URI
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    $host = $_SERVER['HTTP_HOST'];
-    $fullRedirectUri = $protocol . '://' . $host . $redirectUri;
+    // ใช้ redirect URI เดียวกับตอน authorize
+    $fullRedirectUri = $_SESSION['google_redirect_uri'] ?? buildGoogleRedirectUri($redirectUri);
     
     error_log("Full redirect URI: " . $fullRedirectUri);
     
@@ -155,6 +188,7 @@ try {
     
     // ล้างค่า state จาก session
     unset($_SESSION['google_state']);
+    unset($_SESSION['google_redirect_uri']);
     
     // =============================================
     // ตรวจสอบว่าเป็นการ Link Account หรือไม่

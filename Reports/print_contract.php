@@ -10,15 +10,37 @@ if (session_status() === PHP_SESSION_NONE) {
 // Check if accessed by tenant (has tenant_logged_in session) - allow without admin check
 $isTenantAccess = !empty($_SESSION['tenant_logged_in']) || !empty($_SESSION['tenant_token']) || !empty($_GET['from_tenant']);
 
-if (!$isTenantAccess && empty($_SESSION['admin_username'])) {
+// Don't check admin authentication yet if ctr_id is provided (will check token below)
+if (!$isTenantAccess && empty($_SESSION['admin_username']) && empty($_GET['ctr_id'])) {
     header('Location: ../Login.php');
     exit;
 }
+
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
+
+// NEW: Allow access if coming from contract.php with valid token
+if (!empty($_GET['ctr_id']) && !$isTenantAccess && empty($_SESSION['admin_username'])) {
+    try {
+        $tokenCheckStmt = $pdo->prepare("SELECT access_token FROM contract WHERE ctr_id = ? AND access_token IS NOT NULL LIMIT 1");
+        $tokenCheckStmt->execute([(int)$_GET['ctr_id']]);
+        $tokenResult = $tokenCheckStmt->fetchColumn();
+        if ($tokenResult) {
+            $isTenantAccess = true; // Allow access as tenant
+        } else {
+            // No valid token, require authentication
+            header('Location: ../Login.php');
+            exit;
+        }
+    } catch (PDOException $e) {
+        // Error checking token, require authentication
+        header('Location: ../Login.php');
+        exit;
+    }
+}
 
 $ctr_id = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
 
