@@ -321,6 +321,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $pdo->rollBack();
                         } else {
                         
+                        // ตรวจสอบว่าห้องนี้มีสัญญา active อยู่แล้วหรือไม่
+                        $activeContractCheck = $pdo->prepare("SELECT COUNT(*) FROM contract WHERE room_id = ? AND ctr_status = '0'");
+                        $activeContractCheck->execute([$roomId]);
+                        if ((int)$activeContractCheck->fetchColumn() > 0) {
+                            $error = 'ห้องนี้มีสัญญาที่ใช้งานอยู่แล้ว กรุณายกเลิกสัญญาเก่าก่อนสร้างสัญญาใหม่';
+                            $pdo->rollBack();
+                        } else {
+                        
                         // Generate booking ID (use last 9 digits to fit INT(11) max: 2147483647)
                         $bookingId = (int)substr((string)time(), -9);
                         $stmtBooking = $pdo->prepare("
@@ -399,7 +407,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['last_booking_id'] = $bookingId;
                         $_SESSION['last_tenant_id'] = $tenantId;
                         $_SESSION['last_booking_time'] = time();
-                        }
+                        } // end else (active contract check)
+                        } // end else (error check)
                     }
                 } catch (PDOException $e) {
                     if ($pdo->inTransaction()) $pdo->rollBack();
