@@ -373,12 +373,12 @@ try {
             transform: translateX(-50%);
         }
         
-        .nav-links a:hover {
+        .nav-links a:not(.btn-login):hover {
             color: #fff;
             background: var(--glass-bg);
         }
 
-        .nav-links a:hover::before {
+        .nav-links a:not(.btn-login):hover::before {
             width: 60%;
         }
 
@@ -390,7 +390,7 @@ try {
             transition: all 0.3s ease;
         }
 
-        .nav-links a:hover .nav-icon {
+        .nav-links a:not(.btn-login):hover .nav-icon {
             transform: scale(1.2);
             filter: drop-shadow(0 0 8px currentColor);
         }
@@ -408,6 +408,14 @@ try {
         .btn-login:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 30px var(--primary-glow);
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+        }
+
+        .btn-login:hover .nav-icon {
+            stroke: #fff !important;
+            color: #fff !important;
         }
 
         .btn-login::before {
@@ -2019,12 +2027,12 @@ try {
         body.theme-light .nav-links a .nav-icon {
             stroke: #475569 !important;
         }
-        body.theme-light .nav-links a:hover {
+        body.theme-light .nav-links a:not(.btn-login):hover {
             color: var(--primary) !important;
             -webkit-text-fill-color: var(--primary) !important;
             background: rgba(59,130,246,0.08) !important;
         }
-        body.theme-light .nav-links a:hover .nav-icon {
+        body.theme-light .nav-links a:not(.btn-login):hover .nav-icon {
             stroke: var(--primary) !important;
         }
         body.theme-light .nav-links a::before {
@@ -2105,6 +2113,16 @@ try {
             background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
             color: #fff !important;
             -webkit-text-fill-color: #fff !important;
+        }
+        body.theme-light .btn-login:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+        body.theme-light .btn-login:hover .nav-icon,
+        body.theme-light .btn-login .nav-icon {
+            stroke: #fff !important;
+            color: #fff !important;
         }
         body.theme-light .btn-view-rooms {
             color: #fff !important;

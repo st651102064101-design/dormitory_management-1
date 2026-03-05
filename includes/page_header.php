@@ -25,13 +25,43 @@
 <div class="page-header-spacer"></div>
 <script>
 (function() {
+  function fallbackSidebarToggle(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === 'function') {
+        event.stopImmediatePropagation();
+      }
+    }
+
+    var sidebar = document.querySelector('.app-sidebar');
+    var btn = document.getElementById('sidebar-toggle');
+    if (!sidebar) return false;
+
+    var isMobile = window.innerWidth <= 1024;
+    if (isMobile) {
+      var isOpen = sidebar.classList.toggle('mobile-open');
+      document.body.classList.toggle('sidebar-open', isOpen);
+      if (btn) btn.setAttribute('aria-expanded', isOpen.toString());
+    } else {
+      var isCollapsed = sidebar.classList.toggle('collapsed');
+      try { localStorage.setItem('sidebarCollapsed', isCollapsed ? 'true' : 'false'); } catch (e) {}
+      if (btn) btn.setAttribute('aria-expanded', (!isCollapsed).toString());
+    }
+
+    return false;
+  }
+
+  window.__fallbackSidebarToggle = fallbackSidebarToggle;
+
   var btn = document.getElementById('sidebar-toggle');
   if (btn && !btn.__toggleBound) {
     btn.__toggleBound = true;
     btn.addEventListener('click', function(e) {
       if (typeof window.__directSidebarToggle === 'function') {
-        window.__directSidebarToggle(e);
+        return window.__directSidebarToggle(e);
       }
+      return fallbackSidebarToggle(e);
     }, true);
   }
   
@@ -49,10 +79,10 @@
 <style>
 /* Page Header Styles - Apple-style Auto-hide */
 .page-header-bar {
-  position: sticky;
+  position: relative;
   width: 100%;
-  top: 0;
-  z-index: 10000;
+  top: auto;
+  z-index: 20;
   padding: 1rem 1.5rem;
   background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(20px) saturate(180%);
@@ -62,7 +92,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 0 0 1rem 0;
+  margin: 1rem 0 1rem 0;
   transform: translateY(0);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               background 0.3s cubic-bezier(0.4, 0, 0.2, 1),
@@ -84,8 +114,7 @@
 }
 
 .page-header-bar.header-hidden {
-  transform: translateY(-100%);
-  box-shadow: none;
+  transform: translateY(0);
 }
 
 .page-header-bar.header-scrolled {

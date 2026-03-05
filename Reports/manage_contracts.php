@@ -172,6 +172,9 @@ foreach ($contracts as $contract) {
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       }
+      .manage-panel .page-header-bar {
+        margin-top: 0.75rem !important;
+      }
       h1 {
         margin: 0 0 1.5rem 0;
         color: var(--text-primary);

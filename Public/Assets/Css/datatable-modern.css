@@ -173,7 +173,8 @@
 }
 
 .datatable-wrapper .datatable-pagination-list-item a,
-.datatable-wrapper .datatable-pagination-list-item button {
+.datatable-wrapper .datatable-pagination-list-item button,
+.datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -191,7 +192,8 @@
 }
 
 .datatable-wrapper .datatable-pagination-list-item a:hover,
-.datatable-wrapper .datatable-pagination-list-item button:hover {
+.datatable-wrapper .datatable-pagination-list-item button:hover,
+.datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link:hover {
   background: #f1f5f9 !important;
   border-color: #bfdbfe !important;
   color: #0ea5e9 !important;
@@ -199,7 +201,8 @@
 }
 
 .datatable-wrapper .datatable-pagination-list-item.datatable-active a,
-.datatable-wrapper .datatable-pagination-list-item.datatable-active button {
+.datatable-wrapper .datatable-pagination-list-item.datatable-active button,
+.datatable-wrapper .datatable-pagination-list-item.datatable-active .datatable-pagination-list-item-link {
   background: linear-gradient(135deg, #3b82f6, #60a5fa) !important;
   border-color: transparent !important;
   color: #fff !important;
@@ -207,7 +210,8 @@
 }
 
 .datatable-wrapper .datatable-pagination-list-item.datatable-disabled a,
-.datatable-wrapper .datatable-pagination-list-item.datatable-disabled button {
+.datatable-wrapper .datatable-pagination-list-item.datatable-disabled button,
+.datatable-wrapper .datatable-pagination-list-item.datatable-disabled .datatable-pagination-list-item-link {
   opacity: 0.4;
   cursor: not-allowed;
   pointer-events: none;
@@ -240,7 +244,8 @@
   }
   
   .datatable-wrapper .datatable-pagination-list-item a,
-  .datatable-wrapper .datatable-pagination-list-item button {
+  .datatable-wrapper .datatable-pagination-list-item button,
+  .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link {
     min-width: 36px;
     height: 36px;
     padding: 0 0.5rem;

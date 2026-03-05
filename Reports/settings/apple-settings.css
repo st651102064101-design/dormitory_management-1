@@ -2605,8 +2605,24 @@ body.apple-settings-page .sidebar-overlay.active {
 
 .apple-stat-card:hover .icon-animated path,
 .apple-stat-card:hover .icon-animated circle,
-.apple-stat-card:hover .icon-animated rect {
-  animation: iconGlow 1s ease;
+.apple-stat-card:hover .icon-animated rect,
+.apple-stat-card:hover .icon-animated polyline,
+.apple-stat-card:hover .icon-animated line {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  animation: none;
+  opacity: 1;
+  filter: none;
+}
+
+/* Keep stat card icons visible after hover */
+.apple-stat-card .icon-animated path,
+.apple-stat-card .icon-animated circle,
+.apple-stat-card .icon-animated rect,
+.apple-stat-card .icon-animated polyline,
+.apple-stat-card .icon-animated line {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
 }
 
 /* Row Icon SVG Animations */
@@ -2633,6 +2649,12 @@ body.apple-settings-page .sidebar-overlay.active {
 .apple-row-icon svg circle,
 .apple-row-icon svg rect {
   transition: stroke 0.3s ease;
+}
+
+/* Google auth icons: use dark stroke instead of white */
+.apple-row-icon.google-auth-icon svg {
+  stroke: #0f172a !important;
+  color: #0f172a !important;
 }
 
 /* Upload Icon Animation */

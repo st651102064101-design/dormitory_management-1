@@ -168,14 +168,19 @@ try {
 
   body.live-light .sidebar-footer .avatar svg {
     color: #6b7280 !important;
-  }
-
-  body.live-light .sidebar-footer .avatar svg rect {
-    fill: #e5e7eb !important;
+    background: transparent !important;
   }
 
   body.live-light .sidebar-footer .avatar svg path {
     fill: #6b7280 !important;
+  }
+
+  body.live-light .sidebar-footer .avatar,
+  body.live-light .sidebar-footer .avatar img,
+  body.live-light .sidebar-footer .avatar svg {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
   }
 
   /* Light mode - Sidebar navigation text and icons */
@@ -237,11 +242,11 @@ try {
   }
 
   body.live-light .sidebar-nav-area::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.15) !important;
+    background: rgba(15, 23, 42, 0.7) !important;
   }
 
   body.live-light .sidebar-nav-area::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.25) !important;
+    background: rgba(15, 23, 42, 0.9) !important;
   }
 
   /* Ensure panel / header icons remain visible in light mode */
@@ -334,7 +339,6 @@ try {
   body.live-light input,
   body.live-light select,
   body.live-light textarea,
-  body.live-light button,
   body.live-light .form-control {
     background: #ffffff !important;
     color: #111827 !important;
@@ -752,11 +756,11 @@ try {
   }
 
   .sidebar-nav-area::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.15) !important;
+    background: rgba(15, 23, 42, 0.7) !important;
   }
 
   .sidebar-nav-area::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.25) !important;
+    background: rgba(15, 23, 42, 0.9) !important;
   }
 
   /* User section in footer - Light Mode */
@@ -769,14 +773,19 @@ try {
 
   .sidebar-footer .avatar svg {
     color: #6b7280 !important;
-  }
-
-  .sidebar-footer .avatar svg rect {
-    fill: #e5e7eb !important;
+    background: transparent !important;
   }
 
   .sidebar-footer .avatar svg path {
     fill: #6b7280 !important;
+  }
+
+  .sidebar-footer .avatar,
+  .sidebar-footer .avatar img,
+  .sidebar-footer .avatar svg {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
   }
   
   /* ตัวหนังสือทั้งหมดเป็นสีดำ */
@@ -1509,14 +1518,14 @@ try {
     width: 4px;
   }
   .app-sidebar .sidebar-nav-area::-webkit-scrollbar-track {
-    background: transparent;
+    background: rgba(15, 23, 42, 0.2);
   }
   .app-sidebar .sidebar-nav-area::-webkit-scrollbar-thumb {
-    background: rgba(255,255,255,0.2);
+    background: rgba(15, 23, 42, 0.7);
     border-radius: 4px;
   }
   .app-sidebar .sidebar-nav-area::-webkit-scrollbar-thumb:hover {
-    background: rgba(255,255,255,0.3);
+    background: rgba(15, 23, 42, 0.9);
   }
   /* Footer stays at bottom, never scrolls */
   .sidebar-footer {
@@ -2062,7 +2071,7 @@ try {
       z-index: 9999 !important;
       background: #0b162a !important;
       transform: translateX(-100%) !important;
-      transition: transform 0.35s ease !important;
+      transition: transform 0.35s ease, visibility 0s linear 0.35s !important;
       will-change: transform;
       box-shadow: 4px 0 24px rgba(0,0,0,0.6) !important;
       padding: 1.25rem 0.75rem !important;
@@ -2072,10 +2081,11 @@ try {
       display: flex !important;
       flex-direction: column !important;
       visibility: hidden;
+      pointer-events: none !important;
     }
     
     /* Mobile: collapsed sidebar is hidden completely */
-    .app-sidebar.collapsed {
+    aside.app-sidebar.collapsed {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
@@ -2085,6 +2095,8 @@ try {
       background: #0b162a !important;
       transform: translateX(-100%) !important;
       visibility: hidden;
+      transition: transform 0.35s ease, visibility 0s linear 0.35s !important;
+      pointer-events: none !important;
     }
 
     /* When sidebar is open - make it visible and slide in */
@@ -2093,6 +2105,14 @@ try {
       transform: translateX(0) !important;
       visibility: visible !important;
       pointer-events: auto !important;
+      transition-delay: 0s !important;
+    }
+
+    body.sidebar-open aside.app-sidebar.collapsed {
+      transform: translateX(0) !important;
+      visibility: visible !important;
+      pointer-events: auto !important;
+      transition-delay: 0s !important;
     }
     
     /* Mobile: header stays at top */
@@ -2194,7 +2214,7 @@ try {
     }
     
     /* Reset collapsed styles that might conflict */
-    .app-sidebar.collapsed {
+    aside.app-sidebar.collapsed {
       position: fixed !important;
       top: 0 !important;
       left: 0 !important;
@@ -2203,7 +2223,7 @@ try {
       z-index: 9999 !important;
       background: #0b162a !important;
       transform: translateX(-100%) !important;
-      transition: transform 0.35s ease !important;
+      transition: transform 0.35s ease, visibility 0s linear 0.35s !important;
       visibility: hidden;
       will-change: transform;
       box-shadow: 4px 0 24px rgba(0,0,0,0.6) !important;
@@ -2213,12 +2233,15 @@ try {
       flex-direction: column !important;
       gap: 0.5rem !important;
       margin: 0 !important;
+      pointer-events: none !important;
     }
     
-    .app-sidebar.collapsed.mobile-open,
-    body.sidebar-open .app-sidebar.collapsed {
+    aside.app-sidebar.collapsed.mobile-open,
+    body.sidebar-open aside.app-sidebar.collapsed {
       transform: translateX(0) !important;
       visibility: visible !important;
+      pointer-events: auto !important;
+      transition-delay: 0s !important;
     }
     
     /* Content area takes remaining space */
@@ -2300,6 +2323,15 @@ try {
       background: rgba(0, 0, 0, 0.6);
       z-index: 9998;
       pointer-events: auto;
+    }
+
+    /* Keep hamburger button clickable above overlay while sidebar is open */
+    body.sidebar-open #sidebar-toggle {
+      position: fixed !important;
+      top: 12px !important;
+      left: 12px !important;
+      z-index: 10050 !important;
+      pointer-events: auto !important;
     }
 
     /* Keep hamburger button always clickable - removed hiding behavior */
@@ -2532,14 +2564,12 @@ try {
                style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;" 
                onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display: none;">
-            <rect width="24" height="24" rx="6" fill="#ffffff" opacity="0.06" />
             <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
             <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
           </svg>
         <?php else: ?>
           <!-- Default user svg icon -->
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect width="24" height="24" rx="6" fill="#ffffff" opacity="0.06" />
             <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
             <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
           </svg>
@@ -3018,7 +3048,6 @@ function appleConfirm(message, title = 'project.3bbddns.com:36140 บอกว�
         if (avatarDiv) {
           avatarDiv.innerHTML = `
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="24" height="24" rx="6" fill="#ffffff" opacity="0.06" />
               <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
               <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
             </svg>

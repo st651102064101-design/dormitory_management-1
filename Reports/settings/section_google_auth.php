@@ -4,7 +4,7 @@
   <div class="apple-section-card">
     <!-- Google Status -->
     <div class="apple-settings-row">
-      <div class="apple-row-icon" style="background: linear-gradient(135deg, #4285F4, #34A853);">
+      <div class="apple-row-icon google-auth-icon" style="background: linear-gradient(135deg, #4285F4, #34A853);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
           <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
           <polyline points="10 17 15 12 10 7"/>
@@ -68,7 +68,7 @@
   <!-- Help Section -->
   <div class="apple-section-card" style="margin-top: 12px;">
     <div class="apple-settings-row" onclick="window.open('https://console.cloud.google.com/apis/credentials', '_blank')">
-      <div class="apple-row-icon" style="background: linear-gradient(135deg, #4285F4, #34A853);">
+      <div class="apple-row-icon google-auth-icon" style="background: linear-gradient(135deg, #4285F4, #34A853);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
           <circle cx="12" cy="12" r="10"/>
           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>
