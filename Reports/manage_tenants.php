@@ -363,6 +363,30 @@ try {
         color: #b91c1c !important;
         border-color: #fecaca !important;
       }
+
+      .reports-page .crud-column .animate-ui-action-btn.edit,
+      .reports-page .crud-column .btn-edit-tenant {
+        background: #2563eb !important;
+        border: 1px solid #1d4ed8 !important;
+        color: #ffffff !important;
+      }
+      .reports-page .crud-column .animate-ui-action-btn.edit:hover,
+      .reports-page .crud-column .btn-edit-tenant:hover {
+        background: #1d4ed8 !important;
+        border-color: #1e40af !important;
+      }
+
+      .reports-page .crud-column .animate-ui-action-btn.delete,
+      .reports-page .crud-column .btn-delete-tenant {
+        background: #dc2626 !important;
+        border: 1px solid #b91c1c !important;
+        color: #ffffff !important;
+      }
+      .reports-page .crud-column .animate-ui-action-btn.delete:hover,
+      .reports-page .crud-column .btn-delete-tenant:hover {
+        background: #b91c1c !important;
+        border-color: #991b1b !important;
+      }
     </style>
   </head>
   <body class="reports-page">

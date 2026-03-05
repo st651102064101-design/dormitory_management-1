@@ -439,25 +439,52 @@ try {
         gap: 0.4rem;
       }
       
-      .room-card-actions .btn-edit {
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        color: white;
+      .room-card-actions .btn-edit,
+      body.live-light .room-card-actions .btn-edit,
+      html.light-theme .room-card-actions .btn-edit {
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        border: 1px solid #1d4ed8 !important;
+        color: #ffffff !important;
+      }
+
+      .room-card-actions .btn-edit svg,
+      body.live-light .room-card-actions .btn-edit svg,
+      html.light-theme .room-card-actions .btn-edit svg {
+        color: #ffffff !important;
+        stroke: currentColor;
       }
       
-      .room-card-actions .btn-edit:hover {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      .room-card-actions .btn-edit:hover,
+      body.live-light .room-card-actions .btn-edit:hover,
+      html.light-theme .room-card-actions .btn-edit:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+        border-color: #1e40af !important;
+        color: #ffffff !important;
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(37,99,235,0.35);
       }
       
-      .room-card-actions .btn-delete {
-        background: rgba(239,68,68,0.1);
-        color: #f87171;
-        border: 1px solid rgba(239,68,68,0.2);
+      .room-card-actions .btn-delete,
+      body.live-light .room-card-actions .btn-delete,
+      html.light-theme .room-card-actions .btn-delete {
+        background: #dc2626 !important;
+        color: #ffffff !important;
+        border: 1px solid #b91c1c !important;
+      }
+
+      .room-card-actions .btn-delete svg,
+      body.live-light .room-card-actions .btn-delete svg,
+      html.light-theme .room-card-actions .btn-delete svg {
+        color: #ffffff !important;
+        stroke: currentColor;
       }
       
-      .room-card-actions .btn-delete:hover {
-        background: rgba(239,68,68,0.2);
+      .room-card-actions .btn-delete:hover,
+      body.live-light .room-card-actions .btn-delete:hover,
+      html.light-theme .room-card-actions .btn-delete:hover {
+        background: #b91c1c !important;
+        border-color: #991b1b !important;
+        color: #ffffff !important;
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(239,68,68,0.2);
       }
@@ -790,7 +817,9 @@ try {
         border-top: 1px solid rgba(255,255,255,0.06);
       }
       
-      .load-more-btn {
+      .load-more-btn,
+      body.live-light .load-more-btn,
+      html.light-theme .load-more-btn {
         padding: 0.9rem 2.5rem;
         background: rgba(255,255,255,0.05);
         color: #94a3b8;
@@ -803,12 +832,29 @@ try {
         align-items: center;
         gap: 0.5rem;
       }
+
+      body.live-light .load-more-btn,
+      html.light-theme .load-more-btn {
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        color: #ffffff !important;
+        border: 1px solid #1d4ed8 !important;
+      }
       
-      .load-more-btn:hover {
+      .load-more-btn:hover,
+      body.live-light .load-more-btn:hover,
+      html.light-theme .load-more-btn:hover {
         background: rgba(255,255,255,0.1);
         color: #f8fafc;
         border-color: rgba(255,255,255,0.2);
         transform: translateY(-2px);
+      }
+
+      body.live-light .load-more-btn:hover,
+      html.light-theme .load-more-btn:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+        border-color: #1e40af !important;
+        color: #ffffff !important;
+        box-shadow: 0 10px 30px rgba(37,99,235,0.35);
       }
 
       .load-more-container:has(.load-more-btn.hidden) {

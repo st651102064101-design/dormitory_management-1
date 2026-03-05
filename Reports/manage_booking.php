@@ -2009,12 +2009,12 @@ try {
         border-radius: 4px;
         color: #cbd5e1;
       }
-      .rooms-grid.list-view .list-book-btn {
+      .rooms-grid.list-view button.list-book-btn {
         padding: 0.6rem 1.5rem;
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
-        border: none;
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        border: 1px solid #1d4ed8 !important;
         border-radius: 8px;
-        color: white;
+        color: #ffffff !important;
         font-size: 0.85rem;
         font-weight: 600;
         cursor: pointer;
@@ -2027,14 +2027,29 @@ try {
         position: relative;
         z-index: 100;
       }
-      .rooms-grid.list-view .list-book-btn:hover {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      .rooms-grid.list-view button.list-book-btn:hover {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+        border-color: #1e40af !important;
+        color: #ffffff !important;
         transform: translateY(-2px);
         box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
       }
-      .rooms-grid.list-view .list-book-btn svg {
+      .rooms-grid.list-view button.list-book-btn svg {
         width: 16px;
         height: 16px;
+        color: #ffffff !important;
+        stroke: currentColor !important;
+        fill: none !important;
+      }
+
+      .rooms-grid.list-view button.list-book-btn svg *,
+      body.live-light .rooms-grid.list-view button.list-book-btn svg,
+      body.live-light .rooms-grid.list-view button.list-book-btn svg *,
+      html.light-theme .rooms-grid.list-view button.list-book-btn svg,
+      html.light-theme .rooms-grid.list-view button.list-book-btn svg * {
+        color: #ffffff !important;
+        stroke: #ffffff !important;
+        fill: none !important;
       }
       
       /* List view deposit info */

@@ -849,9 +849,15 @@ try {
       }
 
       html.light-theme .expenses-view-toggle {
-        background: #ffffff !important;
-        color: #0f172a !important;
-        border-color: rgba(15,23,42,0.15) !important;
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        color: #ffffff !important;
+        border-color: #1d4ed8 !important;
+      }
+
+      html.light-theme .expenses-view-toggle svg,
+      html.light-theme .expenses-view-toggle svg * {
+        stroke: #ffffff !important;
+        color: #ffffff !important;
       }
 
       html.light-theme .expense-row-card {

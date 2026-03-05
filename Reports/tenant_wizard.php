@@ -264,12 +264,12 @@ try {
         }
 
         .btn-primary {
-            background: #3b82f6;
+            background: #2563eb;
             color: white;
         }
 
         .btn-primary:hover {
-            background: #2563eb;
+            background: #1d4ed8;
             transform: translateY(-1px);
         }
 
@@ -283,13 +283,35 @@ try {
         }
 
         .btn-danger {
-            background: #ef4444;
+            background: #dc2626;
             color: white;
         }
 
         .btn-danger:hover {
-            background: #dc2626;
+            background: #b91c1c;
             transform: translateY(-1px);
+        }
+
+        .wizard-table .action-btn.btn-primary {
+            background: #2563eb !important;
+            border: 1px solid #1d4ed8 !important;
+            color: #ffffff !important;
+        }
+
+        .wizard-table .action-btn.btn-primary:hover {
+            background: #1d4ed8 !important;
+            border-color: #1e40af !important;
+        }
+
+        .wizard-table .action-btn.btn-danger {
+            background: #dc2626 !important;
+            border: 1px solid #b91c1c !important;
+            color: #ffffff !important;
+        }
+
+        .wizard-table .action-btn.btn-danger:hover {
+            background: #b91c1c !important;
+            border-color: #991b1b !important;
         }
 
         .btn-disabled {

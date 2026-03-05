@@ -71,6 +71,7 @@ try {
 $baseUrl = getTenantPortalUrl();
 $totalContracts = count($contracts);
 $lightThemeClass = $isLightTheme ? 'live-light' : '';
+$defaultQrView = 'list';
 ?>
 <!DOCTYPE html>
 <html lang="th" class="<?php echo $lightThemeClass; ?>">
@@ -216,9 +217,14 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
         .qr-header-icon svg {
             width: 44px;
             height: 44px;
-            stroke: white;
-            stroke-width: 1.5;
-            fill: none;
+            color: #ffffff;
+            stroke: none;
+            fill: currentColor;
+        }
+
+        .qr-header-icon svg rect {
+            fill: currentColor;
+            stroke: none;
         }
 
         /* Light theme override for header icon to ensure contrast */
@@ -237,8 +243,18 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
         .light-theme .qr-header-icon svg,
         html.live-light .qr-header-icon svg,
         body.live-light .qr-header-icon svg {
-            stroke: var(--apple-text) !important;
-            fill: none !important;
+            color: #334155 !important;
+            stroke: none !important;
+            fill: currentColor !important;
+        }
+
+        html.light-theme .qr-header-icon svg rect,
+        body.light-theme .qr-header-icon svg rect,
+        .light-theme .qr-header-icon svg rect,
+        html.live-light .qr-header-icon svg rect,
+        body.live-light .qr-header-icon svg rect {
+            fill: currentColor !important;
+            stroke: none !important;
         }
 
         .qr-header h1 {
@@ -378,11 +394,92 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             justify-content: center;
         }
 
+        .view-toggle-group {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: transparent;
+            border: none;
+            border-radius: 14px;
+            padding: 0;
+        }
+
+        .view-toggle-group .btn-apple.view-toggle-btn {
+            min-width: 130px;
+            padding: 10px 16px;
+            border-radius: 10px;
+            box-shadow: none;
+            transform: none;
+            background: #f8fafc !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #334155 !important;
+        }
+
+        .view-toggle-group .btn-apple.view-toggle-btn svg {
+            color: currentColor !important;
+            stroke: currentColor !important;
+            fill: none !important;
+        }
+
+        .view-toggle-group .btn-apple.view-toggle-btn:hover {
+            background: #f1f5f9 !important;
+            border-color: #94a3b8 !important;
+        }
+
+        .view-toggle-group .btn-apple.view-toggle-btn.active {
+            background: linear-gradient(135deg, var(--apple-blue), #5856d6) !important;
+            border-color: transparent !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px rgba(0, 122, 255, 0.35);
+        }
+
+        .view-toggle-group .btn-apple.view-toggle-btn.active svg {
+            color: #ffffff !important;
+            stroke: #ffffff !important;
+        }
+
+        #viewListBtn,
+        #viewGridBtn,
+        #viewTableBtn {
+            color: #1f2937 !important;
+        }
+
+        #viewListBtn svg,
+        #viewGridBtn svg,
+        #viewTableBtn svg,
+        #viewListBtn svg *,
+        #viewGridBtn svg *,
+        #viewTableBtn svg * {
+            stroke: currentColor !important;
+            fill: none !important;
+        }
+
+        #viewListBtn.active,
+        #viewGridBtn.active,
+        #viewTableBtn.active {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, var(--apple-blue), #5856d6) !important;
+            border-color: transparent !important;
+        }
+
+        #viewListBtn.active svg,
+        #viewGridBtn.active svg,
+        #viewTableBtn.active svg,
+        #viewListBtn.active svg *,
+        #viewGridBtn.active svg *,
+        #viewTableBtn.active svg * {
+            stroke: #ffffff !important;
+        }
+
         .qr-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
             gap: 24px;
             width: 100%;
+        }
+
+        .qr-grid.hidden {
+            display: none !important;
         }
 
         .qr-grid.row-view {
@@ -458,6 +555,102 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
                 justify-content: center;
                 margin-left: 0;
             }
+        }
+
+        .qr-table-wrap {
+            display: none;
+            width: 100%;
+            overflow-x: auto;
+            background: transparent !important;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            border-radius: 16px;
+            padding: 0;
+        }
+
+        .qr-table-wrap.active {
+            display: block;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+        }
+
+        .qr-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 980px;
+            border: none !important;
+            outline: none !important;
+            box-shadow: none !important;
+            background: transparent !important;
+        }
+
+        .qr-table th,
+        .qr-table td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e2e8f0 !important;
+            color: var(--apple-text);
+            font-size: 0.95rem;
+            text-align: left;
+            vertical-align: middle;
+            background: transparent !important;
+        }
+
+        .qr-table th {
+            color: var(--apple-text-secondary);
+            font-weight: 600;
+            font-size: 0.86rem;
+            white-space: nowrap;
+        }
+
+        .qr-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .qr-table-room {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, var(--apple-blue), var(--apple-purple));
+            color: #ffffff !important;
+            border-radius: 999px;
+            padding: 6px 10px;
+            font-weight: 600;
+            font-size: 0.88rem;
+            white-space: nowrap;
+        }
+
+        .qr-table-room,
+        .qr-table-room * {
+            color: #ffffff !important;
+        }
+
+        .qr-table-room svg {
+            width: 14px;
+            height: 14px;
+            stroke: #ffffff !important;
+            fill: none;
+        }
+
+        .qr-thumb {
+            width: 72px;
+            height: 72px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(148,163,184,0.35);
+            background: #fff;
+        }
+
+        .qr-table-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .qr-table-actions .btn-card {
+            padding: 8px 12px;
+            font-size: 0.8rem;
         }
 
         .qr-card {
@@ -758,6 +951,8 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             display: flex;
             gap: 10px;
             justify-content: center;
+            flex-wrap: wrap;
+            width: 100%;
         }
 
         .btn-card {
@@ -772,6 +967,12 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
             font-family: inherit;
+            max-width: 100%;
+        }
+
+        .qr-grid:not(.row-view) .card-actions .btn-card {
+            flex: 1 1 110px;
+            justify-content: center;
         }
 
         .btn-card svg {
@@ -801,6 +1002,17 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
         .btn-card.print:hover {
             background: var(--apple-blue);
             color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-card.portal {
+            background: rgba(168, 85, 247, 0.16);
+            color: #a855f7;
+        }
+
+        .btn-card.portal:hover {
+            background: #a855f7;
+            color: #ffffff;
             transform: translateY(-2px);
         }
 
@@ -1024,6 +1236,20 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             color: white !important;
         }
 
+        html.light-theme .btn-card.portal,
+        body.light-theme .btn-card.portal,
+        .light-theme .btn-card.portal {
+            background: rgba(168, 85, 247, 0.12) !important;
+            color: #7e22ce !important;
+        }
+
+        html.light-theme .btn-card.portal:hover,
+        body.light-theme .btn-card.portal:hover,
+        .light-theme .btn-card.portal:hover {
+            background: #7e22ce !important;
+            color: #ffffff !important;
+        }
+
         html.light-theme .empty-state h3,
         body.light-theme .empty-state h3,
         .light-theme .empty-state h3 {
@@ -1104,7 +1330,62 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
     }
 
     function printAll() {
-        window.print();
+        var cards = document.querySelectorAll('.qr-card');
+        if (!cards.length) {
+            window.print();
+            return;
+        }
+
+        var htmlCards = '';
+        cards.forEach(function(card) {
+            var roomBadge = card.querySelector('.room-badge');
+            var tenantNameEl = card.querySelector('.tenant-name');
+            var qrImg = card.querySelector('.qr-container img');
+            if (!roomBadge || !tenantNameEl || !qrImg) return;
+
+            var roomText = roomBadge.textContent.trim();
+            var tenantText = tenantNameEl.textContent.trim();
+            var imageUrl = qrImg.getAttribute('src') || '';
+
+            htmlCards +=
+                '<div class="print-item">' +
+                    '<div class="print-room">' + roomText + '</div>' +
+                    '<div class="print-tenant">' + tenantText + '</div>' +
+                    '<img src="' + imageUrl + '" class="print-qr" alt="QR">' +
+                '</div>';
+        });
+
+        var printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            window.print();
+            return;
+        }
+
+        printWindow.document.write(
+            '<!DOCTYPE html>' +
+            '<html><head><meta charset="utf-8">' +
+            '<title>พิมพ์ QR Code ทั้งหมด</title>' +
+            '<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;600;700&display=swap" rel="stylesheet">' +
+            '<style>' +
+            '*{box-sizing:border-box;} body{margin:0;padding:16px;font-family:"Prompt",sans-serif;background:#fff;color:#111827;}' +
+            '.print-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;}' +
+            '.print-item{border:1px solid #d1d5db;border-radius:14px;padding:14px;text-align:center;break-inside:avoid;page-break-inside:avoid;}' +
+            '.print-room{display:inline-block;background:linear-gradient(135deg,#2563eb,#7c3aed);color:#fff;padding:6px 14px;border-radius:999px;font-weight:700;font-size:14px;margin-bottom:8px;}' +
+            '.print-tenant{font-size:14px;font-weight:600;color:#1f2937;margin-bottom:10px;}' +
+            '.print-qr{width:170px;height:170px;object-fit:contain;border-radius:8px;}' +
+            '@page{size:A4 portrait;margin:10mm;}' +
+            '@media print{body{padding:0;} .print-grid{gap:12px;} .print-item{border:1px solid #cbd5e1;}}' +
+            '</style></head><body>' +
+            '<div class="print-grid">' + htmlCards + '</div>' +
+            '<script>window.onload=function(){setTimeout(function(){window.print();window.close();},350);};<\/script>' +
+            '</body></html>'
+        );
+        printWindow.document.close();
+    }
+
+    function openQrTarget(url) {
+        if (!url) return;
+        window.open(url, '_blank', 'noopener,noreferrer');
     }
 
     function printSingleQR(imageUrl, roomNumber, tenantName) {
@@ -1212,7 +1493,38 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
 
                     <?php if (!empty($contracts)): ?>
                     <div class="action-bar no-print">
-                        <button class="btn-apple primary" onclick="window.print()">
+                        <div class="view-toggle-group" role="group" aria-label="สลับมุมมอง">
+                            <button class="btn-apple secondary view-toggle-btn active" id="viewListBtn" type="button" onclick="setQrView('list')" aria-pressed="true">
+                                <svg viewBox="0 0 24 24">
+                                    <line x1="8" y1="6" x2="21" y2="6"/>
+                                    <line x1="8" y1="12" x2="21" y2="12"/>
+                                    <line x1="8" y1="18" x2="21" y2="18"/>
+                                    <line x1="3" y1="6" x2="3.01" y2="6"/>
+                                    <line x1="3" y1="12" x2="3.01" y2="12"/>
+                                    <line x1="3" y1="18" x2="3.01" y2="18"/>
+                                </svg>
+                                List
+                            </button>
+                            <button class="btn-apple secondary view-toggle-btn" id="viewGridBtn" type="button" onclick="setQrView('grid')" aria-pressed="false">
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="3" y="3" width="7" height="7" rx="1"/>
+                                    <rect x="14" y="3" width="7" height="7" rx="1"/>
+                                    <rect x="3" y="14" width="7" height="7" rx="1"/>
+                                    <rect x="14" y="14" width="7" height="7" rx="1"/>
+                                </svg>
+                                Grid
+                            </button>
+                            <button class="btn-apple secondary view-toggle-btn" id="viewTableBtn" type="button" onclick="setQrView('table')" aria-pressed="false">
+                                <svg viewBox="0 0 24 24">
+                                    <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
+                                    <line x1="3" y1="10" x2="21" y2="10"/>
+                                    <line x1="9" y1="4" x2="9" y2="20"/>
+                                    <line x1="15" y1="4" x2="15" y2="20"/>
+                                </svg>
+                                Table
+                            </button>
+                        </div>
+                        <button class="btn-apple primary" onclick="printAll()">
                             <svg viewBox="0 0 24 24">
                                 <polyline points="6 9 6 2 18 2 18 9"/>
                                 <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
@@ -1230,7 +1542,7 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
                         </button>
                     </div>
 
-                    <div class="qr-grid">
+                    <div class="qr-grid row-view" id="qrListView">
                         <?php foreach ($contracts as $index => $contract): ?>
                         <?php 
                             $tenantUrl = $baseUrl . '?token=' . urlencode($contract['access_token']);
@@ -1267,6 +1579,16 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
                             </div>
                             
                             <div class="card-actions no-print">
+                                <button class="btn-card portal" onclick="openQrTarget('<?php echo htmlspecialchars($tenantUrl, ENT_QUOTES, 'UTF-8'); ?>')">
+                                    <svg viewBox="0 0 24 24">
+                                        <path d="M14 3h7v7"/>
+                                        <path d="M10 14L21 3"/>
+                                        <path d="M21 14v7h-7"/>
+                                        <path d="M3 10V3h7"/>
+                                        <path d="M3 21h7v-7"/>
+                                    </svg>
+                                    เข้าหน้าผู้เช่า
+                                </button>
                                 <button class="btn-card download" onclick="downloadQR('<?php echo $qrImageUrl; ?>', '<?php echo $contract['room_number']; ?>')">
                                     <svg viewBox="0 0 24 24">
                                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
@@ -1287,6 +1609,57 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
                         </div>
                         <?php endforeach; ?>
                     </div>
+
+                    <div class="qr-table-wrap" id="qrTableView">
+                        <table class="qr-table">
+                            <thead>
+                                <tr>
+                                    <th>ห้อง</th>
+                                    <th>ผู้เช่า</th>
+                                    <th>เบอร์โทร</th>
+                                    <th>QR</th>
+                                    <th>จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php foreach ($contracts as $contract): ?>
+                                <?php 
+                                    $tenantUrl = $baseUrl . '?token=' . urlencode($contract['access_token']);
+                                    $qrImageUrl = '../qr_generate.php?data=' . urlencode($tenantUrl);
+                                ?>
+                                <tr>
+                                    <td>
+                                        <span class="qr-table-room">
+                                            <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                            ห้อง <?php echo htmlspecialchars($contract['room_number']); ?>
+                                        </span>
+                                    </td>
+                                    <td><?php echo htmlspecialchars($contract['tnt_name']); ?></td>
+                                    <td><?php echo htmlspecialchars($contract['tnt_phone'] ?? '-'); ?></td>
+                                    <td>
+                                        <img class="qr-thumb" src="<?php echo $qrImageUrl; ?>" alt="QR ห้อง <?php echo htmlspecialchars($contract['room_number']); ?>">
+                                    </td>
+                                    <td>
+                                        <div class="qr-table-actions no-print">
+                                            <button class="btn-card portal" onclick="openQrTarget('<?php echo htmlspecialchars($tenantUrl, ENT_QUOTES, 'UTF-8'); ?>')">
+                                                <svg viewBox="0 0 24 24"><path d="M14 3h7v7"/><path d="M10 14L21 3"/><path d="M21 14v7h-7"/><path d="M3 10V3h7"/><path d="M3 21h7v-7"/></svg>
+                                                เข้าหน้าผู้เช่า
+                                            </button>
+                                            <button class="btn-card download" onclick="downloadQR('<?php echo $qrImageUrl; ?>', '<?php echo $contract['room_number']; ?>')">
+                                                <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                                ดาวน์โหลด
+                                            </button>
+                                            <button class="btn-card print" onclick="printSingleQR('<?php echo $qrImageUrl; ?>', '<?php echo htmlspecialchars($contract['room_number']); ?>', '<?php echo htmlspecialchars(addslashes($contract['tnt_name'])); ?>')">
+                                                <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                                                พิมพ์
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
                     <?php else: ?>
                     <div class="empty-state">
                         <div class="empty-icon">
@@ -1306,6 +1679,37 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
     </div>
     
     <script>
+        function setQrView(view) {
+            var listView = document.getElementById('qrListView');
+            var tableView = document.getElementById('qrTableView');
+            var listBtn = document.getElementById('viewListBtn');
+            var gridBtn = document.getElementById('viewGridBtn');
+            var tableBtn = document.getElementById('viewTableBtn');
+
+            var safeView = (view === 'table' || view === 'grid' || view === 'list') ? view : 'list';
+            var isTableView = (safeView === 'table');
+            var isListView = (safeView === 'list');
+            var isGridView = (safeView === 'grid');
+
+            if (listView) {
+                listView.classList.toggle('hidden', isTableView);
+                listView.classList.toggle('row-view', isListView);
+            }
+            if (tableView) tableView.classList.toggle('active', isTableView);
+
+            if (listBtn) listBtn.classList.toggle('active', isListView);
+            if (gridBtn) gridBtn.classList.toggle('active', isGridView);
+            if (tableBtn) tableBtn.classList.toggle('active', isTableView);
+
+            if (listBtn) listBtn.setAttribute('aria-pressed', isListView ? 'true' : 'false');
+            if (gridBtn) gridBtn.setAttribute('aria-pressed', isGridView ? 'true' : 'false');
+            if (tableBtn) tableBtn.setAttribute('aria-pressed', isTableView ? 'true' : 'false');
+
+            try {
+                localStorage.setItem('qrViewMode', safeView);
+            } catch (e) {}
+        }
+
         // Ensure badge SVG icons render white in Light Theme (runtime override)
         (function(){
             function applyWhiteToBadgeSVGs() {
@@ -1331,6 +1735,16 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             }
 
             document.addEventListener('DOMContentLoaded', applyWhiteToBadgeSVGs);
+
+            document.addEventListener('DOMContentLoaded', function() {
+                var saved = 'list';
+                try {
+                    saved = localStorage.getItem('qrViewMode') || '<?php echo $defaultQrView; ?>';
+                } catch (e) {
+                    saved = '<?php echo $defaultQrView; ?>';
+                }
+                setQrView(saved);
+            });
 
             // Watch for theme class changes (system-settings.js may toggle classes later)
             const obs = new MutationObserver(muts => {

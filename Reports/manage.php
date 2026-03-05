@@ -66,6 +66,7 @@ $wizardCount = safeCount($pdo, "SELECT COUNT(*) FROM tenant_workflow WHERE compl
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border: 1px solid rgba(255,255,255,0.06);
+        box-shadow: 0 14px 32px rgba(0,0,0,0.18);
         border-radius: 20px;
         padding: 1.75rem;
         transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);

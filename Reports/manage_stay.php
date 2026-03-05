@@ -283,7 +283,8 @@ try {
         margin: 0;
       }
       .datatable-wrapper .datatable-pagination-list-item a,
-      .datatable-wrapper .datatable-pagination-list-item button {
+      .datatable-wrapper .datatable-pagination-list-item button,
+      .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -300,21 +301,24 @@ try {
         cursor: pointer;
       }
       .datatable-wrapper .datatable-pagination-list-item a:hover,
-      .datatable-wrapper .datatable-pagination-list-item button:hover {
+      .datatable-wrapper .datatable-pagination-list-item button:hover,
+      .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link:hover {
         background: #f8fafc !important;
         border-color: #cbd5e1 !important;
         color: #1e293b !important;
         transform: translateY(-2px);
       }
       .datatable-wrapper .datatable-pagination-list-item.datatable-active a,
-      .datatable-wrapper .datatable-pagination-list-item.datatable-active button {
+      .datatable-wrapper .datatable-pagination-list-item.datatable-active button,
+      .datatable-wrapper .datatable-pagination-list-item.datatable-active .datatable-pagination-list-item-link {
         background: linear-gradient(135deg, #3b82f6, #60a5fa) !important;
         border-color: transparent !important;
         color: #fff !important;
         box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
       }
       .datatable-wrapper .datatable-pagination-list-item.datatable-disabled a,
-      .datatable-wrapper .datatable-pagination-list-item.datatable-disabled button {
+      .datatable-wrapper .datatable-pagination-list-item.datatable-disabled button,
+      .datatable-wrapper .datatable-pagination-list-item.datatable-disabled .datatable-pagination-list-item-link {
         opacity: 0.4;
         cursor: not-allowed;
         pointer-events: none;
@@ -418,16 +422,20 @@ try {
       }
       body.live-light .datatable-wrapper .datatable-pagination-list-item a,
       body.live-light .datatable-wrapper .datatable-pagination-list-item button,
+      body.live-light .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link,
       html.light-theme .datatable-wrapper .datatable-pagination-list-item a,
-      html.light-theme .datatable-wrapper .datatable-pagination-list-item button {
+      html.light-theme .datatable-wrapper .datatable-pagination-list-item button,
+      html.light-theme .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link {
         background: #ffffff !important;
         border-color: #d1d5db !important;
         color: #475569 !important;
       }
       body.live-light .datatable-wrapper .datatable-pagination-list-item a:hover,
       body.live-light .datatable-wrapper .datatable-pagination-list-item button:hover,
+      body.live-light .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link:hover,
       html.light-theme .datatable-wrapper .datatable-pagination-list-item a:hover,
-      html.light-theme .datatable-wrapper .datatable-pagination-list-item button:hover {
+      html.light-theme .datatable-wrapper .datatable-pagination-list-item button:hover,
+      html.light-theme .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link:hover {
         background: #f8fafc !important;
         border-color: #cbd5e1 !important;
         color: #1e293b !important;

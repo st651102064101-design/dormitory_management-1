@@ -105,14 +105,16 @@ try {
       }
 
       #table-view .datatable-wrapper .datatable-pagination-list-item a,
-      #table-view .datatable-wrapper .datatable-pagination-list-item button {
+      #table-view .datatable-wrapper .datatable-pagination-list-item button,
+      #table-view .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link {
         background: #ffffff !important;
         border: 1px solid #cbd5e1 !important;
         color: #64748b !important;
       }
 
       #table-view .datatable-wrapper .datatable-pagination-list-item a:hover,
-      #table-view .datatable-wrapper .datatable-pagination-list-item button:hover {
+      #table-view .datatable-wrapper .datatable-pagination-list-item button:hover,
+      #table-view .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link:hover {
         background: #f1f5f9 !important;
         color: #0ea5e9 !important;
       }
