@@ -205,6 +205,7 @@ $roomPaymentSummary = $pdo->query("
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการการชำระเงิน</title>
+    <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
@@ -2169,7 +2170,12 @@ $roomPaymentSummary = $pdo->query("
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
       <main class="app-main">
-        <div class="container" style="max-width:100%;padding:1.5rem;">
+        <div>
+          <?php
+            $pageTitle = 'จัดการการชำระเงิน';
+            include __DIR__ . '/../includes/page_header.php';
+          ?>
+          <div class="container" style="max-width:100%;padding:0;">
 
           <!-- Header -->
           <section class="manage-panel fade-in-up">
@@ -2802,6 +2808,7 @@ $roomPaymentSummary = $pdo->query("
             </div>
           </section>
 
+          </div>
         </div>
       </main>
     </div>
