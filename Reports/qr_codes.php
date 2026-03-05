@@ -177,6 +177,33 @@ $defaultQrView = 'list';
             margin: 1rem 1rem 0 1.5rem !important;
         }
 
+        html.light-theme body.qr-page .quick-action-link,
+        body.light-theme.qr-page .quick-action-link,
+        body.qr-page.live-light .quick-action-link,
+        .light-theme .qr-page .quick-action-link {
+            background: rgba(59, 130, 246, 0.14) !important;
+            border-color: rgba(59, 130, 246, 0.5) !important;
+            color: #1d4ed8 !important;
+        }
+
+        html.light-theme body.qr-page .quick-action-link:hover,
+        body.light-theme.qr-page .quick-action-link:hover,
+        body.qr-page.live-light .quick-action-link:hover,
+        .light-theme .qr-page .quick-action-link:hover {
+            background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+            border-color: #1d4ed8 !important;
+            color: #ffffff !important;
+        }
+
+        html.light-theme body.qr-page .quick-action-link.active,
+        body.light-theme.qr-page .quick-action-link.active,
+        body.qr-page.live-light .quick-action-link.active,
+        .light-theme .qr-page .quick-action-link.active {
+            background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+            border-color: #1d4ed8 !important;
+            color: #ffffff !important;
+        }
+
         @keyframes floatParticle {
             0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
             10% { opacity: 0.3; }

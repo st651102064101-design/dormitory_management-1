@@ -283,10 +283,7 @@ $wizardCount = safeCount($pdo, "SELECT COUNT(*) FROM tenant_workflow WHERE compl
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main">
         <div style="width:100%;">
-          <header style="display:flex;align-items:center;gap:0.5rem;margin-bottom:2rem;justify-content:flex-start;">
-            <button id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar" aria-expanded="false" style="background:transparent;border:0;color:#fff;padding:0.6rem 0.85rem;border-radius:6px;cursor:pointer;font-size:1.25rem;flex:0 0 auto;">☰</button>
-            <h2 style="margin:0;color:#fff;font-size:1.05rem;flex:0 0 auto;text-align:left;">จัดการระบบ</h2>
-          </header>
+          <?php $pageTitle = 'จัดการระบบ'; include __DIR__ . '/../includes/page_header.php'; ?>
 
           <section class="manage-panel">
             <div class="page-header">

@@ -1390,36 +1390,44 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
           justify-content: center;
         }
       }
-      /* Ensure active filter icons and counts are visible (white) in light theme.
-         Targets when theme class is on <html> (html.light-theme) or on <body> (body.live-light).
-         Also tries to match inline blue backgrounds (#60a5fa) used on some buttons. */
-      html.light-theme .status-filter-btn.active,
-      html.light-theme .status-filter-btn.active *,
-      html.light-theme a.filter-btn[style*="#60a5fa"],
-      html.light-theme a.filter-btn[style*="#60a5fa"] *,
-      body.live-light .status-filter-btn.active,
-      body.live-light a.filter-btn[style*="#60a5fa"] {
-        color: #ffffff !important;
+      /* Keep repair status filter colors in light mode (avoid white/gray override) */
+      html.light-theme .status-filter-btn,
+      html.light-theme .status-filter-btn *,
+      body.live-light .status-filter-btn,
+      body.live-light .status-filter-btn * {
+        color: inherit !important;
       }
 
-      html.light-theme .status-filter-btn.active svg,
-      html.light-theme .status-filter-btn.active svg *,
-      body.live-light .status-filter-btn.active svg,
-      body.live-light .status-filter-btn.active svg *,
-      html.light-theme a.filter-btn[style*="#60a5fa"] svg,
-      body.live-light a.filter-btn[style*="#60a5fa"] svg {
-        stroke: #ffffff !important;
-        fill: #ffffff !important;
+      html.light-theme .status-filter-btn svg,
+      html.light-theme .status-filter-btn svg *,
+      body.live-light .status-filter-btn svg,
+      body.live-light .status-filter-btn svg * {
+        stroke: currentColor !important;
+        fill: none !important;
       }
 
-      /* If numeric counts are wrapped in a span with class 'count' enforce white */
-      html.light-theme .status-filter-btn.active .count,
-      html.light-theme a.filter-btn .count,
-      body.live-light .status-filter-btn.active .count,
-      body.live-light a.filter-btn .count,
-      html.light-theme .status-filters .status-filter-btn[style*="#60a5fa"] .count,
-      body.live-light .status-filters .status-filter-btn[style*="#60a5fa"] .count {
-        color: #ffffff !important;
+      html.light-theme .status-filter-btn[data-status="all"],
+      body.live-light .status-filter-btn[data-status="all"] {
+        background: rgba(96, 165, 250, 0.2) !important;
+        color: #60a5fa !important;
+      }
+
+      html.light-theme .status-filter-btn[data-status="0"],
+      body.live-light .status-filter-btn[data-status="0"] {
+        background: rgba(249, 115, 22, 0.15) !important;
+        color: #f97316 !important;
+      }
+
+      html.light-theme .status-filter-btn[data-status="1"],
+      body.live-light .status-filter-btn[data-status="1"] {
+        background: rgba(96, 165, 250, 0.15) !important;
+        color: #60a5fa !important;
+      }
+
+      html.light-theme .status-filter-btn[data-status="2"],
+      body.live-light .status-filter-btn[data-status="2"] {
+        background: rgba(34, 197, 94, 0.15) !important;
+        color: #22c55e !important;
       }
 
       /* Image placeholder color: adapt to light/dark themes */
@@ -1571,6 +1579,97 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
             .image-placeholder svg {
               stroke: rgba(17,24,39,0.35) !important;
               fill: none !important;
+            }
+
+            /* ===== Schedule Modal: support white background theme ===== */
+            html.light-theme .schedule-modal,
+            body.live-light .schedule-modal {
+              background: #ffffff !important;
+              border: 1px solid #e5e7eb !important;
+              box-shadow: 0 25px 60px rgba(15,23,42,0.25) !important;
+            }
+
+            html.light-theme .schedule-modal-header,
+            body.live-light .schedule-modal-header,
+            html.light-theme .schedule-modal-footer,
+            body.live-light .schedule-modal-footer {
+              border-color: #e5e7eb !important;
+            }
+
+            html.light-theme .schedule-modal-title,
+            body.live-light .schedule-modal-title,
+            html.light-theme .schedule-modal-title span,
+            body.live-light .schedule-modal-title span {
+              color: #111827 !important;
+            }
+
+            html.light-theme .schedule-modal-title svg,
+            body.live-light .schedule-modal-title svg {
+              color: #7c3aed !important;
+              stroke: #7c3aed !important;
+            }
+
+            html.light-theme .schedule-modal-close,
+            body.live-light .schedule-modal-close {
+              background: #f8fafc !important;
+              border: 1px solid #d1d5db !important;
+              color: #374151 !important;
+            }
+
+            html.light-theme .schedule-modal-close:hover,
+            body.live-light .schedule-modal-close:hover {
+              background: #fee2e2 !important;
+              border-color: #fecaca !important;
+              color: #b91c1c !important;
+            }
+
+            html.light-theme .schedule-info-card,
+            body.live-light .schedule-info-card {
+              background: #f5f3ff !important;
+              border: 1px solid #ddd6fe !important;
+            }
+
+            html.light-theme .schedule-info-label,
+            body.live-light .schedule-info-label {
+              color: #6b7280 !important;
+            }
+
+            html.light-theme .schedule-info-value,
+            body.live-light .schedule-info-value,
+            html.light-theme .schedule-label,
+            body.live-light .schedule-label,
+            html.light-theme .schedule-label svg,
+            body.live-light .schedule-label svg {
+              color: #111827 !important;
+              stroke: currentColor !important;
+            }
+
+            html.light-theme .schedule-input,
+            body.live-light .schedule-input {
+              background: #ffffff !important;
+              border: 1px solid #d1d5db !important;
+              color: #111827 !important;
+            }
+
+            html.light-theme .schedule-input:focus,
+            body.live-light .schedule-input:focus {
+              background: #ffffff !important;
+              border-color: #8b5cf6 !important;
+              box-shadow: 0 0 0 3px rgba(139,92,246,0.15) !important;
+            }
+
+            html.light-theme .schedule-btn-cancel,
+            body.live-light .schedule-btn-cancel {
+              background: #f3f4f6 !important;
+              border: 1px solid #d1d5db !important;
+              color: #374151 !important;
+            }
+
+            html.light-theme .schedule-btn-cancel:hover,
+            body.live-light .schedule-btn-cancel:hover {
+              background: #e5e7eb !important;
+              border-color: #9ca3af !important;
+              color: #111827 !important;
             }
 
             /* ===== Buttons with colored backgrounds - keep white text/icons ===== */

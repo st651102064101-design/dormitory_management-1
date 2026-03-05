@@ -98,7 +98,15 @@ if ($ctr_id === 0) {
         .count { background: rgba(96,165,250,0.12); padding: 10px 16px; border-radius: 10px; margin-top: 4px; font-weight: 700; color: #60a5fa; display: block; border: 1px solid rgba(96,165,250,0.3); }
         .toolbar { display: flex; width: 100%; justify-content: flex-start; gap: 12px; margin: 4px 0 18px; flex-wrap: wrap; }
         .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.12); transition: transform 0.15s ease, box-shadow 0.15s ease; background: #2563eb; color: #fff; }
-        .btn.secondary { background: #e5e7eb; color: #111827; }
+        .btn.secondary {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #ffffff;
+            border: 1px solid #1d4ed8;
+        }
+        .btn.secondary:hover {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+            color: #ffffff;
+        }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.16); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
         .card { background: #ffffff !important; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 8px 20px rgba(15,23,42,0.08); cursor: pointer; text-decoration: none; color: #1e293b; display: block; transition: all 0.2s ease; }
@@ -209,7 +217,7 @@ if ($ctr_id === 0) {
                                     <td><?php echo htmlspecialchars($c['tnt_name'] ?? '-'); ?></td>
                                     <td><?php echo htmlspecialchars($c['room_number'] ?? '-'); ?></td>
                                     <td><?php echo htmlspecialchars($c['ctr_start'] ?? '-'); ?></td>
-                                    <td><a href="print_contract.php?ctr_id=<?php echo (int)$c['ctr_id']; ?>" class="btn secondary" style="padding: 6px 10px; box-shadow: none;" target="_blank" rel="noopener">พิมพ์</a></td>
+                                    <td><a href="print_contract.php?ctr_id=<?php echo (int)$c['ctr_id']; ?>" class="btn secondary" style="padding: 6px 10px; box-shadow: none; color: #ffffff !important;" target="_blank" rel="noopener">พิมพ์</a></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>

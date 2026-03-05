@@ -328,6 +328,30 @@ try {
       .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
       .empty-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
 
+      /* Force quick-actions in this page to blue theme (avoid white/gray) */
+      .page-header-bar .quick-action-link {
+        background: rgba(59, 130, 246, 0.16) !important;
+        border-color: rgba(59, 130, 246, 0.55) !important;
+        color: #1d4ed8 !important;
+      }
+      .page-header-bar .quick-action-link::after {
+        color: #1d4ed8 !important;
+        border-color: rgba(59, 130, 246, 0.5) !important;
+        background: rgba(59, 130, 246, 0.15) !important;
+      }
+      .page-header-bar .quick-action-link:hover,
+      .page-header-bar .quick-action-link.active {
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        border-color: #1d4ed8 !important;
+        color: #ffffff !important;
+      }
+      .page-header-bar .quick-action-link:hover::after,
+      .page-header-bar .quick-action-link.active::after {
+        color: #ffffff !important;
+        border-color: rgba(255, 255, 255, 0.7) !important;
+        background: rgba(15, 23, 42, 0.5) !important;
+      }
+
       /* Light theme support (white background) */
       body.live-light .stat-card,
       html.light-theme .stat-card {

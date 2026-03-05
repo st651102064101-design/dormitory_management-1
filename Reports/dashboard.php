@@ -230,6 +230,15 @@ try {
             text-align: center;
         }
 
+        .dashboard-link-card {
+            cursor: pointer;
+        }
+
+        .dashboard-link-card:focus-visible {
+            outline: 2px solid #60a5fa;
+            outline-offset: 2px;
+        }
+
         <?php if (!$isLight): ?>
         .stat-card.danger { box-shadow: 0 10px 30px rgba(220,53,69,0.25); }
         .stat-card.success { box-shadow: 0 10px 30px rgba(40,167,69,0.22); }
@@ -913,7 +922,7 @@ try {
 
             <!-- Hero Stats with Occupancy Rate -->
             <div class="hero-stats">
-                <div class="hero-card gradient-blue particle-wrapper">
+                <div class="hero-card gradient-blue particle-wrapper dashboard-link-card" data-link="manage_rooms.php">
                     <div class="particle-container" data-particles="5"></div>
                     <div class="hero-card-title">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -943,7 +952,7 @@ try {
                     </div>
                 </div>
                 
-                <div class="hero-card gradient-green particle-wrapper">
+                <div class="hero-card gradient-green particle-wrapper dashboard-link-card" data-link="manage_revenue.php">
                     <div class="particle-container" data-particles="5"></div>
                     <div class="hero-card-title">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -956,7 +965,7 @@ try {
                     </div>
                 </div>
                 
-                <div class="hero-card gradient-purple particle-wrapper">
+                <div class="hero-card gradient-purple particle-wrapper dashboard-link-card" data-link="manage_tenants.php">
                     <div class="particle-container" data-particles="5"></div>
                     <div class="hero-card-title">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -969,7 +978,7 @@ try {
                     </div>
                 </div>
                 
-                <div class="hero-card gradient-orange particle-wrapper">
+                <div class="hero-card gradient-orange particle-wrapper dashboard-link-card" data-link="manage_repairs.php">
                     <div class="particle-container" data-particles="5"></div>
                     <div class="hero-card-title">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
@@ -985,7 +994,7 @@ try {
 
             <!-- สรุปข้อมูล Overview -->
             <div class="dashboard-grid">
-                <div class="stat-card info particle-wrapper">
+                <div class="stat-card info particle-wrapper dashboard-link-card" data-link="manage_tenants.php">
                     <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon blue">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -993,7 +1002,7 @@ try {
                     <h3>ผู้เช่าทั้งหมด</h3>
                     <div class="number"><?php echo $tenant_active; ?></div>
                 </div>
-                <div class="stat-card success particle-wrapper">
+                <div class="stat-card success particle-wrapper dashboard-link-card" data-link="manage_rooms.php">
                     <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon green">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1001,7 +1010,7 @@ try {
                     <h3>ห้องว่าง</h3>
                     <div class="number"><?php echo $room_available; ?></div>
                 </div>
-                <div class="stat-card danger particle-wrapper">
+                <div class="stat-card danger particle-wrapper dashboard-link-card" data-link="manage_rooms.php">
                     <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon red">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
@@ -1009,7 +1018,7 @@ try {
                     <h3>ห้องที่ใช้</h3>
                     <div class="number"><?php echo $room_occupied; ?></div>
                 </div>
-                <div class="stat-card warning particle-wrapper">
+                <div class="stat-card warning particle-wrapper dashboard-link-card" data-link="manage_contracts.php">
                     <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon orange">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -1017,7 +1026,7 @@ try {
                     <h3>สัญญาที่ใช้งาน</h3>
                     <div class="number"><?php echo $contract_active; ?></div>
                 </div>
-                <div class="stat-card danger particle-wrapper">
+                <div class="stat-card danger particle-wrapper dashboard-link-card" data-link="manage_repairs.php">
                     <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon red">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
@@ -1025,7 +1034,7 @@ try {
                     <h3>การแจ้งซ่อมรอดำเนินการ</h3>
                     <div class="number"><?php echo $repair_waiting; ?></div>
                 </div>
-                <div class="stat-card info particle-wrapper">
+                <div class="stat-card info particle-wrapper dashboard-link-card" data-link="manage_news.php">
                     <div class="particle-container" data-particles="3"></div>
                     <div class="stat-icon cyan">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg>
@@ -1369,7 +1378,7 @@ try {
     <script>
         // ทำให้การ์ดรายงานคลิกได้ทั้งใบ
         document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.report-section[data-link]').forEach(function(card) {
+            document.querySelectorAll('.report-section[data-link], .dashboard-link-card[data-link]').forEach(function(card) {
                 card.setAttribute('role', 'link');
                 card.setAttribute('tabindex', '0');
 

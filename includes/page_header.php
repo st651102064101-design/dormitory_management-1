@@ -11,7 +11,7 @@
  */
 ?>
 <header class="page-header-bar">
-  <div>
+  <div class="page-header-left">
     <button id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar" aria-expanded="false" class="sidebar-toggle-btn">
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <line x1="3" y1="6" x2="21" y2="6"/>
@@ -21,6 +21,13 @@
     </button>
     <h2><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></h2>
   </div>
+  <nav class="quick-actions" aria-label="Quick actions">
+    <a href="manage_payments.php" class="quick-action-link" data-shortcut="Ctrl+1">การชำระเงิน</a>
+    <a href="manage_booking.php" class="quick-action-link" data-shortcut="Ctrl+2">จองห้อง</a>
+    <a href="manage_expenses.php" class="quick-action-link" data-shortcut="Ctrl+3">ค่าใช้จ่าย</a>
+    <a href="manage_contracts.php" class="quick-action-link" data-shortcut="Ctrl+4">สัญญา</a>
+    <a href="tenant_wizard.php" class="quick-action-link" data-shortcut="Ctrl+5">Tenant Wizard</a>
+  </nav>
 </header>
 <div class="page-header-spacer"></div>
 <script>
@@ -131,12 +138,63 @@
   align-items: center;
   gap: 0.5rem;
 }
+.page-header-left {
+  min-width: 0;
+}
 .page-header-bar h2 {
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
   color: #f5f8ff;
   transition: opacity 0.3s ease;
+}
+.quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.quick-action-link {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.5);
+  background: rgba(59, 130, 246, 0.18);
+  color: #dbeafe;
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+.quick-action-link:hover {
+  background: rgba(59, 130, 246, 0.18);
+  border-color: rgba(96, 165, 250, 0.8);
+  color: #ffffff;
+}
+.quick-action-link.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  border-color: #1d4ed8;
+  color: #ffffff;
+}
+.quick-action-link::after {
+  content: attr(data-shortcut);
+  margin-left: 0.45rem;
+  padding: 0.08rem 0.35rem;
+  border-radius: 6px;
+  border: 1px solid rgba(96, 165, 250, 0.6);
+  background: rgba(30, 64, 175, 0.35);
+  font-size: 0.76rem;
+  color: #dbeafe;
+  font-weight: 700;
+  line-height: 1.2;
+}
+.quick-action-link.active::after,
+.quick-action-link:hover::after {
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(15, 23, 42, 0.5);
 }
 .page-header-bar.header-hidden h2 {
   opacity: 0;
@@ -176,9 +234,30 @@
 @media (max-width: 768px) {
   .page-header-bar {
     padding: 0.875rem 1rem;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.6rem;
+  }
+  .page-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
   }
   .page-header-bar h2 {
     font-size: 1rem;
+  }
+  .quick-actions {
+    justify-content: flex-start;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    padding-bottom: 0.2rem;
+  }
+  .quick-actions::-webkit-scrollbar {
+    height: 4px;
+  }
+  .quick-actions::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.45);
+    border-radius: 999px;
   }
   .page-header-spacer {
     height: 64px;
@@ -206,6 +285,46 @@ body[data-theme="light"] .page-header-bar h2 {
 body.light-theme .sidebar-toggle-btn,
 body[data-theme="light"] .sidebar-toggle-btn {
   color: #1e293b;
+}
+
+html.light-theme .page-header-bar .quick-action-link,
+html.live-light .page-header-bar .quick-action-link,
+body.light-theme .page-header-bar .quick-action-link,
+body[data-theme="light"] .page-header-bar .quick-action-link,
+body.live-light .page-header-bar .quick-action-link {
+  background: rgba(59,130,246,0.16) !important;
+  border-color: rgba(59,130,246,0.55) !important;
+  color: #1d4ed8 !important;
+}
+
+html.light-theme .page-header-bar .quick-action-link::after,
+html.live-light .page-header-bar .quick-action-link::after,
+body.light-theme .page-header-bar .quick-action-link::after,
+body[data-theme="light"] .page-header-bar .quick-action-link::after,
+body.live-light .page-header-bar .quick-action-link::after {
+  color: #1d4ed8 !important;
+  border-color: rgba(59, 130, 246, 0.5) !important;
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+html.light-theme .page-header-bar .quick-action-link:hover,
+html.live-light .page-header-bar .quick-action-link:hover,
+body.light-theme .page-header-bar .quick-action-link:hover,
+body[data-theme="light"] .page-header-bar .quick-action-link:hover,
+body.live-light .page-header-bar .quick-action-link:hover {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  border-color: #1d4ed8 !important;
+  color: #ffffff !important;
+}
+
+html.light-theme .page-header-bar .quick-action-link.active,
+html.live-light .page-header-bar .quick-action-link.active,
+body.light-theme .page-header-bar .quick-action-link.active,
+body[data-theme="light"] .page-header-bar .quick-action-link.active,
+body.live-light .page-header-bar .quick-action-link.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  border-color: #1d4ed8 !important;
+  color: #ffffff !important;
 }
 
 body.light-theme .sidebar-toggle-btn:hover,
@@ -294,5 +413,51 @@ body[data-theme="light"] .sidebar-toggle-btn:hover {
     // Small delay to ensure containers are rendered
     setTimeout(initHeaderScroll, 100);
   }
+})();
+</script>
+
+<script>
+(function() {
+  var quickLinks = Array.from(document.querySelectorAll('.quick-action-link'));
+  if (!quickLinks.length) return;
+
+  var path = window.location.pathname.split('/').pop();
+  quickLinks.forEach(function(link) {
+    var href = (link.getAttribute('href') || '').trim();
+    if (href && (href === path || path.endsWith('/' + href))) {
+      link.classList.add('active');
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    var isCtrlPrimary = e.ctrlKey && !e.shiftKey && !e.altKey && !e.metaKey;
+    var isCtrlShiftFallback = e.ctrlKey && e.shiftKey && !e.altKey && !e.metaKey;
+    var isAltFallback = e.altKey && !e.metaKey;
+    if (!isCtrlPrimary && !isCtrlShiftFallback && !isAltFallback) return;
+
+    var active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT' || active.isContentEditable)) {
+      return;
+    }
+
+    var codeMap = {
+      'Digit1': 'manage_payments.php',
+      'Digit2': 'manage_booking.php',
+      'Digit3': 'manage_expenses.php',
+      'Digit4': 'manage_contracts.php',
+      'Digit5': 'tenant_wizard.php',
+      'Numpad1': 'manage_payments.php',
+      'Numpad2': 'manage_booking.php',
+      'Numpad3': 'manage_expenses.php',
+      'Numpad4': 'manage_contracts.php',
+      'Numpad5': 'tenant_wizard.php'
+    };
+
+    var target = codeMap[e.code];
+    if (!target) return;
+
+    e.preventDefault();
+    window.location.href = target;
+  });
 })();
 </script>
