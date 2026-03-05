@@ -569,11 +569,41 @@ try {
     
     aside.app-sidebar.collapsed .user-row,
     aside.app-sidebar.collapsed .logout-btn,
-    aside.app-sidebar.collapsed .google-link-btn,
     aside.sidebar-collapsed .user-row,
-    aside.sidebar-collapsed .logout-btn,
-    aside.sidebar-collapsed .google-link-btn {
+    aside.sidebar-collapsed .logout-btn {
       display: none !important;
+    }
+
+    aside.app-sidebar.collapsed .google-link-btn,
+    aside.sidebar-collapsed .google-link-btn {
+      display: block !important;
+      width: 40px !important;
+      height: 40px !important;
+      min-width: 40px !important;
+      max-width: 40px !important;
+      padding: 0 !important;
+      gap: 0 !important;
+      margin: 0 auto !important;
+      border-radius: 10px !important;
+      box-sizing: border-box !important;
+      line-height: 40px !important;
+      text-align: center !important;
+      flex: 0 0 40px !important;
+    }
+
+    aside.app-sidebar.collapsed .google-link-btn .app-nav-label,
+    aside.sidebar-collapsed .google-link-btn .app-nav-label {
+      display: none !important;
+    }
+
+    aside.app-sidebar.collapsed .google-link-btn .google-icon,
+    aside.sidebar-collapsed .google-link-btn .google-icon {
+      margin: 0 !important;
+      display: inline-block !important;
+      vertical-align: middle !important;
+      width: 16px !important;
+      height: 16px !important;
+      flex: 0 0 16px !important;
     }
     
     .sidebar-rail .rail-user,
@@ -619,6 +649,7 @@ try {
   .subitem,
   .app-nav-label,
   .summary-label {
+    position: relative;
     color: #374151 !important;
   }
 
@@ -2287,6 +2318,46 @@ try {
   body.live-light a.filter-btn strong {
     color: #ffffff !important;
   }
+
+  /* Final override: collapsed Google button must be icon-only, centered, non-flex */
+  .google-link-wrap {
+    margin-top: 0.5rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .app-sidebar.collapsed .google-link-wrap,
+  aside.sidebar-collapsed .google-link-wrap {
+    text-align: center !important;
+  }
+
+  .app-sidebar.collapsed .google-link-wrap .google-link-btn,
+  aside.sidebar-collapsed .google-link-wrap .google-link-btn {
+    display: inline-block !important;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    max-width: 40px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 40px !important;
+    text-align: center !important;
+    vertical-align: middle !important;
+    box-sizing: border-box !important;
+  }
+
+  .app-sidebar.collapsed .google-link-wrap .google-link-btn .app-nav-label,
+  aside.sidebar-collapsed .google-link-wrap .google-link-btn .app-nav-label {
+    display: none !important;
+  }
+
+  .app-sidebar.collapsed .google-link-wrap .google-link-btn .google-icon,
+  aside.sidebar-collapsed .google-link-wrap .google-link-btn .google-icon {
+    display: inline-block !important;
+    width: 16px !important;
+    height: 16px !important;
+    margin: 0 !important;
+    vertical-align: middle !important;
+  }
 </style>
 <script>
   // ====== Global Admin Font Scale Sync ======
@@ -2382,11 +2453,11 @@ try {
           <span class="chev chev-toggle" data-target="nav-management" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
         <!-- manage_stay.php removed; link intentionally omitted -->
-        <a class="wizard-nav-item" href="tenant_wizard.php" style="position: relative; background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(99, 102, 241, 0.1) 100%); border-left: 4px solid #3b82f6; margin: 0.5rem 0; border-radius: 8px; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);">
+        <a class="wizard-nav-item" href="tenant_wizard.php" style="position: relative; padding-right: 2.5rem; border-left: 4px solid #3b82f6; margin: 0; border-radius: 8px; overflow: visible;">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg></span>
             <span class="app-nav-label" style="font-weight: 600; color: #60a5fa;">จัดการผู้เช่า <br> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Wizard)</span>
             <?php if ($wizardIncompleteCount > 0): ?>
-            <span style="position: absolute; top: 50%; right: 12px; transform: translateY(-50%); background: #ef4444; color: white; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);">
+            <span style="position: absolute; top: 6px; right: 6px; transform: none; background: #ef4444; color: white; border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; font-weight: bold; pointer-events: none; z-index: 2;">
                 <?php echo $wizardIncompleteCount; ?>
             </span>
             <?php endif; ?>
@@ -2417,14 +2488,14 @@ try {
                style="width: 36px; height: 36px; border-radius: 6px; object-fit: cover;" 
                onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="display: none;">
-            <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.06" />
+            <rect width="24" height="24" rx="6" fill="#ffffff" opacity="0.06" />
             <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
             <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
           </svg>
         <?php else: ?>
           <!-- Default user svg icon -->
           <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.06" />
+            <rect width="24" height="24" rx="6" fill="#ffffff" opacity="0.06" />
             <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
             <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
           </svg>
@@ -2437,7 +2508,7 @@ try {
     </div>
     
     <!-- Google Link/Unlink Button -->
-    <div style="margin-top:0.5rem; margin-bottom:0.3rem;">
+    <div class="google-link-wrap">
       <?php if ($adminGoogleLinked): ?>
         <div class="google-linked-info">
           <svg class="google-icon" viewBox="0 0 24 24" width="14" height="14">
@@ -2701,9 +2772,12 @@ try {
     if (!sidebar) return;
     
     // Skip if already handled
-    if (toggleBtn.__toggleBound || window.__sidebarToggleHandled) {
+    if (window.__sidebarToggleHandled) {
       return;
     }
+
+    // Mark as handled by legacy system (prevents duplicate binds)
+    window.__sidebarToggleHandled = true;
     
     // Load saved state (desktop only)
     if (window.innerWidth > 1024) {
@@ -2718,7 +2792,7 @@ try {
       e.preventDefault();
       e.stopPropagation();
       
-      if (toggleBtn.__toggleBound || window.__sidebarToggleReady) return;
+      if (window.__sidebarToggleReady) return;
       
       if (window.innerWidth > 1024) {
         sidebar.classList.toggle('collapsed');
@@ -2900,7 +2974,7 @@ function appleConfirm(message, title = 'project.3bbddns.com:36140 บอกว�
         if (avatarDiv) {
           avatarDiv.innerHTML = `
             <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <rect width="24" height="24" rx="6" fill="currentColor" opacity="0.06" />
+              <rect width="24" height="24" rx="6" fill="#ffffff" opacity="0.06" />
               <path d="M12 12c2.761 0 5-2.239 5-5s-2.239-5-5-5-5 2.239-5 5 2.239 5 5 5z" fill="currentColor" />
               <path d="M2 20c0-3.314 2.686-6 6-6h8c3.314 0 6 2.686 6 6v1H2v-1z" fill="currentColor" />
             </svg>

@@ -283,7 +283,7 @@ $wizardCount = safeCount($pdo, "SELECT COUNT(*) FROM tenant_workflow WHERE compl
       <main class="app-main">
         <div style="width:100%;">
           <header style="display:flex;align-items:center;gap:0.5rem;margin-bottom:2rem;justify-content:flex-start;">
-            <button id="sidebar-toggle" aria-label="Toggle sidebar" aria-expanded="true" style="background:transparent;border:0;color:#fff;padding:0.6rem 0.85rem;border-radius:6px;cursor:pointer;font-size:1.25rem;flex:0 0 auto;">☰</button>
+            <button id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar" aria-expanded="false" style="background:transparent;border:0;color:#fff;padding:0.6rem 0.85rem;border-radius:6px;cursor:pointer;font-size:1.25rem;flex:0 0 auto;">☰</button>
             <h2 style="margin:0;color:#fff;font-size:1.05rem;flex:0 0 auto;text-align:left;">จัดการระบบ</h2>
           </header>
 
@@ -364,7 +364,7 @@ $wizardCount = safeCount($pdo, "SELECT COUNT(*) FROM tenant_workflow WHERE compl
               </a>
 
               <a href="report_utility.php" class="manage-card">
-                <div class="manage-card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+                <div class="manage-card-icon"><svg id="utilitySwitchIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
                 <div class="manage-card-title">บิลค่าน้ำค่าไฟ</div>
                 <div class="manage-card-desc">จัดการบันทึกมิเตอร์ น้ำ ไฟ รายเดือน</div>
                 <div class="manage-card-count">
@@ -420,5 +420,22 @@ $wizardCount = safeCount($pdo, "SELECT COUNT(*) FROM tenant_workflow WHERE compl
     </div>
 
     <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function () {
+        const utilitySwitchIcon = document.getElementById('utilitySwitchIcon');
+        if (!utilitySwitchIcon) return;
+
+        const icons = [
+          '<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>',
+          '<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>'
+        ];
+
+        let currentIconIndex = 0;
+        setInterval(function () {
+          currentIconIndex = currentIconIndex === 0 ? 1 : 0;
+          utilitySwitchIcon.innerHTML = icons[currentIconIndex];
+        }, 1200);
+      });
+    </script>
   </body>
 </html>

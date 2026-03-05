@@ -220,6 +220,149 @@ try {
       .modal-actions .btn-cancel:active { transform: translateY(0); opacity: 0.9; }
       .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
       .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
+
+      /* White theme overrides */
+      body.reports-page,
+      body.reports-page .app-main {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      .reports-page .manage-panel {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+      }
+      .reports-page .section-header h1,
+      .reports-page .section-header p,
+      .reports-page .manage-panel p,
+      .reports-page .manage-panel div,
+      .reports-page .manage-panel label {
+        color: #0f172a;
+      }
+
+      .tenant-stat-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #0f172a !important;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
+      }
+      .tenant-stat-card h3,
+      .tenant-stat-card .stat-meta { color: #64748b !important; }
+
+      #toggleTenantFormBtn {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #334155 !important;
+      }
+      #toggleTenantFormBtn:hover {
+        background: #f1f5f9 !important;
+        border-color: #94a3b8 !important;
+      }
+
+      #addTenantSection {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+      #addTenantSection .section-header p { color: #64748b !important; }
+
+      .tenant-form-group label { color: #334155 !important; }
+      .tenant-form-group input,
+      .tenant-form-group select,
+      .tenant-form-group textarea {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+      .tenant-form-group input::placeholder,
+      .tenant-form-group textarea::placeholder { color: #94a3b8 !important; }
+
+      .status-filter-btn {
+        background: #f8fafc !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #334155 !important;
+      }
+      .status-filter-btn:hover {
+        background: #f1f5f9 !important;
+        border-color: #94a3b8 !important;
+      }
+      .status-filter-btn.active { color: #ffffff !important; }
+
+      #sortSelect {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+
+      .table-note,
+      .expense-meta,
+      .reports-page [style*="color:#94a3b8"] {
+        color: #64748b !important;
+      }
+
+      .report-table .datatable-top,
+      .report-table .datatable-bottom {
+        background: #ffffff !important;
+      }
+      .report-table .datatable-input {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+      .report-table .datatable-input::placeholder { color: #64748b !important; }
+      .report-table .datatable-selector {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+      .report-table .datatable-dropdown label,
+      .report-table .datatable-info { color: #475569 !important; }
+      .report-table .datatable-table thead th,
+      .report-table .datatable-table thead td,
+      .report-table .datatable-table th {
+        background: #f8fafc !important;
+        color: #334155 !important;
+        border-color: #e2e8f0 !important;
+      }
+      .report-table .datatable-table tbody tr,
+      .report-table .datatable-table tbody td,
+      .report-table .datatable-table td {
+        background: #ffffff !important;
+        color: #1e293b !important;
+        border-color: #e2e8f0 !important;
+      }
+      .report-table .datatable-table tbody tr:hover,
+      .report-table .datatable-table tbody tr:hover td {
+        background: #f8fafc !important;
+      }
+      .report-table .datatable-pagination a,
+      .report-table .datatable-pagination button {
+        background: #ffffff !important;
+        color: #334155 !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      .report-table .datatable-pagination .active a,
+      .report-table .datatable-pagination .active button {
+        background: #60a5fa !important;
+        color: #ffffff !important;
+        border-color: #60a5fa !important;
+      }
+
+      .booking-modal {
+        background: rgba(15,23,42,0.45) !important;
+      }
+      .booking-modal-content {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #0f172a !important;
+        box-shadow: 0 20px 50px rgba(15,23,42,0.2) !important;
+      }
+      .booking-modal-content h2 { color: #0f172a !important; }
+      .modal-actions .btn-submit { color: #ffffff !important; }
+      .modal-actions .btn-cancel {
+        background: #fef2f2 !important;
+        color: #b91c1c !important;
+        border-color: #fecaca !important;
+      }
     </style>
   </head>
   <body class="reports-page">

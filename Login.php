@@ -30,6 +30,10 @@ try {
     }
 } catch (PDOException $e) {}
 
+if (!in_array($publicTheme, ['dark', 'light', 'auto'], true)) {
+  $publicTheme = 'dark';
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   // Check if it's an AJAX request
   $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
@@ -2535,7 +2539,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
 
     <!-- Theme Switcher Button -->
-    <div class="theme-switcher" id="themeSwitcher">
+    <div class="theme-switcher" id="themeSwitcher" style="display:none;">
       <div class="theme-menu" id="themeMenu">
         <div class="theme-menu-item" data-theme="homepage">
           <span class="theme-icon">
@@ -2600,7 +2604,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </svg>
       </button>
     </div>
-    <div class="theme-indicator" id="themeIndicator">Homepage</div>
+    <div class="theme-indicator" id="themeIndicator" style="display:none;">Homepage</div>
 
     <?php if (!empty($login_success)): ?>
       <script>
@@ -2858,18 +2862,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       ];
       
       let currentTheme = 0;
-      
-      // Load saved theme or apply default (homepage)
-      const savedTheme = localStorage.getItem('loginTheme');
-      if (savedTheme) {
-        const index = themes.findIndex(t => t.name === savedTheme);
-        if (index !== -1) {
-          currentTheme = index;
-        }
+
+      // Lock theme to system setting from data-theme-mode (public_theme)
+      const systemThemeMode = (document.body.dataset.themeMode || 'dark').toLowerCase();
+      let lockedTheme = 'dark';
+      if (systemThemeMode === 'light') {
+        lockedTheme = 'light';
+      } else if (systemThemeMode === 'auto') {
+        lockedTheme = document.body.classList.contains('theme-light') ? 'light' : 'dark';
       }
-      // Apply theme class (homepage is default)
-      if (themes[currentTheme].name !== 'cyber') {
-        document.body.classList.add('theme-' + themes[currentTheme].name);
+      const lockedIndex = themes.findIndex(t => t.name === lockedTheme);
+      if (lockedIndex !== -1) {
+        currentTheme = lockedIndex;
       }
       
       // Update indicator
@@ -2903,9 +2907,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.body.classList.add('theme-' + actualTheme);
           }
           
-          // Save preference
-          localStorage.setItem('loginTheme', themeName);
-          
           // Update button icon with SVG
           document.getElementById('themeSwitchBtn').innerHTML = themeSvgIcons[themeName];
           
@@ -2922,44 +2923,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
       }
 
-      // Menu item click handlers
-      document.querySelectorAll('.theme-menu-item').forEach(item => {
-        item.addEventListener('click', function() {
-          const themeName = this.dataset.theme;
-          applyTheme(themeName);
-        });
-      });
-      
-      // Theme switch button - toggle menu on click only
-      document.getElementById('themeSwitchBtn').addEventListener('click', function(e) {
-        e.stopPropagation();
-        e.preventDefault();
-        const menu = document.getElementById('themeMenu');
-        menu.classList.toggle('show');
-      });
-
-      // Prevent space key from triggering button
-      document.getElementById('themeSwitchBtn').addEventListener('keydown', function(e) {
-        if (e.code === 'Space') {
-          e.preventDefault();
-        }
-      });
-
-      // Close menu when clicking outside
-      document.addEventListener('click', function(e) {
-        const themeSwitcher = document.getElementById('themeSwitcher');
-        const menu = document.getElementById('themeMenu');
-        if (!themeSwitcher.contains(e.target)) {
-          menu.classList.remove('show');
-        }
-      });
-
-      // Prevent menu from closing when clicking inside it
-      document.getElementById('themeMenu').addEventListener('click', function(e) {
-        if (e.target.closest('.theme-menu-item')) {
-          this.classList.remove('show');
-        }
-      });
+      // Theme is fixed by system setting: disable manual switching on Login page
 
       // Initialize - set active menu item and button icon with SVG
       document.getElementById('themeSwitchBtn').innerHTML = themeSvgIcons[themes[currentTheme].name];

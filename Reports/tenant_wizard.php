@@ -109,17 +109,19 @@ try {
             --theme-bg-color: <?php echo $themeColor; ?>;
         }
 
-        body {
-            background: var(--bg-primary);
-            color: var(--text-primary);
+        body,
+        body main {
+            background: #ffffff !important;
+            color: #0f172a !important;
         }
 
         .wizard-panel {
             margin: 1.5rem;
             padding: 1.5rem;
-            background: var(--card-bg);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 8px 20px rgba(15,23,42,0.08);
         }
 
         .wizard-intro {
@@ -142,18 +144,19 @@ try {
         }
 
         .wizard-table thead {
-            background: rgba(10,25,41,0.8);
+            background: #f8fafc;
         }
 
         .wizard-table th,
         .wizard-table td {
             padding: 1rem;
             text-align: left;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            color: #1e293b;
+            border-bottom: 1px solid #e2e8f0;
         }
 
         .wizard-table tbody tr:hover {
-            background: rgba(30,41,59,0.4);
+            background: #f8fafc;
         }
 
         .step-indicator {
@@ -183,8 +186,8 @@ try {
             left: 50%;
             transform: translateX(-50%) translateY(5px);
             padding: 6px 10px;
-            background: rgba(15, 23, 42, 0.95);
-            color: white;
+            background: #f8fafc;
+            color: #334155;
             font-size: 0.75rem;
             font-weight: 400;
             border-radius: 6px;
@@ -192,7 +195,7 @@ try {
             opacity: 0;
             visibility: hidden;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid #e2e8f0;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             z-index: 10;
             pointer-events: none;
@@ -206,7 +209,7 @@ try {
             transform: translateX(-50%) translateY(5px);
             border-width: 5px;
             border-style: solid;
-            border-color: rgba(15, 23, 42, 0.95) transparent transparent transparent;
+            border-color: #f8fafc transparent transparent transparent;
             opacity: 0;
             visibility: hidden;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -228,17 +231,18 @@ try {
 
         .step-circle.current {
             background: #3b82f6;
-            color: white;
+            color: #ffffff !important;
             animation: pulse 2s infinite;
         }
 
+
         .step-circle.pending {
-            background: rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.5);
+            background: #f1f5f9;
+            color: #94a3b8;
         }
 
         .step-arrow {
-            color: rgba(255,255,255,0.3);
+            color: #94a3b8;
             font-size: 1rem;
         }
 
@@ -289,8 +293,8 @@ try {
         }
 
         .btn-disabled {
-            background: rgba(255,255,255,0.1);
-            color: rgba(255,255,255,0.3);
+            background: #f1f5f9;
+            color: #94a3b8;
             cursor: not-allowed;
         }
 
@@ -307,13 +311,13 @@ try {
 
         .tenant-phone {
             font-size: 0.85rem;
-            color: rgba(255,255,255,0.7);
+            color: #64748b;
         }
 
         .empty-state {
             text-align: center;
             padding: 3rem;
-            color: rgba(255,255,255,0.6);
+            color: #64748b;
         }
 
         .empty-state svg {
@@ -331,7 +335,7 @@ try {
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(15, 23, 42, 0.45);
             backdrop-filter: blur(8px);
             z-index: 9998;
             animation: fadeIn 0.3s;
@@ -354,39 +358,44 @@ try {
         }
 
         .modal-container {
-            background: rgba(15, 23, 42, 0.95);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
             border-radius: 16px;
             max-width: 800px;
             width: 90%;
             max-height: 90vh;
             overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
             animation: slideUp 0.3s;
             position: relative;
         }
 
         .modal-header {
             padding: 2rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid #e2e8f0;
             position: sticky;
             top: 0;
-            background: rgba(15, 23, 42, 0.98);
+            background: #ffffff;
             backdrop-filter: blur(10px);
             z-index: 10;
+        }
+
+        .modal-header h2,
+        .modal-header p {
+            color: #0f172a !important;
         }
 
         .modal-close {
             position: absolute;
             top: 1rem;
             right: 1rem;
-            background: rgba(255, 255, 255, 0.1);
+            background: #f8fafc;
             border: none;
             width: 36px;
             height: 36px;
             border-radius: 50%;
             cursor: pointer;
-            color: #fff;
+            color: #334155;
             font-size: 1.5rem;
             display: flex;
             align-items: center;
@@ -395,7 +404,7 @@ try {
         }
 
         .modal-close:hover {
-            background: rgba(255, 77, 79, 0.2);
+            background: #fee2e2;
             transform: rotate(90deg);
         }
 
@@ -427,26 +436,28 @@ try {
             display: block;
             margin-bottom: 0.5rem;
             font-weight: 500;
-            color: #f1f5f9;
+            color: #334155;
         }
 
         .form-group input,
-        .form-group textarea {
+        .form-group textarea,
+        .form-group select {
             width: 100%;
             padding: 0.75rem;
-            border: 1px solid rgba(255, 255, 255, 0.15);
+            border: 1px solid #cbd5e1;
             border-radius: 6px;
-            background: rgba(15, 23, 42, 0.6);
-            color: #f1f5f9;
+            background: #ffffff;
+            color: #0f172a;
             transition: all 0.2s;
         }
 
         .form-group input:focus,
-        .form-group textarea:focus {
+        .form-group textarea:focus,
+        .form-group select:focus {
             outline: none;
-            border-color: #f59e0b;
-            background: rgba(15, 23, 42, 0.8);
-            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+            border-color: #60a5fa;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
         }
 
         .form-grid {
@@ -457,37 +468,37 @@ try {
 
         .info-box-modal {
             padding: 1rem;
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.3);
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
             border-radius: 8px;
             margin-bottom: 1.5rem;
         }
 
         .info-box-modal p {
             margin: 0.5rem 0;
-            color: #e2e8f0;
+            color: #1e293b;
         }
 
         .alert-box-modal {
             padding: 1rem;
-            background: rgba(245, 158, 11, 0.1);
-            border: 2px solid rgba(245, 158, 11, 0.3);
+            background: #fffbeb;
+            border: 2px solid #fde68a;
             border-radius: 8px;
             margin: 1.5rem 0;
         }
 
         .alert-box-modal h4 {
             margin-top: 0;
-            color: #fbbf24;
+            color: #b45309;
         }
 
         .modal-footer {
             padding: 1.5rem 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid #e2e8f0;
             display: flex;
             gap: 1rem;
             justify-content: flex-end;
-            background: rgba(15, 23, 42, 0.98);
+            background: #ffffff;
             position: sticky;
             bottom: 0;
         }
@@ -515,13 +526,64 @@ try {
         }
 
         .btn-modal-secondary {
-            background: rgba(255, 255, 255, 0.1);
-            color: #f1f5f9;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: #f8fafc;
+            color: #334155;
+            border: 1px solid #cbd5e1;
         }
 
         .btn-modal-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
+            background: #f1f5f9;
+        }
+
+        .wizard-panel p[style],
+        .wizard-panel span[style],
+        .wizard-panel div[style] {
+            color: inherit;
+        }
+
+        .wizard-table span[style*="rgba(255,255,255"],
+        .wizard-table span[style*="#e2e8f0"],
+        .wizard-table span[style*="#f1f5f9"] {
+            color: #64748b !important;
+        }
+
+        .modal-container [style*="color: #f8fafc"],
+        .modal-container [style*="color: #f1f5f9"],
+        .modal-container [style*="color: #e2e8f0"],
+        .modal-container [style*="color: #fff"],
+        .modal-container [style*="color: rgba(255,255,255"],
+        .modal-container [style*="color: white"] {
+            color: #334155 !important;
+        }
+
+        .modal-container input,
+        .modal-container textarea,
+        .modal-container select {
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+
+        .modal-container input::placeholder,
+        .modal-container textarea::placeholder {
+            color: #64748b !important;
+        }
+
+        .modal-container .close-btn {
+            background: #f8fafc !important;
+            color: #334155 !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+
+        .modal-container [style*="background: rgba(255,255,255,0.05)"],
+        .modal-container [style*="background: rgba(255,255,255,0.08)"],
+        .modal-container [style*="background: rgba(255,255,255,0.1)"] {
+            background: #f8fafc !important;
+            border-color: #e2e8f0 !important;
+        }
+
+        .modal-container img {
+            border-color: #cbd5e1 !important;
         }
     </style>
 </head>
@@ -554,7 +616,7 @@ try {
 
                 <!-- Completion Status Filter Buttons -->
                 <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-                    <a href="tenant_wizard.php?completed=0" style="padding: 0.75rem 1.5rem; background: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>; color: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white' : '#3b82f6'; ?>; border: 2px solid #3b82f6; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3b82f6'; this.style.color='white';" onmouseout="this.style.background='<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>'; this.style.color='<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white' : '#3b82f6'; ?>';">⏳ ยังไม่ครบ 5 ขั้นตอน</a>
+                    <a href="tenant_wizard.php?completed=0" style="padding: 0.75rem 1.5rem; background: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>; color: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white !important' : '#111827 !important'; ?>; border: 2px solid #3b82f6; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3b82f6'; this.style.setProperty('color','white','important');" onmouseout="this.style.background='<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>'; this.style.setProperty('color','<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white' : '#111827'; ?>','important');">⏳ ยังไม่ครบ 5 ขั้นตอน</a>
                     <?php if ($hasCompletedTenants): ?>
                     <a href="tenant_wizard.php?completed=1" style="padding: 0.75rem 1.5rem; background: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>; color: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>; border: 2px solid #22c55e; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#22c55e'; this.style.color='white';" onmouseout="this.style.background='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>'; this.style.color='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>';">✅ ครบ 5 ขั้นตอนแล้ว</a>
                     <?php endif; ?>

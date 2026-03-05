@@ -597,6 +597,9 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
         align-items: center;
         gap: 1rem;
         margin-bottom: 1.5rem;
+        border: none !important;
+        border-bottom: none !important;
+        box-shadow: none !important;
       }
       
       .panel-icon {
@@ -688,7 +691,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
       .status-filter-btn {
         padding: 0.7rem 1.25rem;
         border-radius: 100px;
-        border: 1px solid;
+        border: none;
         background: transparent;
         cursor: pointer;
         font-weight: 500;
@@ -2341,19 +2344,19 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
             
             <!-- Modern Status Filter Buttons -->
             <div class="status-filters">
-              <button type="button" class="status-filter-btn" data-status="all" onclick="filterByStatus('all')" style="background:rgba(96,165,250,0.2);border:1.5px solid rgba(96,165,250,0.5);color:#60a5fa;">
+              <button type="button" class="status-filter-btn" data-status="all" onclick="filterByStatus('all')" style="background:rgba(96,165,250,0.2);color:#60a5fa;">
                 <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                 ทั้งหมด <span style="margin-left:0.3rem;font-weight:700;">(<span class="count-all"><?php echo count($repairs); ?></span>)</span>
               </button>
-              <button type="button" class="status-filter-btn" data-status="0" onclick="filterByStatus('0')" style="background:rgba(249,115,22,0.15);border:1.5px solid rgba(249,115,22,0.4);color:#f97316;">
+              <button type="button" class="status-filter-btn" data-status="0" onclick="filterByStatus('0')" style="background:rgba(249,115,22,0.15);color:#f97316;">
                 <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 รอซ่อม <span style="margin-left:0.3rem;font-weight:700;">(<span class="count-0"><?php echo $stats['pending']; ?></span>)</span>
               </button>
-              <button type="button" class="status-filter-btn" data-status="1" onclick="filterByStatus('1')" style="background:rgba(96,165,250,0.15);border:1.5px solid rgba(96,165,250,0.4);color:#60a5fa;">
+              <button type="button" class="status-filter-btn" data-status="1" onclick="filterByStatus('1')" style="background:rgba(96,165,250,0.15);color:#60a5fa;">
                 <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="gear-animated"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 กำลังซ่อม <span style="margin-left:0.3rem;font-weight:700;">(<span class="count-1"><?php echo $stats['inprogress']; ?></span>)</span>
               </button>
-              <button type="button" class="status-filter-btn" data-status="2" onclick="filterByStatus('2')" style="background:rgba(34,197,94,0.15);border:1.5px solid rgba(34,197,94,0.4);color:#22c55e;">
+              <button type="button" class="status-filter-btn" data-status="2" onclick="filterByStatus('2')" style="background:rgba(34,197,94,0.15);color:#22c55e;">
                 <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 ซ่อมเสร็จแล้ว <span style="margin-left:0.3rem;font-weight:700;">(<span class="count-2"><?php echo $stats['done']; ?></span>)</span>
               </button>

@@ -82,6 +82,7 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
+    <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
     <script>
         // Apply theme immediately before page renders
         (function() {
@@ -171,6 +172,10 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             width: 100% !important;
         }
 
+        body.qr-page .page-header-bar {
+            margin: 1rem 1rem 0 1.5rem !important;
+        }
+
         @keyframes floatParticle {
             0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
             10% { opacity: 0.3; }
@@ -179,9 +184,12 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
         }
 
         .qr-wrapper {
-            max-width: 1600px;
-            margin: 0 auto;
-            padding: 30px;
+            max-width: 100%;
+            margin: 1.5rem;
+            padding: 1.5rem;
+            background: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             animation: fadeInUp 0.6s ease;
             box-sizing: border-box;
         }
@@ -365,6 +373,11 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             border-color: var(--apple-blue);
         }
 
+        .btn-apple.view-toggle-btn {
+            min-width: 170px;
+            justify-content: center;
+        }
+
         .qr-grid {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -372,10 +385,80 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
             width: 100%;
         }
 
+        .qr-grid.row-view {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .qr-grid.row-view .qr-card {
+            display: grid;
+            grid-template-columns: auto minmax(220px, 1fr) auto auto;
+            gap: 14px;
+            align-items: center;
+            text-align: left;
+            padding: 16px 18px;
+            animation: none;
+        }
+
+        .qr-grid.row-view .qr-card::before {
+            display: none;
+        }
+
+        .qr-grid.row-view .qr-card:hover {
+            transform: translateY(-2px);
+        }
+
+        .qr-grid.row-view .room-badge {
+            margin-bottom: 0;
+            font-size: 0.95rem;
+            padding: 8px 14px;
+            min-width: 130px;
+            justify-content: center;
+        }
+
+        .qr-grid.row-view .tenant-info {
+            margin-bottom: 0;
+        }
+
+        .qr-grid.row-view .tenant-name,
+        .qr-grid.row-view .tenant-phone {
+            justify-content: flex-start;
+        }
+
+        .qr-grid.row-view .qr-container {
+            margin-bottom: 0;
+            padding: 10px;
+        }
+
+        .qr-grid.row-view .qr-container img {
+            width: 96px;
+            height: 96px;
+        }
+
+        .qr-grid.row-view .card-actions {
+            margin-left: auto;
+            justify-content: flex-end;
+        }
+
         @media (max-width: 1600px) { .qr-grid { grid-template-columns: repeat(4, 1fr); } }
         @media (max-width: 1400px) { .qr-grid { grid-template-columns: repeat(3, 1fr); } }
         @media (max-width: 1000px) { .qr-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (max-width: 600px) { .qr-grid { grid-template-columns: 1fr; } }
+
+        @media (max-width: 980px) {
+            .qr-grid.row-view .qr-card {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+
+            .qr-grid.row-view .tenant-name,
+            .qr-grid.row-view .tenant-phone,
+            .qr-grid.row-view .card-actions {
+                justify-content: center;
+                margin-left: 0;
+            }
+        }
 
         .qr-card {
             background: var(--apple-card);
@@ -1072,6 +1155,7 @@ $lightThemeClass = $isLightTheme ? 'live-light' : '';
         ?>
         <div class="app-main">
             <main>
+                <?php $pageTitle = 'จัดการ QR Code ผู้เช่า'; include __DIR__ . '/../includes/page_header.php'; ?>
                 <div class="qr-wrapper">
                     <div class="qr-header">
                         <div class="qr-header-icon">

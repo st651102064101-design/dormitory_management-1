@@ -9,9 +9,65 @@ require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
 // เดือน/ปี
-$month = $_GET['month'] ?? date('m');
-$year = $_GET['year'] ?? date('Y');
+$month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('n');
+$year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $showMode = $_GET['show'] ?? 'occupied';
+
+// เดือน/ปีที่มีอยู่จริงในฐานข้อมูล (utility)
+$availableYears = [];
+$availableMonthsByYear = [];
+try {
+    $periodStmt = $pdo->query("\n        SELECT DISTINCT YEAR(utl_date) AS y, MONTH(utl_date) AS m\n        FROM utility\n        WHERE utl_date IS NOT NULL\n        ORDER BY y DESC, m DESC\n    ");
+    $periods = $periodStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($periods as $period) {
+        $periodYear = (int)$period['y'];
+        $periodMonth = (int)$period['m'];
+        if (!isset($availableMonthsByYear[$periodYear])) {
+            $availableMonthsByYear[$periodYear] = [];
+            $availableYears[] = $periodYear;
+        }
+        $availableMonthsByYear[$periodYear][] = $periodMonth;
+    }
+} catch (PDOException $e) {}
+
+$currentYear = (int)date('Y');
+$currentMonth = (int)date('n');
+
+if (!isset($availableMonthsByYear[$currentYear])) {
+    $availableYears[] = $currentYear;
+    $availableMonthsByYear[$currentYear] = [];
+}
+if (!in_array($currentMonth, $availableMonthsByYear[$currentYear], true)) {
+    $availableMonthsByYear[$currentYear][] = $currentMonth;
+}
+
+$availableYears = array_values(array_unique(array_map('intval', $availableYears)));
+rsort($availableYears);
+foreach ($availableMonthsByYear as $yearKey => $monthsList) {
+    $monthsList = array_values(array_unique(array_map('intval', $monthsList)));
+    rsort($monthsList);
+    $availableMonthsByYear[(int)$yearKey] = $monthsList;
+}
+
+if (empty($availableYears)) {
+    $availableYears[] = $year;
+    $availableMonthsByYear[$year] = [$month];
+}
+
+if (!in_array($year, $availableYears, true)) {
+    $year = $availableYears[0];
+}
+
+$yearMonths = $availableMonthsByYear[$year] ?? [];
+if (empty($yearMonths)) {
+    $yearMonths = [(int)date('n')];
+    $availableMonthsByYear[$year] = $yearMonths;
+}
+
+if (!in_array($month, $yearMonths, true)) {
+    $month = $yearMonths[0];
+}
 
 // อัตราค่าน้ำค่าไฟ
 $waterRate = 18;
@@ -31,20 +87,30 @@ $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     $saved = 0;
     foreach ($_POST['meter'] as $roomId => $data) {
-        if (empty($data['water']) || empty($data['electric']) || empty($data['ctr_id'])) continue;
+        if (empty($data['ctr_id'])) continue;
+
+        $waterInput = (isset($data['water']) && $data['water'] !== '') ? (int)$data['water'] : null;
+        $elecInput = (isset($data['electric']) && $data['electric'] !== '') ? (int)$data['electric'] : null;
+
+        if ($waterInput === null && $elecInput === null) continue;
         
         $ctrId = (int)$data['ctr_id'];
-        $waterNew = (int)$data['water'];
-        $elecNew = (int)$data['electric'];
-        $waterOld = (int)($data['water_old'] ?? 0);
-        $elecOld = (int)($data['elec_old'] ?? 0);
-        $meterDate = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-' . date('d');
+        $meterDate = $year . '-' . str_pad((string)$month, 2, '0', STR_PAD_LEFT) . '-' . date('d');
         
         try {
-            // ตรวจสอบว่ามีแล้วหรือยัง
-            $checkStmt = $pdo->prepare("SELECT utl_id FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
+            $prevStmt = $pdo->prepare("SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? ORDER BY utl_date DESC LIMIT 1");
+            $prevStmt->execute([$ctrId]);
+            $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
+
+            $checkStmt = $pdo->prepare("SELECT utl_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
             $checkStmt->execute([$ctrId, $month, $year]);
             $existing = $checkStmt->fetch();
+
+            $waterOld = isset($data['water_old']) ? (int)$data['water_old'] : ($existing ? (int)$existing['utl_water_start'] : (int)($prev['utl_water_end'] ?? 0));
+            $elecOld = isset($data['elec_old']) ? (int)$data['elec_old'] : ($existing ? (int)$existing['utl_elec_start'] : (int)($prev['utl_elec_end'] ?? 0));
+
+            $waterNew = $waterInput ?? ($existing ? (int)$existing['utl_water_end'] : $waterOld);
+            $elecNew = $elecInput ?? ($existing ? (int)$existing['utl_elec_end'] : $elecOld);
             
             if ($existing) {
                 $updateStmt = $pdo->prepare("UPDATE utility SET utl_water_end = ?, utl_elec_end = ?, utl_date = ? WHERE utl_id = ?");
@@ -54,10 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                 $insertStmt->execute([$ctrId, $waterOld, $waterNew, $elecOld, $elecNew, $meterDate]);
             }
             
-            // อัพเดต expense
             $waterUsed = $waterNew - $waterOld;
             $elecUsed = $elecNew - $elecOld;
-            $expMonth = $year . '-' . str_pad($month, 2, '0', STR_PAD_LEFT) . '-01';
             
             $updateExpStmt = $pdo->prepare("
                 UPDATE expense SET 
@@ -86,33 +150,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     }
 }
 
-// ดึงห้องที่มีผู้เช่า
+// ดึงห้อง
 if ($showMode === 'occupied') {
     $rooms = $pdo->query("
         SELECT r.room_id, r.room_number, c.ctr_id, t.tnt_name
         FROM room r
-        JOIN contract c ON r.room_id = c.room_id AND c.ctr_status = '0'
-        JOIN tenant t ON c.tnt_id = t.tnt_id
+        JOIN (
+            SELECT room_id, MAX(ctr_id) AS ctr_id
+            FROM contract
+            WHERE ctr_status = '0'
+            GROUP BY room_id
+        ) lc ON r.room_id = lc.room_id
+        JOIN contract c ON c.ctr_id = lc.ctr_id
+        LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
         ORDER BY CAST(r.room_number AS UNSIGNED) ASC
     ")->fetchAll(PDO::FETCH_ASSOC);
 } else {
     $rooms = $pdo->query("
         SELECT r.room_id, r.room_number, c.ctr_id, COALESCE(t.tnt_name, '') as tnt_name
         FROM room r
-        LEFT JOIN contract c ON r.room_id = c.room_id AND c.ctr_status = '0'
+        LEFT JOIN (
+            SELECT room_id, MAX(ctr_id) AS ctr_id
+            FROM contract
+            WHERE ctr_status = '0'
+            GROUP BY room_id
+        ) lc ON r.room_id = lc.room_id
+        LEFT JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
         ORDER BY CAST(r.room_number AS UNSIGNED) ASC
     ")->fetchAll(PDO::FETCH_ASSOC);
 }
 
-// ดึงค่าเดิมของแต่ละห้อง
+// ดึงค่าเดิม
 $readings = [];
 foreach ($rooms as $room) {
     if (!$room['ctr_id']) {
         $readings[$room['room_id']] = ['water_old' => 0, 'elec_old' => 0, 'water_new' => '', 'elec_new' => '', 'saved' => false];
         continue;
     }
-    
     $prevStmt = $pdo->prepare("SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? ORDER BY utl_date DESC LIMIT 1");
     $prevStmt->execute([$room['ctr_id']]);
     $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
@@ -129,7 +204,6 @@ foreach ($rooms as $room) {
         'saved' => $current ? true : false
     ];
     
-    // ถ้ามีค่าปัจจุบัน ใช้ค่า start เป็นค่าเดิม
     if ($current) {
         $startStmt = $pdo->prepare("SELECT utl_water_start, utl_elec_start FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
         $startStmt->execute([$room['ctr_id'], $month, $year]);
@@ -141,7 +215,6 @@ foreach ($rooms as $room) {
     }
 }
 
-// คำนวณสถิติ
 $totalRooms = count($rooms);
 $totalRecorded = 0;
 foreach ($readings as $r) {
@@ -149,42 +222,32 @@ foreach ($readings as $r) {
 }
 $totalPending = $totalRooms - $totalRecorded;
 
-// ดึงค่าตั้งค่าระบบ
+// ค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
-$themeColor = '#0f172a';
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
-        if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
     }
 } catch (PDOException $e) {}
 
-// ตรวจสอบว่าเป็น light theme หรือไม่
-$isLightTheme = false;
-$lightThemeClass = '';
-if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
-    $hex = ltrim($themeColor, '#');
-    if (strlen($hex) == 3) {
-        $hex = $hex[0].$hex[0].$hex[1].$hex[1].$hex[2].$hex[2];
-    }
-    $r = hexdec(substr($hex, 0, 2));
-    $g = hexdec(substr($hex, 2, 2));
-    $b = hexdec(substr($hex, 4, 2));
-    $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
-    if ($brightness > 180) {
-        $isLightTheme = true;
-        $lightThemeClass = 'light-theme';
-    }
-}
-
-$thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
 $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+
+// จัดกลุ่มห้องตามชั้น
+$floors = [];
+foreach ($rooms as $room) {
+    $num = (int)$room['room_number'];
+    $floorNum = ($num >= 100) ? (int)floor($num / 100) : 1;
+    $floors[$floorNum][] = $room;
+}
+ksort($floors);
+
+$activeTab = $_GET['tab'] ?? 'water';
 ?>
 <!DOCTYPE html>
-<html lang="th" class="<?php echo $lightThemeClass; ?>">
+<html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -194,317 +257,248 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <style>
-        /* Override for full width */
-        .reports-page .app-main {
+        /* === Clean Light Theme === */
+        html, body, .app-shell, .app-main, .reports-page {
+            background: #f0f0f0 !important;
+        }
+        .page-header-bar {
+            background: rgba(255,255,255,0.97) !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+        }
+        .page-header-bar h2 { color: #222 !important; }
+        .sidebar-toggle-btn svg { stroke: #333 !important; }
+
+        .meter-page {
+            width: 100%;
+            max-width: none;
+            margin: 0;
             padding: 0 !important;
         }
-        .meter-page { 
-            padding: 0; 
-            width: 100%;
-            max-width: 100%;
+        .app-main > .meter-page {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
+        }
+        .meter-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
             margin: 0;
+            overflow: hidden;
         }
-        #meterForm {
-            width: 100%;
-            max-width: 100%;
-            margin: 0;
+        .meter-card-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            padding: 1.25rem 1rem 0.5rem;
         }
-        .meter-header {
+        .month-selector {
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-            padding: 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-            width: 100%;
-        }
-        .meter-title {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: #f1f5f9;
-            display: flex;
-            align-items: center;
+            justify-content: center;
             gap: 0.5rem;
-        }
-        .meter-controls {
-            display: flex;
-            gap: 0.5rem;
+            padding: 0.25rem 1rem 0.75rem;
             flex-wrap: wrap;
+            align-items: center;
         }
-        .meter-controls select {
-            padding: 0.5rem 0.75rem;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255,255,255,0.15);
+        .month-selector select {
+            padding: 0.4rem 0.7rem;
+            border: 1px solid #d0d0d0;
             border-radius: 8px;
-            color: #f1f5f9;
             font-size: 0.9rem;
+            color: #333;
+            background: #fff;
         }
-        .mode-btn {
-            padding: 0.5rem 0.75rem;
+        .mode-link {
+            padding: 0.35rem 0.7rem;
             border-radius: 8px;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: #94a3b8;
+            font-size: 0.82rem;
             text-decoration: none;
-            font-size: 0.85rem;
+            color: #666;
+            border: 1px solid #d0d0d0;
+            background: #fff;
             transition: all 0.2s;
         }
-        .mode-btn.active {
-            background: rgba(59, 130, 246, 0.3);
-            border-color: #3b82f6;
-            color: #60a5fa;
+        .mode-link.active {
+            background: #f97316;
+            color: #fff;
+            border-color: #f97316;
         }
-        
-        /* Stats Bar */
-        .stats-bar {
+        .stats-row {
             display: flex;
-            gap: 1rem;
-            padding: 0.75rem 1rem;
-            background: rgba(30, 41, 59, 0.5);
+            justify-content: center;
+            gap: 0.6rem;
+            padding: 0 1rem 0.5rem;
             flex-wrap: wrap;
+        }
+        .stat-badge {
+            padding: 0.3rem 0.7rem;
+            border-radius: 16px;
+            font-size: 0.78rem;
+            font-weight: 600;
+        }
+        .stat-badge.rooms { background: #e3f2fd; color: #1565c0; }
+        .stat-badge.done { background: #e8f5e9; color: #2e7d32; }
+        .stat-badge.pending { background: #fff3e0; color: #e65100; }
+        .rate-info {
+            display: flex;
             justify-content: center;
+            gap: 1.25rem;
+            padding: 0.25rem 1rem 0.5rem;
+            font-size: 0.78rem;
+            color: #999;
         }
-        .stat-item {
+        .rate-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 3px; vertical-align: middle; }
+        .rate-dot.water { background: #4fc3f7; }
+        .rate-dot.elec { background: #f48fb1; }
+
+        /* Tabs */
+        .meter-tabs {
             display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
-            font-size: 0.9rem;
-        }
-        .stat-item.blue { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-        .stat-item.green { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
-        .stat-item.yellow { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
-        .stat-item strong { font-size: 1.1rem; }
-        
-        /* Rate Info */
-        .rate-bar {
-            display: flex;
-            gap: 1.5rem;
-            padding: 0.5rem 1rem;
-            justify-content: center;
-            font-size: 0.8rem;
-            color: #94a3b8;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-        .rate-bar span { display: flex; align-items: center; gap: 4px; }
-        .water-dot { width: 10px; height: 10px; border-radius: 50%; background: #3b82f6; }
-        .elec-dot { width: 10px; height: 10px; border-radius: 50%; background: #eab308; }
-        
-        /* Room List */
-        .room-list {
-            display: flex;
-            flex-direction: column;
-            gap: 0.5rem;
-            padding: 1rem;
-            width: 100%;
-            margin: 0;
-            box-sizing: border-box;
-        }
-        .room-row {
-            display: grid;
-            grid-template-columns: 90px 1fr 1fr 140px auto;
-            gap: 0.75rem;
-            align-items: center;
-            background: rgba(30, 41, 59, 0.8);
-            padding: 1rem;
+            margin: 0 1rem;
             border-radius: 10px;
-            border: 1px solid rgba(255,255,255,0.1);
-            width: 100%;
-            box-sizing: border-box;
+            overflow: hidden;
         }
-        .room-row.saved {
-            border-color: rgba(34, 197, 94, 0.5);
-            background: rgba(34, 197, 94, 0.08);
-        }
-        .room-row.no-contract {
-            opacity: 0.5;
-        }
-        .room-num {
-            font-weight: 700;
-            font-size: 1.3rem;
+        .meter-tab {
+            flex: 1;
             text-align: center;
-            color: #60a5fa;
+            padding: 0.8rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            transition: background 0.2s;
+            color: #fff;
         }
-        .room-tenant {
-            font-size: 0.85rem;
-            color: #64748b;
+        .meter-tab.water-tab { background: #81d4fa; }
+        .meter-tab.water-tab.active { background: #0288d1; }
+        .meter-tab.elec-tab { background: #f48fb1; }
+        .meter-tab.elec-tab.active { background: #d81b60; }
+        .meter-tab svg { width: 18px; height: 18px; }
+
+        /* Floor Header */
+        .floor-header {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #555;
+            background: #fafafa;
+            border-bottom: 1px solid #eee;
+            border-top: 1px solid #eee;
+        }
+
+        /* Table */
+        .meter-table { width: 100%; border-collapse: collapse; }
+        .meter-table thead th {
+            background: #f97316;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.82rem;
+            padding: 0.7rem 0.4rem;
             text-align: center;
             white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 2px;
-        }
-        .input-group label {
-            font-size: 0.75rem;
-            color: #64748b;
-            display: flex;
-            align-items: center;
-            gap: 3px;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 0.65rem;
-            background: rgba(15, 23, 42, 0.8);
-            border: 1px solid rgba(255,255,255,0.15);
-            border-radius: 6px;
-            color: #f1f5f9;
-            font-size: 1.05rem;
+        .meter-table tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.12s; }
+        .meter-table tbody tr:hover { background: #fffde7; }
+        .meter-table tbody tr.saved-row { background: #f1f8e9; }
+        .meter-table tbody tr.empty-row { opacity: 0.4; }
+        .meter-table td {
+            padding: 0.6rem 0.4rem;
             text-align: center;
+            font-size: 0.95rem;
+            color: #333;
+            vertical-align: middle;
         }
-        .input-group input:focus {
-            outline: none;
-            border-color: #3b82f6;
-        }
-        .input-group input.water { border-left: 3px solid #3b82f6; }
-        .input-group input.electric { border-left: 3px solid #eab308; }
-        .input-group .old-val {
-            font-size: 0.7rem;
-            color: #64748b;
+        .room-num-cell { font-weight: 700; font-size: 1.05rem; color: #222; }
+        .status-icon svg { width: 22px; height: 22px; fill: #666; }
+
+        /* Meter Input */
+        .meter-input-field {
+            width: 100%;
+            max-width: 120px;
+            padding: 0.45rem 0.3rem;
             text-align: center;
-        }
-        .room-status {
-            width: 28px;
-            height: 28px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .room-status.saved { background: #22c55e; }
-        .room-status.pending { background: rgba(251, 191, 36, 0.3); border: 2px solid #fbbf24; }
-        
-        /* Room Total Summary */
-        .room-total-summary {
-            display: flex;
-            flex-direction: column;
-            gap: 0.35rem;
-            padding: 0.5rem;
-            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid #b3e5fc;
             border-radius: 6px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .cost-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.75rem;
-        }
-        .cost-label {
-            color: #94a3b8;
-            font-weight: 500;
-        }
-        .cost-value {
-            font-weight: 600;
-            color: #e2e8f0;
-        }
-        .water-cost-item .cost-value {
-            color: #60a5fa;
-        }
-        .elec-cost-item .cost-value {
-            color: #fbbf24;
-        }
-        .total-cost-item {
-            padding-top: 0.35rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-        }
-        .total-cost-item .cost-value.total {
-            color: #22c55e;
-            font-size: 0.85rem;
-        }
-        
-        /* Save Button */
-        .save-container {
-            position: sticky;
-            bottom: 0;
-            background: linear-gradient(to top, rgba(15, 23, 42, 1), rgba(15, 23, 42, 0.95));
-            padding: 1rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            width: 100%;
-            left: 0;
-            right: 0;
-            border-radius: 12px;
-        }
-        .save-summary {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-bottom: 0.75rem;
-            flex-wrap: wrap;
-            font-size: 0.85rem;
-        }
-        .save-summary span {
-            padding: 0.4rem 0.75rem;
-            border-radius: 6px;
-        }
-        .save-summary .water-cost { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
-        .save-summary .elec-cost { background: rgba(234, 179, 8, 0.15); color: #eab308; }
-        .save-summary .total-cost { background: rgba(34, 197, 94, 0.2); color: #22c55e; font-weight: 600; }
-        .save-btn {
-            width: 100%;
-            max-width: 500px;
-            margin: 0 auto;
-            display: block;
-            padding: 0.875rem;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
-            border: none;
-            border-radius: 10px;
-            color: white;
+            background: #e1f5fe;
             font-size: 1rem;
             font-weight: 600;
-            cursor: pointer;
-            box-shadow: 0 4px 15px rgba(34, 197, 94, 0.4);
+            color: #333;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .save-btn:hover { transform: translateY(-1px); }
-        .save-btn:active { transform: scale(0.98); }
-        
-        /* Toast */
-        .toast {
-            position: fixed;
-            top: 1rem;
-            right: 1rem;
-            padding: 0.75rem 1.25rem;
+        .meter-input-field:focus {
+            outline: none;
+            border-color: #0288d1;
+            box-shadow: 0 0 0 3px rgba(2,136,209,0.12);
+            background: #fff;
+        }
+        .meter-input-field.elec-input {
+            border-color: #f8bbd0;
+            background: #fce4ec;
+        }
+        .meter-input-field.elec-input:focus {
+            border-color: #d81b60;
+            box-shadow: 0 0 0 3px rgba(216,27,96,0.12);
+            background: #fff;
+        }
+        .usage-cell { font-weight: 700; color: #0277bd; }
+        .usage-cell.elec-usage { color: #c2185b; }
+
+        /* Save Bar */
+        .save-bar {
+            position: sticky;
+            bottom: 0;
+            background: #fff;
+            border-top: 1px solid #eee;
+            padding: 0.75rem 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.04);
+            z-index: 10;
+        }
+        .save-bar .pill { padding: 0.35rem 0.75rem; border-radius: 16px; font-size: 0.82rem; font-weight: 500; }
+        .save-bar .pill.water { background: #e1f5fe; color: #0277bd; }
+        .save-bar .pill.elec { background: #fce4ec; color: #c2185b; }
+        .save-bar .pill.total { background: #e8f5e9; color: #2e7d32; font-weight: 700; }
+        .save-btn {
+            padding: 0.6rem 1.75rem;
+            background: #f97316;
+            border: none;
             border-radius: 10px;
-            font-weight: 500;
-            z-index: 9999;
-            animation: slideIn 0.3s ease;
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 3px 10px rgba(249,115,22,0.25);
+            transition: all 0.2s;
         }
-        .toast.success { background: #22c55e; color: white; }
-        .toast.error { background: #ef4444; color: white; }
-        @keyframes slideIn {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
+        .save-btn:hover { background: #ea580c; transform: translateY(-1px); }
+
+        /* Toast */
+        .toast-msg { position: fixed; top: 1rem; right: 1rem; padding: 0.7rem 1.2rem; border-radius: 10px; font-weight: 600; z-index: 9999; color: #fff; animation: toastIn 0.3s ease; }
+        .toast-msg.success { background: #43a047; }
+        .toast-msg.error { background: #e53935; }
+        @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .meter-page { max-width: 100%; }
+            .meter-card { margin: 0; border-radius: 0; }
+            .meter-table td, .meter-table th { padding: 0.45rem 0.25rem; font-size: 0.82rem; }
+            .meter-input-field { max-width: 90px; font-size: 0.88rem; }
         }
-        
-        /* Light Theme */
-        html.light-theme .meter-header { border-color: rgba(0,0,0,0.1); }
-        html.light-theme .meter-title { color: #111827; }
-        html.light-theme .meter-controls select { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #111827; }
-        html.light-theme .mode-btn { background: rgba(0,0,0,0.05); border-color: rgba(0,0,0,0.1); color: #374151; }
-        html.light-theme .mode-btn.active { background: rgba(59, 130, 246, 0.15); color: #2563eb; }
-        html.light-theme .stats-bar { background: rgba(0,0,0,0.03); }
-        html.light-theme .rate-bar { color: #64748b; border-color: rgba(0,0,0,0.1); }
-        html.light-theme .room-row { background: rgba(255,255,255,0.9); border-color: rgba(0,0,0,0.1); }
-        html.light-theme .room-row.saved { border-color: rgba(34, 197, 94, 0.4); background: rgba(34, 197, 94, 0.05); }
-        html.light-theme .room-num { color: #2563eb; }
-        html.light-theme .input-group label { color: #64748b; }
-        html.light-theme .input-group input { background: rgba(255,255,255,0.95); border-color: rgba(0,0,0,0.15); color: #111827; }
-        html.light-theme .save-container { background: linear-gradient(to top, rgba(255,255,255,1), rgba(255,255,255,0.95)); border-color: rgba(0,0,0,0.1); }
-        
-        @media (max-width: 500px) {
-            .room-row { grid-template-columns: 50px 1fr 1fr 100px 24px; padding: 0.5rem; gap: 0.5rem; }
-            .room-num { font-size: 0.95rem; }
-            .input-group input { padding: 0.4rem; font-size: 0.85rem; }
-            .meter-header { flex-direction: column; align-items: flex-start; }
-            .room-total-summary { padding: 0.4rem; }
-            .cost-item { font-size: 0.7rem; }
-            .cost-value { font-size: 0.7rem; }
-            .total-cost-item .cost-value.total { font-size: 0.75rem; }
+        @media (max-width: 480px) {
+            .meter-table td, .meter-table th { padding: 0.35rem 0.15rem; font-size: 0.75rem; }
+            .meter-input-field { max-width: 68px; font-size: 0.78rem; padding: 0.35rem 0.2rem; }
+            .meter-card-title { font-size: 1.2rem; }
+            .meter-tab { font-size: 0.82rem; padding: 0.65rem 0.4rem; }
         }
     </style>
 </head>
@@ -513,244 +507,181 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         <main class="app-main">
             <div class="meter-page">
-                <?php 
-                    $pageTitle = 'จดมิเตอร์';
-                    include __DIR__ . '/../includes/page_header.php'; 
-                ?>
+                <?php $pageTitle = 'จดมิเตอร์'; include __DIR__ . '/../includes/page_header.php'; ?>
+
                 <?php if (isset($_SESSION['success'])): ?>
-                <div class="toast success" id="toast"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-                <script>setTimeout(() => document.getElementById('toast')?.remove(), 3000);</script>
+                <div class="toast-msg success" id="toast"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
+                <script>setTimeout(function(){var t=document.getElementById('toast');if(t)t.remove();},3000);</script>
                 <?php endif; ?>
                 <?php if ($error): ?>
-                <div class="toast error"><?php echo $error; ?></div>
+                <div class="toast-msg error"><?php echo htmlspecialchars($error); ?></div>
                 <?php endif; ?>
-                
-                <!-- Header -->
-                <div class="meter-header">
-                    <div class="meter-title">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                        จดมิเตอร์ <?php echo $thaiMonths[(int)$month] . ' ' . ((int)$year + 543); ?>
-                    </div>
-                    <div class="meter-controls">
-                        <form method="get" style="display: flex; gap: 0.5rem;">
-                            <input type="hidden" name="show" value="<?php echo $showMode; ?>">
+
+                <div class="meter-card">
+                    <div class="meter-card-title">จดมิเตอร์</div>
+
+                    <div class="month-selector">
+                        <form method="get" style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;justify-content:center;">
+                            <input type="hidden" name="show" value="<?php echo htmlspecialchars($showMode); ?>">
+                            <input type="hidden" name="tab" value="<?php echo htmlspecialchars($activeTab); ?>">
                             <select name="month" onchange="this.form.submit()">
-                                <?php for ($m = 1; $m <= 12; $m++): ?>
-                                <option value="<?php echo $m; ?>" <?php echo $month == $m ? 'selected' : ''; ?>><?php echo $thaiMonths[$m]; ?></option>
-                                <?php endfor; ?>
+                                <?php foreach (($availableMonthsByYear[$year] ?? []) as $m): ?>
+                                <option value="<?php echo $m; ?>" <?php echo $month === (int)$m ? 'selected' : ''; ?>><?php echo $thaiMonthsFull[(int)$m]; ?></option>
+                                <?php endforeach; ?>
                             </select>
                             <select name="year" onchange="this.form.submit()">
-                                <?php for ($y = date('Y') - 1; $y <= date('Y') + 1; $y++): ?>
-                                <option value="<?php echo $y; ?>" <?php echo $year == $y ? 'selected' : ''; ?>><?php echo $y + 543; ?></option>
-                                <?php endfor; ?>
+                                <?php foreach ($availableYears as $y): ?>
+                                <option value="<?php echo $y; ?>" <?php echo $year === (int)$y ? 'selected' : ''; ?>><?php echo ((int)$y) + 543; ?></option>
+                                <?php endforeach; ?>
                             </select>
+                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=occupied" class="mode-link <?php echo $showMode === 'occupied' ? 'active' : ''; ?>">มีผู้เช่า</a>
+                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=all" class="mode-link <?php echo $showMode === 'all' ? 'active' : ''; ?>">ทั้งหมด</a>
                         </form>
-                        <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&show=occupied" class="mode-btn <?php echo $showMode === 'occupied' ? 'active' : ''; ?>">มีผู้เช่า</a>
-                        <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&show=all" class="mode-btn <?php echo $showMode === 'all' ? 'active' : ''; ?>">ทั้งหมด</a>
                     </div>
-                </div>
-                
-                <!-- Stats -->
-                <div class="stats-bar">
-                    <div class="stat-item blue">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                        <strong><?php echo $totalRooms; ?></strong> ห้อง
+
+                    <div class="stats-row">
+                        <span class="stat-badge rooms"><?php echo $totalRooms; ?> ห้อง</span>
+                        <span class="stat-badge done"><?php echo $totalRecorded; ?> บันทึกแล้ว</span>
+                        <span class="stat-badge pending"><?php echo max(0, $totalPending); ?> รอ</span>
                     </div>
-                    <div class="stat-item green">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
-                        <strong><?php echo $totalRecorded; ?></strong> บันทึกแล้ว
+                    <div class="rate-info">
+                        <span><span class="rate-dot water"></span>น้ำ <?php echo $waterRate; ?>฿/หน่วย</span>
+                        <span><span class="rate-dot elec"></span>ไฟ <?php echo $electricRate; ?>฿/หน่วย</span>
                     </div>
-                    <div class="stat-item yellow">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                        <strong><?php echo max(0, $totalPending); ?></strong> รอบันทึก
-                    </div>
-                </div>
-                
-                <!-- Rate Info -->
-                <div class="rate-bar">
-                    <span><span class="water-dot"></span> น้ำ <?php echo $waterRate; ?>฿/หน่วย</span>
-                    <span><span class="elec-dot"></span> ไฟ <?php echo $electricRate; ?>฿/หน่วย</span>
-                </div>
-                
-                <?php if (empty($rooms)): ?>
-                <div style="text-align: center; padding: 3rem; color: #94a3b8;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
-                    <p style="margin-top: 1rem;">ไม่พบห้องพัก</p>
-                </div>
-                <?php else: ?>
-                
-                <!-- Room List -->
-                <form method="post" id="meterForm" data-allow-submit>
-                    <input type="hidden" name="save" value="1">
-                    
-                    <div class="room-list">
-                        <?php foreach ($rooms as $room): 
-                            $r = $readings[$room['room_id']];
-                            $hasCtr = !empty($room['ctr_id']);
-                        ?>
-                        <div class="room-row <?php echo $r['saved'] ? 'saved' : ''; ?> <?php echo !$hasCtr ? 'no-contract' : ''; ?>">
-                            <div>
-                                <div class="room-num"><?php echo $room['room_number']; ?></div>
-                                <div class="room-tenant"><?php echo $room['tnt_name'] ?: 'ว่าง'; ?></div>
-                            </div>
-                            
-                            <?php if ($hasCtr): 
-                                $waterUsed = $r['water_new'] ? ((int)$r['water_new'] - $r['water_old']) : 0;
-                                $elecUsed = $r['elec_new'] ? ((int)$r['elec_new'] - $r['elec_old']) : 0;
-                                $waterCost = $waterUsed * $waterRate;
-                                $elecCost = $elecUsed * $electricRate;
-                                $totalCost = $waterCost + $elecCost;
-                            ?>
-                            <div class="input-group">
-                                <label><span class="water-dot" style="width:6px;height:6px"></span> น้ำ</label>
-                                <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" 
-                                       class="water meter-input" 
-                                       data-type="water" data-room="<?php echo $room['room_id']; ?>"
-                                       data-old="<?php echo $r['water_old']; ?>"
-                                       placeholder="<?php echo $r['water_old']; ?>" 
-                                       value="<?php echo $r['water_new']; ?>"
-                                       min="<?php echo $r['water_old']; ?>">
-                                <div class="old-val">เดิม <?php echo number_format($r['water_old']); ?></div>
-                                <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
-                                <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
-                            </div>
-                            <div class="input-group">
-                                <label><span class="elec-dot" style="width:6px;height:6px"></span> ไฟ</label>
-                                <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" 
-                                       class="electric meter-input"
-                                       data-type="electric" data-room="<?php echo $room['room_id']; ?>"
-                                       data-old="<?php echo $r['elec_old']; ?>"
-                                       placeholder="<?php echo $r['elec_old']; ?>"
-                                       value="<?php echo $r['elec_new']; ?>"
-                                       min="<?php echo $r['elec_old']; ?>">
-                                <div class="old-val">เดิม <?php echo number_format($r['elec_old']); ?></div>
-                                <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
-                            </div>
-                            
-                            <!-- Room Total Summary -->
-                            <div class="room-total-summary" id="roomSummary_<?php echo $room['room_id']; ?>">
-                                <div class="cost-item water-cost-item">
-                                    <span class="cost-label">น้ำ:</span>
-                                    <span class="cost-value" data-room="<?php echo $room['room_id']; ?>" data-type="water-cost">
-                                        <?php echo $waterCost > 0 ? number_format($waterCost) : '0'; ?> ฿
-                                    </span>
-                                </div>
-                                <div class="cost-item elec-cost-item">
-                                    <span class="cost-label">ไฟ:</span>
-                                    <span class="cost-value" data-room="<?php echo $room['room_id']; ?>" data-type="elec-cost">
-                                        <?php echo $elecCost > 0 ? number_format($elecCost) : '0'; ?> ฿
-                                    </span>
-                                </div>
-                                <div class="cost-item total-cost-item">
-                                    <span class="cost-label">รวม:</span>
-                                    <span class="cost-value total" data-room="<?php echo $room['room_id']; ?>" data-type="total-cost">
-                                        <?php echo $totalCost > 0 ? number_format($totalCost) : '0'; ?> ฿
-                                    </span>
-                                </div>
-                            </div>
-                            <?php else: ?>
-                            <div style="grid-column: span 3; text-align: center; color: #64748b; font-size: 0.8rem;">ห้องว่าง</div>
-                            <?php endif; ?>
-                            
-                            <div class="room-status <?php echo $r['saved'] ? 'saved' : 'pending'; ?>">
-                                <?php if ($r['saved']): ?>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <?php endforeach; ?>
-                    </div>
-                    
-                    <!-- Save Button -->
-                    <div class="save-container">
-                        <div class="save-summary">
-                            <span class="water-cost">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
-                                ค่าน้ำ <strong id="totalWater">0</strong> ฿
-                            </span>
-                            <span class="elec-cost">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
-                                ค่าไฟ <strong id="totalElec">0</strong> ฿
-                            </span>
-                            <span class="total-cost">
-                                รวม <strong id="grandTotal">0</strong> ฿
-                            </span>
-                        </div>
-                        <button type="submit" class="save-btn" id="saveBtn">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align: middle;"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
-                            บันทึกทั้งหมด (<span id="readyCount">0</span> ห้อง)
+
+                    <!-- Tabs -->
+                    <div class="meter-tabs">
+                        <button type="button" class="meter-tab water-tab <?php echo $activeTab==='water'?'active':''; ?>" onclick="switchTab('water')">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+                            จดมิเตอร์ค่าน้ำ
+                        </button>
+                        <button type="button" class="meter-tab elec-tab <?php echo $activeTab==='electric'?'active':''; ?>" onclick="switchTab('electric')">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                            จดมิเตอร์ค่าไฟ
                         </button>
                     </div>
-                </form>
-                <?php endif; ?>
-                
+
+                    <?php if (empty($rooms)): ?>
+                    <div style="text-align:center;padding:3rem;color:#aaa;">
+                        <p>ไม่พบห้องพัก</p>
+                    </div>
+                    <?php else: ?>
+
+                    <form method="post" id="meterForm" data-allow-submit>
+                        <input type="hidden" name="save" value="1">
+
+                        <!-- WATER TAB -->
+                        <div id="waterPanel" style="<?php echo $activeTab!=='water'?'display:none':''; ?>">
+                            <?php foreach ($floors as $floorNum => $floorRooms): ?>
+                            <div class="floor-header">ชั้นที่ <?php echo $floorNum; ?></div>
+                            <table class="meter-table">
+                                <thead><tr>
+                                    <th>ห้อง</th><th>สถานะ</th><th>เลขมิเตอร์เดือนก่อนหน้า</th><th>เลขมิเตอร์เดือนล่าสุด</th><th>หน่วยที่ใช้</th>
+                                </tr></thead>
+                                <tbody>
+                                <?php foreach ($floorRooms as $room):
+                                    $r = $readings[$room['room_id']];
+                                    $hasCtr = !empty($room['ctr_id']);
+                                    $wUsed = ($r['water_new']!==''&&$r['water_new']!==null) ? ((int)$r['water_new']-$r['water_old']) : 0;
+                                ?>
+                                <tr class="<?php echo $r['saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?>">
+                                    <td class="room-num-cell"><?php echo htmlspecialchars($room['room_number']); ?></td>
+                                    <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
+                                    <td><?php echo $hasCtr ? number_format($r['water_old']) : '-'; ?></td>
+                                    <td><?php if($hasCtr): ?>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" placeholder="<?php echo $r['water_old']; ?>" value="<?php echo $r['water_new']; ?>" min="<?php echo $r['water_old']; ?>">
+                                        <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
+                                        <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
+                                    <?php else: ?>-<?php endif; ?></td>
+                                    <td class="usage-cell" data-room="<?php echo $room['room_id']; ?>" data-usage="water"><?php echo $hasCtr ? $wUsed : '-'; ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <!-- ELECTRIC TAB -->
+                        <div id="electricPanel" style="<?php echo $activeTab!=='electric'?'display:none':''; ?>">
+                            <?php foreach ($floors as $floorNum => $floorRooms): ?>
+                            <div class="floor-header">ชั้นที่ <?php echo $floorNum; ?></div>
+                            <table class="meter-table">
+                                <thead><tr>
+                                    <th>ห้อง</th><th>สถานะ</th><th>เลขมิเตอร์เดือนก่อนหน้า</th><th>เลขมิเตอร์เดือนล่าสุด</th><th>หน่วยที่ใช้</th>
+                                </tr></thead>
+                                <tbody>
+                                <?php foreach ($floorRooms as $room):
+                                    $r = $readings[$room['room_id']];
+                                    $hasCtr = !empty($room['ctr_id']);
+                                    $eUsed = ($r['elec_new']!==''&&$r['elec_new']!==null) ? ((int)$r['elec_new']-$r['elec_old']) : 0;
+                                ?>
+                                <tr class="<?php echo $r['saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?>">
+                                    <td class="room-num-cell"><?php echo htmlspecialchars($room['room_number']); ?></td>
+                                    <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
+                                    <td><?php echo $hasCtr ? number_format($r['elec_old']) : '-'; ?></td>
+                                    <td><?php if($hasCtr): ?>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" placeholder="<?php echo $r['elec_old']; ?>" value="<?php echo $r['elec_new']; ?>" min="<?php echo $r['elec_old']; ?>">
+                                        <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
+                                        <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
+                                    <?php else: ?>-<?php endif; ?></td>
+                                    <td class="usage-cell elec-usage" data-room="<?php echo $room['room_id']; ?>" data-usage="electric"><?php echo $hasCtr ? $eUsed : '-'; ?></td>
+                                </tr>
+                                <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                            <?php endforeach; ?>
+                        </div>
+
+                        <div class="save-bar">
+                            <span class="pill water">💧 ค่าน้ำ <strong id="totalWater">0</strong> ฿</span>
+                            <span class="pill elec">⚡ ค่าไฟ <strong id="totalElec">0</strong> ฿</span>
+                            <span class="pill total">รวม <strong id="grandTotal">0</strong> ฿</span>
+                            <button type="submit" class="save-btn">บันทึก (<span id="readyCount">0</span> ห้อง)</button>
+                        </div>
+                    </form>
+                    <?php endif; ?>
+                </div>
             </div>
         </main>
     </div>
 
     <script>
-    const waterRate = <?php echo $waterRate; ?>;
-    const electricRate = <?php echo $electricRate; ?>;
-    
-    function updateTotals() {
-        const inputs = document.querySelectorAll('.meter-input');
-        const roomsData = {};
-        
-        inputs.forEach(input => {
-            const roomId = input.dataset.room;
-            const type = input.dataset.type;
-            const oldVal = parseInt(input.dataset.old) || 0;
-            const newVal = parseInt(input.value) || 0;
-            
-            if (!roomsData[roomId]) roomsData[roomId] = { water: 0, electric: 0, hasWater: false, hasElec: false };
-            
-            if (type === 'water' && input.value) {
-                roomsData[roomId].water = Math.max(0, newVal - oldVal) * waterRate;
-                roomsData[roomId].hasWater = true;
-            }
-            if (type === 'electric' && input.value) {
-                roomsData[roomId].electric = Math.max(0, newVal - oldVal) * electricRate;
-                roomsData[roomId].hasElec = true;
-            }
-        });
-        
-        let totalWater = 0, totalElec = 0, readyCount = 0;
-        
-        // Update each room's summary
-        Object.entries(roomsData).forEach(([roomId, data]) => {
-            const waterCostEl = document.querySelector(`[data-room="${roomId}"][data-type="water-cost"]`);
-            const elecCostEl = document.querySelector(`[data-room="${roomId}"][data-type="elec-cost"]`);
-            const totalCostEl = document.querySelector(`[data-room="${roomId}"][data-type="total-cost"]`);
-            
-            if (waterCostEl) {
-                waterCostEl.textContent = data.water.toLocaleString() + ' ฿';
-            }
-            if (elecCostEl) {
-                elecCostEl.textContent = data.electric.toLocaleString() + ' ฿';
-            }
-            if (totalCostEl) {
-                const roomTotal = data.water + data.electric;
-                totalCostEl.textContent = roomTotal.toLocaleString() + ' ฿';
-            }
-            
-            if (data.hasWater && data.hasElec) {
-                totalWater += data.water;
-                totalElec += data.electric;
-                readyCount++;
-            }
-        });
-        
-        document.getElementById('totalWater').textContent = totalWater.toLocaleString();
-        document.getElementById('totalElec').textContent = totalElec.toLocaleString();
-        document.getElementById('grandTotal').textContent = (totalWater + totalElec).toLocaleString();
-        document.getElementById('readyCount').textContent = readyCount;
+    var waterRate = <?php echo $waterRate; ?>;
+    var electricRate = <?php echo $electricRate; ?>;
+
+    function switchTab(tab) {
+        document.getElementById('waterPanel').style.display = tab==='water' ? '' : 'none';
+        document.getElementById('electricPanel').style.display = tab==='electric' ? '' : 'none';
+        document.querySelector('.water-tab').classList.toggle('active', tab==='water');
+        document.querySelector('.elec-tab').classList.toggle('active', tab==='electric');
     }
-    
-    document.querySelectorAll('.meter-input').forEach(input => {
-        input.addEventListener('input', updateTotals);
-    });
-    
-    // Initial calculation
+
+    function updateTotals() {
+        var inputs = document.querySelectorAll('.meter-input');
+        var rd = {};
+        inputs.forEach(function(i) {
+            var rid = i.dataset.room, t = i.dataset.type;
+            var oldV = parseInt(i.dataset.old)||0, newV = parseInt(i.value)||0;
+            if (!rd[rid]) rd[rid] = {water:0,electric:0,wu:0,eu:0,hw:false,he:false};
+            if (t==='water' && i.value) { var u=Math.max(0,newV-oldV); rd[rid].wu=u; rd[rid].water=u*waterRate; rd[rid].hw=true; }
+            if (t==='electric' && i.value) { var u=Math.max(0,newV-oldV); rd[rid].eu=u; rd[rid].electric=u*electricRate; rd[rid].he=true; }
+        });
+        var tw=0, te=0, rc=0;
+        Object.keys(rd).forEach(function(rid) {
+            var d = rd[rid];
+            document.querySelectorAll('[data-room="'+rid+'"][data-usage="water"]').forEach(function(el) { if(d.hw) el.textContent=d.wu; });
+            document.querySelectorAll('[data-room="'+rid+'"][data-usage="electric"]').forEach(function(el) { if(d.he) el.textContent=d.eu; });
+            if (d.hw) tw += d.water;
+            if (d.he) te += d.electric;
+            if (d.hw || d.he) rc++;
+        });
+        document.getElementById('totalWater').textContent = tw.toLocaleString();
+        document.getElementById('totalElec').textContent = te.toLocaleString();
+        document.getElementById('grandTotal').textContent = (tw+te).toLocaleString();
+        document.getElementById('readyCount').textContent = rc;
+    }
+
+    document.querySelectorAll('.meter-input').forEach(function(i) { i.addEventListener('input', updateTotals); });
     updateTotals();
     </script>
     <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>

@@ -145,11 +145,11 @@ try {
       .status-btn.active { background: linear-gradient(135deg, #3b82f6, #60a5fa); border-color: transparent; color: #fff; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
       .status-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.1); color: #e2e8f0; transform: translateY(-2px); }
       .stay-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-      .stay-card { background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95)); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 1.5rem; transition: all 0.3s cubic-bezier(0.2, 0.55, 0.45, 0.8); }
-      .stay-card:hover { transform: translateY(-4px); box-shadow: 0 15px 35px rgba(3,7,18,0.5); border-color: rgba(96, 165, 250, 0.3); }
+      .stay-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 1.5rem; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08); transition: all 0.3s cubic-bezier(0.2, 0.55, 0.45, 0.8); }
+      .stay-card:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12); border-color: #cbd5e1; }
       .stay-time-badge { display: inline-block; background: linear-gradient(135deg, #10b981, #34d399); color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3); }
-      .stay-date { color: #94a3b8; font-size: 0.8rem; margin-bottom: 15px; }
-      .stay-info { color: #cbd5e1; font-size: 0.95rem; line-height: 1.8; margin: 15px 0; }
+      .stay-date { color: #64748b; font-size: 0.8rem; margin-bottom: 15px; }
+      .stay-info { color: #1f2937; font-size: 0.95rem; line-height: 1.8; margin: 15px 0; }
       .stay-status { padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-top: 10px; }
       .status-pending { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
       .status-active { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
@@ -157,12 +157,12 @@ try {
 
       /* Modern DataTable Styles */
       .stay-table { 
-        background: linear-gradient(135deg, rgba(18,24,40,0.9), rgba(7,13,26,0.95)); 
-        border: 1px solid rgba(255, 255, 255, 0.1); 
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
         border-radius: 16px; 
         overflow: hidden; 
         padding: 1.5rem;
-        box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
       }
       
       /* DataTable Wrapper */
@@ -177,10 +177,10 @@ try {
       /* Search Input */
       .datatable-wrapper .datatable-input {
         padding: 0.75rem 1rem;
-        background: rgba(15, 23, 42, 0.8) !important;
-        border: 1px solid rgba(148, 163, 184, 0.2) !important;
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important;
         border-radius: 12px !important;
-        color: #e2e8f0 !important;
+        color: #1f2937 !important;
         font-size: 0.95rem;
         transition: all 0.3s ease;
         min-width: 250px;
@@ -197,10 +197,10 @@ try {
       /* Per Page Select */
       .datatable-wrapper .datatable-selector {
         padding: 0.6rem 2rem 0.6rem 1rem;
-        background: rgba(15, 23, 42, 0.8) !important;
-        border: 1px solid rgba(148, 163, 184, 0.2) !important;
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important;
         border-radius: 10px !important;
-        color: #e2e8f0 !important;
+        color: #1f2937 !important;
         font-size: 0.9rem;
         cursor: pointer;
         appearance: none;
@@ -216,7 +216,7 @@ try {
       
       /* Info Text */
       .datatable-wrapper .datatable-info {
-        color: #94a3b8 !important;
+        color: #64748b !important;
         font-size: 0.9rem;
       }
       
@@ -227,23 +227,23 @@ try {
         border-spacing: 0;
       }
       .datatable-wrapper table thead {
-        background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)) !important;
+        background: #f3f4f6 !important;
       }
       .datatable-wrapper table thead th {
         padding: 1rem 1.25rem !important;
-        color: #f1f5f9 !important;
+        color: #334155 !important;
         font-weight: 600 !important;
         font-size: 0.85rem !important;
         text-transform: uppercase !important;
         letter-spacing: 0.05em !important;
-        border-bottom: 2px solid rgba(96, 165, 250, 0.3) !important;
+        border-bottom: 1px solid #e5e7eb !important;
         background: transparent !important;
         white-space: nowrap;
         cursor: pointer;
         transition: all 0.2s;
       }
       .datatable-wrapper table thead th:hover {
-        color: #60a5fa !important;
+        color: #0f172a !important;
       }
       .datatable-wrapper table thead th.datatable-ascending::after,
       .datatable-wrapper table thead th.datatable-descending::after {
@@ -253,16 +253,16 @@ try {
       /* Table Body */
       .datatable-wrapper table tbody tr {
         transition: all 0.2s ease;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid #eef2f7;
       }
       .datatable-wrapper table tbody tr:hover {
-        background: rgba(96, 165, 250, 0.08) !important;
+        background: #f8fafc !important;
       }
       .datatable-wrapper table tbody td {
         padding: 1rem 1.25rem !important;
-        color: #e2e8f0 !important;
+        color: #111827 !important;
         font-size: 0.95rem !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-bottom: 1px solid #eef2f7 !important;
         vertical-align: middle;
       }
       
@@ -290,10 +290,10 @@ try {
         min-width: 40px;
         height: 40px;
         padding: 0 0.75rem;
-        background: rgba(30, 41, 59, 0.6) !important;
-        border: 1px solid rgba(148, 163, 184, 0.2) !important;
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important;
         border-radius: 10px !important;
-        color: #94a3b8 !important;
+        color: #475569 !important;
         font-weight: 500;
         text-decoration: none;
         transition: all 0.2s ease;
@@ -301,9 +301,9 @@ try {
       }
       .datatable-wrapper .datatable-pagination-list-item a:hover,
       .datatable-wrapper .datatable-pagination-list-item button:hover {
-        background: rgba(96, 165, 250, 0.2) !important;
-        border-color: rgba(96, 165, 250, 0.4) !important;
-        color: #60a5fa !important;
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #1e293b !important;
         transform: translateY(-2px);
       }
       .datatable-wrapper .datatable-pagination-list-item.datatable-active a,
@@ -323,6 +323,115 @@ try {
       .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
       .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
       .empty-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
+
+      /* Light theme support (white background) */
+      body.live-light .stat-card,
+      html.light-theme .stat-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
+      }
+      body.live-light .stat-label,
+      html.light-theme .stat-label { color: #64748b; }
+      body.live-light .stat-value,
+      html.light-theme .stat-value { color: #0f172a; }
+
+      body.live-light .view-toggle-btn,
+      body.live-light .status-btn,
+      html.light-theme .view-toggle-btn,
+      html.light-theme .status-btn {
+        background: #ffffff;
+        border-color: #d1d5db;
+        color: #475569;
+      }
+      body.live-light .view-toggle-btn:hover:not(.active),
+      body.live-light .status-btn:hover:not(.active),
+      html.light-theme .view-toggle-btn:hover:not(.active),
+      html.light-theme .status-btn:hover:not(.active) {
+        background: #f8fafc;
+        color: #1e293b;
+      }
+
+      body.live-light .stay-card,
+      html.light-theme .stay-card {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      }
+      body.live-light .stay-card:hover,
+      html.light-theme .stay-card:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+      }
+      body.live-light .stay-date,
+      html.light-theme .stay-date { color: #64748b; }
+      body.live-light .stay-info,
+      html.light-theme .stay-info { color: #1f2937; }
+
+      body.live-light .stay-table,
+      html.light-theme .stay-table {
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      }
+      body.live-light .datatable-wrapper .datatable-input,
+      body.live-light .datatable-wrapper .datatable-selector,
+      html.light-theme .datatable-wrapper .datatable-input,
+      html.light-theme .datatable-wrapper .datatable-selector {
+        background: #ffffff !important;
+        border-color: #d1d5db !important;
+        color: #1f2937 !important;
+      }
+      body.live-light .datatable-wrapper .datatable-input::placeholder,
+      html.light-theme .datatable-wrapper .datatable-input::placeholder {
+        color: #9ca3af;
+      }
+      body.live-light .datatable-wrapper .datatable-info,
+      html.light-theme .datatable-wrapper .datatable-info {
+        color: #64748b !important;
+      }
+      body.live-light .datatable-wrapper table thead,
+      html.light-theme .datatable-wrapper table thead {
+        background: #f3f4f6 !important;
+      }
+      body.live-light .datatable-wrapper table thead th,
+      html.light-theme .datatable-wrapper table thead th {
+        color: #334155 !important;
+        border-bottom: 1px solid #e5e7eb !important;
+      }
+      body.live-light .datatable-wrapper table thead th:hover,
+      html.light-theme .datatable-wrapper table thead th:hover {
+        color: #0f172a !important;
+      }
+      body.live-light .datatable-wrapper table tbody tr,
+      html.light-theme .datatable-wrapper table tbody tr {
+        border-bottom: 1px solid #eef2f7;
+      }
+      body.live-light .datatable-wrapper table tbody tr:hover,
+      html.light-theme .datatable-wrapper table tbody tr:hover {
+        background: #f8fafc !important;
+      }
+      body.live-light .datatable-wrapper table tbody td,
+      html.light-theme .datatable-wrapper table tbody td {
+        color: #111827 !important;
+        border-bottom: 1px solid #eef2f7 !important;
+      }
+      body.live-light .datatable-wrapper .datatable-pagination-list-item a,
+      body.live-light .datatable-wrapper .datatable-pagination-list-item button,
+      html.light-theme .datatable-wrapper .datatable-pagination-list-item a,
+      html.light-theme .datatable-wrapper .datatable-pagination-list-item button {
+        background: #ffffff !important;
+        border-color: #d1d5db !important;
+        color: #475569 !important;
+      }
+      body.live-light .datatable-wrapper .datatable-pagination-list-item a:hover,
+      body.live-light .datatable-wrapper .datatable-pagination-list-item button:hover,
+      html.light-theme .datatable-wrapper .datatable-pagination-list-item a:hover,
+      html.light-theme .datatable-wrapper .datatable-pagination-list-item button:hover {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #1e293b !important;
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -332,7 +441,7 @@ try {
         <div class="reports-container">
           <?php include __DIR__ . '/../includes/page_header.php'; ?>
           <div class="container">
-            <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#f8fafc;display:flex;align-items:center;"><span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #3b82f6, #1d4ed8);margin-right:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>รายงานข้อมูลการเข้าพัก</h1>
+            <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#0f172a;display:flex;align-items:center;"><span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #3b82f6, #1d4ed8);margin-right:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>รายงานข้อมูลการเข้าพัก</h1>
             
             <!-- Stat Cards -->
             <div class="stay-stats-grid">

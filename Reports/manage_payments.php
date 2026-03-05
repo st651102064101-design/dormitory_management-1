@@ -52,6 +52,15 @@ try {
     // Handle error silently
 }
 
+$defaultViewMode = 'grid';
+try {
+  $viewStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'default_view_mode' LIMIT 1");
+  $viewValue = $viewStmt ? $viewStmt->fetchColumn() : false;
+  if (is_string($viewValue) && strtolower($viewValue) === 'list') {
+    $defaultViewMode = 'list';
+  }
+} catch (PDOException $e) {}
+
 // รับค่า filter จาก query parameter
 $filterStatus = isset($_GET['status']) ? $_GET['status'] : '';
 $filterMonth = isset($_GET['filter_month']) ? $_GET['filter_month'] : '';
@@ -1460,6 +1469,20 @@ $roomPaymentSummary = $pdo->query("
         margin-top: 1rem;
       }
 
+      .room-summary-grid.list-mode {
+        grid-template-columns: 1fr;
+      }
+
+      .room-summary-grid.list-mode .room-card {
+        border-radius: 14px;
+        padding: 1rem 1.2rem;
+      }
+
+      .room-summary-grid.list-mode .room-card-header {
+        margin-bottom: 0.65rem;
+        padding-bottom: 0.55rem;
+      }
+
       .room-card {
         position: relative;
         background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.95));
@@ -2024,6 +2047,114 @@ $roomPaymentSummary = $pdo->query("
         margin-bottom: 0.3rem;
       }
 
+      .payments-view-toggle {
+        padding: 0.6rem 0.95rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,0.28);
+        background: rgba(255,255,255,0.05);
+        color: #cbd5e1;
+        cursor: pointer;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .payments-view-toggle:hover {
+        background: rgba(255,255,255,0.1);
+      }
+
+      .payments-view-toggle svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+      }
+
+      .is-hidden {
+        display: none !important;
+      }
+
+      .payments-row-view {
+        display: grid;
+        gap: 0.85rem;
+      }
+
+      .payment-row-card {
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(148,163,184,0.2);
+        border-radius: 12px;
+        padding: 0.95rem 1rem;
+      }
+
+      .payment-row-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 0.55rem;
+      }
+
+      .payment-row-main {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .payment-row-main strong {
+        color: #f8fafc;
+      }
+
+      .payment-row-sub {
+        color: #94a3b8;
+        font-size: 0.9rem;
+      }
+
+      .payment-row-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 0.45rem 0.8rem;
+        margin-bottom: 0.65rem;
+        color: #cbd5e1;
+        font-size: 0.9rem;
+      }
+
+      .payment-row-actions {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.7rem;
+        flex-wrap: wrap;
+      }
+
+      body.live-light .payments-view-toggle,
+      html.light-theme .payments-view-toggle {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-color: rgba(15,23,42,0.15) !important;
+      }
+
+      body.live-light .payment-row-card,
+      html.light-theme .payment-row-card {
+        background: #ffffff !important;
+        border-color: rgba(15,23,42,0.12) !important;
+      }
+
+      body.live-light .payment-row-main strong,
+      html.light-theme .payment-row-main strong {
+        color: #0f172a !important;
+      }
+
+      body.live-light .payment-row-sub,
+      html.light-theme .payment-row-sub {
+        color: #64748b !important;
+      }
+
+      body.live-light .payment-row-meta,
+      html.light-theme .payment-row-meta {
+        color: #334155 !important;
+      }
+
       /* responsive table */
       @media (max-width: 768px) {
         .manage-table {
@@ -2223,11 +2354,15 @@ $roomPaymentSummary = $pdo->query("
                 </h2>
                 <p style="color:#94a3b8;margin-top:0.2rem;">แสดงจำนวนครั้งและยอดชำระของแต่ละห้อง (เฉพาะห้องที่มีผู้เช่า)</p>
               </div>
+              <button type="button" id="roomSummaryViewToggle" class="payments-view-toggle" onclick="toggleRoomSummaryView()">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                <span id="roomSummaryViewToggleText"><?php echo $defaultViewMode === 'list' ? 'มุมมอง grid' : 'มุมมอง list'; ?></span>
+              </button>
             </div>
             <?php if (empty($roomPaymentSummary)): ?>
               <p style="text-align:center;color:#64748b;padding:2rem;">ยังไม่มีข้อมูลการชำระเงิน</p>
             <?php else: ?>
-              <div class="room-summary-grid">
+              <div id="roomSummaryGrid" class="room-summary-grid <?php echo $defaultViewMode === 'list' ? 'list-mode' : ''; ?>">
                 <?php foreach ($roomPaymentSummary as $room): ?>
                   <div class="room-card" onclick="filterByRoom('<?php echo htmlspecialchars($room['room_number']); ?>')">
                     <div class="room-card-header">
@@ -2543,8 +2678,12 @@ $roomPaymentSummary = $pdo->query("
                 </h2>
                 <p style="color:#94a3b8;margin-top:0.2rem;">พบ <?php echo count($payments); ?> รายการ<?php echo $filterRoom !== '' ? ' (ห้อง ' . htmlspecialchars($filterRoom) . ')' : ''; ?></p>
               </div>
+              <button type="button" id="paymentsViewToggle" class="payments-view-toggle" onclick="togglePaymentsView()">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                <span id="paymentsViewToggleText">มุมมองแถว</span>
+              </button>
             </div>
-            <div style="overflow-x:auto;">
+            <div id="paymentsTableWrap" style="overflow-x:auto;">
               <table class="manage-table" id="paymentsTable">
                 <thead>
                   <tr>
@@ -2616,6 +2755,50 @@ $roomPaymentSummary = $pdo->query("
                   <?php endif; ?>
                 </tbody>
               </table>
+            </div>
+
+            <div id="paymentsRowView" class="payments-row-view is-hidden">
+              <?php if (empty($payments)): ?>
+                <div class="payment-row-card" style="text-align:center;color:#64748b;">ยังไม่มีข้อมูลการชำระเงิน</div>
+              <?php else: ?>
+                <?php foreach ($payments as $pay): ?>
+                  <?php 
+                    $statusClass = $pay['pay_status'] === '1' ? 'status-verified' : 'status-pending';
+                    $statusText = $statusMap[$pay['pay_status']] ?? 'ไม่ทราบ';
+                  ?>
+                  <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>">
+                    <div class="payment-row-top">
+                      <div class="payment-row-main">
+                        <strong>#<?php echo (int)$pay['pay_id']; ?></strong>
+                        <span class="payment-row-sub">ห้อง <?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?> • <?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></span>
+                      </div>
+                      <span class="status-badge <?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
+                    </div>
+                    <div class="payment-row-meta">
+                      <div>เดือนค่าใช้จ่าย: <?php echo $pay['exp_month'] ? date('m/Y', strtotime($pay['exp_month'])) : '-'; ?></div>
+                      <div>วันที่ชำระ: <?php echo $pay['pay_date'] ? date('d/m/Y', strtotime($pay['pay_date'])) : '-'; ?></div>
+                      <div>จำนวนเงิน: <strong style="color:#22c55e;">฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?></strong></div>
+                      <div>หมายเหตุ: <?php echo !empty($pay['pay_remark']) ? htmlspecialchars($pay['pay_remark']) : '-'; ?></div>
+                    </div>
+                    <div class="payment-row-actions">
+                      <div>
+                        <?php if (!empty($pay['pay_proof'])): ?>
+                          <span class="proof-link" onclick="showProof('<?php echo htmlspecialchars($pay['pay_proof'], ENT_QUOTES, 'UTF-8'); ?>')">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ดูหลักฐาน
+                          </span>
+                        <?php else: ?>
+                          <span style="color:#64748b;">-</span>
+                        <?php endif; ?>
+                      </div>
+                      <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                        <?php if ($pay['pay_status'] === '0'): ?>
+                          <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
+                        <?php endif; ?>
+                      </div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
             </div>
           </section>
 
@@ -3022,8 +3205,62 @@ $roomPaymentSummary = $pdo->query("
     </script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" type="text/javascript"></script>
     <script>
+      const roomSummarySettingMode = <?php echo json_encode($defaultViewMode, JSON_UNESCAPED_UNICODE); ?>;
+
+      function applyRoomSummaryView(mode) {
+        const summaryGrid = document.getElementById('roomSummaryGrid');
+        const toggleText = document.getElementById('roomSummaryViewToggleText');
+        const normalized = mode === 'list' ? 'list' : 'grid';
+
+        if (summaryGrid) {
+          summaryGrid.classList.toggle('list-mode', normalized === 'list');
+        }
+
+        if (toggleText) {
+          toggleText.textContent = normalized === 'list' ? 'มุมมอง grid' : 'มุมมอง list';
+        }
+      }
+
+      function toggleRoomSummaryView() {
+        const summaryGrid = document.getElementById('roomSummaryGrid');
+        const nextMode = summaryGrid && summaryGrid.classList.contains('list-mode') ? 'grid' : 'list';
+        applyRoomSummaryView(nextMode);
+      }
+
+      function applyPaymentsView(mode) {
+        const tableWrap = document.getElementById('paymentsTableWrap');
+        const rowWrap = document.getElementById('paymentsRowView');
+        const toggleText = document.getElementById('paymentsViewToggleText');
+        if (!tableWrap || !rowWrap) return;
+
+        const normalized = mode === 'row' ? 'row' : 'table';
+        tableWrap.classList.toggle('is-hidden', normalized === 'row');
+        rowWrap.classList.toggle('is-hidden', normalized !== 'row');
+
+        if (toggleText) {
+          toggleText.textContent = normalized === 'row' ? 'มุมมองตาราง' : 'มุมมองแถว';
+        }
+
+        try { localStorage.setItem('paymentsViewMode', normalized); } catch (e) {}
+      }
+
+      function togglePaymentsView() {
+        const rowWrap = document.getElementById('paymentsRowView');
+        const nextMode = rowWrap && rowWrap.classList.contains('is-hidden') ? 'row' : 'table';
+        applyPaymentsView(nextMode);
+      }
+
       // Initialize DataTable for payments table
       document.addEventListener('DOMContentLoaded', function() {
+        applyRoomSummaryView(roomSummarySettingMode);
+
+        try {
+          const savedViewMode = localStorage.getItem('paymentsViewMode') || 'table';
+          applyPaymentsView(savedViewMode);
+        } catch (e) {
+          applyPaymentsView('table');
+        }
+
         const paymentsTable = document.getElementById('paymentsTable');
         if (paymentsTable) {
           new simpleDatatables.DataTable(paymentsTable, {

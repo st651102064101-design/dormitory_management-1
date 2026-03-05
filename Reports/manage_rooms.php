@@ -332,6 +332,24 @@ try {
         text-align: center;
       }
 
+      .placeholder-upload-hint {
+        color: #94a3b8;
+      }
+
+      .placeholder-upload-icon,
+      .placeholder-upload-text {
+        color: inherit;
+      }
+
+      .room-card-image-upload:hover .upload-icon,
+      .room-card-image-upload:hover .upload-text,
+      .room-card-image-upload:hover .placeholder-upload-icon,
+      .room-card-image-upload:hover .placeholder-upload-text,
+      .room-card-image-upload:hover .placeholder-upload-icon * {
+        color: #ffffff !important;
+        stroke: #ffffff !important;
+      }
+
       @keyframes uploadBounce {
         0%, 100% {
           transform: translateY(0);
@@ -792,6 +810,10 @@ try {
         border-color: rgba(255,255,255,0.2);
         transform: translateY(-2px);
       }
+
+      .load-more-container:has(.load-more-btn.hidden) {
+        display: none;
+      }
       
       .load-more-btn.hidden {
         display: none;
@@ -958,14 +980,14 @@ try {
                       <?php if (!empty($room['room_image'])): ?>
                         <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
                       <?php else: ?>
-                        <div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #94a3b8; flex-direction: column; gap: 0.5rem;">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                        <div class="placeholder-upload-hint" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; flex-direction: column; gap: 0.5rem;">
+                          <svg class="placeholder-upload-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
                             <path d="M6 12V7a2 2 0 0 1 2-2h2" />
                             <path d="M2 16v-2" />
                             <path d="M22 16v-2" />
                           </svg>
-                          <span style="font-size: 0.75rem; text-align: center;">คลิกเพื่ออัปโหลด</span>
+                          <span class="placeholder-upload-text" style="font-size: 0.75rem; text-align: center;">คลิกเพื่ออัปโหลด</span>
                         </div>
                       <?php endif; ?>
                       <!-- Hover Overlay with Upload Icon -->
@@ -1006,6 +1028,7 @@ try {
                         </button>
                         <button type="button" class="btn btn-delete" onclick="deleteRoom(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars(addslashes($room['room_number'])); ?>')">
                           <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                          ลบ
                         </button>
                       </div>
                     </div>
@@ -1081,6 +1104,7 @@ try {
                             </button>
                             <button type="button" class="btn btn-delete" onclick="deleteRoom(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars(addslashes($room['room_number'])); ?>')">
                               <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                              ลบ
                             </button>
                           </div>
                         </td>
@@ -1673,6 +1697,7 @@ try {
                   </button>
                   <button type="button" class="btn btn-delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                    ลบ
                   </button>
                 </div>
               </div>
@@ -1722,6 +1747,7 @@ try {
                     </button>
                     <button type="button" class="btn btn-delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      ลบ
                     </button>
                   </div>
                 </td>

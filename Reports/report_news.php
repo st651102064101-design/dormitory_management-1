@@ -121,43 +121,103 @@ try {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
+      body.reports-page,
+      body.reports-page .app-main,
+      body.reports-page .reports-container,
+      body.reports-page .reports-container .container {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
       .reports-container { width: 100%; max-width: 100%; padding: 0; }
       .reports-container .container { max-width: 100%; width: 100%; padding: 1.5rem; }
       .news-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-      .stat-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); transition: transform 0.2s, box-shadow 0.2s; }
-      .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
+      .stat-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06); transition: transform 0.2s, box-shadow 0.2s; }
+      .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12); }
       .stat-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
-      .stat-label { font-size: 0.85rem; color: #cbd5e1; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-      .stat-value { font-size: 2rem; font-weight: 700; color: #f8fafc; margin: 0.5rem 0; }
+      .stat-label { font-size: 0.85rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
+      .stat-value { font-size: 2rem; font-weight: 700; color: #0f172a; margin: 0.5rem 0; }
       .view-toggle { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
-      .view-toggle-btn { padding: 0.75rem 1.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #94a3b8; cursor: pointer; transition: all 0.2s; font-weight: 600; }
+      .view-toggle-btn { padding: 0.75rem 1.5rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 8px; color: #475569; cursor: pointer; transition: all 0.2s; font-weight: 600; }
       .view-toggle-btn.active { background: #60a5fa; border-color: #60a5fa; color: #fff; }
-      .view-toggle-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.08); color: #e2e8f0; }
+      .view-toggle-btn:hover:not(.active) { background: #f1f5f9; color: #334155; }
       .news-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-      .news-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; transition: all 0.2s; display: flex; flex-direction: column; }
-      .news-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }
+      .news-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; transition: all 0.2s; display: flex; flex-direction: column; }
+      .news-card:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12); }
       .news-time-badge { display: inline-block; background: #a7f3d0; color: #0f172a; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; margin-left: 0.5rem; width: fit-content; }
-      .news-date { color: #94a3b8; font-size: 0.8rem; margin-bottom: 15px; padding-left: 0.5rem; }
-      .news-title { font-size: 1.2rem; font-weight: 600; color: #fff; margin: 10px 0; padding-left: 0.5rem; }
-      .news-content { color: #cbd5e1; font-size: 0.95rem; line-height: 1.6; margin: 15px 0; padding-left: 0.5rem; }
-      .news-table { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; overflow: hidden; }
+      .news-date { color: #64748b; font-size: 0.8rem; margin-bottom: 15px; padding-left: 0.5rem; }
+      .news-title { font-size: 1.2rem; font-weight: 600; color: #0f172a; margin: 10px 0; padding-left: 0.5rem; }
+      .news-content { color: #334155; font-size: 0.95rem; line-height: 1.6; margin: 15px 0; padding-left: 0.5rem; }
+      .news-table { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
       .news-table table { width: 100%; border-collapse: collapse; }
-      .news-table th, .news-table td { padding: 1rem; text-align: left; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
-      .news-table th { background: rgba(255, 255, 255, 0.05); color: #cbd5e1; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
-      .news-table td { color: #e2e8f0; }
-      .news-table tbody tr:hover { background: rgba(255, 255, 255, 0.03); }
-      .filter-section { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
+      .news-table th, .news-table td { padding: 1rem; text-align: left; border-bottom: 1px solid #e2e8f0; }
+      .news-table th { background: #f8fafc; color: #475569; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
+      .news-table td { color: #1e293b; }
+      .news-table tbody tr:hover { background: #f8fafc; }
+      .filter-section { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; margin-bottom: 2rem; }
       .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
-      .filter-item label { display: block; color: #cbd5e1; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; }
-      .filter-item select { width: 100%; padding: 0.75rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; color: #f8fafc; font-size: 0.9rem; }
-      .filter-item select:focus { outline: none; border-color: #60a5fa; background: rgba(255, 255, 255, 0.08); }
+      .filter-item label { display: block; color: #334155; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; }
+      .filter-item select { width: 100%; padding: 0.75rem; background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; color: #0f172a; font-size: 0.9rem; }
+      .filter-item select:focus { outline: none; border-color: #60a5fa; background: #ffffff; }
+      .filter-item select option { color: #0f172a; background: #ffffff; }
       .filter-btn { padding: 0.75rem 1.5rem; background: #60a5fa; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
       .filter-btn:hover { background: #3b82f6; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4); }
       .filter-btn:active { transform: translateY(0); }
-      .clear-btn { padding: 0.75rem 1.5rem; background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.2s; text-align: center; }
-      .clear-btn:hover { background: rgba(239, 68, 68, 0.25); }
-      .empty-state { text-align: center; padding: 40px 20px; color: #94a3b8; }
+      .clear-btn { padding: 0.75rem 1.5rem; background: #fee2e2; color: #dc2626; border: 1px solid #fecaca; border-radius: 8px; font-weight: 600; text-decoration: none; display: inline-block; transition: all 0.2s; text-align: center; }
+      .clear-btn:hover { background: #fecaca; }
+      .empty-state { text-align: center; padding: 40px 20px; color: #64748b; }
       .empty-state-icon { font-size: 3rem; margin-bottom: 10px; }
+
+      #table-view .datatable-top,
+      #table-view .datatable-bottom {
+        background: #ffffff !important;
+      }
+      #table-view .datatable-input {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+      #table-view .datatable-input::placeholder {
+        color: #64748b !important;
+      }
+      #table-view .datatable-selector {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+      #table-view .datatable-info,
+      #table-view .datatable-dropdown label {
+        color: #475569 !important;
+      }
+      #table-view .datatable-table thead th,
+      #table-view .datatable-table thead td,
+      #table-view .datatable-table th {
+        background: #f8fafc !important;
+        color: #334155 !important;
+        border-color: #e2e8f0 !important;
+      }
+      #table-view .datatable-table tbody tr,
+      #table-view .datatable-table tbody td,
+      #table-view .datatable-table td {
+        background: #ffffff !important;
+        color: #1e293b !important;
+        border-color: #e2e8f0 !important;
+      }
+      #table-view .datatable-table tbody tr:hover,
+      #table-view .datatable-table tbody tr:hover td {
+        background: #f8fafc !important;
+      }
+      #table-view .datatable-pagination a,
+      #table-view .datatable-pagination button {
+        background: #ffffff !important;
+        color: #334155 !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      #table-view .datatable-pagination .active a,
+      #table-view .datatable-pagination .active button {
+        background: #60a5fa !important;
+        color: #ffffff !important;
+        border-color: #60a5fa !important;
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -232,8 +292,7 @@ try {
 
             <!-- ปุ่มเปลี่ยนมุมมอง -->
             <div class="view-toggle">
-              <button class="view-toggle-btn active" onclick="switchView('card')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>มุมมองการ์ด</button>
-              <button class="view-toggle-btn" onclick="switchView('table')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>มุมมองตาราง</button>
+              <button id="toggle-view-btn" class="view-toggle-btn" onclick="toggleView()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>มุมมองการ์ด</button>
             </div>
 
             <!-- Card View -->
@@ -303,24 +362,33 @@ try {
         switchView(dbDefaultView);
       });
 
+      let currentView = 'card';
+
       function switchView(view) {
         const cardView = document.getElementById('card-view');
         const tableView = document.getElementById('table-view');
-        const buttons = document.querySelectorAll('.view-toggle-btn');
-        
-        buttons.forEach(btn => btn.classList.remove('active'));
+        const toggleButton = document.getElementById('toggle-view-btn');
+        currentView = view;
         
         if (view === 'card') {
           cardView.style.display = 'grid';
           tableView.style.display = 'none';
-          buttons[0].classList.add('active');
+          if (toggleButton) {
+            toggleButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>มุมมองการ์ด';
+          }
           localStorage.setItem('newsViewMode', 'card');
         } else {
           cardView.style.display = 'none';
           tableView.style.display = 'block';
-          buttons[1].classList.add('active');
+          if (toggleButton) {
+            toggleButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>มุมมองตาราง';
+          }
           localStorage.setItem('newsViewMode', 'table');
         }
+      }
+
+      function toggleView() {
+        switchView(currentView === 'card' ? 'table' : 'card');
       }
     </script>
     

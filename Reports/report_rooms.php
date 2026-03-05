@@ -54,6 +54,15 @@ $roomTypeStats = $pdo->query("
   ORDER BY rt.type_price DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
+$defaultViewMode = 'grid';
+try {
+  $viewStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'default_view_mode' LIMIT 1");
+  $viewRow = $viewStmt->fetch(PDO::FETCH_ASSOC);
+  if ($viewRow && strtolower((string)$viewRow['setting_value']) === 'list') {
+    $defaultViewMode = 'list';
+  }
+} catch (PDOException $e) {}
+
 $pageTitle = 'รายงานห้องพัก';
 ?>
 <!DOCTYPE html>
@@ -84,16 +93,16 @@ $pageTitle = 'รายงานห้องพัก';
       margin-bottom: 2rem;
     }
     .report-card {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
       border-radius: 12px;
       padding: 1.5rem;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
       transition: transform 0.2s, box-shadow 0.2s;
     }
     .report-card:hover {
       transform: translateY(-4px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
     }
     .report-card-header {
       display: flex;
@@ -108,12 +117,12 @@ $pageTitle = 'รายงานห้องพัก';
       display: flex;
       align-items: center;
       justify-content: center;
-      background: rgba(255, 255, 255, 0.05);
+      background: #f8fafc;
       border-radius: 12px;
     }
     .report-card-title {
       font-size: 0.9rem;
-      color: #cbd5e1;
+      color: #64748b;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       font-weight: 600;
@@ -121,17 +130,17 @@ $pageTitle = 'รายงานห้องพัก';
     .report-card-value {
       font-size: 2.5rem;
       font-weight: 700;
-      color: #f8fafc;
+      color: #0f172a;
       margin: 0.5rem 0;
     }
     .report-card-subtitle {
       font-size: 0.85rem;
-      color: #94a3b8;
+      color: #64748b;
     }
     .progress-bar {
       width: 100%;
       height: 8px;
-      background: rgba(255, 255, 255, 0.1);
+      background: #e5e7eb;
       border-radius: 4px;
       overflow: hidden;
       margin-top: 1rem;
@@ -143,8 +152,8 @@ $pageTitle = 'รายงานห้องพัก';
     }
     .type-stats-table {
       width: 100%;
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
       border-radius: 12px;
       overflow: hidden;
       margin-top: 2rem;
@@ -157,18 +166,18 @@ $pageTitle = 'รายงานห้องพัก';
     .type-stats-table td {
       padding: 1rem;
       text-align: left;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      border-bottom: 1px solid #eef2f7;
     }
     .type-stats-table th {
-      background: rgba(255, 255, 255, 0.05);
-      color: #cbd5e1;
+      background: #f8fafc;
+      color: #334155;
       font-weight: 600;
       font-size: 0.9rem;
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
     .type-stats-table td {
-      color: #e2e8f0;
+      color: #1f2937;
     }
     .type-stats-table tr:last-child td {
       border-bottom: none;
@@ -193,8 +202,8 @@ $pageTitle = 'รายงานห้องพัก';
       border: 1px solid rgba(239, 68, 68, 0.3);
     }
     .chart-container {
-      background: rgba(15, 23, 42, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: #ffffff;
+      border: 1px solid #e5e7eb;
       border-radius: 12px;
       padding: 2rem;
       margin-top: 2rem;
@@ -202,8 +211,31 @@ $pageTitle = 'รายงานห้องพัก';
     .chart-title {
       font-size: 1.2rem;
       font-weight: 600;
-      color: #f8fafc;
+      color: #0f172a;
       margin-bottom: 1.5rem;
+    }
+    .view-toolbar {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 1rem;
+    }
+    .view-toggle-btn {
+      background: #334155;
+      border: 1px solid #475569;
+      color: #fff;
+      padding: 0.5rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      transition: all 0.2s;
+    }
+    .view-toggle-btn:hover {
+      background: #1e293b;
+      border-color: #334155;
     }
     .room-list {
       display: grid;
@@ -212,8 +244,8 @@ $pageTitle = 'รายงานห้องพัก';
       margin-top: 2rem;
     }
     .room-item {
-      background: rgba(15, 23, 42, 0.6);
-      border: 2px solid rgba(255, 255, 255, 0.1);
+      background: #ffffff;
+      border: 2px solid #d1d5db;
       border-radius: 10px;
       padding: 1rem;
       text-align: center;
@@ -221,7 +253,8 @@ $pageTitle = 'รายงานห้องพัก';
     }
     .room-item:hover {
       transform: scale(1.05);
-      border-color: rgba(96, 165, 250, 0.5);
+      border-color: #93c5fd;
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.12);
     }
     .room-item.vacant {
       border-color: rgba(34, 197, 94, 0.4);
@@ -232,18 +265,52 @@ $pageTitle = 'รายงานห้องพัก';
     .room-number {
       font-size: 1.5rem;
       font-weight: 700;
-      color: #f8fafc;
+      color: #0f172a;
       margin-bottom: 0.5rem;
     }
     .room-type {
       font-size: 0.8rem;
-      color: #94a3b8;
+      color: #64748b;
       margin-bottom: 0.5rem;
     }
     .room-price {
       font-size: 0.85rem;
-      color: #cbd5e1;
+      color: #334155;
       font-weight: 600;
+    }
+    .room-table-wrapper {
+      margin-top: 2rem;
+      border: 1px solid #e5e7eb;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .room-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #ffffff;
+    }
+    .room-table th,
+    .room-table td {
+      padding: 0.9rem;
+      border-bottom: 1px solid #eef2f7;
+      text-align: left;
+      color: #1f2937;
+    }
+    .room-table th {
+      background: #f8fafc;
+      color: #334155;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .room-table tr:last-child td {
+      border-bottom: none;
+    }
+    .room-table td:nth-child(3),
+    .room-table td:nth-child(4),
+    .room-table th:nth-child(3),
+    .room-table th:nth-child(4) {
+      text-align: center;
     }
   </style>
 </head>
@@ -353,8 +420,11 @@ $pageTitle = 'รายงานห้องพัก';
 
           <!-- แสดงห้องพักทั้งหมด -->
           <div class="chart-container">
+            <div class="view-toolbar">
+              <button id="toggle-room-view" class="view-toggle-btn" type="button" aria-label="Toggle room view"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>ตาราง</button>
+            </div>
             <div class="chart-title">ภาพรวมห้องพักทั้งหมด</div>
-            <div class="room-list">
+            <div id="room-grid-view" class="room-list">
               <?php foreach ($rooms as $room): ?>
                 <div class="room-item <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
                   <div class="room-number">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></div>
@@ -370,6 +440,35 @@ $pageTitle = 'รายงานห้องพัก';
                 </div>
               <?php endforeach; ?>
             </div>
+
+            <div id="room-table-view" class="room-table-wrapper" style="display:none;">
+              <table class="room-table">
+                <thead>
+                  <tr>
+                    <th>ห้อง</th>
+                    <th>ประเภทห้อง</th>
+                    <th>ราคา/เดือน</th>
+                    <th>สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <?php foreach ($rooms as $room): ?>
+                    <tr>
+                      <td>ห้อง <?php echo htmlspecialchars($room['room_number']); ?></td>
+                      <td><?php echo htmlspecialchars($room['type_name'] ?? '-'); ?></td>
+                      <td>฿<?php echo number_format((int)($room['type_price'] ?? 0)); ?></td>
+                      <td>
+                        <?php if ($room['room_status'] === '0'): ?>
+                          <span class="status-indicator status-vacant">✓ ว่าง</span>
+                        <?php else: ?>
+                          <span class="status-indicator status-occupied">✗ ไม่ว่าง</span>
+                        <?php endif; ?>
+                      </td>
+                    </tr>
+                  <?php endforeach; ?>
+                </tbody>
+              </table>
+            </div>
           </div>
 
         </div>
@@ -379,5 +478,37 @@ $pageTitle = 'รายงานห้องพัก';
 
   <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
   <script src="/dormitory_management/Public/Assets/Javascript/main.js" defer></script>
+  <script>
+    (function() {
+      const toggleBtn = document.getElementById('toggle-room-view');
+      const gridView = document.getElementById('room-grid-view');
+      const tableView = document.getElementById('room-table-view');
+      if (!toggleBtn || !gridView || !tableView) return;
+
+      const pageDefaultMode = <?php echo json_encode($defaultViewMode); ?>;
+      const globalDefaultMode = localStorage.getItem('adminDefaultViewMode');
+      const initialMode = (globalDefaultMode === 'list' || globalDefaultMode === 'grid') ? globalDefaultMode : pageDefaultMode;
+      let isTableView = initialMode === 'list';
+
+      function updateView() {
+        if (isTableView) {
+          gridView.style.display = 'none';
+          tableView.style.display = 'block';
+          toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด';
+        } else {
+          gridView.style.display = 'grid';
+          tableView.style.display = 'none';
+          toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>ตาราง';
+        }
+      }
+
+      toggleBtn.addEventListener('click', function() {
+        isTableView = !isTableView;
+        updateView();
+      });
+
+      updateView();
+    })();
+  </script>
 </body>
 </html>

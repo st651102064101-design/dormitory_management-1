@@ -8,47 +8,123 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
-// ดึงค่า default_view_mode จาก database
-$defaultViewMode = 'grid';
+// เดือน/ปี filter
+$filterMonth = $_GET['month'] ?? '';
+$filterYear = $_GET['year'] ?? '';
+$activeTab = $_GET['tab'] ?? 'water';
+
+// อัตราค่าน้ำค่าไฟ
+$waterRate = 18;
+$electricRate = 8;
 try {
-    $viewStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'default_view_mode' LIMIT 1");
-    $viewRow = $viewStmt->fetch(PDO::FETCH_ASSOC);
-    if ($viewRow && strtolower($viewRow['setting_value']) === 'list') {
-        $defaultViewMode = 'list';
+    $rateStmt = $pdo->query("SELECT * FROM rate ORDER BY effective_date DESC LIMIT 1");
+    $rate = $rateStmt->fetch(PDO::FETCH_ASSOC);
+    if ($rate) {
+        $waterRate = (int)$rate['rate_water'];
+        $electricRate = (int)$rate['rate_elec'];
     }
 } catch (PDOException $e) {}
 
-// รับค่า sort จาก query parameter
-$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
-$orderBy = 'u.utl_date DESC, u.utl_id DESC';
+// เดือน/ปีที่มีอยู่จริงในฐานข้อมูล (utility) + เดือนปัจจุบัน
+$availableYears = [];
+$availableMonthsByYear = [];
+try {
+    $periodStmt = $pdo->query("\n        SELECT DISTINCT YEAR(utl_date) AS y, MONTH(utl_date) AS m\n        FROM utility\n        WHERE utl_date IS NOT NULL\n        ORDER BY y DESC, m DESC\n    ");
+    $periods = $periodStmt->fetchAll(PDO::FETCH_ASSOC);
+    foreach ($periods as $period) {
+        $periodYear = (int)$period['y'];
+        $periodMonth = (int)$period['m'];
+        if (!isset($availableMonthsByYear[$periodYear])) {
+            $availableMonthsByYear[$periodYear] = [];
+            $availableYears[] = $periodYear;
+        }
+        $availableMonthsByYear[$periodYear][] = $periodMonth;
+    }
+} catch (PDOException $e) {}
 
-switch ($sortBy) {
-  case 'oldest':
-    $orderBy = 'u.utl_date ASC, u.utl_id ASC';
-    break;
-  case 'room_number':
-    $orderBy = 'r.room_number ASC';
-    break;
-  case 'newest':
-  default:
-    $orderBy = 'u.utl_date DESC, u.utl_id DESC';
+$currentYear = (int)date('Y');
+$currentMonth = (int)date('n');
+if (!isset($availableMonthsByYear[$currentYear])) {
+    $availableMonthsByYear[$currentYear] = [];
+    $availableYears[] = $currentYear;
+}
+if (!in_array($currentMonth, $availableMonthsByYear[$currentYear], true)) {
+    $availableMonthsByYear[$currentYear][] = $currentMonth;
 }
 
-// ดึงข้อมูลมิเตอร์น้ำ-ไฟทั้งหมด
-$utilStmt = $pdo->query("
-  SELECT u.*,
-         c.ctr_id,
-         t.tnt_name,
-         r.room_number
-  FROM utility u
-  LEFT JOIN contract c ON u.ctr_id = c.ctr_id
-  LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-  LEFT JOIN room r ON c.room_id = r.room_id
-  ORDER BY $orderBy
-");
+$availableYears = array_values(array_unique(array_map('intval', $availableYears)));
+rsort($availableYears);
+foreach ($availableMonthsByYear as $yearKey => $monthsList) {
+    $monthsList = array_values(array_unique(array_map('intval', $monthsList)));
+    sort($monthsList);
+    $availableMonthsByYear[(int)$yearKey] = $monthsList;
+}
+
+if ($filterMonth === '' && $filterYear === '' && !empty($availableYears)) {
+    $latestYear = (int)$availableYears[0];
+    $latestMonths = $availableMonthsByYear[$latestYear] ?? [];
+    if (!empty($latestMonths)) {
+        $filterYear = (string)$latestYear;
+        $filterMonth = (string)max($latestMonths);
+    }
+}
+
+$monthsForFilter = [];
+if ($filterYear !== '' && isset($availableMonthsByYear[(int)$filterYear])) {
+    $monthsForFilter = $availableMonthsByYear[(int)$filterYear];
+} else {
+    $monthSet = [];
+    foreach ($availableMonthsByYear as $monthsList) {
+        foreach ($monthsList as $m) {
+            $monthSet[$m] = true;
+        }
+    }
+    $monthsForFilter = array_keys($monthSet);
+    sort($monthsForFilter);
+}
+
+// Build query
+$whereClause = '';
+$params = [];
+if ($filterMonth && $filterYear) {
+    $whereClause = ' AND MONTH(u.utl_date) = ? AND YEAR(u.utl_date) = ?';
+    $params = [(int)$filterMonth, (int)$filterYear];
+} elseif ($filterMonth) {
+    $whereClause = ' AND MONTH(u.utl_date) = ?';
+    $params = [(int)$filterMonth];
+} elseif ($filterYear) {
+    $whereClause = ' AND YEAR(u.utl_date) = ?';
+    $params = [(int)$filterYear];
+}
+
+$sql = "
+    SELECT u.*, c.ctr_id, t.tnt_name, r.room_number, r.room_id
+    FROM utility u
+    INNER JOIN (
+        SELECT MAX(utl_id) AS utl_id
+        FROM utility
+        GROUP BY ctr_id, YEAR(utl_date), MONTH(utl_date)
+    ) lu ON u.utl_id = lu.utl_id
+    LEFT JOIN contract c ON u.ctr_id = c.ctr_id
+    LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+    LEFT JOIN room r ON c.room_id = r.room_id
+    WHERE 1=1 $whereClause
+    ORDER BY CAST(r.room_number AS UNSIGNED) ASC, u.utl_date DESC
+";
+$utilStmt = $pdo->prepare($sql);
+$utilStmt->execute($params);
 $utilities = $utilStmt->fetchAll(PDO::FETCH_ASSOC);
 
-// ดึงค่าตั้งค่าระบบ
+// จัดกลุ่มตามชั้น
+$floors = [];
+foreach ($utilities as $util) {
+    $num = (int)($util['room_number'] ?? 0);
+    $floorNum = ($num >= 100) ? (int)floor($num / 100) : 1;
+    $floors[$floorNum][] = $util;
+}
+ksort($floors);
+
+// ค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 try {
@@ -58,490 +134,393 @@ try {
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
 } catch (PDOException $e) {}
+
+$thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 ?>
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - ประวัติการอ่านมิเตอร์น้ำ-ไฟ</title>
-    <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
-    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css" />
-    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
-    <!-- DataTable Modern -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
-    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - ประวัติมิเตอร์น้ำ-ไฟ</title>
+    <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
+    <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>">
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <style>
-      /* Mobile Responsive Styles */
-      @media (max-width: 768px) {
-        /* Toggle View Button Responsive */
-        #toggle-view {
-          padding: 0.5rem 0.75rem !important;
-          font-size: 0.85rem !important;
+        /* === Clean Light Theme === */
+        html, body, .app-shell, .app-main, .reports-page {
+            background: #f0f0f0 !important;
         }
-        
-        #toggle-view svg {
-          width: 14px !important;
-          height: 14px !important;
+        .page-header-bar {
+            background: rgba(255,255,255,0.97) !important;
+            border-bottom: 1px solid #e0e0e0 !important;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
         }
-        
-        .app-main > div > div {
-          padding: 0 0.5rem !important;
-          margin-bottom: 0.75rem !important;
+        .page-header-bar h2 { color: #222 !important; }
+        .sidebar-toggle-btn svg { stroke: #333 !important; }
+
+        .report-page {
+            width: 100%;
+            max-width: none;
+            margin: 0;
+            padding: 0 !important;
         }
-        
-        /* Section Header Responsive */
-        .section-header {
-          flex-direction: column !important;
-          align-items: flex-start !important;
-          gap: 0.75rem !important;
+        .app-main > .report-page {
+            padding-left: 0 !important;
+            padding-right: 0 !important;
         }
-        
-        .section-header > div:first-child {
-          width: 100%;
+        .report-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 2px 16px rgba(0,0,0,0.07);
+            margin: 0;
+            overflow: hidden;
         }
-        
-        .section-header h1 {
-          font-size: 1.25rem !important;
+        .report-card-title {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+            padding: 1.25rem 1rem 0.5rem;
         }
-        
-        .section-header p {
-          font-size: 0.85rem !important;
+
+        /* Filter Bar */
+        .filter-bar {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.25rem 1rem 0.75rem;
+            flex-wrap: wrap;
+            align-items: center;
         }
-        
-        #sortSelect {
-          width: 100%;
-          padding: 0.5rem 0.75rem !important;
-          font-size: 0.9rem !important;
+        .filter-bar select {
+            padding: 0.4rem 0.7rem;
+            border: 1px solid #d0d0d0;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #333;
+            background: #fff;
         }
-        
-        /* Card View Responsive */
-        #card-view {
-          grid-template-columns: 1fr !important;
-          gap: 1rem !important;
-          margin-top: 1rem !important;
+        .filter-bar .filter-btn {
+            padding: 0.4rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            color: #fff;
+            border: none;
+            background: #f97316;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.2s;
         }
-        
-        #card-view > div {
-          padding: 1rem !important;
+        .filter-bar .filter-btn:hover { background: #ea580c; }
+        .filter-bar .clear-btn {
+            padding: 0.4rem 0.85rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            text-decoration: none;
+            color: #666;
+            border: 1px solid #d0d0d0;
+            background: #fff;
+            transition: all 0.2s;
         }
-        
-        #card-view > div > div:first-child {
-          flex-direction: column;
-          align-items: flex-start !important;
-          gap: 0.75rem;
+        .filter-bar .clear-btn:hover { background: #f5f5f5; }
+
+        /* Summary Row */
+        .summary-row {
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 0 1rem 0.75rem;
+            flex-wrap: wrap;
         }
-        
-        #card-view > div > div:first-child > div:last-child {
-          text-align: left !important;
+        .summary-badge {
+            padding: 0.35rem 0.85rem;
+            border-radius: 16px;
+            font-size: 0.8rem;
+            font-weight: 600;
         }
-        
-        #card-view > div > div:first-child > div:first-child > div:first-child {
-          font-size: 1.25rem !important;
+        .summary-badge.count { background: #e3f2fd; color: #1565c0; }
+        .summary-badge.water-sum { background: #e1f5fe; color: #0277bd; }
+        .summary-badge.elec-sum { background: #fce4ec; color: #c2185b; }
+
+        /* Tabs */
+        .report-tabs {
+            display: flex;
+            margin: 0 1rem;
+            border-radius: 10px;
+            overflow: hidden;
         }
-        
-        #card-view > div > div:first-child > div:last-child > div:last-child {
-          font-size: 0.95rem !important;
+        .report-tab {
+            flex: 1;
+            text-align: center;
+            padding: 0.8rem;
+            font-size: 0.95rem;
+            font-weight: 700;
+            cursor: pointer;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+            transition: background 0.2s;
+            color: #fff;
         }
-        
-        /* Table View Mobile - Card Layout */
-        #table-view {
-          margin-top: 1rem !important;
+        .report-tab.water-tab { background: #81d4fa; }
+        .report-tab.water-tab.active { background: #0288d1; }
+        .report-tab.elec-tab { background: #f48fb1; }
+        .report-tab.elec-tab.active { background: #d81b60; }
+        .report-tab svg { width: 18px; height: 18px; }
+
+        /* Floor Header */
+        .floor-header {
+            padding: 0.5rem 1rem;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: #555;
+            background: #fafafa;
+            border-bottom: 1px solid #eee;
+            border-top: 1px solid #eee;
         }
-        
-        #table-view > div {
-          overflow-x: visible !important;
-          border: none !important;
-          background: transparent !important;
+
+        /* Table */
+        .report-table { width: 100%; border-collapse: collapse; }
+        .report-table thead th {
+            background: #f97316;
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.82rem;
+            padding: 0.7rem 0.4rem;
+            text-align: center;
+            white-space: nowrap;
         }
-        
-        #table-utility {
-          display: block !important;
-          min-width: 0 !important;
+        .report-table tbody tr { border-bottom: 1px solid #f0f0f0; transition: background 0.12s; }
+        .report-table tbody tr:hover { background: #fffde7; }
+        .report-table td {
+            padding: 0.6rem 0.4rem;
+            text-align: center;
+            font-size: 0.95rem;
+            color: #333;
+            vertical-align: middle;
         }
-        
-        #table-utility thead {
-          display: none !important;
+        .room-num-cell { font-weight: 700; font-size: 1.05rem; color: #222; }
+        .status-icon svg { width: 22px; height: 22px; fill: #666; }
+        .usage-cell { font-weight: 700; color: #0277bd; }
+        .usage-cell.elec-usage { color: #c2185b; }
+        .date-cell { font-size: 0.85rem; color: #888; }
+        .prev-val { color: #999; }
+        .curr-val { 
+            font-weight: 600;
+            background: #e1f5fe;
+            border-radius: 4px;
+            padding: 0.25rem 0.5rem;
+            display: inline-block;
         }
-        
-        #table-utility tbody {
-          display: block !important;
+        .curr-val.elec-val {
+            background: #fce4ec;
         }
-        
-        #table-utility tbody tr {
-          display: block !important;
-          background: #1e293b !important;
-          border: 1px solid #334155 !important;
-          border-radius: 8px !important;
-          margin-bottom: 1rem !important;
-          padding: 1rem !important;
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #aaa;
         }
-        
-        #table-utility tbody td {
-          display: flex !important;
-          justify-content: space-between !important;
-          align-items: center !important;
-          padding: 0.75rem 0 !important;
-          border-bottom: 1px solid rgba(255,255,255,0.05) !important;
-          white-space: normal !important;
+        .empty-state svg { width: 48px; height: 48px; margin-bottom: 0.75rem; }
+
+        /* Go to manage link */
+        .manage-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.5rem 1rem;
+            margin: 0.75rem 1rem;
+            border-radius: 8px;
+            background: #e8f5e9;
+            color: #2e7d32;
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            transition: background 0.2s;
         }
-        
-        #table-utility tbody td:last-child {
-          border-bottom: none !important;
+        .manage-link:hover { background: #c8e6c9; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .report-page { max-width: 100%; }
+            .report-card { margin: 0; border-radius: 0; }
+            .report-table td, .report-table th { padding: 0.45rem 0.25rem; font-size: 0.82rem; }
         }
-        
-        #table-utility tbody td::before {
-          content: attr(data-label);
-          font-weight: 600;
-          color: #94a3b8;
-          font-size: 0.85rem;
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          flex-shrink: 0;
-          margin-right: 1rem;
+        @media (max-width: 480px) {
+            .report-table td, .report-table th { padding: 0.35rem 0.15rem; font-size: 0.75rem; }
+            .report-card-title { font-size: 1.2rem; }
+            .report-tab { font-size: 0.82rem; padding: 0.65rem 0.4rem; }
+            .curr-val { padding: 0.15rem 0.3rem; font-size: 0.8rem; }
         }
-        
-        #table-utility tbody td:first-child {
-          border-bottom: 2px solid #475569 !important;
-          padding-bottom: 1rem !important;
-          margin-bottom: 0.5rem !important;
-        }
-        
-        #table-utility tbody td:first-child::before {
-          display: none;
-        }
-        
-        #table-utility tbody td > div {
-          text-align: right;
-        }
-        
-        /* DataTable Controls Mobile */
-        .datatable-top {
-          flex-direction: column !important;
-          gap: 0.75rem !important;
-          padding: 0 0 1rem 0 !important;
-        }
-        
-        .datatable-search {
-          width: 100% !important;
-          margin: 0 !important;
-        }
-        
-        .datatable-search input {
-          width: 100% !important;
-          padding: 0.6rem 1rem !important;
-          font-size: 0.9rem !important;
-        }
-        
-        .datatable-dropdown {
-          width: 100% !important;
-        }
-        
-        .datatable-selector {
-          width: 100% !important;
-          padding: 0.6rem 1rem !important;
-          font-size: 0.9rem !important;
-        }
-        
-        .datatable-bottom {
-          flex-direction: column !important;
-          align-items: stretch !important;
-          gap: 0.75rem !important;
-        }
-        
-        .datatable-info {
-          text-align: center !important;
-          order: 1;
-          font-size: 0.85rem !important;
-        }
-        
-        .datatable-pagination {
-          margin: 0 !important;
-          order: 2;
-        }
-        
-        .datatable-pagination ul {
-          justify-content: center !important;
-          flex-wrap: wrap;
-        }
-        
-        .datatable-pagination li {
-          margin: 0.25rem !important;
-        }
-        
-        .datatable-pagination a {
-          padding: 0.4rem 0.7rem !important;
-          font-size: 0.85rem !important;
-          min-width: 32px !important;
-        }
-      }
-      
-      @media (max-width: 480px) {
-        #toggle-view {
-          padding: 0.4rem 0.6rem !important;
-          font-size: 0.8rem !important;
-        }
-        
-        .section-header h1 {
-          font-size: 1.1rem !important;
-        }
-        
-        #card-view {
-          gap: 0.75rem !important;
-        }
-        
-        #card-view > div {
-          padding: 0.875rem !important;
-        }
-        
-        #table-utility tbody tr {
-          padding: 0.875rem !important;
-        }
-        
-        #table-utility tbody td {
-          padding: 0.625rem 0 !important;
-          font-size: 0.9rem !important;
-        }
-        
-        #table-utility tbody td::before {
-          font-size: 0.75rem !important;
-        }
-        
-        .datatable-pagination a {
-          padding: 0.35rem 0.6rem !important;
-          font-size: 0.8rem !important;
-          min-width: 28px !important;
-        }
-      }
     </style>
-  </head>
-  <body class="reports-page">
+</head>
+<body class="reports-page">
     <div class="app-shell">
-      <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-      <main class="app-main">
-        <div style="width:100%;">
-          <?php $pageTitle = 'ประวัติการอ่านมิเตอร์น้ำ-ไฟ'; include __DIR__ . '/../includes/page_header.php'; ?>
-          
-          <div style="display:flex;align-items:center;justify-content:flex-end;margin-bottom:1rem;padding:0 1rem;">
-            <button id="toggle-view" aria-label="Toggle view" style="background:#334155;border:1px solid #475569;color:#fff;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;display:inline-flex;align-items:center;gap:0.4rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด</button>
-          </div>
+        <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+        <main class="app-main">
+            <div class="report-page">
+                <?php $pageTitle = 'ประวัติมิเตอร์น้ำ-ไฟ'; include __DIR__ . '/../includes/page_header.php'; ?>
 
-          <section class="manage-panel">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
-              <div>
-                <h1>ประวัติการอ่านมิเตอร์น้ำ-ไฟ</h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">บันทึกการอ่านมิเตอร์ของแต่ละสัญญา</p>
-              </div>
-              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
-                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>อ่านล่าสุด</option>
-                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>อ่านเก่าสุด</option>
-                <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
-              </select>
-            </div>
-            
-            <?php if (empty($utilities)): ?>
-              <div style="text-align:center;padding:3rem 1rem;color:#64748b;">
-                <div style="margin-bottom:1rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
-                <h3>ยังไม่มีข้อมูลมิเตอร์</h3>
-                <p>เริ่มต้นบันทึกการอ่านมิเตอร์ของห้องพัก</p>
-              </div>
-            <?php else: ?>
-              <!-- Card View -->
-              <div id="card-view" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(500px,1fr));gap:1.5rem;margin-top:1.5rem;">
-                <?php foreach ($utilities as $util): ?>
-                  <?php
-                    $waterUsage = (int)($util['utl_water_end'] ?? 0) - (int)($util['utl_water_start'] ?? 0);
-                    $elecUsage = (int)($util['utl_elec_end'] ?? 0) - (int)($util['utl_elec_start'] ?? 0);
-                    $readDate = $util['utl_date'] ? date('d/m/Y', strtotime($util['utl_date'])) : '-';
-                  ?>
-                  <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;">
-                    <!-- ส่วนหัว -->
-                    <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid #475569;padding-bottom:1rem;">
-                      <div>
-                        <div style="font-size:0.875rem;color:#94a3b8;margin-bottom:0.3rem;">รหัสมิเตอร์</div>
-                        <div style="font-size:1.5rem;font-weight:700;color:#fff;">#<?php echo str_pad((string)($util['utl_id'] ?? '0'), 4, '0', STR_PAD_LEFT); ?></div>
-                      </div>
-                      <div style="text-align:right;">
-                        <div style="font-size:0.875rem;color:#94a3b8;margin-bottom:0.3rem;">วันที่อ่าน</div>
-                        <div style="font-size:1.1rem;font-weight:600;color:#fff;"><?php echo $readDate; ?></div>
-                      </div>
-                    </div>
+                <div class="report-card">
+                    <div class="report-card-title">ประวัติมิเตอร์น้ำ-ไฟ</div>
 
-                    <!-- ห้อง/ผู้เช่า -->
-                    <div style="background:#0f172a;padding:1rem;border-radius:6px;">
-                      <div style="font-size:1.1rem;font-weight:600;color:#fff;margin-bottom:0.3rem;">ห้อง <?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></div>
-                      <div style="font-size:0.9rem;color:#cbd5e1;"><?php echo htmlspecialchars($util['tnt_name'] ?? '-'); ?></div>
-                    </div>
+                    <!-- Filter -->
+                    <form method="get" class="filter-bar">
+                        <input type="hidden" id="tabInput" name="tab" value="<?php echo htmlspecialchars($activeTab); ?>">
+                        <select name="month">
+                            <option value="">-- ทุกเดือน --</option>
+                            <?php foreach ($monthsForFilter as $m): ?>
+                            <option value="<?php echo $m; ?>" <?php echo $filterMonth == $m ? 'selected' : ''; ?>><?php echo $thaiMonthsFull[$m]; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <select name="year">
+                            <option value="">-- ทุกปี --</option>
+                            <?php foreach ($availableYears as $y): ?>
+                            <option value="<?php echo $y; ?>" <?php echo $filterYear == $y ? 'selected' : ''; ?>><?php echo $y + 543; ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                        <button type="submit" class="filter-btn">กรอง</button>
+                        <a id="clearFilterLink" href="report_utility.php?tab=<?php echo htmlspecialchars($activeTab); ?>" class="clear-btn">ล้าง</a>
+                    </form>
 
-                    <!-- น้ำ -->
-                    <div>
-                      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
-                        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg, #22c55e, #16a34a);"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></span>
-                        <div style="font-size:1rem;font-weight:700;color:#22c55e;">น้ำ</div>
-                      </div>
-                      <div style="background:#0f172a;padding:1rem;border-radius:6px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
-                        <div style="text-align:center;padding:0.75rem;background:#1e293b;border-radius:4px;">
-                          <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.3rem;">เริ่มต้น</div>
-                          <div style="font-size:1.25rem;font-weight:700;color:#fff;"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></div>
-                        </div>
-                        <div style="text-align:center;padding:0.75rem;background:#1e293b;border-radius:4px;">
-                          <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.3rem;">สิ้นสุด</div>
-                          <div style="font-size:1.25rem;font-weight:700;color:#fff;"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></div>
-                        </div>
-                        <div style="text-align:center;padding:0.75rem;background:#064e3b;border-radius:4px;">
-                          <div style="font-size:0.75rem;color:#86efac;margin-bottom:0.3rem;">ใช้ไป</div>
-                          <div style="font-size:1.25rem;font-weight:700;color:#86efac;"><?php echo number_format($waterUsage); ?></div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- ไฟ -->
-                    <div>
-                      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem;">
-                        <span style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:6px;background:linear-gradient(135deg, #f59e0b, #d97706);"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
-                        <div style="font-size:1rem;font-weight:700;color:#3b82f6;">ไฟ</div>
-                      </div>
-                      <div style="background:#0f172a;padding:1rem;border-radius:6px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.75rem;">
-                        <div style="text-align:center;padding:0.75rem;background:#1e293b;border-radius:4px;">
-                          <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.3rem;">เริ่มต้น</div>
-                          <div style="font-size:1.25rem;font-weight:700;color:#fff;"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></div>
-                        </div>
-                        <div style="text-align:center;padding:0.75rem;background:#1e293b;border-radius:4px;">
-                          <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.3rem;">สิ้นสุด</div>
-                          <div style="font-size:1.25rem;font-weight:700;color:#fff;"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></div>
-                        </div>
-                        <div style="text-align:center;padding:0.75rem;background:#0c4a6e;border-radius:4px;">
-                          <div style="font-size:0.75rem;color:#93c5fd;margin-bottom:0.3rem;">ใช้ไป</div>
-                          <div style="font-size:1.25rem;font-weight:700;color:#93c5fd;"><?php echo number_format($elecUsage); ?></div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                <?php endforeach; ?>
-              </div>
-
-              <!-- Table View -->
-              <div id="table-view" style="display:none;margin-top:1.5rem;">
-                <div style="overflow-x:auto;border:1px solid #334155;border-radius:8px;background:#0f172a;">
-                  <table id="table-utility" style="width:100%;border-collapse:collapse;min-width:1400px;">
-                    <thead>
-                      <tr style="background:#0f172a;">
-                        <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">รหัส</th>
-                        <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">ห้อง/ผู้เช่า</th>
-                        <th rowspan="2" style="padding:1rem;color:#94a3b8;border-bottom:2px solid #475569;white-space:nowrap;vertical-align:bottom;">วันที่อ่าน</th>
-                        <th colspan="3" style="padding:0.75rem;color:#22c55e;text-align:center;font-weight:700;border-bottom:1px solid #475569;border-right:3px solid #475569;font-size:1.1rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>น้ำ</th>
-                        <th colspan="3" style="padding:0.75rem;color:#3b82f6;text-align:center;font-weight:700;border-bottom:1px solid #475569;font-size:1.1rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>ไฟ</th>
-                      </tr>
-                      <tr style="background:#0f172a;">
-                        <th style="padding:0.75rem;color:#22c55e;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">เริ่มต้น</th>
-                        <th style="padding:0.75rem;color:#22c55e;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">สิ้นสุด</th>
-                        <th style="padding:0.75rem;color:#22c55e;font-size:0.9rem;border-bottom:2px solid #475569;border-right:3px solid #475569;white-space:nowrap;">ใช้ไป</th>
-                        <th style="padding:0.75rem;color:#3b82f6;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">เริ่มต้น</th>
-                        <th style="padding:0.75rem;color:#3b82f6;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">สิ้นสุด</th>
-                        <th style="padding:0.75rem;color:#3b82f6;font-size:0.9rem;border-bottom:2px solid #475569;white-space:nowrap;">ใช้ไป</th>
-                      </tr>
-                    </thead>
-                  <tbody>
-<?php foreach ($utilities as $util): ?>
+                    <!-- Summary -->
                     <?php
-                      $waterUsage = (int)($util['utl_water_end'] ?? 0) - (int)($util['utl_water_start'] ?? 0);
-                      $elecUsage = (int)($util['utl_elec_end'] ?? 0) - (int)($util['utl_elec_start'] ?? 0);
-                      $readDate = $util['utl_date'] ? date('d/m/Y', strtotime($util['utl_date'])) : '-';
+                    $totalWaterUsage = 0;
+                    $totalElecUsage = 0;
+                    foreach ($utilities as $u) {
+                        $totalWaterUsage += (int)($u['utl_water_end'] ?? 0) - (int)($u['utl_water_start'] ?? 0);
+                        $totalElecUsage += (int)($u['utl_elec_end'] ?? 0) - (int)($u['utl_elec_start'] ?? 0);
+                    }
                     ?>
-                    <tr style="border-bottom:1px solid #334155;background:#1e293b;">
-                      <td style="padding:0.85rem;color:#fff;font-weight:600;white-space:nowrap;">#<?php echo str_pad((string)($util['utl_id'] ?? '0'), 4, '0', STR_PAD_LEFT); ?></td>
-                      <td data-label="ห้อง/ผู้เช่า" style="padding:0.85rem;white-space:nowrap;">
-                        <div style="color:#fff;font-weight:600;margin-bottom:0.25rem;">ห้อง <?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></div>
-                        <div style="color:#94a3b8;font-size:0.875rem;"><?php echo htmlspecialchars($util['tnt_name'] ?? '-'); ?></div>
-                      </td>
-                      <td data-label="วันที่อ่าน" style="padding:0.85rem;color:#cbd5e1;white-space:nowrap;"><?php echo $readDate; ?></td>
-                      <!-- น้ำ: เริ่มต้น -->
-                      <td data-label="น้ำ เริ่มต้น" style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></td>
-                      <!-- น้ำ: สิ้นสุด -->
-                      <td data-label="น้ำ สิ้นสุด" style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></td>
-                      <!-- น้ำ: ใช้ไป -->
-                      <td data-label="น้ำ ใช้ไป" style="padding:0.85rem;color:#22c55e;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:0.95rem;border-right:3px solid #475569;white-space:nowrap;"><?php echo number_format($waterUsage); ?></td>
-                      <!-- ไฟ: เริ่มต้น -->
-                      <td data-label="ไฟ เริ่มต้น" style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></td>
-                      <!-- ไฟ: สิ้นสุด -->
-                      <td data-label="ไฟ สิ้นสุด" style="padding:0.85rem;color:#e2e8f0;text-align:right;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></td>
-                      <!-- ไฟ: ใช้ไป -->
-                      <td data-label="ไฟ ใช้ไป" style="padding:0.85rem;color:#3b82f6;text-align:right;font-weight:700;font-variant-numeric:tabular-nums;font-size:0.95rem;white-space:nowrap;"><?php echo number_format($elecUsage); ?></td>
-                    </tr>
-<?php endforeach; ?>
-                  </tbody>
-                </table>
+                    <div class="summary-row">
+                        <span class="summary-badge count"><?php echo count($utilities); ?> รายการ</span>
+                        <span class="summary-badge water-sum">💧 น้ำรวม <?php echo number_format($totalWaterUsage); ?> หน่วย</span>
+                        <span class="summary-badge elec-sum">⚡ ไฟรวม <?php echo number_format($totalElecUsage); ?> หน่วย</span>
+                    </div>
+
+                    <!-- Link to manage -->
+                    <div style="text-align:center;">
+                        <a href="manage_utility.php" class="manage-link">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            ไปหน้าจดมิเตอร์
+                        </a>
+                    </div>
+
+                    <!-- Tabs -->
+                    <div class="report-tabs">
+                        <button type="button" class="report-tab water-tab <?php echo $activeTab==='water'?'active':''; ?>" onclick="switchTab('water')">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z"/></svg>
+                            ประวัติค่าน้ำ
+                        </button>
+                        <button type="button" class="report-tab elec-tab <?php echo $activeTab==='electric'?'active':''; ?>" onclick="switchTab('electric')">
+                            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                            ประวัติค่าไฟ
+                        </button>
+                    </div>
+
+                    <?php if (empty($utilities)): ?>
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                        <p>ยังไม่มีข้อมูลมิเตอร์</p>
+                    </div>
+                    <?php else: ?>
+
+                    <!-- WATER TAB -->
+                    <div id="waterPanel" style="<?php echo $activeTab!=='water'?'display:none':''; ?>">
+                        <?php foreach ($floors as $floorNum => $floorUtils): ?>
+                        <div class="floor-header">ชั้นที่ <?php echo $floorNum; ?></div>
+                        <table class="report-table">
+                            <thead><tr>
+                                <th>ห้อง</th>
+                                <th>สถานะ</th>
+                                <th>เลขมิเตอร์เดือนก่อนหน้า</th>
+                                <th>เลขมิเตอร์เดือนล่าสุด</th>
+                                <th>หน่วยที่ใช้</th>
+                            </tr></thead>
+                            <tbody>
+                            <?php foreach ($floorUtils as $util):
+                                $waterUsage = (int)($util['utl_water_end'] ?? 0) - (int)($util['utl_water_start'] ?? 0);
+                            ?>
+                            <tr>
+                                <td class="room-num-cell"><?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></td>
+                                <td class="status-icon">
+                                    <?php if (!empty($util['tnt_name'])): ?>
+                                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="prev-val"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></td>
+                                <td><span class="curr-val"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></span></td>
+                                <td class="usage-cell"><?php echo number_format($waterUsage); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <!-- ELECTRIC TAB -->
+                    <div id="electricPanel" style="<?php echo $activeTab!=='electric'?'display:none':''; ?>">
+                        <?php foreach ($floors as $floorNum => $floorUtils): ?>
+                        <div class="floor-header">ชั้นที่ <?php echo $floorNum; ?></div>
+                        <table class="report-table">
+                            <thead><tr>
+                                <th>ห้อง</th>
+                                <th>สถานะ</th>
+                                <th>เลขมิเตอร์เดือนก่อนหน้า</th>
+                                <th>เลขมิเตอร์เดือนล่าสุด</th>
+                                <th>หน่วยที่ใช้</th>
+                            </tr></thead>
+                            <tbody>
+                            <?php foreach ($floorUtils as $util):
+                                $elecUsage = (int)($util['utl_elec_end'] ?? 0) - (int)($util['utl_elec_start'] ?? 0);
+                            ?>
+                            <tr>
+                                <td class="room-num-cell"><?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></td>
+                                <td class="status-icon">
+                                    <?php if (!empty($util['tnt_name'])): ?>
+                                    <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="prev-val"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></td>
+                                <td><span class="curr-val elec-val"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></span></td>
+                                <td class="usage-cell elec-usage"><?php echo number_format($elecUsage); ?></td>
+                            </tr>
+                            <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                        <?php endforeach; ?>
+                    </div>
+
+                    <?php endif; ?>
                 </div>
-              </div>
-            <?php endif; ?>
-          </section>
-        </div>
-      </main>
+            </div>
+        </main>
     </div>
 
-    <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
     <script>
-      (function() {
-        // View Toggle
-        const viewToggle = document.getElementById('toggle-view');
-        const cardView = document.getElementById('card-view');
-        const tableView = document.getElementById('table-view');
-        // Get default view mode from database (list -> table, grid -> card)
-        let isCardView = '<?php echo $defaultViewMode === "list" ? "false" : "true"; ?>' === 'true';
+    function switchTab(tab) {
+        document.getElementById('waterPanel').style.display = tab==='water' ? '' : 'none';
+        document.getElementById('electricPanel').style.display = tab==='electric' ? '' : 'none';
+        document.querySelector('.water-tab').classList.toggle('active', tab==='water');
+        document.querySelector('.elec-tab').classList.toggle('active', tab==='electric');
 
-        function updateView() {
-          if (isCardView) {
-            cardView.style.display = 'grid';
-            tableView.style.display = 'none';
-            viewToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>ตาราง';
-          } else {
-            cardView.style.display = 'none';
-            tableView.style.display = 'block';
-            viewToggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด';
-          }
-        }
+        const tabInput = document.getElementById('tabInput');
+        if (tabInput) tabInput.value = tab;
 
-        // กำหนดมุมมองเริ่มต้น
-        updateView();
+        const clearFilterLink = document.getElementById('clearFilterLink');
+        if (clearFilterLink) clearFilterLink.href = 'report_utility.php?tab=' + encodeURIComponent(tab);
 
-        if (viewToggle) {
-          viewToggle.addEventListener('click', function() {
-            isCardView = !isCardView;
-            localStorage.setItem('utilityViewMode', isCardView ? 'card' : 'table');
-            updateView();
-          });
-        }
-      })();
-
-      function changeSortBy(sortValue) {
-        const url = new URL(window.location);
-        url.searchParams.set('sort', sortValue);
-        window.location.href = url.toString();
-      }
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', tab);
+        window.history.replaceState({}, '', url.toString());
+    }
     </script>
-    
-    <!-- DataTable Initialization -->
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const utilityTable = document.getElementById('table-utility');
-        if (utilityTable && typeof simpleDatatables !== 'undefined') {
-          new simpleDatatables.DataTable(utilityTable, {
-            searchable: true,
-            fixedHeight: false,
-            perPage: 10,
-            perPageSelect: [5, 10, 25, 50, 100],
-            labels: {
-              placeholder: 'ค้นหามิเตอร์...',
-              perPage: 'รายการต่อหน้า',
-              noRows: 'ไม่พบข้อมูลมิเตอร์',
-              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
-            }
-          });
-        }
-      });
-    </script>
-  </body>
+    <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>
+</body>
 </html>

@@ -164,6 +164,114 @@ try {
       .image-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.9); justify-content: center; align-items: center; }
       .image-modal img { max-width: 90%; max-height: 90%; border-radius: 12px; }
       .image-modal.show { display: flex; }
+
+      .stat-card,
+      .repair-card,
+      .repair-table,
+      .filter-section {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08) !important;
+      }
+
+      .stat-label { color: #64748b !important; }
+      .stat-value { color: #0f172a !important; }
+
+      .view-toggle-btn {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #64748b !important;
+      }
+
+      .view-toggle-btn:hover:not(.active) {
+        background: #f1f5f9 !important;
+        color: #1f2937 !important;
+      }
+
+      .repair-header { border-bottom: 1px solid #e5e7eb !important; }
+      .repair-desc,
+      .repair-info,
+      .charge-item {
+        background: #f8fafc !important;
+      }
+
+      .repair-table th,
+      .repair-table .datatable-wrapper table thead th {
+        background: #f8fafc !important;
+        color: #334155 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+      }
+
+      .repair-table td,
+      .repair-table .datatable-wrapper table tbody td {
+        color: #1f2937 !important;
+        border-bottom: 1px solid #eef2f7 !important;
+      }
+
+      .repair-table tbody tr:hover,
+      .repair-table .datatable-wrapper table tbody tr:hover {
+        background: #f8fafc !important;
+      }
+
+      .filter-item label { color: #475569 !important; }
+
+      .filter-item select {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+
+      .filter-item select:focus {
+        background: #ffffff !important;
+        border-color: #93c5fd !important;
+      }
+
+      .repair-table .datatable-wrapper .datatable-input,
+      .repair-table .datatable-wrapper .datatable-selector {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+
+      .repair-table .datatable-wrapper .datatable-input::placeholder {
+        color: #94a3b8 !important;
+      }
+
+      .repair-table .datatable-wrapper .datatable-input:focus,
+      .repair-table .datatable-wrapper .datatable-selector:focus {
+        background: #ffffff !important;
+        color: #334155 !important;
+        border-color: #93c5fd !important;
+      }
+
+      .repair-table .datatable-wrapper .datatable-selector option {
+        background: #ffffff !important;
+        color: #334155 !important;
+      }
+
+      .repair-table .datatable-wrapper table thead th .datatable-sorter {
+        color: inherit !important;
+        background: transparent !important;
+      }
+
+      .repair-cards [style*="color:#fff"],
+      .repair-table [style*="color:#fff"] {
+        color: #0f172a !important;
+      }
+
+      .repair-cards [style*="color:#94a3b8"],
+      .repair-table [style*="color:#94a3b8"],
+      .repair-cards [style*="color: #94a3b8"],
+      .repair-table [style*="color: #94a3b8"] {
+        color: #64748b !important;
+      }
+
+      a.filter-btn[style*="rgba(255,255,255,0.05)"],
+      a.filter-btn[style*="rgba(255, 255, 255, 0.05)"] {
+        background: #f1f5f9 !important;
+        color: #64748b !important;
+        border: 1px solid #cbd5e1 !important;
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -239,8 +347,7 @@ try {
                 <a href="report_repairs.php?status=2<?php echo $selectedMonth ? '&month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo $selectedStatus === '2' ? '#60a5fa' : 'rgba(255,255,255,0.05)'; ?>;color:<?php echo $selectedStatus === '2' ? '#fff' : '#94a3b8'; ?>;"><svg viewBox="0 0 24 24" fill="none" stroke="<?php echo ($selectedStatus === '2') ? '#ffffff' : 'currentColor'; ?>" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg> เสร็จสิ้น</a>
               </div>
               <div class="view-toggle">
-                <button class="view-toggle-btn active" onclick="switchView('card')"><svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด</button>
-                <button class="view-toggle-btn" onclick="switchView('table')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>ตาราง</button>
+                <button id="toggle-view-btn" class="view-toggle-btn active" onclick="toggleView()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>ตาราง</button>
               </div>
             </div>
 
@@ -320,7 +427,34 @@ try {
         console.log('Window Load: Calling switchView with:', dbDefaultView);
         switchView(dbDefaultView);
       });
-      function switchView(view) { const cardView = document.getElementById('card-view'); const tableView = document.getElementById('table-view'); const buttons = document.querySelectorAll('.view-toggle-btn'); buttons.forEach(btn => btn.classList.remove('active')); if (view === 'card') { cardView.style.display = 'grid'; tableView.style.display = 'none'; buttons[0].classList.add('active'); localStorage.setItem('repairViewMode', 'card'); } else { cardView.style.display = 'none'; tableView.style.display = 'block'; buttons[1].classList.add('active'); localStorage.setItem('repairViewMode', 'table'); } }
+      let currentView = 'card';
+      function switchView(view) {
+        const cardView = document.getElementById('card-view');
+        const tableView = document.getElementById('table-view');
+        const toggleBtn = document.getElementById('toggle-view-btn');
+
+        if (view === 'card') {
+          cardView.style.display = 'grid';
+          tableView.style.display = 'none';
+          if (toggleBtn) {
+            toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>ตาราง';
+          }
+          currentView = 'card';
+          localStorage.setItem('repairViewMode', 'card');
+        } else {
+          cardView.style.display = 'none';
+          tableView.style.display = 'block';
+          if (toggleBtn) {
+            toggleBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>การ์ด';
+          }
+          currentView = 'table';
+          localStorage.setItem('repairViewMode', 'table');
+        }
+      }
+
+      function toggleView() {
+        switchView(currentView === 'card' ? 'table' : 'card');
+      }
       function showImage(imageName) { const modal = document.getElementById('imageModal'); const modalImg = document.getElementById('modalImage'); modalImg.src = '/dormitory_management/Public/Assets/Images/Repairs/' + imageName; modal.classList.add('show'); }
       function closeImage() { document.getElementById('imageModal').classList.remove('show'); }
       document.addEventListener('keydown', function(e) { if (e.key === 'Escape') closeImage(); });

@@ -17,7 +17,7 @@ switch ($sortBy) {
     $orderBy = 'b.bkg_date ASC';
     break;
   case 'room_number':
-    $orderBy = 'r.room_number ASC';
+    $orderBy = "CASE WHEN r.room_number REGEXP '^[0-9]+$' THEN 0 ELSE 1 END, CAST(r.room_number AS UNSIGNED) ASC, r.room_number ASC";
     break;
   case 'newest':
   default:
@@ -30,7 +30,9 @@ $stmt = $pdo->query("
     FROM room r 
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id 
     WHERE r.room_status = '0'
-    ORDER BY r.room_number
+  ORDER BY CASE WHEN r.room_number REGEXP '^[0-9]+$' THEN 0 ELSE 1 END,
+       CAST(r.room_number AS UNSIGNED),
+       r.room_number ASC
 ");
 $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -1503,9 +1505,16 @@ try {
         z-index: 3;
         text-shadow: 0 1px 3px rgba(0,0,0,0.2);
         animation: pulseRing 2s ease-in-out infinite;
-        box-shadow: 0 0 15px rgba(34, 197, 94, 0.5),
-                    0 0 30px rgba(34, 197, 94, 0.3);
+        box-shadow: none;
         border: 1px solid rgba(255,255,255,0.3);
+      }
+
+      /* Remove card shadows for front card block */
+      .room-card,
+      .room-card-inner,
+      .room-card.flipped .room-card-inner,
+      .room-card-face.front {
+        box-shadow: none !important;
       }
       
       .room-card-face.front .status-badge-web3::before {
@@ -3136,6 +3145,46 @@ try {
       html.light-theme h1 svg,
       html.light-theme h2 svg {
           stroke: #374151 !important;
+      }
+
+      /* Force white-background support for this page */
+      body.reports-page,
+      body.reports-page .app-main {
+        background: #ffffff !important;
+        color: #111827 !important;
+      }
+
+      body.reports-page .manage-panel {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+      }
+
+      body.reports-page .section-header h1,
+      body.reports-page .section-header p,
+      body.reports-page .manage-panel h1,
+      body.reports-page .manage-panel p {
+        color: #111827 !important;
+      }
+
+      body.reports-page #sortSelect,
+      body.reports-page #toggleRoomsBtn {
+        background: #ffffff !important;
+        border: 1px solid #d1d5db !important;
+        color: #374151 !important;
+      }
+
+      body.reports-page .report-table,
+      body.reports-page .datatable-wrapper {
+        background: #ffffff !important;
+      }
+
+      /* Keep room card bottom info text white */
+      .room-card-face.front .card-info-bottom,
+      .room-card-face.front .card-info-bottom .room-number-web3,
+      .room-card-face.front .card-info-bottom .room-type-web3,
+      .room-card-face.front .card-info-bottom .room-price-web3 {
+        color: #ffffff !important;
       }
     </style>
   </head>

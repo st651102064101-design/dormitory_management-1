@@ -146,16 +146,16 @@ try {
         margin-bottom: 2rem;
       }
       .stat-card {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
         border-radius: 12px;
         padding: 1.5rem;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
         transition: transform 0.2s, box-shadow 0.2s;
       }
       .stat-card:hover {
         transform: translateY(-4px);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
       }
       .stat-icon {
         font-size: 2.5rem;
@@ -163,7 +163,7 @@ try {
       }
       .stat-label {
         font-size: 0.85rem;
-        color: #cbd5e1;
+        color: #64748b;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         font-weight: 600;
@@ -171,7 +171,7 @@ try {
       .stat-value {
         font-size: 2rem;
         font-weight: 700;
-        color: #f8fafc;
+        color: #0f172a;
         margin: 0.5rem 0;
       }
       .view-toggle {
@@ -181,10 +181,10 @@ try {
       }
       .view-toggle-btn {
         padding: 0.75rem 1.5rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
         border-radius: 8px;
-        color: #94a3b8;
+        color: #64748b;
         cursor: pointer;
         transition: all 0.2s;
         font-weight: 600;
@@ -195,8 +195,8 @@ try {
         color: #fff;
       }
       .view-toggle-btn:hover:not(.active) {
-        background: rgba(255, 255, 255, 0.08);
-        color: #e2e8f0;
+        background: #f1f5f9;
+        color: #1f2937;
       }
       .invoice-cards {
         display: grid;
@@ -204,29 +204,29 @@ try {
         gap: 1.5rem;
       }
       .invoice-card {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
         border-radius: 12px;
         padding: 1.5rem;
         transition: all 0.2s;
       }
       .invoice-card:hover {
         transform: translateY(-2px);
-        border-color: rgba(96, 165, 250, 0.3);
-        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+        border-color: #93c5fd;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
       }
       .invoice-header {
         display: flex;
         justify-content: space-between;
         align-items: start;
         padding-bottom: 1rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        border-bottom: 1px solid #e5e7eb;
         margin-bottom: 1rem;
       }
       .invoice-month {
         font-size: 1.3rem;
         font-weight: 700;
-        color: #f8fafc;
+        color: #0f172a;
       }
       .invoice-status {
         padding: 0.4rem 0.8rem;
@@ -245,7 +245,7 @@ try {
         border: 1px solid rgba(34, 197, 94, 0.3);
       }
       .invoice-info {
-        background: rgba(0, 0, 0, 0.2);
+        background: #f8fafc;
         padding: 1rem;
         border-radius: 8px;
         margin-bottom: 1rem;
@@ -257,14 +257,14 @@ try {
         margin-bottom: 1rem;
       }
       .charge-item {
-        background: rgba(0, 0, 0, 0.2);
+        background: #f8fafc;
         padding: 0.75rem;
         border-radius: 8px;
         text-align: center;
       }
       .charge-label {
         font-size: 0.75rem;
-        color: #94a3b8;
+        color: #64748b;
         margin-bottom: 0.3rem;
       }
       .charge-value {
@@ -272,24 +272,25 @@ try {
         font-weight: 700;
       }
       .invoice-total {
-        background: linear-gradient(135deg, #1e40af 0%, #1e3a8a 100%);
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
         padding: 1rem;
         border-radius: 8px;
         text-align: center;
       }
       .total-label {
         font-size: 0.85rem;
-        color: #93c5fd;
+        color: #1e40af;
         margin-bottom: 0.3rem;
       }
       .total-value {
         font-size: 2rem;
         font-weight: 700;
-        color: #fff;
+        color: #1d4ed8;
       }
       .invoice-table {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
         border-radius: 12px;
         overflow: hidden;
       }
@@ -301,24 +302,24 @@ try {
       .invoice-table td {
         padding: 1rem;
         text-align: left;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        border-bottom: 1px solid #eef2f7;
       }
       .invoice-table th {
-        background: rgba(255, 255, 255, 0.05);
-        color: #cbd5e1;
+        background: #f8fafc;
+        color: #334155;
         font-weight: 600;
         font-size: 0.85rem;
         text-transform: uppercase;
       }
       .invoice-table td {
-        color: #e2e8f0;
+        color: #1f2937;
       }
       .invoice-table tbody tr:hover {
-        background: rgba(255, 255, 255, 0.03);
+        background: #f8fafc;
       }
       .filter-section {
-        background: rgba(15, 23, 42, 0.6);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: #ffffff;
+        border: 1px solid #e5e7eb;
         border-radius: 12px;
         padding: 1.5rem;
         margin-bottom: 2rem;
@@ -330,7 +331,7 @@ try {
       }
       .filter-item label {
         display: block;
-        color: #cbd5e1;
+        color: #475569;
         font-size: 0.85rem;
         font-weight: 600;
         margin-bottom: 0.5rem;
@@ -338,16 +339,16 @@ try {
       .filter-item select {
         width: 100%;
         padding: 0.75rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
         border-radius: 8px;
-        color: #f8fafc;
+        color: #0f172a;
         font-size: 0.9rem;
       }
       .filter-item select:focus {
         outline: none;
         border-color: #60a5fa;
-        background: rgba(255, 255, 255, 0.08);
+        background: #ffffff;
       }
       .filter-btn {
         padding: 0.75rem 1.5rem;
@@ -382,6 +383,86 @@ try {
       }
       .clear-btn:hover {
         background: rgba(239, 68, 68, 0.25);
+      }
+
+      .invoice-table .datatable-wrapper .datatable-input {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+
+      .invoice-table .datatable-wrapper .datatable-input::placeholder {
+        color: #94a3b8 !important;
+      }
+
+      .invoice-table .datatable-wrapper .datatable-input:focus {
+        background: #ffffff !important;
+        color: #334155 !important;
+        border-color: #93c5fd !important;
+      }
+
+      .invoice-table .datatable-wrapper .datatable-selector {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+
+      .invoice-table .datatable-wrapper .datatable-selector:focus {
+        background: #ffffff !important;
+        color: #334155 !important;
+        border-color: #93c5fd !important;
+      }
+
+      .invoice-table .datatable-wrapper .datatable-selector option {
+        background: #ffffff !important;
+        color: #334155 !important;
+      }
+
+      .invoice-table .datatable-wrapper table thead,
+      .invoice-table .datatable-wrapper table thead tr {
+        background: #f8fafc !important;
+      }
+
+      .invoice-table .datatable-wrapper table thead th {
+        background: #f8fafc !important;
+        color: #334155 !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+      }
+
+      .invoice-table .datatable-wrapper table thead th .datatable-sorter {
+        color: inherit !important;
+        background: transparent !important;
+      }
+
+      .invoice-table .datatable-wrapper table tbody td {
+        color: #1f2937 !important;
+      }
+
+      .invoice-table .datatable-wrapper table tbody td:nth-child(1) {
+        color: #334155 !important;
+        font-weight: 600 !important;
+      }
+
+      .invoice-table .datatable-wrapper table tbody td:nth-child(1) div:last-child {
+        color: #64748b !important;
+        font-weight: 500 !important;
+      }
+
+      .invoice-table .datatable-wrapper table tbody td:nth-child(2),
+      .invoice-table .datatable-wrapper table tbody td:nth-child(3),
+      .invoice-table .datatable-wrapper table tbody td:nth-child(4) {
+        color: #334155 !important;
+        font-weight: 600 !important;
+      }
+
+      .invoice-table .datatable-wrapper table tbody td:nth-child(5) div {
+        color: #475569 !important;
+        font-weight: 500 !important;
+      }
+
+      .invoice-table .datatable-wrapper table tbody td:nth-child(6) {
+        color: #0369a1 !important;
+        font-weight: 700 !important;
       }
     </style>
   </head>
@@ -486,28 +567,24 @@ try {
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;">
               <!-- ปุ่มสถานะด้านซ้าย -->
               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                <a href="report_invoice.php<?php echo $selectedMonth ? '?month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo (!isset($_GET['status'])) ? '#60a5fa' : 'rgba(255,255,255,0.05)'; ?>;color:<?php echo (!isset($_GET['status'])) ? '#fff' : '#94a3b8'; ?>;">
+                <a href="report_invoice.php<?php echo $selectedMonth ? '?month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo (!isset($_GET['status'])) ? '#60a5fa' : '#f1f5f9'; ?>;color:<?php echo (!isset($_GET['status'])) ? '#fff' : '#64748b'; ?>;border:<?php echo (!isset($_GET['status'])) ? 'none' : '1px solid #cbd5e1'; ?>;">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                   ทั้งหมด
                 </a>
-                <a href="report_invoice.php?status=0<?php echo $selectedMonth ? '&month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo $selectedStatus === '0' ? '#60a5fa' : 'rgba(255,255,255,0.05)'; ?>;color:<?php echo $selectedStatus === '0' ? '#fff' : '#94a3b8'; ?>;">
+                <a href="report_invoice.php?status=0<?php echo $selectedMonth ? '&month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo $selectedStatus === '0' ? '#60a5fa' : '#f1f5f9'; ?>;color:<?php echo $selectedStatus === '0' ? '#fff' : '#64748b'; ?>;border:<?php echo $selectedStatus === '0' ? 'none' : '1px solid #cbd5e1'; ?>;">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                   รอการตรวจสอบ
                 </a>
-                <a href="report_invoice.php?status=1<?php echo $selectedMonth ? '&month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo $selectedStatus === '1' ? '#60a5fa' : 'rgba(255,255,255,0.05)'; ?>;color:<?php echo $selectedStatus === '1' ? '#fff' : '#94a3b8'; ?>;">
+                <a href="report_invoice.php?status=1<?php echo $selectedMonth ? '&month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo $selectedStatus === '1' ? '#60a5fa' : '#f1f5f9'; ?>;color:<?php echo $selectedStatus === '1' ? '#fff' : '#64748b'; ?>;border:<?php echo $selectedStatus === '1' ? 'none' : '1px solid #cbd5e1'; ?>;">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"/></svg>
                   ตรวจสอบแล้ว
                 </a>
               </div>
               <!-- ปุ่มสลับมุมมองด้านขวา -->
               <div class="view-toggle">
-                <button class="view-toggle-btn active" onclick="switchView('card')">
+                <button id="toggle-view-btn" class="view-toggle-btn" onclick="toggleView()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                   การ์ด
-                </button>
-                <button class="view-toggle-btn" onclick="switchView('table')">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
-                  ตาราง
                 </button>
               </div>
             </div>
@@ -528,7 +605,7 @@ try {
                       <div style="background:#a7f3d0;color:#065f46;padding:0.5rem 1rem;border-radius:20px;font-weight:600;font-size:0.9rem;text-align:center;white-space:nowrap;">
                         <?php echo getRelativeTime($r['exp_month'] ?? null); ?>
                       </div>
-                      <div style="font-size:0.75rem;color:#94a3b8;text-align:center;">
+                      <div style="font-size:0.75rem;color:#64748b;text-align:center;">
                         <?php 
                           $expMonth = $r['exp_month'] ?? '';
                           if ($expMonth) {
@@ -546,17 +623,17 @@ try {
 
                 <div class="invoice-info">
                   <div style="font-size:0.85rem;color:#94a3b8;margin-bottom:0.5rem;">ผู้เช่า</div>
-                  <div style="font-size:1.05rem;font-weight:600;color:#fff;margin-bottom:0.75rem;">
+                  <div style="font-size:1.05rem;font-weight:600;color:#0f172a;margin-bottom:0.75rem;">
                     <?php echo renderField($r['tnt_name'], 'ยังไม่ระบุ'); ?>
                   </div>
                   <div style="display:flex;gap:1.5rem;font-size:0.9rem;">
                     <div>
-                      <span style="color:#94a3b8;">ห้อง:</span>
-                      <span style="color:#fff;font-weight:600;"><?php echo renderField($r['room_number'], '-'); ?></span>
+                      <span style="color:#64748b;">ห้อง:</span>
+                      <span style="color:#0f172a;font-weight:600;"><?php echo renderField($r['room_number'], '-'); ?></span>
                     </div>
                     <div>
-                      <span style="color:#94a3b8;">สัญญา:</span>
-                      <span style="color:#fff;font-weight:600;">#<?php echo renderField((string)($r['ctr_id'] ?? ''), '-'); ?></span>
+                      <span style="color:#64748b;">สัญญา:</span>
+                      <span style="color:#0f172a;font-weight:600;">#<?php echo renderField((string)($r['ctr_id'] ?? ''), '-'); ?></span>
                     </div>
                   </div>
                 </div>
@@ -615,7 +692,7 @@ try {
                         <div style="background:#a7f3d0;color:#065f46;padding:0.4rem 0.8rem;border-radius:16px;font-weight:600;font-size:0.85rem;text-align:center;white-space:nowrap;display:inline-block;width:fit-content;">
                           <?php echo getRelativeTime($r['exp_month'] ?? null); ?>
                         </div>
-                        <div style="font-size:0.75rem;color:#94a3b8;">
+                        <div style="font-size:0.75rem;color:#64748b;">
                           <?php 
                             $expMonth = $r['exp_month'] ?? '';
                             if ($expMonth) {
@@ -630,11 +707,11 @@ try {
                     <td><?php echo renderField($r['tnt_name'], '-'); ?></td>
                     <td><strong><?php echo renderField($r['room_number'], '-'); ?></strong></td>
                     <td style="text-align:right;font-weight:600;">
-                      <div style="font-size:0.85rem;color:#94a3b8;">ไฟ ฿<?php echo renderNumber($r['exp_elec_chg']); ?></div>
-                      <div style="font-size:0.85rem;color:#94a3b8;">น้ำ ฿<?php echo renderNumber($r['exp_water']); ?></div>
-                      <div style="font-size:0.85rem;color:#94a3b8;">ห้อง ฿<?php echo renderNumber($r['room_price']); ?></div>
+                      <div style="font-size:0.85rem;color:#64748b;">ไฟ ฿<?php echo renderNumber($r['exp_elec_chg']); ?></div>
+                      <div style="font-size:0.85rem;color:#64748b;">น้ำ ฿<?php echo renderNumber($r['exp_water']); ?></div>
+                      <div style="font-size:0.85rem;color:#64748b;">ห้อง ฿<?php echo renderNumber($r['room_price']); ?></div>
                       <?php if ((int)($r['exp_other'] ?? 0) > 0): ?>
-                      <div style="font-size:0.85rem;color:#94a3b8;">อื่นๆ ฿<?php echo renderNumber($r['exp_other']); ?></div>
+                      <div style="font-size:0.85rem;color:#64748b;">อื่นๆ ฿<?php echo renderNumber($r['exp_other']); ?></div>
                       <?php endif; ?>
                     </td>
                     <td style="text-align:right;font-weight:700;font-size:1.1rem;">฿<?php echo renderNumber($r['exp_total']); ?></td>
@@ -670,24 +747,33 @@ try {
         switchView(dbDefaultView);
       });
 
+      let currentView = 'card';
+
       function switchView(view) {
         const cardView = document.getElementById('card-view');
         const tableView = document.getElementById('table-view');
-        const buttons = document.querySelectorAll('.view-toggle-btn');
-        
-        buttons.forEach(btn => btn.classList.remove('active'));
+        const toggleButton = document.getElementById('toggle-view-btn');
+        currentView = view;
         
         if (view === 'card') {
           cardView.style.display = 'grid';
           tableView.style.display = 'none';
-          buttons[0].classList.add('active');
+          if (toggleButton) {
+            toggleButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg> การ์ด';
+          }
           localStorage.setItem('invoiceViewMode', 'card');
         } else {
           cardView.style.display = 'none';
           tableView.style.display = 'block';
-          buttons[1].classList.add('active');
+          if (toggleButton) {
+            toggleButton.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/></svg> ตาราง';
+          }
           localStorage.setItem('invoiceViewMode', 'table');
         }
+      }
+
+      function toggleView() {
+        switchView(currentView === 'card' ? 'table' : 'card');
       }
     </script>
     

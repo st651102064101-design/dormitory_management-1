@@ -61,6 +61,62 @@ try {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
+      #table-view .datatable-wrapper {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+
+      #table-view .datatable-wrapper .datatable-input,
+      #table-view .datatable-wrapper .datatable-selector {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+
+      #table-view .datatable-wrapper .datatable-input::placeholder {
+        color: #94a3b8 !important;
+      }
+
+      #table-view .datatable-wrapper table thead {
+        background: #f8fafc !important;
+      }
+
+      #table-view .datatable-wrapper table thead th {
+        color: #475569 !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+      }
+
+      #table-view .datatable-wrapper table tbody tr {
+        background: #ffffff !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+      }
+
+      #table-view .datatable-wrapper table tbody td {
+        color: #0f172a !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+      }
+
+      #table-view .datatable-wrapper table tbody tr:hover {
+        background: #f8fafc !important;
+      }
+
+      #table-view .datatable-wrapper .datatable-info {
+        color: #475569 !important;
+      }
+
+      #table-view .datatable-wrapper .datatable-pagination-list-item a,
+      #table-view .datatable-wrapper .datatable-pagination-list-item button {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #64748b !important;
+      }
+
+      #table-view .datatable-wrapper .datatable-pagination-list-item a:hover,
+      #table-view .datatable-wrapper .datatable-pagination-list-item button:hover {
+        background: #f1f5f9 !important;
+        color: #0ea5e9 !important;
+      }
+
       /* Mobile Responsive Styles */
       @media (max-width: 768px) {
         /* Toggle View Button */
@@ -135,8 +191,8 @@ try {
         
         #table-revenue tbody tr {
           display: block !important;
-          background: #1e293b !important;
-          border: 1px solid #334155 !important;
+          background: #ffffff !important;
+          border: 1px solid #e2e8f0 !important;
           border-radius: 8px !important;
           margin-bottom: 1rem !important;
           padding: 1rem !important;
@@ -147,20 +203,20 @@ try {
           justify-content: space-between !important;
           align-items: center !important;
           padding: 0.75rem 0 !important;
-          border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+          border-bottom: 1px solid #e2e8f0 !important;
         }
         
         #table-revenue tbody td:last-child {
           border-bottom: none !important;
           padding-top: 1rem !important;
           margin-top: 0.5rem !important;
-          border-top: 1px solid #475569 !important;
+          border-top: 1px solid #e2e8f0 !important;
         }
         
         #table-revenue tbody td::before {
           content: attr(data-label);
           font-weight: 600;
-          color: #94a3b8;
+          color: #64748b;
           font-size: 0.85rem;
           text-transform: uppercase;
           letter-spacing: 0.5px;
@@ -325,9 +381,9 @@ try {
             <div id="table-view" style="display:none;margin-top:1.5rem;overflow-x:auto;">
               <table id="table-revenue" class="table--compact" style="width:100%;border-collapse:collapse;">
                 <thead>
-                  <tr style="text-align:left;border-bottom:2px solid #475569;background:#0f172a;">
-                    <th style="padding:0.75rem;color:#94a3b8;">เดือน</th>
-                    <th style="padding:0.75rem;color:#94a3b8;text-align:right;">ยอดรับรวม</th>
+                  <tr style="text-align:left;border-bottom:2px solid #e2e8f0;background:#f8fafc;">
+                    <th style="padding:0.75rem;color:#475569;">เดือน</th>
+                    <th style="padding:0.75rem;color:#475569;text-align:right;">ยอดรับรวม</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -343,9 +399,9 @@ try {
                     }
                     $totalAmount = (int)($r['total_received'] ?? 0);
                   ?>
-                  <tr style="border-bottom:1px solid #334155;background:#1e293b;">
-                    <td data-label="เดือน" style="padding:0.75rem;color:#fff;"><?php echo $monthName; ?></td>
-                    <td data-label="ยอดรับรวม" style="padding:0.75rem;color:#0ea5e9;text-align:right;font-weight:700;font-size:1.1rem;">฿<?php echo number_format($totalAmount); ?></td>
+                  <tr style="border-bottom:1px solid #e2e8f0;background:#ffffff;">
+                    <td data-label="เดือน" style="padding:0.75rem;color:#0f172a;"><?php echo $monthName; ?></td>
+                    <td data-label="ยอดรับรวม" style="padding:0.75rem;color:#0284c7;text-align:right;font-weight:700;font-size:1.1rem;">฿<?php echo number_format($totalAmount); ?></td>
                   </tr>
 <?php endforeach; ?>
                 </tbody>

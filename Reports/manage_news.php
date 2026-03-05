@@ -151,17 +151,17 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
         margin-top: 1rem;
       }
       .news-stat-card {
-        background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
+        background: linear-gradient(135deg, #ffffff, #f8fafc);
         border-radius: 16px;
         padding: 1.25rem;
-        border: 1px solid rgba(255,255,255,0.08);
-        color: #f5f8ff;
-        box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+        border: 1px solid rgba(15,23,42,0.08);
+        color: #0f172a;
+        box-shadow: 0 10px 24px rgba(15,23,42,0.08);
       }
       .news-stat-card h3 {
         margin: 0;
         font-size: 0.95rem;
-        color: rgba(255,255,255,0.7);
+        color: #475569;
       }
       .news-stat-card .stat-value {
         font-size: 2.5rem;
@@ -175,7 +175,7 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
         margin-top: 1.5rem;
       }
       .news-form-group label {
-        color: rgba(255,255,255,0.8);
+        color: #334155;
         font-weight: 600;
         display: block;
         margin-bottom: 0.4rem;
@@ -185,9 +185,9 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
         width: 100%;
         padding: 0.75rem 0.85rem;
         border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.15);
-        background: rgba(8,12,24,0.85);
-        color: #f5f8ff;
+        border: 1px solid rgba(15,23,42,0.14);
+        background: #ffffff;
+        color: #0f172a;
         font-family: inherit;
       }
       .news-form-group textarea {
@@ -206,8 +206,8 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
         margin-top: 1rem;
       }
       .news-card {
-        background: linear-gradient(135deg, rgba(30,41,59,0.6), rgba(15,23,42,0.8));
-        border: 1px solid rgba(255,255,255,0.1);
+        background: #ffffff;
+        border: 1px solid rgba(15,23,42,0.1);
         border-radius: 12px;
         padding: 1.5rem;
         margin-bottom: 1rem;
@@ -226,7 +226,7 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
       .news-card-title {
         font-size: 1.25rem;
         font-weight: 700;
-        color: #f5f8ff;
+        color: #0f172a;
         margin: 0;
       }
       .news-card-meta {
@@ -242,13 +242,35 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
         gap: 0.3rem;
       }
       .news-card-content {
-        color: #cbd5e1;
+        color: #334155;
         line-height: 1.6;
         margin-bottom: 1rem;
       }
       .news-card-actions {
         display: flex;
         gap: 0.5rem;
+      }
+      .news-card-actions .animate-ui-action-btn.edit,
+      .news-card-actions .animate-ui-action-btn.delete {
+        color: #ffffff !important;
+      }
+      .reports-page .news-card-actions .animate-ui-action-btn.edit {
+        background: #007AFF !important;
+        border: 1px solid #007AFF !important;
+        color: #ffffff !important;
+      }
+      .reports-page .news-card-actions .animate-ui-action-btn.delete {
+        background: #FF3B30 !important;
+        border: 1px solid #FF3B30 !important;
+        color: #ffffff !important;
+      }
+      .reports-page .news-card-actions .animate-ui-action-btn.edit:hover {
+        background: #0A66DB !important;
+        border-color: #0A66DB !important;
+      }
+      .reports-page .news-card-actions .animate-ui-action-btn.delete:hover {
+        background: #E63D32 !important;
+        border-color: #E63D32 !important;
       }
       .news-empty {
         text-align: center;
@@ -266,7 +288,7 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
         position: fixed;
         inset: 0;
         padding: 1.5rem;
-        background: rgba(8,15,30,0.7);
+        background: rgba(15,23,42,0.35);
         backdrop-filter: blur(6px);
         align-items: center;
         justify-content: center;
@@ -275,17 +297,17 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
       #editModal.is-open { display: flex; }
       #editModal .booking-modal-content {
         width: min(720px, 100%);
-        background: linear-gradient(145deg, #0f172a, #111827);
+        background: #ffffff;
         border-radius: 16px;
-        border: 1px solid rgba(255,255,255,0.08);
-        box-shadow: 0 20px 60px rgba(0,0,0,0.45);
+        border: 1px solid rgba(15,23,42,0.12);
+        box-shadow: 0 20px 60px rgba(15,23,42,0.2);
         padding: 1.8rem;
-        color: #e2e8f0;
+        color: #1e293b;
       }
       #editModal h2 {
         margin-top: 0;
         margin-bottom: 1rem;
-        color: #f8fafc;
+        color: #0f172a;
         text-align: center;
       }
       #editModal .booking-form-group {
@@ -296,16 +318,16 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
       }
       #editModal label {
         font-weight: 600;
-        color: rgba(255,255,255,0.85);
+        color: #334155;
       }
       #editModal input,
       #editModal textarea {
         width: 100%;
         padding: 0.75rem 0.9rem;
         border-radius: 10px;
-        border: 1px solid rgba(255,255,255,0.15);
-        background: rgba(15,23,42,0.85);
-        color: #f8fafc;
+        border: 1px solid rgba(15,23,42,0.14);
+        background: #ffffff;
+        color: #0f172a;
         font-family: inherit;
       }
       #editModal textarea { min-height: 140px; resize: vertical; }
@@ -331,9 +353,9 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
         cursor: pointer;
       }
       #editModal .btn-cancel {
-        background: rgba(248,250,252,0.1);
-        color: #e2e8f0;
-        border: 1px solid rgba(255,255,255,0.1);
+        background: #f8fafc;
+        color: #334155;
+        border: 1px solid rgba(15,23,42,0.14);
         border-radius: 10px;
         padding: 0.75rem 1.1rem;
         font-weight: 600;
@@ -346,7 +368,7 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
       #submitNewsBtn:active {
         opacity: 0.8;
       }
-        .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; margin-right: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+        .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; margin-right: 1.4rem; background: #ffffff; border: 1px solid rgba(15,23,42,0.1); box-shadow: 0 10px 26px rgba(15,23,42,0.08); }
         .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
     </style>
   </head>
@@ -394,16 +416,16 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
 
           <!-- Toggle button for news form -->
           <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleNewsFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleNewsForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+            <button type="button" id="toggleNewsFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#ffffff;border:1px solid rgba(15,23,42,0.16);color:#1e293b;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(15,23,42,0.08);" onclick="toggleNewsForm()" onmouseover="this.style.background='#f8fafc';this.style.borderColor='rgba(15,23,42,0.24)'" onmouseout="this.style.background='#ffffff';this.style.borderColor='rgba(15,23,42,0.16)'">
               <span id="toggleNewsFormIcon">▼</span> <span id="toggleNewsFormText">ซ่อนฟอร์ม</span>
             </button>
           </div>
 
-          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addNewsSection">
+          <section class="manage-panel" style="background:#ffffff; color:#0f172a;" id="addNewsSection">
             <div class="section-header">
               <div>
                 <h1>เพิ่มข่าวประชาสัมพันธ์ใหม่</h1>
-                <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">เผยแพร่ข่าวสารและประกาศสำคัญ</p>
+                <p style="margin-top:0.25rem;color:#64748b;">เผยแพร่ข่าวสารและประกาศสำคัญ</p>
               </div>
             </div>
             <form action="../Manage/process_news.php" method="post" id="newsForm">
@@ -423,7 +445,7 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
                   </div>
                   <div>
                     <label for="news_by">ผู้เผยแพร่</label>
-                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="ชื่อผู้เผยแพร่" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" readonly style="background: rgba(8,12,24,0.5); cursor: not-allowed; color: rgba(255,255,255,0.6);" />
+                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="ชื่อผู้เผยแพร่" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" readonly style="background:#f8fafc; border-color:rgba(15,23,42,0.12); cursor:not-allowed; color:#64748b;" />
                   </div>
                 </div>
                 <div class="news-form-actions">
@@ -444,9 +466,9 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
             <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>รายการข่าวทั้งหมด</h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">ข่าวประชาสัมพันธ์และประกาศต่างๆ</p>
+                <p style="color:#64748b;margin-top:0.2rem;">ข่าวประชาสัมพันธ์และประกาศต่างๆ</p>
               </div>
-              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(15,23,42,0.16);background:#ffffff;color:#0f172a;font-size:0.95rem;cursor:pointer;">
                 <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
                 <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
                 <option value="title" <?php echo ($sortBy === 'title' ? 'selected' : ''); ?>>ชื่อข่าว (ก-ฮ)</option>

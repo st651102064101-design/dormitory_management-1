@@ -5,12 +5,12 @@
 
 /* DataTable Container */
 .datatable-modern-container {
-  background: linear-gradient(135deg, rgba(18,24,40,0.9), rgba(7,13,26,0.95));
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: linear-gradient(135deg, rgba(255,255,255,0.98), rgba(248,250,252,0.96));
+  border: 1px solid rgba(148, 163, 184, 0.25);
   border-radius: 16px;
   overflow: hidden;
   padding: 1.5rem;
-  box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
 /* DataTable Wrapper */
@@ -49,10 +49,10 @@
 /* Search Input */
 .datatable-wrapper .datatable-input {
   padding: 0.75rem 1rem;
-  background: rgba(15, 23, 42, 0.8) !important;
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 12px !important;
-  color: #e2e8f0 !important;
+  color: #0f172a !important;
   font-size: 0.95rem;
   transition: all 0.3s ease;
   min-width: 250px;
@@ -65,16 +65,16 @@
 }
 
 .datatable-wrapper .datatable-input::placeholder {
-  color: #64748b;
+  color: #94a3b8;
 }
 
 /* Per Page Select */
 .datatable-wrapper .datatable-selector {
   padding: 0.6rem 2.5rem 0.6rem 1rem;
-  background: rgba(15, 23, 42, 0.8) !important;
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 10px !important;
-  color: #e2e8f0 !important;
+  color: #0f172a !important;
   font-size: 0.9rem;
   cursor: pointer;
   appearance: none;
@@ -91,7 +91,7 @@
 
 /* Info Text */
 .datatable-wrapper .datatable-info {
-  color: #94a3b8 !important;
+  color: #475569 !important;
   font-size: 0.9rem;
 }
 
@@ -103,17 +103,21 @@
 }
 
 .datatable-wrapper table thead {
-  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9)) !important;
+  background: #f8fafc !important;
+}
+
+.datatable-wrapper table thead tr {
+  background: #f8fafc !important;
 }
 
 .datatable-wrapper table thead th {
   padding: 1rem 1.25rem !important;
-  color: #f1f5f9 !important;
+  color: #475569 !important;
   font-weight: 600 !important;
   font-size: 0.85rem !important;
   text-transform: uppercase !important;
   letter-spacing: 0.05em !important;
-  border-bottom: 2px solid rgba(96, 165, 250, 0.3) !important;
+  border-bottom: 2px solid #e2e8f0 !important;
   background: transparent !important;
   white-space: nowrap;
   cursor: pointer;
@@ -132,18 +136,19 @@
 /* Table Body */
 .datatable-wrapper table tbody tr {
   transition: all 0.2s ease;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  border-bottom: 1px solid #e2e8f0;
+  background: #ffffff !important;
 }
 
 .datatable-wrapper table tbody tr:hover {
-  background: rgba(96, 165, 250, 0.08) !important;
+  background: #f8fafc !important;
 }
 
 .datatable-wrapper table tbody td {
   padding: 1rem 1.25rem !important;
-  color: #e2e8f0 !important;
+  color: #0f172a !important;
   font-size: 0.95rem !important;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid #e2e8f0 !important;
   vertical-align: middle;
 }
 
@@ -175,10 +180,10 @@
   min-width: 40px;
   height: 40px;
   padding: 0 0.75rem;
-  background: rgba(30, 41, 59, 0.6) !important;
-  border: 1px solid rgba(148, 163, 184, 0.2) !important;
+  background: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
   border-radius: 10px !important;
-  color: #94a3b8 !important;
+  color: #64748b !important;
   font-weight: 500;
   text-decoration: none;
   transition: all 0.2s ease;
@@ -187,9 +192,9 @@
 
 .datatable-wrapper .datatable-pagination-list-item a:hover,
 .datatable-wrapper .datatable-pagination-list-item button:hover {
-  background: rgba(96, 165, 250, 0.2) !important;
-  border-color: rgba(96, 165, 250, 0.4) !important;
-  color: #60a5fa !important;
+  background: #f1f5f9 !important;
+  border-color: #bfdbfe !important;
+  color: #0ea5e9 !important;
   transform: translateY(-2px);
 }
 
@@ -212,7 +217,7 @@
 .datatable-wrapper .datatable-empty {
   text-align: center;
   padding: 3rem 1rem;
-  color: #94a3b8;
+  color: #64748b;
 }
 
 /* Responsive */

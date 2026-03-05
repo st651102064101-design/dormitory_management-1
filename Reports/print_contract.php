@@ -22,6 +22,15 @@ header('Expires: 0');
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+$defaultViewMode = 'grid';
+try {
+    $viewStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'default_view_mode' LIMIT 1");
+    $viewRow = $viewStmt->fetch(PDO::FETCH_ASSOC);
+    if ($viewRow && strtolower((string)$viewRow['setting_value']) === 'list') {
+        $defaultViewMode = 'list';
+    }
+} catch (PDOException $e) {}
+
 // NEW: Allow access if coming from contract.php with valid token
 if (!empty($_GET['ctr_id']) && !$isTenantAccess && empty($_SESSION['admin_username'])) {
     try {
@@ -72,30 +81,90 @@ if ($ctr_id === 0) {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Tahoma, Arial, sans-serif; background: #f5f5f5; min-height: 100vh; }
+        body,
+        body.reports-page,
+        body.reports-page .app-main,
+        body.reports-page .container {
+            font-family: Tahoma, Arial, sans-serif;
+            background: #ffffff !important;
+            color: #0f172a !important;
+            min-height: 100vh;
+        }
         .app-shell { display: flex; min-height: 100vh; }
         .container { width: 100%; max-width: 100%; margin: 20px 0 0 0; padding: 0 24px 24px 24px; display: flex; flex-direction: column; gap: 16px; }
-        .header { background: rgba(255,255,255,0.04); padding: 24px; border-radius: 14px; margin-bottom: 20px; box-shadow: 0 18px 40px rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
-        .header h1 { font-size: 28px; color: #e2e8f0; margin: 0; }
-        .header p { font-size: 15px; color: #cbd5e1; }
+        .header { background: #ffffff; padding: 24px; border-radius: 14px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(15,23,42,0.08); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+        .header h1 { font-size: 28px; color: #0f172a; margin: 0; }
+        .header p { font-size: 15px; color: #64748b; }
         .count { background: rgba(96,165,250,0.12); padding: 10px 16px; border-radius: 10px; margin-top: 4px; font-weight: 700; color: #60a5fa; display: block; border: 1px solid rgba(96,165,250,0.3); }
         .toolbar { display: flex; width: 100%; justify-content: flex-start; gap: 12px; margin: 4px 0 18px; flex-wrap: wrap; }
         .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.12); transition: transform 0.15s ease, box-shadow 0.15s ease; background: #2563eb; color: #fff; }
         .btn.secondary { background: #e5e7eb; color: #111827; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.16); }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; }
-        .card { background: rgba(255,255,255,0.04) !important; border-radius: 12px; padding: 20px; border: 1px solid rgba(255,255,255,0.08); box-shadow: 0 12px 30px rgba(0,0,0,0.35); cursor: pointer; text-decoration: none; color: #e2e8f0; display: block; transition: all 0.2s ease; }
-        .card:hover { transform: translateY(-3px); box-shadow: 0 16px 40px rgba(0,0,0,0.45); border-color: rgba(96,165,250,0.4); }
+        .card { background: #ffffff !important; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; box-shadow: 0 8px 20px rgba(15,23,42,0.08); cursor: pointer; text-decoration: none; color: #1e293b; display: block; transition: all 0.2s ease; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 16px 32px rgba(15,23,42,0.12); border-color: #93c5fd; }
         .card-number { font-size: 20px; font-weight: bold; color: #60a5fa; margin-bottom: 12px; }
-        .card-info { border-top: 1px solid rgba(255,255,255,0.08); padding-top: 12px; }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #e2e8f0; }
-        .label { color: #94a3b8; font-weight: 600; min-width: 80px; }
-        .value { color: #f8fafc; text-align: right; flex: 1; }
-        .table-wrap { background: rgba(255,255,255,0.04); border-radius: 12px; padding: 16px; box-shadow: 0 12px 30px rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.08); }
-        table { width: 100%; border-collapse: collapse; color: #e2e8f0; }
-        th, td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.08); text-align: left; font-size: 14px; }
-        th { background: rgba(255,255,255,0.05); font-weight: 700; color: #f8fafc; }
-        tr:hover td { background: rgba(255,255,255,0.03); }
+        .card-info { border-top: 1px solid #e2e8f0; padding-top: 12px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #334155; }
+        .label { color: #64748b; font-weight: 600; min-width: 80px; }
+        .value { color: #0f172a; text-align: right; flex: 1; }
+        .table-wrap { background: #ffffff; border-radius: 12px; padding: 16px; box-shadow: 0 8px 20px rgba(15,23,42,0.08); border: 1px solid #e2e8f0; }
+        table { width: 100%; border-collapse: collapse; color: #1e293b; }
+        th, td { padding: 10px 12px; border-bottom: 1px solid #e2e8f0; text-align: left; font-size: 14px; }
+        th { background: #f8fafc; font-weight: 700; color: #334155; }
+        tr:hover td { background: #f8fafc; }
+
+        #table-view .datatable-top,
+        #table-view .datatable-bottom {
+            background: #ffffff !important;
+        }
+        #table-view .datatable-input {
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        #table-view .datatable-input::placeholder {
+            color: #64748b !important;
+        }
+        #table-view .datatable-selector {
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            color: #0f172a !important;
+        }
+        #table-view .datatable-dropdown label,
+        #table-view .datatable-info {
+            color: #475569 !important;
+        }
+        #table-view .datatable-table thead th,
+        #table-view .datatable-table thead td,
+        #table-view .datatable-table th {
+            background: #f8fafc !important;
+            color: #334155 !important;
+            border-color: #e2e8f0 !important;
+        }
+        #table-view .datatable-table tbody tr,
+        #table-view .datatable-table tbody td,
+        #table-view .datatable-table td {
+            background: #ffffff !important;
+            color: #1e293b !important;
+            border-color: #e2e8f0 !important;
+        }
+        #table-view .datatable-table tbody tr:hover,
+        #table-view .datatable-table tbody tr:hover td {
+            background: #f8fafc !important;
+        }
+        #table-view .datatable-pagination a,
+        #table-view .datatable-pagination button {
+            background: #ffffff !important;
+            color: #334155 !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+        #table-view .datatable-pagination .active a,
+        #table-view .datatable-pagination .active button {
+            background: #60a5fa !important;
+            color: #ffffff !important;
+            border-color: #60a5fa !important;
+        }
         .hidden { display: none; }
     </style>
 </head>
@@ -150,30 +219,28 @@ if ($ctr_id === 0) {
                     const toggleBtn = document.getElementById('toggle-view');
                     const gridView = document.querySelector('.grid');
                     const tableView = document.getElementById('table-view');
-
-                    function setViewCookie(mode) {
-                        document.cookie = 'contractView=' + mode + '; path=/; max-age=' + (60 * 60 * 24 * 30);
-                    }
-                    function getViewCookie() {
-                        const match = document.cookie.match(/(?:^|; )contractView=([^;]+)/);
-                        return match ? decodeURIComponent(match[1]) : null;
-                    }
+                    const safeGet = (key) => {
+                        try { return localStorage.getItem(key); } catch (e) { return null; }
+                    };
                     function showTable() {
                         tableView.classList.remove('hidden');
                         gridView.classList.add('hidden');
                         toggleBtn.textContent = 'ดูแบบการ์ด';
-                        setViewCookie('table');
                     }
                     function showCard() {
                         tableView.classList.add('hidden');
                         gridView.classList.remove('hidden');
                         toggleBtn.textContent = 'ดูแบบตาราง';
-                        setViewCookie('card');
                     }
 
                     if (toggleBtn && gridView && tableView) {
-                        const savedView = getViewCookie();
-                        if (savedView === 'table') {
+                        const dbDefaultView = '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>';
+                        const globalViewMode = safeGet('adminDefaultViewMode');
+                        const initialView = globalViewMode === 'list'
+                            ? 'table'
+                            : (globalViewMode === 'grid' ? 'card' : dbDefaultView);
+
+                        if (initialView === 'table') {
                             showTable();
                         } else {
                             showCard();
