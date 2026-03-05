@@ -83,10 +83,23 @@ switch ($sortBy) {
     $orderBy = 'e.exp_id DESC';
 }
 
+$availableMonths = [];
+try {
+  $monthStmt = $pdo->query("\n+    SELECT DISTINCT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key\n+    FROM expense e\n+    LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n+    WHERE c.ctr_status = '0' AND e.exp_month IS NOT NULL\n+    ORDER BY month_key DESC\n+  ");
+  $availableMonths = $monthStmt ? $monthStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+} catch (PDOException $e) {}
+
+$selectedMonth = isset($_GET['filter_month']) ? trim((string)$_GET['filter_month']) : '';
+if ($selectedMonth === '' && !empty($availableMonths)) {
+  $selectedMonth = (string)$availableMonths[0];
+}
+if ($selectedMonth !== '' && !in_array($selectedMonth, $availableMonths, true)) {
+  $selectedMonth = !empty($availableMonths) ? (string)$availableMonths[0] : '';
+}
+
 // ดึงข้อมูลค่าใช้จ่าย - เฉพาะสัญญาที่ active (ctr_status = '0')
-// และป้องกัน duplicate โดยใช้ DISTINCT on expense.exp_id
-$expStmt = $pdo->query("
-  SELECT e.*,
+// และแยกตามเดือนที่เลือกเท่านั้น
+$expenseSql = "\n+  SELECT e.*,
          c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_status,
          t.tnt_name, t.tnt_phone,
          r.room_number, r.room_id,
@@ -96,10 +109,21 @@ $expStmt = $pdo->query("
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
   LEFT JOIN room r ON c.room_id = r.room_id
   LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-  WHERE c.ctr_status = '0'
+  WHERE c.ctr_status = '0'";
+
+$expenseParams = [];
+if ($selectedMonth !== '') {
+  $expenseSql .= "\n  AND DATE_FORMAT(e.exp_month, '%Y-%m') = :selectedMonth";
+  $expenseParams[':selectedMonth'] = $selectedMonth;
+}
+
+$expenseSql .= "
   GROUP BY e.exp_id
   ORDER BY $orderBy
-");
+";
+
+$expStmt = $pdo->prepare($expenseSql);
+$expStmt->execute($expenseParams);
 $expenses = $expStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // ดึงข้อมูล payment สำหรับแต่ละ expense (เฉพาะที่อนุมัติแล้ว pay_status = '1')
@@ -120,6 +144,17 @@ while ($pay = $paymentStmt->fetch(PDO::FETCH_ASSOC)) {
     $paymentsByExp[$expId]['count']++;
     $paymentsByExp[$expId]['payments'][] = $pay;
 }
+
+$paymentFlagsByExp = [];
+try {
+  $paymentFlagStmt = $pdo->query("\n    SELECT\n      exp_id,\n      SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ') THEN 1 ELSE 0 END) AS pending_count,\n      SUM(CASE WHEN pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ') THEN pay_amount ELSE 0 END) AS approved_amount\n    FROM payment\n    GROUP BY exp_id\n  ");
+  while ($row = $paymentFlagStmt->fetch(PDO::FETCH_ASSOC)) {
+    $paymentFlagsByExp[(int)$row['exp_id']] = [
+      'pending_count' => (int)($row['pending_count'] ?? 0),
+      'approved_amount' => (int)($row['approved_amount'] ?? 0),
+    ];
+  }
+} catch (PDOException $e) {}
 
 // ดึงสัญญาที่ใช้งานอยู่สำหรับฟอร์ม
 $activeContracts = $pdo->query("
@@ -459,6 +494,227 @@ try {
       .report-table td:nth-child(6) {
         min-width: 100px;
       }
+
+      .expenses-view-toggle {
+        padding: 0.6rem 0.95rem;
+        border-radius: 10px;
+        border: 1px solid rgba(148,163,184,0.28);
+        background: rgba(255,255,255,0.05);
+        color: #cbd5e1;
+        cursor: pointer;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+      }
+
+      .expenses-view-toggle:hover {
+        background: rgba(255,255,255,0.1);
+      }
+
+      .expenses-view-toggle svg {
+        width: 16px;
+        height: 16px;
+        stroke: currentColor;
+      }
+
+      .expenses-actions {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.55rem;
+      }
+
+      .expenses-filters-line {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+      }
+
+      .is-hidden {
+        display: none !important;
+      }
+
+      .expenses-row-view {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 0.9rem;
+      }
+
+      .expense-row-card {
+        background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.95));
+        border: 1px solid rgba(148,163,184,0.22);
+        border-radius: 14px;
+        padding: 1rem 1.1rem;
+        cursor: pointer;
+      }
+
+      .expense-row-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.7rem;
+        margin-bottom: 0.55rem;
+      }
+
+      .expense-row-main {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        color: #f8fafc;
+      }
+
+      .expense-row-sub {
+        color: #94a3b8;
+        font-size: 0.9rem;
+      }
+
+      .expense-row-meta {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.45rem 0.8rem;
+        color: #cbd5e1;
+        font-size: 0.9rem;
+      }
+
+      html.light-theme .expenses-view-toggle {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-color: rgba(15,23,42,0.15) !important;
+      }
+
+      html.light-theme .expense-row-card {
+        background: #ffffff !important;
+        border-color: rgba(15,23,42,0.12) !important;
+      }
+
+      html.light-theme .expense-row-main {
+        color: #0f172a !important;
+      }
+
+      html.light-theme .expense-row-sub {
+        color: #64748b !important;
+      }
+
+      html.light-theme .expense-row-meta {
+        color: #334155 !important;
+      }
+
+      .payment-modal-overlay {
+        position: fixed;
+        inset: 0;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        background: rgba(2, 6, 23, 0.55);
+        z-index: 9999;
+        padding: 1rem;
+      }
+
+      .payment-modal-card {
+        position: relative;
+        width: min(620px, 92vw);
+        background: #ffffff;
+        border-radius: 18px;
+        border: 1px solid #dbe7e2;
+        box-shadow: 0 24px 56px rgba(15, 23, 42, 0.28);
+        padding: 1rem 1.05rem 0.95rem;
+      }
+
+      .payment-modal-close {
+        position: absolute;
+        top: 0.7rem;
+        right: 0.75rem;
+        border: none;
+        background: transparent;
+        color: #64748b;
+        font-size: 1.4rem;
+        cursor: pointer;
+      }
+
+      .payment-modal-check {
+        width: 56px;
+        height: 56px;
+        margin: -40px auto 0.2rem;
+        border-radius: 999px;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #22c55e, #16a34a);
+        color: #fff;
+        box-shadow: 0 10px 30px rgba(34, 197, 94, 0.35);
+      }
+
+      .payment-modal-check svg {
+        width: 30px;
+        height: 30px;
+      }
+
+      .payment-modal-title {
+        margin: 0.1rem 0 0.55rem;
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #1f2937;
+      }
+
+      .payment-modal-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.6fr;
+        gap: 0.75rem 1rem;
+        align-items: start;
+      }
+
+      .payment-modal-label {
+        color: #334155;
+        font-weight: 600;
+        font-size: 1.15rem;
+        line-height: 1.35;
+      }
+
+      .payment-modal-value {
+        color: #1f2937;
+        font-size: 1.15rem;
+        line-height: 1.35;
+      }
+
+      .payment-modal-status {
+        color: #22c55e;
+        font-weight: 700;
+      }
+
+      .payment-modal-status.pending {
+        color: #f59e0b;
+      }
+
+      .payment-proof-thumb {
+        margin-top: 0.3rem;
+        width: 100%;
+        max-width: 260px;
+        border-radius: 14px;
+        border: 1px solid #e2e8f0;
+      }
+
+      @media (max-width: 768px) {
+        .payment-modal-title,
+        .payment-modal-label,
+        .payment-modal-value {
+          font-size: 1rem;
+        }
+
+        .payment-modal-grid {
+          grid-template-columns: 1fr 1.35fr;
+          gap: 0.45rem 0.65rem;
+        }
+
+        .expenses-actions,
+        .expenses-filters-line {
+          width: 100%;
+          align-items: flex-start;
+          justify-content: flex-start;
+        }
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -524,12 +780,17 @@ try {
 
 
           <section class="manage-panel">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>รายการค่าใช้จ่ายทั้งหมด</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ประวัติการเรียกเก็บค่าใช้จ่ายแต่ละห้อง</p>
               </div>
-              <div style="display:flex;gap:0.75rem;align-items:center;flex-wrap:wrap;">
+              <div class="expenses-actions">
+                <button type="button" id="expensesViewToggle" class="expenses-view-toggle" onclick="toggleExpensesView()">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                  <span id="expensesViewToggleText">มุมมอง list(ตาราง)</span>
+                </button>
+                <div class="expenses-filters-line">
                 <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
                   <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
                   <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
@@ -537,41 +798,30 @@ try {
                 </select>
                 <label for="monthFilter" style="color:#94a3b8;font-size:0.9rem;font-weight:600;">กรองตามเดือน:</label>
                 <select id="monthFilter" style="padding:0.5rem 0.75rem;border-radius:8px;background:rgba(15,23,42,0.9);color:#e2e8f0;border:1px solid rgba(148,163,184,0.35);font-size:0.9rem;min-width:150px;">
-                  <option value="" selected>ทั้งหมด</option>
+                  <?php if (empty($availableMonths)): ?>
+                    <option value="">ไม่มีข้อมูลเดือน</option>
+                  <?php endif; ?>
                   <?php
-                    // สร้างรายการเดือนที่มีข้อมูล
-                    $months = [];
                     $thaiMonths = [
                       '01' => 'มกราคม', '02' => 'กุมภาพันธ์', '03' => 'มีนาคม', '04' => 'เมษายน',
                       '05' => 'พฤษภาคม', '06' => 'มิถุนายน', '07' => 'กรกฎาคม', '08' => 'สิงหาคม',
                       '09' => 'กันยายน', '10' => 'ตุลาคม', '11' => 'พฤศจิกายน', '12' => 'ธันวาคม'
                     ];
-                    
-                    foreach ($expenses as $exp) {
-                      if ($exp['exp_month']) {
-                        $monthKey = date('Y-m', strtotime($exp['exp_month']));
-                        $month = date('m', strtotime($exp['exp_month']));
-                        $year = date('Y', strtotime($exp['exp_month']));
-                        $yearThai = (int)$year + 543; // แปลงเป็น พ.ศ.
-                        $monthText = $thaiMonths[$month] . ' ' . $yearThai;
-                        
-                        if (!isset($months[$monthKey])) {
-                          $months[$monthKey] = $monthText;
-                        }
-                      }
-                    }
-                    krsort($months); // เรียงจากใหม่ไปเก่า
-                    
-                    $isFirst = true;
-                    foreach ($months as $key => $text) {
-                      // ไม่ต้อง selected ที่เดือนล่าสุด ให้ selected เฉพาะ 'ทั้งหมด' ด้านบน
-                      echo '<option value="' . htmlspecialchars($key, ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($text, ENT_QUOTES, 'UTF-8') . '</option>';
+
+                    foreach ($availableMonths as $monthKey) {
+                      $month = substr((string)$monthKey, 5, 2);
+                      $year = substr((string)$monthKey, 0, 4);
+                      $yearThai = (int)$year + 543;
+                      $monthText = ($thaiMonths[$month] ?? $month) . ' ' . $yearThai;
+                      $selectedAttr = ((string)$selectedMonth === (string)$monthKey) ? ' selected' : '';
+                      echo '<option value="' . htmlspecialchars((string)$monthKey, ENT_QUOTES, 'UTF-8') . '"' . $selectedAttr . '>' . htmlspecialchars($monthText, ENT_QUOTES, 'UTF-8') . '</option>';
                     }
                   ?>
                 </select>
+                </div>
               </div>
             </div>
-            <div class="report-table">
+            <div id="expensesTableWrap" class="report-table is-hidden">
               <table class="table--compact" id="table-expenses">
                 <thead>
                   <tr>
@@ -593,7 +843,7 @@ try {
                     </tr>
                   <?php else: ?>
                     <?php foreach ($expenses as $exp): ?>
-                      <tr>
+                      <tr class="payment-preview-trigger" data-expense-id="<?php echo (int)$exp['exp_id']; ?>" data-tenant-name="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>" data-status-text="รอตรวจสอบ">
                         <td>#<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?></td>
                         <td>
                           <div class="expense-table-room">
@@ -635,20 +885,24 @@ try {
                             $statusStmt = $pdo->prepare("
                               SELECT 
                                 COALESCE(SUM(CASE WHEN pay_remark = 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as deposit_paid,
-                                COALESCE(SUM(CASE WHEN pay_remark IS NULL OR pay_remark != 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as charges_paid
+                                COALESCE(SUM(CASE WHEN pay_remark IS NULL OR pay_remark != 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as charges_paid,
+                                COALESCE(SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ') THEN 1 ELSE 0 END), 0) as pending_count
                               FROM payment
-                              WHERE exp_id = ? AND pay_status = '1'
+                              WHERE exp_id = ?
                             ");
                             $statusStmt->execute([$expId]);
                             $statusData = $statusStmt->fetch(PDO::FETCH_ASSOC);
                             $statusDepositPaid = (int)($statusData['deposit_paid'] ?? 0);
                             $statusChargesPaid = (int)($statusData['charges_paid'] ?? 0);
+                            $statusPendingCount = (int)($statusData['pending_count'] ?? 0);
                             
                             $statusDepositTotal = 2000;
                             $statusChargesTotal = (int)($exp['exp_total'] ?? 0);
                             
                             // Determine status based on payments
-                            if ($statusDepositPaid >= $statusDepositTotal && $statusChargesPaid >= $statusChargesTotal) {
+                            if ($statusPendingCount > 0) {
+                              $status = '2'; // รอตรวจสอบ
+                            } elseif ($statusDepositPaid >= $statusDepositTotal && $statusChargesPaid >= $statusChargesTotal) {
                               $status = '1'; // ชำระแล้ว
                             } elseif ($statusDepositPaid > 0 || $statusChargesPaid > 0) {
                               $status = '3'; // ชำระยังไม่ครบ
@@ -775,47 +1029,63 @@ try {
                 </tbody>
               </table>
             </div>
+
+            <div id="expensesRowView" class="expenses-row-view">
+              <?php if (empty($expenses)): ?>
+                <div class="expense-row-card" style="text-align:center;color:#64748b;">ยังไม่มีข้อมูลค่าใช้จ่าย</div>
+              <?php else: ?>
+                <?php foreach ($expenses as $exp): ?>
+                  <?php
+                    $rowExpId = (int)($exp['exp_id'] ?? 0);
+                    $rowTotal = (int)($exp['exp_total'] ?? 0);
+                    $rowPendingCount = (int)($paymentFlagsByExp[$rowExpId]['pending_count'] ?? 0);
+                    $rowApprovedAmount = (int)($paymentFlagsByExp[$rowExpId]['approved_amount'] ?? 0);
+
+                    if ($rowPendingCount > 0) {
+                      $rowExpStatus = '2';
+                    } elseif ($rowTotal > 0 && $rowApprovedAmount >= $rowTotal) {
+                      $rowExpStatus = '1';
+                    } elseif ($rowApprovedAmount > 0) {
+                      $rowExpStatus = '3';
+                    } else {
+                      $rowExpStatus = '0';
+                    }
+
+                    $rowStatusText = $statusMap[$rowExpStatus] ?? 'ไม่ระบุ';
+                    $rowStatusColor = $statusColors[$rowExpStatus] ?? '#94a3b8';
+                  ?>
+                     <div class="expense-row-card payment-preview-trigger"
+                       data-month="<?php echo $exp['exp_month'] ? date('Y-m', strtotime((string)$exp['exp_month'])) : ''; ?>"
+                       data-expense-id="<?php echo (int)$exp['exp_id']; ?>"
+                       data-tenant-name="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>"
+                       data-status-text="<?php echo htmlspecialchars((string)$rowStatusText, ENT_QUOTES, 'UTF-8'); ?>">
+                    <div class="expense-row-top">
+                      <div class="expense-row-main">
+                        <strong>#<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?></strong>
+                        <span class="expense-row-sub">ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?> • <?php echo htmlspecialchars($exp['tnt_name'] ?? '-'); ?></span>
+                      </div>
+                      <span class="status-badge" style="background: <?php echo htmlspecialchars($rowStatusColor); ?>;"><?php echo htmlspecialchars($rowStatusText); ?></span>
+                    </div>
+                    <div class="expense-row-meta">
+                      <div>เดือน/ปี: <?php echo $exp['exp_month'] ? date('m/Y', strtotime((string)$exp['exp_month'])) : '-'; ?></div>
+                      <div>ค่าห้อง: <strong>฿<?php echo number_format((int)($exp['room_price'] ?? 0)); ?></strong></div>
+                      <div>ค่าไฟ: <strong>฿<?php echo number_format((int)($exp['exp_elec_chg'] ?? 0)); ?></strong></div>
+                      <div>ค่าน้ำ: <strong>฿<?php echo number_format((int)($exp['exp_water'] ?? 0)); ?></strong></div>
+                      <div>ยอดรวม: <strong style="color:#22c55e;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></strong></div>
+                    </div>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
+            </div>
           </section>
         </div>
       </main>
     </div>
 
-    <!-- Proof Modal -->
-    <div id="paymentProofModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;
-      background:rgba(0,0,0,0);z-index:9999;
-      transition:background 0.45s cubic-bezier(0.32, 0.72, 0, 1);opacity:0;
-      padding:2rem;box-sizing:border-box;align-items:center;justify-content:center;">
-      
-      <button id="closePaymentProofModal" style="position:fixed;top:1rem;right:1rem;
-        background:rgba(255,255,255,0.15);color:#fff;border:none;width:3rem;height:3rem;
-        border-radius:50%;cursor:pointer;font-size:1.5rem;font-weight:600;
-        transition:all 0.4s cubic-bezier(0.32, 0.72, 0, 1);backdrop-filter:blur(20px) saturate(180%);
-        transform:scale(0.7);opacity:0;box-shadow:0 8px 32px rgba(0,0,0,0.3);z-index:10000;">✕</button>
-        
-      <div id="paymentProofContent" style="width:75vw;max-width:75vw;max-height:80vh;overflow-y:auto;
-        background:rgba(15,23,42,0.75);border-radius:20px;padding:1.5rem;
-        backdrop-filter:blur(40px) saturate(180%);box-shadow:0 25px 50px -12px rgba(0,0,0,0.6),
-        0 0 1px rgba(255,255,255,0.1) inset;transition:all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
-        opacity:0;border:1px solid rgba(255,255,255,0.08);
-        text-align:center;position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.85);">
-        
-        <img id="paymentProofImage" src="" alt="หลักฐานการชำระเงิน" 
-          style="width:100%;height:auto;border-radius:12px;display:none;
-          transition:opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1),transform 0.5s cubic-bezier(0.32, 0.72, 0, 1);
-          transform:scale(0.98);" />
-        
-        <embed id="paymentProofEmbed" src="" type="application/pdf" 
-          style="width:80vw;height:80vh;border-radius:12px;display:none;
-          transition:opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);" />
-        
-        <div id="paymentProofError" style="display:none;color:#f87171;padding:2rem;text-align:center;
-          font-size:1.1rem;transition:opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1);">
-          ไม่สามารถแสดงไฟล์ได้
-        </div>
-
-        <div id="paymentProofList" style="display:none;">
-          <!-- Payment list will be populated here -->
-        </div>
+    <div id="paymentProofModal" class="payment-modal-overlay" aria-hidden="true">
+      <div class="payment-modal-card" role="dialog" aria-modal="true" aria-label="รายละเอียดการชำระเงิน">
+        <button id="closePaymentProofModal" class="payment-modal-close" type="button" aria-label="ปิด">✕</button>
+        <div id="paymentProofContent"></div>
       </div>
     </div>
 
@@ -825,6 +1095,29 @@ try {
     <script src="/dormitory_management/Public/Assets/Javascript/main.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
+      function applyExpensesView(mode) {
+        const tableWrap = document.getElementById('expensesTableWrap');
+        const rowWrap = document.getElementById('expensesRowView');
+        const toggleText = document.getElementById('expensesViewToggleText');
+        if (!tableWrap || !rowWrap) return;
+
+        const normalized = mode === 'table' ? 'table' : 'grid';
+        tableWrap.classList.toggle('is-hidden', normalized !== 'table');
+        rowWrap.classList.toggle('is-hidden', normalized === 'table');
+
+        if (toggleText) {
+          toggleText.textContent = normalized === 'table' ? 'มุมมอง grid' : 'มุมมอง list(ตาราง)';
+        }
+
+        try { localStorage.setItem('expensesViewMode', normalized); } catch (e) {}
+      }
+
+      function toggleExpensesView() {
+        const tableWrap = document.getElementById('expensesTableWrap');
+        const nextMode = tableWrap && tableWrap.classList.contains('is-hidden') ? 'table' : 'grid';
+        applyExpensesView(nextMode);
+      }
+
       function changeSortBy(sortValue) {
         const url = new URL(window.location);
         url.searchParams.set('sort', sortValue);
@@ -1087,6 +1380,13 @@ try {
               console.error('Failed to init expense table', err);
             }
           }
+
+          try {
+            const savedViewMode = localStorage.getItem('expensesViewMode') || 'grid';
+            applyExpensesView(savedViewMode);
+          } catch (e) {
+            applyExpensesView('grid');
+          }
         });
       } else {
         setupStatusButtons();
@@ -1099,6 +1399,13 @@ try {
           section.style.display = 'none';
           icon.textContent = '▶';
           text.textContent = 'แสดงฟอร์ม';
+        }
+
+        try {
+          const savedViewMode = localStorage.getItem('expensesViewMode') || 'grid';
+          applyExpensesView(savedViewMode);
+        } catch (e) {
+          applyExpensesView('grid');
         }
       }
 
@@ -1415,173 +1722,122 @@ try {
     <script>
       const paymentProofModal = document.getElementById('paymentProofModal');
       const closePaymentProofModal = document.getElementById('closePaymentProofModal');
-      const paymentProofImage = document.getElementById('paymentProofImage');
-      const paymentProofEmbed = document.getElementById('paymentProofEmbed');
-      const paymentProofError = document.getElementById('paymentProofError');
       const paymentProofContent = document.getElementById('paymentProofContent');
-      const paymentProofList = document.getElementById('paymentProofList');
+      const ownerBankName = <?php echo json_encode((string)($settings['bank_name'] ?? ''), JSON_UNESCAPED_UNICODE); ?>;
+      const ownerAccountNumber = <?php echo json_encode((string)($settings['bank_account_number'] ?? ''), JSON_UNESCAPED_UNICODE); ?>;
 
-      // Open modal when clicking view payment button
-      document.querySelectorAll('.view-payment-btn').forEach(btn => {
-        btn.addEventListener('click', async function() {
-          const expenseId = this.getAttribute('data-expense-id');
-          if (!expenseId) return;
+      function renderPaymentModalCard(payment, context) {
+        const proofSrc = payment.pay_proof
+          ? '/dormitory_management/Public/Assets/Images/Payments/' + payment.pay_proof
+          : '';
+        const ext = String(payment.pay_proof || '').toLowerCase().split('.').pop();
+        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+        const paidDate = payment.pay_date ? new Date(payment.pay_date).toLocaleDateString('th-TH') : '-';
+        const isVerified = String(payment.pay_status) === '1';
+        const statusText = isVerified ? 'ชำระแล้ว' : 'รอตรวจสอบ';
+        const statusClass = isVerified ? 'paid' : 'pending';
+        const proofHtml = !proofSrc
+          ? '<div class="payment-modal-value" style="color:#94a3b8;">-</div>'
+          : (isImage
+              ? '<img class="payment-proof-thumb" src="' + proofSrc + '" alt="หลักฐานการโอน" />'
+              : '<a class="payment-modal-value" style="color:#2563eb;font-weight:700;" href="' + proofSrc + '" target="_blank" rel="noopener">เปิดไฟล์หลักฐาน</a>');
 
-          try {
-            // Fetch payment records for this expense
-            console.log('Fetching payments for expense:', expenseId);
-            const response = await fetch('/Dormitory_Management/Reports/get_payment_proofs.php?exp_id=' + encodeURIComponent(expenseId), {
-              credentials: 'include'
-            });
+        paymentProofContent.innerHTML = `
+          <div class="payment-modal-check">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          </div>
+          <h3 class="payment-modal-title">แจ้งชำระเงิน</h3>
+          <div class="payment-modal-grid">
+            <div class="payment-modal-label">สถานะ</div>
+            <div class="payment-modal-value payment-modal-status ${statusClass}">• ${statusText}</div>
 
-            console.log('Response status:', response.status);
-            const responseText = await response.text();
-            console.log('Response text:', responseText);
-            
-            if (!response.ok) throw new Error('Failed to fetch payments: ' + response.status);
+            <div class="payment-modal-label">โดย ผู้เช่า</div>
+            <div class="payment-modal-value">${context.tenantName || '-'}</div>
 
-            const data = JSON.parse(responseText);
-            console.log('Fetched data:', data);
+            <div class="payment-modal-label">โอนเงินเข้าบัญชี</div>
+            <div class="payment-modal-value">${ownerBankName || '-'}<br>${ownerAccountNumber || '-'}</div>
 
-            if (data.success && data.payments.length > 0) {
-              // Show first payment
-              showPaymentProof(data.payments[0]);
+            <div class="payment-modal-label">วันที่ชำระ</div>
+            <div class="payment-modal-value">${paidDate}</div>
 
-              // Build payment list if multiple proofs
-              if (data.payments.length > 1) {
-                buildPaymentList(data.payments);
-              }
-            } else {
-              paymentProofError.textContent = 'ไม่พบหลักฐานการชำระเงิน';
-              paymentProofError.style.display = 'block';
-              paymentProofImage.style.display = 'none';
-              paymentProofEmbed.style.display = 'none';
-            }
+            <div class="payment-modal-label">จำนวนเงิน</div>
+            <div class="payment-modal-value">฿${Number(payment.pay_amount || 0).toLocaleString('th-TH')}</div>
 
-            // Show modal
-            requestAnimationFrame(() => {
-              paymentProofModal.style.display = 'flex';
-              requestAnimationFrame(() => {
-                paymentProofModal.style.background = 'rgba(0,0,0,0.75)';
-                paymentProofModal.style.opacity = '1';
-                paymentProofContent.style.transform = 'translate(-50%,-50%) scale(1)';
-                paymentProofContent.style.opacity = '1';
-                closePaymentProofModal.style.transform = 'scale(1)';
-                closePaymentProofModal.style.opacity = '1';
-              });
-            });
-          } catch (error) {
-            console.error('Error fetching payments:', error);
-            paymentProofError.textContent = 'เกิดข้อผิดพลาดในการดึงข้อมูล';
-            paymentProofError.style.display = 'block';
-            paymentProofModal.style.display = 'block';
-            paymentProofModal.style.background = 'rgba(0,0,0,0.75)';
-            paymentProofModal.style.opacity = '1';
+            <div class="payment-modal-label">หลักฐานการโอน</div>
+            <div>${proofHtml}</div>
+          </div>
+        `;
+      }
+
+      function showPaymentModal() {
+        if (!paymentProofModal) return;
+        paymentProofModal.style.display = 'flex';
+        paymentProofModal.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeModal() {
+        if (!paymentProofModal) return;
+        paymentProofModal.style.display = 'none';
+        paymentProofModal.setAttribute('aria-hidden', 'true');
+      }
+
+      function notifyPaymentError(message) {
+        if (typeof showErrorToast === 'function') {
+          showErrorToast(message);
+        } else {
+          alert(message);
+        }
+      }
+
+      async function openPaymentPreview(expenseId, context) {
+        if (!expenseId) return;
+
+        try {
+          const response = await fetch('/dormitory_management/Reports/get_payment_proofs.php?exp_id=' + encodeURIComponent(expenseId), {
+            credentials: 'include'
+          });
+          if (!response.ok) throw new Error('ไม่สามารถโหลดข้อมูลการชำระเงินได้');
+          const data = await response.json();
+          if (!data.success || !Array.isArray(data.payments) || data.payments.length === 0) {
+            notifyPaymentError('ไม่พบข้อมูลการชำระเงิน');
+            closeModal();
+            return;
           }
+
+          renderPaymentModalCard(data.payments[0], context);
+          showPaymentModal();
+        } catch (error) {
+          notifyPaymentError(error.message || 'เกิดข้อผิดพลาด');
+          closeModal();
+        }
+      }
+
+      document.querySelectorAll('.payment-preview-trigger').forEach(card => {
+        card.addEventListener('click', function() {
+          openPaymentPreview(this.dataset.expenseId, {
+            tenantName: this.dataset.tenantName || '-',
+            statusText: this.dataset.statusText || 'รอตรวจสอบ'
+          });
         });
       });
 
-      function showPaymentProof(payment) {
-        // Hide all elements first
-        paymentProofImage.style.display = 'none';
-        paymentProofEmbed.style.display = 'none';
-        paymentProofError.style.display = 'none';
-
-        if (!payment.pay_proof) {
-          paymentProofError.textContent = 'ไม่มีหลักฐานสำหรับการชำระนี้';
-          paymentProofError.style.display = 'block';
-          return;
-        }
-
-        const ext = payment.pay_proof.toLowerCase().split('.').pop();
-        const isPdf = ext === 'pdf';
-        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-
-        if (isPdf) {
-          paymentProofEmbed.src = '/dormitory_management/Public/Assets/Images/Payments/' + payment.pay_proof;
-          paymentProofEmbed.style.display = 'block';
-        } else if (isImage) {
-          paymentProofImage.src = '/dormitory_management/Public/Assets/Images/Payments/' + payment.pay_proof;
-          paymentProofImage.style.display = 'block';
-          paymentProofImage.style.opacity = '0';
-          paymentProofImage.style.transform = 'scale(0.98)';
-          
-          paymentProofImage.onload = () => {
-            paymentProofImage.style.transition = 'opacity 0.5s cubic-bezier(0.32, 0.72, 0, 1), transform 0.5s cubic-bezier(0.32, 0.72, 0, 1)';
-            paymentProofImage.style.opacity = '1';
-            paymentProofImage.style.transform = 'scale(1)';
-          };
-        } else {
-          paymentProofError.textContent = 'ประเภทไฟล์ไม่รองรับ';
-          paymentProofError.style.display = 'block';
-        }
-      }
-
-      function buildPaymentList(payments) {
-        paymentProofList.innerHTML = '<div style="margin-top:2rem;padding-top:1.5rem;border-top:1px solid rgba(255,255,255,0.1);"><p style="color:#94a3b8;font-size:0.9rem;margin-bottom:1rem;">หลักฐานการชำระอื่นๆ:</p>';
-        
-        payments.slice(1).forEach((payment, index) => {
-          const btn = document.createElement('button');
-          btn.type = 'button';
-          btn.textContent = `หลักฐาน ${index + 2}`;
-          btn.style.cssText = `
-            display: inline-block;
-            margin-right: 0.5rem;
-            margin-bottom: 0.5rem;
-            padding: 0.5rem 1rem;
-            background: rgba(255,255,255,0.1);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            font-size: 0.85rem;
-            font-weight: 500;
-          `;
-          
-          btn.addEventListener('mouseover', function() {
-            this.style.background = 'rgba(255,255,255,0.15)';
-            this.style.borderColor = 'rgba(255,255,255,0.3)';
-          });
-          
-          btn.addEventListener('mouseout', function() {
-            this.style.background = 'rgba(255,255,255,0.1)';
-            this.style.borderColor = 'rgba(255,255,255,0.2)';
-          });
-          
-          btn.addEventListener('click', () => {
-            showPaymentProof(payment);
-          });
-          
-          paymentProofList.appendChild(btn);
+      document.querySelectorAll('.view-payment-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const expenseId = this.getAttribute('data-expense-id');
+          openPaymentPreview(expenseId, { tenantName: '-', statusText: 'รอตรวจสอบ' });
         });
-        
-        paymentProofList.innerHTML += '</div>';
-        paymentProofList.style.display = 'block';
-      }
+      });
 
-      // Close modal
-      function closeModal() {
-        paymentProofModal.style.background = 'rgba(0,0,0,0)';
-        paymentProofModal.style.opacity = '0';
-        paymentProofContent.style.transform = 'translate(-50%,-50%) scale(0.85)';
-        paymentProofContent.style.opacity = '0';
-        closePaymentProofModal.style.transform = 'scale(0.7)';
-        closePaymentProofModal.style.opacity = '0';
-
-        setTimeout(() => {
-          paymentProofModal.style.display = 'none';
-        }, 450);
-      }
-
-      closePaymentProofModal.addEventListener('click', closeModal);
+      closePaymentProofModal?.addEventListener('click', closeModal);
 
       paymentProofModal.addEventListener('click', function(e) {
-        if (e.target === this) closeModal();
+        if (e.target === this) {
+          closeModal();
+        }
       });
 
       document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && paymentProofModal.style.display !== 'none') {
+        if (e.key === 'Escape' && paymentProofModal && paymentProofModal.style.display !== 'none') {
           closeModal();
         }
       });
@@ -1599,6 +1855,7 @@ try {
         function filterByMonth() {
           const selectedMonth = monthFilter.value;
           const rows = tableBody.querySelectorAll('tr');
+          const cards = document.querySelectorAll('#expensesRowView .expense-row-card[data-month]');
           let visibleCount = 0;
           
           rows.forEach(row => {
@@ -1635,6 +1892,11 @@ try {
                 }
               }
             }
+          });
+
+          cards.forEach(card => {
+            const cardMonth = card.getAttribute('data-month') || '';
+            card.style.display = (!selectedMonth || cardMonth === selectedMonth) ? '' : 'none';
           });
           
           // ตรวจสอบว่ามีแถวที่แสดงหรือไม่

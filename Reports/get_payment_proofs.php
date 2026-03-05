@@ -5,7 +5,7 @@ header('X-Content-Type-Options: nosniff');
 
 try {
     // Check authentication
-    if (!isset($_SESSION['admin_id'])) {
+    if (!isset($_SESSION['admin_id']) && !isset($_SESSION['admin_username'])) {
         throw new Exception('Unauthorized');
     }
 
@@ -27,9 +27,11 @@ try {
             p.pay_amount,
             p.pay_proof,
             p.pay_status,
+                        p.pay_remark,
             p.pay_date
         FROM payment p
         WHERE p.exp_id = ?
+                    AND (p.pay_remark IS NULL OR p.pay_remark != 'มัดจำ')
         ORDER BY p.pay_date DESC, p.pay_id DESC
     ");
     
