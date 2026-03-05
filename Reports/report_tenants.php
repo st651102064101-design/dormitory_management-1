@@ -225,10 +225,10 @@ $statusMap = [
         }
         .view-toggle {
             display: flex;
-            background: rgba(15,23,42,0.8);
+            background: transparent;
             border-radius: 12px;
-            padding: 4px;
-            border: 1px solid var(--glass-border);
+            padding: 0;
+            border: none;
         }
         .view-btn {
             padding: 0.6rem 1.2rem;
