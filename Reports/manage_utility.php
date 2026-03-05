@@ -86,6 +86,7 @@ $success = '';
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     $saved = 0;
+    $lockedRooms = 0;
     foreach ($_POST['meter'] as $roomId => $data) {
         if (empty($data['ctr_id'])) continue;
 
@@ -106,19 +107,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             $checkStmt->execute([$ctrId, $month, $year]);
             $existing = $checkStmt->fetch();
 
+            if ($existing) {
+                $lockedRooms++;
+                continue;
+            }
+
             $waterOld = isset($data['water_old']) ? (int)$data['water_old'] : ($existing ? (int)$existing['utl_water_start'] : (int)($prev['utl_water_end'] ?? 0));
             $elecOld = isset($data['elec_old']) ? (int)$data['elec_old'] : ($existing ? (int)$existing['utl_elec_start'] : (int)($prev['utl_elec_end'] ?? 0));
 
             $waterNew = $waterInput ?? ($existing ? (int)$existing['utl_water_end'] : $waterOld);
             $elecNew = $elecInput ?? ($existing ? (int)$existing['utl_elec_end'] : $elecOld);
             
-            if ($existing) {
-                $updateStmt = $pdo->prepare("UPDATE utility SET utl_water_end = ?, utl_elec_end = ?, utl_date = ? WHERE utl_id = ?");
-                $updateStmt->execute([$waterNew, $elecNew, $meterDate, $existing['utl_id']]);
-            } else {
-                $insertStmt = $pdo->prepare("INSERT INTO utility (ctr_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end, utl_date) VALUES (?, ?, ?, ?, ?, ?)");
-                $insertStmt->execute([$ctrId, $waterOld, $waterNew, $elecOld, $elecNew, $meterDate]);
-            }
+            $insertStmt = $pdo->prepare("INSERT INTO utility (ctr_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end, utl_date) VALUES (?, ?, ?, ?, ?, ?)");
+            $insertStmt->execute([$ctrId, $waterOld, $waterNew, $elecOld, $elecNew, $meterDate]);
             
             $waterUsed = $waterNew - $waterOld;
             $elecUsed = $elecNew - $elecOld;
@@ -145,8 +146,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     }
     if ($saved > 0) {
         $_SESSION['success'] = "บันทึกสำเร็จ {$saved} ห้อง";
+        if ($lockedRooms > 0) {
+            $_SESSION['success'] .= " (ข้าม {$lockedRooms} ห้องที่บันทึกเดือนนี้แล้ว)";
+        }
         header("Location: manage_utility.php?month=$month&year=$year&show=$showMode");
         exit;
+    }
+    if ($lockedRooms > 0) {
+        $error = "ไม่สามารถแก้ไขข้อมูลเดือนนี้ได้: มี {$lockedRooms} ห้องที่บันทึกแล้ว";
     }
 }
 
@@ -445,6 +452,13 @@ $activeTab = $_GET['tab'] ?? 'water';
             box-shadow: 0 0 0 3px rgba(216,27,96,0.12);
             background: #fff;
         }
+        .meter-input-field:disabled,
+        .meter-input-field.locked {
+            background: #f3f4f6 !important;
+            border-color: #d1d5db !important;
+            color: #6b7280 !important;
+            cursor: not-allowed;
+        }
         .usage-cell { font-weight: 700; color: #0277bd; }
         .usage-cell.elec-usage { color: #c2185b; }
 
@@ -589,7 +603,7 @@ $activeTab = $_GET['tab'] ?? 'water';
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
                                     <td><?php echo $hasCtr ? number_format($r['water_old']) : '-'; ?></td>
                                     <td><?php if($hasCtr): ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" placeholder="<?php echo $r['water_old']; ?>" value="<?php echo $r['water_new']; ?>" min="<?php echo $r['water_old']; ?>">
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['saved'] ? 'locked' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" placeholder="<?php echo $r['water_old']; ?>" value="<?php echo $r['water_new']; ?>" min="<?php echo $r['water_old']; ?>" <?php echo $r['saved'] ? 'disabled title="บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                     <?php else: ?>-<?php endif; ?></td>
@@ -620,7 +634,7 @@ $activeTab = $_GET['tab'] ?? 'water';
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
                                     <td><?php echo $hasCtr ? number_format($r['elec_old']) : '-'; ?></td>
                                     <td><?php if($hasCtr): ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" placeholder="<?php echo $r['elec_old']; ?>" value="<?php echo $r['elec_new']; ?>" min="<?php echo $r['elec_old']; ?>">
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['saved'] ? 'locked' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" placeholder="<?php echo $r['elec_old']; ?>" value="<?php echo $r['elec_new']; ?>" min="<?php echo $r['elec_old']; ?>" <?php echo $r['saved'] ? 'disabled title="บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                     <?php else: ?>-<?php endif; ?></td>

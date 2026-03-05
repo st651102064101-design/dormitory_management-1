@@ -21,17 +21,17 @@ try {
     $pdo = connectDB();
 
     // Get payment records with proof files
+    // IMPORTANT: include deposit payments too, because some rows are partial due to deposit-only payments
     $stmt = $pdo->prepare("
         SELECT 
             p.pay_id,
             p.pay_amount,
             p.pay_proof,
             p.pay_status,
-                        p.pay_remark,
+            p.pay_remark,
             p.pay_date
         FROM payment p
         WHERE p.exp_id = ?
-                    AND (p.pay_remark IS NULL OR p.pay_remark != 'มัดจำ')
         ORDER BY p.pay_date DESC, p.pay_id DESC
     ");
     

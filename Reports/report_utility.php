@@ -371,22 +371,20 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                     <div class="report-card-title">ประวัติมิเตอร์น้ำ-ไฟ</div>
 
                     <!-- Filter -->
-                    <form method="get" class="filter-bar">
+                    <form method="get" class="filter-bar" data-allow-submit>
                         <input type="hidden" id="tabInput" name="tab" value="<?php echo htmlspecialchars($activeTab); ?>">
-                        <select name="month">
+                        <select name="month" onchange="this.form.submit()">
                             <option value="">-- ทุกเดือน --</option>
                             <?php foreach ($monthsForFilter as $m): ?>
                             <option value="<?php echo $m; ?>" <?php echo $filterMonth == $m ? 'selected' : ''; ?>><?php echo $thaiMonthsFull[$m]; ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <select name="year">
+                        <select name="year" onchange="this.form.submit()">
                             <option value="">-- ทุกปี --</option>
                             <?php foreach ($availableYears as $y): ?>
                             <option value="<?php echo $y; ?>" <?php echo $filterYear == $y ? 'selected' : ''; ?>><?php echo $y + 543; ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <button type="submit" class="filter-btn">กรอง</button>
-                        <a id="clearFilterLink" href="report_utility.php?tab=<?php echo htmlspecialchars($activeTab); ?>" class="clear-btn">ล้าง</a>
                     </form>
 
                     <!-- Summary -->

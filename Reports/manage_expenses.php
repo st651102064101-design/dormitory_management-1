@@ -85,7 +85,7 @@ switch ($sortBy) {
 
 $availableMonths = [];
 try {
-  $monthStmt = $pdo->query("\n+    SELECT DISTINCT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key\n+    FROM expense e\n+    LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n+    WHERE c.ctr_status = '0' AND e.exp_month IS NOT NULL\n+    ORDER BY month_key DESC\n+  ");
+  $monthStmt = $pdo->query("\n    SELECT DISTINCT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key\n    FROM expense e\n    LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n    WHERE c.ctr_status = '0' AND e.exp_month IS NOT NULL\n    ORDER BY month_key DESC\n  ");
   $availableMonths = $monthStmt ? $monthStmt->fetchAll(PDO::FETCH_COLUMN) : [];
 } catch (PDOException $e) {}
 
@@ -99,8 +99,8 @@ if ($selectedMonth !== '' && !in_array($selectedMonth, $availableMonths, true)) 
 
 // ดึงข้อมูลค่าใช้จ่าย - เฉพาะสัญญาที่ active (ctr_status = '0')
 // และแยกตามเดือนที่เลือกเท่านั้น
-$expenseSql = "\n+  SELECT e.*,
-         c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_status,
+$expenseSql = "\n  SELECT e.*,
+         c.ctr_id, c.tnt_id, c.ctr_start, c.ctr_end, c.ctr_status,
          t.tnt_name, t.tnt_phone,
          r.room_number, r.room_id,
          rt.type_name
@@ -132,7 +132,7 @@ $paymentsByExp = [];
 $paymentStmt = $pdo->query("
   SELECT exp_id, pay_id, pay_date, pay_amount, pay_status, pay_remark
   FROM payment
-  WHERE pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')
+  WHERE pay_status = '1' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
   ORDER BY pay_date ASC
 ");
 while ($pay = $paymentStmt->fetch(PDO::FETCH_ASSOC)) {
@@ -147,12 +147,38 @@ while ($pay = $paymentStmt->fetch(PDO::FETCH_ASSOC)) {
 
 $paymentFlagsByExp = [];
 try {
-  $paymentFlagStmt = $pdo->query("\n    SELECT\n      exp_id,\n      SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ') THEN 1 ELSE 0 END) AS pending_count,\n      SUM(CASE WHEN pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ') THEN pay_amount ELSE 0 END) AS approved_amount\n    FROM payment\n    GROUP BY exp_id\n  ");
+  $paymentFlagStmt = $pdo->query("\n    SELECT\n      exp_id,\n      SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN 1 ELSE 0 END) AS pending_count,\n      SUM(CASE WHEN pay_status = '1' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN pay_amount ELSE 0 END) AS approved_amount\n    FROM payment\n    GROUP BY exp_id\n  ");
   while ($row = $paymentFlagStmt->fetch(PDO::FETCH_ASSOC)) {
     $paymentFlagsByExp[(int)$row['exp_id']] = [
       'pending_count' => (int)($row['pending_count'] ?? 0),
       'approved_amount' => (int)($row['approved_amount'] ?? 0),
     ];
+  }
+} catch (PDOException $e) {}
+
+$depositPaidByCtr = [];
+try {
+  $depositByCtrStmt = $pdo->query("\n    SELECT\n      e.ctr_id,\n      SUM(CASE WHEN p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ' THEN p.pay_amount ELSE 0 END) AS deposit_paid\n    FROM expense e\n    LEFT JOIN payment p ON p.exp_id = e.exp_id\n    GROUP BY e.ctr_id\n  ");
+  while ($row = $depositByCtrStmt->fetch(PDO::FETCH_ASSOC)) {
+    $depositPaidByCtr[(int)($row['ctr_id'] ?? 0)] = (int)($row['deposit_paid'] ?? 0);
+  }
+} catch (PDOException $e) {}
+
+$depositPaidByRoomTenant = [];
+try {
+  $depositByRoomTenantStmt = $pdo->query("\n    SELECT
+      c.room_id,
+      c.tnt_id,
+      SUM(CASE WHEN p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ' THEN p.pay_amount ELSE 0 END) AS deposit_paid
+    FROM payment p
+    INNER JOIN expense e ON p.exp_id = e.exp_id
+    INNER JOIN contract c ON e.ctr_id = c.ctr_id
+    WHERE c.room_id IS NOT NULL AND c.tnt_id IS NOT NULL
+    GROUP BY c.room_id, c.tnt_id
+  ");
+  while ($row = $depositByRoomTenantStmt->fetch(PDO::FETCH_ASSOC)) {
+    $mapKey = (int)($row['room_id'] ?? 0) . '_' . (int)($row['tnt_id'] ?? 0);
+    $depositPaidByRoomTenant[$mapKey] = (int)($row['deposit_paid'] ?? 0);
   }
 } catch (PDOException $e) {}
 
@@ -208,6 +234,65 @@ $statusColors = [
   '3' => '#f59e0b',
 ];
 
+$defaultDepositTotal = 2000;
+$buildExpenseStatus = function(array $exp) use (
+  $paymentFlagsByExp,
+  $depositPaidByRoomTenant,
+  $depositPaidByCtr,
+  $statusMap,
+  $statusColors,
+  $defaultDepositTotal
+) {
+  $expId = (int)($exp['exp_id'] ?? 0);
+  $ctrId = (int)($exp['ctr_id'] ?? 0);
+  $depositKey = (int)($exp['room_id'] ?? 0) . '_' . (int)($exp['tnt_id'] ?? 0);
+
+  $depositPaid = (int)($depositPaidByRoomTenant[$depositKey] ?? ($depositPaidByCtr[$ctrId] ?? 0));
+  $chargesPaid = (int)($paymentFlagsByExp[$expId]['approved_amount'] ?? 0);
+  $pendingCount = (int)($paymentFlagsByExp[$expId]['pending_count'] ?? 0);
+  $chargesTotal = (int)($exp['exp_total'] ?? 0);
+
+  if ($pendingCount > 0) {
+    $status = '2';
+  } elseif ($depositPaid >= $defaultDepositTotal && $chargesPaid >= $chargesTotal) {
+    $status = '1';
+  } elseif ($depositPaid > 0 || $chargesPaid > 0) {
+    $status = '3';
+  } else {
+    $status = '0';
+  }
+
+  $depositRemain = max(0, $defaultDepositTotal - $depositPaid);
+  $chargesRemain = max(0, $chargesTotal - $chargesPaid);
+  $unpaidItems = [];
+  if ($depositRemain > 0) {
+    $unpaidItems[] = 'มัดจำ';
+  }
+  if ($chargesRemain > 0) {
+    $unpaidItems[] = 'ค่าห้อง';
+  }
+
+  $statusText = $statusMap[$status] ?? 'ไม่ระบุ';
+  if ($status === '0') {
+    $statusText = 'ยังไม่ชำระ: ' . implode(' + ', $unpaidItems);
+  } elseif ($status === '3') {
+    $statusText = 'ชำระยังไม่ครบ: ' . implode(' + ', $unpaidItems);
+  }
+
+  return [
+    'status' => $status,
+    'statusText' => $statusText,
+    'statusColor' => $statusColors[$status] ?? '#94a3b8',
+    'totalColor' => in_array($status, ['0', '3'], true) ? '#ef4444' : '#22c55e',
+    'depositPaid' => $depositPaid,
+    'depositTotal' => $defaultDepositTotal,
+    'depositRemain' => $depositRemain,
+    'chargesPaid' => $chargesPaid,
+    'chargesTotal' => $chargesTotal,
+    'chargesRemain' => $chargesRemain,
+  ];
+};
+
 // คำนวณสถิติ
 $stats = [
   'unpaid' => 0,
@@ -240,11 +325,17 @@ foreach ($expenses as $exp) {
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
+$settings = [
+  'bank_name' => '',
+  'bank_account_number' => '',
+];
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+  $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'bank_name', 'bank_account_number')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+    if ($row['setting_key'] === 'bank_name') $settings['bank_name'] = (string)$row['setting_value'];
+    if ($row['setting_key'] === 'bank_account_number') $settings['bank_account_number'] = (string)$row['setting_value'];
     }
 } catch (PDOException $e) {}
 ?>
@@ -463,8 +554,43 @@ try {
         font-weight: 600;
         color: #fff;
       }
-      .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
+      .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #ffffff; border: none; box-shadow: 0 12px 24px rgba(15,23,42,0.08); color: #111827; }
       .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
+
+      .reports-page .manage-panel .section-header h2,
+      .reports-page .manage-panel .section-header h3,
+      .reports-page .manage-panel .section-header h4,
+      .reports-page .manage-panel .section-header span,
+      .reports-page .manage-panel .manage-table td,
+      .reports-page .manage-panel .manage-table th {
+        color: #111827 !important;
+      }
+
+      .reports-page .manage-panel .section-header p,
+      .reports-page .manage-panel .expense-meta,
+      .reports-page .manage-panel .datatable-info {
+        color: #64748b !important;
+      }
+
+      .reports-page .manage-panel .manage-table th {
+        background: #f8fafc !important;
+      }
+
+      .reports-page .manage-panel .manage-table td {
+        background: #ffffff !important;
+      }
+
+      .reports-page .manage-panel .datatable-input,
+      .reports-page .manage-panel .datatable-selector {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border: 1px solid #d1d5db !important;
+      }
+
+      .reports-page .manage-panel .datatable-wrapper.datatable-loading,
+      .reports-page .manage-panel .datatable-wrapper.datatable-loading .datatable-container {
+        opacity: 1 !important;
+      }
       
       /* ตารางแสดงทุกคอลัมน์ และเลื่อนแนวนอนได้ */
       .report-table {
@@ -479,6 +605,75 @@ try {
       .report-table td {
         white-space: nowrap;
         min-width: fit-content;
+      }
+
+      .report-table tbody tr.payment-preview-trigger {
+        cursor: pointer;
+        transition: background-color 0.15s ease;
+      }
+
+      .report-table tbody tr.payment-preview-trigger:hover td {
+        background: rgba(37, 99, 235, 0.04) !important;
+      }
+
+      .report-table tbody tr.payment-preview-trigger:focus-visible {
+        outline: none;
+      }
+
+      .report-table tbody tr.payment-preview-trigger:focus-visible td {
+        background: rgba(37, 99, 235, 0.08) !important;
+      }
+
+      .table-open-hint {
+        margin-top: 0.35rem;
+        font-size: 0.75rem;
+        color: #0369a1;
+        font-weight: 600;
+      }
+
+      .payment-cell-wrap {
+        font-size: 0.85rem;
+        line-height: 1.55;
+      }
+
+      .table-click-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-top: 0.35rem;
+        padding: 0.18rem 0.45rem;
+        border-radius: 999px;
+        font-size: 0.74rem;
+        font-weight: 700;
+        color: #1d4ed8;
+        background: rgba(37, 99, 235, 0.1);
+      }
+
+      .payment-compact {
+        display: grid;
+        gap: 0.22rem;
+      }
+
+      .payment-compact-row {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 0.5rem;
+      }
+
+      .payment-compact-label {
+        color: #64748b;
+        font-size: 0.79rem;
+        font-weight: 600;
+      }
+
+      .payment-compact-value {
+        color: #0f172a;
+        font-weight: 700;
+      }
+
+      .payment-compact-value.warn {
+        color: #ef4444;
       }
       
       /* Override animate-ui.css: แสดงทุกคอลัมน์ในหน้านี้ */
@@ -544,11 +739,23 @@ try {
       }
 
       .expense-row-card {
-        background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.95));
-        border: 1px solid rgba(148,163,184,0.22);
+        background: #ffffff;
+        border: none;
         border-radius: 14px;
         padding: 1rem 1.1rem;
         cursor: pointer;
+        box-shadow: 0 6px 16px rgba(15,23,42,0.08);
+        transition: box-shadow 0.16s ease, transform 0.16s ease;
+      }
+
+      .expense-row-card:hover {
+        box-shadow: 0 10px 22px rgba(15, 23, 42, 0.12);
+        transform: translateY(-1px);
+      }
+
+      .expense-row-card:focus-visible {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18), 0 10px 22px rgba(15, 23, 42, 0.12);
       }
 
       .expense-row-top {
@@ -564,11 +771,17 @@ try {
         align-items: center;
         gap: 0.5rem;
         flex-wrap: wrap;
-        color: #f8fafc;
+        color: #0f172a;
+      }
+
+      .expense-row-id {
+        font-size: 1.02rem;
+        font-weight: 700;
+        color: #0f172a;
       }
 
       .expense-row-sub {
-        color: #94a3b8;
+        color: #64748b;
         font-size: 0.9rem;
       }
 
@@ -576,8 +789,30 @@ try {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         gap: 0.45rem 0.8rem;
-        color: #cbd5e1;
+        color: #334155;
         font-size: 0.9rem;
+      }
+
+      .expense-row-meta-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.55rem;
+        padding-bottom: 0.2rem;
+      }
+
+      .expense-row-meta-label {
+        color: #64748b;
+        font-weight: 500;
+      }
+
+      .expense-row-meta-value {
+        color: #0f172a;
+        font-weight: 700;
+      }
+
+      .expense-row-meta-value.total {
+        font-size: 1rem;
       }
 
       html.light-theme .expenses-view-toggle {
@@ -588,7 +823,7 @@ try {
 
       html.light-theme .expense-row-card {
         background: #ffffff !important;
-        border-color: rgba(15,23,42,0.12) !important;
+        border: none !important;
       }
 
       html.light-theme .expense-row-main {
@@ -603,6 +838,34 @@ try {
         color: #334155 !important;
       }
 
+      html.light-theme .report-table th {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+        border-color: #dbe3ee !important;
+      }
+
+      html.light-theme .report-table td {
+        background: #ffffff !important;
+        color: #1f2937 !important;
+        border-color: #e5e7eb !important;
+      }
+
+      html.light-theme .report-table td .expense-meta,
+      html.light-theme .report-table td .expense-table-room .expense-meta {
+        color: #64748b !important;
+      }
+
+      html.light-theme .reports-page .section-header p,
+      html.light-theme .reports-page .expenses-filters-line label {
+        color: #64748b !important;
+      }
+
+      html.light-theme .reports-page .expenses-filters-line #sortSelect {
+        background: #ffffff !important;
+        color: #111827 !important;
+        border-color: #d1d5db !important;
+      }
+
       .payment-modal-overlay {
         position: fixed;
         inset: 0;
@@ -614,14 +877,39 @@ try {
         padding: 1rem;
       }
 
+      .page-header-bar.modal-open-hidden {
+        opacity: 0 !important;
+        visibility: hidden !important;
+        pointer-events: none !important;
+      }
+
       .payment-modal-card {
         position: relative;
         width: min(620px, 92vw);
+        max-height: min(84vh, 760px);
+        overflow: visible;
         background: #ffffff;
         border-radius: 18px;
         border: 1px solid #dbe7e2;
         box-shadow: 0 24px 56px rgba(15, 23, 42, 0.28);
-        padding: 1rem 1.05rem 0.95rem;
+        padding: 0;
+      }
+
+      .payment-modal-head {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #ffffff;
+        padding: 1.55rem 1.05rem 0.55rem;
+        border-top-left-radius: 18px;
+        border-top-right-radius: 18px;
+      }
+
+      .payment-modal-body {
+        overflow-y: auto;
+        overflow-x: hidden;
+        max-height: calc(84vh - 135px);
+        padding: 0.35rem 1.05rem 0.95rem;
       }
 
       .payment-modal-close {
@@ -636,9 +924,14 @@ try {
       }
 
       .payment-modal-check {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 3;
         width: 56px;
         height: 56px;
-        margin: -40px auto 0.2rem;
+        margin: 0;
         border-radius: 999px;
         display: grid;
         place-items: center;
@@ -647,16 +940,32 @@ try {
         box-shadow: 0 10px 30px rgba(34, 197, 94, 0.35);
       }
 
+      .payment-modal-check.pending {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        box-shadow: 0 10px 30px rgba(245, 158, 11, 0.35);
+      }
+
+      .payment-modal-check.partial {
+        background: linear-gradient(135deg, #f59e0b, #ea580c);
+        box-shadow: 0 10px 30px rgba(234, 88, 12, 0.35);
+      }
+
+      .payment-modal-check.unpaid {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        box-shadow: 0 10px 30px rgba(239, 68, 68, 0.35);
+      }
+
       .payment-modal-check svg {
         width: 30px;
         height: 30px;
       }
 
       .payment-modal-title {
-        margin: 0.1rem 0 0.55rem;
+        margin: 0.35rem 0 0.55rem;
         font-size: 1.5rem;
         font-weight: 700;
         color: #1f2937;
+        text-align: left;
       }
 
       .payment-modal-grid {
@@ -666,16 +975,55 @@ try {
         align-items: start;
       }
 
+      .payment-modal-summary {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.55rem;
+        margin-bottom: 0.8rem;
+      }
+
+      .payment-modal-summary-item {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 0.55rem 0.6rem;
+      }
+
+      .payment-modal-summary-label {
+        color: #64748b;
+        font-size: 0.86rem;
+        font-weight: 600;
+        margin-bottom: 0.22rem;
+      }
+
+      .payment-modal-summary-value {
+        color: #0f172a;
+        font-size: 1.02rem;
+        font-weight: 700;
+        line-height: 1.25;
+      }
+
+      .payment-modal-section {
+        margin-top: 0.65rem;
+      }
+
+      .payment-modal-section-title {
+        margin: 0 0 0.5rem;
+        color: #1e293b;
+        font-size: 1rem;
+        font-weight: 700;
+      }
+
       .payment-modal-label {
         color: #334155;
         font-weight: 600;
-        font-size: 1.15rem;
+        font-size: 1rem;
         line-height: 1.35;
       }
 
       .payment-modal-value {
         color: #1f2937;
-        font-size: 1.15rem;
+        font-size: 1rem;
         line-height: 1.35;
       }
 
@@ -688,12 +1036,26 @@ try {
         color: #f59e0b;
       }
 
+      .payment-modal-status.partial {
+        color: #f59e0b;
+      }
+
+      .payment-modal-status.unpaid {
+        color: #ef4444;
+      }
+
       .payment-proof-thumb {
         margin-top: 0.3rem;
         width: 100%;
         max-width: 260px;
+        max-height: 250px;
+        object-fit: contain;
         border-radius: 14px;
         border: 1px solid #e2e8f0;
+      }
+
+      body.payment-modal-open {
+        overflow: hidden;
       }
 
       @media (max-width: 768px) {
@@ -701,6 +1063,11 @@ try {
         .payment-modal-label,
         .payment-modal-value {
           font-size: 1rem;
+        }
+
+        .payment-modal-summary {
+          grid-template-columns: 1fr;
+          gap: 0.45rem;
         }
 
         .payment-modal-grid {
@@ -784,6 +1151,7 @@ try {
               <div>
                 <h1>รายการค่าใช้จ่ายทั้งหมด</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ประวัติการเรียกเก็บค่าใช้จ่ายแต่ละห้อง</p>
+                <p style="color:#0369a1;margin-top:0.25rem;font-size:0.85rem;font-weight:600;">คลิกที่แถวรายการเพื่อเปิดรายละเอียดการชำระเงิน</p>
               </div>
               <div class="expenses-actions">
                 <button type="button" id="expensesViewToggle" class="expenses-view-toggle" onclick="toggleExpensesView()">
@@ -791,7 +1159,7 @@ try {
                   <span id="expensesViewToggleText">มุมมอง list(ตาราง)</span>
                 </button>
                 <div class="expenses-filters-line">
-                <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+                <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid #d1d5db;background:#ffffff;color:#111827;font-size:0.95rem;cursor:pointer;">
                   <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
                   <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
                   <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
@@ -828,9 +1196,7 @@ try {
                     <th>รหัส</th>
                     <th>ห้อง/ผู้เช่า</th>
                     <th>เดือน/ปี</th>
-                    <th style="text-align:right;">ค่าห้อง</th>
-                    <th style="text-align:right;">ค่าไฟ</th>
-                    <th style="text-align:right;">ค่าน้ำ</th>
+                    <th style="text-align:right;">ค่าใช้จ่าย</th>
                     <th style="text-align:right;">ยอดรวม</th>
                     <th>สถานะ</th>
                     <th>การชำระเงิน</th>
@@ -839,12 +1205,26 @@ try {
                 <tbody>
                   <?php if (empty($expenses)): ?>
                     <tr>
-                      <td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">ยังไม่มีข้อมูลค่าใช้จ่าย</td>
+                      <td colspan="7" style="text-align:center;padding:2rem;color:#64748b;">ยังไม่มีข้อมูลค่าใช้จ่าย</td>
                     </tr>
                   <?php else: ?>
                     <?php foreach ($expenses as $exp): ?>
-                      <tr class="payment-preview-trigger" data-expense-id="<?php echo (int)$exp['exp_id']; ?>" data-tenant-name="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>" data-status-text="รอตรวจสอบ">
-                        <td>#<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?></td>
+                      <?php $rowStatus = $buildExpenseStatus($exp); ?>
+                      <tr class="payment-preview-trigger"
+                        role="button"
+                        tabindex="0"
+                        aria-label="เปิดรายละเอียดการชำระเงินรายการ #<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?> ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?>"
+                        data-expense-id="<?php echo (int)$exp['exp_id']; ?>"
+                        data-tenant-name="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>"
+                        data-status-text="<?php echo htmlspecialchars((string)$rowStatus['statusText'], ENT_QUOTES, 'UTF-8'); ?>"
+                        data-deposit-paid="<?php echo (int)$rowStatus['depositPaid']; ?>"
+                        data-deposit-remain="<?php echo (int)$rowStatus['depositRemain']; ?>"
+                        data-charges-paid="<?php echo (int)$rowStatus['chargesPaid']; ?>"
+                        data-charges-remain="<?php echo (int)$rowStatus['chargesRemain']; ?>">
+                        <td>
+                          #<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?>
+                          <div class="table-open-hint">คลิกเพื่อดูรายละเอียด</div>
+                        </td>
                         <td>
                           <div class="expense-table-room">
                             <span>ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?></span>
@@ -853,174 +1233,44 @@ try {
                         </td>
                         <td><?php echo $exp['exp_month'] ? date('m/Y', strtotime($exp['exp_month'])) : '-'; ?></td>
                         <td style="text-align:right;">
-                          ฿<?php echo number_format((int)($exp['room_price'] ?? 0)); ?>
-                          <div class="expense-meta">ประเภท: <?php echo htmlspecialchars($exp['type_name'] ?? '-'); ?></div>
-                        </td>
-                        <td style="text-align:right;">
                           <?php
+                            $roomPrice = (int)($exp['room_price'] ?? 0);
                             $elecUnits = (int)($exp['exp_elec_unit'] ?? 0);
                             $elecTotal = (int)($exp['exp_elec_chg'] ?? 0);
-                            $elecRate = $elecUnits > 0 ? $elecTotal / $elecUnits : 0;
-                          ?>
-                          <div style="color:#ffffff;font-weight:600;">ยอดการใช้ไฟ: ฿<?php echo number_format($elecTotal); ?></div>
-                          <div class="expense-meta"><strong>ใช้ไฟ <?php echo number_format($elecUnits); ?></strong> หน่วย</div>
-                          <div class="expense-meta">฿<?php echo number_format($elecRate, 2); ?> / หน่วย</div>
-                        </td>
-                        <td style="text-align:right;">
-                          <?php
                             $waterUnits = (int)($exp['exp_water_unit'] ?? 0);
                             $waterTotal = (int)($exp['exp_water'] ?? 0);
-                            $waterRate = $waterUnits > 0 ? $waterTotal / $waterUnits : 0;
                           ?>
-                          <div style="color:#ffffff;font-weight:600;">ยอดการใช้น้ำ: ฿<?php echo number_format($waterTotal); ?></div>
-                          <div class="expense-meta"><strong><?php echo number_format($waterUnits); ?></strong> หน่วย</div>
-                          <div class="expense-meta">฿<?php echo number_format($waterRate, 2); ?> / หน่วย</div>
+                          <div style="color:#111827;font-weight:700;">ห้อง ฿<?php echo number_format($roomPrice); ?></div>
+                          <div class="expense-meta">น้ำ ฿<?php echo number_format($waterTotal); ?> • ไฟ ฿<?php echo number_format($elecTotal); ?></div>
+                          <div class="expense-meta"><?php echo number_format($waterUnits); ?> หน่วยน้ำ • <?php echo number_format($elecUnits); ?> หน่วยไฟ</div>
                         </td>
                         <td style="text-align:right;">
-                          <?php 
-                            // Calculate status based on actual payments, not database field
-                            $expId = (int)$exp['exp_id'];
-                            
-                            // Get deposit and charges payment info
-                            $statusStmt = $pdo->prepare("
-                              SELECT 
-                                COALESCE(SUM(CASE WHEN pay_remark = 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as deposit_paid,
-                                COALESCE(SUM(CASE WHEN pay_remark IS NULL OR pay_remark != 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as charges_paid,
-                                COALESCE(SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ') THEN 1 ELSE 0 END), 0) as pending_count
-                              FROM payment
-                              WHERE exp_id = ?
-                            ");
-                            $statusStmt->execute([$expId]);
-                            $statusData = $statusStmt->fetch(PDO::FETCH_ASSOC);
-                            $statusDepositPaid = (int)($statusData['deposit_paid'] ?? 0);
-                            $statusChargesPaid = (int)($statusData['charges_paid'] ?? 0);
-                            $statusPendingCount = (int)($statusData['pending_count'] ?? 0);
-                            
-                            $statusDepositTotal = 2000;
-                            $statusChargesTotal = (int)($exp['exp_total'] ?? 0);
-                            
-                            // Determine status based on payments
-                            if ($statusPendingCount > 0) {
-                              $status = '2'; // รอตรวจสอบ
-                            } elseif ($statusDepositPaid >= $statusDepositTotal && $statusChargesPaid >= $statusChargesTotal) {
-                              $status = '1'; // ชำระแล้ว
-                            } elseif ($statusDepositPaid > 0 || $statusChargesPaid > 0) {
-                              $status = '3'; // ชำระยังไม่ครบ
-                            } else {
-                              $status = '0'; // ยังไม่ชำระ
-                            }
-                            
-                            // ยอดรวมเป็นสีแดง ถ้าสถานะเป็น "ยังไม่ชำระ" หรือ "ชำระยังไม่ครบ"
-                            $totalColor = (in_array($status, ['0', '3'])) ? '#ef4444' : '#22c55e';
-                          ?>
-                          <strong style="color:<?php echo $totalColor; ?>;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></strong>
+                          <strong style="color:<?php echo $rowStatus['totalColor']; ?>;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></strong>
                         </td>
                         <td>
-                          <?php
-                            // Determine what's unpaid
-                            $unpaidItems = [];
-                            $depositRemainStatus = $statusDepositTotal - $statusDepositPaid;
-                            $chargesRemainStatus = $statusChargesTotal - $statusChargesPaid;
-                            
-                            if ($depositRemainStatus > 0) {
-                              $unpaidItems[] = 'มัดจำ';
-                            }
-                            if ($chargesRemainStatus > 0) {
-                              $unpaidItems[] = 'ค่าห้อง';
-                            }
-                            
-                            $unpaidText = '';
-                            if ($status === '1') {
-                              $unpaidText = $statusMap[$status] ?? 'ไม่ระบุ';
-                            } elseif ($status === '0') {
-                              $unpaidText = 'ยังไม่ชำระ: ' . implode(' + ', $unpaidItems);
-                            } elseif ($status === '3') {
-                              $unpaidText = 'ชำระยังไม่ครบ: ' . implode(' + ', $unpaidItems);
-                            } else {
-                              $unpaidText = $statusMap[$status] ?? 'ไม่ระบุ';
-                            }
-                          ?>
-                          <span class="status-badge" style="background: <?php echo $statusColors[$status] ?? '#94a3b8'; ?>;">
-                            <?php echo $unpaidText; ?>
+                          <span class="status-badge" style="background: <?php echo $rowStatus['statusColor']; ?>;">
+                            <?php echo $rowStatus['statusText']; ?>
                           </span>
                         </td>
                         <td class="crud-column">
                           <?php
-                            // ใช้ข้อมูล payment ที่ดึงมาแล้ว
-                            $expId = (int)$exp['exp_id'];
-                            
-                            // ดึงยอดมัดจำและค่าห้องแยกกัน
-                            $depositStmt = $pdo->prepare("
-                              SELECT 
-                                COALESCE(SUM(CASE WHEN pay_remark = 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as deposit_paid,
-                                COALESCE(SUM(CASE WHEN pay_remark IS NULL OR pay_remark != 'มัดจำ' THEN pay_amount ELSE 0 END), 0) as charges_paid
-                              FROM payment
-                              WHERE exp_id = ? AND pay_status = '1'
-                            ");
-                            $depositStmt->execute([$expId]);
-                            $depositData = $depositStmt->fetch(PDO::FETCH_ASSOC);
-                            $depositPaid = (int)($depositData['deposit_paid'] ?? 0);
-                            $chargesPaid = (int)($depositData['charges_paid'] ?? 0);
-                            
-                            // ดึงยอดรวมค่าห้อง
-                            $expTotal = (int)($exp['exp_total'] ?? 0);
-                            $chargesRemain = $expTotal - $chargesPaid;
-                            
-                            // เงินมัดจำคงที่ 2000 บาท
-                            $depositTotal = 2000;
-                            $depositRemain = max(0, $depositTotal - $depositPaid);
-                            
-                            // นับจำนวนการชำระค่าห้อง (ไม่รวมมัดจำ)
-                            $chargesCountStmt = $pdo->prepare("
-                              SELECT COUNT(*) as count FROM payment
-                              WHERE exp_id = ? AND pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')
-                            ");
-                            $chargesCountStmt->execute([$expId]);
-                            $chargesCount = (int)($chargesCountStmt->fetchColumn() ?? 0);
+                            $depositPaid = (int)$rowStatus['depositPaid'];
+                            $chargesPaid = (int)$rowStatus['chargesPaid'];
+                            $chargesRemain = (int)$rowStatus['chargesRemain'];
+                            $depositRemain = (int)$rowStatus['depositRemain'];
                           ?>
-                          <div style="font-size:0.85rem;line-height:1.8;">
-                            <!-- มัดจำ -->
-                            <div style="margin-bottom:0.5rem;padding-bottom:0.5rem;border-bottom:1px solid rgba(255,255,255,0.1);">
-                              <div style="color:#94a3b8;font-weight:600;margin-bottom:0.25rem;font-size:0.8rem;cursor:help;position:relative;display:inline-block;" title="มัดจำมาจากการจองห้อง">
-                                💰 มัดจำ (฿<?php echo number_format($depositTotal); ?>)
-                                <span style="font-size:0.7rem;color:#64748b;margin-left:0.25rem;">*จองห้อง</span>
+                          <div class="payment-cell-wrap">
+                            <div class="payment-compact">
+                              <div class="payment-compact-row">
+                                <span class="payment-compact-label">มัดจำ (จ่าย/ค้าง)</span>
+                                <span class="payment-compact-value<?php echo $depositRemain > 0 ? ' warn' : ''; ?>">฿<?php echo number_format($depositPaid); ?> / ฿<?php echo number_format($depositRemain); ?></span>
                               </div>
-                              <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.2rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <span style="font-size:0.8rem;"><strong style="color:#22c55e;">ชำระแล้ว:</strong> <strong style="color:#22c55e;">฿<?php echo number_format($depositPaid); ?></strong></span>
-                              </div>
-                              <div style="display:flex;align-items:center;gap:0.35rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                <span style="font-size:0.8rem;"><strong style="color:#ef4444;">ยังไม่ชำระ:</strong> <strong style="color:<?php echo $depositRemain > 0 ? '#ef4444' : '#22c55e'; ?>;">฿<?php echo number_format($depositRemain); ?></strong></span>
+                              <div class="payment-compact-row">
+                                <span class="payment-compact-label">ค่าห้อง (จ่าย/ค้าง)</span>
+                                <span class="payment-compact-value<?php echo $chargesRemain > 0 ? ' warn' : ''; ?>">฿<?php echo number_format($chargesPaid); ?> / ฿<?php echo number_format($chargesRemain); ?></span>
                               </div>
                             </div>
-                            
-                            <!-- ค่าห้อง -->
-                            <div>
-                              <?php 
-                                $roomPrice = (int)($exp['room_price'] ?? 0);
-                                $elecChg = (int)($exp['exp_elec_chg'] ?? 0);
-                                $waterChg = (int)($exp['exp_water'] ?? 0);
-                                $totalCharge = $roomPrice + $elecChg + $waterChg;
-                              ?>
-                              <div style="color:#94a3b8;font-weight:600;margin-bottom:0.25rem;font-size:0.8rem;cursor:help;" title="ประกอบด้วย: ค่าห้อง ฿<?php echo number_format($roomPrice); ?> + น้ำ ฿<?php echo number_format($waterChg); ?> + ไฟ ฿<?php echo number_format($elecChg); ?>">🏠 ค่าห้อง (฿<?php echo number_format($totalCharge); ?>) <span style="font-size:0.7rem;color:#64748b;">*+น้ำ+ไฟ</span></div>
-                              <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.2rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
-                                <span style="font-size:0.8rem;"><strong style="color:#22c55e;">ชำระแล้ว:</strong> <strong style="color:#22c55e;">฿<?php echo number_format($chargesPaid); ?></strong></span>
-                              </div>
-                              <div style="display:flex;align-items:center;gap:0.35rem;margin-bottom:0.3rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                                <span style="font-size:0.8rem;"><strong style="color:#ef4444;">ยังไม่ชำระ:</strong> <strong style="color:#ef4444;">฿<?php echo number_format($chargesRemain); ?></strong></span>
-                              </div>
-                              <?php if ($chargesCount > 0): ?>
-                              <div style="padding:0.35rem 0.5rem;background:rgba(34,197,94,0.1);border-radius:6px;display:inline-flex;align-items:center;gap:0.3rem;">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
-                                <span style="color:#22c55e;font-size:0.8rem;"><?php echo $chargesCount; ?> ครั้ง</span>
-                              </div>
-                              <?php else: ?>
-                              <div style="color:#64748b;font-size:0.8rem;">ยังไม่มีการชำระ</div>
-                              <?php endif; ?>
-                            </div>
+                            <div class="table-click-badge">🖱 กดแถวนี้เพื่อเปิด Modal</div>
                           </div>
                         </td>
                       </tr>
@@ -1036,42 +1286,48 @@ try {
               <?php else: ?>
                 <?php foreach ($expenses as $exp): ?>
                   <?php
-                    $rowExpId = (int)($exp['exp_id'] ?? 0);
-                    $rowTotal = (int)($exp['exp_total'] ?? 0);
-                    $rowPendingCount = (int)($paymentFlagsByExp[$rowExpId]['pending_count'] ?? 0);
-                    $rowApprovedAmount = (int)($paymentFlagsByExp[$rowExpId]['approved_amount'] ?? 0);
-
-                    if ($rowPendingCount > 0) {
-                      $rowExpStatus = '2';
-                    } elseif ($rowTotal > 0 && $rowApprovedAmount >= $rowTotal) {
-                      $rowExpStatus = '1';
-                    } elseif ($rowApprovedAmount > 0) {
-                      $rowExpStatus = '3';
-                    } else {
-                      $rowExpStatus = '0';
-                    }
-
-                    $rowStatusText = $statusMap[$rowExpStatus] ?? 'ไม่ระบุ';
-                    $rowStatusColor = $statusColors[$rowExpStatus] ?? '#94a3b8';
+                    $rowStatus = $buildExpenseStatus($exp);
                   ?>
                      <div class="expense-row-card payment-preview-trigger"
+                       role="button"
+                       tabindex="0"
+                       aria-label="ดูรายละเอียดค่าใช้จ่าย #<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?> ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?>"
                        data-month="<?php echo $exp['exp_month'] ? date('Y-m', strtotime((string)$exp['exp_month'])) : ''; ?>"
                        data-expense-id="<?php echo (int)$exp['exp_id']; ?>"
                        data-tenant-name="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>"
-                       data-status-text="<?php echo htmlspecialchars((string)$rowStatusText, ENT_QUOTES, 'UTF-8'); ?>">
+                       data-status-text="<?php echo htmlspecialchars((string)$rowStatus['statusText'], ENT_QUOTES, 'UTF-8'); ?>"
+                       data-deposit-paid="<?php echo (int)$rowStatus['depositPaid']; ?>"
+                       data-deposit-remain="<?php echo (int)$rowStatus['depositRemain']; ?>"
+                       data-charges-paid="<?php echo (int)$rowStatus['chargesPaid']; ?>"
+                       data-charges-remain="<?php echo (int)$rowStatus['chargesRemain']; ?>">
                     <div class="expense-row-top">
                       <div class="expense-row-main">
-                        <strong>#<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?></strong>
+                        <strong class="expense-row-id">#<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?></strong>
                         <span class="expense-row-sub">ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?> • <?php echo htmlspecialchars($exp['tnt_name'] ?? '-'); ?></span>
                       </div>
-                      <span class="status-badge" style="background: <?php echo htmlspecialchars($rowStatusColor); ?>;"><?php echo htmlspecialchars($rowStatusText); ?></span>
+                      <span class="status-badge" style="background: <?php echo htmlspecialchars($rowStatus['statusColor']); ?>;"><?php echo htmlspecialchars($rowStatus['statusText']); ?></span>
                     </div>
                     <div class="expense-row-meta">
-                      <div>เดือน/ปี: <?php echo $exp['exp_month'] ? date('m/Y', strtotime((string)$exp['exp_month'])) : '-'; ?></div>
-                      <div>ค่าห้อง: <strong>฿<?php echo number_format((int)($exp['room_price'] ?? 0)); ?></strong></div>
-                      <div>ค่าไฟ: <strong>฿<?php echo number_format((int)($exp['exp_elec_chg'] ?? 0)); ?></strong></div>
-                      <div>ค่าน้ำ: <strong>฿<?php echo number_format((int)($exp['exp_water'] ?? 0)); ?></strong></div>
-                      <div>ยอดรวม: <strong style="color:#22c55e;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></strong></div>
+                      <div class="expense-row-meta-item">
+                        <span class="expense-row-meta-label">เดือน/ปี</span>
+                        <span class="expense-row-meta-value"><?php echo $exp['exp_month'] ? date('m/Y', strtotime((string)$exp['exp_month'])) : '-'; ?></span>
+                      </div>
+                      <div class="expense-row-meta-item">
+                        <span class="expense-row-meta-label">ค่าห้อง</span>
+                        <span class="expense-row-meta-value">฿<?php echo number_format((int)($exp['room_price'] ?? 0)); ?></span>
+                      </div>
+                      <div class="expense-row-meta-item">
+                        <span class="expense-row-meta-label">ค่าไฟ</span>
+                        <span class="expense-row-meta-value">฿<?php echo number_format((int)($exp['exp_elec_chg'] ?? 0)); ?></span>
+                      </div>
+                      <div class="expense-row-meta-item">
+                        <span class="expense-row-meta-label">ค่าน้ำ</span>
+                        <span class="expense-row-meta-value">฿<?php echo number_format((int)($exp['exp_water'] ?? 0)); ?></span>
+                      </div>
+                      <div class="expense-row-meta-item">
+                        <span class="expense-row-meta-label">ยอดรวม</span>
+                        <span class="expense-row-meta-value total" style="color:<?php echo htmlspecialchars($rowStatus['totalColor']); ?>;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></span>
+                      </div>
                     </div>
                   </div>
                 <?php endforeach; ?>
@@ -1372,7 +1628,7 @@ try {
                   info: 'แสดง {start}–{end} จาก {rows} รายการ'
                 },
                 columns: [
-                  { select: [7, 8], sortable: false }
+                  { select: [5, 6], sortable: false }
                 ]
               });
               window.__expenseDataTable = dt;
@@ -1677,15 +1933,27 @@ try {
                 document.getElementById('addRateBtn')?.addEventListener('click', addRateFlow);
                 document.getElementById('deleteRateBtn')?.addEventListener('click', deleteRateFlow);
 
+                function detectReportsLightTheme() {
+                  const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim().toLowerCase();
+                  const bodyBg = getComputedStyle(document.body).backgroundColor;
+                  return themeColor === '#fff' || themeColor === '#ffffff' ||
+                         themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
+                         bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
+                }
+
+                function syncReportsThemeClass() {
+                  const isLightTheme = detectReportsLightTheme();
+                  document.documentElement.classList.toggle('light-theme', isLightTheme);
+                  document.body.classList.toggle('light-theme', isLightTheme);
+                  return isLightTheme;
+                }
+
+                window.detectReportsLightTheme = detectReportsLightTheme;
+                window.syncReportsThemeClass = syncReportsThemeClass;
+
                 // ฟังก์ชันสำหรับตรวจจับและปรับสี input fields ตาม theme
                 function updateInputTheme() {
-                  const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim();
-                  const bodyBg = getComputedStyle(document.body).backgroundColor;
-                  
-                  // ตรวจสอบว่าเป็นสีขาวหรือสีอ่อน
-                  const isLightTheme = themeColor === '#fff' || themeColor === '#ffffff' || 
-                                       themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
-                                       bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
+                  const isLightTheme = syncReportsThemeClass();
                   
                   // เลือก input และ select ทั้งหมดในฟอร์ม
                   const inputs = document.querySelectorAll('.expense-form-group input, .expense-form-group select');
@@ -1723,10 +1991,13 @@ try {
       const paymentProofModal = document.getElementById('paymentProofModal');
       const closePaymentProofModal = document.getElementById('closePaymentProofModal');
       const paymentProofContent = document.getElementById('paymentProofContent');
+      const pageHeaderBar = document.querySelector('.page-header-bar');
       const ownerBankName = <?php echo json_encode((string)($settings['bank_name'] ?? ''), JSON_UNESCAPED_UNICODE); ?>;
       const ownerAccountNumber = <?php echo json_encode((string)($settings['bank_account_number'] ?? ''), JSON_UNESCAPED_UNICODE); ?>;
 
       function renderPaymentModalCard(payment, context) {
+        const toNumber = (value) => Number(value || 0);
+        const formatBaht = (value) => `฿${toNumber(value).toLocaleString('th-TH')}`;
         const proofSrc = payment.pay_proof
           ? '/dormitory_management/Public/Assets/Images/Payments/' + payment.pay_proof
           : '';
@@ -1734,8 +2005,37 @@ try {
         const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
         const paidDate = payment.pay_date ? new Date(payment.pay_date).toLocaleDateString('th-TH') : '-';
         const isVerified = String(payment.pay_status) === '1';
-        const statusText = isVerified ? 'ชำระแล้ว' : 'รอตรวจสอบ';
-        const statusClass = isVerified ? 'paid' : 'pending';
+        const fallbackStatusText = isVerified ? 'ชำระแล้ว' : 'รอตรวจสอบ';
+        const statusText = String(context.statusText || '').trim() || fallbackStatusText;
+        let statusClass = isVerified ? 'paid' : 'pending';
+        if (statusText.startsWith('ยังไม่ชำระ')) {
+          statusClass = 'unpaid';
+        } else if (statusText.startsWith('ชำระยังไม่ครบ')) {
+          statusClass = 'partial';
+        } else if (statusText.startsWith('รอตรวจสอบ')) {
+          statusClass = 'pending';
+        } else if (statusText.startsWith('ชำระแล้ว')) {
+          statusClass = 'paid';
+        }
+
+        const statusIconMap = {
+          paid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
+          pending: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>',
+          partial: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+          unpaid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>'
+        };
+        const statusIcon = statusIconMap[statusClass] || statusIconMap.pending;
+        const paymentRemark = String(payment.pay_remark || '').trim();
+        const paymentType = paymentRemark
+          ? (paymentRemark === 'มัดจำ' ? 'มัดจำ' : 'ค่าห้อง/ค่าน้ำ/ค่าไฟ')
+          : '-';
+        const depositPaid = toNumber(context.depositPaid);
+        const depositRemain = toNumber(context.depositRemain);
+        const chargesPaid = toNumber(context.chargesPaid);
+        const chargesRemain = toNumber(context.chargesRemain);
+        const totalPaid = depositPaid + chargesPaid;
+        const totalRemain = depositRemain + chargesRemain;
+        const totalRemainColor = totalRemain > 0 ? '#ef4444' : '#22c55e';
         const proofHtml = !proofSrc
           ? '<div class="payment-modal-value" style="color:#94a3b8;">-</div>'
           : (isImage
@@ -1743,28 +2043,69 @@ try {
               : '<a class="payment-modal-value" style="color:#2563eb;font-weight:700;" href="' + proofSrc + '" target="_blank" rel="noopener">เปิดไฟล์หลักฐาน</a>');
 
         paymentProofContent.innerHTML = `
-          <div class="payment-modal-check">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+          <div class="payment-modal-head">
+            <div class="payment-modal-check ${statusClass}">
+              ${statusIcon}
+            </div>
+            <h3 class="payment-modal-title">แจ้งชำระเงิน</h3>
           </div>
-          <h3 class="payment-modal-title">แจ้งชำระเงิน</h3>
-          <div class="payment-modal-grid">
-            <div class="payment-modal-label">สถานะ</div>
-            <div class="payment-modal-value payment-modal-status ${statusClass}">• ${statusText}</div>
+          <div class="payment-modal-body">
+            <div class="payment-modal-summary">
+              <div class="payment-modal-summary-item">
+                <div class="payment-modal-summary-label">สถานะ</div>
+                <div class="payment-modal-summary-value payment-modal-status ${statusClass}">${statusText}</div>
+              </div>
+              <div class="payment-modal-summary-item">
+                <div class="payment-modal-summary-label">จ่ายแล้วรวม</div>
+                <div class="payment-modal-summary-value">${formatBaht(totalPaid)}</div>
+              </div>
+              <div class="payment-modal-summary-item">
+                <div class="payment-modal-summary-label">ยอดค้างรวม</div>
+                <div class="payment-modal-summary-value" style="color:${totalRemainColor};">${formatBaht(totalRemain)}</div>
+              </div>
+            </div>
 
-            <div class="payment-modal-label">โดย ผู้เช่า</div>
-            <div class="payment-modal-value">${context.tenantName || '-'}</div>
+            <div class="payment-modal-section">
+              <h4 class="payment-modal-section-title">ข้อมูลการชำระ</h4>
+              <div class="payment-modal-grid">
+                <div class="payment-modal-label">ผู้เช่า</div>
+                <div class="payment-modal-value">${context.tenantName || '-'}</div>
 
-            <div class="payment-modal-label">โอนเงินเข้าบัญชี</div>
-            <div class="payment-modal-value">${ownerBankName || '-'}<br>${ownerAccountNumber || '-'}</div>
+                <div class="payment-modal-label">ธนาคารปลายทาง</div>
+                <div class="payment-modal-value">${ownerBankName || '-'}<br>${ownerAccountNumber || '-'}</div>
 
-            <div class="payment-modal-label">วันที่ชำระ</div>
-            <div class="payment-modal-value">${paidDate}</div>
+                <div class="payment-modal-label">วันที่ชำระ</div>
+                <div class="payment-modal-value">${paidDate}</div>
 
-            <div class="payment-modal-label">จำนวนเงิน</div>
-            <div class="payment-modal-value">฿${Number(payment.pay_amount || 0).toLocaleString('th-TH')}</div>
+                <div class="payment-modal-label">จำนวนเงิน</div>
+                <div class="payment-modal-value">${formatBaht(payment.pay_amount)}</div>
 
-            <div class="payment-modal-label">หลักฐานการโอน</div>
-            <div>${proofHtml}</div>
+                <div class="payment-modal-label">ประเภทรายการ</div>
+                <div class="payment-modal-value">${paymentType}</div>
+              </div>
+            </div>
+
+            <div class="payment-modal-section">
+              <h4 class="payment-modal-section-title">สรุปย่อย</h4>
+              <div class="payment-modal-grid">
+                <div class="payment-modal-label">จ่ายแล้ว (มัดจำ)</div>
+                <div class="payment-modal-value">${formatBaht(depositPaid)}</div>
+
+                <div class="payment-modal-label">จ่ายแล้ว (ค่าห้อง)</div>
+                <div class="payment-modal-value">${formatBaht(chargesPaid)}</div>
+
+                <div class="payment-modal-label">ค้างชำระ (มัดจำ)</div>
+                <div class="payment-modal-value" style="color:${depositRemain > 0 ? '#ef4444' : '#22c55e'};font-weight:700;">${formatBaht(depositRemain)}</div>
+
+                <div class="payment-modal-label">ค้างชำระ (ค่าห้อง)</div>
+                <div class="payment-modal-value" style="color:${chargesRemain > 0 ? '#ef4444' : '#22c55e'};font-weight:700;">${formatBaht(chargesRemain)}</div>
+              </div>
+            </div>
+
+            <div class="payment-modal-section">
+              <h4 class="payment-modal-section-title">หลักฐานการโอน</h4>
+              <div>${proofHtml}</div>
+            </div>
           </div>
         `;
       }
@@ -1773,12 +2114,16 @@ try {
         if (!paymentProofModal) return;
         paymentProofModal.style.display = 'flex';
         paymentProofModal.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('payment-modal-open');
+        if (pageHeaderBar) pageHeaderBar.classList.add('modal-open-hidden');
       }
 
       function closeModal() {
         if (!paymentProofModal) return;
         paymentProofModal.style.display = 'none';
         paymentProofModal.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('payment-modal-open');
+        if (pageHeaderBar) pageHeaderBar.classList.remove('modal-open-hidden');
       }
 
       function notifyPaymentError(message) {
@@ -1798,13 +2143,21 @@ try {
           });
           if (!response.ok) throw new Error('ไม่สามารถโหลดข้อมูลการชำระเงินได้');
           const data = await response.json();
-          if (!data.success || !Array.isArray(data.payments) || data.payments.length === 0) {
-            notifyPaymentError('ไม่พบข้อมูลการชำระเงิน');
-            closeModal();
-            return;
+          if (!data.success) {
+            throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลการชำระเงินได้');
           }
 
-          renderPaymentModalCard(data.payments[0], context);
+          const firstPayment = (Array.isArray(data.payments) && data.payments.length > 0)
+            ? data.payments[0]
+            : {
+                pay_proof: '',
+                pay_date: '',
+                pay_amount: 0,
+                pay_remark: '',
+                pay_status: '0'
+              };
+
+          renderPaymentModalCard(firstPayment, context);
           showPaymentModal();
         } catch (error) {
           notifyPaymentError(error.message || 'เกิดข้อผิดพลาด');
@@ -1812,14 +2165,36 @@ try {
         }
       }
 
-      document.querySelectorAll('.payment-preview-trigger').forEach(card => {
-        card.addEventListener('click', function() {
-          openPaymentPreview(this.dataset.expenseId, {
-            tenantName: this.dataset.tenantName || '-',
-            statusText: this.dataset.statusText || 'รอตรวจสอบ'
+      function attachPaymentPreviewTrigger(card) {
+        if (!card || card.dataset.boundPreview === '1') return;
+
+        const openFromCard = () => {
+          openPaymentPreview(card.dataset.expenseId, {
+            tenantName: card.dataset.tenantName || '-',
+            statusText: card.dataset.statusText || 'รอตรวจสอบ',
+            depositPaid: card.dataset.depositPaid || 0,
+            depositRemain: card.dataset.depositRemain || 0,
+            chargesPaid: card.dataset.chargesPaid || 0,
+            chargesRemain: card.dataset.chargesRemain || 0
           });
+        };
+
+        card.addEventListener('click', openFromCard);
+        card.addEventListener('keydown', function(e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            openFromCard();
+          }
         });
-      });
+
+        card.dataset.boundPreview = '1';
+      }
+
+      function bindPaymentPreviewTriggers() {
+        document.querySelectorAll('.payment-preview-trigger').forEach(attachPaymentPreviewTrigger);
+      }
+
+      bindPaymentPreviewTriggers();
 
       document.querySelectorAll('.view-payment-btn').forEach(btn => {
         btn.addEventListener('click', function() {
@@ -1847,101 +2222,24 @@ try {
     <script>
       (function() {
         const monthFilter = document.getElementById('monthFilter');
-        const tableBody = document.querySelector('#table-expenses tbody');
-        
-        if (!monthFilter || !tableBody) return;
-        
-        // Trigger filter on page load
-        function filterByMonth() {
-          const selectedMonth = monthFilter.value;
-          const rows = tableBody.querySelectorAll('tr');
-          const cards = document.querySelectorAll('#expensesRowView .expense-row-card[data-month]');
-          let visibleCount = 0;
-          
-          rows.forEach(row => {
-            // ข้าม row ที่เป็นข้อความ "ยังไม่มีข้อมูล" หรือ "ไม่พบข้อมูล"
-            if (row.id === 'no-data-row' || row.id === 'no-data-filtered' || row.cells.length <= 1) {
-              return;
-            }
-            
-            if (!selectedMonth) {
-              // แสดงทั้งหมด
-              row.style.display = '';
-              visibleCount++;
-            } else {
-              // ดึงข้อมูลเดือน/ปีจากคอลัมน์ที่ 3 (index 2)
-              const dateCell = row.cells[2];
-              if (dateCell) {
-                const dateText = dateCell.textContent.trim(); // format: MM/YYYY
-                
-                // แปลง MM/YYYY เป็น YYYY-MM
-                const parts = dateText.split('/');
-                if (parts.length === 2) {
-                  const month = parts[0];
-                  const year = parts[1];
-                  const rowMonth = `${year}-${month}`; // format: YYYY-MM
-                  
-                  if (rowMonth === selectedMonth) {
-                    row.style.display = '';
-                    visibleCount++;
-                  } else {
-                    row.style.display = 'none';
-                  }
-                } else {
-                  row.style.display = 'none';
-                }
-              }
-            }
-          });
+        if (!monthFilter) return;
 
-          cards.forEach(card => {
-            const cardMonth = card.getAttribute('data-month') || '';
-            card.style.display = (!selectedMonth || cardMonth === selectedMonth) ? '' : 'none';
-          });
-          
-          // ตรวจสอบว่ามีแถวที่แสดงหรือไม่
-          if (visibleCount === 0) {
-            // ถ้าไม่มีแถวที่แสดง แสดงข้อความ
-            const noDataRow = document.createElement('tr');
-            noDataRow.id = 'no-data-filtered';
-            noDataRow.innerHTML = '<td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">ไม่พบข้อมูลในเดือนที่เลือก</td>';
-            
-            // ลบ row เก่าถ้ามี
-            const oldNoData = document.getElementById('no-data-filtered');
-            if (oldNoData) oldNoData.remove();
-            
-            tableBody.appendChild(noDataRow);
+        monthFilter.addEventListener('change', function() {
+          const url = new URL(window.location.href);
+          const selectedMonth = this.value || '';
+          if (selectedMonth) {
+            url.searchParams.set('filter_month', selectedMonth);
           } else {
-            // ลบข้อความ "ไม่พบข้อมูล" ถ้ามี
-            const noDataRow = document.getElementById('no-data-filtered');
-            if (noDataRow) noDataRow.remove();
+            url.searchParams.delete('filter_month');
           }
-        }
-        
-        monthFilter.addEventListener('change', filterByMonth);
-        
-        // เรียกใช้ filter ทันทีเมื่อโหลดหน้า
-        document.addEventListener('DOMContentLoaded', function() {
-          if (monthFilter.value) {
-            filterByMonth();
-          }
+          window.location.href = url.toString();
         });
-        
-        // ถ้าหน้าโหลดแล้ว ให้เรียกใช้ filter ทันที
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', filterByMonth);
-        } else {
-          filterByMonth();
-        }
         
         // เพิ่มการจัดการ theme สำหรับ select
         function updateSelectTheme() {
-          const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim();
-          const bodyBg = getComputedStyle(document.body).backgroundColor;
-          
-          const isLightTheme = themeColor === '#fff' || themeColor === '#ffffff' || 
-                               themeColor === 'rgb(255, 255, 255)' || themeColor === 'white' ||
-                               bodyBg === 'rgb(255, 255, 255)' || bodyBg === '#fff' || bodyBg === '#ffffff';
+          const isLightTheme = (typeof window.syncReportsThemeClass === 'function')
+            ? window.syncReportsThemeClass()
+            : false;
           
           if (isLightTheme) {
             monthFilter.style.background = '#ffffff';
@@ -1955,137 +2253,6 @@ try {
         }
         
         updateSelectTheme();
-        
-        // Month filter function
-        function filterExpensesByMonth() {
-          console.log('filterExpensesByMonth called');
-          const monthFilter = document.getElementById('monthFilter');
-          if (!monthFilter) {
-            console.log('monthFilter not found');
-            return;
-          }
-          
-          const selectedMonth = monthFilter.value;
-          console.log('Selected month:', selectedMonth);
-          
-          const table = document.getElementById('table-expenses');
-          if (!table) {
-            console.log('Table not found');
-            return;
-          }
-          
-          const tbody = table.querySelector('tbody');
-          if (!tbody) {
-            console.log('Tbody not found');
-            return;
-          }
-          
-          const rows = tbody.querySelectorAll('tr');
-          console.log('Total rows:', rows.length);
-          let visibleCount = 0;
-          
-          // selectedMonth format is already YYYY-MM (e.g., "2025-12", "2026-01")
-          // Convert to MM/YYYY for matching table format
-          let targetMonthYear = '';
-          if (selectedMonth) {
-            const [year, month] = selectedMonth.split('-');
-            targetMonthYear = month + '/' + year; // Format: MM/YYYY
-            console.log('Target month/year:', targetMonthYear);
-          }
-          
-          rows.forEach((row, index) => {
-            // Skip special rows
-            if (row.id === 'no-data-row' || row.id === 'no-data-filtered') {
-              return;
-            }
-            
-            // Skip rows with less than 3 cells
-            if (row.cells.length < 3) {
-              return;
-            }
-            
-            if (!selectedMonth) {
-              // Show all
-              row.style.display = '';
-              visibleCount++;
-            } else {
-              // Get date from column 3 (index 2) - format is MM/YYYY
-              const dateCell = row.cells[2];
-              if (dateCell) {
-                const dateText = dateCell.textContent.trim();
-                
-                // Check if this row matches the selected month
-                if (dateText === targetMonthYear) {
-                  row.style.display = '';
-                  visibleCount++;
-                } else {
-                  row.style.display = 'none';
-                }
-              } else {
-                row.style.display = 'none';
-              }
-            }
-          });
-          
-          console.log('Visible rows:', visibleCount);
-          
-          // Show "no data" message if nothing visible
-          const existingNoData = document.getElementById('no-data-filtered');
-          if (existingNoData) {
-            existingNoData.remove();
-          }
-          
-          if (visibleCount === 0 && rows.length > 0) {
-            const noDataRow = document.createElement('tr');
-            noDataRow.id = 'no-data-filtered';
-            noDataRow.innerHTML = '<td colspan="9" style="text-align:center;padding:2rem;color:#64748b;">ไม่พบข้อมูลในเดือนที่เลือก</td>';
-            tbody.appendChild(noDataRow);
-          }
-        }
-        
-        // Attach event listener and make function globally available
-        document.addEventListener('DOMContentLoaded', function() {
-          const monthFilter = document.getElementById('monthFilter');
-          if (monthFilter) {
-            // Remove existing listeners to prevent duplicates
-            monthFilter.removeEventListener('change', filterExpensesByMonth);
-            // Add the listener
-            monthFilter.addEventListener('change', filterExpensesByMonth);
-            console.log('Event listener attached to monthFilter');
-          }
-        });
-        
-        // If DOM is already loaded, attach listener now
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', function() {
-            const monthFilter = document.getElementById('monthFilter');
-            if (monthFilter) {
-              monthFilter.removeEventListener('change', filterExpensesByMonth);
-              monthFilter.addEventListener('change', filterExpensesByMonth);
-            }
-          });
-        } else {
-          const monthFilter = document.getElementById('monthFilter');
-          if (monthFilter) {
-            monthFilter.removeEventListener('change', filterExpensesByMonth);
-            monthFilter.addEventListener('change', filterExpensesByMonth);
-            console.log('Event listener attached to monthFilter (DOM already loaded)');
-          }
-        }
-        
-        // Light theme detection - apply class to html element if theme color is light
-        function applyThemeClass() {
-          const themeColor = getComputedStyle(document.documentElement).getPropertyValue('--theme-bg-color').trim().toLowerCase();
-          // ตรวจสอบว่า theme color เป็นสีขาวหรือสีอ่อนเบา (light colors)
-          const isLight = /^(#fff|#ffffff|rgb\(25[0-5],\s*25[0-5],\s*25[0-5]\)|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))$/i.test(themeColor.trim());
-          if (isLight) {
-            document.documentElement.classList.add('light-theme');
-          } else {
-            document.documentElement.classList.remove('light-theme');
-          }
-          console.log('Theme color:', themeColor, 'Is light:', isLight);
-        }
-        applyThemeClass();
         
         const themeObserver = new MutationObserver(updateSelectTheme);
         themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
