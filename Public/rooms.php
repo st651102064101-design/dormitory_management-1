@@ -356,6 +356,30 @@ foreach ($availableMonths as $monthKey) {
             align-items: center;
             gap: 0.5rem;
         }
+
+        /* Login Button */
+        .btn-login {
+            background: linear-gradient(135deg, var(--primary, #3b82f6), #1d4ed8) !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            padding: 0.75rem 1.5rem !important;
+            border-radius: 10px !important;
+            font-weight: 600;
+            box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+            transition: all 0.3s ease;
+            text-decoration: none;
+        }
+        .btn-login .nav-icon {
+            stroke: #000000 !important;
+        }
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59,130,246,0.45);
+        }
+        .btn-login::before {
+            display: none !important;
+        }
+
         @keyframes iconDraw {
             from { stroke-dashoffset: 100; }
             to { stroke-dashoffset: 0; }
@@ -613,6 +637,10 @@ foreach ($availableMonths as $monthKey) {
             margin: 0;
         }
 
+        .upcoming-rooms-title {
+            color: rgba(255,255,255,0.8);
+        }
+
         .upcoming-header p {
             font-size: 0.85rem;
             color: rgba(255,255,255,0.6);
@@ -690,7 +718,7 @@ foreach ($availableMonths as $monthKey) {
 
         .upcoming-price {
             font-size: 0.9rem;
-            color: <?php echo $themeColor; ?>;
+            color: #000000;
             font-weight: 500;
             margin-bottom: 0.5rem;
         }
@@ -1077,6 +1105,13 @@ foreach ($availableMonths as $monthKey) {
             background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0.3) 50%, transparent 70%);
             box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
         }
+
+        /* Back side after flip: remove white glow particles */
+        .room-card.flipped .card-particles::before,
+        .room-card.flipped .card-particles::after {
+            display: none;
+            box-shadow: none;
+        }
         
         @keyframes particleFloat {
             0%, 100% { 
@@ -1356,8 +1391,9 @@ foreach ($availableMonths as $monthKey) {
         }
         
         .room-card-face.back {
-            background: linear-gradient(145deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
-            border: 1px solid rgba(167, 139, 250, 0.2);
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 55%, #eef2ff 100%);
+            border: 1px solid rgba(148, 163, 184, 0.3);
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
             transform: rotateY(180deg);
             z-index: 1;
         }
@@ -1440,13 +1476,13 @@ foreach ($availableMonths as $monthKey) {
             gap: 0.5rem;
             font-size: 1.1rem;
             font-weight: 600;
-            color: #fff;
+            color: #0f172a;
         }
         
         .room-number-back svg {
             width: 20px;
             height: 20px;
-            color: #a78bfa;
+            color: #2563eb;
         }
         
         .room-icon-animated {
@@ -1458,18 +1494,18 @@ foreach ($availableMonths as $monthKey) {
             align-items: center;
             gap: 0.3rem;
             padding: 0.3rem 0.6rem;
-            background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
-            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: linear-gradient(135deg, rgba(34, 197, 94, 0.12), rgba(16, 185, 129, 0.12));
+            border: 1px solid rgba(34, 197, 94, 0.24);
             border-radius: 20px;
             font-size: 0.7rem;
-            color: #4ade80;
+            color: #15803d;
             font-weight: 500;
         }
         
         .availability-badge.occupied {
-            background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.2));
-            border-color: rgba(239, 68, 68, 0.3);
-            color: #f87171;
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.1), rgba(220, 38, 38, 0.1));
+            border-color: rgba(239, 68, 68, 0.22);
+            color: #b91c1c;
         }
         
         .back-details {
@@ -1483,14 +1519,14 @@ foreach ($availableMonths as $monthKey) {
             align-items: center;
             gap: 0.6rem;
             padding: 0.5rem;
-            background: rgba(255, 255, 255, 0.03);
+            background: rgba(241, 245, 249, 0.85);
             border-radius: 10px;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(148, 163, 184, 0.18);
         }
         
         .detail-item.highlight {
-            background: linear-gradient(135deg, rgba(167, 139, 250, 0.15), rgba(139, 92, 246, 0.1));
-            border-color: rgba(167, 139, 250, 0.2);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.07));
+            border-color: rgba(59, 130, 246, 0.22);
         }
         
         .detail-icon {
@@ -1499,7 +1535,7 @@ foreach ($availableMonths as $monthKey) {
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(255, 255, 255, 0.05);
+            background: rgba(59, 130, 246, 0.1);
             border-radius: 8px;
             flex-shrink: 0;
         }
@@ -1507,7 +1543,7 @@ foreach ($availableMonths as $monthKey) {
         .detail-icon svg {
             width: 16px;
             height: 16px;
-            color: #a78bfa;
+            color: #2563eb;
         }
         
         .detail-text {
@@ -1519,19 +1555,19 @@ foreach ($availableMonths as $monthKey) {
         
         .detail-label {
             font-size: 0.65rem;
-            color: #94a3b8;
+            color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
         
         .detail-value {
             font-size: 0.85rem;
-            color: #fff;
+            color: #0f172a;
             font-weight: 500;
         }
         
         .detail-value.price {
-            color: #a78bfa;
+            color: #2563eb;
             font-weight: 600;
         }
         
@@ -1544,7 +1580,13 @@ foreach ($availableMonths as $monthKey) {
         
         .back-actions {
             padding: 0.75rem 1rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            border-top: 1px solid rgba(148, 163, 184, 0.25);
+        }
+
+        .feature-tag {
+            background: rgba(59, 130, 246, 0.1);
+            color: #1d4ed8;
+            border: 1px solid rgba(59, 130, 246, 0.18);
         }
         
         .book-btn-back {
@@ -1570,6 +1612,21 @@ foreach ($availableMonths as $monthKey) {
             background: linear-gradient(135deg, #2563eb, #1d4ed8);
             transform: translateY(-2px);
             box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        /* Back side after flip: force content text to black */
+        .room-card.flipped .room-card-face.back,
+        .room-card.flipped .room-card-face.back * {
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            text-shadow: none !important;
+        }
+
+        /* Keep booking button text readable */
+        .room-card.flipped .room-card-face.back .book-btn-back,
+        .room-card.flipped .room-card-face.back .book-btn-back * {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
         }
 
         /* List view styles removed */
@@ -1775,211 +1832,463 @@ foreach ($availableMonths as $monthKey) {
             }
         }
 
-        /* ===== LIGHT THEME ===== */
+        /* ==============================================================
+           LIGHT THEME — Clean & Comprehensive
+           ============================================================== */
+
+        /* --- 1) Page Background --- */
         body.theme-light {
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            background: #f8fafc !important;
+            color: #1e293b !important;
         }
         body.theme-light .bg-animation {
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            background: linear-gradient(160deg, #f8fafc, #eef2f7) !important;
         }
         body.theme-light .bg-gradient {
-            background: radial-gradient(ellipse at 30% 20%, rgba(59, 130, 246, 0.08), transparent 50%),
-                        radial-gradient(ellipse at 70% 60%, rgba(139, 92, 246, 0.06), transparent 50%);
+            background: radial-gradient(ellipse at 30% 20%, rgba(59,130,246,0.06), transparent 50%),
+                        radial-gradient(ellipse at 70% 60%, rgba(139,92,246,0.04), transparent 50%) !important;
         }
         body.theme-light .grid-lines {
-            background-image: linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-                             linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+            background-image: linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px) !important;
         }
-        body.theme-light .floating-orb {
-            opacity: 0.15;
-        }
+        body.theme-light .floating-orb { opacity: 0.12 !important; }
         body.theme-light .particle {
-            background: rgba(59, 130, 246, 0.3);
+            background: rgba(59,130,246,0.25) !important;
+            box-shadow: 0 0 8px rgba(59,130,246,0.15) !important;
         }
+
+        /* --- 2) Header & Navigation --- */
         body.theme-light .header {
-            background: rgba(255, 255, 255, 0.9);
-            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(255,255,255,0.92) !important;
+            border-bottom: 1px solid rgba(148,163,184,0.18) !important;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
+        }
+        body.theme-light .header.scrolled {
+            background: rgba(255,255,255,0.97) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08) !important;
         }
         body.theme-light .logo h1 {
-            color: #1e293b !important;
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
             background: none !important;
             -webkit-background-clip: unset !important;
-            -webkit-text-fill-color: #1e293b !important;
+            background-clip: unset !important;
+            text-shadow: none !important;
         }
-        body.theme-light .nav-links a {
-            color: #475569;
+        body.theme-light .nav-links a:not(.btn-login),
+        body.theme-light .nav-links a:not(.btn-login):link,
+        body.theme-light .nav-links a:not(.btn-login):visited {
+            color: #334155 !important;
+            -webkit-text-fill-color: #334155 !important;
+            background: rgba(255,255,255,0.9) !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+            -webkit-tap-highlight-color: transparent;
         }
-        body.theme-light .nav-links a:hover {
-            color: #667eea;
+        body.theme-light .nav-links a:not(.btn-login) .nav-icon {
+            stroke: #334155 !important;
         }
+        body.theme-light .nav-links a:not(.btn-login):hover,
+        body.theme-light .nav-links a:not(.btn-login):active,
+        body.theme-light .nav-links a:not(.btn-login):focus-visible {
+            color: var(--primary) !important;
+            -webkit-text-fill-color: var(--primary) !important;
+            background: rgba(59,130,246,0.1) !important;
+            border-color: rgba(59,130,246,0.24) !important;
+            transform: translateY(-2px) !important;
+            outline: none;
+        }
+        body.theme-light .nav-links a:not(.btn-login):hover .nav-icon,
+        body.theme-light .nav-links a:not(.btn-login):active .nav-icon,
+        body.theme-light .nav-links a:not(.btn-login):focus-visible .nav-icon {
+            stroke: var(--primary) !important;
+        }
+        body.theme-light .nav-links a::before {
+            background: linear-gradient(90deg, transparent, rgba(59,130,246,0.06), transparent) !important;
+        }
+        /* btn-login in light theme */
+        body.theme-light .btn-login {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+            box-shadow: 0 4px 16px rgba(59,130,246,0.3) !important;
+        }
+        body.theme-light .btn-login:hover {
+            box-shadow: 0 8px 28px rgba(59,130,246,0.45) !important;
+        }
+        body.theme-light .btn-login .nav-icon {
+            stroke: #000000 !important;
+        }
+
+        /* --- 3) Page Title --- */
         body.theme-light .page-title h2 {
-            color: #1e293b !important;
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
             background: none !important;
             -webkit-background-clip: unset !important;
-            -webkit-text-fill-color: #1e293b !important;
+            background-clip: unset !important;
+            text-shadow: none !important;
         }
         body.theme-light .page-title p {
             color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
         }
         body.theme-light .page-title .label {
-            background: rgba(102, 126, 234, 0.1);
-            border-color: rgba(102, 126, 234, 0.2);
-            color: #6366f1 !important;
+            background: rgba(59,130,246,0.08) !important;
+            border-color: rgba(59,130,246,0.25) !important;
+            color: #3b82f6 !important;
+            -webkit-text-fill-color: #3b82f6 !important;
         }
+
+        /* --- 4) Back Link --- */
+        body.theme-light .back-link {
+            background: rgba(59,130,246,0.08) !important;
+            border-color: rgba(59,130,246,0.2) !important;
+            color: #3b82f6 !important;
+            -webkit-text-fill-color: #3b82f6 !important;
+        }
+        body.theme-light .back-link:hover {
+            background: rgba(59,130,246,0.15) !important;
+        }
+
+        /* --- 5) Stats Bar --- */
         body.theme-light .stats-bar {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(255,255,255,0.9) !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
         }
         body.theme-light .stat-item {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: #fff !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
         }
         body.theme-light .stat-item .info .number {
-            color: #1e293b !important;
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
         }
         body.theme-light .stat-item .info .label {
             color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
         }
+
+        /* --- 6) Filters --- */
         body.theme-light .filters {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(255,255,255,0.9) !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
         }
         body.theme-light .filters select {
-            background: rgba(255, 255, 255, 0.95);
-            border-color: rgba(148, 163, 184, 0.3);
-            color: #1e293b;
+            background: #fff !important;
+            border-color: rgba(148,163,184,0.3) !important;
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
         }
-        body.theme-light .back-link {
-            background: rgba(59, 130, 246, 0.1);
-            border-color: rgba(59, 130, 246, 0.2);
-            color: #3b82f6;
+        body.theme-light .filters select option {
+            background: #fff !important;
+            color: #1e293b !important;
         }
-        
-        /* Light theme - Room Card */
+
+        /* --- 7) Section Header & View Toggle --- */
+        body.theme-light .rooms-section {
+            background: rgba(255,255,255,0.95) !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+        }
+        body.theme-light .section-header h1 {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+            text-shadow: none !important;
+        }
+        body.theme-light .view-toggle {
+            background: rgba(241,245,249,0.9) !important;
+            border-color: rgba(148,163,184,0.2) !important;
+        }
+        body.theme-light .toggle-view-btn {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .toggle-view-btn:hover {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+        }
+        body.theme-light .toggle-view-btn.active {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+
+        /* --- 8) Room Card — Front Face (image overlay keeps white text) --- */
         body.theme-light .room-card {
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.10) !important;
+        }
+        body.theme-light .room-card:hover {
+            box-shadow: 0 14px 42px rgba(59,130,246,0.18) !important;
         }
         body.theme-light .room-card::before {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6, #22c55e) !important;
-            opacity: 0.15;
+            opacity: 0.12 !important;
+        }
+        body.theme-light .room-card:hover::before {
+            opacity: 0.25 !important;
         }
         body.theme-light .room-card-face.front {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%) !important;
-            border: 1px solid rgba(148, 163, 184, 0.3);
+            background: linear-gradient(135deg, #ffffff, #f8fafc) !important;
+            border: 1px solid rgba(148,163,184,0.25) !important;
         }
         body.theme-light .room-image-container {
-            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%) !important;
+            background: linear-gradient(135deg, #e2e8f0, #cbd5e1) !important;
         }
         body.theme-light .room-number-web3 {
-            color: #ffffff !important;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
         }
         body.theme-light .room-type-web3 {
-            color: rgba(255,255,255,0.9) !important;
+            color: rgba(255,255,255,0.95) !important;
+            -webkit-text-fill-color: rgba(255,255,255,0.95) !important;
+            text-shadow: 0 1px 4px rgba(0,0,0,0.3) !important;
         }
         body.theme-light .room-price-web3 {
-            color: #ffffff !important;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3) !important;
         }
         body.theme-light .status-badge-web3 {
-            color: #ffffff !important;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+        body.theme-light .card-info-bottom,
+        body.theme-light .card-info-bottom * {
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+
+        /* --- 9) Room Card — Back Face (light background, dark text) --- */
+        body.theme-light .room-card-face.back {
+            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%) !important;
+            border: 1px solid rgba(148,163,184,0.25) !important;
+        }
+        body.theme-light .room-number-back {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+        body.theme-light .room-number-back svg {
+            color: var(--primary) !important;
+        }
+        body.theme-light .availability-badge {
+            background: rgba(34,197,94,0.1) !important;
+            border-color: rgba(34,197,94,0.25) !important;
+            color: #16a34a !important;
+            -webkit-text-fill-color: #16a34a !important;
+        }
+        body.theme-light .availability-badge.occupied {
+            background: rgba(239,68,68,0.1) !important;
+            border-color: rgba(239,68,68,0.25) !important;
+            color: #dc2626 !important;
+            -webkit-text-fill-color: #dc2626 !important;
+        }
+        body.theme-light .detail-item {
+            background: rgba(241,245,249,0.6) !important;
+            border-color: rgba(148,163,184,0.12) !important;
+        }
+        body.theme-light .detail-item.highlight {
+            background: rgba(59,130,246,0.06) !important;
+            border-color: rgba(59,130,246,0.15) !important;
+        }
+        body.theme-light .detail-icon {
+            background: rgba(59,130,246,0.08) !important;
+        }
+        body.theme-light .detail-icon svg {
+            color: var(--primary) !important;
+        }
+        body.theme-light .detail-label {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .detail-value {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+        body.theme-light .detail-value.price {
+            color: var(--primary) !important;
+            -webkit-text-fill-color: var(--primary) !important;
+        }
+        body.theme-light .back-actions {
+            border-top-color: rgba(148,163,184,0.18) !important;
+        }
+        body.theme-light .book-btn-back {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
         }
         body.theme-light .feature-tag {
-            background: rgba(139, 92, 246, 0.1);
-            color: #7c3aed;
+            background: rgba(59,130,246,0.08) !important;
+            color: var(--primary) !important;
+            -webkit-text-fill-color: var(--primary) !important;
         }
+        body.theme-light .room-card .card-particles::before,
+        body.theme-light .room-card .card-particles::after {
+            background: radial-gradient(circle, rgba(59,130,246,0.35) 0%, transparent 70%) !important;
+            box-shadow: 0 0 15px rgba(59,130,246,0.3) !important;
+        }
+
+        /* --- 10) Book Overlay (hover on front card) --- */
+        body.theme-light .card-book-overlay {
+            background: rgba(255,255,255,0.82) !important;
+            backdrop-filter: blur(6px) !important;
+        }
+        body.theme-light .book-text {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+        body.theme-light .book-text svg {
+            stroke: #fff !important;
+        }
+
+        /* --- 11) Upcoming Section --- */
+        body.theme-light .upcoming-section {
+            background: linear-gradient(135deg, rgba(249,115,22,0.06), rgba(234,88,12,0.03)) !important;
+            border-color: rgba(249,115,22,0.2) !important;
+        }
+        body.theme-light .upcoming-header h3 {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+        body.theme-light .upcoming-header p {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .upcoming-card {
+            background: rgba(255,255,255,0.8) !important;
+            border-color: rgba(148,163,184,0.2) !important;
+        }
+        body.theme-light .upcoming-card:hover {
+            background: rgba(249,115,22,0.06) !important;
+            border-color: rgba(249,115,22,0.35) !important;
+        }
+        body.theme-light .upcoming-card.active {
+            border-color: rgba(249,115,22,0.6) !important;
+            background: rgba(249,115,22,0.08) !important;
+            box-shadow: 0 8px 24px rgba(249,115,22,0.15) !important;
+        }
+        body.theme-light .upcoming-room-number {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+        body.theme-light .upcoming-price {
+            color: #000000 !important;
+            -webkit-text-fill-color: #000000 !important;
+        }
+        body.theme-light .upcoming-date {
+            color: #f97316 !important;
+            -webkit-text-fill-color: #f97316 !important;
+        }
+        body.theme-light .view-all-btn {
+            background: rgba(249,115,22,0.1) !important;
+            border-color: rgba(249,115,22,0.3) !important;
+            color: #ea580c !important;
+            -webkit-text-fill-color: #ea580c !important;
+        }
+        body.theme-light .selected-upcoming-title {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+        }
+        body.theme-light .upcoming-rooms-title {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+        }
+
+        /* --- 12) Quick Stats --- */
+        body.theme-light .quick-stat {
+            background: rgba(255,255,255,0.9) !important;
+        }
+        body.theme-light .quick-stat.green {
+            border-color: rgba(34,197,94,0.25) !important;
+            background: rgba(34,197,94,0.06) !important;
+        }
+        body.theme-light .quick-stat.orange {
+            border-color: rgba(249,115,22,0.25) !important;
+            background: rgba(249,115,22,0.06) !important;
+        }
+        body.theme-light .quick-stat.blue {
+            border-color: rgba(59,130,246,0.25) !important;
+            background: rgba(59,130,246,0.06) !important;
+        }
+        body.theme-light .quick-stat-label {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+
+        /* --- 13) Month Buttons & Select --- */
+        body.theme-light .month-btn {
+            background: rgba(255,255,255,0.9) !important;
+            border-color: rgba(148,163,184,0.25) !important;
+            color: #475569 !important;
+            -webkit-text-fill-color: #475569 !important;
+        }
+        body.theme-light .month-btn:hover {
+            background: rgba(249,115,22,0.08) !important;
+            border-color: #f97316 !important;
+            color: #ea580c !important;
+            -webkit-text-fill-color: #ea580c !important;
+        }
+        body.theme-light .month-btn.active {
+            background: #f97316 !important;
+            border-color: #f97316 !important;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+        body.theme-light .month-select-wrapper label {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .month-select {
+            background: #fff !important;
+            border-color: rgba(148,163,184,0.3) !important;
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+        }
+        body.theme-light .month-select option {
+            background: #fff !important;
+            color: #1e293b !important;
+        }
+
+        /* --- 14) Empty State --- */
         body.theme-light .empty-state {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            background: rgba(255,255,255,0.9) !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
         }
         body.theme-light .empty-state p {
             color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
         }
-        
-        /* Light theme - Section Header & View Toggle */
-        body.theme-light .rooms-section {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-        }
-        body.theme-light .section-header h1 {
-            color: #1e293b !important;
-            background: none !important;
-            -webkit-background-clip: unset !important;
-            -webkit-text-fill-color: #1e293b !important;
-        }
-        /* Light theme scrollbar */
-        body.theme-light::-webkit-scrollbar-track {
-            background: rgba(0, 0, 0, 0.05);
-        }
-        body.theme-light::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #6366f1 0%, #8b5cf6 100%);
-        }
-        body.theme-light .back-card-content::-webkit-scrollbar-track {
-            background: rgba(99, 102, 241, 0.1);
-        }
-        
-        /* Light theme - Back Card */
-        body.theme-light .room-card-face.back {
-            background: linear-gradient(145deg, #ffffff 0%, #f8fafc 50%, #f1f5f9 100%);
-            border: 1px solid rgba(148, 163, 184, 0.3);
-        }
-        body.theme-light .room-number-back {
-            color: #1e293b;
-        }
-        body.theme-light .room-number-back svg {
-            color: #6366f1;
-        }
-        body.theme-light .availability-badge {
-            background: rgba(34, 197, 94, 0.1);
-            border-color: rgba(34, 197, 94, 0.2);
-            color: #16a34a;
-        }
-        body.theme-light .availability-badge.occupied {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.2);
-            color: #dc2626;
-        }
-        body.theme-light .detail-item {
-            background: rgba(0, 0, 0, 0.02);
-            border-color: rgba(148, 163, 184, 0.1);
-        }
-        body.theme-light .detail-item.highlight {
-            background: rgba(99, 102, 241, 0.08);
-            border-color: rgba(99, 102, 241, 0.15);
-        }
-        body.theme-light .detail-icon {
-            background: rgba(99, 102, 241, 0.1);
-        }
-        body.theme-light .detail-icon svg {
-            color: #6366f1;
-        }
-        body.theme-light .detail-label {
-            color: #64748b;
-        }
-        body.theme-light .detail-value {
-            color: #1e293b;
-        }
-        body.theme-light .detail-value.price {
-            color: #6366f1;
-        }
-        body.theme-light .back-actions {
-            border-top-color: rgba(148, 163, 184, 0.2);
-        }
-        
-        /* Light theme list view styles removed */
-        
-        /* Light theme - Load More */
+
+        /* --- 15) Load More --- */
         body.theme-light .load-more-container {
-            background: transparent;
+            background: transparent !important;
         }
         body.theme-light .load-more-btn {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(148, 163, 184, 0.3);
-            color: #64748b;
+            background: #fff !important;
+            border: 1px solid rgba(148,163,184,0.25) !important;
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
         }
         body.theme-light .load-more-btn:hover {
-            background: rgba(99, 102, 241, 0.1);
-            border-color: rgba(99, 102, 241, 0.3);
-            color: #6366f1;
+            background: rgba(59,130,246,0.06) !important;
+            border-color: rgba(59,130,246,0.3) !important;
+            color: var(--primary) !important;
+            -webkit-text-fill-color: var(--primary) !important;
+        }
+
+        /* --- 16) Scrollbar --- */
+        body.theme-light::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.04) !important;
+        }
+        body.theme-light::-webkit-scrollbar-thumb {
+            background: linear-gradient(180deg, var(--primary) 0%, #6366f1 100%) !important;
+        }
+        body.theme-light .back-card-content::-webkit-scrollbar-track {
+            background: rgba(59,130,246,0.08) !important;
         }
 
         /* User Avatar Dropdown */
@@ -2383,7 +2692,7 @@ if ($publicTheme === 'light') {
             
             <?php if (!empty($upcomingRooms)): ?>
             <!-- Upcoming Rooms Grid using existing room card style -->
-            <h4 style="margin: 1.5rem 0 1rem; font-size: 1rem; color: rgba(255,255,255,0.8);">
+            <h4 class="upcoming-rooms-title" style="margin: 1.5rem 0 1rem; font-size: 1rem;">
                 📅 ห้องที่จะว่างใน<?php echo $displayMonth; ?> (<?php echo count($upcomingRooms); ?> ห้อง)
             </h4>
             <div class="upcoming-rooms">
@@ -2413,7 +2722,7 @@ if ($publicTheme === 'light') {
                 <div id="selected-upcoming-card" class="selected-upcoming-card"></div>
             </div>
             <?php else: ?>
-            <div style="text-align: center; padding: 2rem; color: rgba(255,255,255,0.5);">
+            <div style="text-align: center; padding: 2rem; color: #94a3b8;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:40px;height:40px;margin-bottom:0.5rem;opacity:0.5;">
                     <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                     <line x1="16" y1="2" x2="16" y2="6"></line>
@@ -2956,15 +3265,19 @@ if ($publicTheme === 'light') {
         
         /* Live light theme detection */
         body.live-light .room-card::before {
-            opacity: 0.15;
+            opacity: 0.12;
         }
         
         body.live-light .card-book-overlay {
-            background: rgba(255, 255, 255, 0.85);
+            background: rgba(255, 255, 255, 0.82);
         }
         
         body.live-light .book-text {
             color: white;
+            -webkit-text-fill-color: white;
+        }
+        body.live-light .book-text svg {
+            stroke: white !important;
         }
     </style>
 

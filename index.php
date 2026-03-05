@@ -1967,458 +1967,256 @@ try {
             transform: translateY(0);
         }
 
-        /* ===== LIGHT THEME ===== */
+        /* ==============================================================
+           LIGHT THEME — Clean & Complete
+           ============================================================== */
+
+        /* --- 1) Page Background --- */
         body.theme-light {
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            background: #f8fafc !important;
+            color: #1e293b !important;
         }
         body.theme-light .bg-animation {
-            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+            background: linear-gradient(160deg, #f8fafc, #eef2f7) !important;
         }
         body.theme-light .bg-gradient {
-            background: radial-gradient(ellipse at 30% 20%, rgba(59, 130, 246, 0.08), transparent 50%),
-                        radial-gradient(ellipse at 70% 60%, rgba(139, 92, 246, 0.06), transparent 50%),
-                        radial-gradient(ellipse at 40% 80%, rgba(34, 197, 94, 0.04), transparent 40%);
+            background: radial-gradient(ellipse at 30% 20%, rgba(59,130,246,0.06), transparent 50%),
+                        radial-gradient(ellipse at 70% 60%, rgba(139,92,246,0.04), transparent 50%),
+                        radial-gradient(ellipse at 40% 80%, rgba(34,197,94,0.03), transparent 40%) !important;
         }
         body.theme-light .grid-lines {
-            background-image: linear-gradient(rgba(148, 163, 184, 0.1) 1px, transparent 1px),
-                             linear-gradient(90deg, rgba(148, 163, 184, 0.1) 1px, transparent 1px);
+            background-image: linear-gradient(rgba(148,163,184,0.08) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(148,163,184,0.08) 1px, transparent 1px) !important;
         }
-        body.theme-light .floating-orb {
-            opacity: 0.15;
-        }
+        body.theme-light .floating-orb { opacity: 0.12 !important; }
         body.theme-light .particle {
-            background: rgba(59, 130, 246, 0.3);
-            box-shadow: 0 0 10px rgba(59, 130, 246, 0.2);
+            background: rgba(59,130,246,0.25) !important;
+            box-shadow: 0 0 8px rgba(59,130,246,0.15) !important;
         }
+
+        /* --- 2) Header & Navigation --- */
         body.theme-light .header {
-            background: rgba(255, 255, 255, 0.9);
-            border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            background: rgba(255,255,255,0.92) !important;
+            border-bottom: 1px solid rgba(148,163,184,0.18) !important;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06) !important;
         }
         body.theme-light .header.scrolled {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255,255,255,0.97) !important;
         }
-        body.theme-light .logo-text {
-            color: #1e293b;
-        }
-        body.theme-light .nav-links a {
-            color: #475569;
-        }
-        body.theme-light .nav-links a:hover {
-            color: var(--primary);
-        }
-        body.theme-light .hero-content h1 {
-            color: #1e293b;
-        }
-        body.theme-light .hero-content p {
-            color: #64748b;
-        }
-        body.theme-light .section-title h2 {
-            color: #1e293b;
-        }
-        body.theme-light .section-title p {
-            color: #64748b;
-        }
-        body.theme-light .service-card {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-        }
-        body.theme-light .service-card:hover {
-            border-color: rgba(59, 130, 246, 0.3);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
-        }
-        body.theme-light .service-card h3 {
-            color: #1e293b;
-        }
-        body.theme-light .service-card p {
-            color: #64748b;
-        }
-        body.theme-light .room-card {
-            background: rgba(255, 255, 255, 0.95);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-        }
-        body.theme-light .room-card:hover {
-            border-color: var(--primary);
-            box-shadow: 0 20px 60px rgba(59, 130, 246, 0.15);
-        }
-        body.theme-light .room-card-body {
-            background: #fff;
-        }
-        body.theme-light .room-features li {
-            color: #475569;
-        }
-        body.theme-light .news-card {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-        }
-        body.theme-light .news-card:hover {
-            border-color: rgba(59, 130, 246, 0.3);
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
-        }
-        body.theme-light .news-card h3 {
-            color: #1e293b;
-        }
-        body.theme-light .news-card p {
-            color: #64748b;
-        }
-        body.theme-light .news-meta {
-            color: #94a3b8;
-        }
-        body.theme-light .contact-card {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-        }
-        body.theme-light .contact-card h3 {
-            color: #1e293b;
-        }
-        body.theme-light .contact-detail {
-            color: #475569;
-        }
-        body.theme-light .quick-link-card {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-        }
-        body.theme-light .quick-link-card:hover {
-            border-color: rgba(59, 130, 246, 0.3);
-        }
-        body.theme-light .quick-link-card h4 {
-            color: #1e293b;
-        }
-        body.theme-light .quick-link-card p {
-            color: #64748b;
-        }
-        body.theme-light .location-card {
-            background: rgba(255, 255, 255, 0.9);
-            border: 1px solid rgba(148, 163, 184, 0.2);
-        }
-        body.theme-light .location-card h3 {
-            color: #1e293b;
-        }
-        body.theme-light .location-card p {
-            color: #64748b;
-        }
-        body.theme-light .footer {
-            background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
-            border-top: 1px solid rgba(148, 163, 184, 0.2);
-        }
-        body.theme-light .footer-links a {
-            color: #64748b;
-        }
-        body.theme-light .footer-links a:hover {
-            color: var(--primary);
-        }
-        body.theme-light .footer-copyright {
-            color: #94a3b8;
-        }
-        body.theme-light .stat-number {
-            color: #1e293b;
-        }
-        body.theme-light .stat-label {
-            color: #64748b;
-        }
-        /* Room card texts */
-        body.theme-light .room-number {
-            color: #1e293b;
-        }
-        body.theme-light .room-type {
-            color: #64748b;
-        }
-        body.theme-light .room-price {
-            color: #1e293b;
-        }
-        body.theme-light .room-price span {
-            color: #64748b;
-        }
-        body.theme-light .room-card-header {
-            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
-        }
-        body.theme-light .room-card-header .room-number,
-        body.theme-light .room-card-header .room-type {
-            color: #fff;
-        }
-        /* News card texts */
-        body.theme-light .news-title {
-            color: #1e293b;
-        }
-        body.theme-light .news-excerpt {
-            color: #64748b;
-        }
-        body.theme-light .news-date {
-            color: #94a3b8;
-        }
-        /* Contact section */
-        body.theme-light .contact-info h3 {
-            color: #1e293b;
-        }
-        body.theme-light .contact-info p {
-            color: #64748b;
-        }
-        body.theme-light .contact-item {
-            color: #475569;
-        }
-        body.theme-light .contact-item span {
-            color: #1e293b;
-        }
-        /* Hero section */
-        body.theme-light .hero-stats .stat-box {
-            background: transparent;
-            border: none;
-        }
-        body.theme-light .hero-stats .stat-box::after {
-            display: none !important;
-        }
-        body.theme-light .hero-stats .stat-box .number {
-            color: #1e293b;
-        }
-        body.theme-light .hero-stats .stat-box .label {
-            color: #64748b;
-        }
-        body.theme-light .scroll-indicator {
-            color: #1e293b;
-        }
-        
-        body.theme-light .scroll-indicator .mouse {
-            border: 2px solid #1e293b;
-        }
-        
-        body.theme-light .scroll-indicator .mouse::before {
-            background: #1e293b;
-        }
-        
-        /* Buttons - keep visible */
-        body.theme-light .btn-primary {
-            color: #fff;
-        }
-        body.theme-light .btn-book {
-            color: #fff;
-        }
-        /* Quick links */
-        body.theme-light .quick-link-title {
-            color: #1e293b;
-        }
-        body.theme-light .quick-link-desc {
-            color: #64748b;
-        }
-        /* Service icons remain colorful */
-        body.theme-light .service-icon {
-            color: var(--primary);
-        }
-        
-        /* ============================================= */
-        /* ULTIMATE LIGHT THEME - ALL TEXT BLACK        */
-        /* ============================================= */
-        body.theme-light,
-        body.theme-light *,
-        body.theme-light *::before,
-        body.theme-light *::after {
-            color: #1e293b !important;
-            -webkit-text-fill-color: #1e293b !important;
-            text-shadow: none !important;
-            opacity: 1 !important;
-        }
-        
-        /* Remove all gradient text effects */
-        body.theme-light h1,
-        body.theme-light h2,
-        body.theme-light h3,
-        body.theme-light h4,
-        body.theme-light h5,
-        body.theme-light h6,
-        body.theme-light p,
-        body.theme-light span,
-        body.theme-light a,
-        body.theme-light div,
-        body.theme-light li,
-        body.theme-light label,
-        body.theme-light .gradient-text,
-        body.theme-light .logo h1,
-        body.theme-light .nav-links a,
-        body.theme-light .hero h2,
-        body.theme-light .section-title h2 {
-            color: #1e293b !important;
-            -webkit-text-fill-color: #1e293b !important;
+        body.theme-light .logo-text,
+        body.theme-light .logo h1 {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
             background: none !important;
             -webkit-background-clip: unset !important;
             background-clip: unset !important;
             text-shadow: none !important;
         }
-        
-        /* ============ EXCEPTIONS - WHITE TEXT ============ */
-        /* Primary buttons - dark text in light theme */
-        body.theme-light .btn-primary,
-        body.theme-light .btn-primary *,
-        body.theme-light .btn-login,
-        body.theme-light .btn-login *,
-        body.theme-light button[type="submit"],
-        body.theme-light button[type="submit"] * {
-            color: #1e293b !important;
-            -webkit-text-fill-color: #1e293b !important;
-            background: transparent !important;
-            border: none !important;
-            box-shadow: none !important;
+        body.theme-light .nav-links a {
+            color: #475569 !important;
+            -webkit-text-fill-color: #475569 !important;
         }
-        
-        /* Room status badge - white text */
-        body.theme-light .room-status-badge {
+        body.theme-light .nav-links a .nav-icon {
+            stroke: #475569 !important;
+        }
+        body.theme-light .nav-links a:hover {
+            color: var(--primary) !important;
+            -webkit-text-fill-color: var(--primary) !important;
+            background: rgba(59,130,246,0.08) !important;
+        }
+        body.theme-light .nav-links a:hover .nav-icon {
+            stroke: var(--primary) !important;
+        }
+        body.theme-light .nav-links a::before {
+            background: linear-gradient(90deg, transparent, rgba(59,130,246,0.06), transparent) !important;
+        }
+
+        /* --- 3) Hero Section --- */
+        body.theme-light .hero h2,
+        body.theme-light .hero-content h1 {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+            text-shadow: none !important;
+        }
+        body.theme-light .hero h2 .gradient-text,
+        body.theme-light .gradient-text {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+            text-shadow: none !important;
+            opacity: 1 !important;
+        }
+        body.theme-light .hero p,
+        body.theme-light .hero-content p {
+            color: #475569 !important;
+            -webkit-text-fill-color: #475569 !important;
+        }
+        body.theme-light .hero-badge {
+            background: rgba(255,255,255,0.85) !important;
+            border-color: rgba(148,163,184,0.25) !important;
+            color: #475569 !important;
+        }
+        body.theme-light .hero-stats .stat-box {
+            background: rgba(255,255,255,0.7) !important;
+            border: 1px solid rgba(148,163,184,0.15) !important;
+        }
+        body.theme-light .hero-stats .stat-box::after { display: none !important; }
+        body.theme-light .hero-stats .stat-box .number {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+        body.theme-light .hero-stats .stat-box .label {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .scroll-indicator { color: #475569 !important; }
+        body.theme-light .scroll-indicator .mouse { border-color: #475569 !important; }
+        body.theme-light .scroll-indicator .mouse::before { background: #475569 !important; }
+
+        /* --- 4) Buttons --- */
+        body.theme-light .btn-primary {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
             color: #fff !important;
             -webkit-text-fill-color: #fff !important;
+            box-shadow: 0 4px 16px var(--primary-glow) !important;
         }
-        
-        /* ============ SECONDARY BUTTON - DARK TEXT ============ */
-        body.theme-light .btn-secondary,
-        body.theme-light .btn-secondary *,
-        body.theme-light a.btn-secondary,
-        body.theme-light a.btn-secondary * {
-            color: #1e293b !important;
-            -webkit-text-fill-color: #1e293b !important;
-            background: rgba(255, 255, 255, 0.95) !important;
-            stroke: #1e293b !important;
+        body.theme-light .btn-primary:hover {
+            box-shadow: 0 8px 28px var(--primary-glow) !important;
         }
+        body.theme-light .btn-primary .btn-icon { stroke: #fff !important; }
         body.theme-light .btn-secondary {
-            border: 2px solid #1e293b !important;
-        }
-        
-        /* Room card header - dark text on light background */
-        body.theme-light .room-card-header {
-            background: linear-gradient(135deg, #e0e7ff, #c7d2fe) !important;
-        }
-        body.theme-light .room-card-header,
-        body.theme-light .room-card-header .room-number,
-        body.theme-light .room-card-header .room-type,
-        body.theme-light .room-card-header * {
+            background: rgba(255,255,255,0.9) !important;
             color: #1e293b !important;
             -webkit-text-fill-color: #1e293b !important;
+            border: 1.5px solid rgba(148,163,184,0.35) !important;
         }
-        body.theme-light .room-status-badge {
+        body.theme-light .btn-secondary .btn-icon { stroke: #1e293b !important; }
+        body.theme-light .btn-book {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
             color: #fff !important;
             -webkit-text-fill-color: #fff !important;
         }
-        /* Room book button - dark text */
-        body.theme-light .btn-book,
-        body.theme-light .btn-book *,
-        body.theme-light a.btn-book,
-        body.theme-light a.btn-book * {
-            color: #1e293b !important;
-            -webkit-text-fill-color: #1e293b !important;
-            background: transparent !important;
+        body.theme-light .btn-login {
+            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
         }
-        /* Google Maps button - white text */
-        body.theme-light .google-maps-btn,
+        body.theme-light .btn-view-rooms {
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+        body.theme-light .google-maps-btn {
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
         body.theme-light .google-maps-btn * {
             color: #fff !important;
             -webkit-text-fill-color: #fff !important;
             stroke: #fff !important;
         }
-        /* Force site name to dark */
-        body.theme-light .logo h1 {
-            color: #1e293b !important;
-            background: transparent !important;
-            background-clip: unset !important;
-            -webkit-background-clip: unset !important;
-            -webkit-text-fill-color: #1e293b !important;
-            text-shadow: none !important;
+
+        /* --- 5) Section Titles --- */
+        body.theme-light .section-title .label {
+            background: rgba(59,130,246,0.08) !important;
+            border-color: rgba(59,130,246,0.25) !important;
+            color: #3b82f6 !important;
+            -webkit-text-fill-color: #3b82f6 !important;
         }
-        /* Force gradient text to dark */
-        body.theme-light .gradient-text {
-            color: #1e293b !important;
-            background: transparent !important;
-            -webkit-background-clip: unset !important;
-            background-clip: unset !important;
-            -webkit-text-fill-color: #1e293b !important;
-            text-shadow: none !important;
-        }
-        body.theme-light .hero-content h1,
-        body.theme-light .section-title h2,
-        body.theme-light .service-card h3,
-        body.theme-light .news-card h3,
-        body.theme-light .contact-card h3,
-        body.theme-light .quick-link-card h4,
-        body.theme-light .location-card h3 {
-            color: #1e293b !important;
-        }
-        body.theme-light .hero-content p,
-        body.theme-light .section-title p,
-        body.theme-light .service-card p,
-        body.theme-light .news-card p,
-        body.theme-light .contact-card p,
-        body.theme-light .quick-link-card p,
-        body.theme-light .location-card p {
-            color: #475569 !important;
-        }
-        /* Location card - light background */
-        body.theme-light .location-card {
-            background: rgba(255, 255, 255, 0.95) !important;
-            border: 1px solid rgba(148, 163, 184, 0.3);
-        }
-        body.theme-light .location-info {
-            background: rgba(248, 250, 252, 0.9);
-        }
-        body.theme-light .location-address {
-            color: #475569 !important;
-        }
-        /* Contact section light */
-        body.theme-light .contact-section {
-            background: rgba(248, 250, 252, 0.95);
-        }
-        body.theme-light .contact-detail {
-            color: #475569 !important;
-        }
-        body.theme-light .contact-detail a {
-            color: #1e293b !important;
-        }
-        /* Nav menu items */
-        body.theme-light .nav-links a {
-            color: #475569 !important;
-        }
-        body.theme-light .nav-links a:hover {
-            color: var(--primary) !important;
-        }
-        /* Button text stays white */
-        body.theme-light .btn-primary,
-        body.theme-light .btn-book,
-        body.theme-light .btn-login,
-        body.theme-light .btn-view-rooms {
-            color: #fff !important;
-        }
-        /* Override gradient text for light theme - IMPORTANT */
         body.theme-light .section-title h3,
-        body.theme-light .hero-content h1 {
+        body.theme-light .section-title h2 {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
             background: none !important;
             -webkit-background-clip: unset !important;
-            -webkit-text-fill-color: #1e293b !important;
             background-clip: unset !important;
-            color: #1e293b !important;
-        }
-        body.theme-light .section-title .label {
-            background: rgba(59, 130, 246, 0.1) !important;
-            border-color: rgba(59, 130, 246, 0.3) !important;
-            color: #3b82f6 !important;
+            text-shadow: none !important;
         }
         body.theme-light .section-title p {
             color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
         }
-        body.theme-light .service-card h3,
-        body.theme-light .quick-link-card h4,
-        body.theme-light .news-card h3,
-        body.theme-light .contact-card h3 {
+        body.theme-light .section-icon {
+            filter: drop-shadow(0 0 6px rgba(59,130,246,0.4)) !important;
+        }
+
+        /* --- 6) Service Cards --- */
+        body.theme-light .service-card {
+            background: #fff !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05) !important;
+        }
+        body.theme-light .service-card:hover {
+            border-color: rgba(59,130,246,0.3) !important;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.08) !important;
+        }
+        body.theme-light .service-card h3 {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
             background: none !important;
             -webkit-background-clip: unset !important;
-            -webkit-text-fill-color: #1e293b !important;
             background-clip: unset !important;
-            color: #1e293b !important;
         }
-        body.theme-light .service-card p,
-        body.theme-light .quick-link-card p,
-        body.theme-light .news-card p {
+        body.theme-light .service-card p {
             color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
         }
-        /* Web3 Room card - keep white text on dark cards */
+        body.theme-light .service-icon { color: var(--primary) !important; }
+
+        /* --- 7) Quick Links --- */
+        body.theme-light .quick-link-card {
+            background: #fff !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+        }
+        body.theme-light .quick-link-card:hover {
+            border-color: var(--primary) !important;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.08) !important;
+        }
+        body.theme-light .quick-link-card h4,
+        body.theme-light .quick-link-title {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+        }
+        body.theme-light .quick-link-card p,
+        body.theme-light .quick-link-desc {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+
+        /* --- 8) Room Cards (image overlay - keep white text on dark) --- */
+        body.theme-light .room-card {
+            box-shadow: 0 8px 28px rgba(0,0,0,0.10) !important;
+        }
+        body.theme-light .room-card:hover {
+            box-shadow: 0 14px 42px rgba(59,130,246,0.18) !important;
+        }
+        body.theme-light .room-card::before { opacity: 0.15 !important; }
+        body.theme-light .room-card:hover::before { opacity: 0.35 !important; }
         body.theme-light .room-card .room-number-web3,
         body.theme-light .room-card .room-type-web3,
-        body.theme-light .room-card .room-price-web3,
-        body.theme-light .room-card .status-badge-web3,
+        body.theme-light .room-card .room-price-web3 {
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+        }
+        body.theme-light .room-card .status-badge-web3 {
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+        body.theme-light .room-card-body { background: #fff !important; }
+        body.theme-light .room-features li { color: #475569 !important; }
+        body.theme-light .room-card .card-info-bottom * {
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
+        /* Room back face */
         body.theme-light .room-card .room-number-back,
         body.theme-light .room-card .room-number-back span,
         body.theme-light .room-card .detail-value,
@@ -2426,99 +2224,160 @@ try {
         body.theme-light .room-card .feature-tag,
         body.theme-light .room-card .book-btn-back {
             color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
         }
         body.theme-light .room-card .detail-label {
             color: #94a3b8 !important;
+            -webkit-text-fill-color: #94a3b8 !important;
         }
         body.theme-light .room-card .detail-value.price {
             color: #a78bfa !important;
+            -webkit-text-fill-color: #a78bfa !important;
         }
-        body.theme-light .room-card .availability-badge {
-            color: #4ade80 !important;
+        body.theme-light .room-card .card-particles::before,
+        body.theme-light .room-card .card-particles::after {
+            background: radial-gradient(circle, rgba(59,130,246,0.4) 0%, transparent 70%) !important;
         }
-        body.theme-light .room-card .feature-tag {
-            color: #a78bfa !important;
+        /* Room card header (table view) */
+        body.theme-light .room-card-header {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
         }
-        /* ENSURE ALL TEXT IS DARK IN LIGHT THEME */
-        body.theme-light {
-            color: #1e293b !important;
-        }
-        body.theme-light * {
-            color: #1e293b !important;
-        }
-        body.theme-light,
-        body.theme-light a,
-        body.theme-light p,
-        body.theme-light span,
-        body.theme-light div,
-        body.theme-light h1,
-        body.theme-light h2,
-        body.theme-light h3,
-        body.theme-light h4,
-        body.theme-light h5,
-        body.theme-light h6,
-        body.theme-light li,
-        body.theme-light label,
-        body.theme-light strong,
-        body.theme-light em,
-        body.theme-light small,
-        body.theme-light .logo-text,
-        body.theme-light .nav-links a,
-        body.theme-light .hero-content,
-        body.theme-light .section-title,
-        body.theme-light .service-card,
-        body.theme-light .room-card-body,
-        body.theme-light .news-card,
-        body.theme-light .contact-card,
-        body.theme-light .location-card,
-        body.theme-light .footer {
-            color: #1e293b !important;
-        }
-        /* Remove all gradients and text effects */
-        body.theme-light h1,
-        body.theme-light h2,
-        body.theme-light h3,
-        body.theme-light h4,
-        body.theme-light h5,
-        body.theme-light h6,
-        body.theme-light .section-title h3,
-        body.theme-light .section-title h2,
-        body.theme-light .hero-content h1,
-        body.theme-light .service-card h3,
-        body.theme-light .quick-link-card h4,
-        body.theme-light .news-card h3,
-        body.theme-light .contact-card h3 {
-            background: none !important;
-            -webkit-background-clip: unset !important;
-            -webkit-text-fill-color: unset !important;
-            background-clip: unset !important;
-            color: #1e293b !important;
-            text-shadow: none !important;
-            opacity: 1 !important;
-        }
-        /* All text must be dark black */
-        body.theme-light,
-        body.theme-light * {
-            color: #1e293b !important;
-            opacity: 1 !important;
-        }
-        /* Except buttons - keep white text */
-        body.theme-light .btn-primary,
-        body.theme-light .btn-book,
-        body.theme-light .btn-login,
-        body.theme-light .btn-view-rooms,
-        body.theme-light .btn-submit,
-        body.theme-light button[type="submit"],
-        body.theme-light a[class*="btn"] {
-            color: #fff !important;
-        }
-        /* Keep header card text white */
         body.theme-light .room-card-header,
         body.theme-light .room-card-header .room-number,
         body.theme-light .room-card-header .room-type,
+        body.theme-light .room-card-header * {
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+        }
         body.theme-light .room-status-badge {
             color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
         }
+
+        /* --- 9) News Cards --- */
+        body.theme-light .news-card {
+            background: #fff !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05) !important;
+        }
+        body.theme-light .news-card:hover {
+            border-color: rgba(59,130,246,0.3) !important;
+            box-shadow: 0 12px 36px rgba(0,0,0,0.08) !important;
+        }
+        body.theme-light .news-card h3,
+        body.theme-light .news-title {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+        }
+        body.theme-light .news-card p,
+        body.theme-light .news-excerpt {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .news-meta,
+        body.theme-light .news-date {
+            color: #94a3b8 !important;
+            -webkit-text-fill-color: #94a3b8 !important;
+        }
+
+        /* --- 10) Contact Section --- */
+        body.theme-light .contact-card {
+            background: #fff !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+        }
+        body.theme-light .contact-card h3,
+        body.theme-light .contact-info h3 {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+        }
+        body.theme-light .contact-card p,
+        body.theme-light .contact-info p {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .contact-detail {
+            color: #475569 !important;
+            -webkit-text-fill-color: #475569 !important;
+        }
+        body.theme-light .contact-detail a {
+            color: #1e293b !important;
+            -webkit-text-fill-color: #1e293b !important;
+        }
+        body.theme-light .contact-item { color: #475569 !important; }
+        body.theme-light .contact-item span { color: #1e293b !important; }
+        body.theme-light .contact-section { background: rgba(248,250,252,0.95) !important; }
+
+        /* --- 11) Location Section --- */
+        body.theme-light .location-card {
+            background: #fff !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+        }
+        body.theme-light .location-card h3 {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+        }
+        body.theme-light .location-card p,
+        body.theme-light .location-address {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .location-info {
+            background: rgba(248,250,252,0.9) !important;
+        }
+
+        /* --- 12) Footer --- */
+        body.theme-light .footer {
+            background: #f1f5f9 !important;
+            border-top: 1px solid rgba(148,163,184,0.2) !important;
+        }
+        body.theme-light .footer-logo {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+            background: none !important;
+            -webkit-background-clip: unset !important;
+            background-clip: unset !important;
+        }
+        body.theme-light .footer p {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .footer-links a {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+        body.theme-light .footer-links a:hover {
+            color: var(--primary) !important;
+            -webkit-text-fill-color: var(--primary) !important;
+        }
+        body.theme-light .footer-copyright {
+            color: #94a3b8 !important;
+            -webkit-text-fill-color: #94a3b8 !important;
+        }
+
+        /* --- 13) Stats --- */
+        body.theme-light .stat-number {
+            color: #0f172a !important;
+            -webkit-text-fill-color: #0f172a !important;
+        }
+        body.theme-light .stat-label {
+            color: #64748b !important;
+            -webkit-text-fill-color: #64748b !important;
+        }
+
+        /* --- 14) Room text in non-image contexts --- */
+        body.theme-light .room-number { color: #0f172a !important; }
+        body.theme-light .room-type { color: #64748b !important; }
+        body.theme-light .room-price { color: #0f172a !important; }
+        body.theme-light .room-price span { color: #64748b !important; }
     </style>
 </head>
 <?php

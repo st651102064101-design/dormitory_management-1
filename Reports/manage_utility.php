@@ -251,7 +251,10 @@ foreach ($rooms as $room) {
 }
 ksort($floors);
 
-$activeTab = $_GET['tab'] ?? 'water';
+$activeTab = $_POST['tab'] ?? ($_GET['tab'] ?? 'water');
+if (!in_array($activeTab, ['water', 'electric'], true)) {
+    $activeTab = 'water';
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -365,26 +368,43 @@ $activeTab = $_GET['tab'] ?? 'water';
             margin: 0 1rem;
             border-radius: 10px;
             overflow: hidden;
+            border: 1px solid #e2e8f0;
+            background: #f8fafc;
+            gap: 0;
         }
         .meter-tab {
             flex: 1;
             text-align: center;
             padding: 0.8rem;
             font-size: 0.95rem;
-            font-weight: 700;
+            font-weight: 600;
             cursor: pointer;
             border: none;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.4rem;
-            transition: background 0.2s;
-            color: #fff;
+            transition: all 0.2s ease;
+            color: #64748b;
+            background: transparent;
+            position: relative;
         }
-        .meter-tab.water-tab { background: #81d4fa; }
-        .meter-tab.water-tab.active { background: #0288d1; }
-        .meter-tab.elec-tab { background: #f48fb1; }
-        .meter-tab.elec-tab.active { background: #d81b60; }
+        .meter-tab:hover {
+            background: #eef2f7;
+            color: #334155;
+        }
+        .meter-tab.water-tab.active {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25);
+        }
+        .meter-tab.elec-tab.active {
+            background: linear-gradient(135deg, #f97316, #ea580c);
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25);
+        }
         .meter-tab svg { width: 18px; height: 18px; }
 
         /* Floor Header */
@@ -537,7 +557,7 @@ $activeTab = $_GET['tab'] ?? 'water';
                     <div class="month-selector">
                         <form method="get" style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;justify-content:center;">
                             <input type="hidden" name="show" value="<?php echo htmlspecialchars($showMode); ?>">
-                            <input type="hidden" name="tab" value="<?php echo htmlspecialchars($activeTab); ?>">
+                            <input type="hidden" name="tab" class="tab-hidden-input" value="<?php echo htmlspecialchars($activeTab); ?>">
                             <select name="month" onchange="this.form.submit()">
                                 <?php foreach (($availableMonthsByYear[$year] ?? []) as $m): ?>
                                 <option value="<?php echo $m; ?>" <?php echo $month === (int)$m ? 'selected' : ''; ?>><?php echo $thaiMonthsFull[(int)$m]; ?></option>
@@ -583,6 +603,7 @@ $activeTab = $_GET['tab'] ?? 'water';
 
                     <form method="post" id="meterForm" data-allow-submit>
                         <input type="hidden" name="save" value="1">
+                        <input type="hidden" name="tab" class="tab-hidden-input" value="<?php echo htmlspecialchars($activeTab); ?>">
 
                         <!-- WATER TAB -->
                         <div id="waterPanel" style="<?php echo $activeTab!=='water'?'display:none':''; ?>">
@@ -662,12 +683,29 @@ $activeTab = $_GET['tab'] ?? 'water';
     <script>
     var waterRate = <?php echo $waterRate; ?>;
     var electricRate = <?php echo $electricRate; ?>;
+    var initialTab = <?php echo json_encode($activeTab, JSON_UNESCAPED_UNICODE); ?>;
 
-    function switchTab(tab) {
-        document.getElementById('waterPanel').style.display = tab==='water' ? '' : 'none';
-        document.getElementById('electricPanel').style.display = tab==='electric' ? '' : 'none';
-        document.querySelector('.water-tab').classList.toggle('active', tab==='water');
-        document.querySelector('.elec-tab').classList.toggle('active', tab==='electric');
+    function switchTab(tab, shouldSyncUrl) {
+        if (shouldSyncUrl === undefined) shouldSyncUrl = true;
+        var safeTab = tab === 'electric' ? 'electric' : 'water';
+
+        document.getElementById('waterPanel').style.display = safeTab === 'water' ? '' : 'none';
+        document.getElementById('electricPanel').style.display = safeTab === 'electric' ? '' : 'none';
+
+        var waterBtn = document.querySelector('.water-tab');
+        var elecBtn = document.querySelector('.elec-tab');
+        if (waterBtn) waterBtn.classList.toggle('active', safeTab === 'water');
+        if (elecBtn) elecBtn.classList.toggle('active', safeTab === 'electric');
+
+        document.querySelectorAll('.tab-hidden-input').forEach(function(input) {
+            input.value = safeTab;
+        });
+
+        if (shouldSyncUrl && window.history && window.history.replaceState) {
+            var url = new URL(window.location.href);
+            url.searchParams.set('tab', safeTab);
+            window.history.replaceState({}, '', url.toString());
+        }
     }
 
     function updateTotals() {
@@ -696,6 +734,7 @@ $activeTab = $_GET['tab'] ?? 'water';
     }
 
     document.querySelectorAll('.meter-input').forEach(function(i) { i.addEventListener('input', updateTotals); });
+    switchTab(initialTab, false);
     updateTotals();
     </script>
     <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>

@@ -364,6 +364,16 @@ try {
         gap: 1rem;
         margin-top: 1rem;
       }
+      .expense-stats-note {
+        margin-top: 0.75rem;
+        padding: 0.65rem 0.9rem;
+        border-radius: 10px;
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        background: rgba(56, 189, 248, 0.12);
+        color: #0369a1;
+        font-size: 0.88rem;
+        font-weight: 600;
+      }
       .expense-stat-card {
         background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
         border-radius: 16px;
@@ -418,6 +428,11 @@ try {
       
       html.light-theme .expense-stat-card .stat-money {
         color: rgba(0,0,0,0.6) !important;
+      }
+      html.light-theme .expense-stats-note {
+        border-color: rgba(14, 116, 144, 0.35) !important;
+        background: rgba(14, 165, 233, 0.12) !important;
+        color: #075985 !important;
       }
       .expense-form {
         display: grid;
@@ -1141,6 +1156,9 @@ try {
                 <div class="stat-value"><?php echo number_format($stats['unpaid'] + $stats['paid']); ?></div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_unpaid'] + $stats['total_paid']); ?></div>
               </div>
+            </div>
+            <div class="expense-stats-note">
+              หมายเหตุ: ยอดสถิติด้านบนรวมเฉพาะค่าใช้จ่ายรายเดือน (ค่าห้อง + ค่าน้ำ + ค่าไฟ) และไม่รวมค่ามัดจำ
             </div>
           </section>
 
