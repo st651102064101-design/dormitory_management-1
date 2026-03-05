@@ -7,8 +7,9 @@
       <div style="display: flex; gap: 20px; width: 100%;">
         <div style="flex: 1; text-align: center;">
           <div style="font-size: 28px; color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="icon-animated"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
-          <div id="currentWaterRate" style="font-size: 24px; font-weight: 700; color: var(--apple-blue);">฿<?php echo number_format($waterRate); ?></div>
-          <div style="font-size: 12px; color: var(--apple-text-secondary);">บาท/หน่วย</div>
+          <div id="currentWaterRate" style="font-size: 24px; font-weight: 700; color: var(--apple-blue);">฿200</div>
+          <div style="font-size: 12px; color: var(--apple-text-secondary);">เหมาจ่าย ≤10 หน่วย</div>
+          <div style="font-size: 11px; color: var(--apple-text-secondary);">เกินหน่วยละ ฿25</div>
         </div>
         <div style="flex: 1; text-align: center;">
           <div style="font-size: 28px; color: #f59e0b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="icon-animated"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
@@ -44,8 +45,8 @@
       <div class="apple-rate-display">
         <div class="apple-rate-item">
           <div class="apple-rate-icon" style="color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
-          <div class="apple-rate-value" id="sheetWaterRate">฿<?php echo number_format($waterRate); ?></div>
-          <div class="apple-rate-unit">บาท/หน่วย</div>
+          <div class="apple-rate-value" id="sheetWaterRate">฿200</div>
+          <div class="apple-rate-unit">เหมาจ่าย ≤10 หน่วย<br><span style="font-size:11px;">เกินหน่วยละ ฿25</span></div>
         </div>
         <div class="apple-rate-item">
           <div class="apple-rate-icon" style="color: #f59e0b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>

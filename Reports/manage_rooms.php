@@ -836,6 +836,10 @@ try {
           font-size: 2.5rem;
         }
       }
+
+      .page-header-bar {
+        margin-top: 1rem !important;
+      }
     </style>
   </head>
   <body class="reports-page" data-disable-edit-modal="true">

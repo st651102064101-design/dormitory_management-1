@@ -118,6 +118,25 @@ foreach ($contracts as $c) {
     $ctrStatusBuckets['other']++;
   }
 }
+
+// นับสถานะสำหรับการ์ดให้ตรงกับกติกาการแสดงผลในตาราง
+$tableStatusCounts = [
+  'waiting' => 0,
+  'staying' => 0,
+  'cancelled' => 0,
+];
+foreach ($contracts as $contract) {
+  $s = isset($contract['ctr_status']) ? (string)$contract['ctr_status'] : '0';
+  $tenantStatus = isset($contract['tnt_status']) ? (string)$contract['tnt_status'] : '';
+
+  if ($s === '1') {
+    $tableStatusCounts['cancelled']++;
+  } elseif ($tenantStatus === '2' || $s === '2') {
+    $tableStatusCounts['waiting']++;
+  } else {
+    $tableStatusCounts['staying']++;
+  }
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -541,7 +560,7 @@ foreach ($contracts as $c) {
                 <div class="contract-stats">
                     <div class="contract-stat-card particle-wrapper">
                         <div class="particle-container" data-particles="3"></div>
-                        <div class="stat-value" style="color: #FF9800;"><?php echo $tenantStatusCounts['0']; ?></div>
+                    <div class="stat-value" style="color: #FF9800;"><?php echo $tableStatusCounts['waiting']; ?></div>
                         <div class="stat-label">รอเข้าพัก</div>
                         <div class="stat-chip">
                             <span style="display: inline-block; width: 8px; height: 8px; background: #FF9800; border-radius: 50%;"></span>
@@ -550,7 +569,7 @@ foreach ($contracts as $c) {
                     </div>
                     <div class="contract-stat-card particle-wrapper">
                         <div class="particle-container" data-particles="3"></div>
-                        <div class="stat-value" style="color: #4CAF50;"><?php echo $tenantStatusCounts['1']; ?></div>
+                    <div class="stat-value" style="color: #4CAF50;"><?php echo $tableStatusCounts['staying']; ?></div>
                         <div class="stat-label">กำลังพักอยู่</div>
                         <div class="stat-chip">
                             <span style="display: inline-block; width: 8px; height: 8px; background: #4CAF50; border-radius: 50%;"></span>
@@ -559,11 +578,11 @@ foreach ($contracts as $c) {
                     </div>
                     <div class="contract-stat-card particle-wrapper">
                         <div class="particle-container" data-particles="3"></div>
-                        <div class="stat-value" style="color: #f44336;"><?php echo $tenantStatusCounts['2']; ?></div>
-                        <div class="stat-label">ย้ายออก</div>
+                    <div class="stat-value" style="color: #f44336;"><?php echo $tableStatusCounts['cancelled']; ?></div>
+                      <div class="stat-label">ยกเลิกแล้ว</div>
                         <div class="stat-chip">
                             <span style="display: inline-block; width: 8px; height: 8px; background: #f44336; border-radius: 50%;"></span>
-                            ออกไปแล้ว
+                        ออก
                         </div>
                     </div>
                 </div>
@@ -752,6 +771,13 @@ foreach ($contracts as $c) {
                                 $s = isset($contract['ctr_status']) ? (string)$contract['ctr_status'] : '0';
                                 $lbl = isset($statusLabels[$s]) ? $statusLabels[$s] : 'N/A';
                                 $col = isset($statusColors[$s]) ? $statusColors[$s] : '#999';
+
+                                // แสดงสถานะ "รอเข้าพัก" จากฝั่งผู้เช่าในตาราง
+                                $tenantStatus = isset($contract['tnt_status']) ? (string)$contract['tnt_status'] : '';
+                                if ($tenantStatus === '2' && $s !== '1') {
+                                  $lbl = 'รอเข้าพัก';
+                                  $col = '#FF9800';
+                                }
                           ?>
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
                               <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $ctr_id; ?></td>

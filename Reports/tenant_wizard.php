@@ -986,7 +986,7 @@ try {
                         </div>
                         <div style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
                             <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">อัตราค่าน้ำ</div>
-                            <div id="waterRateDisplay" style="font-size: 1.1rem; font-weight: 600; color: #3b82f6;">฿0.00/หน่วย</div>
+                            <div id="waterRateDisplay" style="font-size: 1.1rem; font-weight: 600; color: #3b82f6;">เหมาจ่าย ฿200</div>
                         </div>
                         <div style="padding: 1rem; background: rgba(255,255,255,0.05); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
                             <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.5rem;">อัตราค่าไฟ</div>
@@ -1331,14 +1331,14 @@ try {
                 
                 document.getElementById('modal_billing_rate_water').value = waterRate;
                 document.getElementById('modal_billing_rate_elec').value = elecRate;
-                document.getElementById('waterRateDisplay').textContent = `฿${Number(waterRate).toFixed(2)}/หน่วย`;
+                document.getElementById('waterRateDisplay').textContent = 'เหมาจ่าย ฿200';
                 document.getElementById('elecRateDisplay').textContent = `฿${Number(elecRate).toFixed(2)}/หน่วย`;
             })
             .catch(() => {
                 // ใช้ค่า default ถ้าโหลดไม่ได้
                 document.getElementById('modal_billing_rate_water').value = 18;
                 document.getElementById('modal_billing_rate_elec').value = 8;
-                document.getElementById('waterRateDisplay').textContent = '฿18.00/หน่วย';
+                document.getElementById('waterRateDisplay').textContent = 'เหมาจ่าย ฿200';
                 document.getElementById('elecRateDisplay').textContent = '฿8.00/หน่วย';
             });
         

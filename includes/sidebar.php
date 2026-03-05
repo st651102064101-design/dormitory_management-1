@@ -387,6 +387,50 @@ try {
     transform: scale(1.15);
     transition: transform 0.2s ease;
   }
+
+  /* Animated utility icon (water/electric switch) */
+  .app-nav-icon.utility-icon-toggle {
+    position: relative;
+    overflow: hidden;
+  }
+  .app-nav-icon.utility-icon-toggle .utility-icon {
+    position: absolute;
+    inset: 0;
+    margin: auto;
+    width: 1.2rem;
+    height: 1.2rem;
+    transform-origin: center;
+    animation-duration: 2.4s;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+  }
+  .app-nav-icon.utility-icon-toggle .utility-icon.water {
+    color: #38bdf8;
+    animation-name: utilityWaterSwap;
+  }
+  .app-nav-icon.utility-icon-toggle .utility-icon.electric {
+    color: #f59e0b;
+    animation-name: utilityElecSwap;
+  }
+
+  @keyframes utilityWaterSwap {
+    0%, 44% { opacity: 1; transform: scale(1) rotate(0deg); }
+    50%, 100% { opacity: 0; transform: scale(0.88) rotate(-8deg); }
+  }
+  @keyframes utilityElecSwap {
+    0%, 44% { opacity: 0; transform: scale(0.88) rotate(8deg); }
+    50%, 94% { opacity: 1; transform: scale(1) rotate(0deg); }
+    100% { opacity: 0; transform: scale(0.88) rotate(8deg); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-nav-icon.utility-icon-toggle .utility-icon {
+      animation: none !important;
+    }
+    .app-nav-icon.utility-icon-toggle .utility-icon.electric {
+      opacity: 0;
+    }
+  }
   
   /* Dashboard and Manage summary styling */
   #nav-dashboard > summary,
@@ -2464,7 +2508,7 @@ try {
         </a>
         <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label">ผู้เช่า</span></a>
         <a class="" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span></a>
-        <a class="" href="manage_utility.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span></a>
+        <a class="" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span></a>
         <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
         <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span><span class="app-nav-label">ห้องพัก</span></a>
         <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label">จัดการสัญญา</span></a>

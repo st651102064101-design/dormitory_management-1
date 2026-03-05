@@ -6,6 +6,7 @@ if (empty($_SESSION['admin_username'])) {
     exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/water_calc.php';
 $pdo = connectDB();
 
 // เดือน/ปี
@@ -124,18 +125,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             $waterUsed = $waterNew - $waterOld;
             $elecUsed = $elecNew - $elecOld;
             
+            // คำนวณค่าน้ำแบบเหมาจ่าย
+            $waterCost = calculateWaterCost($waterUsed);
+            $elecCost = $elecUsed * $electricRate;
+            
             $updateExpStmt = $pdo->prepare("
                 UPDATE expense SET 
                     exp_elec_unit = ?, exp_water_unit = ?,
                     rate_elec = ?, rate_water = ?,
-                    exp_elec_chg = ? * ?, exp_water = ? * ?,
-                    exp_total = room_price + (? * ?) + (? * ?)
+                    exp_elec_chg = ?, exp_water = ?,
+                    exp_total = room_price + ? + ?
                 WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?
             ");
             $updateExpStmt->execute([
                 $elecUsed, $waterUsed, $electricRate, $waterRate,
-                $elecUsed, $electricRate, $waterUsed, $waterRate,
-                $elecUsed, $electricRate, $waterUsed, $waterRate,
+                $elecCost, $waterCost,
+                $elecCost, $waterCost,
                 $ctrId, $month, $year
             ]);
             
@@ -275,6 +280,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             background: rgba(255,255,255,0.97) !important;
             border-bottom: 1px solid #e0e0e0 !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+            margin-top: 0.75rem !important;
         }
         .page-header-bar h2 { color: #222 !important; }
         .sidebar-toggle-btn svg { stroke: #333 !important; }
@@ -287,7 +293,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         }
         .app-main > .meter-page {
             padding-left: 0 !important;
-            padding-right: 0 !important;
+            padding-right: 1rem !important;
         }
         .meter-card {
             background: #fff;
@@ -379,31 +385,31 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
-            border: none;
+            border: none !important;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.4rem;
             transition: all 0.2s ease;
-            color: #64748b;
-            background: transparent;
+            color: #64748b !important;
+            background: transparent !important;
             position: relative;
         }
         .meter-tab:hover {
-            background: #eef2f7;
-            color: #334155;
+            background: #eef2f7 !important;
+            color: #334155 !important;
         }
         .meter-tab.water-tab.active {
-            background: linear-gradient(135deg, #0ea5e9, #0284c7);
-            color: #ffffff;
+            background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+            color: #ffffff !important;
             font-weight: 700;
-            box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25);
+            box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25) !important;
         }
         .meter-tab.elec-tab.active {
-            background: linear-gradient(135deg, #f97316, #ea580c);
-            color: #ffffff;
+            background: linear-gradient(135deg, #f97316, #ea580c) !important;
+            color: #ffffff !important;
             font-weight: 700;
-            box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25);
+            box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25) !important;
         }
         .meter-tab svg { width: 18px; height: 18px; }
 
@@ -579,7 +585,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                         <span class="stat-badge pending"><?php echo max(0, $totalPending); ?> รอ</span>
                     </div>
                     <div class="rate-info">
-                        <span><span class="rate-dot water"></span>น้ำ <?php echo $waterRate; ?>฿/หน่วย</span>
+                        <span><span class="rate-dot water"></span>น้ำ เหมาจ่าย <?php echo WATER_BASE_PRICE; ?>฿ (≤<?php echo WATER_BASE_UNITS; ?> หน่วย) เกินหน่วยละ <?php echo WATER_EXCESS_RATE; ?>฿</span>
                         <span><span class="rate-dot elec"></span>ไฟ <?php echo $electricRate; ?>฿/หน่วย</span>
                     </div>
 
@@ -681,8 +687,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
     </div>
 
     <script>
-    var waterRate = <?php echo $waterRate; ?>;
     var electricRate = <?php echo $electricRate; ?>;
+    <?php echo getWaterCalcJS(); ?>
     var initialTab = <?php echo json_encode($activeTab, JSON_UNESCAPED_UNICODE); ?>;
 
     function switchTab(tab, shouldSyncUrl) {
@@ -715,7 +721,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             var rid = i.dataset.room, t = i.dataset.type;
             var oldV = parseInt(i.dataset.old)||0, newV = parseInt(i.value)||0;
             if (!rd[rid]) rd[rid] = {water:0,electric:0,wu:0,eu:0,hw:false,he:false};
-            if (t==='water' && i.value) { var u=Math.max(0,newV-oldV); rd[rid].wu=u; rd[rid].water=u*waterRate; rd[rid].hw=true; }
+            if (t==='water' && i.value) { var u=Math.max(0,newV-oldV); rd[rid].wu=u; rd[rid].water=calculateWaterCost(u); rd[rid].hw=true; }
             if (t==='electric' && i.value) { var u=Math.max(0,newV-oldV); rd[rid].eu=u; rd[rid].electric=u*electricRate; rd[rid].he=true; }
         });
         var tw=0, te=0, rc=0;

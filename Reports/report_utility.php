@@ -156,6 +156,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
             background: rgba(255,255,255,0.97) !important;
             border-bottom: 1px solid #e0e0e0 !important;
             box-shadow: 0 1px 4px rgba(0,0,0,0.06) !important;
+            margin-top: 0.75rem !important;
         }
         .page-header-bar h2 { color: #222 !important; }
         .sidebar-toggle-btn svg { stroke: #333 !important; }
@@ -168,7 +169,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         }
         .app-main > .report-page {
             padding-left: 0 !important;
-            padding-right: 0 !important;
+            padding-right: 1rem !important;
         }
         .report-card {
             background: #fff;
@@ -259,18 +260,29 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
             font-size: 0.95rem;
             font-weight: 700;
             cursor: pointer;
-            border: none;
+            border: none !important;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 0.4rem;
             transition: background 0.2s;
-            color: #fff;
+            color: #64748b !important;
+            background: transparent !important;
         }
-        .report-tab.water-tab { background: #81d4fa; }
-        .report-tab.water-tab.active { background: #0288d1; }
-        .report-tab.elec-tab { background: #f48fb1; }
-        .report-tab.elec-tab.active { background: #d81b60; }
+        .report-tab:hover {
+            background: #eef2f7 !important;
+            color: #334155 !important;
+        }
+        .report-tab.water-tab.active {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+            color: #ffffff !important;
+            box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25) !important;
+        }
+        .report-tab.elec-tab.active {
+            background: linear-gradient(135deg, #f97316, #ea580c) !important;
+            color: #ffffff !important;
+            box-shadow: inset 0 -3px 0 rgba(255,255,255,0.25) !important;
+        }
         .report-tab svg { width: 18px; height: 18px; }
 
         /* Floor Header */

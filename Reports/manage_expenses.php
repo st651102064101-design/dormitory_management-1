@@ -623,8 +623,26 @@ try {
       }
 
       .report-table tbody tr.payment-preview-trigger {
-        cursor: pointer;
+        cursor: pointer !important;
         transition: background-color 0.15s ease;
+      }
+
+      .payment-preview-trigger,
+      .payment-preview-trigger *,
+      .report-table tbody tr.payment-preview-trigger td,
+      .report-table tbody tr.payment-preview-trigger td *,
+      .expense-row-card.payment-preview-trigger,
+      .expense-row-card.payment-preview-trigger * {
+        cursor: pointer !important;
+      }
+
+      .payment-preview-trigger:hover,
+      .payment-preview-trigger:hover *,
+      .payment-preview-trigger:focus,
+      .payment-preview-trigger:focus *,
+      .payment-preview-trigger:focus-visible,
+      .payment-preview-trigger:focus-visible * {
+        cursor: pointer !important;
       }
 
       .report-table tbody tr.payment-preview-trigger:hover td {
@@ -1690,6 +1708,16 @@ try {
         const waterUnit = document.getElementById('exp_water_unit');
         const waterRate = document.getElementById('rate_water');
         const preview = document.getElementById('calcPreview');
+
+        // ค่าน้ำแบบเหมาจ่าย: ≤ 10 หน่วย = 200฿, เกินหน่วยละ 25฿
+        var WATER_BASE_UNITS = 10;
+        var WATER_BASE_PRICE = 200;
+        var WATER_EXCESS_RATE = 25;
+        function calcWaterCost(units) {
+          if (units <= 0) return 0;
+          if (units <= WATER_BASE_UNITS) return WATER_BASE_PRICE;
+          return WATER_BASE_PRICE + (units - WATER_BASE_UNITS) * WATER_EXCESS_RATE;
+        }
         
         function updatePreview() {
           const selectedOpt = ctrSelect.options[ctrSelect.selectedIndex];
@@ -1697,10 +1725,9 @@ try {
           const elecU = parseInt(elecUnit.value || '0');
           const elecR = parseFloat(elecRate.value || '0');
           const waterU = parseInt(waterUnit.value || '0');
-          const waterR = parseFloat(waterRate.value || '0');
           
           const elecChg = Math.round(elecU * elecR);
-          const waterChg = Math.round(waterU * waterR);
+          const waterChg = calcWaterCost(waterU);
           const total = roomPrice + elecChg + waterChg;
           
           if (roomPrice > 0 || elecU > 0 || waterU > 0) {
@@ -1710,7 +1737,7 @@ try {
             document.getElementById('preview_elec_rate').textContent = elecR.toFixed(2);
             document.getElementById('preview_elec').textContent = '฿' + elecChg.toLocaleString();
             document.getElementById('preview_water_unit').textContent = waterU;
-            document.getElementById('preview_water_rate').textContent = waterR.toFixed(2);
+            document.getElementById('preview_water_rate').textContent = 'เหมาจ่าย';
             document.getElementById('preview_water').textContent = '฿' + waterChg.toLocaleString();
             document.getElementById('preview_total').textContent = '฿' + total.toLocaleString();
           } else {
@@ -2152,8 +2179,12 @@ try {
         }
       }
 
-      async function openPaymentPreview(expenseId, context) {
-        if (!expenseId) return;
+      async function openPaymentPreview(expenseId, context, options) {
+        const silentError = !!(options && options.silentError);
+        if (!expenseId) {
+          if (!silentError) notifyPaymentError('ไม่พบรหัสรายการค่าใช้จ่าย จึงไม่สามารถเปิดรายละเอียดได้');
+          return false;
+        }
 
         try {
           const response = await fetch('/dormitory_management/Reports/get_payment_proofs.php?exp_id=' + encodeURIComponent(expenseId), {
@@ -2177,35 +2208,49 @@ try {
 
           renderPaymentModalCard(firstPayment, context);
           showPaymentModal();
+          return true;
         } catch (error) {
-          notifyPaymentError(error.message || 'เกิดข้อผิดพลาด');
+          if (!silentError) notifyPaymentError(error.message || 'เกิดข้อผิดพลาด');
           closeModal();
+          return false;
         }
       }
 
       function attachPaymentPreviewTrigger(card) {
-        if (!card || card.dataset.boundPreview === '1') return;
+        if (!card) return;
 
-        const openFromCard = () => {
-          openPaymentPreview(card.dataset.expenseId, {
+        // บังคับ cursor แบบ inline กันสไตล์ภายนอกทับ
+        card.style.cursor = 'pointer';
+        card.querySelectorAll('*').forEach(function(el) {
+          el.style.cursor = 'pointer';
+        });
+
+        card.__paymentPreviewBound = true;
+        card.dataset.boundPreview = '1';
+      }
+
+      async function openPaymentFromTrigger(card) {
+        if (!card || card.dataset.previewBusy === '1') return;
+        card.dataset.previewBusy = '1';
+
+        try {
+          const opened = await openPaymentPreview(card.dataset.expenseId, {
             tenantName: card.dataset.tenantName || '-',
             statusText: card.dataset.statusText || 'รอตรวจสอบ',
             depositPaid: card.dataset.depositPaid || 0,
             depositRemain: card.dataset.depositRemain || 0,
             chargesPaid: card.dataset.chargesPaid || 0,
             chargesRemain: card.dataset.chargesRemain || 0
+          }, {
+            silentError: true
           });
-        };
 
-        card.addEventListener('click', openFromCard);
-        card.addEventListener('keydown', function(e) {
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            openFromCard();
+          if (!opened || !paymentProofModal || paymentProofModal.getAttribute('aria-hidden') !== 'false') {
+            alert('ไม่สามารถเปิด Modal รายละเอียดได้ กรุณาลองใหม่อีกครั้ง');
           }
-        });
-
-        card.dataset.boundPreview = '1';
+        } finally {
+          card.dataset.previewBusy = '0';
+        }
       }
 
       function bindPaymentPreviewTriggers() {
@@ -2213,6 +2258,43 @@ try {
       }
 
       bindPaymentPreviewTriggers();
+
+      // Fallback แบบ delegation: ครอบคลุมแถว/การ์ดที่ถูก render ใหม่จาก DataTable
+      document.addEventListener('click', function(e) {
+        const trigger = e.target.closest('.payment-preview-trigger');
+        if (!trigger) return;
+        openPaymentFromTrigger(trigger);
+      });
+
+      document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const active = document.activeElement;
+        if (!active || !active.closest) return;
+        const trigger = active.closest('.payment-preview-trigger');
+        if (!trigger) return;
+        e.preventDefault();
+        openPaymentFromTrigger(trigger);
+      });
+
+      // Fallback ระดับเมาส์: บังคับให้เป็นรูปมือเมื่อชี้บนแถว/การ์ดที่กดเปิด modal ได้
+      let __hoverPaymentTrigger = null;
+      document.addEventListener('mousemove', function(e) {
+        const trigger = e.target && e.target.closest ? e.target.closest('.payment-preview-trigger') : null;
+        if (trigger) {
+          if (__hoverPaymentTrigger !== trigger) {
+            __hoverPaymentTrigger = trigger;
+            document.body.style.cursor = 'pointer';
+          }
+        } else if (__hoverPaymentTrigger) {
+          __hoverPaymentTrigger = null;
+          document.body.style.cursor = '';
+        }
+      });
+
+      document.addEventListener('mouseleave', function() {
+        __hoverPaymentTrigger = null;
+        document.body.style.cursor = '';
+      });
 
       document.querySelectorAll('.view-payment-btn').forEach(btn => {
         btn.addEventListener('click', function() {

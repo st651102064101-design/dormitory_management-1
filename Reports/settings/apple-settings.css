@@ -760,6 +760,10 @@ body.apple-settings-page .manage-panel {
   background: linear-gradient(135deg, var(--apple-indigo), #787aff); 
   box-shadow: 0 3px 10px rgba(88, 86, 214, 0.3);
 }
+.apple-row-icon.cyan {
+  background: linear-gradient(135deg, #06b6d4, #22d3ee);
+  box-shadow: 0 3px 10px rgba(6, 182, 212, 0.3);
+}
 .apple-row-icon.yellow { 
   background: linear-gradient(135deg, var(--apple-yellow), #ffd60a); 
   box-shadow: 0 3px 10px rgba(255, 204, 0, 0.3);
@@ -2612,6 +2616,17 @@ body.apple-settings-page .sidebar-overlay.active {
 
 .apple-settings-row:hover .apple-row-icon svg {
   transform: scale(1.15);
+}
+
+/* Ensure setting-row icons are always visible (no draw animation on row icons) */
+.apple-row-icon .icon-animated path,
+.apple-row-icon .icon-animated circle,
+.apple-row-icon .icon-animated rect,
+.apple-row-icon .icon-animated polyline,
+.apple-row-icon .icon-animated line {
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  animation: none;
 }
 
 .apple-row-icon svg path,

@@ -177,7 +177,7 @@ if ($settingsStmt) {
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">อัตราค่าน้ำ</div>
-                        <div class="summary-value">฿<?php echo number_format($rate['rate_water'] ?? 0, 2); ?>/หน่วย</div>
+                        <div class="summary-value">เหมาจ่าย ฿200 (≤10 หน่วย)<br><span style="font-size:0.85em;">เกินหน่วยละ ฿25</span></div>
                     </div>
                     <div class="summary-item">
                         <div class="summary-label">อัตราค่าไฟ</div>

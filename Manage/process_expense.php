@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/water_calc.php';
 
 try {
     $pdo = connectDB();
@@ -51,7 +52,8 @@ try {
 
     // คำนวณค่าใช้จ่าย (ค่ามัดจำ 2000 ไม่เกี่ยวข้อง ใช้สำหรับบิลเดือนเท่านั้น)
     $exp_elec_chg = (int)round($exp_elec_unit * $rate_elec);
-    $exp_water = (int)round($exp_water_unit * $rate_water);
+    // ค่าน้ำแบบเหมาจ่าย: ≤ 10 หน่วย = 200฿, เกินหน่วยละ 25฿
+    $exp_water = calculateWaterCost($exp_water_unit);
     // IMPORTANT: ยอดรวม = ค่าห้อง + ค่าไฟ + ค่าน้ำ ไม่หักมัดจำ
     $exp_total = $room_price + $exp_elec_chg + $exp_water;
 

@@ -368,8 +368,15 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
       #submitNewsBtn:active {
         opacity: 0.8;
       }
-        .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; margin-right: 1.4rem; background: #ffffff; border: 1px solid rgba(15,23,42,0.1); box-shadow: 0 10px 26px rgba(15,23,42,0.08); }
-        .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
+      .page-header-bar {
+        margin-top: 1rem !important;
+      }
+      .reports-page .manage-panel {
+        margin: 0 !important;
+        background: #ffffff;
+        border: 1px solid rgba(15,23,42,0.1);
+        box-shadow: 0 10px 26px rgba(15,23,42,0.08);
+      }
     </style>
   </head>
   <body class="reports-page" data-disable-edit-modal="true">

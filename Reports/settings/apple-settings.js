@@ -1145,14 +1145,15 @@ class AppleSettings {
     const today = new Date();
     const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear() + 543}`;
     
-    // Update main display
+    // Update main display - ค่าน้ำเป็นแบบเหมาจ่ายคงที่ ไม่ต้องอัพเดต
     const currentWater = document.getElementById('currentWaterRate');
     const currentElec = document.getElementById('currentElecRate');
     const currentDateLabel = document.getElementById('currentRateDateLabel');
     
+    // ค่าน้ำเหมาจ่าย - แสดงคงที่
     if (currentWater) {
       currentWater.style.transform = 'scale(1.1)';
-      currentWater.textContent = `฿${Number(waterRate).toLocaleString()}`;
+      currentWater.textContent = '฿200';
       setTimeout(() => currentWater.style.transform = 'scale(1)', 200);
     }
     if (currentElec) {
@@ -1169,7 +1170,7 @@ class AppleSettings {
     const sheetElec = document.getElementById('sheetElecRate');
     const sheetDateLabel = document.getElementById('sheetRateDateLabel');
     
-    if (sheetWater) sheetWater.textContent = `฿${Number(waterRate).toLocaleString()}`;
+    if (sheetWater) sheetWater.textContent = '฿200';
     if (sheetElec) sheetElec.textContent = `฿${Number(elecRate).toLocaleString()}`;
     if (sheetDateLabel) sheetDateLabel.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>อัตราปัจจุบัน (ใช้ตั้งแต่ ${dateStr})`;
     
