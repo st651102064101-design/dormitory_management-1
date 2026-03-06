@@ -1,14 +1,57 @@
 <?php
 /**
  * Page Header Component
- * 
+ *
  * Includes the hamburger menu button and page title.
- * 
- * Usage: 
+ *
+ * Usage:
  *   <?php $pageTitle = 'หน้าจัดการ'; include __DIR__ . '/includes/page_header.php'; ?>
- * 
+ *
+ * Optional:
+ *   $pageHeaderActions = [
+ *     [
+ *       'label' => 'เพิ่ม',
+ *       'type' => 'button',
+ *       'className' => 'active',
+ *       'attributes' => ['data-foo' => 'bar']
+ *     ]
+ *   ];
+ *
  * Required: sidebar_toggle.php must be included in <head> first
  */
+
+$defaultHeaderActions = [
+  ['label' => 'การชำระเงิน', 'href' => 'manage_payments.php', 'shortcut' => 'Ctrl+1'],
+  ['label' => 'จองห้อง', 'href' => 'manage_booking.php', 'shortcut' => 'Ctrl+2'],
+  ['label' => 'ค่าใช้จ่าย', 'href' => 'manage_expenses.php', 'shortcut' => 'Ctrl+3'],
+  ['label' => 'สัญญา', 'href' => 'manage_contracts.php', 'shortcut' => 'Ctrl+4'],
+  ['label' => 'Tenant Wizard', 'href' => 'tenant_wizard.php', 'shortcut' => 'Ctrl+5'],
+];
+
+$headerActions = (isset($pageHeaderActions) && is_array($pageHeaderActions)) ? $pageHeaderActions : $defaultHeaderActions;
+$headerActionsLabel = $pageHeaderActionsLabel ?? 'Quick actions';
+$buildHeaderAttributes = static function (array $attributes): string {
+  $parts = [];
+  foreach ($attributes as $name => $value) {
+    if ($value === null || $value === false) {
+      continue;
+    }
+
+    $safeName = preg_replace('/[^a-zA-Z0-9_:\-]/', '', (string) $name);
+    if ($safeName === '') {
+      continue;
+    }
+
+    if ($value === true) {
+      $parts[] = $safeName;
+      continue;
+    }
+
+    $parts[] = $safeName . '="' . htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8') . '"';
+  }
+
+  return $parts ? ' ' . implode(' ', $parts) : '';
+};
 ?>
 <header class="page-header-bar">
   <div class="page-header-left">
@@ -21,12 +64,27 @@
     </button>
     <h2><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></h2>
   </div>
-  <nav class="quick-actions" aria-label="Quick actions">
-    <a href="manage_payments.php" class="quick-action-link" data-shortcut="Ctrl+1">การชำระเงิน</a>
-    <a href="manage_booking.php" class="quick-action-link" data-shortcut="Ctrl+2">จองห้อง</a>
-    <a href="manage_expenses.php" class="quick-action-link" data-shortcut="Ctrl+3">ค่าใช้จ่าย</a>
-    <a href="manage_contracts.php" class="quick-action-link" data-shortcut="Ctrl+4">สัญญา</a>
-    <a href="tenant_wizard.php" class="quick-action-link" data-shortcut="Ctrl+5">Tenant Wizard</a>
+  <nav class="quick-actions" aria-label="<?php echo htmlspecialchars($headerActionsLabel, ENT_QUOTES, 'UTF-8'); ?>">
+    <?php foreach ($headerActions as $action): ?>
+      <?php
+        $label = $action['label'] ?? '';
+        if ($label === '') {
+          continue;
+        }
+        $type = $action['type'] ?? 'link';
+        $shortcut = $action['shortcut'] ?? '';
+        $className = trim('quick-action-link' . (!empty($action['className']) ? ' ' . $action['className'] : '') . ($type === 'button' ? ' quick-action-button' : ''));
+        $attributes = $action['attributes'] ?? [];
+        if ($shortcut !== '') {
+          $attributes['data-shortcut'] = $shortcut;
+        }
+      ?>
+      <?php if ($type === 'button'): ?>
+        <button type="button" class="<?php echo htmlspecialchars($className, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $buildHeaderAttributes($attributes); ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></button>
+      <?php else: ?>
+        <a href="<?php echo htmlspecialchars($action['href'] ?? '#', ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo htmlspecialchars($className, ENT_QUOTES, 'UTF-8'); ?>"<?php echo $buildHeaderAttributes($attributes); ?>><?php echo htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?></a>
+      <?php endif; ?>
+    <?php endforeach; ?>
   </nav>
 </header>
 <div class="page-header-spacer"></div>
@@ -158,6 +216,7 @@
 .quick-action-link {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   padding: 0.45rem 0.75rem;
   border-radius: 8px;
   border: 1px solid rgba(59, 130, 246, 0.5);
@@ -167,6 +226,10 @@
   font-size: 0.82rem;
   font-weight: 700;
   transition: all 0.2s ease;
+}
+.quick-action-button {
+  cursor: pointer;
+  appearance: none;
 }
 .quick-action-link:hover {
   background: rgba(59, 130, 246, 0.18);
@@ -189,6 +252,10 @@
   color: #dbeafe;
   font-weight: 700;
   line-height: 1.2;
+}
+.quick-action-link:not([data-shortcut])::after,
+.quick-action-link[data-shortcut=""]::after {
+  display: none;
 }
 .quick-action-link.active::after,
 .quick-action-link:hover::after {

@@ -1,0 +1,391 @@
+/* ============================================================
+   Tenant Light Theme Overrides
+   Applied via body.light-theme class
+   ============================================================ */
+
+/* --- Body & Background --- */
+body.light-theme {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%) !important;
+    color: #334155 !important;
+}
+
+/* --- Header --- */
+body.light-theme .header {
+    background: rgba(255, 255, 255, 0.95) !important;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+body.light-theme .header-title {
+    color: #1e293b !important;
+}
+body.light-theme .header-info h1 {
+    color: #1e293b !important;
+}
+body.light-theme .header-info p {
+    color: #64748b !important;
+}
+body.light-theme .back-btn {
+    color: #64748b !important;
+}
+
+/* --- Bottom Navigation --- */
+body.light-theme .bottom-nav {
+    background: rgba(255, 255, 255, 0.98) !important;
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.06);
+}
+body.light-theme .nav-item {
+    color: #94a3b8 !important;
+}
+body.light-theme .nav-item.active,
+body.light-theme .nav-item:hover {
+    color: #3b82f6 !important;
+}
+
+/* --- Cards & Containers (generic) --- */
+body.light-theme .menu-item,
+body.light-theme .info-card,
+body.light-theme .form-section,
+body.light-theme .bill-card,
+body.light-theme .news-item,
+body.light-theme .news-card,
+body.light-theme .repair-item,
+body.light-theme .payment-item,
+body.light-theme .section,
+body.light-theme .utility-card,
+body.light-theme .unpaid-report-card,
+body.light-theme .contract-card:not([style*="linear-gradient"]) {
+    background: rgba(255, 255, 255, 0.85) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+body.light-theme .menu-item:hover,
+body.light-theme .menu-item:active {
+    background: rgba(59, 130, 246, 0.08) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+body.light-theme .bill-card:hover {
+    border-color: #3b82f6 !important;
+}
+body.light-theme .bill-card.selected {
+    border-color: #10b981 !important;
+    background: rgba(16, 185, 129, 0.06) !important;
+}
+
+/* --- Profile / Room / Contract gradient cards --- */
+/* Keep the blue gradient but slightly lighter */
+body.light-theme .room-card,
+body.light-theme .room-info-card,
+body.light-theme .profile-card {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+    color: white !important;
+}
+
+/* --- Text Colors --- */
+body.light-theme .section-title {
+    color: #475569 !important;
+}
+body.light-theme .info-label,
+body.light-theme .bank-info-label,
+body.light-theme .bill-label,
+body.light-theme .bill-details,
+body.light-theme .news-content,
+body.light-theme .utility-label,
+body.light-theme .remaining-label,
+body.light-theme .file-upload-text {
+    color: #64748b !important;
+}
+body.light-theme .summary-label {
+    color: #475569 !important;
+}
+/* --- Meter rows (report_utility.php) --- */
+body.light-theme .meter-row {
+    background: rgba(241, 245, 249, 0.7) !important;
+}
+body.light-theme .meter-row.elec { border-left-color: #d97706 !important; }
+body.light-theme .meter-row.water { border-left-color: #1d4ed8 !important; }
+body.light-theme .meter-row.elec .meter-type { color: #d97706 !important; }
+body.light-theme .meter-row.water .meter-type { color: #1d4ed8 !important; }
+body.light-theme .meter-row.elec .meter-cell-val { color: #d97706 !important; }
+body.light-theme .meter-row.water .meter-cell-val { color: #1d4ed8 !important; }
+body.light-theme .meter-cell.usage .meter-cell-val { color: #475569 !important; }
+body.light-theme .meter-cell-label { color: #94a3b8 !important; }
+body.light-theme .meter-arrow { color: #94a3b8 !important; }
+body.light-theme .meter-divider { background: rgba(0,0,0,0.1) !important; }
+/* legacy summary overrides (kept for safety) */
+body.light-theme .summary-value {
+    color: #1e293b !important;
+    font-weight: 600 !important;
+}
+body.light-theme .info-value,
+body.light-theme .bank-info-value,
+body.light-theme .info-card-title,
+body.light-theme .bill-month,
+body.light-theme .news-title,
+body.light-theme .utility-month {
+    color: #1e293b !important;
+}
+body.light-theme .bill-value,
+body.light-theme .repair-desc {
+    color: #334155 !important;
+}
+body.light-theme .payment-date,
+body.light-theme .news-date,
+body.light-theme .repair-date,
+body.light-theme .utility-date,
+body.light-theme .utility-detail,
+body.light-theme .empty-state {
+    color: #94a3b8 !important;
+}
+
+/* --- Borders & Separators --- */
+body.light-theme .info-row {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+body.light-theme .info-row:last-child {
+    border-bottom: none !important;
+}
+body.light-theme .section-title[style*="border-bottom"],
+body.light-theme .info-card-title {
+    border-bottom-color: rgba(0, 0, 0, 0.08) !important;
+}
+body.light-theme .profile-card .section-title,
+body.light-theme .utility-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+body.light-theme .news-by {
+    border-top: 1px solid rgba(0, 0, 0, 0.06) !important;
+}
+body.light-theme .utility-summary {
+    border-top: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+
+/* --- Input & Form Elements --- */
+body.light-theme .form-group select,
+body.light-theme .form-group input,
+body.light-theme .form-group textarea {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    color: #1e293b !important;
+}
+body.light-theme .form-group select:focus,
+body.light-theme .form-group input:focus,
+body.light-theme .form-group textarea:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+body.light-theme .form-group label {
+    color: #475569 !important;
+}
+
+/* --- File Upload --- */
+body.light-theme .file-upload {
+    background: #ffffff !important;
+    border: 2px dashed #cbd5e1 !important;
+}
+body.light-theme .file-upload:hover {
+    border-color: #3b82f6 !important;
+}
+
+/* --- Menu Icons (keep icon colors, lighten backgrounds) --- */
+body.light-theme .menu-icon {
+    background: rgba(59, 130, 246, 0.1) !important;
+}
+body.light-theme .menu-icon.green { background: rgba(34, 197, 94, 0.1) !important; }
+body.light-theme .menu-icon.orange { background: rgba(249, 115, 22, 0.1) !important; }
+body.light-theme .menu-icon.red { background: rgba(239, 68, 68, 0.1) !important; }
+body.light-theme .menu-icon.purple { background: rgba(168, 85, 247, 0.1) !important; }
+body.light-theme .menu-icon.teal { background: rgba(20, 184, 166, 0.1) !important; }
+body.light-theme .menu-icon.yellow { background: rgba(234, 179, 8, 0.1) !important; }
+
+/* --- Menu item text --- */
+body.light-theme .menu-item {
+    color: #334155 !important;
+}
+
+/* --- Alerts & Status Messages --- */
+body.light-theme .alert-success {
+    background: rgba(16, 185, 129, 0.08) !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    color: #059669 !important;
+}
+body.light-theme .alert-error {
+    background: rgba(239, 68, 68, 0.08) !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+    color: #dc2626 !important;
+}
+body.light-theme .no-unpaid {
+    background: rgba(16, 185, 129, 0.08) !important;
+    border: 1px solid rgba(16, 185, 129, 0.25) !important;
+    color: #059669 !important;
+}
+
+/* --- Termination status --- */
+body.light-theme .termination-status {
+    background: rgba(245, 158, 11, 0.08) !important;
+    border: 1px solid rgba(245, 158, 11, 0.25) !important;
+}
+body.light-theme .termination-status h3 {
+    color: #d97706 !important;
+}
+body.light-theme .termination-status p {
+    color: #b45309 !important;
+}
+
+/* --- Warning box --- */
+body.light-theme .warning-box {
+    background: rgba(239, 68, 68, 0.05) !important;
+    border: 1px solid rgba(239, 68, 68, 0.2) !important;
+}
+body.light-theme .warning-box h4 {
+    color: #dc2626 !important;
+}
+body.light-theme .warning-box ul {
+    color: #b91c1c !important;
+}
+
+/* --- Status badges --- */
+body.light-theme .status-badge.no-checkin {
+    background: rgba(239, 68, 68, 0.1) !important;
+    color: #dc2626 !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+}
+body.light-theme .status-badge.has-checkin {
+    background: rgba(34, 197, 94, 0.1) !important;
+    color: #16a34a !important;
+    border: 1px solid rgba(34, 197, 94, 0.3) !important;
+}
+
+/* --- Summary cards (reports) --- */
+body.light-theme .summary-card {
+    background: rgba(255, 255, 255, 0.9) !important;
+    border: 1px solid rgba(0, 0, 0, 0.08) !important;
+}
+body.light-theme .summary-card.unpaid {
+    border-color: rgba(239, 68, 68, 0.25) !important;
+}
+body.light-theme .summary-card.paid {
+    border-color: rgba(16, 185, 129, 0.25) !important;
+}
+
+/* --- Bank info section (payment.php) --- */
+body.light-theme .bank-info-section {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(241, 245, 249, 0.95) 100%) !important;
+    border: 1px solid rgba(59, 130, 246, 0.15) !important;
+}
+
+/* --- Schedule info (repair.php) --- */
+body.light-theme .schedule-info {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.06), rgba(168, 85, 247, 0.04)) !important;
+    border: 1px solid rgba(139, 92, 246, 0.2) !important;
+}
+
+/* --- Room image placeholder --- */
+body.light-theme .room-image {
+    background: rgba(241, 245, 249, 0.9) !important;
+}
+body.light-theme .room-image-placeholder {
+    color: #94a3b8 !important;
+}
+
+/* --- Meter box (checkin.php) --- */
+body.light-theme .meter-box {
+    background: rgba(59, 130, 246, 0.06) !important;
+    border: 1px solid rgba(59, 130, 246, 0.15) !important;
+}
+
+/* --- Contract dates (checkin.php) --- */
+body.light-theme .date-box {
+    background: rgba(59, 130, 246, 0.08) !important;
+    border: 1px solid rgba(59, 130, 246, 0.22) !important;
+}
+body.light-theme .date-label {
+    color: #64748b !important;
+}
+body.light-theme .date-value {
+    color: #1e293b !important;
+    font-weight: 700 !important;
+}
+
+/* --- Utility items --- */
+body.light-theme .utility-item {
+    background: rgba(241, 245, 249, 0.7) !important;
+}
+
+/* --- Unpaid alert --- */
+body.light-theme .alert-unpaid {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%) !important;
+    color: white !important;
+}
+
+/* --- View all link --- */
+body.light-theme .view-all-link {
+    color: #3b82f6 !important;
+}
+
+/* --- SVG icons in regular context --- */
+body.light-theme .section-icon svg {
+    stroke: #64748b !important;
+}
+body.light-theme .file-upload-icon svg {
+    stroke: #94a3b8 !important;
+}
+body.light-theme .date-icon svg {
+    stroke: #94a3b8 !important;
+}
+
+/* --- Contract card with gradient header --- */
+body.light-theme .contract-card[style*="linear-gradient"],
+body.light-theme .contract-header {
+    color: white !important;
+}
+
+/* --- Cancel termination --- */
+body.light-theme .btn-cancel-termination {
+    background: rgba(239, 68, 68, 0.06) !important;
+    border: 1px solid rgba(239, 68, 68, 0.3) !important;
+    color: #dc2626 !important;
+}
+
+/* --- btn-terminate --- */
+body.light-theme .btn-terminate {
+    background: rgba(239, 68, 68, 0.08) !important;
+    border: 1px solid rgba(239, 68, 68, 0.25) !important;
+}
+
+/* --- Copy text hover (payment.php) --- */
+body.light-theme .copy-text:hover {
+    color: #2563eb !important;
+}
+
+/* --- Highlight value --- */
+body.light-theme .highlight-value {
+    color: #2563eb !important;
+}
+
+/* --- Profile card inner text stays white (on blue gradient) --- */
+body.light-theme .profile-name,
+body.light-theme .profile-room,
+body.light-theme .room-number,
+body.light-theme .room-type {
+    color: white !important;
+}
+
+/* --- Back button (payment.php variant) --- */
+body.light-theme .back-btn[style*="background"] {
+    background: rgba(59, 130, 246, 0.08) !important;
+    border: 1px solid rgba(59, 130, 246, 0.3) !important;
+    color: #3b82f6 !important;
+}
+
+/* --- Scrollbar (optional, subtle) --- */
+body.light-theme::-webkit-scrollbar {
+    width: 6px;
+}
+body.light-theme::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+body.light-theme::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 3px;
+}

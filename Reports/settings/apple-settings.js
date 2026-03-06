@@ -16,6 +16,7 @@ class AppleSettings {
     this.initThemeSelector();
     this.initColorPicker();
     this.initViewModeSelector();
+    this.initHeaderActions();
   }
 
   // ===== Sheet Modal Management =====
@@ -96,6 +97,43 @@ class AppleSettings {
       overlay.classList.remove('active');
       document.body.style.overflow = '';
     }
+  }
+
+  initHeaderActions() {
+    document.querySelectorAll('[data-settings-action]').forEach((button) => {
+      button.addEventListener('click', async (event) => {
+        event.preventDefault();
+        const action = button.dataset.settingsAction;
+        const sheetId = button.dataset.sheetTarget;
+        const focusId = button.dataset.sheetFocus;
+
+        if (action === 'delete-signature') {
+          const deleteSignatureBtn = document.getElementById('deleteSignatureBtn');
+          if (!deleteSignatureBtn) {
+            this.showToast('ยังไม่มีลายเซ็นให้ลบ', 'error');
+            return;
+          }
+
+          await this.deleteSignature();
+          return;
+        }
+
+        if (sheetId) {
+          this.openSheet(sheetId);
+          if (focusId) {
+            window.setTimeout(() => {
+              const target = document.getElementById(focusId);
+              if (target) {
+                target.focus();
+                if (typeof target.select === 'function') {
+                  target.select();
+                }
+              }
+            }, 180);
+          }
+        }
+      });
+    });
   }
 
   // ===== Toggle Switches =====

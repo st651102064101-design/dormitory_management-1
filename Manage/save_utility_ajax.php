@@ -33,26 +33,36 @@ if ($waterNew === null && $elecNew === null) {
 
 try {
     $pdo = connectDB();
+    $targetMonthStart = sprintf('%04d-%02d-01', $meterYear, $meterMonth);
+    $targetMonthEnd = (new DateTimeImmutable($targetMonthStart))->modify('+1 month')->format('Y-m-d');
 
     // อัตราค่าน้ำ-ไฟล่าสุด
     $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY effective_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
     $rateWater = $rateRow ? (float)$rateRow['rate_water'] : 18.0;
     $rateElec  = $rateRow ? (float)$rateRow['rate_elec']  : 8.0;
 
-    // ค่าปลายเดือนที่แล้ว → เป็นค่าต้นเดือนนี้
+    // ค่าปลายล่าสุดก่อนเดือนเป้าหมาย → เป็นค่าต้นของเดือนนี้
     $prevStmt = $pdo->prepare(
-        "SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? ORDER BY utl_date DESC LIMIT 1"
+        "SELECT utl_water_end, utl_elec_end
+         FROM utility
+         WHERE ctr_id = ? AND utl_date < ?
+         ORDER BY utl_date DESC, utl_id DESC
+         LIMIT 1"
     );
-    $prevStmt->execute([$ctrId]);
+    $prevStmt->execute([$ctrId, $targetMonthStart]);
     $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
     $prevWater = $prev ? (int)$prev['utl_water_end'] : 0;
     $prevElec  = $prev ? (int)$prev['utl_elec_end']  : 0;
 
     // ตรวจซ้ำ
     $checkStmt = $pdo->prepare(
-        "SELECT utl_id FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?"
+        "SELECT utl_id
+         FROM utility
+         WHERE ctr_id = ? AND utl_date >= ? AND utl_date < ?
+         ORDER BY utl_date DESC, utl_id DESC
+         LIMIT 1"
     );
-    $checkStmt->execute([$ctrId, $meterMonth, $meterYear]);
+    $checkStmt->execute([$ctrId, $targetMonthStart, $targetMonthEnd]);
     if ($checkStmt->fetch()) {
         echo json_encode(['success' => false, 'error' => 'บันทึกมิเตอร์เดือนนี้แล้ว ไม่สามารถแก้ไขได้']);
         exit;

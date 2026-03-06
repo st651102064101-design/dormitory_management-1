@@ -159,6 +159,71 @@ include __DIR__ . '/settings/settings_data.php';
         padding: 40px 24px 100px !important;
       }
     }
+
+    /* Make page header actions obvious on the settings page */
+    body.apple-settings-page .page-header-bar {
+      position: sticky;
+      top: 20px;
+      z-index: 120;
+      margin: 0 0 20px 0;
+      border: 1px solid rgba(59, 130, 246, 0.18);
+      background: linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(30, 41, 59, 0.9));
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.22);
+    }
+
+    body.apple-settings-page .page-header-bar h2 {
+      font-size: 1.1rem;
+      letter-spacing: 0.01em;
+    }
+
+    body.apple-settings-page #sidebar-toggle {
+      display: none;
+    }
+
+    body.apple-settings-page .page-header-left {
+      gap: 0;
+    }
+
+    body.apple-settings-page .quick-actions {
+      gap: 0.55rem;
+      width: 100%;
+      justify-content: flex-end;
+    }
+
+    body.apple-settings-page .quick-action-link {
+      min-height: 40px;
+      padding: 0.55rem 0.9rem;
+      border-radius: 10px;
+      border-color: rgba(96, 165, 250, 0.38);
+      background: rgba(59, 130, 246, 0.16);
+      color: #eff6ff;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+
+    body.apple-settings-page .quick-action-link.active {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      box-shadow: 0 10px 24px rgba(37, 99, 235, 0.28);
+    }
+
+    body.apple-settings-page .quick-action-link:hover {
+      transform: translateY(-1px);
+      background: rgba(59, 130, 246, 0.24);
+    }
+
+    body.apple-settings-page .quick-action-link.active:hover {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    @media (max-width: 768px) {
+      body.apple-settings-page .page-header-bar {
+        top: 12px;
+        padding: 0.95rem 1rem;
+      }
+
+      body.apple-settings-page .quick-actions {
+        justify-content: flex-start;
+      }
+    }
   </style>
 </head>
 <body class="reports-page apple-settings-page" data-theme-color="<?php echo htmlspecialchars($themeColor); ?>">
@@ -278,6 +343,55 @@ include __DIR__ . '/settings/settings_data.php';
     <main class="app-main">
       <!-- Apple Settings UI -->
       <div class="apple-settings-wrapper">
+        <?php
+          $pageTitle = 'จัดการระบบ';
+          $pageHeaderActionsLabel = 'Quick actions';
+          $pageHeaderActions = [
+            [
+              'label' => 'รูปภาพ',
+              'href' => '#sheet-logo',
+              'attributes' => [
+                'data-settings-action' => 'open-sheet',
+                'data-sheet-target' => 'sheet-logo',
+              ],
+            ],
+            [
+              'label' => 'ทั่วไป',
+              'href' => '#sheet-sitename',
+              'attributes' => [
+                'data-settings-action' => 'open-sheet',
+                'data-sheet-target' => 'sheet-sitename',
+                'data-sheet-focus' => 'siteName',
+              ],
+            ],
+            [
+              'label' => 'ลายเซ็น',
+              'href' => '#sheet-signature',
+              'attributes' => [
+                'data-settings-action' => 'open-sheet',
+                'data-sheet-target' => 'sheet-signature',
+              ],
+            ],
+            [
+              'label' => 'ค่าใช้จ่าย',
+              'href' => '#sheet-rates',
+              'attributes' => [
+                'data-settings-action' => 'open-sheet',
+                'data-sheet-target' => 'sheet-rates',
+                'data-sheet-focus' => 'waterRate',
+              ],
+            ],
+            [
+              'label' => 'ระบบ',
+              'href' => '#sheet-system-info',
+              'attributes' => [
+                'data-settings-action' => 'open-sheet',
+                'data-sheet-target' => 'sheet-system-info',
+              ],
+            ],
+          ];
+          include __DIR__ . '/../includes/page_header.php';
+        ?>
         
         <!-- Header -->
         <div class="apple-settings-header">

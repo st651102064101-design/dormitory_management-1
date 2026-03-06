@@ -10,6 +10,10 @@ $pdo = $auth['pdo'];
 $token = $auth['token'];
 $contract = $auth['contract'];
 $settings = getSystemSettings($pdo);
+$roomImageFilename = basename((string) ($contract['room_image'] ?? ''));
+$roomImageWebPath = '/dormitory_management/Public/Assets/Images/Rooms/' . rawurlencode($roomImageFilename);
+$roomImageFilePath = __DIR__ . '/../Public/Assets/Images/Rooms/' . $roomImageFilename;
+$hasRoomImage = $roomImageFilename !== '' && is_file($roomImageFilePath);
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -156,8 +160,11 @@ $settings = getSystemSettings($pdo);
             fill: none;
         }
     </style>
+    <?php if (($settings['public_theme'] ?? '') === 'light'): ?>
+    <link rel="stylesheet" href="tenant-light-theme.css">
+    <?php endif; ?>
 </head>
-<body>
+<body class="<?= ($settings['public_theme'] ?? '') === 'light' ? 'light-theme' : '' ?>">
     <header class="header">
         <div class="header-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="back-btn">←</a>
@@ -168,8 +175,8 @@ $settings = getSystemSettings($pdo);
     <div class="container">
         <!-- Room Image -->
         <div class="room-image">
-            <?php if (!empty($contract['room_image'])): ?>
-            <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($contract['room_image']); ?>" alt="Room Image">
+            <?php if ($hasRoomImage): ?>
+            <img src="<?php echo htmlspecialchars($roomImageWebPath, ENT_QUOTES, 'UTF-8'); ?>" alt="Room Image">
             <?php else: ?>
             <div class="room-image-placeholder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
             <?php endif; ?>

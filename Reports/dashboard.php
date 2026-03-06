@@ -70,15 +70,14 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM room WHERE room_status = 0");
     $room_occupied = $stmt->fetch()['total'] ?? 0;
     
-    // 7. รายงานสรุปการใช้น้ำ-ไฟ
-    $stmt = $pdo->query("SELECT AVG(utl_water_end - utl_water_start) as avg_water, AVG(utl_elec_end - utl_elec_start) as avg_elec FROM utility");
+    // 7. รายงานสรุปการใช้น้ำ-ไฟ (ไม่รวมเดือนที่ใช้งาน 0 หน่วย)
+    $stmt = $pdo->query("SELECT AVG(utl_water_end - utl_water_start) as avg_water, AVG(utl_elec_end - utl_elec_start) as avg_elec FROM utility WHERE (utl_water_end - utl_water_start) > 0 OR (utl_elec_end - utl_elec_start) > 0");
     $utility_avg = $stmt->fetch() ?? ['avg_water' => 0, 'avg_elec' => 0];
     $avg_water = round($utility_avg['avg_water'] ?? 0, 2);
     $avg_elec = round($utility_avg['avg_elec'] ?? 0, 2);
     
-    // 8. รายงานข้อมูลรายรับ (คำนวนจากการชำระของผู้เช่า — เฉพาะรายการที่ตรวจสอบแล้ว)
-    $stmt = $pdo->query("SELECT SUM(pay_amount) as total_revenue FROM payment WHERE pay_status = '1'");
-    $total_revenue = $stmt->fetch()['total_revenue'] ?? 0;
+    // 8. รายงานข้อมูลรายรับ (ใช้ค่าเดียวกับ total_payment — เฉพาะรายการที่ตรวจสอบแล้ว)
+    $total_revenue = $total_payment;
     
     // 9. ข้อมูลสัญญา
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM contract WHERE ctr_status = 0");
@@ -87,8 +86,8 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM contract WHERE ctr_status = 1");
     $contract_cancelled = $stmt->fetch()['total'] ?? 0;
     
-    // ดึงข้อมูล Tenant (นับทั้งหมด)
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM tenant");
+    // ดึงข้อมูล Tenant (นับเฉพาะที่มีสัญญาที่ใช้งานอยู่)
+    $stmt = $pdo->query("SELECT COUNT(DISTINCT tnt_id) as total FROM contract WHERE ctr_status = 0");
     $tenant_active = $stmt->fetch()['total'] ?? 0;
     
     // ดึงค่าตั้งค่าระบบ
@@ -123,14 +122,18 @@ try {
     $stmt = $pdo->query("SELECT ctr_status, COUNT(*) as count FROM contract GROUP BY ctr_status");
     $contract_distribution = [];
     foreach ($stmt->fetchAll() as $row) {
-        $status = $row['ctr_status'] == '0' ? 'active' : 'ended';
-        $contract_distribution[$status] = $row['count'];
+        switch ($row['ctr_status']) {
+            case '0': $status = 'active'; break;
+            case '2': $status = 'pending_cancel'; break;
+            default:  $status = 'ended'; break;
+        }
+        $contract_distribution[$status] = ($contract_distribution[$status] ?? 0) + $row['count'];
     }
     
-    // ข้อมูล Payment trend (7 วันล่าสุด)
+    // ข้อมูล Payment trend (7 วันล่าสุด — เฉพาะที่ตรวจสอบแล้ว)
     $stmt = $pdo->query("SELECT DATE(pay_date) as date, COUNT(*) as count, SUM(pay_amount) as total
             FROM payment 
-            WHERE pay_date >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+            WHERE pay_date >= DATE_SUB(NOW(), INTERVAL 7 DAY) AND pay_status = 1
             GROUP BY DATE(pay_date)
             ORDER BY date ASC");
     $payment_trend = $stmt->fetchAll() ?: [];
@@ -171,14 +174,14 @@ try {
             GROUP BY rt.type_id, rt.type_name");
     $room_types = $stmt->fetchAll() ?: [];
     
-    // Today's Stats - จองห้องใหม่ (นับจากการจองที่รอดำเนินการ bkg_status = 0 หรือ 1)
-    $stmt = $pdo->query("SELECT COUNT(*) as today_bookings FROM booking WHERE bkg_status IN (0, 1)");
+    // Today's Stats - จองห้องใหม่วันนี้
+    $stmt = $pdo->query("SELECT COUNT(*) as today_bookings FROM booking WHERE bkg_status IN (0, 1) AND DATE(bkg_date) = CURDATE()");
     $today_bookings = $stmt->fetch()['today_bookings'] ?? 0;
     
     $stmt = $pdo->query("SELECT COUNT(*) as today_repairs FROM repair WHERE DATE(repair_date) = CURDATE()");
     $today_repairs = $stmt->fetch()['today_repairs'] ?? 0;
     
-    $stmt = $pdo->query("SELECT SUM(pay_amount) as today_payments FROM payment WHERE DATE(pay_date) = CURDATE()");
+    $stmt = $pdo->query("SELECT SUM(pay_amount) as today_payments FROM payment WHERE DATE(pay_date) = CURDATE() AND pay_status = 1");
     $today_payments = $stmt->fetch()['today_payments'] ?? 0;
     
 } catch (PDOException $e) {
@@ -1599,14 +1602,15 @@ try {
         new Chart(contractStatusCtx, {
             type: 'doughnut',
             data: {
-                labels: ['Active', 'Ended'],
+                labels: ['Active', 'Ended', 'Pending Cancel'],
                 datasets: [{
                     data: [
                         <?php echo isset($contract_distribution['active']) ? $contract_distribution['active'] : 0; ?>,
-                        <?php echo isset($contract_distribution['ended']) ? $contract_distribution['ended'] : 0; ?>
+                        <?php echo isset($contract_distribution['ended']) ? $contract_distribution['ended'] : 0; ?>,
+                        <?php echo isset($contract_distribution['pending_cancel']) ? $contract_distribution['pending_cancel'] : 0; ?>
                     ],
-                    backgroundColor: [colors.success, colors.danger],
-                    borderColor: [colors.successBorder, colors.dangerBorder],
+                    backgroundColor: [colors.success, colors.danger, colors.warning],
+                    borderColor: [colors.successBorder, colors.dangerBorder, colors.warningBorder],
                     borderWidth: 2
                 }]
             },
