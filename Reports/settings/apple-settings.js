@@ -256,6 +256,14 @@ class AppleSettings {
         this.saveFpsThreshold();
       });
     }
+
+    const quickActionsForm = document.getElementById('quickActionsForm');
+    if (quickActionsForm) {
+      quickActionsForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveQuickActions();
+      });
+    }
   }
 
   async saveSiteName() {
@@ -335,6 +343,50 @@ class AppleSettings {
         this.closeSheet('sheet-email');
         const displayEl = document.querySelector('[data-display="email"]');
         if (displayEl) displayEl.textContent = email;
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  async saveQuickActions() {
+    const quickActions = [];
+
+    for (let index = 0; index < 5; index += 1) {
+      const label = document.getElementById(`quickActionLabel${index}`)?.value.trim() || '';
+      const href = document.getElementById(`quickActionHref${index}`)?.value.trim() || '';
+      const shortcut = document.getElementById(`quickActionShortcut${index}`)?.value.trim() || '';
+      const enabled = !!document.getElementById(`quickActionEnabled${index}`)?.checked;
+
+      if (enabled && (!label || !href)) {
+        this.showToast(`กรุณากรอกชื่อและลิงก์ของปุ่ม ${index + 1}`, 'error');
+        return;
+      }
+
+      quickActions.push({ label, href, shortcut, enabled });
+    }
+
+    if (!quickActions.some((action) => action.enabled)) {
+      this.showToast('ต้องเปิดใช้งานอย่างน้อย 1 ปุ่ม', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `admin_quick_actions=${encodeURIComponent(JSON.stringify(quickActions))}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        const enabledCount = quickActions.filter((action) => action.enabled).length;
+        const displayEl = document.querySelector('[data-display="quickactions-count"]');
+        if (displayEl) displayEl.textContent = `${enabledCount} ปุ่ม`;
+        this.showToast('บันทึกปุ่มลัดสำเร็จ', 'success');
+        this.closeSheet('sheet-quick-actions');
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
       }

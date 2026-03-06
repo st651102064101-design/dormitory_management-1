@@ -129,7 +129,7 @@ try {
         color: #0f172a !important;
       }
       .reports-container { width: 100%; max-width: 100%; padding: 0; }
-      .reports-container .container { max-width: 100%; width: 100%; padding: 1.5rem; }
+      .reports-container .container { max-width: 100%; width: 100%; padding: 0 1.5rem 1.5rem; }
       .news-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
       .stat-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06); transition: transform 0.2s, box-shadow 0.2s; }
       .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12); }

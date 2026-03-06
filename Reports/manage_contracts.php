@@ -165,15 +165,18 @@ foreach ($contracts as $contract) {
         display: none;
       }
       .manage-panel {
-        margin: 1.5rem;
+        margin: 0 1.5rem 3rem;
         margin-bottom: 3rem;
         padding: 1.5rem;
         background: var(--card-bg);
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       }
-      .manage-panel .page-header-bar {
-        margin-top: 0.75rem !important;
+      .contracts-header-wrap {
+        margin: 1.5rem 1.5rem 1rem;
+      }
+      .contracts-header-wrap .page-header-bar {
+        margin: 0;
       }
       h1 {
         margin: 0 0 1.5rem 0;
@@ -514,10 +517,11 @@ foreach ($contracts as $contract) {
     <div style="display: flex;">
         <?php include '../includes/sidebar.php'; ?>
         <main style="flex: 1; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem;">
-            
-            <div class="manage-panel">
+            <div class="contracts-header-wrap">
               <?php $pageTitle = 'จัดการสัญญาเช่า'; include '../includes/page_header.php'; ?>
+            </div>
 
+            <div class="manage-panel">
                 <?php if (!empty($_SESSION['error'])): ?>
                   <div style="margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px;">
                     <?php echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['error']); ?>

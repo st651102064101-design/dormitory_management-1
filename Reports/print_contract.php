@@ -91,7 +91,7 @@ if ($ctr_id === 0) {
             min-height: 100vh;
         }
         .app-shell { display: flex; min-height: 100vh; }
-        .container { width: 100%; max-width: 100%; margin: 20px 0 0 0; padding: 0 24px 24px 24px; display: flex; flex-direction: column; gap: 16px; }
+        .container { width: 100%; max-width: 100%; margin: 0; padding: 0 24px 24px 24px; display: flex; flex-direction: column; gap: 16px; }
         .header { background: #ffffff; padding: 24px; border-radius: 14px; margin-bottom: 20px; box-shadow: 0 8px 24px rgba(15,23,42,0.08); border: 1px solid #e2e8f0; display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
         .header h1 { font-size: 28px; color: #0f172a; margin: 0; }
         .header p { font-size: 15px; color: #64748b; }

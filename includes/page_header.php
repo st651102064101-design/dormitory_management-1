@@ -25,11 +25,75 @@ $defaultHeaderActions = [
   ['label' => 'จองห้อง', 'href' => 'manage_booking.php', 'shortcut' => 'Ctrl+2'],
   ['label' => 'ค่าใช้จ่าย', 'href' => 'manage_expenses.php', 'shortcut' => 'Ctrl+3'],
   ['label' => 'สัญญา', 'href' => 'manage_contracts.php', 'shortcut' => 'Ctrl+4'],
-  ['label' => 'Tenant Wizard', 'href' => 'tenant_wizard.php', 'shortcut' => 'Ctrl+5'],
+  ['label' => 'ตัวช่วยผู้เช่า', 'href' => 'tenant_wizard.php', 'shortcut' => 'Ctrl+5'],
 ];
 
-$headerActions = (isset($pageHeaderActions) && is_array($pageHeaderActions)) ? $pageHeaderActions : $defaultHeaderActions;
+$normalizeHeaderActions = static function (array $actions, array $defaults): array {
+  $normalized = [];
+  foreach ($actions as $index => $action) {
+    if (!is_array($action)) {
+      continue;
+    }
+
+    $default = $defaults[$index] ?? ['label' => '', 'href' => '#', 'shortcut' => ''];
+    $enabled = array_key_exists('enabled', $action) ? (bool) $action['enabled'] : true;
+    if (!$enabled) {
+      continue;
+    }
+
+    $label = trim((string) ($action['label'] ?? $default['label']));
+    $href = trim((string) ($action['href'] ?? $default['href']));
+    $shortcut = trim((string) ($action['shortcut'] ?? $default['shortcut']));
+    if ($label === '' || $href === '') {
+      continue;
+    }
+
+    if (strpos($href, '..') !== false || preg_match('/^(?:https?:|javascript:|\/\/)/i', $href) || !preg_match('/^[A-Za-z0-9_\/.\-?#=&%]+$/', $href)) {
+      continue;
+    }
+
+    $normalized[] = [
+      'label' => $label,
+      'href' => $href,
+      'shortcut' => $shortcut,
+      'type' => $action['type'] ?? 'link',
+      'className' => $action['className'] ?? '',
+      'attributes' => isset($action['attributes']) && is_array($action['attributes']) ? $action['attributes'] : [],
+    ];
+  }
+
+  return $normalized ?: $defaults;
+};
+
+$headerActions = $defaultHeaderActions;
+if (isset($pageHeaderActions) && is_array($pageHeaderActions)) {
+  $headerActions = $normalizeHeaderActions($pageHeaderActions, $defaultHeaderActions);
+} elseif (isset($adminQuickActions) && is_array($adminQuickActions)) {
+  $headerActions = $normalizeHeaderActions($adminQuickActions, $defaultHeaderActions);
+} else {
+  try {
+    require_once __DIR__ . '/../ConnectDB.php';
+    $pageHeaderPdo = connectDB();
+    $pageHeaderStmt = $pageHeaderPdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'admin_quick_actions' LIMIT 1");
+    $pageHeaderStmt->execute();
+    $quickActionsJson = $pageHeaderStmt->fetchColumn();
+    if ($quickActionsJson) {
+      $decodedQuickActions = json_decode((string) $quickActionsJson, true);
+      if (is_array($decodedQuickActions)) {
+        $headerActions = $normalizeHeaderActions($decodedQuickActions, $defaultHeaderActions);
+      }
+    }
+  } catch (Throwable $e) {
+    $headerActions = $defaultHeaderActions;
+  }
+}
+
 $headerActionsLabel = $pageHeaderActionsLabel ?? 'Quick actions';
+$pageHeaderTitle = '';
+if (isset($pageTitle)) {
+  $pageHeaderTitle = trim((string) $pageTitle);
+}
+
 $buildHeaderAttributes = static function (array $attributes): string {
   $parts = [];
   foreach ($attributes as $name => $value) {
@@ -62,7 +126,7 @@ $buildHeaderAttributes = static function (array $attributes): string {
         <line x1="3" y1="18" x2="21" y2="18"/>
       </svg>
     </button>
-    <h2><?php echo htmlspecialchars($pageTitle, ENT_QUOTES, 'UTF-8'); ?></h2>
+    <h2 id="page-header-title"><?php echo htmlspecialchars($pageHeaderTitle, ENT_QUOTES, 'UTF-8'); ?></h2>
   </div>
   <nav class="quick-actions" aria-label="<?php echo htmlspecialchars($headerActionsLabel, ENT_QUOTES, 'UTF-8'); ?>">
     <?php foreach ($headerActions as $action): ?>
@@ -139,15 +203,101 @@ $buildHeaderAttributes = static function (array $attributes): string {
       window.__initSidebarState();
     }
   }
+
+  function initHeaderAutoHide() {
+    var header = document.querySelector('.page-header-bar');
+    if (!header || header.__autoHideBound) {
+      return;
+    }
+
+    header.__autoHideBound = true;
+
+    var scrollContainer = document.querySelector('.app-main') || document.querySelector('.main-content') || window;
+    var lastScrollTop = 0;
+    var ticking = false;
+
+    function getScrollTop() {
+      if (scrollContainer && scrollContainer !== window) {
+        return scrollContainer.scrollTop || 0;
+      }
+
+      return window.pageYOffset || document.documentElement.scrollTop || 0;
+    }
+
+    function updateHeaderState() {
+      var currentScrollTop = getScrollTop();
+      var scrollDelta = currentScrollTop - lastScrollTop;
+
+      if (currentScrollTop > 8) {
+        header.classList.add('header-scrolled');
+      } else {
+        header.classList.remove('header-scrolled');
+      }
+
+      if (currentScrollTop <= 16) {
+        header.classList.remove('header-hidden');
+      } else if (scrollDelta > 6) {
+        header.classList.add('header-hidden');
+      } else if (scrollDelta < -6) {
+        header.classList.remove('header-hidden');
+      }
+
+      lastScrollTop = currentScrollTop < 0 ? 0 : currentScrollTop;
+      ticking = false;
+    }
+
+    function requestUpdate() {
+      if (ticking) {
+        return;
+      }
+
+      ticking = true;
+      window.requestAnimationFrame(updateHeaderState);
+    }
+
+    if (scrollContainer && scrollContainer !== window) {
+      scrollContainer.addEventListener('scroll', requestUpdate, { passive: true });
+    }
+    window.addEventListener('scroll', requestUpdate, { passive: true });
+    window.addEventListener('resize', requestUpdate, { passive: true });
+
+    updateHeaderState();
+  }
+
+  function fillMissingHeaderTitle() {
+    var titleEl = document.getElementById('page-header-title');
+    if (!titleEl || titleEl.textContent.trim() !== '') {
+      return;
+    }
+
+    var documentTitle = (document.title || '').trim();
+    if (!documentTitle) {
+      return;
+    }
+
+    var parts = documentTitle.split(' - ').map(function(part) {
+      return part.trim();
+    }).filter(Boolean);
+
+    titleEl.textContent = parts.length > 1 ? parts[parts.length - 1] : documentTitle;
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initHeaderAutoHide);
+    document.addEventListener('DOMContentLoaded', fillMissingHeaderTitle);
+  } else {
+    initHeaderAutoHide();
+    fillMissingHeaderTitle();
+  }
 })();
 </script>
 <style>
 /* Page Header Styles - Apple-style Auto-hide */
 .page-header-bar {
-  position: relative;
+  position: sticky;
   width: 100%;
-  top: auto;
-  z-index: 20;
+  top: 1rem;
+  z-index: 120;
   padding: 1rem 1.5rem;
   background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(20px) saturate(180%);
@@ -179,7 +329,7 @@ $buildHeaderAttributes = static function (array $attributes): string {
 }
 
 .page-header-bar.header-hidden {
-  transform: translateY(0);
+  transform: translateY(calc(-100% - 1rem));
 }
 
 .page-header-bar.header-scrolled {
@@ -237,9 +387,9 @@ $buildHeaderAttributes = static function (array $attributes): string {
   color: #ffffff;
 }
 .quick-action-link.active {
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  border-color: #1d4ed8;
-  color: #ffffff;
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  border-color: #1d4ed8 !important;
+  color: #ffffff !important;
 }
 .quick-action-link::after {
   content: attr(data-shortcut);
@@ -259,9 +409,9 @@ $buildHeaderAttributes = static function (array $attributes): string {
 }
 .quick-action-link.active::after,
 .quick-action-link:hover::after {
-  color: #ffffff;
-  border-color: rgba(255, 255, 255, 0.7);
-  background: rgba(15, 23, 42, 0.5);
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  background: rgba(15, 23, 42, 0.5) !important;
 }
 .page-header-bar.header-hidden h2 {
   opacity: 0;
@@ -300,6 +450,7 @@ $buildHeaderAttributes = static function (array $attributes): string {
 }
 @media (max-width: 768px) {
   .page-header-bar {
+    top: 0.75rem;
     padding: 0.875rem 1rem;
     flex-direction: column;
     align-items: stretch;
@@ -488,11 +639,46 @@ body[data-theme="light"] .sidebar-toggle-btn:hover {
   var quickLinks = Array.from(document.querySelectorAll('.quick-action-link'));
   if (!quickLinks.length) return;
 
-  var path = window.location.pathname.split('/').pop();
+  function normalizePath(value) {
+    if (!value) return '';
+
+    try {
+      value = new URL(value, window.location.href).pathname || '';
+    } catch (e) {
+      value = String(value);
+    }
+
+    value = String(value).split('?')[0].split('#')[0].trim();
+    if (!value) return '';
+
+    value = value.replace(/\/+$/, '');
+    if (!value) return '';
+
+    return value;
+  }
+
+  function basename(value) {
+    var normalized = normalizePath(value);
+    if (!normalized) return '';
+
+    var parts = normalized.split('/').filter(Boolean);
+    return parts.length ? parts[parts.length - 1] : normalized;
+  }
+
+  var currentPath = normalizePath(window.location.pathname);
+  var currentBase = basename(window.location.pathname);
+
   quickLinks.forEach(function(link) {
     var href = (link.getAttribute('href') || '').trim();
-    if (href && (href === path || path.endsWith('/' + href))) {
+    var linkPath = normalizePath(href);
+    var linkBase = basename(href);
+
+    if (href && (
+      (linkPath && linkPath === currentPath) ||
+      (linkBase && linkBase === currentBase)
+    )) {
       link.classList.add('active');
+      link.setAttribute('aria-current', 'page');
     }
   });
 

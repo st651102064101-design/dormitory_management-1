@@ -498,6 +498,63 @@ try {
         exit;
     }
 
+    // จัดการปุ่มลัดใน page header
+    if (isset($_POST['admin_quick_actions'])) {
+        $decodedQuickActions = json_decode((string)$_POST['admin_quick_actions'], true);
+        if (!is_array($decodedQuickActions) || empty($decodedQuickActions)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ข้อมูลปุ่มลัดไม่ถูกต้อง']);
+            exit;
+        }
+
+        $normalizedQuickActions = [];
+        foreach (array_slice($decodedQuickActions, 0, 5) as $index => $action) {
+            if (!is_array($action)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'ข้อมูลปุ่มลัดไม่ถูกต้อง']);
+                exit;
+            }
+
+            $label = trim((string)($action['label'] ?? ''));
+            $href = trim((string)($action['href'] ?? ''));
+            $shortcut = trim((string)($action['shortcut'] ?? ''));
+            $enabled = !empty($action['enabled']);
+
+            if ($label === '' || mb_strlen($label) > 50) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'ชื่อปุ่มลัดลำดับที่ ' . ($index + 1) . ' ไม่ถูกต้อง']);
+                exit;
+            }
+
+            if ($href === '' || strlen($href) > 255 || strpos($href, '..') !== false || preg_match('/^(?:https?:|javascript:|\/\/)/i', $href) || !preg_match('/^[A-Za-z0-9_\/.\-?#=&%]+$/', $href)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'ลิงก์ของปุ่มลัดลำดับที่ ' . ($index + 1) . ' ไม่ถูกต้อง']);
+                exit;
+            }
+
+            if ($shortcut !== '' && mb_strlen($shortcut) > 20) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'คีย์ลัดของปุ่มลัดลำดับที่ ' . ($index + 1) . ' ยาวเกินไป']);
+                exit;
+            }
+
+            $normalizedQuickActions[] = [
+                'label' => $label,
+                'href' => $href,
+                'shortcut' => $shortcut,
+                'enabled' => $enabled,
+            ];
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $jsonValue = json_encode($normalizedQuickActions, JSON_UNESCAPED_UNICODE);
+        $stmt->execute(['admin_quick_actions', $jsonValue, $jsonValue]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกปุ่มลัดสำเร็จ', 'quick_actions' => $normalizedQuickActions]);
+        exit;
+    }
+
     // บันทึกชื่อธนาคาร
     if (isset($_POST['bank_name'])) {
         $bankName = trim($_POST['bank_name']);

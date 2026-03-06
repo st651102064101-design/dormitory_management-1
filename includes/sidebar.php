@@ -46,7 +46,8 @@ try {
     $wizardCountStmt = $pdo->query("
         SELECT COUNT(*) as incomplete_count FROM booking b
         LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-        WHERE (tw.id IS NULL OR tw.completed = 0)
+        WHERE b.bkg_status != '0'
+          AND (tw.id IS NULL OR tw.completed = 0)
     ");
     $wizardCountResult = $wizardCountStmt->fetch(PDO::FETCH_ASSOC);
     $wizardIncompleteCount = (int)($wizardCountResult['incomplete_count'] ?? 0);
@@ -2539,7 +2540,7 @@ try {
         <!-- manage_stay.php removed; link intentionally omitted -->
         <a class="wizard-nav-item" href="tenant_wizard.php" style="position: relative; padding-right: 2.5rem; border-left: 4px solid #3b82f6; margin: 0; border-radius: 8px; overflow: visible;">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg></span>
-            <span class="app-nav-label" style="font-weight: 600; color: #60a5fa;">จัดการผู้เช่า <br> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; (Wizard)</span>
+            <span class="app-nav-label" style="font-weight: 600; color: #60a5fa;">ตัวช่วยผู้เช่า</span>
             <?php if ($wizardIncompleteCount > 0): ?>
             <span style="position: absolute; top: 6px; right: 6px; transform: none; background: #ef4444; color: white; border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; font-weight: bold; pointer-events: none; z-index: 2;">
               <?php echo $wizardIncompleteCount > 99 ? '99+' : $wizardIncompleteCount; ?>

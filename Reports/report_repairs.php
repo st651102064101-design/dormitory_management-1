@@ -122,7 +122,7 @@ try {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
       .reports-container { width: 100%; max-width: 100%; padding: 0; }
-      .reports-container .container { max-width: 100%; width: 100%; padding: 1.5rem; }
+      .reports-container .container { max-width: 100%; width: 100%; padding: 0 1.5rem 1.5rem; }
       .repair-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
       .stat-card { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 1.5rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); transition: transform 0.2s, box-shadow 0.2s; }
       .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3); }

@@ -21,6 +21,56 @@
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
+
+    <div class="apple-settings-row" data-sheet="sheet-quick-actions">
+      <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/><path d="M18 4l2 2-2 2"/><path d="M18 16l2 2-2 2"/></svg></div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">ปุ่มลัดเมนูด้านบน</p>
+        <p class="apple-row-sublabel">แก้ชื่อ ลิงก์ และคีย์ลัดของ quick actions</p>
+      </div>
+      <span class="apple-row-value" data-display="quickactions-count"><?php echo count(array_filter($adminQuickActions, static fn($action) => !empty($action['enabled']))); ?> ปุ่ม</span>
+      <span class="apple-row-chevron">›</span>
+    </div>
+  </div>
+</div>
+
+<div class="apple-sheet-overlay" id="sheet-quick-actions">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-quick-actions">ยกเลิก</button>
+      <h3 class="apple-sheet-title">จัดการปุ่มลัด</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <form id="quickActionsForm">
+        <?php foreach ($adminQuickActions as $index => $action): ?>
+        <div style="border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; margin-bottom: 14px; background: rgba(255,255,255,0.03);">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:12px;">
+            <strong style="font-size: 14px; color: var(--apple-text);">ปุ่ม <?php echo $index + 1; ?></strong>
+            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color: var(--apple-text-secondary);">
+              <input type="checkbox" id="quickActionEnabled<?php echo $index; ?>" <?php echo !empty($action['enabled']) ? 'checked' : ''; ?>>
+              เปิดใช้งาน
+            </label>
+          </div>
+          <div class="apple-input-group">
+            <label class="apple-input-label">ชื่อปุ่ม</label>
+            <input type="text" id="quickActionLabel<?php echo $index; ?>" class="apple-input" maxlength="50" value="<?php echo htmlspecialchars((string)$action['label']); ?>">
+          </div>
+          <div class="apple-input-group">
+            <label class="apple-input-label">ลิงก์</label>
+            <input type="text" id="quickActionHref<?php echo $index; ?>" class="apple-input" maxlength="255" value="<?php echo htmlspecialchars((string)$action['href']); ?>">
+          </div>
+          <div class="apple-input-group" style="margin-bottom: 0;">
+            <label class="apple-input-label">คีย์ลัด</label>
+            <input type="text" id="quickActionShortcut<?php echo $index; ?>" class="apple-input" maxlength="20" value="<?php echo htmlspecialchars((string)$action['shortcut']); ?>" placeholder="เช่น Ctrl+1">
+          </div>
+        </div>
+        <?php endforeach; ?>
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0 0 16px;">ใช้ลิงก์ภายในระบบเท่านั้น เช่น `manage_payments.php` หรือ `tenant_wizard.php`</p>
+        <button type="submit" class="apple-button primary">บันทึกปุ่มลัด</button>
+      </form>
+    </div>
   </div>
 </div>
 

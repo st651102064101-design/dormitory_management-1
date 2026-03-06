@@ -291,7 +291,7 @@ try {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>จัดการผู้เช่า - Wizard</title>
+    <title>ตัวช่วยผู้เช่า</title>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <style>
@@ -315,7 +315,7 @@ try {
         }
 
         .wizard-panel > .page-header-bar {
-            margin: 0 !important;
+            margin: 0 0 1rem !important;
             border-radius: 0;
             border: 0;
             border-bottom: 1px solid #e2e8f0;
@@ -328,7 +328,7 @@ try {
 
         .wizard-panel-body {
             padding: 1.5rem;
-            padding-top: 2rem;
+            padding-top: 1rem;
         }
 
         .wizard-intro {
@@ -866,7 +866,7 @@ try {
         <?php include '../includes/sidebar.php'; ?>
         <main style="flex: 1; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem;">
             <div class="wizard-panel">
-                <?php $pageTitle = 'จัดการผู้เช่า - Wizard'; include '../includes/page_header.php'; ?>
+                <?php $pageTitle = 'ตัวช่วยผู้เช่า'; include '../includes/page_header.php'; ?>
                 <div class="wizard-panel-body">
 
                 <?php if (!empty($_SESSION['error'])): ?>
