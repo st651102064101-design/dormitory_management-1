@@ -3,28 +3,33 @@ declare(strict_types=1);
 session_start();
 
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ../Login.php');
-    exit;
+  header('Location: ../Login.php');
+  exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/water_calc.php';
 $pdo = connectDB();
 
 // --- อัตโนมัติสร้างรายการค่าใช้จ่ายใหม่เมื่อถึงเดือนใหม่ ---
 $today = new DateTime();
 $currentMonth = $today->format('Y-m');
-// ดึงสัญญาที่ยังไม่หมดอายุ
-$contractsStmt = $pdo->query("SELECT ctr_id, ctr_start, ctr_end FROM contract WHERE ctr_status = '0'");
+// ดึงเฉพาะสัญญาที่ยังไม่หมดอายุและผ่าน Wizard ถึง Step 5 แล้ว
+$contractsStmt = $pdo->query("\n  SELECT DISTINCT c.ctr_id, c.ctr_start, c.ctr_end\n  FROM contract c\n  INNER JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n  WHERE c.ctr_status = '0'\n    AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n");
 $contracts = $contractsStmt ? $contractsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
 foreach ($contracts as $contract) {
   $ctr_id = (int)$contract['ctr_id'];
-  $ctr_start = (new DateTime($contract['ctr_start']))->format('Y-m');
-  $ctr_end = (new DateTime($contract['ctr_end']))->format('Y-m');
+  $ctrStartDate = new DateTime($contract['ctr_start']);
+  $ctrEndDate = new DateTime($contract['ctr_end']);
+  $ctr_start = $ctrStartDate->format('Y-m');
+  $ctr_end = $ctrEndDate->format('Y-m');
+  // เริ่มคิดบิลรายเดือนเดือนถัดไปเสมอ
+  $firstBillMonth = (clone $ctrStartDate)->modify('first day of next month')->format('Y-m');
   // ตรวจสอบเดือนล่าสุดที่บันทึก
   $lastExpStmt = $pdo->prepare("SELECT MAX(DATE_FORMAT(exp_month, '%Y-%m')) AS last_month FROM expense WHERE ctr_id = ?");
   $lastExpStmt->execute([$ctr_id]);
   $lastMonth = $lastExpStmt->fetchColumn();
-  // ถ้าไม่มีเลย ให้เริ่มจาก ctr_start
-  $nextMonth = $lastMonth ? (new DateTime($lastMonth . '-01'))->modify('+1 month')->format('Y-m') : $ctr_start;
+  // ถ้าไม่มีเลย ให้เริ่มจากเดือนแรกที่ควรคิดบิล
+  $nextMonth = $lastMonth ? (new DateTime($lastMonth . '-01'))->modify('+1 month')->format('Y-m') : $firstBillMonth;
   // ถ้า nextMonth <= currentMonth และ nextMonth <= ctr_end ให้สร้างรายการใหม่
   while ($nextMonth <= $currentMonth && $nextMonth <= $ctr_end) {
     // ตรวจสอบว่ามีรายการแล้วหรือยัง
@@ -86,8 +91,9 @@ switch ($sortBy) {
 
 $availableMonths = [];
 try {
-  $monthStmt = $pdo->query("\n    SELECT DISTINCT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key\n    FROM expense e\n    LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n    WHERE c.ctr_status = '0' AND e.exp_month IS NOT NULL\n    ORDER BY month_key DESC\n  ");
-  $availableMonths = $monthStmt ? $monthStmt->fetchAll(PDO::FETCH_COLUMN) : [];
+  $monthStmt = $pdo->prepare("\n    SELECT DISTINCT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key\n    FROM expense e\n    LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n    LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n    WHERE c.ctr_status = '0'\n      AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n      AND e.exp_month IS NOT NULL\n      AND DATE_FORMAT(e.exp_month, '%Y-%m') <= :currentMonth\n      AND NOT (\n        DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m')\n      )\n    ORDER BY month_key DESC\n  ");
+  $monthStmt->execute([':currentMonth' => $currentMonth]);
+  $availableMonths = $monthStmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {}
 
 $selectedMonth = isset($_GET['filter_month']) ? trim((string)$_GET['filter_month']) : '';
@@ -96,6 +102,52 @@ if ($selectedMonth === '' && !empty($availableMonths)) {
 }
 if ($selectedMonth !== '' && !in_array($selectedMonth, $availableMonths, true)) {
   $selectedMonth = !empty($availableMonths) ? (string)$availableMonths[0] : '';
+}
+
+// Sync utility readings -> expense (for month being viewed) so amounts match manage_utility
+if ($selectedMonth !== '' && preg_match('/^\d{4}-\d{2}$/', $selectedMonth) === 1) {
+  [$syncYear, $syncMonth] = explode('-', $selectedMonth);
+  $syncYearInt = (int)$syncYear;
+  $syncMonthInt = (int)$syncMonth;
+
+  try {
+    $syncStmt = $pdo->prepare("\n      SELECT\n        e.exp_id,\n        e.room_price,\n        e.rate_elec,\n        u.utl_water_start,\n        u.utl_water_end,\n        u.utl_elec_start,\n        u.utl_elec_end\n      FROM expense e\n      LEFT JOIN utility u\n        ON u.ctr_id = e.ctr_id\n       AND YEAR(u.utl_date) = :syncYear\n       AND MONTH(u.utl_date) = :syncMonth\n      LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n      LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n      WHERE DATE_FORMAT(e.exp_month, '%Y-%m') = :syncMonthKey\n        AND c.ctr_status = '0'\n        AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n        AND NOT (\n          DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m')\n        )\n    ");
+    $syncStmt->execute([
+      ':syncYear' => $syncYearInt,
+      ':syncMonth' => $syncMonthInt,
+      ':syncMonthKey' => $selectedMonth,
+    ]);
+
+    $updateExpenseStmt = $pdo->prepare("\n      UPDATE expense\n      SET\n        exp_elec_unit = :expElecUnit,\n        exp_water_unit = :expWaterUnit,\n        exp_elec_chg = :expElecChg,\n        exp_water = :expWater,\n        exp_total = :expTotal\n      WHERE exp_id = :expId\n    ");
+
+    while ($row = $syncStmt->fetch(PDO::FETCH_ASSOC)) {
+      $hasUtilityReading = !($row['utl_water_end'] === null && $row['utl_elec_end'] === null);
+
+      $waterUsed = 0;
+      $elecUsed = 0;
+      if ($hasUtilityReading) {
+        $waterUsed = max(0, (int)$row['utl_water_end'] - (int)$row['utl_water_start']);
+        $elecUsed = max(0, (int)$row['utl_elec_end'] - (int)$row['utl_elec_start']);
+      }
+
+      $rateElec = (int)($row['rate_elec'] ?? 0);
+      $elecCost = (int)round($elecUsed * $rateElec);
+      $waterCost = (int)calculateWaterCost($waterUsed);
+      $roomPrice = (int)($row['room_price'] ?? 0);
+      $expTotal = $roomPrice + $elecCost + $waterCost;
+
+      $updateExpenseStmt->execute([
+        ':expElecUnit' => $elecUsed,
+        ':expWaterUnit' => $waterUsed,
+        ':expElecChg' => $elecCost,
+        ':expWater' => $waterCost,
+        ':expTotal' => $expTotal,
+        ':expId' => (int)$row['exp_id'],
+      ]);
+    }
+  } catch (PDOException $e) {
+    // Keep page usable even if sync fails.
+  }
 }
 
 // ดึงข้อมูลค่าใช้จ่าย - เฉพาะสัญญาที่ active (ctr_status = '0')
@@ -110,7 +162,16 @@ $expenseSql = "\n  SELECT e.*,
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
   LEFT JOIN room r ON c.room_id = r.room_id
   LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-  WHERE c.ctr_status = '0'";
+  WHERE c.ctr_status = '0'
+    AND EXISTS (
+      SELECT 1
+      FROM tenant_workflow tw
+      WHERE tw.ctr_id = c.ctr_id
+        AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
+    )
+    AND NOT (
+      DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m')
+    )";
 
 $expenseParams = [];
 if ($selectedMonth !== '') {
@@ -157,32 +218,6 @@ try {
   }
 } catch (PDOException $e) {}
 
-$depositPaidByCtr = [];
-try {
-  $depositByCtrStmt = $pdo->query("\n    SELECT\n      e.ctr_id,\n      SUM(CASE WHEN p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ' THEN p.pay_amount ELSE 0 END) AS deposit_paid\n    FROM expense e\n    LEFT JOIN payment p ON p.exp_id = e.exp_id\n    GROUP BY e.ctr_id\n  ");
-  while ($row = $depositByCtrStmt->fetch(PDO::FETCH_ASSOC)) {
-    $depositPaidByCtr[(int)($row['ctr_id'] ?? 0)] = (int)($row['deposit_paid'] ?? 0);
-  }
-} catch (PDOException $e) {}
-
-$depositPaidByRoomTenant = [];
-try {
-  $depositByRoomTenantStmt = $pdo->query("\n    SELECT
-      c.room_id,
-      c.tnt_id,
-      SUM(CASE WHEN p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ' THEN p.pay_amount ELSE 0 END) AS deposit_paid
-    FROM payment p
-    INNER JOIN expense e ON p.exp_id = e.exp_id
-    INNER JOIN contract c ON e.ctr_id = c.ctr_id
-    WHERE c.room_id IS NOT NULL AND c.tnt_id IS NOT NULL
-    GROUP BY c.room_id, c.tnt_id
-  ");
-  while ($row = $depositByRoomTenantStmt->fetch(PDO::FETCH_ASSOC)) {
-    $mapKey = (int)($row['room_id'] ?? 0) . '_' . (int)($row['tnt_id'] ?? 0);
-    $depositPaidByRoomTenant[$mapKey] = (int)($row['deposit_paid'] ?? 0);
-  }
-} catch (PDOException $e) {}
-
 // ดึงสัญญาที่ใช้งานอยู่สำหรับฟอร์ม
 $activeContracts = $pdo->query("
   SELECT c.ctr_id, c.room_id,
@@ -194,6 +229,12 @@ $activeContracts = $pdo->query("
   LEFT JOIN room r ON c.room_id = r.room_id
   LEFT JOIN roomtype rt ON r.type_id = rt.type_id
   WHERE c.ctr_status = '0'
+    AND EXISTS (
+      SELECT 1
+      FROM tenant_workflow tw
+      WHERE tw.ctr_id = c.ctr_id
+        AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
+    )
   ORDER BY r.room_number
 ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -235,49 +276,34 @@ $statusColors = [
   '3' => '#f59e0b',
 ];
 
-$defaultDepositTotal = 2000;
 $buildExpenseStatus = function(array $exp) use (
   $paymentFlagsByExp,
-  $depositPaidByRoomTenant,
-  $depositPaidByCtr,
   $statusMap,
-  $statusColors,
-  $defaultDepositTotal
+  $statusColors
 ) {
   $expId = (int)($exp['exp_id'] ?? 0);
-  $ctrId = (int)($exp['ctr_id'] ?? 0);
-  $depositKey = (int)($exp['room_id'] ?? 0) . '_' . (int)($exp['tnt_id'] ?? 0);
 
-  $depositPaid = (int)($depositPaidByRoomTenant[$depositKey] ?? ($depositPaidByCtr[$ctrId] ?? 0));
   $chargesPaid = (int)($paymentFlagsByExp[$expId]['approved_amount'] ?? 0);
   $pendingCount = (int)($paymentFlagsByExp[$expId]['pending_count'] ?? 0);
   $chargesTotal = (int)($exp['exp_total'] ?? 0);
 
   if ($pendingCount > 0) {
     $status = '2';
-  } elseif ($depositPaid >= $defaultDepositTotal && $chargesPaid >= $chargesTotal) {
+  } elseif ($chargesPaid >= $chargesTotal) {
     $status = '1';
-  } elseif ($depositPaid > 0 || $chargesPaid > 0) {
+  } elseif ($chargesPaid > 0) {
     $status = '3';
   } else {
     $status = '0';
   }
 
-  $depositRemain = max(0, $defaultDepositTotal - $depositPaid);
   $chargesRemain = max(0, $chargesTotal - $chargesPaid);
-  $unpaidItems = [];
-  if ($depositRemain > 0) {
-    $unpaidItems[] = 'มัดจำ';
-  }
-  if ($chargesRemain > 0) {
-    $unpaidItems[] = 'ค่าห้อง';
-  }
 
   $statusText = $statusMap[$status] ?? 'ไม่ระบุ';
   if ($status === '0') {
-    $statusText = 'ยังไม่ชำระ: ' . implode(' + ', $unpaidItems);
+    $statusText = 'ยังไม่ชำระ';
   } elseif ($status === '3') {
-    $statusText = 'ชำระยังไม่ครบ: ' . implode(' + ', $unpaidItems);
+    $statusText = 'ชำระยังไม่ครบ';
   }
 
   return [
@@ -285,9 +311,6 @@ $buildExpenseStatus = function(array $exp) use (
     'statusText' => $statusText,
     'statusColor' => $statusColors[$status] ?? '#94a3b8',
     'totalColor' => in_array($status, ['0', '3'], true) ? '#ef4444' : '#22c55e',
-    'depositPaid' => $depositPaid,
-    'depositTotal' => $defaultDepositTotal,
-    'depositRemain' => $depositRemain,
     'chargesPaid' => $chargesPaid,
     'chargesTotal' => $chargesTotal,
     'chargesRemain' => $chargesRemain,
@@ -325,6 +348,47 @@ foreach ($expenses as $exp) {
 
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
+
+// --- ตรวจสอบห้องที่ยังไม่ได้จดมิเตอร์เดือนที่กำลังดูอยู่ ---
+$meterMissingByExp = []; // exp_id => true
+$meterMissingRooms = []; // [['room_number'=>, 'tnt_name'=>, 'month'=>]]
+if ($selectedMonth !== '' && !empty($expenses)) {
+    [$filterYear, $filterMon] = explode('-', $selectedMonth);
+    $filterYearInt = (int)$filterYear;
+    $filterMonInt  = (int)$filterMon;
+    // สร้าง map: ctr_id -> exp
+    $expByCtr = [];
+    foreach ($expenses as $exp) {
+        $expByCtr[(int)$exp['ctr_id']] = $exp;
+    }
+    // batch check utility
+    if (!empty($expByCtr)) {
+        $ctrIds = array_keys($expByCtr);
+        $ph = implode(',', array_fill(0, count($ctrIds), '?'));
+        $utilChkStmt = $pdo->prepare(
+            "SELECT DISTINCT ctr_id FROM utility
+             WHERE ctr_id IN ($ph)
+               AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?"
+        );
+        $utilChkStmt->execute([...$ctrIds, $filterMonInt, $filterYearInt]);
+        $hasUtilSet = [];
+        foreach ($utilChkStmt->fetchAll(PDO::FETCH_COLUMN) as $cid) {
+            $hasUtilSet[(int)$cid] = true;
+        }
+        foreach ($expByCtr as $ctrId => $exp) {
+            if (empty($hasUtilSet[$ctrId])) {
+                $meterMissingByExp[(int)$exp['exp_id']] = true;
+                $meterMissingRooms[] = [
+                    'room_number' => $exp['room_number'] ?? '-',
+                    'tnt_name'    => $exp['tnt_name']    ?? '-',
+                    'month'       => date('m/Y', strtotime($exp['exp_month'])),
+                ];
+            }
+        }
+    }
+}
+// --- END ตรวจสอบมิเตอร์ ---
+
 $logoFilename = 'Logo.jpg';
 $settings = [
   'bank_name' => '',
@@ -374,6 +438,38 @@ try {
         color: #0369a1;
         font-size: 0.88rem;
         font-weight: 600;
+      }
+      .meter-alert-banner {
+        margin-bottom: 1.1rem;
+        padding: 1rem 1.2rem;
+        border-radius: 12px;
+        border: 1px solid rgba(239,68,68,0.45);
+        background: rgba(239,68,68,0.08);
+        color: #b91c1c;
+      }
+      .meter-alert-banner .meter-alert-title {
+        display: flex; align-items: center; gap: 0.55rem;
+        font-size: 0.98rem; font-weight: 700; margin-bottom: 0.55rem;
+      }
+      .meter-alert-banner .meter-alert-list {
+        list-style: none; margin: 0; padding: 0;
+        display: flex; flex-wrap: wrap; gap: 0.45rem;
+      }
+      .meter-alert-banner .meter-alert-list li {
+        background: rgba(239,68,68,0.12);
+        border: 1px solid rgba(239,68,68,0.3);
+        border-radius: 20px;
+        padding: 0.2rem 0.65rem;
+        font-size: 0.82rem; font-weight: 600;
+      }
+      html.light-theme .meter-alert-banner { color: #991b1b; }
+      .meter-missing-badge {
+        display: inline-flex; align-items: center; gap: 0.25rem;
+        background: rgba(239,68,68,0.12);
+        border: 1px solid rgba(239,68,68,0.3);
+        border-radius: 12px; padding: 0.1rem 0.45rem;
+        font-size: 0.74rem; font-weight: 700; color: #dc2626;
+        white-space: nowrap; margin-top: 0.2rem;
       }
       .expense-stat-card {
         background: linear-gradient(135deg, rgba(12, 22, 42, 0.92), rgba(10, 16, 30, 0.96));
@@ -790,24 +886,67 @@ try {
       .expenses-view-toggle {
         padding: 0.6rem 0.95rem;
         border-radius: 10px;
-        border: 1px solid rgba(148,163,184,0.28);
-        background: rgba(255,255,255,0.05);
-        color: #cbd5e1;
+          border: 1px solid #1d4ed8;
+          background: linear-gradient(135deg, #2563eb, #1d4ed8);
+          color: #ffffff !important;
         cursor: pointer;
         font-weight: 600;
         display: inline-flex;
         align-items: center;
         gap: 0.45rem;
+        position: relative;
+        z-index: 20;
+        pointer-events: auto !important;
+        user-select: none;
+        -webkit-user-select: none;
       }
 
       .expenses-view-toggle:hover {
-        background: rgba(255,255,255,0.1);
+        background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        border-color: #1e40af;
+      }
+
+      .expenses-view-toggle[aria-pressed="true"] {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #ffffff !important;
+        border-color: #1d4ed8;
+      }
+
+      .expenses-view-toggle[aria-pressed="true"]:hover {
+        background: linear-gradient(135deg, #1d4ed8, #1e40af);
+        border-color: #1e40af;
       }
 
       .expenses-view-toggle svg {
         width: 16px;
         height: 16px;
-        stroke: currentColor;
+          stroke: currentColor !important;
+          color: currentColor !important;
+        fill: none !important;
+        pointer-events: none;
+      }
+
+      .expenses-view-toggle svg * {
+          stroke: currentColor !important;
+          color: currentColor !important;
+        fill: none !important;
+        pointer-events: none;
+      }
+
+      .expenses-view-toggle[aria-pressed="true"] svg,
+      .expenses-view-toggle[aria-pressed="true"] svg * {
+        stroke: #ffffff !important;
+        color: #ffffff !important;
+      }
+
+      .expenses-view-toggle[aria-pressed="true"] span {
+        color: #ffffff !important;
+      }
+
+      .expenses-view-toggle span {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+        pointer-events: none;
       }
 
       .expenses-actions {
@@ -815,6 +954,8 @@ try {
         flex-direction: column;
         align-items: flex-end;
         gap: 0.55rem;
+        position: relative;
+        z-index: 12;
       }
 
       .expenses-filters-line {
@@ -913,14 +1054,32 @@ try {
       }
 
       html.light-theme .expenses-view-toggle {
-        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+        color: #ffffff !important;
+        border-color: #1d4ed8 !important;
+      }
+
+      html.light-theme .expenses-view-toggle[aria-pressed="true"] {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
         color: #ffffff !important;
         border-color: #1d4ed8 !important;
       }
 
       html.light-theme .expenses-view-toggle svg,
       html.light-theme .expenses-view-toggle svg * {
+        stroke: currentColor !important;
+        color: currentColor !important;
+        fill: none !important;
+      }
+
+      html.light-theme .expenses-view-toggle[aria-pressed="true"] svg,
+      html.light-theme .expenses-view-toggle[aria-pressed="true"] svg * {
         stroke: #ffffff !important;
+        color: #ffffff !important;
+        fill: none !important;
+      }
+
+      html.light-theme .expenses-view-toggle[aria-pressed="true"] span {
         color: #ffffff !important;
       }
 
@@ -1225,6 +1384,21 @@ try {
                 </div>
               </div>
             </div>
+
+            <?php if (!empty($meterMissingRooms)): ?>
+            <div class="meter-alert-banner">
+              <div class="meter-alert-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                ⚠ ยังไม่ได้จดมิเตอร์ <?php echo count($meterMissingRooms); ?> ห้อง — ยอดค่าน้ำ/ไฟยังเป็น 0 กรุณาจดมิเตอร์ในผู้เช่าที่จัดการ ก่อนบิลจะคำนวณถูกต้อง
+              </div>
+              <ul class="meter-alert-list">
+                <?php foreach ($meterMissingRooms as $mr): ?>
+                  <li>💧⚡ ห้อง <?php echo htmlspecialchars($mr['room_number'], ENT_QUOTES, 'UTF-8'); ?> • <?php echo htmlspecialchars($mr['tnt_name'], ENT_QUOTES, 'UTF-8'); ?> (<?php echo htmlspecialchars($mr['month'], ENT_QUOTES, 'UTF-8'); ?>)</li>
+                <?php endforeach; ?>
+              </ul>
+            </div>
+            <?php endif; ?>
+
             <div class="expense-stats">
               <div class="expense-stat-card is-unpaid">
                 <div class="stat-head">
@@ -1273,7 +1447,7 @@ try {
               </div>
               <div class="expenses-actions">
                 <button type="button" id="expensesViewToggle" class="expenses-view-toggle" onclick="toggleExpensesView()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                  <svg id="expensesViewToggleIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                   <span id="expensesViewToggleText">มุมมอง list(ตาราง)</span>
                 </button>
                 <div class="expenses-filters-line">
@@ -1335,8 +1509,6 @@ try {
                         data-expense-id="<?php echo (int)$exp['exp_id']; ?>"
                         data-tenant-name="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>"
                         data-status-text="<?php echo htmlspecialchars((string)$rowStatus['statusText'], ENT_QUOTES, 'UTF-8'); ?>"
-                        data-deposit-paid="<?php echo (int)$rowStatus['depositPaid']; ?>"
-                        data-deposit-remain="<?php echo (int)$rowStatus['depositRemain']; ?>"
                         data-charges-paid="<?php echo (int)$rowStatus['chargesPaid']; ?>"
                         data-charges-remain="<?php echo (int)$rowStatus['chargesRemain']; ?>">
                         <td>
@@ -1347,6 +1519,9 @@ try {
                           <div class="expense-table-room">
                             <span>ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?></span>
                             <span class="expense-meta"><?php echo htmlspecialchars($exp['tnt_name'] ?? '-'); ?></span>
+                            <?php if (!empty($meterMissingByExp[(int)$exp['exp_id']])): ?>
+                              <span class="meter-missing-badge">⚠ ยังไม่จดมิเตอร์</span>
+                            <?php endif; ?>
                           </div>
                         </td>
                         <td><?php echo $exp['exp_month'] ? date('m/Y', strtotime($exp['exp_month'])) : '-'; ?></td>
@@ -1372,20 +1547,18 @@ try {
                         </td>
                         <td class="crud-column">
                           <?php
-                            $depositPaid = (int)$rowStatus['depositPaid'];
                             $chargesPaid = (int)$rowStatus['chargesPaid'];
                             $chargesRemain = (int)$rowStatus['chargesRemain'];
-                            $depositRemain = (int)$rowStatus['depositRemain'];
                           ?>
                           <div class="payment-cell-wrap">
                             <div class="payment-compact">
                               <div class="payment-compact-row">
-                                <span class="payment-compact-label">มัดจำ (จ่าย/ค้าง)</span>
-                                <span class="payment-compact-value<?php echo $depositRemain > 0 ? ' warn' : ''; ?>">฿<?php echo number_format($depositPaid); ?> / ฿<?php echo number_format($depositRemain); ?></span>
+                                <span class="payment-compact-label">ชำระแล้ว</span>
+                                <span class="payment-compact-value">฿<?php echo number_format($chargesPaid); ?></span>
                               </div>
                               <div class="payment-compact-row">
-                                <span class="payment-compact-label">ค่าห้อง (จ่าย/ค้าง)</span>
-                                <span class="payment-compact-value<?php echo $chargesRemain > 0 ? ' warn' : ''; ?>">฿<?php echo number_format($chargesPaid); ?> / ฿<?php echo number_format($chargesRemain); ?></span>
+                                <span class="payment-compact-label">ค้างชำระ</span>
+                                <span class="payment-compact-value<?php echo $chargesRemain > 0 ? ' warn' : ''; ?>">฿<?php echo number_format($chargesRemain); ?></span>
                               </div>
                             </div>
                             <div class="table-click-badge">🖱 กดแถวนี้เพื่อเปิด Modal</div>
@@ -1414,14 +1587,15 @@ try {
                        data-expense-id="<?php echo (int)$exp['exp_id']; ?>"
                        data-tenant-name="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>"
                        data-status-text="<?php echo htmlspecialchars((string)$rowStatus['statusText'], ENT_QUOTES, 'UTF-8'); ?>"
-                       data-deposit-paid="<?php echo (int)$rowStatus['depositPaid']; ?>"
-                       data-deposit-remain="<?php echo (int)$rowStatus['depositRemain']; ?>"
                        data-charges-paid="<?php echo (int)$rowStatus['chargesPaid']; ?>"
                        data-charges-remain="<?php echo (int)$rowStatus['chargesRemain']; ?>">
                     <div class="expense-row-top">
                       <div class="expense-row-main">
                         <strong class="expense-row-id">#<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?></strong>
                         <span class="expense-row-sub">ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?> • <?php echo htmlspecialchars($exp['tnt_name'] ?? '-'); ?></span>
+                        <?php if (!empty($meterMissingByExp[(int)$exp['exp_id']])): ?>
+                          <span class="meter-missing-badge">⚠ ยังไม่จดมิเตอร์</span>
+                        <?php endif; ?>
                       </div>
                       <span class="status-badge" style="background: <?php echo htmlspecialchars($rowStatus['statusColor']); ?>;"><?php echo htmlspecialchars($rowStatus['statusText']); ?></span>
                     </div>
@@ -1469,10 +1643,17 @@ try {
     <script src="/dormitory_management/Public/Assets/Javascript/main.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
+      const expensesToggleIcons = {
+          list: '<circle cx="5" cy="6" r="1.25"></circle><circle cx="5" cy="12" r="1.25"></circle><circle cx="5" cy="18" r="1.25"></circle><line x1="9" y1="6" x2="20" y2="6"></line><line x1="9" y1="12" x2="20" y2="12"></line><line x1="9" y1="18" x2="20" y2="18"></line>',
+        grid: '<rect x="3" y="3" width="7" height="7" rx="1"></rect><rect x="14" y="3" width="7" height="7" rx="1"></rect><rect x="3" y="14" width="7" height="7" rx="1"></rect><rect x="14" y="14" width="7" height="7" rx="1"></rect>'
+      };
+
       function applyExpensesView(mode) {
         const tableWrap = document.getElementById('expensesTableWrap');
         const rowWrap = document.getElementById('expensesRowView');
         const toggleText = document.getElementById('expensesViewToggleText');
+        const toggleBtn = document.getElementById('expensesViewToggle');
+        const toggleIcon = document.getElementById('expensesViewToggleIcon');
         if (!tableWrap || !rowWrap) return;
 
         const normalized = mode === 'table' ? 'table' : 'grid';
@@ -1481,6 +1662,14 @@ try {
 
         if (toggleText) {
           toggleText.textContent = normalized === 'table' ? 'มุมมอง grid' : 'มุมมอง list(ตาราง)';
+        }
+
+        if (toggleBtn) {
+          toggleBtn.setAttribute('aria-pressed', normalized === 'table' ? 'true' : 'false');
+        }
+
+        if (toggleIcon) {
+          toggleIcon.innerHTML = normalized === 'table' ? expensesToggleIcons.grid : expensesToggleIcons.list;
         }
 
         try { localStorage.setItem('expensesViewMode', normalized); } catch (e) {}
@@ -2153,15 +2342,11 @@ try {
         };
         const statusIcon = statusIconMap[statusClass] || statusIconMap.pending;
         const paymentRemark = String(payment.pay_remark || '').trim();
-        const paymentType = paymentRemark
-          ? (paymentRemark === 'มัดจำ' ? 'มัดจำ' : 'ค่าห้อง/ค่าน้ำ/ค่าไฟ')
-          : '-';
-        const depositPaid = toNumber(context.depositPaid);
-        const depositRemain = toNumber(context.depositRemain);
+        const paymentType = paymentRemark || 'ค่าห้อง/ค่าน้ำ/ค่าไฟ';
         const chargesPaid = toNumber(context.chargesPaid);
         const chargesRemain = toNumber(context.chargesRemain);
-        const totalPaid = depositPaid + chargesPaid;
-        const totalRemain = depositRemain + chargesRemain;
+        const totalPaid = chargesPaid;
+        const totalRemain = chargesRemain;
         const totalRemainColor = totalRemain > 0 ? '#ef4444' : '#22c55e';
         const proofHtml = !proofSrc
           ? '<div class="payment-modal-value" style="color:#94a3b8;">-</div>'
@@ -2215,16 +2400,10 @@ try {
             <div class="payment-modal-section">
               <h4 class="payment-modal-section-title">สรุปย่อย</h4>
               <div class="payment-modal-grid">
-                <div class="payment-modal-label">จ่ายแล้ว (มัดจำ)</div>
-                <div class="payment-modal-value">${formatBaht(depositPaid)}</div>
-
-                <div class="payment-modal-label">จ่ายแล้ว (ค่าห้อง)</div>
+                <div class="payment-modal-label">ชำระแล้ว</div>
                 <div class="payment-modal-value">${formatBaht(chargesPaid)}</div>
 
-                <div class="payment-modal-label">ค้างชำระ (มัดจำ)</div>
-                <div class="payment-modal-value" style="color:${depositRemain > 0 ? '#ef4444' : '#22c55e'};font-weight:700;">${formatBaht(depositRemain)}</div>
-
-                <div class="payment-modal-label">ค้างชำระ (ค่าห้อง)</div>
+                <div class="payment-modal-label">ค้างชำระ</div>
                 <div class="payment-modal-value" style="color:${chargesRemain > 0 ? '#ef4444' : '#22c55e'};font-weight:700;">${formatBaht(chargesRemain)}</div>
               </div>
             </div>
@@ -2319,8 +2498,6 @@ try {
           const opened = await openPaymentPreview(card.dataset.expenseId, {
             tenantName: card.dataset.tenantName || '-',
             statusText: card.dataset.statusText || 'รอตรวจสอบ',
-            depositPaid: card.dataset.depositPaid || 0,
-            depositRemain: card.dataset.depositRemain || 0,
             chargesPaid: card.dataset.chargesPaid || 0,
             chargesRemain: card.dataset.chargesRemain || 0
           }, {

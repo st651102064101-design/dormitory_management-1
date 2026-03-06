@@ -13,16 +13,16 @@ require_once __DIR__ . '/../ConnectDB.php';
 
 try {
     $pdo = connectDB();
-    
+
     $stmt = $pdo->query("
         SELECT rate_water, rate_elec 
-        FROM utility_rates 
-        ORDER BY rate_id DESC 
+        FROM rate 
+        ORDER BY effective_date DESC, rate_id DESC 
         LIMIT 1
     ");
-    
+
     $rate = $stmt->fetch(PDO::FETCH_ASSOC);
-    
+
     if ($rate) {
         echo json_encode([
             'rate_water' => (float)$rate['rate_water'],
@@ -36,7 +36,10 @@ try {
         ]);
     }
     
-} catch (Exception $e) {
+} catch (Throwable $e) {
     http_response_code(500);
-    echo json_encode(['error' => 'Database error']);
+    echo json_encode([
+        'error' => 'Database error',
+        'message' => $e->getMessage()
+    ]);
 }

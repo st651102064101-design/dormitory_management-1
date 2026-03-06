@@ -33,6 +33,13 @@ try {
 
     $pdo->beginTransaction();
 
+    $activeContractStmt = $pdo->prepare("SELECT ctr_id FROM contract WHERE room_id = ? AND ctr_status IN ('0', '2') LIMIT 1 FOR UPDATE");
+    $activeContractStmt->execute([$room_id]);
+    $existingContractId = $activeContractStmt->fetchColumn();
+    if ($existingContractId) {
+        throw new Exception('ห้องนี้มีผู้เช่าอยู่แล้ว ไม่สามารถสร้างสัญญาซ้ำได้');
+    }
+
     // สร้างสัญญา
     $stmt = $pdo->prepare("
         INSERT INTO contract (ctr_start, ctr_end, ctr_deposit, ctr_status, tnt_id, room_id, contract_created_date)

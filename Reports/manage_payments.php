@@ -8,6 +8,20 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// Auto-heal: ถ้า Wizard ยืนยัน Step 2 แล้ว แต่ booking_payment ยังไม่ถูกอัปเดตสถานะ ให้ปรับเป็นยืนยันอัตโนมัติ
+try {
+  $pdo->exec("\n    UPDATE booking_payment bp\n    INNER JOIN tenant_workflow tw ON tw.bkg_id = bp.bkg_id\n    SET bp.bp_status = '1',\n        bp.bp_payment_date = COALESCE(bp.bp_payment_date, NOW())\n    WHERE COALESCE(tw.step_2_confirmed, 0) = 1\n      AND COALESCE(bp.bp_status, '0') <> '1'\n  ");
+} catch (PDOException $e) {
+  error_log('manage_payments auto-heal booking_payment error: ' . $e->getMessage());
+}
+
+// กรณีหมายเหตุเป็นมัดจำ ให้ยืนยันอัตโนมัติ ไม่ต้องให้ผู้ใช้กดยืนยันซ้ำ
+try {
+  $pdo->exec("\n    UPDATE payment\n    SET pay_status = '1'\n    WHERE COALESCE(pay_status, '0') = '0'\n      AND REPLACE(TRIM(COALESCE(pay_remark, '')), ' ', '') LIKE '%มัดจำ%'\n  ");
+} catch (PDOException $e) {
+  error_log('manage_payments auto-verify deposit error: ' . $e->getMessage());
+}
+
 // ดึง theme color จากการตั้งค่าระบบ
 $settingsStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
 $themeColor = '#0f172a'; // ค่า default (dark mode)
@@ -67,35 +81,59 @@ $filterMonth = isset($_GET['filter_month']) ? $_GET['filter_month'] : '';
 $filterYear = isset($_GET['filter_year']) ? $_GET['filter_year'] : '';
 $filterRoom = isset($_GET['room']) ? $_GET['room'] : '';
 
-// สร้าง WHERE clause
-$whereConditions = [];
-$whereParams = [];
-
-if ($filterStatus !== '') {
-    $whereConditions[] = "p.pay_status = ?";
-    $whereParams[] = $filterStatus;
+$isMonthAllRequest = isset($_GET['filter_month']) && (
+  $_GET['filter_month'] === 'all' || trim((string)$_GET['filter_month']) === ''
+);
+if ($isMonthAllRequest) {
+  $filterMonth = '';
 }
 
-if ($filterMonth !== '' && $filterYear !== '') {
-    $whereConditions[] = "MONTH(p.pay_date) = ? AND YEAR(p.pay_date) = ?";
-    $whereParams[] = $filterMonth;
-    $whereParams[] = $filterYear;
-} elseif ($filterMonth !== '') {
-    $whereConditions[] = "MONTH(p.pay_date) = ?";
-    $whereParams[] = $filterMonth;
-} elseif ($filterYear !== '') {
-    $whereConditions[] = "YEAR(p.pay_date) = ?";
-    $whereParams[] = $filterYear;
+$currentYearString = date('Y');
+if ($filterYear === '') {
+  $filterYear = $currentYearString;
 }
 
-if ($filterRoom !== '') {
-    $whereConditions[] = "r.room_number = ?";
-    $whereParams[] = $filterRoom;
+$latestMonthKey = '';
+try {
+  $latestMonthStmt = $pdo->query("
+    SELECT month_key
+    FROM (
+      SELECT DATE_FORMAT(p.pay_date, '%Y-%m') AS month_key
+      FROM payment p
+      WHERE p.pay_date IS NOT NULL
+      UNION
+      SELECT DATE_FORMAT(c.ctr_start, '%Y-%m') AS month_key
+      FROM booking_payment bp
+      INNER JOIN booking b ON b.bkg_id = bp.bkg_id
+      LEFT JOIN tenant_workflow tw ON tw.bkg_id = b.bkg_id
+      LEFT JOIN contract c ON c.ctr_id = tw.ctr_id
+      WHERE COALESCE(bp.bp_status, '0') = '1'
+        AND bp.bp_id <> 770043117
+        AND c.ctr_start IS NOT NULL
+      UNION
+      SELECT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key
+      FROM expense e
+      INNER JOIN contract c ON e.ctr_id = c.ctr_id
+      WHERE c.ctr_status = '0'
+        AND e.exp_month IS NOT NULL
+        AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+    ) latest_months
+    WHERE month_key IS NOT NULL AND month_key <> ''
+    ORDER BY month_key DESC
+    LIMIT 1
+  ");
+  $latestMonthKey = (string)($latestMonthStmt ? $latestMonthStmt->fetchColumn() : '');
+} catch (PDOException $e) {
+  $latestMonthKey = '';
 }
 
-$whereClause = '';
-if (!empty($whereConditions)) {
-    $whereClause = 'WHERE ' . implode(' AND ', $whereConditions);
+if (!$isMonthAllRequest && $filterMonth === '' && preg_match('/^\d{4}-\d{2}$/', $latestMonthKey) === 1) {
+  [$latestYear, $latestMonth] = explode('-', $latestMonthKey);
+  if ($filterYear === $latestYear || $filterYear === '') {
+    $filterYear = $latestYear;
+    $filterMonth = (string)((int)$latestMonth);
+  }
 }
 
 // ดึงข้อมูลการชำระเงิน
@@ -112,17 +150,150 @@ $sql = "
     LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
     LEFT JOIN room r ON c.room_id = r.room_id
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-    $whereClause
     ORDER BY p.pay_id DESC
 ";
 
 $stmt = $pdo->prepare($sql);
-$stmt->execute($whereParams);
+  $stmt->execute();
 $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// Merge verified booking deposits (ค่ามัดจำ) จาก booking_payment เพื่อให้แสดงในหน้า manage_payments
+try {
+  $depositRows = $pdo->query("
+      SELECT
+        bp.bp_id,
+        bp.bp_amount,
+        bp.bp_status,
+        bp.bp_proof,
+        b.bkg_date,
+        c.ctr_start,
+        t.tnt_id,
+        t.tnt_name,
+        t.tnt_phone,
+        r.room_number
+      FROM booking_payment bp
+      INNER JOIN booking b ON b.bkg_id = bp.bkg_id
+      LEFT JOIN tenant_workflow tw ON tw.bkg_id = b.bkg_id
+      LEFT JOIN contract c ON c.ctr_id = tw.ctr_id
+      LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
+      LEFT JOIN room r ON b.room_id = r.room_id
+      WHERE COALESCE(bp.bp_status, '0') = '1'
+        AND bp.bp_id <> 770043117
+      ORDER BY bp.bp_id DESC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
+  foreach ($depositRows as $dep) {
+    $depDate = !empty($dep['ctr_start']) ? (string)$dep['ctr_start'] : (string)($dep['bkg_date'] ?? '');
+    if ($depDate === '') {
+      $depDate = date('Y-m-d H:i:s');
+    }
+
+    $depMonth = date('n', strtotime($depDate));
+    $depYear = date('Y', strtotime($depDate));
+
+    $payments[] = [
+      'pay_id' => -(int)$dep['bp_id'],
+      'display_pay_id' => 'BP' . (int)$dep['bp_id'],
+      'exp_id' => null,
+      'exp_month' => null,
+      'exp_total' => (int)($dep['bp_amount'] ?? 0),
+      'exp_status' => '1',
+      'ctr_id' => null,
+      'room_id' => null,
+      'tnt_id' => $dep['tnt_id'] ?? null,
+      'tnt_name' => $dep['tnt_name'] ?? '-',
+      'tnt_phone' => $dep['tnt_phone'] ?? '-',
+      'room_number' => $dep['room_number'] ?? '-',
+      'type_name' => null,
+      'pay_date' => $depDate,
+      'pay_amount' => (int)($dep['bp_amount'] ?? 0),
+      'pay_proof' => $dep['bp_proof'] ?? null,
+      'pay_status' => '1',
+      'pay_remark' => 'ค่ามัดจำ (เงินจอง)',
+      'payment_source' => 'booking_deposit',
+    ];
+  }
+} catch (PDOException $e) {
+  error_log('manage_payments merge booking deposit error: ' . $e->getMessage());
+}
+
+// Merge unpaid monthly bills so rooms appear in the payments page even before tenants submit proof.
+try {
+  $unpaidBillRows = $pdo->query("\n      SELECT
+        e.exp_id,
+        e.exp_month,
+        e.exp_total,
+        e.exp_status,
+        c.ctr_id,
+        c.room_id,
+        t.tnt_id,
+        t.tnt_name,
+        t.tnt_phone,
+        r.room_number,
+        rt.type_name
+      FROM expense e
+      INNER JOIN (
+        SELECT MAX(exp_id) AS exp_id
+        FROM expense
+        GROUP BY ctr_id, DATE_FORMAT(exp_month, '%Y-%m')
+      ) latest_expense ON latest_expense.exp_id = e.exp_id
+      INNER JOIN contract c ON e.ctr_id = c.ctr_id
+      LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+      LEFT JOIN room r ON c.room_id = r.room_id
+      LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+      LEFT JOIN payment p ON p.exp_id = e.exp_id
+      WHERE c.ctr_status = '0'
+        AND p.exp_id IS NULL
+        AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+      ORDER BY e.exp_month DESC, CAST(r.room_number AS UNSIGNED) ASC
+    ")->fetchAll(PDO::FETCH_ASSOC);
+
+  foreach ($unpaidBillRows as $row) {
+    $expMonth = (string)($row['exp_month'] ?? '');
+    $monthTs = $expMonth !== '' ? strtotime($expMonth) : false;
+    $expMonthInt = $monthTs ? (int)date('n', $monthTs) : null;
+    $expYearInt = $monthTs ? (int)date('Y', $monthTs) : null;
+
+    $payments[] = [
+      'pay_id' => -1000000 - (int)$row['exp_id'],
+      'display_pay_id' => 'EXP' . (int)$row['exp_id'],
+      'exp_id' => (int)$row['exp_id'],
+      'exp_month' => $row['exp_month'],
+      'exp_total' => (int)($row['exp_total'] ?? 0),
+      'exp_status' => (string)($row['exp_status'] ?? '0'),
+      'ctr_id' => (int)($row['ctr_id'] ?? 0),
+      'room_id' => (int)($row['room_id'] ?? 0),
+      'tnt_id' => $row['tnt_id'] ?? null,
+      'tnt_name' => $row['tnt_name'] ?? '-',
+      'tnt_phone' => $row['tnt_phone'] ?? '-',
+      'room_number' => $row['room_number'] ?? '-',
+      'type_name' => $row['type_name'] ?? null,
+      'pay_date' => null,
+      'pay_amount' => (int)($row['exp_total'] ?? 0),
+      'pay_proof' => null,
+      'pay_status' => 'unpaid',
+      'pay_remark' => 'ยังไม่มีการแจ้งชำระ',
+      'payment_source' => 'unpaid_expense',
+    ];
+  }
+} catch (PDOException $e) {
+  error_log('manage_payments merge unpaid bills error: ' . $e->getMessage());
+}
+
+usort($payments, static function(array $a, array $b): int {
+  $aTime = strtotime((string)($a['pay_date'] ?? $a['exp_month'] ?? '')) ?: 0;
+  $bTime = strtotime((string)($b['pay_date'] ?? $b['exp_month'] ?? '')) ?: 0;
+  if ($aTime === $bTime) {
+    return ((int)($b['pay_id'] ?? 0)) <=> ((int)($a['pay_id'] ?? 0));
+  }
+  return $bTime <=> $aTime;
+});
 
 // ดึงค่าใช้จ่ายที่ยังไม่ชำระและชำระยังไม่ครบ (สำหรับ dropdown ในฟอร์ม)
 $unpaidExpenses = $pdo->query("
     SELECT e.exp_id, e.exp_month, e.exp_total, e.exp_status,
+       e.room_price, e.exp_water, e.exp_elec_chg,
            c.ctr_id,
            t.tnt_name,
            r.room_number
@@ -137,6 +308,7 @@ $unpaidExpenses = $pdo->query("
 $statusMap = [
     '0' => 'รอตรวจสอบ',
     '1' => 'ตรวจสอบแล้ว',
+  'unpaid' => 'ยังไม่ชำระ',
 ];
 $statusColors = [
     '0' => '#fbbf24',
@@ -151,12 +323,12 @@ $stats = [
     'total_verified' => 0,
 ];
 foreach ($payments as $pay) {
-    if ($pay['pay_status'] === '0') {
-        $stats['pending']++;
-        $stats['total_pending'] += (int)($pay['pay_amount'] ?? 0);
-    } else {
+  if ($pay['pay_status'] === '1') {
         $stats['verified']++;
         $stats['total_verified'] += (int)($pay['pay_amount'] ?? 0);
+  } else {
+    $stats['pending']++;
+    $stats['total_pending'] += (int)($pay['pay_amount'] ?? 0);
     }
 }
 
@@ -173,18 +345,59 @@ try {
 
 // ดึงเดือนที่มีข้อมูล
 $availableMonths = $pdo->query("
-    SELECT DISTINCT DATE_FORMAT(pay_date, '%Y-%m') as month_key
-    FROM payment
-    WHERE pay_date IS NOT NULL
+    SELECT DISTINCT month_key
+    FROM (
+      SELECT DATE_FORMAT(p.pay_date, '%Y-%m') AS month_key
+      FROM payment p
+      WHERE p.pay_date IS NOT NULL
+      UNION
+      SELECT DATE_FORMAT(c.ctr_start, '%Y-%m') AS month_key
+      FROM booking_payment bp
+      INNER JOIN booking b ON b.bkg_id = bp.bkg_id
+      LEFT JOIN tenant_workflow tw ON tw.bkg_id = b.bkg_id
+      LEFT JOIN contract c ON c.ctr_id = tw.ctr_id
+      WHERE COALESCE(bp.bp_status, '0') = '1'
+        AND bp.bp_id <> 770043117
+        AND c.ctr_start IS NOT NULL
+      UNION
+      SELECT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key
+      FROM expense e
+      INNER JOIN contract c ON e.ctr_id = c.ctr_id
+      WHERE c.ctr_status = '0'
+        AND e.exp_month IS NOT NULL
+        AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+    ) m
     ORDER BY month_key DESC
 ")->fetchAll(PDO::FETCH_COLUMN);
+
+  $availableYearOptions = [];
+  $availableMonthOptions = [];
+  foreach ($availableMonths as $monthKey) {
+    if (!is_string($monthKey) || preg_match('/^\d{4}-\d{2}$/', $monthKey) !== 1) {
+      continue;
+    }
+
+    [$yearPart, $monthPart] = explode('-', $monthKey);
+    $yearPart = (string)((int)$yearPart);
+    $monthInt = (int)$monthPart;
+
+    $availableYearOptions[$yearPart] = true;
+    $availableMonthOptions[(string)$monthInt] = true;
+  }
+
+  $availableYearOptions = array_keys($availableYearOptions);
+  rsort($availableYearOptions, SORT_NUMERIC);
+
+  $availableMonthOptions = array_keys($availableMonthOptions);
+  sort($availableMonthOptions, SORT_NUMERIC);
 
 // ดึงสรุปการชำระเงินแยกตามห้อง
 $roomPaymentSummary = $pdo->query("
     SELECT 
         r.room_id,
         r.room_number,
-        t.tnt_name,
+        MAX(t.tnt_name) as tnt_name,
         COUNT(p.pay_id) as payment_count,
         SUM(CASE WHEN p.pay_status = '1' THEN p.pay_amount ELSE 0 END) as total_verified,
         SUM(CASE WHEN p.pay_status = '0' THEN p.pay_amount ELSE 0 END) as total_pending,
@@ -195,9 +408,21 @@ $roomPaymentSummary = $pdo->query("
     LEFT JOIN expense e ON c.ctr_id = e.ctr_id
     LEFT JOIN payment p ON e.exp_id = p.exp_id
     WHERE c.ctr_id IS NOT NULL
-    GROUP BY r.room_id, r.room_number, t.tnt_name
+    GROUP BY r.room_id, r.room_number
     ORDER BY r.room_number ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
+
+$filterRoomOptions = [];
+foreach ($roomPaymentSummary as $room) {
+  $roomNumber = trim((string)($room['room_number'] ?? ''));
+  if ($roomNumber === '') {
+    continue;
+  }
+  $filterRoomOptions[$roomNumber] = true;
+}
+$filterRoomOptions = array_keys($filterRoomOptions);
+natsort($filterRoomOptions);
+$filterRoomOptions = array_values($filterRoomOptions);
 ?>
 <!doctype html>
 <html lang="th" class="<?php echo $lightThemeClass; ?>">
@@ -1579,6 +1804,12 @@ $roomPaymentSummary = $pdo->query("
       .room-stat-value.verified { color: #22c55e; }
       .room-stat-value.pending { color: #fbbf24; }
 
+      .room-card.is-active-filter {
+        border-color: rgba(96,165,250,0.8);
+        box-shadow: 0 18px 40px rgba(37,99,235,0.28);
+        transform: translateY(-4px);
+      }
+
       .room-last-payment {
         font-size: 0.8rem;
         color: rgba(255,255,255,0.5);
@@ -1895,6 +2126,11 @@ $roomPaymentSummary = $pdo->query("
         color: #22c55e;
         border: 1px solid rgba(34, 197, 94, 0.3);
       }
+      .status-unpaid {
+        background: rgba(245, 158, 11, 0.12);
+        color: #f59e0b;
+        border: 1px solid rgba(245, 158, 11, 0.24);
+      }
 
       .proof-link {
         display: inline-flex;
@@ -2077,6 +2313,7 @@ $roomPaymentSummary = $pdo->query("
 
       .payments-row-view {
         display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
         gap: 0.85rem;
       }
 
@@ -2272,83 +2509,7 @@ $roomPaymentSummary = $pdo->query("
             </div>
           </section>
 
-          <!-- Bank Payment Destination Section -->
-          <?php if (!empty($settings['bank_name']) || !empty($settings['promptpay_number'])): ?>
-          <!-- <section class="manage-panel">
-            <div class="section-title">
-              <span class="section-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/>
-                </svg>
-              </span>
-              ปลายทางการชำระเงิน
-            </div>
-
-            <div class="bank-info-section">
-              <?php if (!empty($settings['bank_name'])): ?>
-              <div class="bank-info-item">
-                <div class="bank-info-icon bank">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/>
-                  </svg>
-                </div>
-                <div class="bank-info-content">
-                  <div class="bank-info-label">ธนาคาร</div>
-                  <div class="bank-info-value"><?php echo htmlspecialchars($settings['bank_name']); ?></div>
-                </div>
-              </div>
-              <?php endif; ?>
-
-              <?php if (!empty($settings['bank_account_name'])): ?>
-              <div class="bank-info-item">
-                <div class="bank-info-icon account">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
-                  </svg>
-                </div>
-                <div class="bank-info-content">
-                  <div class="bank-info-label">ชื่อบัญชี</div>
-                  <div class="bank-info-value"><?php echo htmlspecialchars($settings['bank_account_name']); ?></div>
-                </div>
-              </div>
-              <?php endif; ?>
-
-              <?php if (!empty($settings['bank_account_number'])): ?>
-              <div class="bank-info-item">
-                <div class="bank-info-icon number">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/>
-                  </svg>
-                </div>
-                <div class="bank-info-content">
-                  <div class="bank-info-label">เลขบัญชี</div>
-                  <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['bank_account_number']); ?>')">
-                    <?php echo htmlspecialchars($settings['bank_account_number']); ?>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon-svg"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  </div>
-                </div>
-              </div>
-              <?php endif; ?>
-
-              <?php if (!empty($settings['promptpay_number'])): ?>
-              <div class="bank-info-item">
-                <div class="bank-info-icon promptpay">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/>
-                  </svg>
-                </div>
-                <div class="bank-info-content">
-                  <div class="bank-info-label">พร้อมเพย์</div>
-                  <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['promptpay_number']); ?>')">
-                    <?php echo htmlspecialchars($settings['promptpay_number']); ?>
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="copy-icon-svg"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
-                  </div>
-                </div>
-              </div>
-              <?php endif; ?>
-            </div>
-          </section> -->
-          <?php endif; ?>
+          <!-- Bank Payment Destination Section removed -->
 
           <!-- Room Payment Summary -->
           <section class="manage-panel">
@@ -2360,8 +2521,8 @@ $roomPaymentSummary = $pdo->query("
                 </h2>
                 <p style="color:#94a3b8;margin-top:0.2rem;">แสดงจำนวนครั้งและยอดชำระของแต่ละห้อง (เฉพาะห้องที่มีผู้เช่า)</p>
               </div>
-              <button type="button" id="roomSummaryViewToggle" class="payments-view-toggle" onclick="toggleRoomSummaryView()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              <button type="button" id="roomSummaryViewToggle" class="payments-view-toggle" onclick="(function(){var grid=document.getElementById('roomSummaryGrid');var text=document.getElementById('roomSummaryViewToggleText');if(!grid){return;}var isList=grid.classList.contains('list-mode');grid.classList.toggle('list-mode',!isList);if(text){text.textContent=!isList?'มุมมอง grid':'มุมมอง list';}})();">
+                <svg viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#111827;"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                 <span id="roomSummaryViewToggleText"><?php echo $defaultViewMode === 'list' ? 'มุมมอง grid' : 'มุมมอง list'; ?></span>
               </button>
             </div>
@@ -2370,11 +2531,11 @@ $roomPaymentSummary = $pdo->query("
             <?php else: ?>
               <div id="roomSummaryGrid" class="room-summary-grid <?php echo $defaultViewMode === 'list' ? 'list-mode' : ''; ?>">
                 <?php foreach ($roomPaymentSummary as $room): ?>
-                  <div class="room-card" onclick="filterByRoom('<?php echo htmlspecialchars($room['room_number']); ?>')">
+                  <div class="room-card<?php echo $filterRoom === (string)($room['room_number'] ?? '') ? ' is-active-filter' : ''; ?>" data-room-number="<?php echo htmlspecialchars((string)($room['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" onclick="filterByRoom('<?php echo htmlspecialchars((string)$room['room_number']); ?>')">
                     <div class="room-card-header">
                       <span class="room-number">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        ห้อง <?php echo htmlspecialchars($room['room_number']); ?>
+                        ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?>
                       </span>
                       <span class="payment-count">
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
@@ -2411,11 +2572,11 @@ $roomPaymentSummary = $pdo->query("
 
           <!-- Toggle button for payment form -->
           <div style="margin:1.5rem 0;">
-            <button type="button" id="togglePaymentFormBtn" class="toggle-form-btn collapsed" onclick="togglePaymentForm(true)" aria-expanded="false" aria-pressed="true" title="ฟอร์มถูกปิดไว้">
+            <button type="button" id="togglePaymentFormBtn" class="toggle-form-btn collapsed" onclick="togglePaymentForm()" aria-expanded="false" aria-pressed="false" title="คลิกเพื่อแสดงฟอร์ม">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="toggle-icon" id="togglePaymentFormIcon">
                 <polyline points="6 9 12 15 18 9"/>
               </svg>
-              <span id="togglePaymentFormText">ปิดแล้ว</span>
+              <span id="togglePaymentFormText">แสดงฟอร์ม</span>
             </button>
           </div>
 
@@ -2573,7 +2734,9 @@ $roomPaymentSummary = $pdo->query("
                       <optgroup label="<?php echo htmlspecialchars($group['label']); ?>">
                         <?php foreach ($group['items'] as $exp): ?>
                           <option value="<?php echo (int)$exp['exp_id']; ?>" data-amount="<?php echo (int)($exp['exp_total'] ?? 0); ?>">
-                            ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?> - 
+                            ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?> 
+                            ค่าเช่า = (ค่าห้อง ฿<?php echo number_format((int)($exp['room_price'] ?? 0)); ?> + ค่าน้ำ ฿<?php echo number_format((int)($exp['exp_water'] ?? 0)); ?> + ค่าไฟ ฿<?php echo number_format((int)($exp['exp_elec_chg'] ?? 0)); ?>)
+                            |
                             <?php echo htmlspecialchars($exp['tnt_name'] ?? 'ไม่ระบุ'); ?> 
                             (฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?>)
                           </option>
@@ -2616,9 +2779,9 @@ $roomPaymentSummary = $pdo->query("
                 <label>กรองตามห้อง</label>
                 <select id="filterRoom" onchange="applyFilters()">
                   <option value="">ทุกห้อง</option>
-                  <?php foreach ($roomPaymentSummary as $room): ?>
-                    <option value="<?php echo htmlspecialchars($room['room_number']); ?>" <?php echo $filterRoom === $room['room_number'] ? 'selected' : ''; ?>>
-                      ห้อง <?php echo htmlspecialchars($room['room_number']); ?>
+                  <?php foreach ($filterRoomOptions as $roomNumber): ?>
+                    <option value="<?php echo htmlspecialchars((string)$roomNumber); ?>" <?php echo $filterRoom === (string)$roomNumber ? 'selected' : ''; ?>>
+                      ห้อง <?php echo htmlspecialchars((string)$roomNumber); ?>
                     </option>
                   <?php endforeach; ?>
                 </select>
@@ -2629,44 +2792,41 @@ $roomPaymentSummary = $pdo->query("
                   <option value="">ทั้งหมด</option>
                   <option value="0" <?php echo $filterStatus === '0' ? 'selected' : ''; ?>>รอตรวจสอบ</option>
                   <option value="1" <?php echo $filterStatus === '1' ? 'selected' : ''; ?>>ตรวจสอบแล้ว</option>
+                  <option value="unpaid" <?php echo $filterStatus === 'unpaid' ? 'selected' : ''; ?>>ยังไม่ชำระ</option>
                 </select>
               </div>
               <div class="filter-group">
                 <label>กรองตามเดือน</label>
                 <select id="filterMonth" onchange="applyFilters()">
-                  <option value="">ทั้งหมด</option>
+                  <option value="" <?php echo $filterMonth === '' ? 'selected' : ''; ?>>ทั้งหมด</option>
                   <?php 
                   $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-                  for ($m = 1; $m <= 12; $m++):
+                  foreach ($availableMonthOptions as $monthOption):
+                    $m = (int)$monthOption;
                   ?>
                     <option value="<?php echo $m; ?>" <?php echo $filterMonth === (string)$m ? 'selected' : ''; ?>><?php echo $thaiMonths[$m]; ?></option>
-                  <?php endfor; ?>
+                  <?php endforeach; ?>
                 </select>
               </div>
               <div class="filter-group">
                 <label>กรองตามปี</label>
                 <select id="filterYear" onchange="applyFilters()">
                   <option value="">ทั้งหมด</option>
-                  <?php 
-                  $currentYear = (int)date('Y');
-                  for ($y = $currentYear - 2; $y <= $currentYear + 1; $y++):
-                    $thaiYear = $y + 543;
-                  ?>
-                    <option value="<?php echo $y; ?>" <?php echo $filterYear === (string)$y ? 'selected' : ''; ?>><?php echo $thaiYear; ?></option>
-                  <?php endfor; ?>
+                  <?php foreach ($availableYearOptions as $yearOption): ?>
+                    <?php $thaiYear = (int)$yearOption + 543; ?>
+                    <option value="<?php echo htmlspecialchars((string)$yearOption); ?>" <?php echo $filterYear === (string)$yearOption ? 'selected' : ''; ?>><?php echo $thaiYear; ?></option>
+                  <?php endforeach; ?>
                 </select>
               </div>
               <div class="filter-group">
                 <button type="button" onclick="clearFilters()" style="padding:0.5rem 1rem;background:rgba(148,163,184,0.2);border:1px solid rgba(148,163,184,0.3);color:#94a3b8;border-radius:8px;cursor:pointer;font-size:0.9rem;display:inline-flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>ล้างตัวกรอง</button>
               </div>
             </div>
-            <?php if ($filterRoom !== ''): ?>
-              <div style="margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;display:flex;align-items:center;gap:0.5rem;">
+              <div id="paymentsRoomFilterNotice" style="margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;display:<?php echo $filterRoom !== '' ? 'flex' : 'none'; ?>;align-items:center;gap:0.5rem;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2  2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                กำลังแสดงเฉพาะห้อง <strong><?php echo htmlspecialchars($filterRoom); ?></strong>
-                <a href="?<?php echo http_build_query(array_filter(['status' => $filterStatus, 'filter_month' => $filterMonth, 'filter_year' => $filterYear])); ?>" style="margin-left:auto;color:#f87171;text-decoration:none;">✕ ยกเลิก</a>
+                กำลังแสดงเฉพาะห้อง <strong id="paymentsRoomFilterValue"><?php echo htmlspecialchars($filterRoom); ?></strong>
+                <button type="button" onclick="clearRoomFilter()" style="margin-left:auto;color:#f59e0b;background:none;border:none;cursor:pointer;padding:0;font:inherit;">✕ ยกเลิก</button>
               </div>
-            <?php endif; ?>
           </section>
 
           <!-- Payments Table -->
@@ -2682,15 +2842,15 @@ $roomPaymentSummary = $pdo->query("
                   </svg>
                   รายการการชำระเงิน
                 </h2>
-                <p style="color:#94a3b8;margin-top:0.2rem;">พบ <?php echo count($payments); ?> รายการ<?php echo $filterRoom !== '' ? ' (ห้อง ' . htmlspecialchars($filterRoom) . ')' : ''; ?></p>
+                <p id="paymentsResultsSummary" style="color:#94a3b8;margin-top:0.2rem;">พบ <?php echo count($payments); ?> รายการ<?php echo $filterRoom !== '' ? ' (ห้อง ' . htmlspecialchars($filterRoom) . ')' : ''; ?></p>
               </div>
               <button type="button" id="paymentsViewToggle" class="payments-view-toggle" onclick="togglePaymentsView()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                <span id="paymentsViewToggleText">มุมมองแถว</span>
+                <svg viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#111827;"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                <span id="paymentsViewToggleText">มุมมองกริด</span>
               </button>
             </div>
-            <div id="paymentsTableWrap" style="overflow-x:auto;">
-              <table class="manage-table" id="paymentsTable">
+            <div id="paymentsTableWrap" style="overflow-x:auto;display:block !important;visibility:visible !important;opacity:1 !important;">
+              <table class="manage-table" id="paymentsTable" style="display:table !important;width:100%;visibility:visible !important;opacity:1 !important;">
                 <thead>
                   <tr>
                     <th>รหัส</th>
@@ -2712,8 +2872,14 @@ $roomPaymentSummary = $pdo->query("
                     </tr>
                   <?php else: ?>
                     <?php foreach ($payments as $pay): ?>
-                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>">
-                        <td><?php echo (int)$pay['pay_id']; ?></td>
+                      <?php $isDepositRemark = strpos((string)($pay['pay_remark'] ?? ''), 'มัดจำ') !== false; ?>
+                      <?php $hasExpenseLink = !empty($pay['exp_id']) && (int)$pay['exp_id'] > 0; ?>
+                      <?php $filterDateSource = !empty($pay['exp_month']) ? (string)$pay['exp_month'] : (string)($pay['pay_date'] ?? ''); ?>
+                      <?php $filterTimestamp = $filterDateSource !== '' ? strtotime($filterDateSource) : false; ?>
+                      <?php $filterMonthValue = $filterTimestamp ? (string)((int)date('n', $filterTimestamp)) : ''; ?>
+                      <?php $filterYearValue = $filterTimestamp ? (string)date('Y', $filterTimestamp) : ''; ?>
+                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>">
+                        <td><?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></td>
                         <td><?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?></td>
                         <td><?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></td>
                         <td><?php echo $pay['exp_month'] ? date('m/Y', strtotime($pay['exp_month'])) : '-'; ?></td>
@@ -2732,17 +2898,19 @@ $roomPaymentSummary = $pdo->query("
                           <?php if (!empty($pay['pay_remark'])): ?>
                             <span style="color:#f59e0b;font-weight:500;"><?php echo htmlspecialchars($pay['pay_remark']); ?></span>
                           <?php else: ?>
-                            <span style="color:#64748b;">-</span>
+                            <span style="color:#64748b;">ค่าเช่า</span>
                           <?php endif; ?>
                         </td>
                         <td>
                           <?php 
-                          $statusClass = $pay['pay_status'] === '1' ? 'status-verified' : 'status-pending';
+                          $statusClass = $pay['pay_status'] === '1' ? 'status-verified' : (($pay['pay_status'] ?? '') === 'unpaid' ? 'status-unpaid' : 'status-pending');
                           $statusText = $statusMap[$pay['pay_status']] ?? 'ไม่ทราบ';
                           ?>
                           <span class="status-badge <?php echo $statusClass; ?>">
                             <?php if ($pay['pay_status'] === '1'): ?>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="status-icon-check" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
+                            <?php elseif (($pay['pay_status'] ?? '') === 'unpaid'): ?>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                             <?php else: ?>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="status-icon-pending" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                             <?php endif; ?>
@@ -2751,13 +2919,16 @@ $roomPaymentSummary = $pdo->query("
                         </td>
                         <td>
                           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                            <?php if ($pay['pay_status'] === '0'): ?>
+                            <?php if ($pay['pay_status'] === '0' && !$isDepositRemark && $hasExpenseLink): ?>
                               <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                             <?php endif; ?>
                           </div>
                         </td>
                       </tr>
                     <?php endforeach; ?>
+                    <tr id="paymentsNoResultsRow" style="display:none;">
+                      <td colspan="10" style="text-align:center;padding:2rem;color:#64748b;">ไม่พบข้อมูลตามตัวกรองที่เลือก</td>
+                    </tr>
                   <?php endif; ?>
                 </tbody>
               </table>
@@ -2769,13 +2940,19 @@ $roomPaymentSummary = $pdo->query("
               <?php else: ?>
                 <?php foreach ($payments as $pay): ?>
                   <?php 
-                    $statusClass = $pay['pay_status'] === '1' ? 'status-verified' : 'status-pending';
+                    $statusClass = $pay['pay_status'] === '1' ? 'status-verified' : (($pay['pay_status'] ?? '') === 'unpaid' ? 'status-unpaid' : 'status-pending');
                     $statusText = $statusMap[$pay['pay_status']] ?? 'ไม่ทราบ';
+                    $isDepositRemark = strpos((string)($pay['pay_remark'] ?? ''), 'มัดจำ') !== false;
+                    $hasExpenseLink = !empty($pay['exp_id']) && (int)$pay['exp_id'] > 0;
+                    $filterDateSource = !empty($pay['exp_month']) ? (string)$pay['exp_month'] : (string)($pay['pay_date'] ?? '');
+                    $filterTimestamp = $filterDateSource !== '' ? strtotime($filterDateSource) : false;
+                    $filterMonthValue = $filterTimestamp ? (string)((int)date('n', $filterTimestamp)) : '';
+                    $filterYearValue = $filterTimestamp ? (string)date('Y', $filterTimestamp) : '';
                   ?>
-                  <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>">
+                  <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>">
                     <div class="payment-row-top">
                       <div class="payment-row-main">
-                        <strong>#<?php echo (int)$pay['pay_id']; ?></strong>
+                        <strong>#<?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></strong>
                         <span class="payment-row-sub">ห้อง <?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?> • <?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></span>
                       </div>
                       <span class="status-badge <?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
@@ -2784,7 +2961,7 @@ $roomPaymentSummary = $pdo->query("
                       <div>เดือนค่าใช้จ่าย: <?php echo $pay['exp_month'] ? date('m/Y', strtotime($pay['exp_month'])) : '-'; ?></div>
                       <div>วันที่ชำระ: <?php echo $pay['pay_date'] ? date('d/m/Y', strtotime($pay['pay_date'])) : '-'; ?></div>
                       <div>จำนวนเงิน: <strong style="color:#22c55e;">฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?></strong></div>
-                      <div>หมายเหตุ: <?php echo !empty($pay['pay_remark']) ? htmlspecialchars($pay['pay_remark']) : '-'; ?></div>
+                      <div>หมายเหตุ: <?php echo !empty($pay['pay_remark']) ? htmlspecialchars($pay['pay_remark']) : 'ค่าเช่า'; ?></div>
                     </div>
                     <div class="payment-row-actions">
                       <div>
@@ -2797,13 +2974,14 @@ $roomPaymentSummary = $pdo->query("
                         <?php endif; ?>
                       </div>
                       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                        <?php if ($pay['pay_status'] === '0'): ?>
+                        <?php if ($pay['pay_status'] === '0' && !$isDepositRemark && $hasExpenseLink): ?>
                           <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                         <?php endif; ?>
                       </div>
                     </div>
                   </div>
                 <?php endforeach; ?>
+                <div id="paymentsRowNoResults" class="payment-row-card" style="text-align:center;color:#64748b;display:none;">ไม่พบข้อมูลตามตัวกรองที่เลือก</div>
               <?php endif; ?>
             </div>
           </section>
@@ -2892,6 +3070,7 @@ $roomPaymentSummary = $pdo->query("
           btn.classList.remove('collapsed');
           text.textContent = 'ซ่อนฟอร์ม';
           btn.setAttribute('aria-expanded', 'true');
+          btn.setAttribute('aria-pressed', 'true');
           // Add slide down animation
           section.style.opacity = '0';
           section.style.transform = 'translateY(-10px)';
@@ -2908,6 +3087,7 @@ $roomPaymentSummary = $pdo->query("
             btn.classList.add('collapsed');
             text.textContent = 'แสดงฟอร์ม';
             btn.setAttribute('aria-expanded', 'false');
+            btn.setAttribute('aria-pressed', 'false');
           }, 300);
         }
       }
@@ -2931,25 +3111,283 @@ $roomPaymentSummary = $pdo->query("
         payDate.value = `${y}-${m}-${d}`;
       })();
 
-      // Apply filters
-      function applyFilters() {
-        const room = document.getElementById('filterRoom').value;
-        const status = document.getElementById('filterStatus').value;
-        const month = document.getElementById('filterMonth').value;
-        const year = document.getElementById('filterYear').value;
-        
-        let url = window.location.pathname + '?';
-        const params = [];
-        if (room !== '') params.push('room=' + encodeURIComponent(room));
-        if (status !== '') params.push('status=' + status);
-        if (month !== '') params.push('filter_month=' + month);
-        if (year !== '') params.push('filter_year=' + year);
-        
-        window.location.href = url + params.join('&');
+      const paymentsDefaultFilters = {
+        room: <?php echo json_encode($filterRoom, JSON_UNESCAPED_UNICODE); ?>,
+        status: <?php echo json_encode($filterStatus, JSON_UNESCAPED_UNICODE); ?>,
+        month: <?php echo json_encode($filterMonth, JSON_UNESCAPED_UNICODE); ?>,
+        year: <?php echo json_encode($filterYear, JSON_UNESCAPED_UNICODE); ?>
+      };
+
+      let paymentsDataTable = null;
+      let paymentsSourceRows = [];
+
+      function getPaymentsFilterState() {
+        return {
+          room: document.getElementById('filterRoom')?.value || '',
+          status: document.getElementById('filterStatus')?.value || '',
+          month: document.getElementById('filterMonth')?.value || '',
+          year: document.getElementById('filterYear')?.value || ''
+        };
+      }
+
+      function updatePaymentsFilterHistory(filters) {
+        const url = new URL(window.location.href);
+        if (filters.room) {
+          url.searchParams.set('room', filters.room);
+        } else {
+          url.searchParams.delete('room');
+        }
+
+        if (filters.status) {
+          url.searchParams.set('status', filters.status);
+        } else {
+          url.searchParams.delete('status');
+        }
+
+        if (filters.month) {
+          url.searchParams.set('filter_month', filters.month);
+        } else {
+          url.searchParams.set('filter_month', 'all');
+        }
+
+        if (filters.year) {
+          url.searchParams.set('filter_year', filters.year);
+        } else {
+          url.searchParams.delete('filter_year');
+        }
+
+        url.hash = '';
+        window.history.replaceState({}, '', url.toString());
+      }
+
+      function matchesPaymentFilters(element, filters) {
+        if (!element || element.dataset.filterItem !== 'payment') {
+          return false;
+        }
+
+        if (filters.room && (element.dataset.room || '') !== filters.room) {
+          return false;
+        }
+
+        if (filters.status && (element.dataset.status || '') !== filters.status) {
+          return false;
+        }
+
+        if (filters.month && (element.dataset.month || '') !== filters.month) {
+          return false;
+        }
+
+        if (filters.year && (element.dataset.year || '') !== filters.year) {
+          return false;
+        }
+
+        return true;
+      }
+
+      function updatePaymentsSummary(visibleCount, filters) {
+        const summary = document.getElementById('paymentsResultsSummary');
+        if (!summary) {
+          return;
+        }
+
+        let text = `พบ ${visibleCount} รายการ`;
+        if (filters.room) {
+          text += ` (ห้อง ${filters.room})`;
+        }
+        summary.textContent = text;
+      }
+
+      function updatePaymentsRoomNotice(filters) {
+        const notice = document.getElementById('paymentsRoomFilterNotice');
+        const value = document.getElementById('paymentsRoomFilterValue');
+        if (!notice || !value) {
+          return;
+        }
+
+        if (filters.room) {
+          value.textContent = filters.room;
+          notice.style.display = 'flex';
+        } else {
+          notice.style.display = 'none';
+        }
+      }
+
+      function updateRoomCardState(filters) {
+        const roomCards = document.querySelectorAll('.room-card[data-room-number]');
+        roomCards.forEach((card) => {
+          const isActive = filters.room !== '' && card.dataset.roomNumber === filters.room;
+          card.classList.toggle('is-active-filter', isActive);
+        });
+      }
+
+      function snapshotPaymentsRows() {
+        if (paymentsSourceRows.length > 0) {
+          return;
+        }
+
+        const tbody = document.querySelector('#paymentsTable tbody');
+        if (!tbody) {
+          return;
+        }
+
+        paymentsSourceRows = Array.from(tbody.querySelectorAll('tr[data-filter-item="payment"]')).map((row) => row.cloneNode(true));
+      }
+
+      function cleanupPaymentsTableDom() {
+        const paymentsTable = document.getElementById('paymentsTable');
+        if (!paymentsTable) {
+          return;
+        }
+
+        const wrapper = paymentsTable.closest('.datatable-wrapper');
+        if (wrapper && wrapper.parentNode) {
+          wrapper.parentNode.insertBefore(paymentsTable, wrapper);
+          wrapper.remove();
+        }
+
+        paymentsTable.classList.remove('datatable-table');
+        paymentsTable.style.display = 'table';
+        paymentsTable.style.width = '100%';
+        paymentsTable.style.visibility = 'visible';
+        paymentsTable.style.opacity = '1';
+      }
+
+      function initPaymentsDataTable() {
+        const paymentsTable = document.getElementById('paymentsTable');
+        if (!paymentsTable) return;
+        if (typeof simpleDatatables === 'undefined' || typeof simpleDatatables.DataTable !== 'function') return;
+
+        paymentsDataTable = new simpleDatatables.DataTable(paymentsTable, {
+          searchable: true,
+          fixedHeight: false,
+          perPage: 10,
+          perPageSelect: [5, 10, 25, 50],
+          labels: {
+            placeholder: 'ค้นหา...',
+            perPage: 'รายการต่อหน้า',
+            noRows: 'ไม่พบข้อมูล',
+            info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+          }
+        });
+      }
+
+      function destroyPaymentsDataTable() {
+        if (paymentsDataTable) {
+          try { paymentsDataTable.destroy(); } catch (e) {}
+          paymentsDataTable = null;
+        }
+        cleanupPaymentsTableDom();
+      }
+
+      function applyFilters(options = {}) {
+        const filters = getPaymentsFilterState();
+
+        if (options.skipReload !== true) {
+          const url = new URL(window.location.href);
+
+          if (filters.room) {
+            url.searchParams.set('room', filters.room);
+          } else {
+            url.searchParams.delete('room');
+          }
+
+          if (filters.status) {
+            url.searchParams.set('status', filters.status);
+          } else {
+            url.searchParams.delete('status');
+          }
+
+          if (filters.month) {
+            url.searchParams.set('filter_month', filters.month);
+          } else {
+            url.searchParams.set('filter_month', 'all');
+          }
+
+          if (filters.year) {
+            url.searchParams.set('filter_year', filters.year);
+          } else {
+            url.searchParams.delete('filter_year');
+          }
+
+          url.hash = '';
+          window.location.href = url.toString();
+          return;
+        }
+
+        const tbody = document.querySelector('#paymentsTable tbody');
+        const rowCards = document.querySelectorAll('#paymentsRowView .payment-row-card[data-filter-item="payment"]');
+        const noResultsRow = document.getElementById('paymentsNoResultsRow');
+        const rowNoResults = document.getElementById('paymentsRowNoResults');
+
+        snapshotPaymentsRows();
+        destroyPaymentsDataTable();
+
+        let visibleCount = 0;
+        if (tbody) {
+          if (noResultsRow && noResultsRow.parentNode === tbody) {
+            noResultsRow.remove();
+          }
+
+          Array.from(tbody.querySelectorAll('tr[data-filter-item="payment"]')).forEach((row) => row.remove());
+
+          paymentsSourceRows.forEach((row) => {
+            if (matchesPaymentFilters(row, filters)) {
+              tbody.appendChild(row.cloneNode(true));
+              visibleCount += 1;
+            }
+          });
+
+          if (visibleCount === 0 && noResultsRow) {
+            tbody.appendChild(noResultsRow);
+          }
+        }
+
+        if (noResultsRow) {
+          noResultsRow.style.display = visibleCount === 0 ? '' : 'none';
+        }
+
+        if (visibleCount > 0) {
+          initPaymentsDataTable();
+        }
+
+        // --- Grid/row view: plain show/hide (no DataTable involved) ---
+        rowCards.forEach((card) => {
+          card.style.display = matchesPaymentFilters(card, filters) ? '' : 'none';
+        });
+
+        if (rowNoResults) {
+          rowNoResults.style.display = visibleCount === 0 ? '' : 'none';
+        }
+
+        updatePaymentsSummary(visibleCount, filters);
+        updatePaymentsRoomNotice(filters);
+        updateRoomCardState(filters);
+
+        if (options.updateHistory !== false) {
+          updatePaymentsFilterHistory(filters);
+        }
       }
 
       function clearFilters() {
-        window.location.href = window.location.pathname;
+        const room = document.getElementById('filterRoom');
+        const status = document.getElementById('filterStatus');
+        const month = document.getElementById('filterMonth');
+        const year = document.getElementById('filterYear');
+
+        if (room) room.value = '';
+        if (status) status.value = '';
+        if (month) month.value = paymentsDefaultFilters.month || '';
+        if (year) year.value = paymentsDefaultFilters.year || '';
+
+        applyFilters();
+      }
+
+      function clearRoomFilter() {
+        const room = document.getElementById('filterRoom');
+        if (room) {
+          room.value = '';
+        }
+        applyFilters();
       }
 
       // Show proof modal
@@ -3007,29 +3445,19 @@ $roomPaymentSummary = $pdo->query("
         });
       }
 
-      // Filter by room - redirect with room parameter and scroll anchor
+      // Filter by room without page reload
       function filterByRoom(roomNumber) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('room', roomNumber);
-        // Clear other filters when clicking room card
-        url.searchParams.delete('status');
-        url.searchParams.delete('month');
-        url.hash = 'paymentsTable';
-        window.location.href = url.toString();
-      }
-
-      // Auto scroll to table if room filter is active
-      document.addEventListener('DOMContentLoaded', function() {
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.has('room') && urlParams.get('room') !== '') {
-          setTimeout(function() {
-            const table = document.getElementById('paymentsTable');
-            if (table) {
-              table.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-          }, 100);
+        const roomSelect = document.getElementById('filterRoom');
+        if (roomSelect) {
+          roomSelect.value = roomNumber;
         }
-      });
+        applyFilters();
+
+        const table = document.getElementById('paymentsTable');
+        if (table) {
+          table.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
 
       // Update payment status
       async function updatePaymentStatus(payId, newStatus, expId) {
@@ -3243,12 +3671,49 @@ $roomPaymentSummary = $pdo->query("
         const normalized = mode === 'row' ? 'row' : 'table';
         tableWrap.classList.toggle('is-hidden', normalized === 'row');
         rowWrap.classList.toggle('is-hidden', normalized !== 'row');
+        tableWrap.style.display = normalized === 'row' ? 'none' : 'block';
+        rowWrap.style.display = normalized === 'row' ? 'grid' : 'none';
+        tableWrap.style.visibility = 'visible';
+        tableWrap.style.opacity = '1';
+        rowWrap.style.visibility = 'visible';
+        rowWrap.style.opacity = '1';
 
         if (toggleText) {
-          toggleText.textContent = normalized === 'row' ? 'มุมมองตาราง' : 'มุมมองแถว';
+          toggleText.textContent = normalized === 'row' ? 'มุมมองตาราง' : 'มุมมองกริด';
         }
 
         try { localStorage.setItem('paymentsViewMode', normalized); } catch (e) {}
+      }
+
+      function ensurePaymentsViewVisible() {
+        const tableWrap = document.getElementById('paymentsTableWrap');
+        const rowWrap = document.getElementById('paymentsRowView');
+        if (!tableWrap || !rowWrap) return;
+
+        const tableHidden = tableWrap.classList.contains('is-hidden');
+        const rowHidden = rowWrap.classList.contains('is-hidden');
+
+        // Safety fallback: never allow both payment views to be hidden.
+        if (tableHidden && rowHidden) {
+          tableWrap.classList.remove('is-hidden');
+          rowWrap.classList.add('is-hidden');
+          tableWrap.style.display = 'block';
+          rowWrap.style.display = 'none';
+          const toggleText = document.getElementById('paymentsViewToggleText');
+          if (toggleText) toggleText.textContent = 'มุมมองกริด';
+        }
+
+        tableWrap.style.visibility = 'visible';
+        tableWrap.style.opacity = '1';
+        rowWrap.style.visibility = 'visible';
+        rowWrap.style.opacity = '1';
+
+        const paymentsTable = document.getElementById('paymentsTable');
+        if (paymentsTable) {
+          paymentsTable.style.display = 'table';
+          paymentsTable.style.visibility = 'visible';
+          paymentsTable.style.opacity = '1';
+        }
       }
 
       function togglePaymentsView() {
@@ -3261,28 +3726,13 @@ $roomPaymentSummary = $pdo->query("
       document.addEventListener('DOMContentLoaded', function() {
         applyRoomSummaryView(roomSummarySettingMode);
 
-        try {
-          const savedViewMode = localStorage.getItem('paymentsViewMode') || 'table';
-          applyPaymentsView(savedViewMode);
-        } catch (e) {
-          applyPaymentsView('table');
-        }
+        // Always start with table view to avoid hidden-table state from stale localStorage.
+        applyPaymentsView('table');
 
-        const paymentsTable = document.getElementById('paymentsTable');
-        if (paymentsTable) {
-          new simpleDatatables.DataTable(paymentsTable, {
-            searchable: true,
-            fixedHeight: false,
-            perPage: 10,
-            perPageSelect: [5, 10, 25, 50],
-            labels: {
-              placeholder: 'ค้นหา...',
-              perPage: 'รายการต่อหน้า',
-              noRows: 'ไม่พบข้อมูล',
-              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
-            }
-          });
-        }
+        ensurePaymentsViewVisible();
+
+        ensurePaymentsViewVisible();
+        applyFilters({ skipReload: true, updateHistory: false });
       });
     </script>
   </body>

@@ -11,6 +11,17 @@ $token = $auth['token'];
 $contract = $auth['contract'];
 $settings = getSystemSettings($pdo);
 
+$currentBillMonth = (new DateTime('first day of this month'))->format('Y-m');
+$firstBillMonth = $currentBillMonth;
+if (!empty($contract['ctr_start'])) {
+    try {
+        $ctrStartDate = new DateTime((string)$contract['ctr_start']);
+        $firstBillMonth = $ctrStartDate->modify('first day of next month')->format('Y-m');
+    } catch (Exception $e) {
+        $firstBillMonth = $currentBillMonth;
+    }
+}
+
 // Get all expenses for this contract
 $expenses = [];
 try {
@@ -24,11 +35,13 @@ try {
             SELECT MAX(exp_id) AS exp_id
             FROM expense
             WHERE ctr_id = ?
+              AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
+              AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
             GROUP BY exp_month
         ) latest ON e.exp_id = latest.exp_id
         ORDER BY e.exp_month DESC
     ");
-    $stmt->execute([$contract['ctr_id']]);
+    $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
     $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
 
