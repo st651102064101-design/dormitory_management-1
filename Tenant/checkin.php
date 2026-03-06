@@ -44,11 +44,13 @@ try {
     // ดึงค่าตั้งค่าระบบ
     $siteName = 'Sangthian Dormitory';
     $logoFilename = 'Logo.jpg';
+    $publicTheme = 'dark';
     try {
-        $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
+        $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'public_theme')");
         while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
             if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
             if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
+            if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
         }
     } catch (PDOException $e) {}
 
@@ -439,8 +441,11 @@ $hasCheckIn = !empty($data['checkin_id']);
             color: #f8fafc;
         }
     </style>
+    <?php if (($publicTheme ?? '') === 'light'): ?>
+    <link rel="stylesheet" href="tenant-light-theme.css">
+    <?php endif; ?>
 </head>
-<body>
+<body class="<?= ($publicTheme ?? '') === 'light' ? 'light-theme' : '' ?>">
     <header class="header">
         <div class="header-content">
             <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="logo">

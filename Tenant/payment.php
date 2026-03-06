@@ -715,8 +715,11 @@ $paymentStatusMap = [
             to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
         }
     </style>
+    <?php if (($settings['public_theme'] ?? '') === 'light'): ?>
+    <link rel="stylesheet" href="tenant-light-theme.css">
+    <?php endif; ?>
 </head>
-<body>
+<body class="<?= ($settings['public_theme'] ?? '') === 'light' ? 'light-theme' : '' ?>">
     <header class="header">
         <div class="header-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="back-btn">←</a>

@@ -4,12 +4,14 @@
  */
 declare(strict_types=1);
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../includes/water_calc.php';
 
 $auth = checkTenantAuth();
 $pdo = $auth['pdo'];
 $token = $auth['token'];
 $contract = $auth['contract'];
 $settings = getSystemSettings($pdo);
+$contractStartMonth = !empty($contract['ctr_start']) ? date('Y-m', strtotime((string) $contract['ctr_start'])) : null;
 
 // Get utility data for this contract
 $utilities = [];
@@ -19,9 +21,10 @@ try {
         FROM utility u
         LEFT JOIN expense e ON u.ctr_id = e.ctr_id AND DATE_FORMAT(u.utl_date, '%Y-%m') = DATE_FORMAT(e.exp_month, '%Y-%m')
         WHERE u.ctr_id = ?
+          AND (? IS NULL OR DATE_FORMAT(u.utl_date, '%Y-%m') <> ?)
         ORDER BY u.utl_date DESC
     ");
-    $stmt->execute([$contract['ctr_id']]);
+    $stmt->execute([$contract['ctr_id'], $contractStartMonth, $contractStartMonth]);
     $utilities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
 
@@ -32,9 +35,10 @@ if (empty($utilities)) {
             SELECT *, exp_month as utl_date
             FROM expense
             WHERE ctr_id = ?
+              AND (? IS NULL OR DATE_FORMAT(exp_month, '%Y-%m') <> ?)
             ORDER BY exp_month DESC
         ");
-        $stmt->execute([$contract['ctr_id']]);
+        $stmt->execute([$contract['ctr_id'], $contractStartMonth, $contractStartMonth]);
         $utilities = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {}
 }
@@ -124,20 +128,53 @@ if (empty($utilities)) {
         .utility-item.water .utility-value { color: #3b82f6; }
         .utility-detail { font-size: 0.7rem; color: #64748b; margin-top: 0.25rem; }
         .utility-summary {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            display: flex;
+            flex-direction: column;
             gap: 0.5rem;
             margin-top: 1rem;
             padding-top: 0.75rem;
             border-top: 1px solid rgba(255,255,255,0.1);
         }
-        .summary-item {
+        .meter-row {
             display: flex;
-            justify-content: space-between;
-            font-size: 0.85rem;
+            align-items: center;
+            gap: 0.75rem;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 10px;
+            padding: 0.6rem 0.875rem;
+            font-size: 0.82rem;
         }
-        .summary-label { color: #94a3b8; }
-        .summary-value { color: #f8fafc; font-weight: 500; }
+        .meter-row.elec { border-left: 3px solid #f59e0b; }
+        .meter-row.water { border-left: 3px solid #3b82f6; }
+        .meter-type {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            min-width: 60px;
+            font-weight: 600;
+        }
+        .meter-row.elec .meter-type { color: #f59e0b; }
+        .meter-row.water .meter-type { color: #3b82f6; }
+        .meter-type svg { width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2; }
+        .meter-cells {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+        .meter-cell {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 52px;
+        }
+        .meter-cell-label { font-size: 0.68rem; color: #64748b; margin-bottom: 0.1rem; }
+        .meter-cell-val  { font-size: 0.88rem; font-weight: 700; color: #f8fafc; }
+        .meter-row.elec .meter-cell-val { color: #f59e0b; }
+        .meter-row.water .meter-cell-val { color: #3b82f6; }
+        .meter-arrow { color: #475569; font-size: 0.85rem; }
+        .meter-divider { width:1px; height:28px; background: rgba(255,255,255,0.1); margin: 0 0.15rem; }
+        .meter-cell.usage .meter-cell-val { color: #94a3b8; font-size: 0.82rem; }
         .empty-state {
             text-align: center;
             padding: 3rem;
@@ -210,8 +247,11 @@ if (empty($utilities)) {
         .utility-item.electric .utility-icon svg { stroke: #f59e0b; }
         .utility-item.water .utility-icon svg { stroke: #3b82f6; }
     </style>
+    <?php if (($settings['public_theme'] ?? '') === 'light'): ?>
+    <link rel="stylesheet" href="tenant-light-theme.css">
+    <?php endif; ?>
 </head>
-<body>
+<body class="<?= ($settings['public_theme'] ?? '') === 'light' ? 'light-theme' : '' ?>">
     <header class="header">
         <div class="header-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="back-btn">←</a>
@@ -243,29 +283,71 @@ if (empty($utilities)) {
                     <div class="utility-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
                     <div class="utility-label">ค่าน้ำประปา</div>
                     <div class="utility-value"><?php echo number_format($util['exp_water'] ?? 0); ?> ฿</div>
-                    <div class="utility-detail"><?php echo $util['exp_water_unit'] ?? 0; ?> หน่วย × <?php echo $util['rate_water'] ?? 0; ?> บาท</div>
+                    <?php
+                        $wUnit = (int)($util['exp_water_unit'] ?? 0);
+                        $wAmt  = (int)($util['exp_water'] ?? 0);
+                        if ($wUnit <= 0) {
+                            $wDetail = 'ยังไม่มีข้อมูลมิเตอร์';
+                        } elseif ($wUnit <= WATER_BASE_UNITS) {
+                            $wDetail = 'เหมาจ่าย ≤' . WATER_BASE_UNITS . ' หน่วย (ใช้ ' . $wUnit . ' หน่วย)';
+                        } else {
+                            $excess = $wUnit - WATER_BASE_UNITS;
+                            $wDetail = WATER_BASE_UNITS . ' หน่วยแรก ' . WATER_BASE_PRICE . '฿ + เกิน ' . $excess . ' หน่วย × ' . WATER_EXCESS_RATE . '฿';
+                        }
+                    ?>
+                    <div class="utility-detail"><?php echo $wDetail; ?></div>
                 </div>
             </div>
             <?php if (isset($util['utl_elec_start']) || isset($util['utl_water_start'])): ?>
             <div class="utility-summary">
                 <?php if (isset($util['utl_elec_start'])): ?>
-                <div class="summary-item">
-                    <span class="summary-label">มิเตอร์ไฟเริ่ม</span>
-                    <span class="summary-value"><?php echo number_format($util['utl_elec_start']); ?></span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">มิเตอร์ไฟสิ้นสุด</span>
-                    <span class="summary-value"><?php echo number_format($util['utl_elec_end'] ?? 0); ?></span>
+                <?php $elecUsed = max(0, (int)($util['utl_elec_end'] ?? 0) - (int)$util['utl_elec_start']); ?>
+                <div class="meter-row elec">
+                    <div class="meter-type">
+                        <svg viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                        ไฟฟ้า
+                    </div>
+                    <div class="meter-cells">
+                        <div class="meter-cell">
+                            <div class="meter-cell-label">เลขเริ่ม</div>
+                            <div class="meter-cell-val"><?php echo number_format($util['utl_elec_start']); ?></div>
+                        </div>
+                        <div class="meter-arrow">→</div>
+                        <div class="meter-cell">
+                            <div class="meter-cell-label">เลขสิ้นสุด</div>
+                            <div class="meter-cell-val"><?php echo number_format($util['utl_elec_end'] ?? 0); ?></div>
+                        </div>
+                        <div class="meter-divider"></div>
+                        <div class="meter-cell usage">
+                            <div class="meter-cell-label">หน่วยที่ใช้</div>
+                            <div class="meter-cell-val"><?php echo number_format($elecUsed); ?> หน่วย</div>
+                        </div>
+                    </div>
                 </div>
                 <?php endif; ?>
                 <?php if (isset($util['utl_water_start'])): ?>
-                <div class="summary-item">
-                    <span class="summary-label">มิเตอร์น้ำเริ่ม</span>
-                    <span class="summary-value"><?php echo number_format($util['utl_water_start']); ?></span>
-                </div>
-                <div class="summary-item">
-                    <span class="summary-label">มิเตอร์น้ำสิ้นสุด</span>
-                    <span class="summary-value"><?php echo number_format($util['utl_water_end'] ?? 0); ?></span>
+                <?php $waterUsed = max(0, (int)($util['utl_water_end'] ?? 0) - (int)$util['utl_water_start']); ?>
+                <div class="meter-row water">
+                    <div class="meter-type">
+                        <svg viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                        น้ำประปา
+                    </div>
+                    <div class="meter-cells">
+                        <div class="meter-cell">
+                            <div class="meter-cell-label">เลขเริ่ม</div>
+                            <div class="meter-cell-val"><?php echo number_format($util['utl_water_start']); ?></div>
+                        </div>
+                        <div class="meter-arrow">→</div>
+                        <div class="meter-cell">
+                            <div class="meter-cell-label">เลขสิ้นสุด</div>
+                            <div class="meter-cell-val"><?php echo number_format($util['utl_water_end'] ?? 0); ?></div>
+                        </div>
+                        <div class="meter-divider"></div>
+                        <div class="meter-cell usage">
+                            <div class="meter-cell-label">หน่วยที่ใช้</div>
+                            <div class="meter-cell-val"><?php echo number_format($waterUsed); ?> หน่วย</div>
+                        </div>
+                    </div>
                 </div>
                 <?php endif; ?>
             </div>

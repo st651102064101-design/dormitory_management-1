@@ -21,17 +21,23 @@ try {
     $now = new DateTimeImmutable();
     $meterMonth = (int)$now->format('n');
     $meterYear  = (int)$now->format('Y');
+    $targetMonthStart = sprintf('%04d-%02d-01', $meterYear, $meterMonth);
+    $targetMonthEnd = (new DateTimeImmutable($targetMonthStart))->modify('+1 month')->format('Y-m-d');
 
     // อัตราค่าน้ำ-ไฟล่าสุด
     $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY effective_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
     $rateWater = $rateRow ? (float)$rateRow['rate_water'] : 18.0;
     $rateElec  = $rateRow ? (float)$rateRow['rate_elec']  : 8.0;
 
-    // มิเตอร์เดือนที่แล้ว (ค่าปลาย = ค่าต้นเดือนนี้)
+    // มิเตอร์ล่าสุดก่อนเดือนเป้าหมาย (ค่าปลาย = ค่าต้นของเดือนเป้าหมาย)
     $prevStmt = $pdo->prepare(
-        "SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? ORDER BY utl_date DESC LIMIT 1"
+        "SELECT utl_water_end, utl_elec_end
+         FROM utility
+         WHERE ctr_id = ? AND utl_date < ?
+         ORDER BY utl_date DESC, utl_id DESC
+         LIMIT 1"
     );
-    $prevStmt->execute([$ctrId]);
+    $prevStmt->execute([$ctrId, $targetMonthStart]);
     $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
 
     $prevWater = $prev ? (int)$prev['utl_water_end'] : 0;
@@ -40,10 +46,18 @@ try {
     // ตรวจสอบว่าบันทึกเดือนนี้แล้วหรือยัง
     $currStmt = $pdo->prepare(
         "SELECT utl_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end
-         FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?"
+         FROM utility
+         WHERE ctr_id = ? AND utl_date >= ? AND utl_date < ?
+         ORDER BY utl_date DESC, utl_id DESC
+         LIMIT 1"
     );
-    $currStmt->execute([$ctrId, $meterMonth, $meterYear]);
+    $currStmt->execute([$ctrId, $targetMonthStart, $targetMonthEnd]);
     $curr = $currStmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($curr) {
+        $prevWater = (int)$curr['utl_water_start'];
+        $prevElec = (int)$curr['utl_elec_start'];
+    }
 
     echo json_encode([
         'prev_water'  => $prevWater,
