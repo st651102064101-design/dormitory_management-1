@@ -18,38 +18,42 @@ try {
     }
 } catch (PDOException $e) {}
 
-// รับค่าเดือน/ปี ที่เลือก (รูปแบบ YYYY-MM)
-$selectedMonth = isset($_GET['month']) ? $_GET['month'] : '';
-$selectedStatus = isset($_GET['status']) ? $_GET['status'] : '';
-
-// ดึงรายการเดือนที่มีในระบบ (format เป็น YYYY-MM)
-$availableMonths = [];
 $monthNames = [
-  '01' => 'มกราคม', '02' => 'กุมภาพันธ์', '03' => 'มีนาคม', '04' => 'เมษายน',
-  '05' => 'พฤษภาคม', '06' => 'มิถุนายน', '07' => 'กรกฎาคม', '08' => 'สิงหาคม',
-  '09' => 'กันยายน', '10' => 'ตุลาคม', '11' => 'พฤศจิกายน', '12' => 'ธันวาคม'
+    1 => 'มกราคม',   2 => 'กุมภาพันธ์', 3 => 'มีนาคม',    4 => 'เมษายน',
+    5 => 'พฤษภาคม',  6 => 'มิถุนายน',   7 => 'กรกฎาคม',   8 => 'สิงหาคม',
+    9 => 'กันยายน',  10 => 'ตุลาคม',    11 => 'พฤศจิกายน', 12 => 'ธันวาคม',
 ];
-try {
-  $monthsStmt = $pdo->query("SELECT DISTINCT DATE_FORMAT(exp_month, '%Y-%m') as month_key FROM expense WHERE exp_month IS NOT NULL ORDER BY month_key DESC");
-  $availableMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {}
 
-// Simple invoice viewer: list expenses with contract and tenant
-$whereClause = '';
-if ($selectedMonth || $selectedStatus !== '') {
-  $conditions = [];
-  if ($selectedMonth) {
-    $conditions[] = "DATE_FORMAT(e.exp_month, '%Y-%m') = " . $pdo->quote($selectedMonth);
-  }
-  if ($selectedStatus !== '') {
-    $conditions[] = "e.exp_status = " . $pdo->quote($selectedStatus);
-  }
-  $whereClause = 'WHERE ' . implode(' AND ', $conditions);
-}
-
-$stmt = $pdo->query("SELECT e.*, c.ctr_id, t.tnt_name, r.room_number FROM expense e LEFT JOIN contract c ON e.ctr_id = c.ctr_id LEFT JOIN tenant t ON c.tnt_id = t.tnt_id LEFT JOIN room r ON c.room_id = r.room_id $whereClause ORDER BY e.exp_month DESC");
+// ดึงข้อมูลทั้งหมด ไม่รวมเดือนในอนาคต
+$stmt = $pdo->query("SELECT e.*, c.ctr_id, t.tnt_name, r.room_number
+    FROM expense e
+    LEFT JOIN contract c ON e.ctr_id = c.ctr_id
+    LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+    LEFT JOIN room r ON c.room_id = r.room_id
+    WHERE DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+    ORDER BY e.exp_month DESC");
 error_reporting(E_ALL);
 $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+// สร้างตัวเลือก dropdown สำหรับ client-side filter
+$filterRoomOptions     = [];
+$availableMonthOptions = [];
+$availableYearOptions  = [];
+foreach ($rows as $row) {
+    $rn = $row['room_number'] ?? '';
+    if ($rn !== '' && !in_array($rn, $filterRoomOptions, true)) $filterRoomOptions[] = $rn;
+    if (!empty($row['exp_month'])) {
+        $m = (int)date('n', strtotime($row['exp_month']));
+        $y = (int)date('Y', strtotime($row['exp_month']));
+        if (!in_array($m, $availableMonthOptions, true)) $availableMonthOptions[] = $m;
+        if (!in_array($y, $availableYearOptions, true))  $availableYearOptions[]  = $y;
+    }
+}
+natsort($filterRoomOptions);
+$filterRoomOptions = array_values($filterRoomOptions);
+sort($availableMonthOptions);
+rsort($availableYearOptions);
+
 $statusLabels = [
   '0' => 'รอการตรวจสอบ',
   '1' => 'ตรวจสอบแล้ว',
@@ -137,7 +141,7 @@ try {
       .reports-container .container {
         max-width: 100%;
         width: 100%;
-        padding: 1.5rem;
+          padding: 0 1.5rem 1.5rem;
       }
       .invoice-stats-grid {
         display: grid;
@@ -480,48 +484,6 @@ try {
               include __DIR__ . '/../includes/page_header.php'; 
             ?>
 
-            <!-- ตัวกรองเดือน -->
-            <div class="filter-section">
-              <form method="GET" action="report_invoice.php" id="filterForm">
-                <div class="filter-grid">
-                  <div class="filter-item">
-                    <label for="filterMonth">เดือน</label>
-                    <select name="month" id="filterMonth">
-                      <option value="">ทุกเดือน</option>
-                      <?php 
-                        if (!empty($availableMonths)) {
-                          foreach ($availableMonths as $month): 
-                            $selected = ($selectedMonth === $month) ? 'selected' : '';
-                            // แปลงเป็นชื่อเดือนไทย
-                            list($year, $monthNum) = explode('-', $month);
-                            $thaiYear = (int)$year + 543;
-                            $monthName = $monthNames[$monthNum] ?? $monthNum;
-                            $displayText = "$monthName $thaiYear";
-                      ?>
-                        <option value="<?php echo htmlspecialchars($month); ?>" <?php echo $selected; ?>>
-                          <?php echo htmlspecialchars($displayText); ?>
-                        </option>
-                      <?php 
-                          endforeach;
-                        }
-                      ?>
-                    </select>
-                  </div>
-                  <div class="filter-item" style="display:flex;align-items:flex-end;gap:0.5rem;">
-                    <button type="button" class="filter-btn" onclick="document.getElementById('filterForm').submit();" style="flex:1;min-height:2.5rem;width:100%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;">
-                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                      กรองข้อมูล
-                    </button>
-                    <?php if ($selectedMonth): ?>
-                      <a href="report_invoice.php" class="clear-btn" style="flex:1;min-height:2.5rem;width:100%;display:flex;align-items:center;justify-content:center;">
-                        ✕ ล้างตัวกรอง
-                      </a>
-                    <?php endif; ?>
-                  </div>
-                </div>
-              </form>
-            </div>
-
             <!-- สถิติภาพรวม -->
             <?php
               $totalInvoices = count($rows);
@@ -563,24 +525,54 @@ try {
               </div>
             </div>
 
-            <!-- ปุ่มแยกตามสถานะ และ ปุ่มสลับมุมมอง -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2rem;flex-wrap:wrap;gap:1rem;">
-              <!-- ปุ่มสถานะด้านซ้าย -->
-              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                <a href="report_invoice.php<?php echo $selectedMonth ? '?month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo (!isset($_GET['status'])) ? '#60a5fa' : '#f1f5f9'; ?>;color:<?php echo (!isset($_GET['status'])) ? '#fff' : '#64748b'; ?>;border:<?php echo (!isset($_GET['status'])) ? 'none' : '1px solid #cbd5e1'; ?>;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
-                  ทั้งหมด
-                </a>
-                <a href="report_invoice.php?status=0<?php echo $selectedMonth ? '&month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo $selectedStatus === '0' ? '#60a5fa' : '#f1f5f9'; ?>;color:<?php echo $selectedStatus === '0' ? '#fff' : '#64748b'; ?>;border:<?php echo $selectedStatus === '0' ? 'none' : '1px solid #cbd5e1'; ?>;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                  รอการตรวจสอบ
-                </a>
-                <a href="report_invoice.php?status=1<?php echo $selectedMonth ? '&month=' . htmlspecialchars($selectedMonth) : ''; ?>" class="filter-btn" style="padding:0.75rem 1.5rem;text-decoration:none;display:inline-flex;align-items:center;gap:0.5rem;background:<?php echo $selectedStatus === '1' ? '#60a5fa' : '#f1f5f9'; ?>;color:<?php echo $selectedStatus === '1' ? '#fff' : '#64748b'; ?>;border:<?php echo $selectedStatus === '1' ? 'none' : '1px solid #cbd5e1'; ?>;">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"/></svg>
-                  ตรวจสอบแล้ว
-                </a>
+            <!-- ตัวกรอง -->
+            <div class="filter-section">
+              <div class="filter-grid">
+                <div class="filter-item">
+                  <label for="filterRoom">ห้อง</label>
+                  <select id="filterRoom" onchange="applyFilters()">
+                    <option value="">ทุกห้อง</option>
+                    <?php foreach ($filterRoomOptions as $rn): ?>
+                      <option value="<?php echo htmlspecialchars($rn, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($rn, ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label for="filterStatus">สถานะ</label>
+                  <select id="filterStatus" onchange="applyFilters()">
+                    <option value="">ทุกสถานะ</option>
+                    <option value="0">รอตรวจสอบ</option>
+                    <option value="1">ตรวจสอบแล้ว</option>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label for="filterMonth">เดือน</label>
+                  <select id="filterMonth" onchange="applyFilters()">
+                    <option value="">ทุกเดือน</option>
+                    <?php foreach ($availableMonthOptions as $m): ?>
+                      <option value="<?php echo $m; ?>"><?php echo $monthNames[$m] ?? $m; ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="filter-item">
+                  <label for="filterYear">ปี</label>
+                  <select id="filterYear" onchange="applyFilters()">
+                    <option value="">ทุกปี</option>
+                    <?php foreach ($availableYearOptions as $y): ?>
+                      <option value="<?php echo $y; ?>"><?php echo $y + 543; ?></option>
+                    <?php endforeach; ?>
+                  </select>
+                </div>
+                <div class="filter-item" style="display:flex;align-items:flex-end;">
+                  <button type="button" class="clear-btn" onclick="clearFilters()" style="width:100%;min-height:2.5rem;display:flex;align-items:center;justify-content:center;gap:0.4rem;">
+                    ✕ ล้างตัวกรอง
+                  </button>
+                </div>
               </div>
-              <!-- ปุ่มสลับมุมมองด้านขวา -->
+            </div>
+
+            <!-- ปุ่มสลับมุมมอง -->
+            <div style="display:flex;justify-content:flex-end;margin-bottom:2rem;">
               <div class="view-toggle">
                 <button id="toggle-view-btn" class="view-toggle-btn" onclick="toggleView()">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
@@ -597,8 +589,14 @@ try {
                 $statusLabel = $statusLabels[$statusKey] ?? 'ยังไม่ระบุสถานะ';
                 $statusClass = $statusKey === '1' ? 'status-verified' : 'status-pending';
                 $cardTotal = (int)($r['exp_total'] ?? 0);
+                $filterMonth_ = !empty($r['exp_month']) ? (int)date('n', strtotime($r['exp_month'])) : '';
+                $filterYear_  = !empty($r['exp_month']) ? date('Y', strtotime($r['exp_month'])) : '';
               ?>
-              <div class="invoice-card">
+              <div class="invoice-card" data-filter-item="invoice"
+                data-room="<?php echo htmlspecialchars($r['room_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                data-status="<?php echo htmlspecialchars((string)($r['exp_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                data-month="<?php echo $filterMonth_; ?>"
+                data-year="<?php echo $filterYear_; ?>">
                 <div class="invoice-header">
                   <div>
                     <div style="display:flex;flex-direction:column;gap:0.5rem;">
@@ -685,8 +683,14 @@ try {
                     $statusKey = (string)($r['exp_status'] ?? '');
                     $statusLabel = $statusLabels[$statusKey] ?? 'ยังไม่ระบุสถานะ';
                     $statusClass = $statusKey === '1' ? 'status-verified' : 'status-pending';
+                    $trMonth = !empty($r['exp_month']) ? (int)date('n', strtotime($r['exp_month'])) : '';
+                    $trYear  = !empty($r['exp_month']) ? date('Y', strtotime($r['exp_month'])) : '';
                   ?>
-                  <tr>
+                  <tr data-filter-item="invoice"
+                    data-room="<?php echo htmlspecialchars($r['room_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?>"
+                    data-status="<?php echo htmlspecialchars($statusKey, ENT_QUOTES, 'UTF-8'); ?>"
+                    data-month="<?php echo $trMonth; ?>"
+                    data-year="<?php echo $trYear; ?>">
                     <td>
                       <div style="display:flex;flex-direction:column;gap:0.3rem;">
                         <div style="background:#a7f3d0;color:#065f46;padding:0.4rem 0.8rem;border-radius:16px;font-weight:600;font-size:0.85rem;text-align:center;white-space:nowrap;display:inline-block;width:fit-content;">
@@ -774,6 +778,32 @@ try {
 
       function toggleView() {
         switchView(currentView === 'card' ? 'table' : 'card');
+      }
+
+      function applyFilters() {
+        const room   = document.getElementById('filterRoom')?.value   ?? '';
+        const status = document.getElementById('filterStatus')?.value ?? '';
+        const month  = document.getElementById('filterMonth')?.value  ?? '';
+        const year   = document.getElementById('filterYear')?.value   ?? '';
+        document.querySelectorAll('[data-filter-item="invoice"]').forEach(el => {
+          const matchRoom   = !room   || el.dataset.room   === room;
+          const matchStatus = !status || el.dataset.status === status;
+          const matchMonth  = !month  || el.dataset.month  === month;
+          const matchYear   = !year   || el.dataset.year   === year;
+          el.style.display  = (matchRoom && matchStatus && matchMonth && matchYear) ? '' : 'none';
+        });
+      }
+
+      function clearFilters() {
+        const room   = document.getElementById('filterRoom');
+        const status = document.getElementById('filterStatus');
+        const month  = document.getElementById('filterMonth');
+        const year   = document.getElementById('filterYear');
+        if (room)   room.value   = '';
+        if (status) status.value = '';
+        if (month)  month.value  = '';
+        if (year)   year.value   = '';
+        applyFilters();
       }
     </script>
     

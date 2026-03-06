@@ -247,7 +247,7 @@ try {
       .reports-container .container {
         max-width: 100%;
         width: 100%;
-        padding: 1.5rem;
+        padding: 0 1.5rem 1.5rem;
       }
       .payment-stats-grid {
         display: grid;

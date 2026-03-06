@@ -895,6 +895,17 @@ $statusMap = [
             pointer-events: auto !important;
             cursor: pointer !important;
         }
+        .main-content > .page-header-bar {
+            margin: 1.5rem 1.5rem 1rem;
+            width: calc(100% - 3rem);
+            box-sizing: border-box;
+        }
+        @media (max-width: 768px) {
+            .main-content > .page-header-bar {
+                margin: 1rem 1rem 0.75rem;
+                width: calc(100% - 2rem);
+            }
+        }
     </style>
 </head>
 <body>

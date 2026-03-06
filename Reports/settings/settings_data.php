@@ -27,6 +27,14 @@ $publicTheme = 'dark';
 $useBgImage = '0';
 $defaultViewMode = 'grid'; // ค่าเริ่มต้นการแสดงผล grid หรือ list
 $fpsThreshold = '60'; // FPS threshold สำหรับแจ้งเตือนประสิทธิภาพต่ำ
+$defaultAdminQuickActions = [
+    ['label' => 'การชำระเงิน', 'href' => 'manage_payments.php', 'shortcut' => 'Ctrl+1', 'enabled' => true],
+    ['label' => 'จองห้อง', 'href' => 'manage_booking.php', 'shortcut' => 'Ctrl+2', 'enabled' => true],
+    ['label' => 'ค่าใช้จ่าย', 'href' => 'manage_expenses.php', 'shortcut' => 'Ctrl+3', 'enabled' => true],
+    ['label' => 'สัญญา', 'href' => 'manage_contracts.php', 'shortcut' => 'Ctrl+4', 'enabled' => true],
+    ['label' => 'ตัวช่วยผู้เช่า', 'href' => 'tenant_wizard.php', 'shortcut' => 'Ctrl+5', 'enabled' => true],
+];
+$adminQuickActions = $defaultAdminQuickActions;
 
 // ข้อมูลบัญชีธนาคาร
 $bankName = '';
@@ -44,7 +52,7 @@ $ownerSignature = '';
 
 // ดึงค่าตั้งค่าระบบจาก database
 try {
-    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'default_view_mode', 'fps_threshold', 'google_client_id', 'google_client_secret', 'google_redirect_uri', 'owner_signature')");
+    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'default_view_mode', 'fps_threshold', 'google_client_id', 'google_client_secret', 'google_redirect_uri', 'owner_signature', 'admin_quick_actions')");
     $rawSettings = $settingsStmt->fetchAll(PDO::FETCH_ASSOC);
     $settings = [];
     foreach ($rawSettings as $setting) {
@@ -78,6 +86,23 @@ try {
     // Owner signature
     $ownerSignature = $settings['owner_signature'] ?? $ownerSignature;
 
+    if (!empty($settings['admin_quick_actions'])) {
+        $decodedQuickActions = json_decode((string)$settings['admin_quick_actions'], true);
+        if (is_array($decodedQuickActions)) {
+            $normalizedQuickActions = [];
+            foreach ($defaultAdminQuickActions as $index => $defaultAction) {
+                $savedAction = isset($decodedQuickActions[$index]) && is_array($decodedQuickActions[$index]) ? $decodedQuickActions[$index] : [];
+                $normalizedQuickActions[] = [
+                    'label' => trim((string)($savedAction['label'] ?? $defaultAction['label'])),
+                    'href' => trim((string)($savedAction['href'] ?? $defaultAction['href'])),
+                    'shortcut' => trim((string)($savedAction['shortcut'] ?? $defaultAction['shortcut'])),
+                    'enabled' => array_key_exists('enabled', $savedAction) ? (bool)$savedAction['enabled'] : (bool)$defaultAction['enabled'],
+                ];
+            }
+            $adminQuickActions = $normalizedQuickActions;
+        }
+    }
+
     // ถ้า table ว่าง ให้ insert default
     $checkStmt = $pdo->query("SELECT COUNT(*) as cnt FROM system_settings");
     if ((int)$checkStmt->fetchColumn() === 0) {
@@ -89,6 +114,7 @@ try {
         $insertStmt->execute(['bg_filename', $bgFilename]);
         $insertStmt->execute(['contact_phone', $contactPhone]);
         $insertStmt->execute(['contact_email', $contactEmail]);
+        $insertStmt->execute(['admin_quick_actions', json_encode($adminQuickActions, JSON_UNESCAPED_UNICODE)]);
     }
 } catch (PDOException $e) {
     // Use default values if query fails
