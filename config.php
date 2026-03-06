@@ -16,13 +16,24 @@ define('SITE_HOST', 'project.3bbddns.com:36140/');
 // ===========================================
 // ตั้งค่า Protocol (http หรือ https)
 // ===========================================
-define('SITE_PROTOCOL', 'http');
+// ใส่ '' เพื่อให้ระบบตรวจจาก request อัตโนมัติ
+define('SITE_PROTOCOL', '');
 
 // ===========================================
 // ฟังก์ชันสร้าง Base URL
 // ===========================================
 function getBaseUrl($path = '') {
     $protocol = SITE_PROTOCOL;
+
+    // Auto-detect protocol when SITE_PROTOCOL is empty
+    if (empty($protocol)) {
+        $isHttps = (
+            (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
+            (isset($_SERVER['SERVER_PORT']) && (string)$_SERVER['SERVER_PORT'] === '443') ||
+            (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
+        );
+        $protocol = $isHttps ? 'https' : 'http';
+    }
     $host = SITE_HOST;
     
     // ถ้าไม่ได้กำหนด host ให้ใช้ค่าอัตโนมัติ

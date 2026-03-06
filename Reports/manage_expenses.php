@@ -376,59 +376,122 @@ try {
         font-weight: 600;
       }
       .expense-stat-card {
-        background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
+        background: linear-gradient(135deg, rgba(12, 22, 42, 0.92), rgba(10, 16, 30, 0.96));
         border-radius: 16px;
         padding: 1.25rem;
-        border: 1px solid rgba(255,255,255,0.08);
+        border: 1px solid rgba(148, 163, 184, 0.22);
         color: #f5f8ff;
-        box-shadow: 0 15px 35px rgba(3,7,18,0.4);
+        box-shadow: 0 10px 26px rgba(3, 7, 18, 0.34);
+      }
+      .expense-stat-card .stat-head {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.65rem;
+      }
+      .expense-stat-card .status-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 999px;
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.08);
       }
       .expense-stat-card h3 {
         margin: 0;
         font-size: 0.95rem;
-        color: rgba(255,255,255,0.7);
+        color: rgba(226, 232, 240, 0.92);
+      }
+      .expense-stat-card .stat-kpi-label {
+        font-size: 0.82rem;
+        color: rgba(148, 163, 184, 0.95);
+        margin-top: 0.45rem;
       }
       .expense-stat-card .stat-value {
-        font-size: 2.2rem;
+        font-size: 2rem;
         font-weight: 700;
-        margin-top: 0.5rem;
+        line-height: 1.1;
+        margin-top: 0.2rem;
       }
       .expense-stat-card .stat-money {
-        font-size: 1.1rem;
-        color: rgba(255,255,255,0.6);
-        margin-top: 0.5rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-top: 0.15rem;
+      }
+      .expense-stat-card.is-unpaid .status-dot {
+        background: #ef4444;
+      }
+      .expense-stat-card.is-unpaid .stat-value,
+      .expense-stat-card.is-unpaid .stat-money {
+        color: #f87171;
+      }
+      .expense-stat-card.is-paid .status-dot {
+        background: #22c55e;
+      }
+      .expense-stat-card.is-paid .stat-value,
+      .expense-stat-card.is-paid .stat-money {
+        color: #4ade80;
+      }
+      .expense-stat-card.is-total .status-dot {
+        background: #60a5fa;
+      }
+      .expense-stat-card.is-total .stat-value,
+      .expense-stat-card.is-total .stat-money {
+        color: #93c5fd;
       }
       
       /* Light theme overrides for expense stat cards */
       @media (prefers-color-scheme: light) {
         .expense-stat-card {
-          background: linear-gradient(135deg, rgba(243,244,246,0.95), rgba(229,231,235,0.85)) !important;
-          border: 1px solid rgba(0,0,0,0.1) !important;
+          background: #ffffff !important;
+          border: 1px solid rgba(148, 163, 184, 0.35) !important;
           color: #374151 !important;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+          box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08) !important;
         }
         .expense-stat-card h3 {
-          color: rgba(0,0,0,0.7) !important;
+          color: #0f172a !important;
         }
-        .expense-stat-card .stat-money {
-          color: rgba(0,0,0,0.6) !important;
+        .expense-stat-card .stat-kpi-label {
+          color: #64748b !important;
+        }
+        .expense-stat-card.is-unpaid .stat-value,
+        .expense-stat-card.is-unpaid .stat-money {
+          color: #dc2626 !important;
+        }
+        .expense-stat-card.is-paid .stat-value,
+        .expense-stat-card.is-paid .stat-money {
+          color: #16a34a !important;
+        }
+        .expense-stat-card.is-total .stat-value,
+        .expense-stat-card.is-total .stat-money {
+          color: #2563eb !important;
         }
       }
       
       /* JavaScript-detected light theme class */
       html.light-theme .expense-stat-card {
-        background: linear-gradient(135deg, rgba(243,244,246,0.95), rgba(229,231,235,0.85)) !important;
-        border: 1px solid rgba(0,0,0,0.1) !important;
+        background: #ffffff !important;
+        border: 1px solid rgba(148, 163, 184, 0.35) !important;
         color: #374151 !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+        box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08) !important;
       }
       
       html.light-theme .expense-stat-card h3 {
-        color: rgba(0,0,0,0.7) !important;
+        color: #0f172a !important;
       }
       
-      html.light-theme .expense-stat-card .stat-money {
-        color: rgba(0,0,0,0.6) !important;
+      html.light-theme .expense-stat-card .stat-kpi-label {
+        color: #64748b !important;
+      }
+      html.light-theme .expense-stat-card.is-unpaid .stat-value,
+      html.light-theme .expense-stat-card.is-unpaid .stat-money {
+        color: #dc2626 !important;
+      }
+      html.light-theme .expense-stat-card.is-paid .stat-value,
+      html.light-theme .expense-stat-card.is-paid .stat-money {
+        color: #16a34a !important;
+      }
+      html.light-theme .expense-stat-card.is-total .stat-value,
+      html.light-theme .expense-stat-card.is-total .stat-money {
+        color: #2563eb !important;
       }
       html.light-theme .expense-stats-note {
         border-color: rgba(14, 116, 144, 0.35) !important;
@@ -1163,22 +1226,34 @@ try {
               </div>
             </div>
             <div class="expense-stats">
-              <div class="expense-stat-card particle-wrapper">
-                <div class="particle-container" data-particles="3"></div>
-                <h3>ยังไม่ชำระ</h3>
-                <div class="stat-value" style="color:#ef4444;"><?php echo number_format($stats['unpaid']); ?></div>
+              <div class="expense-stat-card is-unpaid">
+                <div class="stat-head">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  <h3>ยังไม่ชำระ</h3>
+                </div>
+                <div class="stat-kpi-label">จำนวนรายการ</div>
+                <div class="stat-value"><?php echo number_format($stats['unpaid']); ?></div>
+                <div class="stat-kpi-label">ยอดเงิน</div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_unpaid']); ?></div>
               </div>
-              <div class="expense-stat-card particle-wrapper">
-                <div class="particle-container" data-particles="3"></div>
-                <h3>ชำระแล้ว</h3>
-                <div class="stat-value" style="color:#22c55e;"><?php echo number_format($stats['paid']); ?></div>
+              <div class="expense-stat-card is-paid">
+                <div class="stat-head">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  <h3>ชำระแล้ว</h3>
+                </div>
+                <div class="stat-kpi-label">จำนวนรายการ</div>
+                <div class="stat-value"><?php echo number_format($stats['paid']); ?></div>
+                <div class="stat-kpi-label">ยอดเงิน</div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_paid']); ?></div>
               </div>
-              <div class="expense-stat-card particle-wrapper">
-                <div class="particle-container" data-particles="3"></div>
-                <h3>ยอดรวมทั้งหมด</h3>
+              <div class="expense-stat-card is-total">
+                <div class="stat-head">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  <h3>ยอดรวมทั้งหมด</h3>
+                </div>
+                <div class="stat-kpi-label">จำนวนรายการ</div>
                 <div class="stat-value"><?php echo number_format($stats['unpaid'] + $stats['paid']); ?></div>
+                <div class="stat-kpi-label">ยอดเงิน</div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_unpaid'] + $stats['total_paid']); ?></div>
               </div>
             </div>
@@ -1198,7 +1273,7 @@ try {
               </div>
               <div class="expenses-actions">
                 <button type="button" id="expensesViewToggle" class="expenses-view-toggle" onclick="toggleExpensesView()">
-                  <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
                   <span id="expensesViewToggleText">มุมมอง list(ตาราง)</span>
                 </button>
                 <div class="expenses-filters-line">

@@ -375,11 +375,14 @@ try {
         
         .nav-links a:not(.btn-login):hover {
             color: #fff;
-            background: var(--glass-bg);
+            -webkit-text-fill-color: #fff;
+            background: #1d4ed8;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--primary-glow);
         }
 
         .nav-links a:not(.btn-login):hover::before {
-            width: 60%;
+            width: 0;
         }
 
         .nav-icon {
@@ -396,7 +399,7 @@ try {
         }
         
         .btn-login {
-            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
+            background: var(--primary) !important;
             color: #fff !important;
             padding: 0.75rem 1.5rem !important;
             border-radius: 10px;
@@ -410,7 +413,7 @@ try {
             box-shadow: 0 8px 30px var(--primary-glow);
             color: #fff !important;
             -webkit-text-fill-color: #fff !important;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            background: #1d4ed8 !important;
         }
 
         .btn-login:hover .nav-icon {
@@ -1665,7 +1668,7 @@ try {
 
         /* ===== LOCATION SECTION ===== */
         .location-section {
-            background: linear-gradient(135deg, rgba(15, 23, 42, 0.6), rgba(30, 41, 59, 0.6));
+            background: linear-gradient(135deg, #f8fafc, #e2e8f0);
             padding: 5rem 2rem;
         }
         
@@ -1686,8 +1689,8 @@ try {
             position: relative;
             border-radius: 24px;
             overflow: hidden;
-            box-shadow: 0 25px 50px rgba(102, 126, 234, 0.15);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(37, 99, 235, 0.12);
+            border: 1px solid rgba(148, 163, 184, 0.3);
             aspect-ratio: 1 / 1;
             animation: fadeInUp 0.8s ease;
         }
@@ -1696,19 +1699,19 @@ try {
             width: 100%;
             height: 100%;
             border-radius: 24px;
-            background: #1e293b;
+            background: #f8fafc;
         }
 
         .location-info-card {
-            background: rgba(15, 23, 42, 0.9);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(102, 126, 234, 0.3);
+            background: rgba(255, 255, 255, 0.96);
+            border: 1px solid rgba(148, 163, 184, 0.3);
             border-radius: 16px;
             padding: 2rem;
             animation: slideUpIn 0.6s ease;
             position: relative;
             z-index: 10;
             height: fit-content;
+            box-shadow: 0 16px 36px rgba(15, 23, 42, 0.08);
         }
 
         @keyframes slideUpIn {
@@ -1728,13 +1731,13 @@ try {
             justify-content: space-between;
             margin-bottom: 1.5rem;
             padding-bottom: 1rem;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.3);
         }
 
         .location-header h3 {
             font-size: 1.25rem;
             font-weight: 700;
-            color: #fff;
+            color: #0f172a;
         }
 
         .location-badge {
@@ -1768,13 +1771,13 @@ try {
 
         .detail-label {
             font-size: 0.85rem;
-            color: #94a3b8;
+            color: #64748b;
             margin-bottom: 0.25rem;
         }
 
         .detail-value {
             font-size: 0.95rem;
-            color: #fff;
+            color: #0f172a;
             font-weight: 500;
         }
 
@@ -2028,12 +2031,14 @@ try {
             stroke: #475569 !important;
         }
         body.theme-light .nav-links a:not(.btn-login):hover {
-            color: var(--primary) !important;
-            -webkit-text-fill-color: var(--primary) !important;
-            background: rgba(59,130,246,0.08) !important;
+            color: #fff !important;
+            -webkit-text-fill-color: #fff !important;
+            background: #1d4ed8 !important;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px var(--primary-glow);
         }
         body.theme-light .nav-links a:not(.btn-login):hover .nav-icon {
-            stroke: var(--primary) !important;
+            stroke: #fff !important;
         }
         body.theme-light .nav-links a::before {
             background: linear-gradient(90deg, transparent, rgba(59,130,246,0.06), transparent) !important;
@@ -2070,8 +2075,8 @@ try {
             color: #475569 !important;
         }
         body.theme-light .hero-stats .stat-box {
-            background: rgba(255,255,255,0.7) !important;
-            border: 1px solid rgba(148,163,184,0.15) !important;
+            background: transparent !important;
+            border: none !important;
         }
         body.theme-light .hero-stats .stat-box::after { display: none !important; }
         body.theme-light .hero-stats .stat-box .number {
@@ -2110,12 +2115,12 @@ try {
             -webkit-text-fill-color: #fff !important;
         }
         body.theme-light .btn-login {
-            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
+            background: var(--primary) !important;
             color: #fff !important;
             -webkit-text-fill-color: #fff !important;
         }
         body.theme-light .btn-login:hover {
-            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            background: #1d4ed8 !important;
             color: #fff !important;
             -webkit-text-fill-color: #fff !important;
         }
@@ -3029,19 +3034,20 @@ if ($publicTheme === 'light') {
     <style>
         /* Leaflet map custom styling */
         .leaflet-container {
-            background: #1e293b !important;
+            background: #f8fafc !important;
             border-radius: 24px;
         }
         
         body.theme-light .leaflet-container {
             background: #f8fafc !important;
-            filter: invert(0.95) hue-rotate(180deg);
+            filter: none;
         }
         
         .leaflet-control-attribution {
-            background: rgba(15, 23, 42, 0.8) !important;
-            color: #94a3b8 !important;
+            background: rgba(255, 255, 255, 0.92) !important;
+            color: #475569 !important;
             border-radius: 8px !important;
+            border: 1px solid rgba(148, 163, 184, 0.25) !important;
         }
         
         body.theme-light .leaflet-control-attribution {
@@ -3050,8 +3056,8 @@ if ($publicTheme === 'light') {
         }
         
         .leaflet-control {
-            background: rgba(15, 23, 42, 0.9) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            background: rgba(255, 255, 255, 0.95) !important;
+            border: 1px solid rgba(148, 163, 184, 0.25) !important;
             border-radius: 8px !important;
         }
         
@@ -3061,8 +3067,8 @@ if ($publicTheme === 'light') {
         }
         
         .leaflet-control button {
-            background: rgba(102, 126, 234, 0.2) !important;
-            color: #667eea !important;
+            background: rgba(59, 130, 246, 0.12) !important;
+            color: #2563eb !important;
             border: none !important;
         }
         
@@ -3072,7 +3078,7 @@ if ($publicTheme === 'light') {
         }
         
         .leaflet-control button:hover {
-            background: rgba(102, 126, 234, 0.3) !important;
+            background: rgba(59, 130, 246, 0.2) !important;
         }
         
         body.theme-light .leaflet-control button:hover {
@@ -3111,10 +3117,10 @@ if ($publicTheme === 'light') {
         }
         
         .leaflet-popup-content-wrapper {
-            background: rgba(15, 23, 42, 0.95) !important;
-            border: 1px solid rgba(102, 126, 234, 0.3) !important;
+            background: rgba(255, 255, 255, 0.98) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
             border-radius: 12px !important;
-            backdrop-filter: blur(20px);
+            backdrop-filter: blur(10px);
         }
         
         body.theme-light .leaflet-popup-content-wrapper {
@@ -3123,7 +3129,7 @@ if ($publicTheme === 'light') {
         }
         
         .leaflet-popup-content {
-            color: #fff !important;
+            color: #1e293b !important;
             margin: 0 !important;
             font-size: 0.9rem !important;
         }
@@ -3133,8 +3139,8 @@ if ($publicTheme === 'light') {
         }
         
         .leaflet-popup-tip {
-            background: rgba(15, 23, 42, 0.95) !important;
-            border: 1px solid rgba(102, 126, 234, 0.3) !important;
+            background: rgba(255, 255, 255, 0.98) !important;
+            border: 1px solid rgba(59, 130, 246, 0.3) !important;
         }
         
         body.theme-light .leaflet-popup-tip {
@@ -3151,19 +3157,11 @@ if ($publicTheme === 'light') {
             // Create map
             const map = L.map('map').setView(locationCoords, 16);
             
-            // Add dark-themed tile layer (CartoDB Positron)
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+            // Add bright map tile layer
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
                 attribution: '© OpenStreetMap contributors © CARTO',
                 maxZoom: 20,
                 crossOrigin: true
-            }).addTo(map);
-            
-            // Add labels layer
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png', {
-                attribution: '',
-                maxZoom: 20,
-                crossOrigin: true,
-                pane: 'markerPane'
             }).addTo(map);
             
             // Create custom marker
@@ -3178,10 +3176,10 @@ if ($publicTheme === 'light') {
             // Add marker
             const marker = L.marker(locationCoords, { icon: markerElement })
                 .bindPopup(
-                    '<div style="text-align: center;"><strong style="font-size:1.1em;color:#fff;display:block;margin-bottom:8px;">' + siteName + '</strong>' +
-                    '<svg style="width:24px;height:24px;margin-bottom:8px;" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">' +
+                    '<div style="text-align: center;"><strong style="font-size:1.1em;color:#0f172a;display:block;margin-bottom:8px;">' + siteName + '</strong>' +
+                    '<svg style="width:24px;height:24px;margin-bottom:8px;" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">' +
                     '<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><br/>' +
-                    '<span style="color:#94a3b8;font-size:0.9em;">16.436550, 101.149011</span></div>',
+                    '<span style="color:#64748b;font-size:0.9em;">16.436550, 101.149011</span></div>',
                     { closeButton: true, className: 'custom-popup' }
                 )
                 .addTo(map);
