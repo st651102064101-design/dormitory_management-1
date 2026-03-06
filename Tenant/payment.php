@@ -13,6 +13,24 @@ $settings = getSystemSettings($pdo);
 
 $success = '';
 $error = '';
+$isAjaxRequest = (
+    ($_SERVER['REQUEST_METHOD'] ?? '') === 'POST' &&
+    (
+        strtolower((string)($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '')) === 'xmlhttprequest' ||
+        stripos((string)($_SERVER['HTTP_ACCEPT'] ?? ''), 'application/json') !== false
+    )
+);
+
+$currentBillMonth = (new DateTime('first day of this month'))->format('Y-m');
+$firstBillMonth = $currentBillMonth;
+if (!empty($contract['ctr_start'])) {
+    try {
+        $ctrStartDate = new DateTime((string)$contract['ctr_start']);
+        $firstBillMonth = $ctrStartDate->modify('first day of next month')->format('Y-m');
+    } catch (Exception $e) {
+        $firstBillMonth = $currentBillMonth;
+    }
+}
 
 // Get unpaid expenses
 $unpaidExpenses = [];
@@ -22,19 +40,29 @@ $selectedExpId = isset($_GET['exp_id']) ? (int)$_GET['exp_id'] : 0;
 try {
     $stmt = $pdo->prepare("
         SELECT e.*, r.room_number,
-               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1') as paid_amount
+               COALESCE(ps.submitted_amount, 0) AS paid_amount
         FROM expense e
         JOIN (
             SELECT MAX(exp_id) AS exp_id
             FROM expense
-            WHERE ctr_id = ? AND exp_status = '0'
+            WHERE ctr_id = ?
+            AND exp_status IN ('0', '3')
+              AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
+              AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
             GROUP BY exp_month
         ) latest ON e.exp_id = latest.exp_id
+        LEFT JOIN (
+            SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
+            FROM payment
+            WHERE pay_status IN ('0', '1')
+            GROUP BY exp_id
+        ) ps ON ps.exp_id = e.exp_id
         JOIN contract c ON e.ctr_id = c.ctr_id
         JOIN room r ON c.room_id = r.room_id
+        WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
         ORDER BY e.exp_month DESC
     ");
-    $stmt->execute([$contract['ctr_id']]);
+    $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
     $unpaidExpenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // หา expense ที่เลือก
@@ -50,6 +78,7 @@ try {
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $targetPath = '';
     try {
         $exp_id = (int)($_POST['exp_id'] ?? 0);
         $pay_amount = (int)($_POST['pay_amount'] ?? 0);
@@ -59,15 +88,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } elseif (empty($_FILES['pay_proof']['name'])) {
             $error = 'กรุณาแนบหลักฐานการชำระเงิน';
         } else {
-            // Verify expense belongs to this contract
-            $checkStmt = $pdo->prepare("SELECT * FROM expense WHERE exp_id = ? AND ctr_id = ?");
-            $checkStmt->execute([$exp_id, $contract['ctr_id']]);
-            $expense = $checkStmt->fetch();
-            
-            if (!$expense) {
-                throw new Exception('ไม่พบบิลที่ระบุ');
-            }
-            
             // Handle file upload
             $file = $_FILES['pay_proof'];
             $maxFileSize = 5 * 1024 * 1024; // 5MB
@@ -87,9 +107,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
             
             $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-            $uploadsDir = __DIR__ . '//dormitory_management/Public/Assets/Images/Payments';
+            $uploadsDir = dirname(__DIR__) . '/Public/Assets/Images/Payments';
             if (!is_dir($uploadsDir)) {
-                mkdir($uploadsDir, 0755, true);
+                if (!mkdir($uploadsDir, 0777, true) && !is_dir($uploadsDir)) {
+                    throw new Exception('ไม่สามารถสร้างโฟลเดอร์อัพโหลดได้');
+                }
+            }
+
+            // XAMPP/Apache may run with a different user than project owner.
+            if (!is_writable($uploadsDir)) {
+                @chmod($uploadsDir, 0777);
+            }
+            if (!is_writable($uploadsDir)) {
+                throw new Exception('โฟลเดอร์อัพโหลดไม่มีสิทธิ์เขียนไฟล์');
             }
             
             $filename = 'payment_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
@@ -98,36 +128,105 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
                 throw new Exception('ไม่สามารถอัพโหลดไฟล์ได้');
             }
+
+            // Lock expense row + related payments to prevent duplicate submissions after refresh or rapid retries.
+            $pdo->beginTransaction();
+
+            $checkStmt = $pdo->prepare("SELECT * FROM expense WHERE exp_id = ? AND ctr_id = ? FOR UPDATE");
+            $checkStmt->execute([$exp_id, $contract['ctr_id']]);
+            $expense = $checkStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$expense) {
+                throw new Exception('ไม่พบบิลที่ระบุ');
+            }
+
+            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') FOR UPDATE");
+            $sumRowsStmt->execute([$exp_id]);
+            $submittedAmount = 0;
+            foreach ($sumRowsStmt->fetchAll(PDO::FETCH_ASSOC) as $payRow) {
+                $submittedAmount += (int)($payRow['pay_amount'] ?? 0);
+            }
+
+            $expTotal = (int)($expense['exp_total'] ?? 0);
+            $remainingAmount = max(0, $expTotal - $submittedAmount);
+            if ($remainingAmount <= 0) {
+                throw new Exception('บิลนี้ถูกส่งชำระครบแล้ว ไม่สามารถส่งซ้ำได้');
+            }
+
+            $recordAmount = $pay_amount > 0 ? $pay_amount : $remainingAmount;
+            if ($recordAmount <= 0) {
+                throw new Exception('จำนวนเงินไม่ถูกต้อง');
+            }
+            if ($recordAmount > $remainingAmount) {
+                throw new Exception('จำนวนเงินเกินยอดคงเหลือของบิลนี้');
+            }
             
             // Insert payment record
             $stmt = $pdo->prepare("
                 INSERT INTO payment (pay_date, pay_amount, pay_proof, pay_status, exp_id)
                 VALUES (CURDATE(), ?, ?, '0', ?)
             ");
-            $stmt->execute([$pay_amount ?: $expense['exp_total'], $filename, $exp_id]);
+            $stmt->execute([$recordAmount, $filename, $exp_id]);
+
+            $pdo->commit();
+
+            $remainingAfterSubmit = max(0, $remainingAmount - $recordAmount);
             
             $success = 'แจ้งชำระเงินเรียบร้อยแล้ว รอการตรวจสอบจากผู้ดูแล';
             
             // Refresh unpaid expenses
             $stmt = $pdo->prepare("
-                SELECT e.*, r.room_number 
+                SELECT e.*, r.room_number,
+                       COALESCE(ps.submitted_amount, 0) AS paid_amount
                 FROM expense e
                 JOIN (
                     SELECT MAX(exp_id) AS exp_id
                     FROM expense
-                    WHERE ctr_id = ? AND exp_status = '0'
+                    WHERE ctr_id = ?
+                        AND exp_status IN ('0', '3')
+                      AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
+                      AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
                     GROUP BY exp_month
                 ) latest ON e.exp_id = latest.exp_id
+                LEFT JOIN (
+                    SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
+                    FROM payment
+                    WHERE pay_status IN ('0', '1')
+                    GROUP BY exp_id
+                ) ps ON ps.exp_id = e.exp_id
                 JOIN contract c ON e.ctr_id = c.ctr_id
                 JOIN room r ON c.room_id = r.room_id
+                WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
                 ORDER BY e.exp_month DESC
             ");
-            $stmt->execute([$contract['ctr_id']]);
+            $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
             $unpaidExpenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
     } catch (Exception $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        if ($targetPath !== '' && is_file($targetPath)) {
+            @unlink($targetPath);
+        }
         $error = $e->getMessage();
+    }
+
+    if ($isAjaxRequest) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode([
+            'success' => $error === '',
+            'message' => $error === '' ? $success : $error,
+            'error' => $error,
+            'exp_id' => isset($exp_id) ? (int)$exp_id : 0,
+            'submitted_amount' => isset($submittedAmount, $recordAmount) ? (int)($submittedAmount + $recordAmount) : null,
+            'remaining_amount' => isset($remainingAfterSubmit) ? (int)$remainingAfterSubmit : null,
+            'pay_amount' => isset($recordAmount) ? (int)$recordAmount : null,
+            'pay_date' => isset($recordAmount) ? date('Y-m-d') : null,
+            'exp_month' => isset($expense['exp_month']) ? (string)$expense['exp_month'] : null,
+            'pay_status_label' => 'รอตรวจสอบ',
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 }
 
@@ -144,6 +243,27 @@ try {
     $stmt->execute([$contract['ctr_id']]);
     $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
+
+$unpaidReportItems = [];
+$unpaidReportTotal = 0.0;
+foreach ($unpaidExpenses as $exp) {
+    $total = (float)($exp['exp_total'] ?? 0);
+    $submitted = (float)($exp['paid_amount'] ?? 0);
+    $remaining = max(0, $total - $submitted);
+    if ($remaining <= 0) {
+        continue;
+    }
+
+    $unpaidReportItems[] = [
+        'exp_id' => (int)($exp['exp_id'] ?? 0),
+        'exp_month' => (string)($exp['exp_month'] ?? ''),
+        'total' => $total,
+        'submitted' => $submitted,
+        'remaining' => $remaining,
+        'status' => $submitted > 0 ? 'ชำระบางส่วน' : 'ยังไม่ชำระ',
+    ];
+    $unpaidReportTotal += $remaining;
+}
 
 $paymentStatusMap = [
     '0' => ['label' => 'รอตรวจสอบ', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
@@ -310,6 +430,47 @@ $paymentStatusMap = [
         .bill-total { font-size: 1.2rem; font-weight: 700; color: #f59e0b; }
         .bill-details { font-size: 0.8rem; color: #94a3b8; }
         .payment-history { margin-top: 2rem; }
+        .unpaid-report {
+            margin-top: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        .unpaid-report-card {
+            background: rgba(30, 41, 59, 0.8);
+            border: 1px solid rgba(239, 68, 68, 0.25);
+            border-radius: 12px;
+            padding: 0.95rem 1rem;
+            margin-bottom: 0.75rem;
+        }
+        .unpaid-report-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.4rem;
+        }
+        .unpaid-report-month {
+            font-weight: 600;
+            color: #f8fafc;
+        }
+        .unpaid-report-status {
+            font-size: 0.75rem;
+            color: #fbbf24;
+        }
+        .unpaid-report-row {
+            display: flex;
+            justify-content: space-between;
+            color: #94a3b8;
+            font-size: 0.82rem;
+            margin-bottom: 0.25rem;
+        }
+        .unpaid-report-row strong {
+            color: #ef4444;
+        }
+        .unpaid-report-total {
+            margin-bottom: 0.75rem;
+            color: #ef4444;
+            font-weight: 700;
+        }
         .payment-item {
             background: rgba(30, 41, 59, 0.8);
             border: 1px solid rgba(255,255,255,0.1);
@@ -653,7 +814,7 @@ $paymentStatusMap = [
                             <?php echo date('m/Y', strtotime($expense['exp_month'])); ?> - 
                             ยอดรวม <?php echo number_format($expTotal); ?> บาท
                             <?php if ($paidAmount > 0): ?>
-                                (จ่ายแล้ว <?php echo number_format($paidAmount); ?> / คงเหลือ <?php echo number_format($remaining); ?>)
+                                (ส่งแล้ว <?php echo number_format($paidAmount); ?> / คงเหลือ <?php echo number_format($remaining); ?>)
                             <?php endif; ?>
                         </option>
                         <?php endforeach; ?>
@@ -666,7 +827,7 @@ $paymentStatusMap = [
                         <span id="summary-total" style="color: #f8fafc; font-weight: 600;">0 บาท</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                        <span style="color: #10b981;">ชำระแล้ว:</span>
+                        <span style="color: #10b981;">ส่งแล้ว:</span>
                         <span id="summary-paid" style="color: #10b981; font-weight: 600;">0 บาท</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; padding-top: 0.5rem; border-top: 1px solid rgba(255,255,255,0.1);">
@@ -685,7 +846,7 @@ $paymentStatusMap = [
                 
                 <div class="form-group" id="pay-proof-group" style="display: none;">
                     <label>หลักฐานการชำระเงิน (สลิป) *</label>
-                    <div class="file-upload" onclick="document.getElementById('pay_proof').click()">
+                    <div class="file-upload">
                         <input type="file" name="pay_proof" id="pay_proof" accept="image/jpeg,image/png,image/webp" onchange="previewImage(this)" required>
                         <div class="file-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
                         <div class="file-upload-text">แตะเพื่อเลือกรูปสลิป</div>
@@ -699,8 +860,29 @@ $paymentStatusMap = [
             </form>
             <?php endif; ?>
         </div>
+
+        <div class="unpaid-report">
+            <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span> รายงานยังไม่ชำระ</div>
+            <?php if (empty($unpaidReportItems)): ?>
+                <div class="empty-state" style="padding:1rem 0;color:#34d399;">ไม่มียอดค้างชำระ</div>
+            <?php else: ?>
+                <div class="unpaid-report-total">ยอดค้างรวม <?php echo number_format($unpaidReportTotal); ?> บาท</div>
+                <?php foreach ($unpaidReportItems as $item): ?>
+                    <div class="unpaid-report-card">
+                        <div class="unpaid-report-top">
+                            <div class="unpaid-report-month"><?php echo $item['exp_month'] ? date('m/Y', strtotime($item['exp_month'])) : '-'; ?></div>
+                            <div class="unpaid-report-status"><?php echo htmlspecialchars($item['status']); ?></div>
+                        </div>
+                        <div class="unpaid-report-row"><span>ยอดบิล</span><span><?php echo number_format($item['total']); ?> บาท</span></div>
+                        <div class="unpaid-report-row"><span>ส่งแล้ว</span><span><?php echo number_format($item['submitted']); ?> บาท</span></div>
+                        <div class="unpaid-report-row"><span>คงเหลือ</span><span><strong><?php echo number_format($item['remaining']); ?> บาท</strong></span></div>
+                        <a class="btn-pay" href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo (int)$item['exp_id']; ?>">ชำระบิลนี้</a>
+                    </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
         
-        <div class="payment-history">
+        <div class="payment-history" id="paymentHistorySection">
             <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> ประวัติการแจ้งชำระเงิน</div>
             
             <?php if (empty($payments)): ?>
@@ -747,6 +929,26 @@ $paymentStatusMap = [
     </nav>
     
     <script>
+    function updateSubmitState() {
+        const select = document.getElementById('exp_id');
+        const payAmount = document.getElementById('pay_amount');
+        const payProofInput = document.getElementById('pay_proof');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (!submitBtn || !select || !payAmount || !payProofInput) {
+            return;
+        }
+
+        const selectedOption = select.options[select.selectedIndex];
+        const remaining = selectedOption && selectedOption.value ? (parseFloat(selectedOption.dataset.remaining) || 0) : 0;
+        const amount = parseFloat(payAmount.value) || 0;
+        const hasExpense = !!(selectedOption && selectedOption.value);
+        const hasProof = !!(payProofInput.files && payProofInput.files.length > 0);
+        const validAmount = amount > 0 && (remaining <= 0 || amount <= remaining);
+
+        submitBtn.disabled = !(hasExpense && validAmount && hasProof);
+    }
+
     function updatePaymentAmount() {
         const select = document.getElementById('exp_id');
         const option = select.options[select.selectedIndex];
@@ -786,6 +988,8 @@ $paymentStatusMap = [
                 previewContainer.style.display = 'none';
             }
         }
+
+        updateSubmitState();
     }
     
     // เรียกใช้ทันทีถ้ามีการเลือกบิลมาแล้ว
@@ -805,7 +1009,28 @@ $paymentStatusMap = [
             };
             reader.readAsDataURL(input.files[0]);
         }
+
+        updateSubmitState();
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const expSelect = document.getElementById('exp_id');
+        const payAmount = document.getElementById('pay_amount');
+        const payProofInput = document.getElementById('pay_proof');
+
+        if (expSelect) {
+            expSelect.addEventListener('change', updateSubmitState);
+        }
+        if (payAmount) {
+            payAmount.addEventListener('input', updateSubmitState);
+            payAmount.addEventListener('change', updateSubmitState);
+        }
+        if (payProofInput) {
+            payProofInput.addEventListener('change', updateSubmitState);
+        }
+
+        updateSubmitState();
+    });
     
     function copyToClipboard(text) {
         navigator.clipboard.writeText(text).then(() => {
@@ -836,6 +1061,167 @@ $paymentStatusMap = [
             toast.remove();
         }, 2000);
     }
+
+    function showFormAlert(message, type) {
+        const container = document.querySelector('.container');
+        if (!container) return;
+
+        const oldAlert = container.querySelector('.alert.alert-success, .alert.alert-error');
+        if (oldAlert) {
+            oldAlert.remove();
+        }
+
+        const alert = document.createElement('div');
+        alert.className = type === 'success' ? 'alert alert-success' : 'alert alert-error';
+        alert.innerHTML = `<span>${message}</span>`;
+        container.insertBefore(alert, container.firstChild);
+    }
+
+    function formatPayDate(isoDate) {
+        if (!isoDate) return '-';
+        const dt = new Date(isoDate);
+        if (Number.isNaN(dt.getTime())) return isoDate;
+        const dd = String(dt.getDate()).padStart(2, '0');
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const yyyy = dt.getFullYear();
+        return `${dd}/${mm}/${yyyy}`;
+    }
+
+    function formatBillMonth(isoMonth) {
+        if (!isoMonth) return '-';
+        const dt = new Date(isoMonth);
+        if (Number.isNaN(dt.getTime())) return isoMonth;
+        const mm = String(dt.getMonth() + 1).padStart(2, '0');
+        const yyyy = dt.getFullYear();
+        return `${mm}/${yyyy}`;
+    }
+
+    function prependPaymentHistoryItem(result) {
+        const section = document.getElementById('paymentHistorySection');
+        if (!section) return;
+
+        const empty = section.querySelector('.empty-state');
+        if (empty) {
+            empty.remove();
+        }
+
+        const item = document.createElement('div');
+        item.className = 'payment-item';
+
+        const amount = Number(result.pay_amount || 0);
+        const statusLabel = result.pay_status_label || 'รอตรวจสอบ';
+        const payDateText = formatPayDate(result.pay_date || '');
+        const billMonthText = formatBillMonth(result.exp_month || '');
+
+        item.innerHTML = `
+            <div class="payment-header">
+                <span class="payment-date"><span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> ${payDateText}</span>
+                <span class="payment-status" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b;">${statusLabel}</span>
+            </div>
+            <div class="payment-amount"><span class="amount-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ${amount.toLocaleString()} บาท</div>
+            <div class="bill-details">บิลเดือน ${billMonthText}</div>
+        `;
+
+        const firstItem = section.querySelector('.payment-item');
+        const sectionTitle = section.querySelector('.section-title');
+        if (firstItem) {
+            section.insertBefore(item, firstItem);
+        } else if (sectionTitle && sectionTitle.nextSibling) {
+            section.insertBefore(item, sectionTitle.nextSibling);
+        } else {
+            section.appendChild(item);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('paymentForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (!form || !submitBtn) {
+            return;
+        }
+
+        form.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            updateSubmitState();
+            if (submitBtn.disabled) {
+                return;
+            }
+
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'กำลังส่งข้อมูล...';
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                if (result && result.success) {
+                    showFormAlert(result.message || 'แจ้งชำระเงินเรียบร้อยแล้ว', 'success');
+                    prependPaymentHistoryItem(result);
+
+                    const expSelect = document.getElementById('exp_id');
+                    const selectedOption = expSelect ? expSelect.options[expSelect.selectedIndex] : null;
+                    const preview = document.getElementById('preview-container');
+                    if (preview) preview.style.display = 'none';
+
+                    if (selectedOption && selectedOption.value && result.remaining_amount !== null) {
+                        const newRemaining = Number(result.remaining_amount) || 0;
+                        const newSubmitted = Number(result.submitted_amount) || 0;
+                        selectedOption.dataset.paid = String(newSubmitted);
+                        selectedOption.dataset.remaining = String(newRemaining);
+
+                        const total = Number(selectedOption.dataset.total || 0);
+                        const monthText = selectedOption.textContent.split('-')[0].trim();
+                        if (newRemaining > 0) {
+                            selectedOption.textContent = `${monthText} - ยอดรวม ${total.toLocaleString()} บาท (ส่งแล้ว ${newSubmitted.toLocaleString()} / คงเหลือ ${newRemaining.toLocaleString()})`;
+                            updatePaymentAmount();
+                        } else {
+                            selectedOption.remove();
+                            if (expSelect && expSelect.options.length > 1) {
+                                expSelect.selectedIndex = 1;
+                                updatePaymentAmount();
+                            } else {
+                                expSelect.value = '';
+                                updatePaymentAmount();
+                                const summary = document.getElementById('payment-summary');
+                                const payAmountGroup = document.getElementById('pay-amount-group');
+                                const payProofGroup = document.getElementById('pay-proof-group');
+                                if (summary) summary.style.display = 'none';
+                                if (payAmountGroup) payAmountGroup.style.display = 'none';
+                                if (payProofGroup) payProofGroup.style.display = 'none';
+                                showFormAlert('บิลนี้ถูกส่งชำระครบแล้ว เลือกบิลเดือนอื่นได้', 'success');
+                            }
+                        }
+                    } else {
+                        form.reset();
+                        updatePaymentAmount();
+                    }
+
+                    const payProofInput = document.getElementById('pay_proof');
+                    if (payProofInput) payProofInput.value = '';
+                    updateSubmitState();
+                } else {
+                    showFormAlert((result && result.message) ? result.message : 'ไม่สามารถบันทึกข้อมูลได้', 'error');
+                    updateSubmitState();
+                }
+            } catch (err) {
+                showFormAlert('ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่', 'error');
+                updateSubmitState();
+            } finally {
+                submitBtn.innerHTML = originalText;
+                updateSubmitState();
+            }
+        });
+    });
     </script>
 </body>
 </html>

@@ -1930,7 +1930,7 @@ try {
             }
             
             .hero {
-                padding: 7rem 1rem 3rem;
+                padding: 9rem 1rem 3rem;
                 min-height: auto;
             }
             

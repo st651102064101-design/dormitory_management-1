@@ -23,49 +23,60 @@ try {
     $checkin_date = $_POST['checkin_date'] ?? '';
     $water_meter_start = isset($_POST['water_meter_start']) ? (float)$_POST['water_meter_start'] : 0;
     $elec_meter_start = isset($_POST['elec_meter_start']) ? (float)$_POST['elec_meter_start'] : 0;
-    $key_number = trim($_POST['key_number'] ?? '');
-    $notes = trim($_POST['notes'] ?? '');
 
     if ($ctr_id <= 0 || empty($tnt_id) || empty($checkin_date)) {
         throw new Exception('ข้อมูลไม่ครบถ้วน');
     }
 
-    // อัปโหลดรูปภาพ (ถ้ามี)
-    $roomImagePaths = [];
-    if (!empty($_FILES['room_images']['name'][0])) {
-        $uploadDir = __DIR__ . '/../Public/Assets/Images/Checkin';
-        $roomImagePaths = uploadMultipleFiles($_FILES['room_images'], $uploadDir, ['jpg', 'jpeg', 'png']);
+    if ($water_meter_start <= 0 || $elec_meter_start <= 0) {
+        throw new Exception('กรุณากรอกเลขมิเตอร์น้ำ/ไฟที่มากกว่า 0');
     }
 
     $pdo->beginTransaction();
 
-    // บันทึกข้อมูลเช็คอิน
-    $stmt = $pdo->prepare("
-        INSERT INTO checkin_record
-        (checkin_date, water_meter_start, elec_meter_start, room_images, key_number, notes, ctr_id, created_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    ");
+    // กันข้อมูลซ้ำ: 1 สัญญาควรมีข้อมูล check-in ล่าสุดเพียง 1 รายการ
+    $existingCheckinStmt = $pdo->prepare("SELECT checkin_id FROM checkin_record WHERE ctr_id = ? ORDER BY checkin_id DESC LIMIT 1");
+    $existingCheckinStmt->execute([$ctr_id]);
+    $existingCheckin = $existingCheckinStmt->fetch(PDO::FETCH_ASSOC);
 
-    $roomImagesJson = !empty($roomImagePaths) ? json_encode($roomImagePaths) : null;
+    if ($existingCheckin) {
+        $stmt = $pdo->prepare("
+            UPDATE checkin_record
+            SET checkin_date = ?,
+                water_meter_start = ?,
+                elec_meter_start = ?
+            WHERE checkin_id = ?
+        ");
 
-    $stmt->execute([
-        $checkin_date,
-        $water_meter_start,
-        $elec_meter_start,
-        $roomImagesJson,
-        $key_number,
-        $notes,
-        $ctr_id,
-        $_SESSION['admin_username']
-    ]);
+        $stmt->execute([
+            $checkin_date,
+            $water_meter_start,
+            $elec_meter_start,
+            (int)$existingCheckin['checkin_id']
+        ]);
+    } else {
+        $stmt = $pdo->prepare("
+            INSERT INTO checkin_record
+            (checkin_date, water_meter_start, elec_meter_start, ctr_id, created_by)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+
+        $stmt->execute([
+            $checkin_date,
+            $water_meter_start,
+            $elec_meter_start,
+            $ctr_id,
+            $_SESSION['admin_username']
+        ]);
+    }
 
     // อัปเดตสถานะผู้เช่าเป็น "พักอยู่" (1)
     $stmt = $pdo->prepare("UPDATE tenant SET tnt_status = '1' WHERE tnt_id = ?");
     $stmt->execute([$tnt_id]);
     
     // อัปเดตสถานะห้องเป็น "ไม่ว่าง" (1) เมื่อเช็คอิน
-    // ดึง room_id จาก contract
-    $stmt = $pdo->prepare("SELECT room_id FROM contract WHERE ctr_id = ?");
+    // ดึง room_id และวันเริ่มสัญญา
+    $stmt = $pdo->prepare("SELECT room_id, ctr_start FROM contract WHERE ctr_id = ?");
     $stmt->execute([$ctr_id]);
     $contract = $stmt->fetch(PDO::FETCH_ASSOC);
     
@@ -74,16 +85,49 @@ try {
         $stmt->execute([$contract['room_id']]);
     }
 
-    // อัปเดต Workflow Step 4
+    // ใช้เดือนเริ่มสัญญาเป็นเดือนอ้างอิงหลักสำหรับมิเตอร์/บิลแรก
+    $effectiveDate = $checkin_date;
+    if (!empty($contract['ctr_start']) && $contract['ctr_start'] !== '0000-00-00') {
+        $effectiveDate = (string)$contract['ctr_start'];
+    }
+
+    $effectiveDt = new DateTime($effectiveDate);
+    $targetMonth = $effectiveDt->format('Y-m');
+    $targetMonthDate = $targetMonth . '-01';
+
+    $checkUtilityStmt = $pdo->prepare("SELECT utl_id, utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? AND DATE_FORMAT(utl_date, '%Y-%m') = ? ORDER BY utl_id DESC LIMIT 1");
+    $checkUtilityStmt->execute([$ctr_id, $targetMonth]);
+    $existingUtility = $checkUtilityStmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($existingUtility) {
+        // ถ้ามี row ของเดือนนั้นอยู่แล้ว ให้เติมค่าเริ่มต้นแทนค่าศูนย์เดิม
+        $updateUtilityStmt = $pdo->prepare("\n            UPDATE utility\n            SET utl_water_start = ?,\n                utl_elec_start = ?,\n                utl_water_end = CASE WHEN COALESCE(utl_water_end, 0) <= 0 THEN ? ELSE utl_water_end END,\n                utl_elec_end = CASE WHEN COALESCE(utl_elec_end, 0) <= 0 THEN ? ELSE utl_elec_end END\n            WHERE utl_id = ?\n        ");
+        $updateUtilityStmt->execute([
+            $water_meter_start,
+            $elec_meter_start,
+            $water_meter_start,
+            $elec_meter_start,
+            (int)$existingUtility['utl_id']
+        ]);
+    } else {
+        $insertUtilityStmt = $pdo->prepare("INSERT INTO utility (ctr_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end, utl_date) VALUES (?, ?, ?, ?, ?, ?)");
+        $insertUtilityStmt->execute([
+            $ctr_id,
+            $water_meter_start,
+            $water_meter_start,
+            $elec_meter_start,
+            $elec_meter_start,
+            $targetMonthDate
+        ]);
+    }
+
+    // อัปเดต Workflow Step 4 เมื่อข้อมูลครบถ้วนแล้ว
     updateWorkflowStep($pdo, $tnt_id, 4, $_SESSION['admin_username']);
     
     // สร้างบิลเดือนแรกอัตโนมัติ
-    $checkinDt = new DateTime($checkin_date);
-    $currentMonth = $checkinDt->format('Y-m');
-    
     // ตรวจสอบว่ามีบิลสำหรับเดือนนี้แล้วหรือไม่
     $checkExpStmt = $pdo->prepare("SELECT COUNT(*) FROM expense WHERE ctr_id = ? AND DATE_FORMAT(exp_month, '%Y-%m') = ?");
-    $checkExpStmt->execute([$ctr_id, $currentMonth]);
+    $checkExpStmt->execute([$ctr_id, $targetMonth]);
     
     if ((int)$checkExpStmt->fetchColumn() === 0) {
         // ดึงข้อมูลห้องและค่าเช่า
@@ -124,7 +168,7 @@ try {
         ");
         
         $createExpStmt->execute([
-            $currentMonth . '-01',
+            $targetMonthDate,
             $rate_elec,
             $rate_water,
             $room_price,
@@ -133,9 +177,12 @@ try {
         ]);
     }
 
+    // Step 5 อัตโนมัติ: เมื่อเช็คอินครบถ้วนและมีบิลเดือนแรกแล้ว ให้ปิด workflow ทันที
+    updateWorkflowStep($pdo, $tnt_id, 5, $_SESSION['admin_username'], $ctr_id);
+
     $pdo->commit();
 
-    $_SESSION['success'] = "บันทึกเช็คอินเรียบร้อย! ขั้นตอนถัดไป: เริ่มบิลรายเดือน";
+    $_SESSION['success'] = "บันทึกเช็คอินและเริ่มบิลรายเดือนอัตโนมัติเรียบร้อยแล้ว";
     header('Location: ../Reports/tenant_wizard.php');
     exit;
 

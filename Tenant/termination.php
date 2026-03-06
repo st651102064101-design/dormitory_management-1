@@ -27,7 +27,29 @@ try {
 } catch (PDOException $e) {}
 
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && !$hasTermination) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cancel_termination' && $hasTermination) {
+    try {
+        $termId = (int)($termination['term_id'] ?? 0);
+        if ($termId > 0) {
+            $pdo->prepare("DELETE FROM termination WHERE term_id = ? AND ctr_id = ?")
+                ->execute([$termId, $contract['ctr_id']]);
+        } else {
+            $pdo->prepare("DELETE FROM termination WHERE ctr_id = ?")
+                ->execute([$contract['ctr_id']]);
+        }
+        $pdo->prepare("UPDATE contract SET ctr_status = '0' WHERE ctr_id = ?")
+            ->execute([$contract['ctr_id']]);
+        $success = 'ยกเลิกคำร้องยกเลิกสัญญาเรียบร้อยแล้ว';
+        $hasTermination = false;
+        $termination = null;
+        // Refresh contract status
+        $ctrStmt = $pdo->prepare("SELECT ctr_status FROM contract WHERE ctr_id = ?");
+        $ctrStmt->execute([$contract['ctr_id']]);
+        $contract = array_merge($contract, $ctrStmt->fetch(PDO::FETCH_ASSOC) ?: []);
+    } catch (Exception $e) {
+        $error = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    }
+} elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && !$hasTermination) {
     try {
         $term_date = $_POST['term_date'] ?? '';
         
@@ -243,6 +265,33 @@ $minDate = date('Y-m-d', strtotime('+7 days'));
             margin-bottom: 0.5rem;
         }
         .termination-status p { color: #fcd34d; }
+        .btn-cancel-termination {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1.25rem;
+            padding: 0.75rem 1.5rem;
+            background: rgba(239,68,68,0.12);
+            border: 1px solid rgba(239,68,68,0.4);
+            border-radius: 10px;
+            color: #f87171;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s, transform 0.15s;
+        }
+        .btn-cancel-termination:hover {
+            background: rgba(239,68,68,0.22);
+            transform: translateY(-1px);
+        }
+        .btn-cancel-termination svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            stroke-width: 2;
+            fill: none;
+        }
         .bottom-nav {
             position: fixed;
             bottom: 0;
@@ -381,7 +430,24 @@ $minDate = date('Y-m-d', strtotime('+7 days'));
         <!-- Already requested termination -->
         <div class="termination-status">
             <h3><span class="status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> รออนุมัติการยกเลิกสัญญา</h3>
-            <p>วันที่ต้องการย้ายออก: <?php echo $termination['term_date'] ?? '-'; ?></p>
+            <p>วันที่ต้องการย้ายออก: <?php echo htmlspecialchars($termination['term_date'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></p>
+            <!-- two-step confirm เพื่อหลีก window.confirm() ที่ถูก block บน mobile -->
+            <div id="cancelTermStep1" style="margin-top:1.25rem;">
+                <button type="button" class="btn-cancel-termination" onclick="document.getElementById('cancelTermStep1').style.display='none';document.getElementById('cancelTermStep2').style.display='block';">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                    ยกเลิกคำร้องยกเลิกสัญญา
+                </button>
+            </div>
+            <div id="cancelTermStep2" style="display:none;margin-top:1rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.35);border-radius:12px;padding:1rem;text-align:left;">
+                <p style="color:#fca5a5;font-size:0.88rem;margin-bottom:0.85rem;">⚠ ยืนยันยกเลิกคำร้อง? สัญญาจะกลับสู่สถานะ “ปกติ”</p>
+                <form method="POST">
+                    <input type="hidden" name="action" value="cancel_termination">
+                    <div style="display:flex;gap:0.6rem;">
+                        <button type="submit" class="btn-cancel-termination" style="flex:1;justify-content:center;margin-top:0;padding:0.75rem;font-size:0.88rem;">✓ ยืนยัน</button>
+                        <button type="button" style="flex:1;padding:0.75rem;background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#94a3b8;font-family:inherit;font-size:0.88rem;cursor:pointer;" onclick="document.getElementById('cancelTermStep2').style.display='none';document.getElementById('cancelTermStep1').style.display='block';">ย้อนกลับ</button>
+                    </div>
+                </form>
+            </div>
         </div>
         <?php else: ?>
         <!-- Termination Form -->
@@ -434,6 +500,9 @@ $minDate = date('Y-m-d', strtotime('+7 days'));
     <script>
     function confirmTermination() {
         return confirm('⚠️ คุณแน่ใจหรือไม่ที่จะยกเลิกสัญญา?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้');
+    }
+    function confirmCancelTermination() {
+        return confirm('ยืนยันยกเลิกคำร้องยกเลิกสัญญา?\n\nสัญญาของคุณจะกลับสู่สถานะ “ปกติ”');
     }
     </script>
 </body>

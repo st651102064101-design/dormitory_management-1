@@ -33,24 +33,30 @@ try {
 
     $pdo->beginTransaction();
 
-    // สร้างบิลรายเดือนแรก
-    $stmt = $pdo->prepare("
-        INSERT INTO expense
-        (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id)
-        VALUES (?, 0, 0, ?, ?, ?, 0, 0, ?, '0', ?)
-    ");
+        // สร้างบิลรายเดือนแรกแบบ idempotent (ไม่ให้ซ้ำเดือนเดียวกัน)
+        $checkStmt = $pdo->prepare("SELECT exp_id FROM expense WHERE ctr_id = ? AND DATE_FORMAT(exp_month, '%Y-%m') = DATE_FORMAT(?, '%Y-%m') LIMIT 1");
+        $checkStmt->execute([$ctr_id, $nextMonth]);
+        $existingExpenseId = $checkStmt->fetchColumn();
 
-    $stmt->execute([
-        $nextMonth,
-        $rate_elec,
-        $rate_water,
-        $room_price,
-        $room_price, // exp_total = room_price initially (ยังไม่มีค่าน้ำ-ไฟ)
-        $ctr_id
-    ]);
+        if (!$existingExpenseId) {
+            $stmt = $pdo->prepare("
+                INSERT INTO expense
+                (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id)
+                VALUES (?, 0, 0, ?, ?, ?, 0, 0, ?, '0', ?)
+            ");
+
+            $stmt->execute([
+                $nextMonth,
+                $rate_elec,
+                $rate_water,
+                $room_price,
+                $room_price, // exp_total = room_price initially (ยังไม่มีค่าน้ำ-ไฟ)
+                $ctr_id
+            ]);
+        }
 
     // อัปเดต Workflow Step 5 (ขั้นตอนสุดท้าย)
-    updateWorkflowStep($pdo, $tnt_id, 5, $_SESSION['admin_username']);
+        updateWorkflowStep($pdo, $tnt_id, 5, $_SESSION['admin_username'], $ctr_id);
 
     $pdo->commit();
 

@@ -51,8 +51,9 @@ try {
     $wizardCountResult = $wizardCountStmt->fetch(PDO::FETCH_ASSOC);
     $wizardIncompleteCount = (int)($wizardCountResult['incomplete_count'] ?? 0);
 
-    // ดึงจำนวนรายการชำระเงินที่รอตรวจสอบ
-    $paymentPendingStmt = $pdo->query("SELECT COUNT(*) AS pending_count FROM payment WHERE pay_status = '0'");
+    // ดึงจำนวนรายการชำระเงินที่ "รอตรวจสอบ"
+    // รวมทั้งรายการจาก payment และ booking_payment (มัดจำจากขั้นตอนจอง)
+    $paymentPendingStmt = $pdo->query("\n        SELECT\n            (SELECT COUNT(*) FROM payment WHERE COALESCE(pay_status, '0') = '0')\n          + (SELECT COUNT(*) FROM booking_payment WHERE COALESCE(bp_status, '0') = '0')\n          AS pending_count\n    ");
     $paymentPendingResult = $paymentPendingStmt->fetch(PDO::FETCH_ASSOC);
     $pendingPaymentReviewCount = (int)($paymentPendingResult['pending_count'] ?? 0);
 } catch (Exception $e) {

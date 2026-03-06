@@ -104,7 +104,29 @@ try {
 // ดึงบิลค้างชำระสำหรับชำระค่าเช่าเดือนแรก
 $firstUnpaidExpense = null;
 try {
-    $unpaidStmt = $pdo->prepare("SELECT * FROM expense WHERE ctr_id = ? AND exp_status = '0' ORDER BY exp_month ASC LIMIT 1");
+    $unpaidStmt = $pdo->prepare("\n+        SELECT
+            e.*,
+            COALESCE(ps.submitted_amount, 0) AS submitted_amount,
+            (e.exp_total - COALESCE(ps.submitted_amount, 0)) AS remaining_amount
+        FROM expense e
+        JOIN (
+            SELECT MAX(exp_id) AS exp_id
+            FROM expense
+            WHERE ctr_id = ?
+              AND exp_status IN ('0', '3')
+              AND DATE_FORMAT(exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+            GROUP BY DATE_FORMAT(exp_month, '%Y-%m')
+        ) latest ON latest.exp_id = e.exp_id
+        LEFT JOIN (
+            SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
+            FROM payment
+            WHERE pay_status IN ('0', '1')
+            GROUP BY exp_id
+        ) ps ON ps.exp_id = e.exp_id
+        WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
+        ORDER BY e.exp_month ASC
+        LIMIT 1
+    ");
     $unpaidStmt->execute([$contract['ctr_id']]);
     $firstUnpaidExpense = $unpaidStmt->fetch(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
@@ -570,7 +592,7 @@ $contractStatusMap = [
             <div class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
             <div class="alert-content">
                 <h3>มีบิลค้างชำระ</h3>
-                <p>ยอดรวม <?php echo number_format($firstUnpaidExpense['exp_total']); ?> บาท</p>
+                <p>ยอดคงเหลือ <?php echo number_format((int)($firstUnpaidExpense['remaining_amount'] ?? $firstUnpaidExpense['exp_total'] ?? 0)); ?> บาท</p>
                 <a class="alert-btn" href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo (int)$firstUnpaidExpense['exp_id']; ?>">
                     ชำระค่าเช่าเดือนแรก
                 </a>

@@ -8,8 +8,9 @@ if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
     exit;
 }
-require_once __DIR__ . '/../ConnectDB.php';
+
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
 // ดึงรายการสัญญาที่ยังใช้งานอยู่
@@ -17,17 +18,16 @@ $contracts = [];
 try {
     // ตรวจสอบว่ามีคอลัมน์ access_token หรือยัง
     $checkColumn = $pdo->query("SHOW COLUMNS FROM contract LIKE 'access_token'");
-    $hasColumn = $checkColumn->fetch();
+    $hasColumn = $checkColumn ? $checkColumn->fetch(PDO::FETCH_ASSOC) : false;
     
     if (!$hasColumn) {
         $pdo->exec("ALTER TABLE `contract` ADD COLUMN `access_token` VARCHAR(64) DEFAULT NULL COMMENT 'Token สำหรับเข้าถึง Tenant Portal' AFTER `room_id`");
         $pdo->exec("ALTER TABLE `contract` ADD UNIQUE KEY `access_token_unique` (`access_token`)");
     }
-    
-    // สร้าง token สำหรับสัญญาที่ยังไม่มี
+
     $pdo->exec("UPDATE `contract` SET `access_token` = MD5(CONCAT(ctr_id, '-', tnt_id, '-', room_id, '-', NOW(), '-', RAND())) WHERE `access_token` IS NULL AND `ctr_status` IN ('0', '2')");
     
-    $stmt = $pdo->query("
+    $stmt = $pdo->query(" 
         SELECT c.*, 
                t.tnt_name, t.tnt_phone,
                r.room_number,
@@ -37,9 +37,39 @@ try {
         JOIN room r ON c.room_id = r.room_id
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id
         WHERE c.ctr_status IN ('0', '2')
+          AND NOT EXISTS (
+              SELECT 1
+              FROM contract newer
+              WHERE newer.room_id = c.room_id
+                AND newer.ctr_status IN ('0', '2')
+                AND (
+                    COALESCE(newer.ctr_end, '0000-00-00') > COALESCE(c.ctr_end, '0000-00-00')
+                    OR (
+                        COALESCE(newer.ctr_end, '0000-00-00') = COALESCE(c.ctr_end, '0000-00-00')
+                        AND COALESCE(newer.ctr_start, '0000-00-00') > COALESCE(c.ctr_start, '0000-00-00')
+                    )
+                    OR (
+                        COALESCE(newer.ctr_end, '0000-00-00') = COALESCE(c.ctr_end, '0000-00-00')
+                        AND COALESCE(newer.ctr_start, '0000-00-00') = COALESCE(c.ctr_start, '0000-00-00')
+                        AND newer.ctr_id > c.ctr_id
+                    )
+                )
+          )
         ORDER BY CAST(r.room_number AS UNSIGNED) ASC
     ");
     $contracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $uniqueContracts = [];
+    $seenRooms = [];
+    foreach ($contracts as $contract) {
+        $roomKey = (string)($contract['room_id'] ?? $contract['room_number'] ?? '');
+        if ($roomKey === '' || isset($seenRooms[$roomKey])) {
+            continue;
+        }
+        $seenRooms[$roomKey] = true;
+        $uniqueContracts[] = $contract;
+    }
+    $contracts = $uniqueContracts;
 } catch (PDOException $e) {
     $error = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
 }
@@ -174,7 +204,10 @@ $defaultQrView = 'list';
         }
 
         body.qr-page .page-header-bar {
-            margin: 1rem 1rem 0 1.5rem !important;
+            width: min(1600px, calc(100% - 3rem));
+            max-width: min(1600px, calc(100% - 3rem));
+            margin: 1.5rem auto 0 !important;
+            box-sizing: border-box;
         }
 
         html.light-theme body.qr-page .quick-action-link,
@@ -212,8 +245,9 @@ $defaultQrView = 'list';
         }
 
         .qr-wrapper {
-            max-width: 100%;
-            margin: 1.5rem;
+            width: min(1600px, calc(100% - 3rem));
+            max-width: min(1600px, calc(100% - 3rem));
+            margin: 1.5rem auto;
             padding: 1.5rem;
             background: var(--card-bg);
             border-radius: 8px;
@@ -466,24 +500,20 @@ $defaultQrView = 'list';
         }
 
         #viewListBtn,
-        #viewGridBtn,
-        #viewTableBtn {
+        #viewGridBtn {
             color: #1f2937 !important;
         }
 
         #viewListBtn svg,
         #viewGridBtn svg,
-        #viewTableBtn svg,
         #viewListBtn svg *,
-        #viewGridBtn svg *,
-        #viewTableBtn svg * {
+        #viewGridBtn svg * {
             stroke: currentColor !important;
             fill: none !important;
         }
 
         #viewListBtn.active,
-        #viewGridBtn.active,
-        #viewTableBtn.active {
+        #viewGridBtn.active {
             color: #ffffff !important;
             background: linear-gradient(135deg, var(--apple-blue), #5856d6) !important;
             border-color: transparent !important;
@@ -491,10 +521,8 @@ $defaultQrView = 'list';
 
         #viewListBtn.active svg,
         #viewGridBtn.active svg,
-        #viewTableBtn.active svg,
         #viewListBtn.active svg *,
-        #viewGridBtn.active svg *,
-        #viewTableBtn.active svg * {
+        #viewGridBtn.active svg * {
             stroke: #ffffff !important;
         }
 
@@ -640,7 +668,7 @@ $defaultQrView = 'list';
             align-items: center;
             gap: 6px;
             background: linear-gradient(135deg, var(--apple-blue), var(--apple-purple));
-            color: #ffffff !important;
+            color: #000000 !important;
             border-radius: 999px;
             padding: 6px 10px;
             font-weight: 600;
@@ -650,13 +678,13 @@ $defaultQrView = 'list';
 
         .qr-table-room,
         .qr-table-room * {
-            color: #ffffff !important;
+            color: #000000 !important;
         }
 
         .qr-table-room svg {
             width: 14px;
             height: 14px;
-            stroke: #ffffff !important;
+            stroke: #000000 !important;
             fill: none;
         }
 
@@ -1541,15 +1569,6 @@ $defaultQrView = 'list';
                                 </svg>
                                 Grid
                             </button>
-                            <button class="btn-apple secondary view-toggle-btn" id="viewTableBtn" type="button" onclick="setQrView('table')" aria-pressed="false">
-                                <svg viewBox="0 0 24 24">
-                                    <rect x="3" y="4" width="18" height="16" rx="2" ry="2"/>
-                                    <line x1="3" y1="10" x2="21" y2="10"/>
-                                    <line x1="9" y1="4" x2="9" y2="20"/>
-                                    <line x1="15" y1="4" x2="15" y2="20"/>
-                                </svg>
-                                Table
-                            </button>
                         </div>
                         <button class="btn-apple primary" onclick="printAll()">
                             <svg viewBox="0 0 24 24">
@@ -1711,10 +1730,9 @@ $defaultQrView = 'list';
             var tableView = document.getElementById('qrTableView');
             var listBtn = document.getElementById('viewListBtn');
             var gridBtn = document.getElementById('viewGridBtn');
-            var tableBtn = document.getElementById('viewTableBtn');
 
-            var safeView = (view === 'table' || view === 'grid' || view === 'list') ? view : 'list';
-            var isTableView = (safeView === 'table');
+            var safeView = (view === 'grid' || view === 'list') ? view : 'list';
+            var isTableView = false;
             var isListView = (safeView === 'list');
             var isGridView = (safeView === 'grid');
 
@@ -1726,11 +1744,9 @@ $defaultQrView = 'list';
 
             if (listBtn) listBtn.classList.toggle('active', isListView);
             if (gridBtn) gridBtn.classList.toggle('active', isGridView);
-            if (tableBtn) tableBtn.classList.toggle('active', isTableView);
 
             if (listBtn) listBtn.setAttribute('aria-pressed', isListView ? 'true' : 'false');
             if (gridBtn) gridBtn.setAttribute('aria-pressed', isGridView ? 'true' : 'false');
-            if (tableBtn) tableBtn.setAttribute('aria-pressed', isTableView ? 'true' : 'false');
 
             try {
                 localStorage.setItem('qrViewMode', safeView);
@@ -1769,6 +1785,9 @@ $defaultQrView = 'list';
                     saved = localStorage.getItem('qrViewMode') || '<?php echo $defaultQrView; ?>';
                 } catch (e) {
                     saved = '<?php echo $defaultQrView; ?>';
+                }
+                if (saved !== 'list' && saved !== 'grid') {
+                    saved = 'list';
                 }
                 setQrView(saved);
             });
