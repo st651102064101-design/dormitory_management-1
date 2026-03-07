@@ -148,6 +148,21 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <style>
+        :root {
+            --report-accent: #f97316;
+            --report-accent-dark: #ea580c;
+        }
+
+        body[data-report-tab="water"] {
+            --report-accent: #0ea5e9;
+            --report-accent-dark: #0284c7;
+        }
+
+        body[data-report-tab="electric"] {
+            --report-accent: #f97316;
+            --report-accent-dark: #ea580c;
+        }
+
         /* === Clean Light Theme === */
         html, body, .app-shell, .app-main, .reports-page {
             background: #f0f0f0 !important;
@@ -210,12 +225,12 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
             text-decoration: none;
             color: #fff;
             border: none;
-            background: #f97316;
+            background: var(--report-accent);
             cursor: pointer;
             font-weight: 600;
             transition: background 0.2s;
         }
-        .filter-bar .filter-btn:hover { background: #ea580c; }
+        .filter-bar .filter-btn:hover { background: var(--report-accent-dark); }
         .filter-bar .clear-btn {
             padding: 0.4rem 0.85rem;
             border-radius: 8px;
@@ -299,7 +314,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         /* Table */
         .report-table { width: 100%; border-collapse: collapse; }
         .report-table thead th {
-            background: #f97316;
+            background: var(--report-accent);
             color: #fff;
             font-weight: 600;
             font-size: 0.82rem;
@@ -372,7 +387,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         }
     </style>
 </head>
-<body class="reports-page">
+<body class="reports-page" data-report-tab="<?php echo htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8'); ?>">
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         <main class="app-main">
@@ -519,6 +534,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         document.getElementById('electricPanel').style.display = tab==='electric' ? '' : 'none';
         document.querySelector('.water-tab').classList.toggle('active', tab==='water');
         document.querySelector('.elec-tab').classList.toggle('active', tab==='electric');
+        if (document.body) document.body.setAttribute('data-report-tab', tab);
 
         const tabInput = document.getElementById('tabInput');
         if (tabInput) tabInput.value = tab;

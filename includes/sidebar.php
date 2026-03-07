@@ -11,6 +11,32 @@ $adminGoogleLinked = false;
 $adminGoogleEmail = '';
 $wizardIncompleteCount = 0;
 $pendingPaymentReviewCount = 0;
+$expenseStatusBadgeCounts = [
+  'unpaid' => 0,
+  'pending' => 0,
+  'partial' => 0,
+  'paid' => 0,
+];
+$paymentStatusBadgeCounts = [
+  'unpaid' => 0,
+  'pending' => 0,
+  'paid' => 0,
+];
+$utilityStatusBadgeCounts = [
+  'water' => 0,
+  'electric' => 0,
+];
+$repairStatusBadgeCounts = [
+  'pending' => 0,
+  'inprogress' => 0,
+  'done' => 0,
+  'cancelled' => 0,
+];
+$bookingStatusBadgeCounts = [
+  'reserved' => 0,
+  'checkedin' => 0,
+  'cancelled' => 0,
+];
 try {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
@@ -57,9 +83,65 @@ try {
     $paymentPendingStmt = $pdo->query("\n        SELECT\n            (SELECT COUNT(*) FROM payment WHERE COALESCE(pay_status, '0') = '0')\n          + (SELECT COUNT(*) FROM booking_payment WHERE COALESCE(bp_status, '0') = '0')\n          AS pending_count\n    ");
     $paymentPendingResult = $paymentPendingStmt->fetch(PDO::FETCH_ASSOC);
     $pendingPaymentReviewCount = (int)($paymentPendingResult['pending_count'] ?? 0);
+
+    // ดึงจำนวนค่าใช้จ่ายแยกตามสถานะเพื่อแสดง alert badge ในเมนู
+    $expenseStatusStmt = $pdo->query("\n        SELECT\n          SUM(CASE\n                WHEN COALESCE(pay.pending_count, 0) > 0 THEN 1\n                ELSE 0\n              END) AS pending_count,\n          SUM(CASE\n                WHEN COALESCE(pay.pending_count, 0) = 0\n                 AND COALESCE(pay.approved_amount, 0) >= COALESCE(e.exp_total, 0)\n                THEN 1\n                ELSE 0\n              END) AS paid_count,\n          SUM(CASE\n                WHEN COALESCE(pay.pending_count, 0) = 0\n                 AND COALESCE(pay.approved_amount, 0) > 0\n                 AND COALESCE(pay.approved_amount, 0) < COALESCE(e.exp_total, 0)\n                THEN 1\n                ELSE 0\n              END) AS partial_count,\n          SUM(CASE\n                WHEN COALESCE(pay.pending_count, 0) = 0\n                 AND COALESCE(pay.approved_amount, 0) <= 0\n                THEN 1\n                ELSE 0\n              END) AS unpaid_count\n        FROM expense e\n        INNER JOIN contract c\n          ON e.ctr_id = c.ctr_id\n         AND c.ctr_status = '0'\n        LEFT JOIN tenant_workflow tw\n          ON tw.ctr_id = c.ctr_id\n        LEFT JOIN (\n          SELECT\n            exp_id,\n            SUM(CASE\n                  WHEN pay_status = '0'\n                   AND pay_proof IS NOT NULL\n                   AND pay_proof <> ''\n                   AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'\n                  THEN 1\n                  ELSE 0\n                END) AS pending_count,\n            SUM(CASE\n                  WHEN pay_status = '1'\n                   AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'\n                  THEN pay_amount\n                  ELSE 0\n                END) AS approved_amount\n          FROM payment\n          GROUP BY exp_id\n        ) pay ON pay.exp_id = e.exp_id\n        WHERE (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n          AND NOT (DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m'))\n    ");
+    $expenseStatusResult = $expenseStatusStmt ? $expenseStatusStmt->fetch(PDO::FETCH_ASSOC) : [];
+    $expenseStatusBadgeCounts = [
+      'unpaid' => (int)($expenseStatusResult['unpaid_count'] ?? 0),
+      'pending' => (int)($expenseStatusResult['pending_count'] ?? 0),
+      'partial' => (int)($expenseStatusResult['partial_count'] ?? 0),
+      'paid' => (int)($expenseStatusResult['paid_count'] ?? 0),
+    ];
+
+    // ดึงจำนวนรายการการชำระเงินแยกสถานะเพื่อแสดง alert badge ที่เมนูการชำระเงิน
+    $paymentStatusStmt = $pdo->query("\n        SELECT\n          (SELECT COUNT(*) FROM payment WHERE COALESCE(pay_status, '0') = '0')\n          + (SELECT COUNT(*) FROM booking_payment WHERE COALESCE(bp_status, '0') = '0')\n          AS pending_count,\n\n          (SELECT COUNT(*) FROM payment WHERE COALESCE(pay_status, '0') = '1')\n          + (SELECT COUNT(*) FROM booking_payment WHERE COALESCE(bp_status, '0') = '1' AND bp_id <> 770043117)\n          AS paid_count,\n\n          (SELECT COUNT(*)\n           FROM expense e\n           INNER JOIN contract c ON e.ctr_id = c.ctr_id\n           LEFT JOIN payment p ON p.exp_id = e.exp_id\n           WHERE c.ctr_status = '0'\n             AND p.exp_id IS NULL\n             AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')\n             AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m'))\n          AS unpaid_count\n    ");
+    $paymentStatusResult = $paymentStatusStmt ? $paymentStatusStmt->fetch(PDO::FETCH_ASSOC) : [];
+    $paymentStatusBadgeCounts = [
+      'unpaid' => (int)($paymentStatusResult['unpaid_count'] ?? 0),
+      'pending' => (int)($paymentStatusResult['pending_count'] ?? 0),
+      'paid' => (int)($paymentStatusResult['paid_count'] ?? 0),
+    ];
+
+    // ดึงจำนวนห้องที่ยังไม่ได้จดมิเตอร์เดือนปัจจุบัน แยกน้ำ/ไฟ
+    // ใช้เกณฑ์เดียวกับหน้า manage_utility (ห้องที่มีผู้เช่า/สัญญา active ล่าสุดต่อห้อง)
+    $utilityStatusStmt = $pdo->query("\n        SELECT\n          SUM(CASE WHEN u.utl_id IS NULL OR u.utl_water_end IS NULL THEN 1 ELSE 0 END) AS water_count,\n          SUM(CASE WHEN u.utl_id IS NULL OR u.utl_elec_end IS NULL THEN 1 ELSE 0 END) AS electric_count\n        FROM (\n          SELECT c.ctr_id\n          FROM contract c\n          INNER JOIN (\n            SELECT room_id, MAX(ctr_id) AS ctr_id\n            FROM contract\n            WHERE ctr_status = '0'\n            GROUP BY room_id\n          ) lc ON lc.ctr_id = c.ctr_id\n        ) active_ctr\n        LEFT JOIN utility u\n          ON u.ctr_id = active_ctr.ctr_id\n         AND MONTH(u.utl_date) = MONTH(CURDATE())\n         AND YEAR(u.utl_date) = YEAR(CURDATE())\n    ");
+    $utilityStatusResult = $utilityStatusStmt ? $utilityStatusStmt->fetch(PDO::FETCH_ASSOC) : [];
+    $utilityStatusBadgeCounts = [
+      'water' => (int)($utilityStatusResult['water_count'] ?? 0),
+      'electric' => (int)($utilityStatusResult['electric_count'] ?? 0),
+    ];
+
+    // ดึงจำนวนสถานะงานซ่อมเพื่อแสดงที่เมนูแจ้งซ่อม
+    $repairStatusStmt = $pdo->query("\n        SELECT\n          SUM(CASE WHEN COALESCE(repair_status, '0') = '0' THEN 1 ELSE 0 END) AS pending_count,\n          SUM(CASE WHEN COALESCE(repair_status, '0') = '1' THEN 1 ELSE 0 END) AS inprogress_count,\n          SUM(CASE WHEN COALESCE(repair_status, '0') = '2' THEN 1 ELSE 0 END) AS done_count,\n          SUM(CASE WHEN COALESCE(repair_status, '0') = '3' THEN 1 ELSE 0 END) AS cancelled_count\n        FROM repair\n    ");
+    $repairStatusResult = $repairStatusStmt ? $repairStatusStmt->fetch(PDO::FETCH_ASSOC) : [];
+    $repairStatusBadgeCounts = [
+      'pending' => (int)($repairStatusResult['pending_count'] ?? 0),
+      'inprogress' => (int)($repairStatusResult['inprogress_count'] ?? 0),
+      'done' => (int)($repairStatusResult['done_count'] ?? 0),
+      'cancelled' => (int)($repairStatusResult['cancelled_count'] ?? 0),
+    ];
+
+    // ดึงจำนวนสถานะการจองเพื่อแสดงที่เมนูการจองห้อง
+    $bookingStatusStmt = $pdo->query("\n        SELECT\n          SUM(CASE WHEN COALESCE(bkg_status, '0') = '1' THEN 1 ELSE 0 END) AS reserved_count,\n          SUM(CASE WHEN COALESCE(bkg_status, '0') = '2' THEN 1 ELSE 0 END) AS checkedin_count,\n          SUM(CASE WHEN COALESCE(bkg_status, '0') = '0' THEN 1 ELSE 0 END) AS cancelled_count\n        FROM booking\n    ");
+    $bookingStatusResult = $bookingStatusStmt ? $bookingStatusStmt->fetch(PDO::FETCH_ASSOC) : [];
+    $bookingStatusBadgeCounts = [
+      'reserved' => (int)($bookingStatusResult['reserved_count'] ?? 0),
+      'checkedin' => (int)($bookingStatusResult['checkedin_count'] ?? 0),
+      'cancelled' => (int)($bookingStatusResult['cancelled_count'] ?? 0),
+    ];
+
+    // คงไว้เพื่อ compatibility กับโค้ดเดิม
+    $pendingPaymentReviewCount = $paymentStatusBadgeCounts['pending'];
 } catch (Exception $e) {
     // ใช้ค่า default ถ้า database error
 }
+
+  $expenseStatusBadgeTotal = array_sum($expenseStatusBadgeCounts);
+  $paymentStatusBadgeTotal = array_sum($paymentStatusBadgeCounts);
+  $utilityStatusBadgeTotal = array_sum($utilityStatusBadgeCounts);
+  $repairStatusBadgeTotal = array_sum($repairStatusBadgeCounts);
+  $bookingStatusBadgeTotal = array_sum($bookingStatusBadgeCounts);
 ?>
 <style>
   :root {
@@ -772,6 +854,180 @@ try {
     background: rgba(15, 23, 42, 0.9) !important;
   }
 
+  .expense-nav-item {
+    position: relative;
+    padding-right: 0.65rem !important;
+  }
+
+  .expense-status-badges {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: nowrap;
+  }
+
+  .expense-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 0.67rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .expense-status-badge.unpaid { background: #ef4444; }
+  .expense-status-badge.pending { background: #f97316; }
+  .expense-status-badge.partial { background: #f59e0b; }
+  .expense-status-badge.paid { background: #22c55e; }
+
+  .payment-nav-item {
+    position: relative;
+    padding-right: 0.65rem !important;
+  }
+
+  .payment-status-badges {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: nowrap;
+  }
+
+  .payment-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 0.67rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .payment-status-badge.unpaid { background: #ef4444; }
+  .payment-status-badge.pending { background: #f59e0b; }
+  .payment-status-badge.paid { background: #22c55e; }
+
+  .utility-nav-item {
+    position: relative;
+    padding-right: 0.65rem !important;
+  }
+
+  .utility-status-badges {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: nowrap;
+  }
+
+  .utility-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 0.67rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .utility-status-badge.water { background: #0ea5e9; }
+  .utility-status-badge.electric { background: #f59e0b; }
+
+  .booking-nav-item {
+    position: relative;
+    padding-right: 0.65rem !important;
+  }
+
+  .booking-status-badges {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: nowrap;
+  }
+
+  .booking-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 0.67rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .booking-status-badge.reserved { background: #f59e0b; }
+  .booking-status-badge.checkedin { background: #22c55e; }
+  .booking-status-badge.cancelled { background: #ef4444; }
+
+  .repair-nav-item {
+    position: relative;
+    padding-right: 0.65rem !important;
+  }
+
+  .repair-status-badges {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    flex-wrap: nowrap;
+  }
+
+  .repair-status-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 0.67rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .repair-status-badge.pending { background: #f97316; }
+  .repair-status-badge.inprogress { background: #60a5fa; }
+  .repair-status-badge.done { background: #22c55e; }
+  .repair-status-badge.cancelled { background: #ef4444; }
+
+  aside.sidebar-collapsed .expense-status-badges,
+  .app-sidebar.collapsed .expense-status-badges,
+  aside.sidebar-collapsed .payment-status-badges,
+  .app-sidebar.collapsed .payment-status-badges,
+  aside.sidebar-collapsed .booking-status-badges,
+  .app-sidebar.collapsed .booking-status-badges,
+  aside.sidebar-collapsed .utility-status-badges,
+  .app-sidebar.collapsed .utility-status-badges,
+  aside.sidebar-collapsed .repair-status-badges,
+  .app-sidebar.collapsed .repair-status-badges {
+    display: none !important;
+  }
+
   /* User section in footer - Light Mode */
   .sidebar-footer .user-row,
   .sidebar-footer .user-meta,
@@ -874,7 +1130,7 @@ try {
   
   /* Buttons */
   .quick-color,
-  button:not(.btn-save):not([type="submit"]) {
+  button:not(.btn-save):not([type="submit"]):not(.expenses-view-toggle):not(.meter-tab) {
     background: #f3f4f6 !important;
     border: 1px solid #d1d5db !important;
     color: #111827 !important;
@@ -2548,23 +2804,50 @@ try {
             <?php endif; ?>
         </a>
         <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label">ผู้เช่า</span></a>
-        <a class="" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span></a>
-        <a class="" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span></a>
+        <a class="booking-nav-item" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span><?php if ($bookingStatusBadgeTotal > 0): ?><span class="booking-status-badges" aria-label="สถานะการจอง"><?php if ($bookingStatusBadgeCounts['reserved'] > 0): ?><span class="booking-status-badge reserved" title="จองแล้ว"><?php echo $bookingStatusBadgeCounts['reserved'] > 99 ? '99+' : $bookingStatusBadgeCounts['reserved']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['checkedin'] > 0): ?><span class="booking-status-badge checkedin" title="เข้าพักแล้ว"><?php echo $bookingStatusBadgeCounts['checkedin'] > 99 ? '99+' : $bookingStatusBadgeCounts['checkedin']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['cancelled'] > 0): ?><span class="booking-status-badge cancelled" title="ยกเลิก"><?php echo $bookingStatusBadgeCounts['cancelled'] > 99 ? '99+' : $bookingStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
+        <a class="utility-nav-item" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span><?php if ($utilityStatusBadgeTotal > 0): ?><span class="utility-status-badges" aria-label="สถานะจดมิเตอร์น้ำไฟ"><?php if ($utilityStatusBadgeCounts['water'] > 0): ?><span class="utility-status-badge water" title="น้ำยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['water'] > 99 ? '99+' : $utilityStatusBadgeCounts['water']; ?></span><?php endif; ?><?php if ($utilityStatusBadgeCounts['electric'] > 0): ?><span class="utility-status-badge electric" title="ไฟยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['electric'] > 99 ? '99+' : $utilityStatusBadgeCounts['electric']; ?></span><?php endif; ?></span><?php endif; ?></a>
         <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
         <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span><span class="app-nav-label">ห้องพัก</span></a>
         <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label">จัดการสัญญา</span></a>
         <a class="" href="qr_codes.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg></span><span class="app-nav-label">QR Code ผู้เช่า</span></a>
-        <a class="" href="manage_expenses.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="app-nav-label">ค่าใช้จ่าย</span></a>
-        <a class="" href="manage_payments.php" style="position: relative; padding-right: 2.5rem;">
-          <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
-          <span class="app-nav-label">การชำระเงิน</span>
-          <?php if ($pendingPaymentReviewCount > 0): ?>
-          <span style="position: absolute; top: 50%; right: 8px; transform: translateY(-50%); background: #ef4444; color: white; border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; font-weight: bold; pointer-events: none; z-index: 2;">
-            <?php echo $pendingPaymentReviewCount; ?>
+        <a class="expense-nav-item" href="manage_expenses.php">
+          <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+          <span class="app-nav-label">ค่าใช้จ่าย</span>
+          <?php if ($expenseStatusBadgeTotal > 0): ?>
+          <span class="expense-status-badges" aria-label="สถานะค่าใช้จ่าย">
+            <?php if ($expenseStatusBadgeCounts['unpaid'] > 0): ?>
+              <span class="expense-status-badge unpaid" title="ยังไม่ชำระ"><?php echo $expenseStatusBadgeCounts['unpaid'] > 99 ? '99+' : $expenseStatusBadgeCounts['unpaid']; ?></span>
+            <?php endif; ?>
+            <?php if ($expenseStatusBadgeCounts['pending'] > 0): ?>
+              <span class="expense-status-badge pending" title="รอตรวจสอบ"><?php echo $expenseStatusBadgeCounts['pending'] > 99 ? '99+' : $expenseStatusBadgeCounts['pending']; ?></span>
+            <?php endif; ?>
+            <?php if ($expenseStatusBadgeCounts['partial'] > 0): ?>
+              <span class="expense-status-badge partial" title="ชำระยังไม่ครบ"><?php echo $expenseStatusBadgeCounts['partial'] > 99 ? '99+' : $expenseStatusBadgeCounts['partial']; ?></span>
+            <?php endif; ?>
+            <?php if ($expenseStatusBadgeCounts['paid'] > 0): ?>
+              <span class="expense-status-badge paid" title="ชำระแล้ว"><?php echo $expenseStatusBadgeCounts['paid'] > 99 ? '99+' : $expenseStatusBadgeCounts['paid']; ?></span>
+            <?php endif; ?>
           </span>
           <?php endif; ?>
         </a>
-        <a class="" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">แจ้งซ่อม</span></a>
+        <a class="payment-nav-item" href="manage_payments.php">
+          <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
+          <span class="app-nav-label">การชำระเงิน</span>
+          <?php if ($paymentStatusBadgeTotal > 0): ?>
+          <span class="payment-status-badges" aria-label="สถานะการชำระเงิน">
+            <?php if ($paymentStatusBadgeCounts['unpaid'] > 0): ?>
+              <span class="payment-status-badge unpaid" title="ยังไม่ชำระ"><?php echo $paymentStatusBadgeCounts['unpaid'] > 99 ? '99+' : $paymentStatusBadgeCounts['unpaid']; ?></span>
+            <?php endif; ?>
+            <?php if ($paymentStatusBadgeCounts['pending'] > 0): ?>
+              <span class="payment-status-badge pending" title="รอตรวจสอบ"><?php echo $paymentStatusBadgeCounts['pending'] > 99 ? '99+' : $paymentStatusBadgeCounts['pending']; ?></span>
+            <?php endif; ?>
+            <?php if ($paymentStatusBadgeCounts['paid'] > 0): ?>
+              <span class="payment-status-badge paid" title="ตรวจสอบแล้ว"><?php echo $paymentStatusBadgeCounts['paid'] > 99 ? '99+' : $paymentStatusBadgeCounts['paid']; ?></span>
+            <?php endif; ?>
+          </span>
+          <?php endif; ?>
+        </a>
+        <a class="repair-nav-item" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">แจ้งซ่อม</span><?php if ($repairStatusBadgeTotal > 0): ?><span class="repair-status-badges" aria-label="สถานะแจ้งซ่อม"><?php if ($repairStatusBadgeCounts['pending'] > 0): ?><span class="repair-status-badge pending" title="รอซ่อม"><?php echo $repairStatusBadgeCounts['pending'] > 99 ? '99+' : $repairStatusBadgeCounts['pending']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['inprogress'] > 0): ?><span class="repair-status-badge inprogress" title="กำลังซ่อม"><?php echo $repairStatusBadgeCounts['inprogress'] > 99 ? '99+' : $repairStatusBadgeCounts['inprogress']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['done'] > 0): ?><span class="repair-status-badge done" title="ซ่อมเสร็จแล้ว"><?php echo $repairStatusBadgeCounts['done'] > 99 ? '99+' : $repairStatusBadgeCounts['done']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['cancelled'] > 0): ?><span class="repair-status-badge cancelled" title="ยกเลิก"><?php echo $repairStatusBadgeCounts['cancelled'] > 99 ? '99+' : $repairStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
         <a class="" href="system_settings.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="app-nav-label">ตั้งค่าระบบ</span></a>
       </details>
     </div>

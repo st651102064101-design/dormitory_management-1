@@ -272,6 +272,24 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <style>
+        :root {
+            --meter-accent: #f97316;
+            --meter-accent-dark: #ea580c;
+            --meter-accent-shadow: rgba(249,115,22,0.25);
+        }
+
+        body[data-meter-tab="water"] {
+            --meter-accent: #0ea5e9;
+            --meter-accent-dark: #0284c7;
+            --meter-accent-shadow: rgba(14,165,233,0.25);
+        }
+
+        body[data-meter-tab="electric"] {
+            --meter-accent: #f97316;
+            --meter-accent-dark: #ea580c;
+            --meter-accent-shadow: rgba(249,115,22,0.25);
+        }
+
         /* === Clean Light Theme === */
         html, body, .app-shell, .app-main, .reports-page {
             background: #f0f0f0 !important;
@@ -336,9 +354,9 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             transition: all 0.2s;
         }
         .mode-link.active {
-            background: #f97316;
+            background: var(--meter-accent);
             color: #fff;
-            border-color: #f97316;
+            border-color: var(--meter-accent);
         }
         .stats-row {
             display: flex;
@@ -427,7 +445,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         /* Table */
         .meter-table { width: 100%; border-collapse: collapse; }
         .meter-table thead th {
-            background: #f97316;
+            background: var(--meter-accent);
             color: #fff;
             font-weight: 600;
             font-size: 0.82rem;
@@ -509,17 +527,17 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         .save-bar .pill.total { background: #e8f5e9; color: #2e7d32; font-weight: 700; }
         .save-btn {
             padding: 0.6rem 1.75rem;
-            background: #f97316;
+            background: var(--meter-accent);
             border: none;
             border-radius: 10px;
             color: #fff;
             font-size: 0.95rem;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 3px 10px rgba(249,115,22,0.25);
+            box-shadow: 0 3px 10px var(--meter-accent-shadow);
             transition: all 0.2s;
         }
-        .save-btn:hover { background: #ea580c; transform: translateY(-1px); }
+        .save-btn:hover { background: var(--meter-accent-dark); transform: translateY(-1px); }
 
         /* Toast */
         .toast-msg { position: fixed; top: 1rem; right: 1rem; padding: 0.7rem 1.2rem; border-radius: 10px; font-weight: 600; z-index: 9999; color: #fff; animation: toastIn 0.3s ease; }
@@ -542,7 +560,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         }
     </style>
 </head>
-<body class="reports-page">
+<body class="reports-page" data-meter-tab="<?php echo htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8'); ?>">
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         <main class="app-main">
@@ -702,6 +720,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         var elecBtn = document.querySelector('.elec-tab');
         if (waterBtn) waterBtn.classList.toggle('active', safeTab === 'water');
         if (elecBtn) elecBtn.classList.toggle('active', safeTab === 'electric');
+        if (document.body) document.body.setAttribute('data-meter-tab', safeTab);
 
         document.querySelectorAll('.tab-hidden-input').forEach(function(input) {
             input.value = safeTab;
