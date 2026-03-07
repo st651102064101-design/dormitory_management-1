@@ -142,6 +142,7 @@ try {
   $utilityStatusBadgeTotal = array_sum($utilityStatusBadgeCounts);
   $repairStatusBadgeTotal = array_sum($repairStatusBadgeCounts);
   $bookingStatusBadgeTotal = array_sum($bookingStatusBadgeCounts);
+  $todoBadgeTotal = $wizardIncompleteCount + $bookingStatusBadgeCounts['reserved'] + $utilityStatusBadgeCounts['water'] + $utilityStatusBadgeCounts['electric'] + $expenseStatusBadgeCounts['unpaid'] + $expenseStatusBadgeCounts['pending'] + $expenseStatusBadgeCounts['partial'] + $paymentStatusBadgeCounts['unpaid'] + $paymentStatusBadgeCounts['pending'] + $repairStatusBadgeCounts['pending'] + $repairStatusBadgeCounts['inprogress'];
 ?>
 <style>
   :root {
@@ -551,6 +552,21 @@ try {
     text-decoration: none;
     color: inherit;
     cursor: pointer;
+  }
+
+  /* Reserve space for todo badge + chevron so they never overlap label */
+  #nav-todo > summary .summary-link {
+    padding-right: 5rem;
+  }
+
+  /* Place todo total badge just left of chevron */
+  #nav-todo > summary .todo-total-badge {
+    position: absolute;
+    right: 2.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    line-height: 1;
+    z-index: 1;
   }
   
   #nav-dashboard > summary .summary-link:hover,
@@ -2984,17 +3000,17 @@ try {
     </div>
   </nav>
 
-  <nav class="app-nav" aria-label="Reports navigation">
+  <nav class="app-nav" aria-label="Todo navigation">
     <div class="group">
-      <details id="nav-management" open>
+      <details id="nav-todo" open>
         <summary>
-          <a href="manage.php" class="summary-link">
-            <span class="app-nav-icon app-nav-icon--management" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-            <span class="summary-label">จัดการ</span>
+          <a href="todo_tasks.php" class="summary-link">
+            <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+            <span class="summary-label">งานที่ต้องทำ</span>
           </a>
-          <span class="chev chev-toggle" data-target="nav-management" style="cursor:pointer;font-size: 1.5rem;">›</span>
+          <?php if ($todoBadgeTotal > 0): ?><span class="todo-total-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="งานรอดำเนินการ <?php echo $todoBadgeTotal; ?> รายการ" style="background:#f59e0b;color:white;border-radius:999px;min-width:20px;height:20px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;pointer-events:auto;"><?php echo $todoBadgeTotal > 99 ? '99+' : $todoBadgeTotal; ?></span><?php endif; ?>
+          <span class="chev chev-toggle" data-target="nav-todo" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
-        <!-- manage_stay.php removed; link intentionally omitted -->
         <a class="wizard-nav-item" href="tenant_wizard.php" style="position: relative; padding-right: 2.5rem; border-left: 4px solid #3b82f6; margin: 0; border-radius: 8px; overflow: visible;">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg></span>
             <span class="app-nav-label" style="font-weight: 600; color: #60a5fa;">ตัวช่วยผู้เช่า</span>
@@ -3004,14 +3020,9 @@ try {
             </span>
             <?php endif; ?>
         </a>
-        <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label">ผู้เช่า</span></a>
         <a class="booking-nav-item" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span><?php if ($bookingStatusBadgeTotal > 0): ?><span class="booking-status-badges" aria-label="สถานะการจอง"><?php if ($bookingStatusBadgeCounts['reserved'] > 0): ?><span class="booking-status-badge reserved" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="จองแล้ว"><?php echo $bookingStatusBadgeCounts['reserved'] > 99 ? '99+' : $bookingStatusBadgeCounts['reserved']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['checkedin'] > 0): ?><span class="booking-status-badge checkedin" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="เข้าพักแล้ว"><?php echo $bookingStatusBadgeCounts['checkedin'] > 99 ? '99+' : $bookingStatusBadgeCounts['checkedin']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['cancelled'] > 0): ?><span class="booking-status-badge cancelled" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยกเลิก"><?php echo $bookingStatusBadgeCounts['cancelled'] > 99 ? '99+' : $bookingStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
         <a class="utility-nav-item" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span><?php if ($utilityStatusBadgeTotal > 0): ?><span class="utility-status-badges" aria-label="สถานะจดมิเตอร์น้ำไฟ"><?php if ($utilityStatusBadgeCounts['water'] > 0): ?><span class="utility-status-badge water" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="น้ำยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['water'] > 99 ? '99+' : $utilityStatusBadgeCounts['water']; ?></span><?php endif; ?><?php if ($utilityStatusBadgeCounts['electric'] > 0): ?><span class="utility-status-badge electric" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ไฟยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['electric'] > 99 ? '99+' : $utilityStatusBadgeCounts['electric']; ?></span><?php endif; ?></span><?php endif; ?></a>
-        <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
-        <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span><span class="app-nav-label">ห้องพัก</span></a>
-        <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label">จัดการสัญญา</span></a>
-        <a class="" href="qr_codes.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg></span><span class="app-nav-label">QR Code ผู้เช่า</span></a>
-        <a class="expense-nav-item" href="manage_expenses.php">
+                <a class="expense-nav-item" href="manage_expenses.php">
           <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
           <span class="app-nav-label">ค่าใช้จ่าย</span>
           <?php if ($expenseStatusBadgeTotal > 0): ?>
@@ -3049,10 +3060,44 @@ try {
           <?php endif; ?>
         </a>
         <a class="repair-nav-item" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">แจ้งซ่อม</span><?php if ($repairStatusBadgeTotal > 0): ?><span class="repair-status-badges" aria-label="สถานะแจ้งซ่อม"><?php if ($repairStatusBadgeCounts['pending'] > 0): ?><span class="repair-status-badge pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="รอซ่อม"><?php echo $repairStatusBadgeCounts['pending'] > 99 ? '99+' : $repairStatusBadgeCounts['pending']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['inprogress'] > 0): ?><span class="repair-status-badge inprogress" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="กำลังซ่อม"><?php echo $repairStatusBadgeCounts['inprogress'] > 99 ? '99+' : $repairStatusBadgeCounts['inprogress']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['done'] > 0): ?><span class="repair-status-badge done" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ซ่อมเสร็จแล้ว"><?php echo $repairStatusBadgeCounts['done'] > 99 ? '99+' : $repairStatusBadgeCounts['done']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['cancelled'] > 0): ?><span class="repair-status-badge cancelled" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยกเลิก"><?php echo $repairStatusBadgeCounts['cancelled'] > 99 ? '99+' : $repairStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
-        <a class="" href="system_settings.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="app-nav-label">ตั้งค่าระบบ</span></a>
       </details>
     </div>
   </nav>
+
+  <!-- ═══ Group 3: ข้อมูลผู้เช่า ═══ -->
+  <nav class="app-nav" aria-label="Tenants navigation">
+    <div class="group">
+      <details id="nav-tenants">
+        <summary>
+          <a href="manage_tenants.php" class="summary-link">
+            <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+            <span class="summary-label">ข้อมูลผู้เช่า</span>
+          </a>
+          <span class="chev chev-toggle" data-target="nav-tenants" style="cursor:pointer;font-size: 1.5rem;">›</span>
+        </summary>
+        <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label">จัดการสัญญา</span></a>
+        <a class="" href="qr_codes.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg></span><span class="app-nav-label">QR Code ผู้เช่า</span></a>
+      </details>
+    </div>
+  </nav>
+
+  <!-- ═══ Group 4: ตั้งค่า ═══ -->
+  <nav class="app-nav" aria-label="Settings navigation">
+    <div class="group">
+      <details id="nav-settings">
+        <summary>
+          <a href="system_settings.php" class="summary-link">
+            <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
+            <span class="summary-label">ตั้งค่า</span>
+          </a>
+          <span class="chev chev-toggle" data-target="nav-settings" style="cursor:pointer;font-size: 1.5rem;">›</span>
+        </summary>
+        <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span><span class="app-nav-label">ห้องพัก</span></a>
+        <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
+      </details>
+    </div>
+  </nav>
+
   </div><!-- end sidebar-nav-area -->
 
   <div class="sidebar-footer">
