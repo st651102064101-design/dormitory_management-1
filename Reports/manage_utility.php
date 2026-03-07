@@ -13,6 +13,9 @@ $pdo = connectDB();
 $month = isset($_GET['month']) ? (int)$_GET['month'] : (int)date('n');
 $year = isset($_GET['year']) ? (int)$_GET['year'] : (int)date('Y');
 $showMode = $_GET['show'] ?? 'occupied';
+$todoOnly = isset($_GET['todo_only']) && $_GET['todo_only'] === '1';
+$selectedCtrId = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
+$selectedCtrFilterActive = $selectedCtrId > 0;
 
 // เดือน/ปีที่มีอยู่จริงในฐานข้อมูล (utility)
 $availableYears = [];
@@ -154,7 +157,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         if ($lockedRooms > 0) {
             $_SESSION['success'] .= " (ข้าม {$lockedRooms} ห้องที่บันทึกเดือนนี้แล้ว)";
         }
-        header("Location: manage_utility.php?month=$month&year=$year&show=$showMode");
+        $redirectQuery = "month=$month&year=$year&show=$showMode";
+        if ($selectedCtrFilterActive) {
+            $redirectQuery .= "&todo_only=1&ctr_id=" . $selectedCtrId;
+        }
+        header("Location: manage_utility.php?$redirectQuery");
         exit;
     }
     if ($lockedRooms > 0) {
@@ -164,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 
 // ดึงห้อง
 if ($showMode === 'occupied') {
-    $rooms = $pdo->query("
+    $occupiedSql = "
         SELECT r.room_id, r.room_number, c.ctr_id, t.tnt_name
         FROM room r
         JOIN (
@@ -175,10 +182,20 @@ if ($showMode === 'occupied') {
         ) lc ON r.room_id = lc.room_id
         JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        ORDER BY CAST(r.room_number AS UNSIGNED) ASC
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ";
+
+    $occupiedParams = [];
+    if ($selectedCtrFilterActive) {
+        $occupiedSql .= "\n        WHERE c.ctr_id = ?";
+        $occupiedParams[] = $selectedCtrId;
+    }
+
+    $occupiedSql .= "\n        ORDER BY CAST(r.room_number AS UNSIGNED) ASC";
+    $occupiedStmt = $pdo->prepare($occupiedSql);
+    $occupiedStmt->execute($occupiedParams);
+    $rooms = $occupiedStmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
-    $rooms = $pdo->query("
+    $allSql = "
         SELECT r.room_id, r.room_number, c.ctr_id, COALESCE(t.tnt_name, '') as tnt_name
         FROM room r
         LEFT JOIN (
@@ -189,8 +206,18 @@ if ($showMode === 'occupied') {
         ) lc ON r.room_id = lc.room_id
         LEFT JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        ORDER BY CAST(r.room_number AS UNSIGNED) ASC
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ";
+
+    $allParams = [];
+    if ($selectedCtrFilterActive) {
+        $allSql .= "\n        WHERE c.ctr_id = ?";
+        $allParams[] = $selectedCtrId;
+    }
+
+    $allSql .= "\n        ORDER BY CAST(r.room_number AS UNSIGNED) ASC";
+    $allStmt = $pdo->prepare($allSql);
+    $allStmt->execute($allParams);
+    $rooms = $allStmt->fetchAll(PDO::FETCH_ASSOC);
 }
 
 // ดึงค่าเดิม
@@ -582,6 +609,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                         <form method="get" style="display:flex;gap:0.4rem;align-items:center;flex-wrap:wrap;justify-content:center;">
                             <input type="hidden" name="show" value="<?php echo htmlspecialchars($showMode); ?>">
                             <input type="hidden" name="tab" class="tab-hidden-input" value="<?php echo htmlspecialchars($activeTab); ?>">
+                            <?php if ($selectedCtrFilterActive): ?>
+                            <input type="hidden" name="todo_only" value="1">
+                            <input type="hidden" name="ctr_id" value="<?php echo (int)$selectedCtrId; ?>">
+                            <?php endif; ?>
                             <select name="month" onchange="this.form.submit()">
                                 <?php foreach (($availableMonthsByYear[$year] ?? []) as $m): ?>
                                 <option value="<?php echo $m; ?>" <?php echo $month === (int)$m ? 'selected' : ''; ?>><?php echo $thaiMonthsFull[(int)$m]; ?></option>
@@ -592,8 +623,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                 <option value="<?php echo $y; ?>" <?php echo $year === (int)$y ? 'selected' : ''; ?>><?php echo ((int)$y) + 543; ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=occupied" class="mode-link <?php echo $showMode === 'occupied' ? 'active' : ''; ?>">มีผู้เช่า</a>
-                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=all" class="mode-link <?php echo $showMode === 'all' ? 'active' : ''; ?>">ทั้งหมด</a>
+                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=occupied<?php echo $selectedCtrFilterActive ? '&todo_only=1&ctr_id=' . (int)$selectedCtrId : ''; ?>" class="mode-link <?php echo $showMode === 'occupied' ? 'active' : ''; ?>">มีผู้เช่า</a>
+                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=all<?php echo $selectedCtrFilterActive ? '&todo_only=1&ctr_id=' . (int)$selectedCtrId : ''; ?>" class="mode-link <?php echo $showMode === 'all' ? 'active' : ''; ?>">ทั้งหมด</a>
                         </form>
                     </div>
 
