@@ -47,6 +47,95 @@ $canUseSidebarSnapshot = is_array($sidebarSnapshot)
   && (time() - (int)$sidebarSnapshot['ts'] <= $sidebarCacheTtlSeconds)
   && (int)$sidebarSnapshot['admin_id'] === $currentAdminId;
 
+$sidebarAccountFlashSuccess = (string)($_SESSION['sidebar_account_flash_success'] ?? '');
+$sidebarAccountFlashError = (string)($_SESSION['sidebar_account_flash_error'] ?? '');
+$sidebarAccountModalUsername = (string)($_SESSION['sidebar_account_old_username'] ?? ($_SESSION['admin_username'] ?? ''));
+$sidebarAccountAutoOpen = ($sidebarAccountFlashError !== '');
+unset($_SESSION['sidebar_account_flash_success'], $_SESSION['sidebar_account_flash_error'], $_SESSION['sidebar_account_old_username']);
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_update'])) {
+  $redirectTo = (string)($_SERVER['REQUEST_URI'] ?? 'dashboard.php');
+  $redirectTo = str_replace(["\r", "\n"], '', $redirectTo);
+  if ($redirectTo === '') {
+    $redirectTo = 'dashboard.php';
+  }
+
+  $submittedUsername = trim((string)($_POST['new_admin_username'] ?? ''));
+  $currentPassword = (string)($_POST['current_admin_password'] ?? '');
+  $newPassword = (string)($_POST['new_admin_password'] ?? '');
+  $confirmPassword = (string)($_POST['confirm_admin_password'] ?? '');
+  $accountError = '';
+
+  if ($currentAdminId <= 0) {
+    $accountError = 'ไม่พบข้อมูลผู้ดูแลระบบในเซสชัน';
+  } elseif ($submittedUsername === '') {
+    $accountError = 'กรุณากรอกชื่อผู้ใช้';
+  } elseif ($currentPassword === '') {
+    $accountError = 'กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันตัวตน';
+  } elseif ($newPassword !== '' && strlen($newPassword) < 6) {
+    $accountError = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร';
+  } elseif ($newPassword !== $confirmPassword) {
+    $accountError = 'ยืนยันรหัสผ่านใหม่ไม่ตรงกัน';
+  }
+
+  if ($accountError === '') {
+    try {
+      require_once __DIR__ . '/../ConnectDB.php';
+      $pdoAccount = connectDB();
+
+      $currentAdminStmt = $pdoAccount->prepare('SELECT admin_id, admin_username, admin_password FROM admin WHERE admin_id = ? LIMIT 1');
+      $currentAdminStmt->execute([$currentAdminId]);
+      $currentAdminRow = $currentAdminStmt->fetch(PDO::FETCH_ASSOC);
+
+      if (!$currentAdminRow) {
+        $accountError = 'ไม่พบบัญชีผู้ดูแลระบบ';
+      } else {
+        $storedPassword = (string)($currentAdminRow['admin_password'] ?? '');
+        $passwordOk = false;
+        if ($storedPassword !== '' && password_verify($currentPassword, $storedPassword)) {
+          $passwordOk = true;
+        } elseif ($currentPassword === $storedPassword) {
+          $passwordOk = true;
+        }
+
+        if (!$passwordOk) {
+          $accountError = 'รหัสผ่านปัจจุบันไม่ถูกต้อง';
+        } else {
+          $dupStmt = $pdoAccount->prepare('SELECT admin_id FROM admin WHERE admin_username = ? AND admin_id <> ? LIMIT 1');
+          $dupStmt->execute([$submittedUsername, $currentAdminId]);
+          if ($dupStmt->fetch(PDO::FETCH_ASSOC)) {
+            $accountError = 'ชื่อผู้ใช้นี้ถูกใช้งานแล้ว';
+          } else {
+            if ($newPassword !== '') {
+              $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
+              $updateStmt = $pdoAccount->prepare('UPDATE admin SET admin_username = ?, admin_password = ? WHERE admin_id = ?');
+              $updateStmt->execute([$submittedUsername, $newPasswordHash, $currentAdminId]);
+            } else {
+              $updateStmt = $pdoAccount->prepare('UPDATE admin SET admin_username = ? WHERE admin_id = ?');
+              $updateStmt->execute([$submittedUsername, $currentAdminId]);
+            }
+
+            $_SESSION['admin_username'] = $submittedUsername;
+            $_SESSION['sidebar_account_flash_success'] = ($newPassword !== '')
+              ? 'อัปเดตชื่อผู้ใช้และรหัสผ่านเรียบร้อยแล้ว'
+              : 'อัปเดตชื่อผู้ใช้เรียบร้อยแล้ว';
+            unset($_SESSION['__sidebar_snapshot_v1']);
+            header('Location: ' . $redirectTo);
+            exit;
+          }
+        }
+      }
+    } catch (Throwable $e) {
+      $accountError = 'ไม่สามารถบันทึกข้อมูลได้ในขณะนี้';
+    }
+  }
+
+  $_SESSION['sidebar_account_flash_error'] = $accountError;
+  $_SESSION['sidebar_account_old_username'] = $submittedUsername;
+  header('Location: ' . $redirectTo);
+  exit;
+}
+
 if ($canUseSidebarSnapshot) {
     $cached = (array)$sidebarSnapshot['data'];
     $siteName = (string)($cached['siteName'] ?? $siteName);
@@ -2954,6 +3043,200 @@ if ($sidebarDataLoadedFromDb) {
   .tooltip .tooltip-inner * {
     color: #f8fafc !important;
   }
+
+  .user-row-clickable {
+    position: relative;
+    cursor: pointer;
+    border-radius: 10px;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  }
+
+  .user-row-clickable::after {
+    content: "✎";
+    position: absolute;
+    top: 6px;
+    right: 8px;
+    font-size: 0.72rem;
+    opacity: 0.72;
+  }
+
+  .user-row-clickable:hover,
+  .user-row-clickable:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+    background: rgba(255, 255, 255, 0.08) !important;
+    outline: none;
+  }
+
+  .user-meta .edit-hint {
+    font-size: 0.68rem;
+    opacity: 0.82;
+    margin-top: 2px;
+  }
+
+  .sidebar-account-flash {
+    margin-bottom: 0.5rem;
+    border-radius: 10px;
+    font-size: 0.74rem;
+    line-height: 1.35;
+    padding: 0.45rem 0.55rem;
+  }
+
+  .sidebar-account-flash.success {
+    background: rgba(16, 185, 129, 0.18);
+    color: #d1fae5 !important;
+    border: 1px solid rgba(16, 185, 129, 0.45);
+  }
+
+  .sidebar-account-flash.error {
+    background: rgba(239, 68, 68, 0.18);
+    color: #fee2e2 !important;
+    border: 1px solid rgba(239, 68, 68, 0.45);
+  }
+
+  .sidebar-account-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    padding: 1rem;
+  }
+
+  .sidebar-account-modal-backdrop[hidden] {
+    display: none !important;
+  }
+
+  .sidebar-account-modal {
+    width: min(100%, 420px);
+    border-radius: 14px;
+    background: #ffffff;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    box-shadow: 0 20px 48px rgba(15, 23, 42, 0.25);
+    overflow: hidden;
+  }
+
+  .sidebar-account-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1rem;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.24);
+  }
+
+  .sidebar-account-modal-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #0f172a !important;
+  }
+
+  .sidebar-account-modal-close {
+    width: 36px;
+    height: 36px;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    border-radius: 8px;
+    background: #f8fafc;
+    color: #334155 !important;
+    font-size: 0;
+    line-height: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+  }
+
+  .sidebar-account-modal-close svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2.4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    flex-shrink: 0;
+  }
+
+  .sidebar-account-modal-close:hover {
+    background: #e2e8f0;
+    border-color: #94a3b8;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.15);
+  }
+
+  .sidebar-account-modal-close:active {
+    transform: scale(0.96);
+  }
+
+  .sidebar-account-modal-close:focus-visible {
+    outline: 2px solid #60a5fa;
+    outline-offset: 2px;
+  }
+
+  .sidebar-account-modal-body {
+    padding: 1rem;
+    color: #0f172a !important;
+  }
+
+  .sidebar-account-modal-body label {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 0.8rem;
+    color: #0f172a !important;
+  }
+
+  .sidebar-account-modal-body input {
+    width: 100%;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    border-radius: 10px;
+    padding: 0.55rem 0.65rem;
+    background: #f8fafc;
+    color: #0f172a !important;
+    margin-bottom: 0.75rem;
+  }
+
+  .sidebar-account-modal-body input::placeholder {
+    color: rgba(100, 116, 139, 0.8);
+  }
+
+  .sidebar-account-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.4rem;
+  }
+
+  .sidebar-account-actions button {
+    border: 0;
+    border-radius: 10px;
+    padding: 0.5rem 0.85rem;
+    cursor: pointer;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .sidebar-account-actions .cancel-btn {
+    background: #e2e8f0;
+    color: #0f172a !important;
+  }
+
+  .sidebar-account-actions .save-btn {
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff !important;
+  }
+
+  body.sidebar-account-modal-open {
+    overflow: hidden;
+  }
+
+  body.live-light .user-row-clickable:hover,
+  body.live-light .user-row-clickable:focus-visible {
+    background: rgba(37, 99, 235, 0.08) !important;
+  }
+
+  body.live-light .sidebar-account-modal {
+    background: #ffffff;
+  }
 </style>
 <script>
   // ====== Global Admin Font Scale Sync ======
@@ -3157,7 +3440,14 @@ if ($sidebarDataLoadedFromDb) {
   </div><!-- end sidebar-nav-area -->
 
   <div class="sidebar-footer">
-    <div class="user-row">
+    <?php if ($sidebarAccountFlashSuccess !== ''): ?>
+      <div class="sidebar-account-flash success"><?php echo htmlspecialchars($sidebarAccountFlashSuccess, ENT_QUOTES, 'UTF-8'); ?></div>
+    <?php endif; ?>
+    <?php if ($sidebarAccountFlashError !== ''): ?>
+      <div class="sidebar-account-flash error"><?php echo htmlspecialchars($sidebarAccountFlashError, ENT_QUOTES, 'UTF-8'); ?></div>
+    <?php endif; ?>
+
+    <div class="user-row user-row-clickable" id="sidebarAccountTrigger" role="button" tabindex="0" aria-label="จัดการบัญชีผู้ใช้" aria-haspopup="dialog" aria-controls="sidebarAccountModal" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="คลิกเพื่อเปลี่ยนชื่อผู้ใช้/รหัสผ่าน">
       <div class="avatar">
         <?php if (!empty($_SESSION['admin_picture'])): ?>
           <!-- Google avatar -->
@@ -3180,6 +3470,43 @@ if ($sidebarDataLoadedFromDb) {
       <div class="user-meta">
         <div class="name"><?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?></div>
         <div class="email"><?php echo htmlspecialchars($_SESSION['admin_username'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+        <div class="edit-hint">คลิกเพื่อจัดการชื่อผู้ใช้และรหัสผ่าน</div>
+      </div>
+    </div>
+
+    <div class="sidebar-account-modal-backdrop" id="sidebarAccountModal" <?php echo $sidebarAccountAutoOpen ? '' : 'hidden'; ?> data-auto-open="<?php echo $sidebarAccountAutoOpen ? '1' : '0'; ?>">
+      <div class="sidebar-account-modal" role="dialog" aria-modal="true" aria-labelledby="sidebarAccountModalTitle">
+        <div class="sidebar-account-modal-header">
+          <h3 id="sidebarAccountModalTitle">จัดการบัญชีเข้าสู่ระบบ</h3>
+          <button type="button" class="sidebar-account-modal-close" data-close-account-modal aria-label="ปิด">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M6 6L18 18"></path>
+              <path d="M18 6L6 18"></path>
+            </svg>
+          </button>
+        </div>
+        <div class="sidebar-account-modal-body">
+          <form method="post" action="">
+            <input type="hidden" name="sidebar_account_update" value="1">
+
+            <label for="sidebarNewAdminUsername">ชื่อผู้ใช้ (Username)</label>
+            <input id="sidebarNewAdminUsername" name="new_admin_username" type="text" value="<?php echo htmlspecialchars($sidebarAccountModalUsername, ENT_QUOTES, 'UTF-8'); ?>" required>
+
+            <label for="sidebarCurrentAdminPassword">รหัสผ่านปัจจุบัน (ต้องกรอกทุกครั้ง)</label>
+            <input id="sidebarCurrentAdminPassword" name="current_admin_password" type="password" autocomplete="current-password" required>
+
+            <label for="sidebarNewAdminPassword">รหัสผ่านใหม่ (ไม่บังคับ)</label>
+            <input id="sidebarNewAdminPassword" name="new_admin_password" type="password" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัวอักษร">
+
+            <label for="sidebarConfirmAdminPassword">ยืนยันรหัสผ่านใหม่</label>
+            <input id="sidebarConfirmAdminPassword" name="confirm_admin_password" type="password" autocomplete="new-password" placeholder="กรอกอีกครั้งให้ตรงกัน">
+
+            <div class="sidebar-account-actions">
+              <button type="button" class="cancel-btn" data-close-account-modal>ยกเลิก</button>
+              <button type="submit" class="save-btn">บันทึกข้อมูล</button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
     
@@ -3371,6 +3698,58 @@ if ($sidebarDataLoadedFromDb) {
       sidebar.classList.remove('collapsed');
     }
   });
+})();
+
+(function() {
+  const trigger = document.getElementById('sidebarAccountTrigger');
+  const modal = document.getElementById('sidebarAccountModal');
+  if (!trigger || !modal) {
+    return;
+  }
+
+  const firstInput = modal.querySelector('input[name="new_admin_username"]');
+  const closeButtons = modal.querySelectorAll('[data-close-account-modal]');
+
+  function openModal() {
+    modal.hidden = false;
+    document.body.classList.add('sidebar-account-modal-open');
+    if (firstInput) {
+      setTimeout(function() { firstInput.focus(); firstInput.select(); }, 0);
+    }
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+    document.body.classList.remove('sidebar-account-modal-open');
+  }
+
+  trigger.addEventListener('click', openModal);
+  trigger.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      openModal();
+    }
+  });
+
+  closeButtons.forEach(function(btn) {
+    btn.addEventListener('click', closeModal);
+  });
+
+  modal.addEventListener('click', function(e) {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' && !modal.hidden) {
+      closeModal();
+    }
+  });
+
+  if (modal.dataset.autoOpen === '1') {
+    openModal();
+  }
 })();
 
 // Save and restore collapsible details state
