@@ -23,6 +23,36 @@ if (!$exp_id || !in_array($exp_status, [0, 1], true)) {
 try {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
+
+    $meterCheckStmt = $pdo->prepare(
+        "SELECT
+            e.exp_id,
+            e.ctr_id,
+            e.exp_month,
+            u.utl_water_end,
+            u.utl_elec_end
+         FROM expense e
+         LEFT JOIN utility u
+           ON u.ctr_id = e.ctr_id
+          AND YEAR(u.utl_date) = YEAR(e.exp_month)
+          AND MONTH(u.utl_date) = MONTH(e.exp_month)
+         WHERE e.exp_id = ?
+         LIMIT 1"
+    );
+    $meterCheckStmt->execute([$exp_id]);
+    $expenseRow = $meterCheckStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$expenseRow) {
+        die(json_encode(['success' => false, 'error' => 'ไม่พบรายการค่าใช้จ่ายที่ต้องการอัพเดท']));
+    }
+
+    $isMeterComplete = ($expenseRow['utl_water_end'] !== null && $expenseRow['utl_elec_end'] !== null);
+    if (!$isMeterComplete) {
+        die(json_encode([
+            'success' => false,
+            'error' => 'ยังไม่สามารถออกบิลได้ เนื่องจากยังไม่ได้จดมิเตอร์น้ำ/ไฟครบในเดือนนี้'
+        ]));
+    }
     
     $stmt = $pdo->prepare('UPDATE expense SET exp_status = ? WHERE exp_id = ?');
     $success = $stmt->execute([$exp_status, $exp_id]);

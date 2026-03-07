@@ -47,7 +47,7 @@ foreach ($contracts as $contract) {
       $rate_water = (int)($rateRow['rate_water'] ?? 20);
       // สร้างรายการใหม่ (หน่วยไฟ/น้ำ = 0)
       // IMPORTANT: ยอดรวม = ค่าห้อง ไม่หักมัดจำ 2000 บาท (มัดจำเป็นเรื่องแยกต่างหาก)
-      $insert = $pdo->prepare("INSERT INTO expense (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id) VALUES (?, 0, 0, ?, ?, ?, 0, 0, ?, '0', ?)");
+      $insert = $pdo->prepare("INSERT INTO expense (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id) VALUES (?, 0, 0, ?, ?, ?, 0, 0, ?, '2', ?)");
       $exp_total = $room_price;
       $insert->execute([
         $nextMonth . '-01',
@@ -111,21 +111,21 @@ if ($selectedMonth !== '' && preg_match('/^\d{4}-\d{2}$/', $selectedMonth) === 1
   $syncMonthInt = (int)$syncMonth;
 
   try {
-    $syncStmt = $pdo->prepare("\n      SELECT\n        e.exp_id,\n        e.room_price,\n        e.rate_elec,\n        u.utl_water_start,\n        u.utl_water_end,\n        u.utl_elec_start,\n        u.utl_elec_end\n      FROM expense e\n      LEFT JOIN utility u\n        ON u.ctr_id = e.ctr_id\n       AND YEAR(u.utl_date) = :syncYear\n       AND MONTH(u.utl_date) = :syncMonth\n      LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n      LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n      WHERE DATE_FORMAT(e.exp_month, '%Y-%m') = :syncMonthKey\n        AND c.ctr_status = '0'\n        AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n        AND NOT (\n          DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m')\n        )\n    ");
+    $syncStmt = $pdo->prepare("\n      SELECT\n        e.exp_id,\n        e.room_price,\n        e.rate_elec,\n        e.exp_status,\n        u.utl_water_start,\n        u.utl_water_end,\n        u.utl_elec_start,\n        u.utl_elec_end\n      FROM expense e\n      LEFT JOIN utility u\n        ON u.ctr_id = e.ctr_id\n       AND YEAR(u.utl_date) = :syncYear\n       AND MONTH(u.utl_date) = :syncMonth\n      LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n      LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n      WHERE DATE_FORMAT(e.exp_month, '%Y-%m') = :syncMonthKey\n        AND c.ctr_status = '0'\n        AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n        AND NOT (\n          DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m')\n        )\n    ");
     $syncStmt->execute([
       ':syncYear' => $syncYearInt,
       ':syncMonth' => $syncMonthInt,
       ':syncMonthKey' => $selectedMonth,
     ]);
 
-    $updateExpenseStmt = $pdo->prepare("\n      UPDATE expense\n      SET\n        exp_elec_unit = :expElecUnit,\n        exp_water_unit = :expWaterUnit,\n        exp_elec_chg = :expElecChg,\n        exp_water = :expWater,\n        exp_total = :expTotal\n      WHERE exp_id = :expId\n    ");
+    $updateExpenseStmt = $pdo->prepare("\n      UPDATE expense\n      SET\n        exp_elec_unit = :expElecUnit,\n        exp_water_unit = :expWaterUnit,\n        exp_elec_chg = :expElecChg,\n        exp_water = :expWater,\n        exp_total = :expTotal,\n        exp_status = :expStatus\n      WHERE exp_id = :expId\n    ");
 
     while ($row = $syncStmt->fetch(PDO::FETCH_ASSOC)) {
-      $hasUtilityReading = !($row['utl_water_end'] === null && $row['utl_elec_end'] === null);
+      $hasCompleteUtilityReading = ($row['utl_water_end'] !== null && $row['utl_elec_end'] !== null);
 
       $waterUsed = 0;
       $elecUsed = 0;
-      if ($hasUtilityReading) {
+      if ($hasCompleteUtilityReading) {
         $waterUsed = max(0, (int)$row['utl_water_end'] - (int)$row['utl_water_start']);
         $elecUsed = max(0, (int)$row['utl_elec_end'] - (int)$row['utl_elec_start']);
       }
@@ -135,6 +135,18 @@ if ($selectedMonth !== '' && preg_match('/^\d{4}-\d{2}$/', $selectedMonth) === 1
       $waterCost = (int)calculateWaterCost($waterUsed);
       $roomPrice = (int)($row['room_price'] ?? 0);
       $expTotal = $roomPrice + $elecCost + $waterCost;
+      $currentStatus = (string)($row['exp_status'] ?? '0');
+      $nextStatus = $currentStatus;
+
+      // ถ้ายังจดมิเตอร์ไม่ครบ ให้คงสถานะรอตรวจสอบไว้ (ยังไม่ออกบิลผู้เช่า)
+      if (!$hasCompleteUtilityReading) {
+        if ($currentStatus === '0' || $currentStatus === '2') {
+          $nextStatus = '2';
+        }
+      } elseif ($currentStatus === '2') {
+        // เมื่อจดมิเตอร์ครบแล้ว ให้กลับมาเป็นยังไม่ชำระเพื่อเปิดรอบบิล
+        $nextStatus = '0';
+      }
 
       $updateExpenseStmt->execute([
         ':expElecUnit' => $elecUsed,
@@ -142,6 +154,7 @@ if ($selectedMonth !== '' && preg_match('/^\d{4}-\d{2}$/', $selectedMonth) === 1
         ':expElecChg' => $elecCost,
         ':expWater' => $waterCost,
         ':expTotal' => $expTotal,
+        ':expStatus' => $nextStatus,
         ':expId' => (int)$row['exp_id'],
       ]);
     }
@@ -368,7 +381,9 @@ if ($selectedMonth !== '' && !empty($expenses)) {
         $utilChkStmt = $pdo->prepare(
             "SELECT DISTINCT ctr_id FROM utility
              WHERE ctr_id IN ($ph)
-               AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?"
+           AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?
+           AND utl_water_end IS NOT NULL
+           AND utl_elec_end IS NOT NULL"
         );
         $utilChkStmt->execute([...$ctrIds, $filterMonInt, $filterYearInt]);
         $hasUtilSet = [];
@@ -1552,14 +1567,18 @@ try {
                           ?>
                           <div class="payment-cell-wrap">
                             <div class="payment-compact">
+                              <?php if ($chargesPaid > 0): ?>
                               <div class="payment-compact-row">
                                 <span class="payment-compact-label">ชำระแล้ว</span>
                                 <span class="payment-compact-value">฿<?php echo number_format($chargesPaid); ?></span>
                               </div>
+                              <?php endif; ?>
+                              <?php if ($chargesRemain > 0): ?>
                               <div class="payment-compact-row">
                                 <span class="payment-compact-label">ค้างชำระ</span>
                                 <span class="payment-compact-value<?php echo $chargesRemain > 0 ? ' warn' : ''; ?>">฿<?php echo number_format($chargesRemain); ?></span>
                               </div>
+                              <?php endif; ?>
                             </div>
                             <div class="table-click-badge">🖱 กดแถวนี้เพื่อเปิด Modal</div>
                           </div>
@@ -2348,6 +2367,10 @@ try {
         const totalPaid = chargesPaid;
         const totalRemain = chargesRemain;
         const totalRemainColor = totalRemain > 0 ? '#ef4444' : '#22c55e';
+        const showTotalPaid = totalPaid > 0;
+        const showTotalRemain = totalRemain > 0;
+        const showChargesPaid = chargesPaid > 0;
+        const showChargesRemain = chargesRemain > 0;
         const proofHtml = !proofSrc
           ? '<div class="payment-modal-value" style="color:#94a3b8;">-</div>'
           : (isImage
@@ -2367,14 +2390,14 @@ try {
                 <div class="payment-modal-summary-label">สถานะ</div>
                 <div class="payment-modal-summary-value payment-modal-status ${statusClass}">${statusText}</div>
               </div>
-              <div class="payment-modal-summary-item">
+              ${showTotalPaid ? `<div class="payment-modal-summary-item">
                 <div class="payment-modal-summary-label">จ่ายแล้วรวม</div>
                 <div class="payment-modal-summary-value">${formatBaht(totalPaid)}</div>
-              </div>
-              <div class="payment-modal-summary-item">
+              </div>` : ''}
+              ${showTotalRemain ? `<div class="payment-modal-summary-item">
                 <div class="payment-modal-summary-label">ยอดค้างรวม</div>
                 <div class="payment-modal-summary-value" style="color:${totalRemainColor};">${formatBaht(totalRemain)}</div>
-              </div>
+              </div>` : ''}
             </div>
 
             <div class="payment-modal-section">
@@ -2397,16 +2420,16 @@ try {
               </div>
             </div>
 
-            <div class="payment-modal-section">
+            ${(showChargesPaid || showChargesRemain) ? `<div class="payment-modal-section">
               <h4 class="payment-modal-section-title">สรุปย่อย</h4>
               <div class="payment-modal-grid">
-                <div class="payment-modal-label">ชำระแล้ว</div>
-                <div class="payment-modal-value">${formatBaht(chargesPaid)}</div>
+                ${showChargesPaid ? `<div class="payment-modal-label">ชำระแล้ว</div>
+                <div class="payment-modal-value">${formatBaht(chargesPaid)}</div>` : ''}
 
-                <div class="payment-modal-label">ค้างชำระ</div>
-                <div class="payment-modal-value" style="color:${chargesRemain > 0 ? '#ef4444' : '#22c55e'};font-weight:700;">${formatBaht(chargesRemain)}</div>
+                ${showChargesRemain ? `<div class="payment-modal-label">ค้างชำระ</div>
+                <div class="payment-modal-value" style="color:#ef4444;font-weight:700;">${formatBaht(chargesRemain)}</div>` : ''}
               </div>
-            </div>
+            </div>` : ''}
 
             <div class="payment-modal-section">
               <h4 class="payment-modal-section-title">หลักฐานการโอน</h4>
