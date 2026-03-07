@@ -26,6 +26,8 @@ if ($settingsStmt) {
 try {
     // Check if completion filter is applied
     $completedFilter = isset($_GET['completed']) ? (int)$_GET['completed'] : 0;
+    $selectedBkgId = isset($_GET['bkg_id']) ? (int)$_GET['bkg_id'] : 0;
+    $bookingFilterCondition = $selectedBkgId > 0 ? " AND b.bkg_id = {$selectedBkgId} " : '';
 
         $firstBillPaidCondition = "
                 EXISTS (
@@ -197,6 +199,7 @@ try {
                                             OR tw.completed = 0
                                             OR tw.completed = 1
                                         )
+                                    " . $bookingFilterCondition . "
                                     AND (
                                             current_room_contract.ctr_id IS NULL
                                             OR COALESCE(c.ctr_id, tw.ctr_id, 0) = current_room_contract.ctr_id
@@ -283,8 +286,13 @@ try {
 } catch (Exception $e) {
     $wizardTenants = [];
     $hasCompletedTenants = false;
+    $selectedBkgId = 0;
     $error = "เกิดข้อผิดพลาดในการดึงข้อมูล: " . $e->getMessage();
 }
+
+$completedZeroHref = 'tenant_wizard.php?completed=0' . ($selectedBkgId > 0 ? '&bkg_id=' . $selectedBkgId : '');
+$completedOneHref = 'tenant_wizard.php?completed=1' . ($selectedBkgId > 0 ? '&bkg_id=' . $selectedBkgId : '');
+$clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -963,9 +971,13 @@ try {
 
                 <!-- Completion Status Filter Buttons -->
                 <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-                    <a href="tenant_wizard.php?completed=0" style="padding: 0.75rem 1.5rem; background: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>; color: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white !important' : '#111827 !important'; ?>; border: 2px solid #3b82f6; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3b82f6'; this.style.setProperty('color','white','important');" onmouseout="this.style.background='<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>'; this.style.setProperty('color','<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white' : '#111827'; ?>','important');">⏳ ยังไม่ครบ 5 ขั้นตอน</a>
+                    <a href="<?php echo htmlspecialchars($completedZeroHref, ENT_QUOTES, 'UTF-8'); ?>" style="padding: 0.75rem 1.5rem; background: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>; color: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white !important' : '#111827 !important'; ?>; border: 2px solid #3b82f6; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3b82f6'; this.style.setProperty('color','white','important');" onmouseout="this.style.background='<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>'; this.style.setProperty('color','<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white' : '#111827'; ?>','important');">⏳ ยังไม่ครบ 5 ขั้นตอน</a>
                     <?php if ($hasCompletedTenants): ?>
-                    <a href="tenant_wizard.php?completed=1" style="padding: 0.75rem 1.5rem; background: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>; color: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>; border: 2px solid #22c55e; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#22c55e'; this.style.color='white';" onmouseout="this.style.background='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>'; this.style.color='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>';">✅ ครบ 5 ขั้นตอนแล้ว</a>
+                    <a href="<?php echo htmlspecialchars($completedOneHref, ENT_QUOTES, 'UTF-8'); ?>" style="padding: 0.75rem 1.5rem; background: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>; color: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>; border: 2px solid #22c55e; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#22c55e'; this.style.color='white';" onmouseout="this.style.background='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>'; this.style.color='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>';">✅ ครบ 5 ขั้นตอนแล้ว</a>
+                    <?php endif; ?>
+                    <?php if ($selectedBkgId > 0): ?>
+                    <span style="padding: 0.75rem 1rem; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 8px; font-weight: 600;">กำลังแสดงเฉพาะรายการ #<?php echo (int)$selectedBkgId; ?></span>
+                    <a href="<?php echo htmlspecialchars($clearSelectionHref, ENT_QUOTES, 'UTF-8'); ?>" style="padding: 0.75rem 1.25rem; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; border-radius: 8px; text-decoration: none; font-weight: 600;">ล้างตัวกรอง</a>
                     <?php endif; ?>
                 </div>
 

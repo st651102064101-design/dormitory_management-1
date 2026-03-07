@@ -716,6 +716,108 @@ if ($sidebarDataLoadedFromDb) {
     line-height: 1;
     z-index: 1;
   }
+
+  /* Collapsed rail: render Todo as centered icon pill with corner badge */
+  @media (min-width: 1025px) {
+    aside.sidebar-collapsed #nav-todo > summary,
+    .app-sidebar.collapsed #nav-todo > summary {
+      position: relative !important;
+      padding: 0.35rem 0 !important;
+      min-height: 3rem !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > summary .summary-link,
+    .app-sidebar.collapsed #nav-todo > summary .summary-link {
+      width: 2.45rem !important;
+      height: 2.45rem !important;
+      min-width: 2.45rem !important;
+      border-radius: 0.75rem !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: rgba(148, 163, 184, 0.14) !important;
+      border: 1px solid rgba(148, 163, 184, 0.32) !important;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > summary .summary-link.active,
+    .app-sidebar.collapsed #nav-todo > summary .summary-link.active {
+      background: rgba(59, 130, 246, 0.2) !important;
+      border-color: rgba(59, 130, 246, 0.45) !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > summary .todo-total-badge,
+    .app-sidebar.collapsed #nav-todo > summary .todo-total-badge {
+      right: 0.38rem !important;
+      top: 0.12rem !important;
+      transform: none !important;
+      min-width: 18px !important;
+      height: 18px !important;
+      padding: 0 5px !important;
+      font-size: 10px !important;
+      border: 1px solid rgba(255, 255, 255, 0.72) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+      z-index: 3 !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo .wizard-nav-item,
+    .app-sidebar.collapsed #nav-todo .wizard-nav-item {
+      width: 2.45rem !important;
+      height: 2.45rem !important;
+      min-width: 2.45rem !important;
+      padding: 0 !important;
+      margin: 0.2rem auto !important;
+      border-left: 0 !important;
+      border-radius: 0.75rem !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: relative !important;
+      background: rgba(148, 163, 184, 0.14) !important;
+      border: 1px solid rgba(148, 163, 184, 0.32) !important;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+      overflow: visible !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo .wizard-nav-item.active,
+    .app-sidebar.collapsed #nav-todo .wizard-nav-item.active {
+      background: rgba(59, 130, 246, 0.2) !important;
+      border-color: rgba(59, 130, 246, 0.45) !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo .wizard-nav-item .app-nav-label,
+    .app-sidebar.collapsed #nav-todo .wizard-nav-item .app-nav-label {
+      display: none !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo .wizard-nav-item .app-nav-icon,
+    .app-sidebar.collapsed #nav-todo .wizard-nav-item .app-nav-icon {
+      margin: 0 !important;
+      width: 2rem !important;
+      height: 2rem !important;
+      min-width: 2rem !important;
+      min-height: 2rem !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo .wizard-nav-item > span[data-bs-toggle="tooltip"],
+    .app-sidebar.collapsed #nav-todo .wizard-nav-item > span[data-bs-toggle="tooltip"] {
+      top: 0.12rem !important;
+      right: 0.2rem !important;
+      transform: none !important;
+      min-width: 18px !important;
+      height: 18px !important;
+      padding: 0 5px !important;
+      font-size: 10px !important;
+      border: 1px solid rgba(255, 255, 255, 0.72) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+      z-index: 3 !important;
+    }
+  }
   
   #nav-dashboard > summary .summary-link:hover,
   #nav-management > summary .summary-link:hover {
@@ -2418,6 +2520,25 @@ if ($sidebarDataLoadedFromDb) {
   aside.sidebar-collapsed details[open] > :not(summary) {
     display: none !important;
   }
+
+  /* Normalize native details content slot in collapsed mode */
+  aside.sidebar-collapsed details::details-content,
+  .app-sidebar.collapsed details::details-content {
+    padding: 0 !important;
+    margin: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
+  }
+
+  aside.sidebar-collapsed details[open]::details-content,
+  .app-sidebar.collapsed details[open]::details-content {
+    display: none !important;
+  }
+
+  aside.sidebar-collapsed #nav-todo[open]::details-content,
+  .app-sidebar.collapsed #nav-todo[open]::details-content {
+    display: block !important;
+  }
   
   /* Hide all labels when sidebar is collapsed - but show on mobile */
   aside.sidebar-collapsed .app-nav-label,
@@ -2534,6 +2655,158 @@ if ($sidebarDataLoadedFromDb) {
   }
   .app-sidebar.collapsed details summary .chev {
     display: none !important;
+  }
+
+  /* Final override: all Todo child buttons use compact rail cards in collapsed mode */
+  @media (min-width: 1025px) {
+    /* Top-level summary items in collapsed rail */
+    aside.sidebar-collapsed #nav-dashboard > summary,
+    aside.sidebar-collapsed #nav-tenants > summary,
+    aside.sidebar-collapsed #nav-settings > summary,
+    .app-sidebar.collapsed #nav-dashboard > summary,
+    .app-sidebar.collapsed #nav-tenants > summary,
+    .app-sidebar.collapsed #nav-settings > summary {
+      position: relative !important;
+      padding: 0.35rem 0 !important;
+      min-height: 3rem !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+    }
+
+    aside.sidebar-collapsed #nav-dashboard > summary .summary-link,
+    aside.sidebar-collapsed #nav-tenants > summary .summary-link,
+    aside.sidebar-collapsed #nav-settings > summary .summary-link,
+    .app-sidebar.collapsed #nav-dashboard > summary .summary-link,
+    .app-sidebar.collapsed #nav-tenants > summary .summary-link,
+    .app-sidebar.collapsed #nav-settings > summary .summary-link {
+      width: 2.45rem !important;
+      height: 2.45rem !important;
+      min-width: 2.45rem !important;
+      min-height: 2.45rem !important;
+      margin: 0 auto !important;
+      padding: 0 !important;
+      border-radius: 0.75rem !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      background: rgba(148, 163, 184, 0.14) !important;
+      border: 1px solid rgba(148, 163, 184, 0.32) !important;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+    }
+
+    aside.sidebar-collapsed #nav-dashboard > summary .summary-link.active,
+    aside.sidebar-collapsed #nav-tenants > summary .summary-link.active,
+    aside.sidebar-collapsed #nav-settings > summary .summary-link.active,
+    .app-sidebar.collapsed #nav-dashboard > summary .summary-link.active,
+    .app-sidebar.collapsed #nav-tenants > summary .summary-link.active,
+    .app-sidebar.collapsed #nav-settings > summary .summary-link.active {
+      background: rgba(59, 130, 246, 0.2) !important;
+      border-color: rgba(59, 130, 246, 0.45) !important;
+    }
+
+    aside.sidebar-collapsed #nav-dashboard > summary .chev,
+    aside.sidebar-collapsed #nav-tenants > summary .chev,
+    aside.sidebar-collapsed #nav-settings > summary .chev,
+    .app-sidebar.collapsed #nav-dashboard > summary .chev,
+    .app-sidebar.collapsed #nav-tenants > summary .chev,
+    .app-sidebar.collapsed #nav-settings > summary .chev {
+      display: none !important;
+    }
+
+    aside.sidebar-collapsed #nav-dashboard > summary .app-nav-icon,
+    aside.sidebar-collapsed #nav-tenants > summary .app-nav-icon,
+    aside.sidebar-collapsed #nav-settings > summary .app-nav-icon,
+    .app-sidebar.collapsed #nav-dashboard > summary .app-nav-icon,
+    .app-sidebar.collapsed #nav-tenants > summary .app-nav-icon,
+    .app-sidebar.collapsed #nav-settings > summary .app-nav-icon {
+      width: 2rem !important;
+      height: 2rem !important;
+      min-width: 2rem !important;
+      min-height: 2rem !important;
+      margin: 0 !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > a,
+    .app-sidebar.collapsed #nav-todo > a {
+      width: 2.45rem !important;
+      height: 2.45rem !important;
+      min-width: 2.45rem !important;
+      min-height: 2.45rem !important;
+      margin: 0.2rem auto !important;
+      padding: 0 !important;
+      border-radius: 0.75rem !important;
+      border-left: 0 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      position: relative !important;
+      background: rgba(148, 163, 184, 0.14) !important;
+      border: 1px solid rgba(148, 163, 184, 0.32) !important;
+      box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03) !important;
+      overflow: visible !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > a.active,
+    .app-sidebar.collapsed #nav-todo > a.active {
+      background: rgba(59, 130, 246, 0.2) !important;
+      border-color: rgba(59, 130, 246, 0.45) !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > a .app-nav-label,
+    .app-sidebar.collapsed #nav-todo > a .app-nav-label {
+      display: none !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > a .app-nav-icon,
+    .app-sidebar.collapsed #nav-todo > a .app-nav-icon {
+      margin: 0 !important;
+      width: 2rem !important;
+      height: 2rem !important;
+      min-width: 2rem !important;
+      min-height: 2rem !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > a .booking-status-badges,
+    aside.sidebar-collapsed #nav-todo > a .utility-status-badges,
+    aside.sidebar-collapsed #nav-todo > a .expense-status-badges,
+    aside.sidebar-collapsed #nav-todo > a .payment-status-badges,
+    aside.sidebar-collapsed #nav-todo > a .repair-status-badges,
+    .app-sidebar.collapsed #nav-todo > a .booking-status-badges,
+    .app-sidebar.collapsed #nav-todo > a .utility-status-badges,
+    .app-sidebar.collapsed #nav-todo > a .expense-status-badges,
+    .app-sidebar.collapsed #nav-todo > a .payment-status-badges,
+    .app-sidebar.collapsed #nav-todo > a .repair-status-badges {
+      display: inline-flex !important;
+      position: absolute !important;
+      top: 0.12rem !important;
+      right: 0.2rem !important;
+      margin: 0 !important;
+      z-index: 3 !important;
+      pointer-events: auto !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > a .todo-action-badge,
+    .app-sidebar.collapsed #nav-todo > a .todo-action-badge,
+    aside.sidebar-collapsed #nav-todo > a > span[data-bs-toggle="tooltip"],
+    .app-sidebar.collapsed #nav-todo > a > span[data-bs-toggle="tooltip"] {
+      min-width: 18px !important;
+      height: 18px !important;
+      padding: 0 5px !important;
+      font-size: 10px !important;
+      line-height: 1 !important;
+      border: 1px solid rgba(255, 255, 255, 0.72) !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25) !important;
+      z-index: 3 !important;
+    }
+
+    aside.sidebar-collapsed #nav-todo > a > span[data-bs-toggle="tooltip"],
+    .app-sidebar.collapsed #nav-todo > a > span[data-bs-toggle="tooltip"] {
+      position: absolute !important;
+      top: 0.12rem !important;
+      right: 0.2rem !important;
+      transform: none !important;
+    }
   }
   
   /* Mobile Responsive */
