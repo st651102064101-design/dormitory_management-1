@@ -166,18 +166,8 @@ include __DIR__ . '/settings/settings_data.php';
   <div class="app-shell">
     <?php include __DIR__ . '/../includes/sidebar.php'; ?>
     
-    <!-- Critical Layout Override - After Sidebar CSS -->
+    <!-- Layout Override - Keep sidebar visible on settings page -->
     <style>
-      /* Hide Sidebar Completely for Apple Settings Page */
-      body.apple-settings-page .app-sidebar {
-        display: none !important;
-      }
-      
-      /* Hide Menu Button - No Sidebar Needed */
-      body.apple-settings-page .apple-menu-btn {
-        display: none !important;
-      }
-      
       /* Override sidebar.php CSS for apple-settings-page */
       body.apple-settings-page,
       html.apple-settings-html {
@@ -188,13 +178,15 @@ include __DIR__ . '/settings/settings_data.php';
       }
       
       body.apple-settings-page .app-shell {
-        display: block !important;
+        display: flex !important;
+        flex-direction: row !important;
         height: auto !important;
         min-height: 100vh !important;
       }
       
       body.apple-settings-page .app-main {
         display: block !important;
+        flex: 1 1 auto !important;
         width: 100% !important;
         max-width: 100% !important;
         height: auto !important;
@@ -218,63 +210,16 @@ include __DIR__ . '/settings/settings_data.php';
       
       /* Mobile adjustments */
       @media (max-width: 768px) {
+        body.apple-settings-page .app-shell {
+          display: block !important;
+          flex-direction: column !important;
+        }
+
         body.apple-settings-page .apple-settings-wrapper {
           padding: 60px 16px 100px !important;
         }
       }
-      
-      /* Back Button Style */
-      .apple-back-btn {
-        position: fixed !important;
-        top: 20px !important;
-        left: 20px !important;
-        width: 48px !important;
-        height: 48px !important;
-        border-radius: 14px !important;
-        background: var(--apple-card) !important;
-        border: none !important;
-        cursor: pointer !important;
-        z-index: 10001 !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
-        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
-        text-decoration: none !important;
-      }
-      
-      .apple-back-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        background: var(--apple-blue) !important;
-      }
-      
-      .apple-back-btn:hover svg {
-        stroke: #ffffff !important;
-      }
-      
-      .apple-back-btn:active {
-        transform: scale(0.95);
-      }
-      
-      .apple-back-btn svg {
-        width: 22px;
-        height: 22px;
-        stroke: var(--apple-text);
-        stroke-width: 2.5;
-        stroke-linecap: round;
-        stroke-linejoin: round;
-        fill: none;
-        transition: stroke 0.2s ease;
-      }
     </style>
-    
-    <!-- Back Button -->
-    <a href="/dormitory_management/Reports/dashboard.php" class="apple-back-btn" aria-label="ย้อนกลับ">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
-        <path d="M19 12H5M12 19l-7-7 7-7"/>
-      </svg>
-    </a>
     
     <main class="app-main">
       <!-- Apple Settings UI -->
@@ -420,31 +365,6 @@ include __DIR__ . '/settings/settings_data.php';
     setTimeout(forceLayoutFix, 500);
   })();
   
-  // Connect apple-menu-btn to global sidebar toggle
-  (function() {
-    const menuBtn = document.getElementById('apple-menu-btn');
-    
-    if (menuBtn) {
-      menuBtn.addEventListener('click', function(e) {
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Use the global sidebar toggle function
-        if (typeof window.__directSidebarToggle === 'function') {
-          window.__directSidebarToggle(e);
-        }
-      });
-      
-      // Initialize sidebar state
-      if (typeof window.__initSidebarState === 'function') {
-        if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', window.__initSidebarState);
-        } else {
-          window.__initSidebarState();
-        }
-      }
-    }
-  })();
   </script>
 </body>
 </html>
