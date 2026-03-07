@@ -864,19 +864,9 @@ try {
   .utility-nav-item,
   .booking-nav-item,
   .repair-nav-item {
-    display: grid !important;
-    grid-template-columns: 1.8rem minmax(0, 1fr) auto;
-    align-items: center;
-    column-gap: 0.35rem;
+    display: flex !important;
+    align-items: center !important;
     width: 100% !important;
-  }
-
-  .expense-nav-item .app-nav-icon,
-  .payment-nav-item .app-nav-icon,
-  .utility-nav-item .app-nav-icon,
-  .booking-nav-item .app-nav-icon,
-  .repair-nav-item .app-nav-icon {
-    grid-column: 1;
   }
 
   .expense-nav-item .app-nav-label,
@@ -884,8 +874,8 @@ try {
   .utility-nav-item .app-nav-label,
   .booking-nav-item .app-nav-label,
   .repair-nav-item .app-nav-label {
-    grid-column: 2;
-    min-width: 0;
+    flex: 1 !important;
+    min-width: 0 !important;
   }
 
   .expense-status-badges {
@@ -1049,9 +1039,8 @@ try {
   .utility-status-badges,
   .booking-status-badges,
   .repair-status-badges {
-    grid-column: 3;
-    justify-self: end;
-    margin-left: 0 !important;
+    margin-left: auto !important;
+    flex-shrink: 0 !important;
   }
 
   aside.sidebar-collapsed .expense-status-badges,
