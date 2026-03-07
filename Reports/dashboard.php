@@ -400,6 +400,30 @@ try {
             padding-bottom: 15px;
         }
 
+        .priority-group-title {
+            font-size: 14px;
+            font-weight: 700;
+            letter-spacing: 0.2px;
+            margin: 6px 0 10px;
+            padding-left: 2px;
+            <?php if ($isLight): ?>
+            color: #1f2937;
+            <?php else: ?>
+            color: #dbe7ff;
+            <?php endif; ?>
+        }
+
+        .priority-group-title span {
+            font-weight: 600;
+            font-size: 12px;
+            margin-left: 8px;
+            <?php if ($isLight): ?>
+            color: #6b7280;
+            <?php else: ?>
+            color: rgba(219, 231, 255, 0.75);
+            <?php endif; ?>
+        }
+
         .report-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
@@ -1147,49 +1171,29 @@ try {
                 </div>
             </div>
 
-            <!-- รายงานรายละเอียด แบบมี Mini Charts -->
+            <!-- รายงานรายละเอียด แบบเรียงตามความสำคัญ -->
+            <div class="priority-group-title">ความสำคัญสูง <span>งานที่ควรตรวจทุกวัน</span></div>
             <div class="charts-row">
-                <!-- การเข้าพัก -->
-                <div class="report-section" data-link="report_reservations.php">
-                    <h3><span class="section-icon blue"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>รายงานข้อมูลการเข้าพัก</h3>
+                <!-- ใบแจ้งชำระเงิน -->
+                <div class="report-section" data-link="report_invoice.php">
+                    <h3><span class="section-icon purple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>ใบแจ้งชำระเงิน</h3>
                     <div class="report-flex">
                         <div class="mini-chart-container">
-                            <canvas id="miniBookingChart"></canvas>
+                            <canvas id="miniInvoiceChart"></canvas>
                         </div>
                         <div>
                             <div class="report-grid">
                                 <div class="report-item">
-                                    <label>เข้าพักแล้ว</label>
-                                    <div class="value"><?php echo $booking_checkedin ?: '-'; ?></div>
+                                    <label>รอตรวจสอบ</label>
+                                    <div class="value" style="color: #f59e0b;"><?php echo $payment_pending; ?></div>
                                 </div>
                                 <div class="report-item">
-                                    <label>จองอยู่</label>
-                                    <div class="value"><?php echo $booking_pending ?: '-'; ?></div>
+                                    <label>ตรวจสอบแล้ว</label>
+                                    <div class="value" style="color: #22c55e;"><?php echo $payment_verified; ?></div>
                                 </div>
                             </div>
                             <div style="margin-top: 10px; text-align: center;">
-                                <a href="manage_booking.php" style="color: #3b82f6; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ข่าวประชาสัมพันธ์ -->
-                <div class="report-section" data-link="report_news.php">
-                    <h3><span class="section-icon cyan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg></span>รายงานข้อมูลข่าวประชาสัมพันธ์</h3>
-                    <div class="report-flex">
-                        <div class="mini-chart-container">
-                            <canvas id="miniNewsChart"></canvas>
-                        </div>
-                        <div>
-                            <div class="report-grid">
-                                <div class="report-item">
-                                    <label>ข่าวทั้งหมด</label>
-                                    <div class="value"><?php echo $news_count; ?></div>
-                                </div>
-                            </div>
-                            <div style="margin-top: 10px; text-align: center;">
-                                <a href="report_news.php" style="color: #06b6d4; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
+                                <a href="report_invoice.php" style="color: #a855f7; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
                             </div>
                         </div>
                     </div>
@@ -1223,34 +1227,35 @@ try {
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="charts-row">
-                <!-- ใบแจ้งชำระเงิน -->
-                <div class="report-section" data-link="report_invoice.php">
-                    <h3><span class="section-icon purple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span>ใบแจ้งชำระเงิน</h3>
+                <!-- การเข้าพัก -->
+                <div class="report-section" data-link="report_reservations.php">
+                    <h3><span class="section-icon blue"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span>รายงานข้อมูลการเข้าพัก</h3>
                     <div class="report-flex">
                         <div class="mini-chart-container">
-                            <canvas id="miniInvoiceChart"></canvas>
+                            <canvas id="miniBookingChart"></canvas>
                         </div>
                         <div>
                             <div class="report-grid">
                                 <div class="report-item">
-                                    <label>รอตรวจสอบ</label>
-                                    <div class="value" style="color: #f59e0b;"><?php echo $payment_pending; ?></div>
+                                    <label>เข้าพักแล้ว</label>
+                                    <div class="value"><?php echo $booking_checkedin ?: '-'; ?></div>
                                 </div>
                                 <div class="report-item">
-                                    <label>ตรวจสอบแล้ว</label>
-                                    <div class="value" style="color: #22c55e;"><?php echo $payment_verified; ?></div>
+                                    <label>จองอยู่</label>
+                                    <div class="value"><?php echo $booking_pending ?: '-'; ?></div>
                                 </div>
                             </div>
                             <div style="margin-top: 10px; text-align: center;">
-                                <a href="report_invoice.php" style="color: #a855f7; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
+                                <a href="report_reservations.php" style="color: #3b82f6; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
                             </div>
                         </div>
                     </div>
                 </div>
+            </div>
 
+            <div class="priority-group-title">ติดตามประจำ <span>การเงินและการใช้ทรัพยากร</span></div>
+            <div class="charts-row">
                 <!-- ยอดชำระเงิน -->
                 <div class="report-section" data-link="report_payments.php">
                     <h3><span class="section-icon green"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>รายงานการชำระเงิน</h3>
@@ -1272,33 +1277,27 @@ try {
                     </div>
                 </div>
 
-                <!-- ห้องพัก -->
-                <div class="report-section" data-link="report_rooms.php">
-                    <h3><span class="section-icon blue"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>รายงานข้อมูลห้องพัก</h3>
+                <!-- รายรับ -->
+                <div class="report-section" data-link="report_payments.php">
+                    <h3><span class="section-icon indigo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>รายงานข้อมูลรายรับ</h3>
                     <div class="report-flex">
                         <div class="mini-chart-container">
-                            <canvas id="miniRoomChart"></canvas>
+                            <canvas id="miniRevenueChart"></canvas>
                         </div>
                         <div>
                             <div class="report-grid">
                                 <div class="report-item">
-                                    <label>ห้องว่าง</label>
-                                    <div class="value" style="color: #22c55e;"><?php echo $room_available; ?></div>
-                                </div>
-                                <div class="report-item">
-                                    <label>ห้องไม่ว่าง</label>
-                                    <div class="value" style="color: #ef4444;"><?php echo $room_occupied; ?></div>
+                                    <label>รายรับทั้งหมด</label>
+                                    <div class="value" style="color: #6366f1;">฿<?php echo number_format($total_revenue, 0); ?></div>
                                 </div>
                             </div>
                             <div style="margin-top: 10px; text-align: center;">
-                                <a href="manage_rooms.php" style="color: #3b82f6; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
+                                <a href="report_payments.php" style="color: #6366f1; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            <div class="charts-row">
                 <!-- น้ำ-ไฟ -->
                 <div class="report-section" data-link="report_utility.php">
                     <h3><span class="section-icon teal"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-4V4a2 2 0 0 0-4 0v6H6a2 2 0 0 0-2 2v8h16v-8a2 2 0 0 0-2-2z"/><path d="M8 20v-6"/><path d="M16 20v-6"/></svg></span>รายงานสรุปการใช้น้ำ-ไฟ</h3>
@@ -1323,23 +1322,30 @@ try {
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <!-- รายรับ -->
-                <div class="report-section" data-link="report_payments.php">
-                    <h3><span class="section-icon indigo"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></span>รายงานข้อมูลรายรับ</h3>
+            <div class="priority-group-title">ข้อมูลอ้างอิง <span>ดูภาพรวมและเอกสารประกอบ</span></div>
+            <div class="charts-row">
+                <!-- ห้องพัก -->
+                <div class="report-section" data-link="report_rooms.php">
+                    <h3><span class="section-icon blue"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span>รายงานข้อมูลห้องพัก</h3>
                     <div class="report-flex">
                         <div class="mini-chart-container">
-                            <canvas id="miniRevenueChart"></canvas>
+                            <canvas id="miniRoomChart"></canvas>
                         </div>
                         <div>
                             <div class="report-grid">
                                 <div class="report-item">
-                                    <label>รายรับทั้งหมด</label>
-                                    <div class="value" style="color: #6366f1;">฿<?php echo number_format($total_revenue, 0); ?></div>
+                                    <label>ห้องว่าง</label>
+                                    <div class="value" style="color: #22c55e;"><?php echo $room_available; ?></div>
+                                </div>
+                                <div class="report-item">
+                                    <label>ห้องไม่ว่าง</label>
+                                    <div class="value" style="color: #ef4444;"><?php echo $room_occupied; ?></div>
                                 </div>
                             </div>
                             <div style="margin-top: 10px; text-align: center;">
-                                <a href="manage_revenue.php" style="color: #6366f1; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
+                                <a href="report_rooms.php" style="color: #3b82f6; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
                             </div>
                         </div>
                     </div>
@@ -1365,6 +1371,27 @@ try {
                             </div>
                             <div style="margin-top: 10px; text-align: center;">
                                 <a href="print_contract.php" style="color: #ec4899; text-decoration: none; font-size: 13px;">พิมพ์สัญญา →</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ข่าวประชาสัมพันธ์ -->
+                <div class="report-section" data-link="report_news.php">
+                    <h3><span class="section-icon cyan"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8z"/></svg></span>รายงานข้อมูลข่าวประชาสัมพันธ์</h3>
+                    <div class="report-flex">
+                        <div class="mini-chart-container">
+                            <canvas id="miniNewsChart"></canvas>
+                        </div>
+                        <div>
+                            <div class="report-grid">
+                                <div class="report-item">
+                                    <label>ข่าวทั้งหมด</label>
+                                    <div class="value"><?php echo $news_count; ?></div>
+                                </div>
+                            </div>
+                            <div style="margin-top: 10px; text-align: center;">
+                                <a href="report_news.php" style="color: #06b6d4; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
                             </div>
                         </div>
                     </div>
