@@ -9,6 +9,15 @@ if (empty($_SESSION['admin_username'])) {
 
 $admin_name = $_SESSION['admin_username'];
 
+$bookings = [];
+$utilities = [];
+$expenses = [];
+$pendingPayments = [];
+$pendingWater = 0;
+$pendingElec = 0;
+$themeColor = '#0f172a';
+$isLight = false;
+
 try {
     $pdo = connectDB();
 
@@ -23,40 +32,53 @@ try {
     $isLight = $brightness > 155;
 
     // === Tab 1: การจอง (รอดำเนินการ) ===
-    $bookingStmt = $pdo->query("
-        SELECT b.bkg_id, b.bkg_date, b.bkg_status,
-               t.tnt_name, t.tnt_lastname, t.tnt_phone,
-               r.room_number, rt.roomtype_name
-        FROM booking b
-        LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
-        LEFT JOIN room r ON b.room_id = r.room_id
-        LEFT JOIN roomtype rt ON r.roomtype_id = rt.roomtype_id
-        WHERE b.bkg_status IN (1, 2)
-        ORDER BY b.bkg_date DESC
-        LIMIT 50
-    ");
-    $bookings = $bookingStmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $bookingStmt = $pdo->query("
+            SELECT b.bkg_id, b.bkg_date, b.bkg_status,
+                   COALESCE(t.tnt_name, '') AS tnt_name, t.tnt_phone,
+                   r.room_number, rt.type_name AS roomtype_name
+            FROM booking b
+            LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
+            LEFT JOIN room r ON b.room_id = r.room_id
+            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+                        LEFT JOIN contract active_ctr
+                            ON active_ctr.room_id = b.room_id
+                         AND active_ctr.ctr_status = '0'
+            WHERE b.bkg_status = 1
+                            AND active_ctr.ctr_id IS NULL
+            ORDER BY b.bkg_date DESC
+            LIMIT 50
+        ");
+        $bookings = $bookingStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $bookings = [];
+    }
 
     // === Tab 2: จดมิเตอร์ (ห้องที่ยังไม่จด) ===
-    $utilityStmt = $pdo->query("
-        SELECT r.room_id, r.room_number, rt.roomtype_name,
-               t.tnt_name, t.tnt_lastname,
-               c.ctr_id,
-               u.utl_id, u.utl_water_start, u.utl_water_end, u.utl_elec_start, u.utl_elec_end
-        FROM contract c
-        INNER JOIN (
-            SELECT room_id, MAX(ctr_id) AS ctr_id
-            FROM contract WHERE ctr_status = '0' GROUP BY room_id
-        ) lc ON lc.ctr_id = c.ctr_id
-        LEFT JOIN room r ON c.room_id = r.room_id
-        LEFT JOIN roomtype rt ON r.roomtype_id = rt.roomtype_id
-        LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        LEFT JOIN utility u ON u.ctr_id = c.ctr_id
-            AND MONTH(u.utl_date) = MONTH(CURDATE())
-            AND YEAR(u.utl_date) = YEAR(CURDATE())
-        ORDER BY r.room_number ASC
-    ");
-    $utilities = $utilityStmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $utilityStmt = $pdo->query("
+            SELECT r.room_id, r.room_number, rt.type_name AS roomtype_name,
+                   COALESCE(t.tnt_name, '') AS tnt_name,
+                   c.ctr_id,
+                   u.utl_id, u.utl_water_start, u.utl_water_end, u.utl_elec_start, u.utl_elec_end
+            FROM contract c
+            INNER JOIN (
+                SELECT room_id, MAX(ctr_id) AS ctr_id
+                FROM contract WHERE ctr_status = '0' GROUP BY room_id
+            ) lc ON lc.ctr_id = c.ctr_id
+            LEFT JOIN room r ON c.room_id = r.room_id
+            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+            LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+            LEFT JOIN utility u ON u.ctr_id = c.ctr_id
+                AND MONTH(u.utl_date) = MONTH(CURDATE())
+                AND YEAR(u.utl_date) = YEAR(CURDATE())
+            WHERE (u.utl_id IS NULL OR u.utl_water_end IS NULL OR u.utl_elec_end IS NULL)
+            ORDER BY r.room_number ASC
+        ");
+        $utilities = $utilityStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $utilities = [];
+    }
 
     $pendingWater = 0;
     $pendingElec = 0;
@@ -66,55 +88,97 @@ try {
     }
 
     // === Tab 3: ค่าใช้จ่าย ===
-    $expenseStmt = $pdo->query("
-        SELECT e.exp_id, e.exp_month, e.exp_total, e.exp_room_price,
-               e.exp_water_cost, e.exp_electric_cost, e.exp_common_fee,
-               c.ctr_id, r.room_number, t.tnt_name, t.tnt_lastname,
-               COALESCE(pay_agg.approved_amount, 0) AS paid_amount,
-               COALESCE(pay_agg.pending_count, 0) AS pending_count
-        FROM expense e
-        INNER JOIN contract c ON e.ctr_id = c.ctr_id AND c.ctr_status = '0'
-        LEFT JOIN room r ON c.room_id = r.room_id
-        LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id
-        LEFT JOIN (
-            SELECT exp_id,
-                SUM(CASE WHEN pay_status = '1' THEN pay_amount ELSE 0 END) AS approved_amount,
-                SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' THEN 1 ELSE 0 END) AS pending_count
-            FROM payment GROUP BY exp_id
-        ) pay_agg ON pay_agg.exp_id = e.exp_id
-        WHERE (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
-          AND YEAR(e.exp_month) = YEAR(CURDATE())
-          AND MONTH(e.exp_month) = MONTH(CURDATE())
-          AND NOT (DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m'))
-        ORDER BY r.room_number ASC
-    ");
-    $expenses = $expenseStmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $expenseStmt = $pdo->query("
+             SELECT e.exp_id, e.exp_month, e.exp_total,
+                 e.room_price, e.exp_elec_chg, e.exp_water,
+                   c.ctr_id, r.room_number, COALESCE(t.tnt_name, '') AS tnt_name,
+                                     CASE WHEN EXISTS (
+                                         SELECT 1
+                                         FROM utility u2
+                                         WHERE u2.ctr_id = e.ctr_id
+                                             AND YEAR(u2.utl_date) = YEAR(e.exp_month)
+                                             AND MONTH(u2.utl_date) = MONTH(e.exp_month)
+                                             AND u2.utl_water_end IS NOT NULL
+                                             AND u2.utl_elec_end IS NOT NULL
+                                     ) THEN 1 ELSE 0 END AS has_complete_meter,
+                   COALESCE(pay_agg.approved_amount, 0) AS paid_amount,
+                   COALESCE(pay_agg.pending_count, 0) AS pending_count
+            FROM expense e
+            INNER JOIN contract c ON e.ctr_id = c.ctr_id AND c.ctr_status = '0'
+            LEFT JOIN room r ON c.room_id = r.room_id
+            LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+            LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id
+            LEFT JOIN (
+                SELECT exp_id,
+                    SUM(CASE WHEN pay_status = '1' THEN pay_amount ELSE 0 END) AS approved_amount,
+                    SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' THEN 1 ELSE 0 END) AS pending_count
+                FROM payment GROUP BY exp_id
+            ) pay_agg ON pay_agg.exp_id = e.exp_id
+            WHERE (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
+              AND YEAR(e.exp_month) = YEAR(CURDATE())
+              AND MONTH(e.exp_month) = MONTH(CURDATE())
+              AND NOT (DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m'))
+              AND (
+                COALESCE(pay_agg.pending_count, 0) > 0
+                OR COALESCE(pay_agg.approved_amount, 0) < COALESCE(e.exp_total, 0)
+              )
+            ORDER BY r.room_number ASC
+        ");
+        $expenses = $expenseStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $expenses = [];
+    }
 
     // === Tab 4: การชำระเงิน (รอตรวจสอบ) ===
-    $paymentStmt = $pdo->query("
-        SELECT p.pay_id, p.pay_amount, p.pay_date, p.pay_status, p.pay_proof, p.pay_remark,
-               e.exp_id, e.exp_month, e.exp_total,
-               r.room_number, t.tnt_name, t.tnt_lastname
-        FROM payment p
-        LEFT JOIN expense e ON p.exp_id = e.exp_id
-        LEFT JOIN contract c ON e.ctr_id = c.ctr_id
-        LEFT JOIN room r ON c.room_id = r.room_id
-        LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        WHERE p.pay_status = '0'
-          AND p.pay_proof IS NOT NULL AND p.pay_proof <> ''
-        ORDER BY p.pay_date DESC
-        LIMIT 50
-    ");
-    $pendingPayments = $paymentStmt->fetchAll(PDO::FETCH_ASSOC);
+    try {
+        $paymentStmt = $pdo->query("
+            SELECT x.payment_kind, x.pay_id, x.pay_amount, x.pay_date, x.pay_status, x.pay_proof, x.pay_remark,
+                   x.exp_id, x.exp_month, x.exp_total, x.room_number, x.tnt_name
+            FROM (
+                SELECT 'pending' AS payment_kind,
+                       p.pay_id, p.pay_amount, p.pay_date, p.pay_status, p.pay_proof, p.pay_remark,
+                       e.exp_id, e.exp_month, e.exp_total,
+                       r.room_number, COALESCE(t.tnt_name, '') AS tnt_name
+                FROM payment p
+                LEFT JOIN expense e ON p.exp_id = e.exp_id
+                LEFT JOIN contract c ON e.ctr_id = c.ctr_id
+                LEFT JOIN room r ON c.room_id = r.room_id
+                LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+                WHERE p.pay_status = '0'
+                  AND p.pay_proof IS NOT NULL AND p.pay_proof <> ''
+
+                UNION ALL
+
+                SELECT 'unpaid' AS payment_kind,
+                       NULL AS pay_id,
+                       NULL AS pay_amount,
+                       NULL AS pay_date,
+                       '0' AS pay_status,
+                       NULL AS pay_proof,
+                       'ยังไม่ชำระ' AS pay_remark,
+                       e.exp_id, e.exp_month, e.exp_total,
+                       r.room_number, COALESCE(t.tnt_name, '') AS tnt_name
+                FROM expense e
+                INNER JOIN contract c ON e.ctr_id = c.ctr_id
+                LEFT JOIN room r ON c.room_id = r.room_id
+                LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+                LEFT JOIN payment p ON p.exp_id = e.exp_id
+                WHERE c.ctr_status = '0'
+                  AND p.exp_id IS NULL
+                  AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+                  AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+            ) x
+            ORDER BY x.pay_date DESC, x.exp_month DESC
+            LIMIT 50
+        ");
+        $pendingPayments = $paymentStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $pendingPayments = [];
+    }
 
 } catch (Exception $e) {
-    $bookings = [];
-    $utilities = [];
-    $expenses = [];
-    $pendingPayments = [];
-    $pendingWater = 0;
-    $pendingElec = 0;
+    // Keep partial data if some queries succeeded; fallback only for theme.
     $themeColor = '#0f172a';
     $isLight = false;
 }
@@ -133,19 +197,25 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>งานที่ต้องทำ - ระบบจัดการหอพัก</title>
     <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script>
         (function() {
             var c = localStorage.getItem('theme_class');
             if (c) {
                 document.documentElement.classList.add(c);
-                document.body.classList.add(c);
             }
         })();
     </script>
     <style>
+        html, body.reports-page {
+            font-family: 'Prompt', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
+        }
+
         .todo-tabs {
             display: flex;
             gap: 8px;
@@ -167,15 +237,31 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
             font-size: 14px;
             transition: all 0.2s ease;
             white-space: nowrap;
+            position: relative;
         }
         .todo-tab:hover {
             background: rgba(255,255,255,0.1);
             color: white;
         }
         .todo-tab.active {
-            background: rgba(59,130,246,0.2);
-            border-color: #3b82f6;
-            color: #60a5fa;
+            color: #ffffff !important;
+            border-color: transparent;
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.24);
+        }
+        .todo-tab.active svg {
+            color: #ffffff;
+        }
+        .todo-tab.active[data-tab="booking"] {
+            background: linear-gradient(135deg, #f59e0b, #d97706);
+        }
+        .todo-tab.active[data-tab="utility"] {
+            background: linear-gradient(135deg, #06b6d4, #0891b2);
+        }
+        .todo-tab.active[data-tab="expense"] {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+        }
+        .todo-tab.active[data-tab="payment"] {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
         }
         .todo-tab .tab-badge {
             display: inline-flex;
@@ -234,6 +320,56 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         }
         .todo-table tbody tr:hover {
             background: rgba(255,255,255,0.03);
+        }
+        .todo-table tbody tr.todo-row-link {
+            cursor: pointer;
+        }
+        .todo-table tbody tr.todo-row-link td:last-child {
+            text-align: right;
+            white-space: nowrap;
+        }
+        .todo-manage-link {
+            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            color: #ffffff !important;
+        }
+        .btn-action,
+        .btn-action:hover,
+        .btn-action:focus,
+        .btn-action:active,
+        .todo-manage-link,
+        .todo-manage-link:hover,
+        .todo-manage-link:focus,
+        .todo-manage-link:active {
+            color: #ffffff !important;
+            text-decoration: none;
+        }
+        .utility-manage-actions {
+            display: inline-flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+        .utility-water-btn {
+            background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+            border-color: #0369a1 !important;
+            color: #ffffff !important;
+        }
+        .utility-water-btn:hover {
+            background: linear-gradient(135deg, #38bdf8, #0ea5e9) !important;
+            border-color: #0284c7 !important;
+            color: #ffffff !important;
+        }
+        .utility-electric-btn {
+            background: linear-gradient(135deg, #fb923c, #ea580c) !important;
+            border-color: #c2410c !important;
+            color: #ffffff !important;
+        }
+        .utility-electric-btn:hover {
+            background: linear-gradient(135deg, #fdba74, #fb923c) !important;
+            border-color: #ea580c !important;
+            color: #ffffff !important;
         }
         .todo-table tbody tr:last-child td {
             border-bottom: none;
@@ -332,7 +468,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         /* Light theme */
         body.live-light .todo-tab { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.03); color: rgba(0,0,0,0.5); }
         body.live-light .todo-tab:hover { background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.8); }
-        body.live-light .todo-tab.active { background: rgba(59,130,246,0.1); border-color: #3b82f6; color: #2563eb; }
+        body.live-light .todo-tab.active { color: #fff !important; border-color: transparent; box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2); }
         body.live-light .todo-table thead th { background: rgba(0,0,0,0.03); color: rgba(0,0,0,0.5); border-bottom-color: rgba(0,0,0,0.08); }
         body.live-light .todo-table tbody td { color: rgba(0,0,0,0.8); border-bottom-color: rgba(0,0,0,0.06); }
         body.live-light .todo-table tbody tr:hover { background: rgba(0,0,0,0.02); }
@@ -340,33 +476,117 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         body.live-light .todo-card-header { border-bottom-color: rgba(0,0,0,0.06); }
         body.live-light .todo-card-header h3 { color: rgba(0,0,0,0.85); }
         body.live-light .empty-state { color: rgba(0,0,0,0.35); }
+
+        /* Force active tab colors (override Bootstrap/main.css collisions) */
+        body.reports-page .todo-tabs .todo-tab.active,
+        body.live-light.reports-page .todo-tabs .todo-tab.active {
+            color: #ffffff !important;
+            border-color: transparent !important;
+        }
+        body.reports-page .todo-tabs .todo-tab.active[data-tab="booking"],
+        body.live-light.reports-page .todo-tabs .todo-tab.active[data-tab="booking"] {
+            background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+            box-shadow: 0 8px 18px rgba(217, 119, 6, 0.35) !important;
+        }
+        body.reports-page .todo-tabs .todo-tab.active[data-tab="utility"],
+        body.live-light.reports-page .todo-tabs .todo-tab.active[data-tab="utility"] {
+            background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+            box-shadow: 0 8px 18px rgba(8, 145, 178, 0.35) !important;
+        }
+        body.reports-page .todo-tabs .todo-tab.active[data-tab="expense"],
+        body.live-light.reports-page .todo-tabs .todo-tab.active[data-tab="expense"] {
+            background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+            box-shadow: 0 8px 18px rgba(124, 58, 237, 0.35) !important;
+        }
+        body.reports-page .todo-tabs .todo-tab.active[data-tab="payment"],
+        body.live-light.reports-page .todo-tabs .todo-tab.active[data-tab="payment"] {
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            box-shadow: 0 8px 18px rgba(220, 38, 38, 0.35) !important;
+        }
+        body.reports-page .todo-tabs .todo-tab.active svg,
+        body.live-light.reports-page .todo-tabs .todo-tab.active svg {
+            color: #ffffff !important;
+            stroke: #ffffff !important;
+        }
+
+        /* Ultimate fallback active style */
+        body.reports-page .todo-tabs .todo-tab.active {
+            background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+            color: #ffffff !important;
+            border-color: transparent !important;
+            box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35) !important;
+        }
+        body.reports-page .todo-tabs .todo-tab.active svg {
+            stroke: #ffffff !important;
+            color: #ffffff !important;
+            opacity: 1 !important;
+        }
     </style>
 </head>
 <body class="reports-page">
+    <script>
+        (function() {
+            var c = localStorage.getItem('theme_class');
+            if (c && document.body) {
+                document.body.classList.add(c);
+            }
+        })();
+    </script>
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         <main class="app-main">
             <div>
                 <?php $pageTitle = 'งานที่ต้องทำ'; include __DIR__ . '/../includes/page_header.php'; ?>
 
+                <style>
+                    /* Late override: loaded after sidebar include, so it wins */
+                    .app-main .todo-tabs .todo-tab.active,
+                    .app-main .todo-tabs .todo-tab.is-active {
+                        background: #1d4ed8 !important;
+                        border-color: #1d4ed8 !important;
+                        color: #ffffff !important;
+                        box-shadow: 0 10px 20px rgba(29, 78, 216, 0.35) !important;
+                    }
+
+                    .app-main .todo-tabs .todo-tab.active svg,
+                    .app-main .todo-tabs .todo-tab.is-active svg,
+                    .app-main .todo-tabs .todo-tab.active svg *,
+                    .app-main .todo-tabs .todo-tab.is-active svg * {
+                        stroke: #ffffff !important;
+                        color: #ffffff !important;
+                        opacity: 1 !important;
+                    }
+
+                    .app-main .utility-manage-actions .btn-action,
+                    .app-main .utility-manage-actions .btn-action:hover,
+                    .app-main .utility-manage-actions .btn-action:focus,
+                    .app-main .utility-manage-actions .btn-action:active,
+                    .app-main .utility-manage-actions .todo-manage-link,
+                    .app-main .utility-manage-actions .todo-manage-link:hover,
+                    .app-main .utility-manage-actions .todo-manage-link:focus,
+                    .app-main .utility-manage-actions .todo-manage-link:active {
+                        color: #ffffff !important;
+                    }
+                </style>
+
                 <!-- Tab Navigation -->
                 <div class="todo-tabs">
-                    <button class="todo-tab active" data-tab="booking" onclick="switchTab('booking')">
+                    <button type="button" class="todo-tab active" data-tab="booking" onclick="switchTab('booking')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
                         การจอง
                         <?php if ($bookingCount > 0): ?><span class="tab-badge booking"><?php echo $bookingCount; ?></span><?php endif; ?>
                     </button>
-                    <button class="todo-tab" data-tab="utility" onclick="switchTab('utility')">
+                    <button type="button" class="todo-tab" data-tab="utility" onclick="switchTab('utility')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
                         จดมิเตอร์
                         <?php if ($utilityPendingCount > 0): ?><span class="tab-badge utility"><?php echo $utilityPendingCount; ?></span><?php endif; ?>
                     </button>
-                    <button class="todo-tab" data-tab="expense" onclick="switchTab('expense')">
+                    <button type="button" class="todo-tab" data-tab="expense" onclick="switchTab('expense')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                         ค่าใช้จ่าย
                         <?php if ($expenseCount > 0): ?><span class="tab-badge expense"><?php echo $expenseCount; ?></span><?php endif; ?>
                     </button>
-                    <button class="todo-tab" data-tab="payment" onclick="switchTab('payment')">
+                    <button type="button" class="todo-tab" data-tab="payment" onclick="switchTab('payment')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         รอชำระเงิน
                         <?php if ($paymentCount > 0): ?><span class="tab-badge payment"><?php echo $paymentCount; ?></span><?php endif; ?>
@@ -378,7 +598,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                     <div class="todo-card">
                         <div class="todo-card-header">
                             <h3>รายการจองที่รอดำเนินการ</h3>
-                            <a href="manage_booking.php" class="btn-action primary">ดูทั้งหมด →</a>
+                            <a href="manage_booking.php?todo_only=1&status=1" class="btn-action primary">ดูทั้งหมด →</a>
                         </div>
                         <div class="todo-card-body">
                             <?php if (empty($bookings)): ?>
@@ -393,12 +613,13 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>ผู้เช่า</th>
                                         <th>วันที่จอง</th>
                                         <th>สถานะ</th>
+                                        <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
                                         <?php foreach ($bookings as $b): ?>
                                         <tr>
                                             <td><strong><?php echo htmlspecialchars($b['room_number'] ?? '-'); ?></strong><br><small style="color:rgba(255,255,255,0.4)"><?php echo htmlspecialchars($b['roomtype_name'] ?? ''); ?></small></td>
-                                            <td><?php echo htmlspecialchars(($b['tnt_name'] ?? '') . ' ' . ($b['tnt_lastname'] ?? '')); ?></td>
+                                            <td><?php echo htmlspecialchars($b['tnt_name'] ?? '-'); ?></td>
                                             <td><?php echo $b['bkg_date'] ? date('d/m/Y', strtotime($b['bkg_date'])) : '-'; ?></td>
                                             <td>
                                                 <?php if ($b['bkg_status'] == 1): ?>
@@ -407,6 +628,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                     <span class="status-chip checkedin">เข้าพักแล้ว</span>
                                                 <?php endif; ?>
                                             </td>
+                                            <td><a class="btn-action primary todo-manage-link" href="manage_booking.php?todo_only=1&status=1&bkg_id=<?php echo (int)$b['bkg_id']; ?>">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -436,16 +658,18 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>ผู้เช่า</th>
                                         <th>น้ำ</th>
                                         <th>ไฟ</th>
+                                        <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
                                         <?php foreach ($utilities as $u): ?>
                                         <?php
                                             $waterDone = !empty($u['utl_id']) && $u['utl_water_end'] !== null;
                                             $elecDone = !empty($u['utl_id']) && $u['utl_elec_end'] !== null;
+                                            $utilityCtrId = (int)($u['ctr_id'] ?? 0);
                                         ?>
                                         <tr>
                                             <td><strong><?php echo htmlspecialchars($u['room_number'] ?? '-'); ?></strong></td>
-                                            <td><?php echo htmlspecialchars(($u['tnt_name'] ?? '') . ' ' . ($u['tnt_lastname'] ?? '')); ?></td>
+                                            <td><?php echo htmlspecialchars($u['tnt_name'] ?? '-'); ?></td>
                                             <td>
                                                 <?php if ($waterDone): ?>
                                                     <span class="status-chip done-water">✓ จดแล้ว (<?php echo htmlspecialchars($u['utl_water_end']); ?>)</span>
@@ -459,6 +683,16 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                 <?php else: ?>
                                                     <span class="status-chip not-done">✗ ยังไม่จด</span>
                                                 <?php endif; ?>
+                                            </td>
+                                            <td>
+                                                <div class="utility-manage-actions">
+                                                    <?php if (!$waterDone): ?>
+                                                    <a class="btn-action primary todo-manage-link utility-water-btn" href="manage_utility.php?todo_only=1&ctr_id=<?php echo $utilityCtrId; ?>&tab=water">จัดการน้ำ</a>
+                                                    <?php endif; ?>
+                                                    <?php if (!$elecDone): ?>
+                                                    <a class="btn-action primary todo-manage-link utility-electric-btn" href="manage_utility.php?todo_only=1&ctr_id=<?php echo $utilityCtrId; ?>&tab=electric">จัดการไฟ</a>
+                                                    <?php endif; ?>
+                                                </div>
                                             </td>
                                         </tr>
                                         <?php endforeach; ?>
@@ -490,6 +724,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>ยอดรวม</th>
                                         <th>ชำระแล้ว</th>
                                         <th>สถานะ</th>
+                                        <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
                                         <?php foreach ($expenses as $exp): ?>
@@ -497,17 +732,30 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $total = floatval($exp['exp_total']);
                                             $paid = floatval($exp['paid_amount']);
                                             $hasPending = intval($exp['pending_count']) > 0;
-                                            if ($hasPending) { $statusClass = 'pending'; $statusText = 'รอตรวจสอบ'; }
+                                            $hasCompleteMeter = intval($exp['has_complete_meter'] ?? 0) === 1;
+                                            $meterCtrId = (int)($exp['ctr_id'] ?? 0);
+                                            $meterManageHref = ($meterCtrId > 0) ? ('manage_utility.php?todo_only=1&ctr_id=' . $meterCtrId) : 'manage_utility.php';
+                                            if (!$hasCompleteMeter) { $statusClass = 'unpaid'; $statusText = 'ยังไม่ได้จดมิเตอร์'; }
+                                            elseif ($hasPending) { $statusClass = 'pending'; $statusText = 'รอตรวจสอบ'; }
                                             elseif ($paid >= $total && $total > 0) { $statusClass = 'paid'; $statusText = 'ชำระแล้ว'; }
                                             elseif ($paid > 0) { $statusClass = 'partial'; $statusText = 'ชำระบางส่วน'; }
                                             else { $statusClass = 'unpaid'; $statusText = 'ยังไม่ชำระ'; }
                                         ?>
                                         <tr>
                                             <td><strong><?php echo htmlspecialchars($exp['room_number'] ?? '-'); ?></strong></td>
-                                            <td><?php echo htmlspecialchars(($exp['tnt_name'] ?? '') . ' ' . ($exp['tnt_lastname'] ?? '')); ?></td>
+                                            <td><?php echo htmlspecialchars($exp['tnt_name'] ?? '-'); ?></td>
                                             <td><?php echo number_format($total, 2); ?> ฿</td>
                                             <td><?php echo number_format($paid, 2); ?> ฿</td>
-                                            <td><span class="status-chip <?php echo $statusClass; ?>"><?php echo $statusText; ?></span></td>
+                                            <td>
+                                                <?php if (!$hasCompleteMeter): ?>
+                                                    <a href="<?php echo htmlspecialchars($meterManageHref); ?>" class="status-chip <?php echo $statusClass; ?>" style="text-decoration:none;display:inline-flex;align-items:center;">
+                                                        <?php echo $statusText; ?>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="status-chip <?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
+                                                <?php endif; ?>
+                                            </td>
+                                            <td><a class="btn-action primary todo-manage-link" href="manage_expenses.php">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -538,21 +786,25 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>จำนวนเงิน</th>
                                         <th>วันที่ชำระ</th>
                                         <th>สลิป</th>
+                                        <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
                                         <?php foreach ($pendingPayments as $p): ?>
                                         <tr>
                                             <td><strong><?php echo htmlspecialchars($p['room_number'] ?? '-'); ?></strong></td>
-                                            <td><?php echo htmlspecialchars(($p['tnt_name'] ?? '') . ' ' . ($p['tnt_lastname'] ?? '')); ?></td>
-                                            <td><?php echo number_format(floatval($p['pay_amount']), 2); ?> ฿</td>
+                                            <td><?php echo htmlspecialchars($p['tnt_name'] ?? '-'); ?></td>
+                                            <td><?php echo number_format(floatval(($p['payment_kind'] ?? '') === 'unpaid' ? ($p['exp_total'] ?? 0) : ($p['pay_amount'] ?? 0)), 2); ?> ฿</td>
                                             <td><?php echo $p['pay_date'] ? date('d/m/Y', strtotime($p['pay_date'])) : '-'; ?></td>
                                             <td>
-                                                <?php if (!empty($p['pay_proof'])): ?>
-                                                    <span class="status-chip pending">มีสลิป</span>
+                                                <?php if (($p['payment_kind'] ?? '') === 'unpaid'): ?>
+                                                    <span class="status-chip unpaid">ยังไม่ชำระ</span>
+                                                <?php elseif (!empty($p['pay_proof'])): ?>
+                                                    <span class="status-chip pending">รอตรวจสอบ</span>
                                                 <?php else: ?>
                                                     <span style="color:rgba(255,255,255,0.3);">-</span>
                                                 <?php endif; ?>
                                             </td>
+                                            <td><a class="btn-action primary todo-manage-link" href="manage_payments.php">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -568,14 +820,72 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        function applyTabVisualState(button, isActive) {
+            if (!button) return;
+
+            button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+            button.classList.toggle('is-active', isActive);
+
+            if (isActive) {
+                button.style.setProperty('background', '#1d4ed8', 'important');
+                button.style.setProperty('color', '#ffffff', 'important');
+                button.style.setProperty('border-color', '#1d4ed8', 'important');
+                button.style.setProperty('box-shadow', '0 10px 20px rgba(29, 78, 216, 0.35)', 'important');
+            } else {
+                button.style.removeProperty('background');
+                button.style.removeProperty('color');
+                button.style.removeProperty('border-color');
+                button.style.removeProperty('box-shadow');
+            }
+
+            const icon = button.querySelector('svg');
+            if (icon) {
+                if (isActive) {
+                    icon.style.setProperty('stroke', '#ffffff', 'important');
+                    icon.style.setProperty('color', '#ffffff', 'important');
+                    icon.style.setProperty('opacity', '1', 'important');
+                } else {
+                    icon.style.removeProperty('stroke');
+                    icon.style.removeProperty('color');
+                    icon.style.removeProperty('opacity');
+                }
+
+                icon.querySelectorAll('path, line, rect, circle, polyline, polygon, ellipse').forEach(function(node) {
+                    if (isActive) {
+                        node.style.setProperty('stroke', '#ffffff', 'important');
+                        node.style.setProperty('opacity', '1', 'important');
+                    } else {
+                        node.style.removeProperty('stroke');
+                        node.style.removeProperty('opacity');
+                    }
+                });
+            }
+        }
+
         function switchTab(tabName) {
+            const tabs = document.querySelectorAll('.todo-tab');
+            const panels = document.querySelectorAll('.todo-panel');
+
             // Deactivate all tabs and panels
-            document.querySelectorAll('.todo-tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.todo-panel').forEach(p => p.classList.remove('active'));
+            tabs.forEach(function(tab) {
+                tab.classList.remove('active');
+                applyTabVisualState(tab, false);
+            });
+            panels.forEach(function(panel) {
+                panel.classList.remove('active');
+            });
 
             // Activate selected
-            document.querySelector(`.todo-tab[data-tab="${tabName}"]`).classList.add('active');
-            document.getElementById('panel-' + tabName).classList.add('active');
+            const selectedTab = document.querySelector('.todo-tab[data-tab="' + tabName + '"]');
+            const selectedPanel = document.getElementById('panel-' + tabName);
+
+            if (selectedTab) {
+                selectedTab.classList.add('active');
+                applyTabVisualState(selectedTab, true);
+            }
+            if (selectedPanel) {
+                selectedPanel.classList.add('active');
+            }
 
             // Update URL hash without scrolling
             history.replaceState(null, '', '#' + tabName);
@@ -584,9 +894,21 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         // Restore tab from URL hash on load
         document.addEventListener('DOMContentLoaded', function() {
             const hash = window.location.hash.replace('#', '');
-            if (['booking', 'utility', 'expense', 'payment'].includes(hash)) {
-                switchTab(hash);
-            }
+            const initialTab = ['booking', 'utility', 'expense', 'payment'].includes(hash) ? hash : 'booking';
+            switchTab(initialTab);
+
+            document.querySelectorAll('.todo-row-link').forEach(function(row) {
+                row.addEventListener('click', function(e) {
+                    const interactive = e.target.closest('a, button, input, select, textarea, label');
+                    if (interactive) {
+                        return;
+                    }
+                    const href = row.getAttribute('data-href');
+                    if (href) {
+                        window.location.href = href;
+                    }
+                });
+            });
         });
     </script>
 </body>

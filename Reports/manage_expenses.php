@@ -201,6 +201,49 @@ $expStmt = $pdo->prepare($expenseSql);
 $expStmt->execute($expenseParams);
 $expenses = $expStmt->fetchAll(PDO::FETCH_ASSOC);
 
+// ตรวจสอบห้องที่ยังไม่ได้จดมิเตอร์เดือนที่กำลังดูอยู่
+$meterMissingByExp = []; // exp_id => true
+$meterMissingRooms = []; // [['room_number'=>, 'tnt_name'=>, 'month'=>]]
+if ($selectedMonth !== '' && !empty($expenses)) {
+  [$filterYear, $filterMon] = explode('-', $selectedMonth);
+  $filterYearInt = (int)$filterYear;
+  $filterMonInt  = (int)$filterMon;
+
+  $expByCtr = [];
+  foreach ($expenses as $exp) {
+    $expByCtr[(int)$exp['ctr_id']] = $exp;
+  }
+
+  if (!empty($expByCtr)) {
+    $ctrIds = array_keys($expByCtr);
+    $ph = implode(',', array_fill(0, count($ctrIds), '?'));
+    $utilChkStmt = $pdo->prepare(
+      "SELECT DISTINCT ctr_id FROM utility
+       WHERE ctr_id IN ($ph)
+         AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?
+         AND utl_water_end IS NOT NULL
+         AND utl_elec_end IS NOT NULL"
+    );
+    $utilChkStmt->execute([...$ctrIds, $filterMonInt, $filterYearInt]);
+
+    $hasUtilSet = [];
+    foreach ($utilChkStmt->fetchAll(PDO::FETCH_COLUMN) as $cid) {
+      $hasUtilSet[(int)$cid] = true;
+    }
+
+    foreach ($expByCtr as $ctrId => $exp) {
+      if (empty($hasUtilSet[$ctrId])) {
+        $meterMissingByExp[(int)$exp['exp_id']] = true;
+        $meterMissingRooms[] = [
+          'room_number' => $exp['room_number'] ?? '-',
+          'tnt_name'    => $exp['tnt_name'] ?? '-',
+          'month'       => date('m/Y', strtotime((string)$exp['exp_month'])),
+        ];
+      }
+    }
+  }
+}
+
 // ดึงข้อมูล payment สำหรับแต่ละ expense (เฉพาะที่อนุมัติแล้ว pay_status = '1')
 // สำคัญ: ไม่นับรวม payment ที่มี pay_remark = 'มัดจำ' เพราะมัดจำไม่ใช่การชำระค่าใช้จ่ายรายเดือน
 $paymentsByExp = [];
@@ -290,15 +333,30 @@ $statusColors = [
 ];
 
 $buildExpenseStatus = function(array $exp) use (
+  $meterMissingByExp,
   $paymentFlagsByExp,
   $statusMap,
   $statusColors
 ) {
   $expId = (int)($exp['exp_id'] ?? 0);
+  $hasMeterMissing = !empty($meterMissingByExp[$expId]);
 
   $chargesPaid = (int)($paymentFlagsByExp[$expId]['approved_amount'] ?? 0);
   $pendingCount = (int)($paymentFlagsByExp[$expId]['pending_count'] ?? 0);
   $chargesTotal = (int)($exp['exp_total'] ?? 0);
+
+  if ($hasMeterMissing) {
+    $chargesRemain = max(0, $chargesTotal - $chargesPaid);
+    return [
+      'status' => '2',
+      'statusText' => 'ยังไม่ได้จดมิเตอร์',
+      'statusColor' => '#ef4444',
+      'totalColor' => '#ef4444',
+      'chargesPaid' => $chargesPaid,
+      'chargesTotal' => $chargesTotal,
+      'chargesRemain' => $chargesRemain,
+    ];
+  }
 
   if ($pendingCount > 0) {
     $status = '2';
@@ -369,46 +427,6 @@ $pendingPartialCount = $stats['pending'] + $stats['partial'];
 $pendingPartialTotal = $stats['total_pending'] + $stats['total_partial'];
 $totalExpenseCount = $stats['unpaid'] + $stats['paid'] + $stats['pending'] + $stats['partial'];
 
-// --- ตรวจสอบห้องที่ยังไม่ได้จดมิเตอร์เดือนที่กำลังดูอยู่ ---
-$meterMissingByExp = []; // exp_id => true
-$meterMissingRooms = []; // [['room_number'=>, 'tnt_name'=>, 'month'=>]]
-if ($selectedMonth !== '' && !empty($expenses)) {
-    [$filterYear, $filterMon] = explode('-', $selectedMonth);
-    $filterYearInt = (int)$filterYear;
-    $filterMonInt  = (int)$filterMon;
-    // สร้าง map: ctr_id -> exp
-    $expByCtr = [];
-    foreach ($expenses as $exp) {
-        $expByCtr[(int)$exp['ctr_id']] = $exp;
-    }
-    // batch check utility
-    if (!empty($expByCtr)) {
-        $ctrIds = array_keys($expByCtr);
-        $ph = implode(',', array_fill(0, count($ctrIds), '?'));
-        $utilChkStmt = $pdo->prepare(
-            "SELECT DISTINCT ctr_id FROM utility
-             WHERE ctr_id IN ($ph)
-           AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?
-           AND utl_water_end IS NOT NULL
-           AND utl_elec_end IS NOT NULL"
-        );
-        $utilChkStmt->execute([...$ctrIds, $filterMonInt, $filterYearInt]);
-        $hasUtilSet = [];
-        foreach ($utilChkStmt->fetchAll(PDO::FETCH_COLUMN) as $cid) {
-            $hasUtilSet[(int)$cid] = true;
-        }
-        foreach ($expByCtr as $ctrId => $exp) {
-            if (empty($hasUtilSet[$ctrId])) {
-                $meterMissingByExp[(int)$exp['exp_id']] = true;
-                $meterMissingRooms[] = [
-                    'room_number' => $exp['room_number'] ?? '-',
-                    'tnt_name'    => $exp['tnt_name']    ?? '-',
-                    'month'       => date('m/Y', strtotime($exp['exp_month'])),
-                ];
-            }
-        }
-    }
-}
 // --- END ตรวจสอบมิเตอร์ ---
 
 $logoFilename = 'Logo.jpg';
@@ -2695,7 +2713,7 @@ try {
         const fallbackStatusText = isVerified ? 'ชำระแล้ว' : 'รอตรวจสอบ';
         const statusText = String(context.statusText || '').trim() || fallbackStatusText;
         let statusClass = isVerified ? 'paid' : 'pending';
-        if (statusText.startsWith('ยังไม่ชำระ')) {
+        if (statusText.startsWith('ยังไม่ชำระ') || statusText.startsWith('ยังไม่ได้จดมิเตอร์')) {
           statusClass = 'unpaid';
         } else if (statusText.startsWith('ชำระยังไม่ครบ')) {
           statusClass = 'partial';

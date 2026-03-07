@@ -37,6 +37,35 @@ $bookingStatusBadgeCounts = [
   'checkedin' => 0,
   'cancelled' => 0,
 ];
+$sidebarDataLoadedFromDb = false;
+$sidebarCacheTtlSeconds = 20;
+$sidebarCacheKey = '__sidebar_snapshot_v1';
+$sidebarSnapshot = $_SESSION[$sidebarCacheKey] ?? null;
+$currentAdminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : 0;
+$canUseSidebarSnapshot = is_array($sidebarSnapshot)
+  && isset($sidebarSnapshot['ts'], $sidebarSnapshot['admin_id'], $sidebarSnapshot['data'])
+  && (time() - (int)$sidebarSnapshot['ts'] <= $sidebarCacheTtlSeconds)
+  && (int)$sidebarSnapshot['admin_id'] === $currentAdminId;
+
+if ($canUseSidebarSnapshot) {
+    $cached = (array)$sidebarSnapshot['data'];
+    $siteName = (string)($cached['siteName'] ?? $siteName);
+    $logoFilename = (string)($cached['logoFilename'] ?? $logoFilename);
+    $themeColor = (string)($cached['themeColor'] ?? $themeColor);
+    $fontSize = (string)($cached['fontSize'] ?? $fontSize);
+    $adminGoogleLinked = !empty($cached['adminGoogleLinked']);
+    $adminGoogleEmail = (string)($cached['adminGoogleEmail'] ?? $adminGoogleEmail);
+    $wizardIncompleteCount = (int)($cached['wizardIncompleteCount'] ?? $wizardIncompleteCount);
+    $pendingPaymentReviewCount = (int)($cached['pendingPaymentReviewCount'] ?? $pendingPaymentReviewCount);
+    $expenseStatusBadgeCounts = (array)($cached['expenseStatusBadgeCounts'] ?? $expenseStatusBadgeCounts);
+    $paymentStatusBadgeCounts = (array)($cached['paymentStatusBadgeCounts'] ?? $paymentStatusBadgeCounts);
+    $utilityStatusBadgeCounts = (array)($cached['utilityStatusBadgeCounts'] ?? $utilityStatusBadgeCounts);
+    $repairStatusBadgeCounts = (array)($cached['repairStatusBadgeCounts'] ?? $repairStatusBadgeCounts);
+    $bookingStatusBadgeCounts = (array)($cached['bookingStatusBadgeCounts'] ?? $bookingStatusBadgeCounts);
+    if (empty($_SESSION['admin_picture']) && !empty($cached['adminPicture'])) {
+        $_SESSION['admin_picture'] = (string)$cached['adminPicture'];
+    }
+} else {
 try {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
@@ -123,7 +152,7 @@ try {
     ];
 
     // ดึงจำนวนสถานะการจองเพื่อแสดงที่เมนูการจองห้อง
-    $bookingStatusStmt = $pdo->query("\n        SELECT\n          SUM(CASE WHEN COALESCE(bkg_status, '0') = '1' THEN 1 ELSE 0 END) AS reserved_count,\n          SUM(CASE WHEN COALESCE(bkg_status, '0') = '2' THEN 1 ELSE 0 END) AS checkedin_count,\n          SUM(CASE WHEN COALESCE(bkg_status, '0') = '0' THEN 1 ELSE 0 END) AS cancelled_count\n        FROM booking\n    ");
+    $bookingStatusStmt = $pdo->query("\n        SELECT\n          SUM(CASE WHEN COALESCE(b.bkg_status, '0') = '1' AND active_ctr.ctr_id IS NULL THEN 1 ELSE 0 END) AS reserved_count,\n          SUM(CASE WHEN COALESCE(b.bkg_status, '0') = '2' THEN 1 ELSE 0 END) AS checkedin_count,\n          SUM(CASE WHEN COALESCE(b.bkg_status, '0') = '0' THEN 1 ELSE 0 END) AS cancelled_count\n        FROM booking b\n        LEFT JOIN contract active_ctr\n          ON active_ctr.room_id = b.room_id\n         AND active_ctr.ctr_status = '0'\n    ");
     $bookingStatusResult = $bookingStatusStmt ? $bookingStatusStmt->fetch(PDO::FETCH_ASSOC) : [];
     $bookingStatusBadgeCounts = [
       'reserved' => (int)($bookingStatusResult['reserved_count'] ?? 0),
@@ -133,16 +162,46 @@ try {
 
     // คงไว้เพื่อ compatibility กับโค้ดเดิม
     $pendingPaymentReviewCount = $paymentStatusBadgeCounts['pending'];
+    $sidebarDataLoadedFromDb = true;
 } catch (Exception $e) {
     // ใช้ค่า default ถ้า database error
 }
+  }
 
   $expenseStatusBadgeTotal = array_sum($expenseStatusBadgeCounts);
   $paymentStatusBadgeTotal = array_sum($paymentStatusBadgeCounts);
   $utilityStatusBadgeTotal = array_sum($utilityStatusBadgeCounts);
   $repairStatusBadgeTotal = array_sum($repairStatusBadgeCounts);
   $bookingStatusBadgeTotal = array_sum($bookingStatusBadgeCounts);
-  $todoBadgeTotal = $wizardIncompleteCount + $bookingStatusBadgeCounts['reserved'] + $utilityStatusBadgeCounts['water'] + $utilityStatusBadgeCounts['electric'] + $expenseStatusBadgeCounts['unpaid'] + $expenseStatusBadgeCounts['pending'] + $expenseStatusBadgeCounts['partial'] + $paymentStatusBadgeCounts['unpaid'] + $paymentStatusBadgeCounts['pending'] + $repairStatusBadgeCounts['pending'] + $repairStatusBadgeCounts['inprogress'];
+  $bookingActionBadgeTotal = (int)$bookingStatusBadgeCounts['reserved'];
+  $utilityActionBadgeTotal = (int)$utilityStatusBadgeCounts['water'] + (int)$utilityStatusBadgeCounts['electric'];
+  $expenseActionBadgeTotal = (int)$expenseStatusBadgeCounts['unpaid'] + (int)$expenseStatusBadgeCounts['pending'] + (int)$expenseStatusBadgeCounts['partial'];
+  $paymentActionBadgeTotal = (int)$paymentStatusBadgeCounts['unpaid'] + (int)$paymentStatusBadgeCounts['pending'];
+  $repairActionBadgeTotal = (int)$repairStatusBadgeCounts['pending'] + (int)$repairStatusBadgeCounts['inprogress'];
+  $todoBadgeTotal = $wizardIncompleteCount + $bookingActionBadgeTotal + $utilityActionBadgeTotal + $expenseActionBadgeTotal + $paymentActionBadgeTotal + $repairActionBadgeTotal;
+
+if ($sidebarDataLoadedFromDb) {
+  $_SESSION[$sidebarCacheKey] = [
+    'ts' => time(),
+    'admin_id' => $currentAdminId,
+    'data' => [
+      'siteName' => $siteName,
+      'logoFilename' => $logoFilename,
+      'themeColor' => $themeColor,
+      'fontSize' => $fontSize,
+      'adminGoogleLinked' => $adminGoogleLinked,
+      'adminGoogleEmail' => $adminGoogleEmail,
+      'adminPicture' => $_SESSION['admin_picture'] ?? '',
+      'wizardIncompleteCount' => $wizardIncompleteCount,
+      'pendingPaymentReviewCount' => $pendingPaymentReviewCount,
+      'expenseStatusBadgeCounts' => $expenseStatusBadgeCounts,
+      'paymentStatusBadgeCounts' => $paymentStatusBadgeCounts,
+      'utilityStatusBadgeCounts' => $utilityStatusBadgeCounts,
+      'repairStatusBadgeCounts' => $repairStatusBadgeCounts,
+      'bookingStatusBadgeCounts' => $bookingStatusBadgeCounts,
+    ],
+  ];
+}
 ?>
 <style>
   :root {
@@ -894,6 +953,22 @@ try {
     min-width: 0 !important;
   }
 
+  .todo-action-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 22px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    font-size: 0.67rem;
+    font-weight: 700;
+    line-height: 1;
+    color: #ffffff !important;
+    background: #ef4444;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
   .expense-status-badges {
     margin-left: auto;
     display: inline-flex;
@@ -1508,7 +1583,7 @@ try {
   <script>
   // Force override inline styles for Light Mode
   document.addEventListener('DOMContentLoaded', function() {
-    const allElements = document.querySelectorAll('section, div, .dashboard-grid, .chart-container');
+    const allElements = document.querySelectorAll('[style*="background"], [style*="linear-gradient"]');
     allElements.forEach(el => {
       const style = el.getAttribute('style');
       if (style && (style.includes('background') || style.includes('linear-gradient'))) {
@@ -3008,7 +3083,7 @@ try {
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             <span class="summary-label">งานที่ต้องทำ</span>
           </a>
-          <?php if ($todoBadgeTotal > 0): ?><span class="todo-total-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="งานรอดำเนินการ <?php echo $todoBadgeTotal; ?> รายการ" style="background:#f59e0b;color:white;border-radius:999px;min-width:20px;height:20px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;pointer-events:auto;"><?php echo $todoBadgeTotal > 99 ? '99+' : $todoBadgeTotal; ?></span><?php endif; ?>
+          <?php if ($todoBadgeTotal > 0): ?><span class="todo-total-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="งานรอดำเนินการ <?php echo $todoBadgeTotal; ?> รายการ" style="background:#ef4444;color:white;border-radius:999px;min-width:20px;height:20px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;pointer-events:auto;"><?php echo $todoBadgeTotal > 99 ? '99+' : $todoBadgeTotal; ?></span><?php endif; ?>
           <span class="chev chev-toggle" data-target="nav-todo" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
         <a class="wizard-nav-item" href="tenant_wizard.php" style="position: relative; padding-right: 2.5rem; border-left: 4px solid #3b82f6; margin: 0; border-radius: 8px; overflow: visible;">
@@ -3020,46 +3095,27 @@ try {
             </span>
             <?php endif; ?>
         </a>
-        <a class="booking-nav-item" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span><?php if ($bookingStatusBadgeTotal > 0): ?><span class="booking-status-badges" aria-label="สถานะการจอง"><?php if ($bookingStatusBadgeCounts['reserved'] > 0): ?><span class="booking-status-badge reserved" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="จองแล้ว"><?php echo $bookingStatusBadgeCounts['reserved'] > 99 ? '99+' : $bookingStatusBadgeCounts['reserved']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['checkedin'] > 0): ?><span class="booking-status-badge checkedin" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="เข้าพักแล้ว"><?php echo $bookingStatusBadgeCounts['checkedin'] > 99 ? '99+' : $bookingStatusBadgeCounts['checkedin']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['cancelled'] > 0): ?><span class="booking-status-badge cancelled" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยกเลิก"><?php echo $bookingStatusBadgeCounts['cancelled'] > 99 ? '99+' : $bookingStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
-        <a class="utility-nav-item" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span><?php if ($utilityStatusBadgeTotal > 0): ?><span class="utility-status-badges" aria-label="สถานะจดมิเตอร์น้ำไฟ"><?php if ($utilityStatusBadgeCounts['water'] > 0): ?><span class="utility-status-badge water" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="น้ำยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['water'] > 99 ? '99+' : $utilityStatusBadgeCounts['water']; ?></span><?php endif; ?><?php if ($utilityStatusBadgeCounts['electric'] > 0): ?><span class="utility-status-badge electric" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ไฟยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['electric'] > 99 ? '99+' : $utilityStatusBadgeCounts['electric']; ?></span><?php endif; ?></span><?php endif; ?></a>
+        <a class="booking-nav-item" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span><?php if ($bookingActionBadgeTotal > 0): ?><span class="booking-status-badges" aria-label="สถานะการจองค้าง"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: รอเข้าพัก/รอยืนยัน"><?php echo $bookingActionBadgeTotal > 99 ? '99+' : $bookingActionBadgeTotal; ?></span></span><?php endif; ?></a>
+        <a class="utility-nav-item" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span><?php if ($utilityActionBadgeTotal > 0): ?><span class="utility-status-badges" aria-label="สถานะจดมิเตอร์น้ำไฟค้าง"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: ห้องที่ยังไม่จดมิเตอร์"><?php echo $utilityActionBadgeTotal > 99 ? '99+' : $utilityActionBadgeTotal; ?></span></span><?php endif; ?></a>
                 <a class="expense-nav-item" href="manage_expenses.php">
           <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
           <span class="app-nav-label">ค่าใช้จ่าย</span>
-          <?php if ($expenseStatusBadgeTotal > 0): ?>
+          <?php if ($expenseActionBadgeTotal > 0): ?>
           <span class="expense-status-badges" aria-label="สถานะค่าใช้จ่าย">
-            <?php if ($expenseStatusBadgeCounts['unpaid'] > 0): ?>
-              <span class="expense-status-badge unpaid" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยังไม่ชำระ"><?php echo $expenseStatusBadgeCounts['unpaid'] > 99 ? '99+' : $expenseStatusBadgeCounts['unpaid']; ?></span>
-            <?php endif; ?>
-            <?php if ($expenseStatusBadgeCounts['pending'] > 0): ?>
-              <span class="expense-status-badge pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="รอตรวจสอบ"><?php echo $expenseStatusBadgeCounts['pending'] > 99 ? '99+' : $expenseStatusBadgeCounts['pending']; ?></span>
-            <?php endif; ?>
-            <?php if ($expenseStatusBadgeCounts['partial'] > 0): ?>
-              <span class="expense-status-badge partial" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ชำระยังไม่ครบ"><?php echo $expenseStatusBadgeCounts['partial'] > 99 ? '99+' : $expenseStatusBadgeCounts['partial']; ?></span>
-            <?php endif; ?>
-            <?php if ($expenseStatusBadgeCounts['paid'] > 0): ?>
-              <span class="expense-status-badge paid" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ชำระแล้ว"><?php echo $expenseStatusBadgeCounts['paid'] > 99 ? '99+' : $expenseStatusBadgeCounts['paid']; ?></span>
-            <?php endif; ?>
+            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: ยังไม่ชำระ/รอตรวจสอบ/ชำระไม่ครบ"><?php echo $expenseActionBadgeTotal > 99 ? '99+' : $expenseActionBadgeTotal; ?></span>
           </span>
           <?php endif; ?>
         </a>
         <a class="payment-nav-item" href="manage_payments.php">
           <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
           <span class="app-nav-label">การชำระเงิน</span>
-          <?php if ($paymentStatusBadgeTotal > 0): ?>
+          <?php if ($paymentActionBadgeTotal > 0): ?>
           <span class="payment-status-badges" aria-label="สถานะการชำระเงิน">
-            <?php if ($paymentStatusBadgeCounts['unpaid'] > 0): ?>
-              <span class="payment-status-badge unpaid" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยังไม่ชำระ"><?php echo $paymentStatusBadgeCounts['unpaid'] > 99 ? '99+' : $paymentStatusBadgeCounts['unpaid']; ?></span>
-            <?php endif; ?>
-            <?php if ($paymentStatusBadgeCounts['pending'] > 0): ?>
-              <span class="payment-status-badge pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="รอตรวจสอบ"><?php echo $paymentStatusBadgeCounts['pending'] > 99 ? '99+' : $paymentStatusBadgeCounts['pending']; ?></span>
-            <?php endif; ?>
-            <?php if ($paymentStatusBadgeCounts['paid'] > 0): ?>
-              <span class="payment-status-badge paid" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ตรวจสอบแล้ว"><?php echo $paymentStatusBadgeCounts['paid'] > 99 ? '99+' : $paymentStatusBadgeCounts['paid']; ?></span>
-            <?php endif; ?>
+            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: ยังไม่ชำระ/รอตรวจสอบ"><?php echo $paymentActionBadgeTotal > 99 ? '99+' : $paymentActionBadgeTotal; ?></span>
           </span>
           <?php endif; ?>
         </a>
-        <a class="repair-nav-item" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">แจ้งซ่อม</span><?php if ($repairStatusBadgeTotal > 0): ?><span class="repair-status-badges" aria-label="สถานะแจ้งซ่อม"><?php if ($repairStatusBadgeCounts['pending'] > 0): ?><span class="repair-status-badge pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="รอซ่อม"><?php echo $repairStatusBadgeCounts['pending'] > 99 ? '99+' : $repairStatusBadgeCounts['pending']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['inprogress'] > 0): ?><span class="repair-status-badge inprogress" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="กำลังซ่อม"><?php echo $repairStatusBadgeCounts['inprogress'] > 99 ? '99+' : $repairStatusBadgeCounts['inprogress']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['done'] > 0): ?><span class="repair-status-badge done" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ซ่อมเสร็จแล้ว"><?php echo $repairStatusBadgeCounts['done'] > 99 ? '99+' : $repairStatusBadgeCounts['done']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['cancelled'] > 0): ?><span class="repair-status-badge cancelled" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยกเลิก"><?php echo $repairStatusBadgeCounts['cancelled'] > 99 ? '99+' : $repairStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
+        <a class="repair-nav-item" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">แจ้งซ่อม</span><?php if ($repairActionBadgeTotal > 0): ?><span class="repair-status-badges" aria-label="สถานะแจ้งซ่อมค้าง"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: รอซ่อม/กำลังซ่อม"><?php echo $repairActionBadgeTotal > 99 ? '99+' : $repairActionBadgeTotal; ?></span></span><?php endif; ?></a>
       </details>
     </div>
   </nav>
@@ -3210,6 +3266,20 @@ try {
 <script>
 (function() {
   const sidebar = document.querySelector('.app-sidebar');
+  let isFreshLoginSession = false;
+
+  // First page load after a new login session: close all dropdowns.
+  try {
+    const currentLoginSession = <?php echo json_encode((string)session_id()); ?>;
+    const loginSessionKey = 'sidebar_login_session_id';
+    const savedLoginSession = localStorage.getItem(loginSessionKey);
+    if (savedLoginSession !== currentLoginSession) {
+      isFreshLoginSession = true;
+      localStorage.setItem(loginSessionKey, currentLoginSession);
+    }
+  } catch (e) {}
+
+  window.__sidebarFreshLogin = isFreshLoginSession;
   
   // Restore sidebar state on page load (desktop only)
   // Note: Sidebar toggle handler is now managed by animate-ui.js
@@ -3221,13 +3291,37 @@ try {
   
   // Set active menu item based on current page
   function setActiveMenu() {
-    const currentPage = window.location.pathname.split('/').pop();
+    const currentPage = (window.location.pathname.split('/').pop() || '').split('?')[0];
     const menuLinks = document.querySelectorAll('.app-nav a');
     
     menuLinks.forEach(link => {
       const href = link.getAttribute('href');
-      if (href && (href === currentPage || href.endsWith('/' + currentPage))) {
+      if (!href) return;
+
+      const normalizedHref = href.split('#')[0];
+      const hrefFile = (normalizedHref.split('/').pop() || '').split('?')[0];
+      if (hrefFile && hrefFile === currentPage) {
         link.classList.add('active');
+
+        // Skip auto-open on the very first page after login.
+        // Also skip auto-open when active link is a summary-link itself.
+        const parentDetails = link.closest('details[id]');
+        if (link.classList.contains('summary-link')) {
+          if (parentDetails) {
+            parentDetails.removeAttribute('open');
+            parentDetails.open = false;
+            try {
+              localStorage.setItem('sidebar_details_' + parentDetails.id, 'closed');
+            } catch (e) {}
+          }
+        } else if (!window.__sidebarFreshLogin) {
+          if (parentDetails) {
+            parentDetails.open = true;
+            try {
+              localStorage.setItem('sidebar_details_' + parentDetails.id, 'open');
+            } catch (e) {}
+          }
+        }
       }
     });
   }
@@ -3239,6 +3333,17 @@ try {
   document.querySelectorAll('summary .summary-link').forEach(function(link) {
     link.addEventListener('click', function(e) {
       e.stopPropagation(); // ป้องกันไม่ให้ toggle dropdown
+
+      // คลิกเมนูหลักของ dropdown นี้ ให้จำสถานะเป็นปิดอัตโนมัติ
+      const parentDetails = link.closest('details[id]');
+      if (parentDetails) {
+        parentDetails.removeAttribute('open');
+        parentDetails.open = false;
+        try {
+          localStorage.setItem('sidebar_details_' + parentDetails.id, 'closed');
+        } catch (err) {}
+      }
+
       // ให้ลิงก์ทำงานทันที
       window.location.href = link.getAttribute('href');
     });
@@ -3271,9 +3376,25 @@ try {
 // Save and restore collapsible details state
 (function() {
   let isInitializing = true;
+  const shouldCloseAllOnLogin = !!window.__sidebarFreshLogin;
   
   // Function to restore state - ทำงาน FORCE เพื่อ override ทุกอย่าง
   function restoreDetailsState() {
+    if (shouldCloseAllOnLogin) {
+      document.querySelectorAll('details[id]').forEach(function(details) {
+        details.removeAttribute('open');
+        details.open = false;
+        try {
+          localStorage.setItem('sidebar_details_' + details.id, 'closed');
+        } catch (e) {}
+      });
+
+      setTimeout(function() {
+        isInitializing = false;
+      }, 100);
+      return;
+    }
+
     document.querySelectorAll('details[id]').forEach(function(details) {
       const id = details.id;
       if (id) {
@@ -3291,6 +3412,46 @@ try {
           details.open = true;
         }
         // ถ้าไม่มีการบันทึก ใช้สถานะเริ่มต้นจาก HTML (ครั้งแรก)
+      }
+    });
+
+    // Auto-open only the group for current page, and close all unrelated groups.
+    const currentPage = (window.location.pathname.split('/').pop() || '').split('?')[0];
+    const activeDetailIds = new Set();
+
+    document.querySelectorAll('.app-nav a[href]').forEach(function(link) {
+      const href = link.getAttribute('href');
+      if (!href) return;
+      const hrefFile = (href.split('#')[0].split('/').pop() || '').split('?')[0];
+      if (hrefFile && hrefFile === currentPage) {
+        link.classList.add('active');
+        const parentDetails = link.closest('details[id]');
+        if (!parentDetails) return;
+
+        if (link.classList.contains('summary-link')) {
+          parentDetails.removeAttribute('open');
+          parentDetails.open = false;
+          try {
+            localStorage.setItem('sidebar_details_' + parentDetails.id, 'closed');
+          } catch (e) {}
+          return;
+        }
+
+        activeDetailIds.add(parentDetails.id);
+        parentDetails.open = true;
+        try {
+          localStorage.setItem('sidebar_details_' + parentDetails.id, 'open');
+        } catch (e) {}
+      }
+    });
+
+    document.querySelectorAll('details[id]').forEach(function(details) {
+      if (!activeDetailIds.has(details.id)) {
+        details.removeAttribute('open');
+        details.open = false;
+        try {
+          localStorage.setItem('sidebar_details_' + details.id, 'closed');
+        } catch (e) {}
       }
     });
     
@@ -3316,10 +3477,8 @@ try {
       setTimeout(restoreDetailsState, 50);
     });
   } else {
-    // ทำงานทันทีและซ้ำอีกครั้งหลังจาก setActiveMenu ทำงานเสร็จ
+    // ทำงานครั้งเดียวก็พอ เพื่อลดงานซ้ำตอนเปลี่ยนหน้า
     restoreDetailsState();
-    setTimeout(restoreDetailsState, 50);
-    setTimeout(restoreDetailsState, 200);
   }
 })();
 

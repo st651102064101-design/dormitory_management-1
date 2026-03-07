@@ -37,6 +37,15 @@ try {
             WHERE ctr_id = ?
               AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
               AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
+                            AND EXISTS (
+                                    SELECT 1
+                                    FROM utility u
+                                    WHERE u.ctr_id = expense.ctr_id
+                                        AND YEAR(u.utl_date) = YEAR(expense.exp_month)
+                                        AND MONTH(u.utl_date) = MONTH(expense.exp_month)
+                                        AND u.utl_water_end IS NOT NULL
+                                        AND u.utl_elec_end IS NOT NULL
+                            )
             GROUP BY exp_month
         ) latest ON e.exp_id = latest.exp_id
         ORDER BY e.exp_month DESC

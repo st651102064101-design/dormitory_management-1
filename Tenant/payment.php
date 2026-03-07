@@ -46,7 +46,16 @@ try {
             SELECT MAX(exp_id) AS exp_id
             FROM expense
             WHERE ctr_id = ?
-            AND exp_status IN ('0', '3')
+                            AND exp_status IN ('0', '3')
+                            AND EXISTS (
+                                    SELECT 1
+                                    FROM utility u
+                                    WHERE u.ctr_id = expense.ctr_id
+                                        AND YEAR(u.utl_date) = YEAR(expense.exp_month)
+                                        AND MONTH(u.utl_date) = MONTH(expense.exp_month)
+                                        AND u.utl_water_end IS NOT NULL
+                                        AND u.utl_elec_end IS NOT NULL
+                            )
               AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
               AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
             GROUP BY exp_month
@@ -139,6 +148,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('ไม่พบบิลที่ระบุ');
             }
 
+            $meterCheckStmt = $pdo->prepare("\n                SELECT 1\n                FROM utility\n                WHERE ctr_id = ?\n                  AND YEAR(utl_date) = YEAR(?)\n                  AND MONTH(utl_date) = MONTH(?)\n                  AND utl_water_end IS NOT NULL\n                  AND utl_elec_end IS NOT NULL\n                LIMIT 1\n            ");
+            $meterCheckStmt->execute([$contract['ctr_id'], (string)$expense['exp_month'], (string)$expense['exp_month']]);
+            if (!$meterCheckStmt->fetchColumn()) {
+                throw new Exception('บิลนี้ยังไม่ได้จดมิเตอร์ครบ จึงยังไม่สามารถชำระได้');
+            }
+
             $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') FOR UPDATE");
             $sumRowsStmt->execute([$exp_id]);
             $submittedAmount = 0;
@@ -182,7 +197,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT MAX(exp_id) AS exp_id
                     FROM expense
                     WHERE ctr_id = ?
-                        AND exp_status IN ('0', '3')
+                                                AND exp_status IN ('0', '3')
+                                                AND EXISTS (
+                                                        SELECT 1
+                                                        FROM utility u
+                                                        WHERE u.ctr_id = expense.ctr_id
+                                                            AND YEAR(u.utl_date) = YEAR(expense.exp_month)
+                                                            AND MONTH(u.utl_date) = MONTH(expense.exp_month)
+                                                            AND u.utl_water_end IS NOT NULL
+                                                            AND u.utl_elec_end IS NOT NULL
+                                                )
                       AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
                       AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
                     GROUP BY exp_month

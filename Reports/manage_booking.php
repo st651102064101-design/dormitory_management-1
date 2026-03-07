@@ -11,6 +11,13 @@ $pdo = connectDB();
 // รับค่า sort จาก query parameter
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 $orderBy = 'b.bkg_date DESC';
+$todoOnly = isset($_GET['todo_only']) && $_GET['todo_only'] === '1';
+$statusFilter = isset($_GET['status']) ? (string)$_GET['status'] : ($todoOnly ? '1' : 'all');
+$bookingIdFilter = isset($_GET['bkg_id']) ? (int)$_GET['bkg_id'] : 0;
+
+if (!in_array($statusFilter, ['all', '0', '1', '2'], true)) {
+  $statusFilter = 'all';
+}
 
 switch ($sortBy) {
   case 'oldest':
@@ -24,12 +31,57 @@ switch ($sortBy) {
     $orderBy = 'b.bkg_date DESC';
 }
 
+$bookingFilterSql = '';
+$bookingFilterParams = [];
+if ($bookingIdFilter > 0) {
+  $bookingFilterSql = ' WHERE b.bkg_id = :bkg_id_filter';
+  $bookingFilterParams[':bkg_id_filter'] = $bookingIdFilter;
+} elseif ($statusFilter !== 'all') {
+  $bookingFilterSql = ' WHERE b.bkg_status = :bkg_status_filter';
+  $bookingFilterParams[':bkg_status_filter'] = $statusFilter;
+}
+
+$fetchBookings = static function(PDO $pdo, string $orderBy, string $bookingFilterSql, array $bookingFilterParams): array {
+  $baseCondition = "(COALESCE(b.bkg_status, '0') <> '1' OR active_ctr.ctr_id IS NULL)";
+  $extraFilter = preg_replace('/^\s*WHERE\s+/i', '', trim($bookingFilterSql ?? ''));
+  $whereSql = "WHERE $baseCondition";
+  if ($extraFilter !== '') {
+    $whereSql .= " AND ($extraFilter)";
+  }
+
+  $sql = "
+    SELECT b.*, r.room_number, rt.type_name, rt.type_price, t.tnt_name
+    FROM booking b
+    LEFT JOIN room r ON b.room_id = r.room_id
+    LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+    LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
+    LEFT JOIN contract active_ctr ON active_ctr.room_id = b.room_id AND active_ctr.ctr_status = '0'
+    $whereSql
+    ORDER BY $orderBy
+  ";
+
+  $stmt = $pdo->prepare($sql);
+  foreach ($bookingFilterParams as $key => $value) {
+    $paramType = ($key === ':bkg_id_filter') ? PDO::PARAM_INT : PDO::PARAM_STR;
+    $stmt->bindValue($key, $value, $paramType);
+  }
+  $stmt->execute();
+
+  return $stmt->fetchAll(PDO::FETCH_ASSOC);
+};
+
 // ดึงข้อมูลห้องที่ว่าง (room_status = '0')
 $stmt = $pdo->query("
     SELECT r.*, rt.type_name, rt.type_price 
     FROM room r 
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id 
     WHERE r.room_status = '0'
+      AND NOT EXISTS (
+        SELECT 1
+        FROM contract c2
+        WHERE c2.room_id = r.room_id
+          AND c2.ctr_status = '0'
+      )
   ORDER BY CASE WHEN r.room_number REGEXP '^[0-9]+$' THEN 0 ELSE 1 END,
        CAST(r.room_number AS UNSIGNED),
        r.room_number ASC
@@ -52,15 +104,8 @@ $stmtTenants = $pdo->query("
 ");
 $selectableTenants = $stmtTenants->fetchAll(PDO::FETCH_ASSOC);
 
-// ดึงข้อมูลการจองทั้งหมด (รวมยกเลิก)
-$stmtBookings = $pdo->query("
-  SELECT b.*, r.room_number, rt.type_name, rt.type_price
-  FROM booking b
-  LEFT JOIN room r ON b.room_id = r.room_id
-  LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-  ORDER BY $orderBy
-");
-$bookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC);
+// ดึงข้อมูลการจองตาม filter ปัจจุบัน
+$bookings = $fetchBookings($pdo, $orderBy, $bookingFilterSql, $bookingFilterParams);
 
 // Auto-cancel bookings that reached check-in date without confirmation
 // วันที่เข้าพักถ้าน้อยกว่า/เท่ากับวันนี้ และยังไม่ได้เข้าพัก (status='1') ให้ยกเลิก (status='0')
@@ -79,16 +124,8 @@ try {
   error_log("Auto-cancel booking error: " . $e->getMessage());
 }
 
-// Re-fetch bookings after auto-cancellation (show all statuses including cancelled)
-$stmtBookings = $pdo->query("
-  SELECT b.*, r.room_number, rt.type_name, rt.type_price, t.tnt_name
-  FROM booking b
-  LEFT JOIN room r ON b.room_id = r.room_id
-  LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-  LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
-  ORDER BY $orderBy
-");
-$bookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC);
+// Re-fetch bookings after auto-cancellation using current filter
+$bookings = $fetchBookings($pdo, $orderBy, $bookingFilterSql, $bookingFilterParams);
 
 // คำนวณสถิติ
 $stats = [
@@ -342,6 +379,21 @@ try {
         let hasChecked = false;
         const FPS_READINGS_NEEDED = 6; // รวบรวม 6 ครั้งก่อน check
         const FPS_THRESHOLD = <?php echo (int)$fpsThreshold; ?>; // ค่าจาก database
+        const DEFAULT_VIEW_MODE = <?php echo json_encode($defaultViewMode === 'list' ? 'list' : 'grid'); ?>;
+
+        function getCurrentBookingView() {
+          const roomsGrid = document.getElementById('roomsGrid');
+          if (roomsGrid) {
+            return roomsGrid.classList.contains('list-view') ? 'list' : 'grid';
+          }
+          try {
+            const stored = localStorage.getItem('bookingViewMode');
+            if (stored === 'list' || stored === 'grid') {
+              return stored;
+            }
+          } catch (e) {}
+          return DEFAULT_VIEW_MODE;
+        }
         
         function checkFPS(currentTime) {
           frameCount++;
@@ -364,7 +416,12 @@ try {
               if (avgFPS < FPS_THRESHOLD) {
                 window.__isLowPerformance = true;
                 console.log('Low performance detected! Avg FPS:', avgFPS, 'Threshold:', FPS_THRESHOLD);
-                showPerformanceAlert(avgFPS);
+                const currentView = getCurrentBookingView();
+                if (currentView === 'grid') {
+                  showPerformanceAlert(avgFPS);
+                } else {
+                  console.log('Low performance detected, but current view is list. Skip FPS popup.');
+                }
               } else {
                 console.log('Performance OK, no alert needed');
               }
@@ -380,6 +437,9 @@ try {
         
         function showPerformanceAlert(fps) {
           console.log('showPerformanceAlert called with fps:', fps);
+          if (document.getElementById('fps-alert-overlay')) {
+            return;
+          }
           // Create Apple-style alert overlay
           const overlay = document.createElement('div');
           overlay.id = 'fps-alert-overlay';
@@ -3576,7 +3636,7 @@ try {
           <section class="manage-panel">
             <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
-                <h1>รายการจองทั้งหมด</h1>
+                <h1><?php echo ($bookingIdFilter > 0) ? 'รายการจองที่เลือก' : (($statusFilter === '1') ? 'รายการจองที่ต้องจัดการ' : 'รายการจองทั้งหมด'); ?></h1>
               </div>
               <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
                 <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>จองล่าสุด</option>
