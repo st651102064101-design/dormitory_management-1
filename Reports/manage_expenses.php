@@ -362,6 +362,13 @@ foreach ($expenses as $exp) {
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 
+// คำนวณ collection rate
+$totalAll = $stats['total_unpaid'] + $stats['total_paid'] + $stats['total_pending'] + $stats['total_partial'];
+$collectionPct = $totalAll > 0 ? round(($stats['total_paid'] / $totalAll) * 100) : 0;
+$pendingPartialCount = $stats['pending'] + $stats['partial'];
+$pendingPartialTotal = $stats['total_pending'] + $stats['total_partial'];
+$totalExpenseCount = $stats['unpaid'] + $stats['paid'] + $stats['pending'] + $stats['partial'];
+
 // --- ตรวจสอบห้องที่ยังไม่ได้จดมิเตอร์เดือนที่กำลังดูอยู่ ---
 $meterMissingByExp = []; // exp_id => true
 $meterMissingRooms = []; // [['room_number'=>, 'tnt_name'=>, 'month'=>]]
@@ -1359,6 +1366,289 @@ try {
           justify-content: flex-start;
         }
       }
+
+      /* === WORLD-CLASS UX: Collection Progress Bar === */
+      .collection-progress {
+        margin-top: 1rem;
+        padding: 1rem 1.25rem;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+      }
+      .collection-progress-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+      }
+      .collection-progress-label {
+        font-size: 0.88rem;
+        font-weight: 700;
+        color: #334155;
+      }
+      .collection-progress-pct {
+        font-size: 0.88rem;
+        font-weight: 800;
+        color: #2563eb;
+      }
+      .collection-bar {
+        height: 10px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+        position: relative;
+      }
+      .collection-bar-fill {
+        height: 100%;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #22c55e, #16a34a);
+        transition: width 0.8s cubic-bezier(0.4,0,0.2,1);
+        min-width: 0;
+      }
+      .collection-bar-fill.low { background: linear-gradient(90deg, #ef4444, #dc2626); }
+      .collection-bar-fill.mid { background: linear-gradient(90deg, #f59e0b, #d97706); }
+      .collection-segments {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.55rem;
+        flex-wrap: wrap;
+      }
+      .collection-segment {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.8rem;
+        color: #64748b;
+        font-weight: 600;
+      }
+      .collection-segment-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        flex-shrink: 0;
+      }
+
+      /* === WORLD-CLASS UX: Status Filter Tabs === */
+      .expense-filter-tabs {
+        display: flex;
+        gap: 0.4rem;
+        padding: 0;
+        margin: 0 0 1rem;
+        flex-wrap: wrap;
+      }
+      .expense-filter-tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        border: 1.5px solid #e2e8f0;
+        background: #ffffff;
+        color: #64748b;
+        font-size: 0.88rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.18s ease;
+        user-select: none;
+        white-space: nowrap;
+      }
+      .expense-filter-tab:hover {
+        border-color: #cbd5e1;
+        background: #f1f5f9;
+        color: #334155;
+      }
+      .expense-filter-tab.active {
+        background: #2563eb;
+        border-color: #2563eb;
+        color: #ffffff;
+        box-shadow: 0 2px 8px rgba(37,99,235,0.25);
+      }
+      .expense-filter-tab .tab-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 20px;
+        height: 20px;
+        padding: 0 5px;
+        border-radius: 999px;
+        background: rgba(0,0,0,0.08);
+        font-size: 0.75rem;
+        font-weight: 700;
+        line-height: 1;
+      }
+      .expense-filter-tab.active .tab-count {
+        background: rgba(255,255,255,0.25);
+        color: #ffffff;
+      }
+      .expense-filter-tab[data-status="0"] .tab-count { color: #dc2626; }
+      .expense-filter-tab[data-status="2"] .tab-count { color: #d97706; }
+      .expense-filter-tab[data-status="3"] .tab-count { color: #ea580c; }
+      .expense-filter-tab[data-status="1"] .tab-count { color: #16a34a; }
+      .expense-filter-tab.active .tab-count { color: #ffffff; }
+
+      /* === WORLD-CLASS UX: Unified Toolbar === */
+      .expense-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 0.65rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .expense-toolbar-search {
+        position: relative;
+        flex: 1;
+        min-width: 180px;
+        max-width: 320px;
+      }
+      .expense-toolbar-search input {
+        width: 100%;
+        padding: 0.55rem 0.75rem 0.55rem 2.4rem;
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        background: #ffffff;
+        color: #1f2937;
+        font-size: 0.9rem;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      }
+      .expense-toolbar-search input:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
+      }
+      .expense-toolbar-search input::placeholder { color: #94a3b8; }
+      .expense-toolbar-search .search-icon {
+        position: absolute;
+        left: 0.75rem;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 16px;
+        height: 16px;
+        color: #94a3b8;
+        pointer-events: none;
+      }
+      .expense-toolbar select {
+        padding: 0.55rem 0.75rem;
+        border-radius: 10px;
+        border: 1.5px solid #e2e8f0;
+        background: #ffffff;
+        color: #1f2937;
+        font-size: 0.9rem;
+        cursor: pointer;
+        font-weight: 500;
+      }
+      .expense-toolbar select:focus {
+        outline: none;
+        border-color: #60a5fa;
+        box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
+      }
+      .expense-toolbar .toolbar-divider {
+        width: 1px;
+        height: 28px;
+        background: #e2e8f0;
+        flex-shrink: 0;
+      }
+
+      /* === WORLD-CLASS UX: Card Progress Bar === */
+      .expense-card-progress {
+        margin-top: 0.6rem;
+        padding-top: 0.5rem;
+        border-top: 1px solid #f1f5f9;
+      }
+      .expense-card-progress-bar {
+        height: 6px;
+        background: #e2e8f0;
+        border-radius: 999px;
+        overflow: hidden;
+      }
+      .expense-card-progress-fill {
+        height: 100%;
+        border-radius: 999px;
+        transition: width 0.6s ease;
+      }
+      .expense-card-progress-fill.full { background: #22c55e; }
+      .expense-card-progress-fill.partial { background: #f59e0b; }
+      .expense-card-progress-fill.none { background: #ef4444; width: 0 !important; }
+      .expense-card-progress-text {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.3rem;
+        font-size: 0.78rem;
+        color: #94a3b8;
+        font-weight: 600;
+      }
+
+      /* === Stats card: pending === */
+      .expense-stat-card.is-pending .status-dot { background: #f59e0b; }
+      .expense-stat-card.is-pending .stat-value,
+      .expense-stat-card.is-pending .stat-money { color: #fbbf24; }
+      html.light-theme .expense-stat-card.is-pending .stat-value,
+      html.light-theme .expense-stat-card.is-pending .stat-money { color: #d97706 !important; }
+
+      /* Info chip */
+      .expense-info-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.4rem 0.85rem;
+        border-radius: 999px;
+        background: rgba(56,189,248,0.1);
+        border: 1px solid rgba(56,189,248,0.25);
+        color: #0369a1;
+        font-size: 0.82rem;
+        font-weight: 600;
+        margin-top: 0.55rem;
+      }
+      .expense-info-chip svg {
+        width: 14px; height: 14px;
+        flex-shrink: 0;
+      }
+
+      /* Empty state */
+      .expense-empty-state {
+        text-align: center;
+        padding: 3rem 1.5rem;
+        color: #94a3b8;
+      }
+      .expense-empty-state svg {
+        width: 56px;
+        height: 56px;
+        color: #cbd5e1;
+        margin-bottom: 0.75rem;
+      }
+      .expense-empty-state p {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #64748b;
+        margin: 0;
+      }
+      .expense-empty-state small {
+        font-size: 0.85rem;
+        color: #94a3b8;
+      }
+
+      /* Responsive: filter tabs */
+      @media (max-width: 768px) {
+        .expense-filter-tabs {
+          gap: 0.3rem;
+        }
+        .expense-filter-tab {
+          padding: 0.4rem 0.75rem;
+          font-size: 0.82rem;
+        }
+        .expense-toolbar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .expense-toolbar-search {
+          max-width: none;
+        }
+        .expense-toolbar .toolbar-divider {
+          display: none;
+        }
+        .collection-segments {
+          gap: 0.6rem;
+        }
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -1392,10 +1682,9 @@ try {
             <div class="section-header">
               <div>
                 <p style="color:#94a3b8;margin-top:0.2rem;">สรุปยอดค่าใช้จ่ายและสถานะการชำระเงิน</p>
-                <div style="margin-top:0.5rem;padding:0.75rem 1.25rem;background:rgba(56,189,248,0.12);border-radius:8px;color:#0369a1;font-size:1rem;">
-                  <strong>ระบบจะเพิ่มรายการค่าใช้จ่ายใหม่ให้อัตโนมัติทุกเดือน</strong> สำหรับสัญญาที่กำลังใช้งาน โดยไม่ต้องบันทึกเอง<br>
-                  เมื่อถึงเดือนใหม่ ระบบจะสร้างรายการค่าใช้จ่ายของแต่ละห้องพักตามสัญญา จนถึงเดือนสุดท้ายของสัญญา โดยใช้ราคาห้องและอัตราค่าน้ำ/ไฟล่าสุด (หน่วยน้ำ/ไฟเริ่มต้นเป็น 0)<br>
-                  ผู้ดูแลสามารถแก้ไขรายละเอียดแต่ละรายการได้ภายหลังตามจริง
+                <div class="expense-info-chip">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+                  ระบบสร้างรายการค่าใช้จ่ายอัตโนมัติทุกเดือน ตามสัญญาที่ใช้งาน
                 </div>
               </div>
             </div>
@@ -1420,81 +1709,126 @@ try {
                   <span class="status-dot" aria-hidden="true"></span>
                   <h3>ยังไม่ชำระ</h3>
                 </div>
-                <div class="stat-kpi-label">จำนวนรายการ</div>
-                <div class="stat-value"><?php echo number_format($stats['unpaid']); ?></div>
-                <div class="stat-kpi-label">ยอดเงิน</div>
+                <div class="stat-value"><?php echo number_format($stats['unpaid']); ?> <span style="font-size:0.85rem;font-weight:500;opacity:0.7;">รายการ</span></div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_unpaid']); ?></div>
               </div>
+              <?php if ($pendingPartialCount > 0): ?>
+              <div class="expense-stat-card is-pending">
+                <div class="stat-head">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  <h3>รอดำเนินการ</h3>
+                </div>
+                <div class="stat-value"><?php echo number_format($pendingPartialCount); ?> <span style="font-size:0.85rem;font-weight:500;opacity:0.7;">รายการ</span></div>
+                <div class="stat-money">฿<?php echo number_format($pendingPartialTotal); ?></div>
+              </div>
+              <?php endif; ?>
               <div class="expense-stat-card is-paid">
                 <div class="stat-head">
                   <span class="status-dot" aria-hidden="true"></span>
                   <h3>ชำระแล้ว</h3>
                 </div>
-                <div class="stat-kpi-label">จำนวนรายการ</div>
-                <div class="stat-value"><?php echo number_format($stats['paid']); ?></div>
-                <div class="stat-kpi-label">ยอดเงิน</div>
+                <div class="stat-value"><?php echo number_format($stats['paid']); ?> <span style="font-size:0.85rem;font-weight:500;opacity:0.7;">รายการ</span></div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_paid']); ?></div>
               </div>
               <div class="expense-stat-card is-total">
                 <div class="stat-head">
                   <span class="status-dot" aria-hidden="true"></span>
-                  <h3>ยอดรวมทั้งหมด</h3>
+                  <h3>รวมทั้งหมด</h3>
                 </div>
-                <div class="stat-kpi-label">จำนวนรายการ</div>
-                <div class="stat-value"><?php echo number_format($stats['unpaid'] + $stats['paid']); ?></div>
-                <div class="stat-kpi-label">ยอดเงิน</div>
-                <div class="stat-money">฿<?php echo number_format($stats['total_unpaid'] + $stats['total_paid']); ?></div>
+                <div class="stat-value"><?php echo number_format($totalExpenseCount); ?> <span style="font-size:0.85rem;font-weight:500;opacity:0.7;">รายการ</span></div>
+                <div class="stat-money">฿<?php echo number_format($totalAll); ?></div>
               </div>
             </div>
-            <div class="expense-stats-note">
-              หมายเหตุ: ยอดสถิติด้านบนรวมเฉพาะค่าใช้จ่ายรายเดือน (ค่าห้อง + ค่าน้ำ + ค่าไฟ) และไม่รวมค่ามัดจำ
+
+            <!-- Collection Progress Bar -->
+            <div class="collection-progress">
+              <div class="collection-progress-header">
+                <span class="collection-progress-label">อัตราการเก็บเงินได้</span>
+                <span class="collection-progress-pct"><?php echo $collectionPct; ?>%</span>
+              </div>
+              <div class="collection-bar">
+                <div class="collection-bar-fill<?php echo $collectionPct < 30 ? ' low' : ($collectionPct < 70 ? ' mid' : ''); ?>" style="width:<?php echo $collectionPct; ?>%;"></div>
+              </div>
+              <div class="collection-segments">
+                <div class="collection-segment"><span class="collection-segment-dot" style="background:#22c55e;"></span> ชำระแล้ว ฿<?php echo number_format($stats['total_paid']); ?></div>
+                <?php if ($pendingPartialTotal > 0): ?>
+                <div class="collection-segment"><span class="collection-segment-dot" style="background:#f59e0b;"></span> รอดำเนินการ ฿<?php echo number_format($pendingPartialTotal); ?></div>
+                <?php endif; ?>
+                <div class="collection-segment"><span class="collection-segment-dot" style="background:#ef4444;"></span> ค้างชำระ ฿<?php echo number_format($stats['total_unpaid']); ?></div>
+              </div>
             </div>
           </section>
 
 
 
           <section class="manage-panel">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
-              <div>
-                <h1>รายการค่าใช้จ่ายทั้งหมด</h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">ประวัติการเรียกเก็บค่าใช้จ่ายแต่ละห้อง</p>
-                <p style="color:#0369a1;margin-top:0.25rem;font-size:0.85rem;font-weight:600;">คลิกที่แถวรายการเพื่อเปิดรายละเอียดการชำระเงิน</p>
-              </div>
-              <div class="expenses-actions">
+            <div class="section-header" style="margin-bottom:0.75rem;">
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;width:100%;">
+                <div>
+                  <h1 style="margin:0;">รายการค่าใช้จ่าย</h1>
+                  <p style="color:#94a3b8;margin:0.15rem 0 0;font-size:0.88rem;">กดที่รายการเพื่อดูรายละเอียดและหลักฐานการชำระ</p>
+                </div>
                 <button type="button" id="expensesViewToggle" class="expenses-view-toggle" onclick="toggleExpensesView()">
                   <svg id="expensesViewToggleIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                  <span id="expensesViewToggleText">มุมมอง list(ตาราง)</span>
+                  <span id="expensesViewToggleText">ตาราง</span>
                 </button>
-                <div class="expenses-filters-line">
-                <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid #d1d5db;background:#ffffff;color:#111827;font-size:0.95rem;cursor:pointer;">
-                  <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
-                  <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
-                  <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
-                </select>
-                <label for="monthFilter" style="color:#94a3b8;font-size:0.9rem;font-weight:600;">กรองตามเดือน:</label>
-                <select id="monthFilter" style="padding:0.5rem 0.75rem;border-radius:8px;background:rgba(15,23,42,0.9);color:#e2e8f0;border:1px solid rgba(148,163,184,0.35);font-size:0.9rem;min-width:150px;">
-                  <?php if (empty($availableMonths)): ?>
-                    <option value="">ไม่มีข้อมูลเดือน</option>
-                  <?php endif; ?>
-                  <?php
-                    $thaiMonths = [
-                      '01' => 'มกราคม', '02' => 'กุมภาพันธ์', '03' => 'มีนาคม', '04' => 'เมษายน',
-                      '05' => 'พฤษภาคม', '06' => 'มิถุนายน', '07' => 'กรกฎาคม', '08' => 'สิงหาคม',
-                      '09' => 'กันยายน', '10' => 'ตุลาคม', '11' => 'พฤศจิกายน', '12' => 'ธันวาคม'
-                    ];
-
-                    foreach ($availableMonths as $monthKey) {
-                      $month = substr((string)$monthKey, 5, 2);
-                      $year = substr((string)$monthKey, 0, 4);
-                      $yearThai = (int)$year + 543;
-                      $monthText = ($thaiMonths[$month] ?? $month) . ' ' . $yearThai;
-                      $selectedAttr = ((string)$selectedMonth === (string)$monthKey) ? ' selected' : '';
-                      echo '<option value="' . htmlspecialchars((string)$monthKey, ENT_QUOTES, 'UTF-8') . '"' . $selectedAttr . '>' . htmlspecialchars($monthText, ENT_QUOTES, 'UTF-8') . '</option>';
-                    }
-                  ?>
-                </select>
-                </div>
               </div>
+            </div>
+
+            <!-- Status Filter Tabs -->
+            <div class="expense-filter-tabs" id="expenseFilterTabs">
+              <button type="button" class="expense-filter-tab active" data-status="all">
+                ทั้งหมด <span class="tab-count"><?php echo $totalExpenseCount; ?></span>
+              </button>
+              <?php if ($stats['unpaid'] > 0): ?>
+              <button type="button" class="expense-filter-tab" data-status="0">
+                ยังไม่ชำระ <span class="tab-count"><?php echo $stats['unpaid']; ?></span>
+              </button>
+              <?php endif; ?>
+              <?php if ($stats['pending'] > 0): ?>
+              <button type="button" class="expense-filter-tab" data-status="2">
+                รอตรวจสอบ <span class="tab-count"><?php echo $stats['pending']; ?></span>
+              </button>
+              <?php endif; ?>
+              <?php if ($stats['partial'] > 0): ?>
+              <button type="button" class="expense-filter-tab" data-status="3">
+                ชำระยังไม่ครบ <span class="tab-count"><?php echo $stats['partial']; ?></span>
+              </button>
+              <?php endif; ?>
+              <?php if ($stats['paid'] > 0): ?>
+              <button type="button" class="expense-filter-tab" data-status="1">
+                ชำระแล้ว <span class="tab-count"><?php echo $stats['paid']; ?></span>
+              </button>
+              <?php endif; ?>
+            </div>
+
+            <!-- Unified Toolbar -->
+            <div class="expense-toolbar">
+              <select id="monthFilter" class="expense-toolbar-month">
+                <?php if (empty($availableMonths)): ?>
+                  <option value="">ไม่มีข้อมูลเดือน</option>
+                <?php endif; ?>
+                <?php
+                  $thaiMonths = [
+                    '01' => 'ม.ค.', '02' => 'ก.พ.', '03' => 'มี.ค.', '04' => 'เม.ย.',
+                    '05' => 'พ.ค.', '06' => 'มิ.ย.', '07' => 'ก.ค.', '08' => 'ส.ค.',
+                    '09' => 'ก.ย.', '10' => 'ต.ค.', '11' => 'พ.ย.', '12' => 'ธ.ค.'
+                  ];
+                  foreach ($availableMonths as $monthKey) {
+                    $month = substr((string)$monthKey, 5, 2);
+                    $year = substr((string)$monthKey, 0, 4);
+                    $yearThai = (int)$year + 543;
+                    $monthText = ($thaiMonths[$month] ?? $month) . ' ' . $yearThai;
+                    $selectedAttr = ((string)$selectedMonth === (string)$monthKey) ? ' selected' : '';
+                    echo '<option value="' . htmlspecialchars((string)$monthKey, ENT_QUOTES, 'UTF-8') . '"' . $selectedAttr . '>' . htmlspecialchars($monthText, ENT_QUOTES, 'UTF-8') . '</option>';
+                  }
+                ?>
+              </select>
+              <select id="sortSelect" onchange="changeSortBy(this.value)">
+                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>ล่าสุด</option>
+                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เก่าสุด</option>
+                <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>ห้อง</option>
+              </select>
             </div>
             <div id="expensesTableWrap" class="report-table is-hidden">
               <table class="table--compact" id="table-expenses">
@@ -1522,13 +1856,15 @@ try {
                         tabindex="0"
                         aria-label="เปิดรายละเอียดการชำระเงินรายการ #<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?> ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?>"
                         data-expense-id="<?php echo (int)$exp['exp_id']; ?>"
+                        data-status="<?php echo htmlspecialchars((string)$rowStatus['status'], ENT_QUOTES, 'UTF-8'); ?>"
+                        data-room="<?php echo htmlspecialchars((string)($exp['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                        data-tenant="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                         data-tenant-name="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>"
                         data-status-text="<?php echo htmlspecialchars((string)$rowStatus['statusText'], ENT_QUOTES, 'UTF-8'); ?>"
                         data-charges-paid="<?php echo (int)$rowStatus['chargesPaid']; ?>"
                         data-charges-remain="<?php echo (int)$rowStatus['chargesRemain']; ?>">
                         <td>
                           #<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?>
-                          <div class="table-open-hint">คลิกเพื่อดูรายละเอียด</div>
                         </td>
                         <td>
                           <div class="expense-table-room">
@@ -1580,7 +1916,7 @@ try {
                               </div>
                               <?php endif; ?>
                             </div>
-                            <div class="table-click-badge">🖱 กดแถวนี้เพื่อเปิด Modal</div>
+
                           </div>
                         </td>
                       </tr>
@@ -1604,6 +1940,9 @@ try {
                        aria-label="ดูรายละเอียดค่าใช้จ่าย #<?php echo str_pad((string)$exp['exp_id'], 4, '0', STR_PAD_LEFT); ?> ห้อง <?php echo htmlspecialchars((string)($exp['room_number'] ?? '-')); ?>"
                        data-month="<?php echo $exp['exp_month'] ? date('Y-m', strtotime((string)$exp['exp_month'])) : ''; ?>"
                        data-expense-id="<?php echo (int)$exp['exp_id']; ?>"
+                       data-status="<?php echo htmlspecialchars((string)$rowStatus['status'], ENT_QUOTES, 'UTF-8'); ?>"
+                       data-room="<?php echo htmlspecialchars((string)($exp['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                       data-tenant="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
                        data-tenant-name="<?php echo htmlspecialchars((string)($exp['tnt_name'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>"
                        data-status-text="<?php echo htmlspecialchars((string)$rowStatus['statusText'], ENT_QUOTES, 'UTF-8'); ?>"
                        data-charges-paid="<?php echo (int)$rowStatus['chargesPaid']; ?>"
@@ -1638,6 +1977,19 @@ try {
                       <div class="expense-row-meta-item">
                         <span class="expense-row-meta-label">ยอดรวม</span>
                         <span class="expense-row-meta-value total" style="color:<?php echo htmlspecialchars($rowStatus['totalColor']); ?>;">฿<?php echo number_format((int)($exp['exp_total'] ?? 0)); ?></span>
+                      </div>
+                    </div>
+                    <?php
+                      $cardTotal = (int)($exp['exp_total'] ?? 0);
+                      $cardPaid = (int)$rowStatus['chargesPaid'];
+                      $cardPct = $cardTotal > 0 ? min(100, round(($cardPaid / $cardTotal) * 100)) : 0;
+                      $cardFillClass = $cardPct >= 100 ? 'full' : ($cardPct > 0 ? 'partial' : 'none');
+                    ?>
+                    <div class="expense-card-progress">
+                      <div class="expense-card-progress-bar"><div class="expense-card-progress-fill <?php echo $cardFillClass; ?>" style="width:<?php echo $cardPct; ?>%;"></div></div>
+                      <div class="expense-card-progress-text">
+                        <span>ชำระ ฿<?php echo number_format($cardPaid); ?></span>
+                        <span>คงเหลือ ฿<?php echo number_format(max(0, $cardTotal - $cardPaid)); ?></span>
                       </div>
                     </div>
                   </div>
@@ -1680,7 +2032,7 @@ try {
         rowWrap.classList.toggle('is-hidden', normalized === 'table');
 
         if (toggleText) {
-          toggleText.textContent = normalized === 'table' ? 'มุมมอง grid' : 'มุมมอง list(ตาราง)';
+          toggleText.textContent = normalized === 'table' ? 'การ์ด' : 'ตาราง';
         }
 
         if (toggleBtn) {
@@ -2616,30 +2968,74 @@ try {
           }
           window.location.href = url.toString();
         });
-        
-        // เพิ่มการจัดการ theme สำหรับ select
-        function updateSelectTheme() {
-          const isLightTheme = (typeof window.syncReportsThemeClass === 'function')
-            ? window.syncReportsThemeClass()
-            : false;
-          
-          if (isLightTheme) {
-            monthFilter.style.background = '#ffffff';
-            monthFilter.style.color = '#111827';
-            monthFilter.style.borderColor = '#d1d5db';
-          } else {
-            monthFilter.style.background = 'rgba(15,23,42,0.9)';
-            monthFilter.style.color = '#e2e8f0';
-            monthFilter.style.borderColor = 'rgba(148,163,184,0.35)';
-          }
-        }
-        
-        updateSelectTheme();
-        
-        const themeObserver = new MutationObserver(updateSelectTheme);
-        themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
-        themeObserver.observe(document.body, { attributes: true, attributeFilter: ['style'] });
       })();
+    </script>
+
+    <!-- Status Filter Tabs + Search -->
+    <script>
+    (function() {
+      let activeStatus = 'all';
+
+      const filterTabs = document.querySelectorAll('#expenseFilterTabs .expense-filter-tab');
+      const tableBody = document.querySelector('#table-expenses tbody');
+      const rowView = document.getElementById('expensesRowView');
+
+      function getTableRows() {
+        return tableBody ? Array.from(tableBody.querySelectorAll('tr.payment-preview-trigger')) : [];
+      }
+
+      function getCards() {
+        return rowView ? Array.from(rowView.querySelectorAll('.expense-row-card.payment-preview-trigger')) : [];
+      }
+
+      function matchesFilter(el) {
+        const status = el.dataset.status || '';
+        return activeStatus === 'all' || status === activeStatus;
+      }
+
+      function applyFilters() {
+        let visibleCount = 0;
+
+        getTableRows().forEach(tr => {
+          const show = matchesFilter(tr);
+          tr.style.display = show ? '' : 'none';
+          if (show) visibleCount++;
+        });
+
+        getCards().forEach(card => {
+          const show = matchesFilter(card);
+          card.style.display = show ? '' : 'none';
+          if (show) visibleCount++;
+        });
+
+        // Show empty state if no results in card view
+        let emptyEl = rowView ? rowView.querySelector('.expense-empty-state') : null;
+        const cardsVisible = getCards().filter(c => c.style.display !== 'none').length;
+        if (cardsVisible === 0 && rowView && !rowView.classList.contains('is-hidden')) {
+          if (!emptyEl) {
+            emptyEl = document.createElement('div');
+            emptyEl.className = 'expense-empty-state';
+            emptyEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>ไม่พบรายการที่ตรงกัน</p><small>ลองเปลี่ยนตัวกรองหรือคำค้นหา</small>';
+            rowView.appendChild(emptyEl);
+          }
+          emptyEl.style.display = '';
+        } else if (emptyEl) {
+          emptyEl.style.display = 'none';
+        }
+      }
+
+      // Tab click handlers
+      filterTabs.forEach(tab => {
+        tab.addEventListener('click', function() {
+          filterTabs.forEach(t => t.classList.remove('active'));
+          this.classList.add('active');
+          activeStatus = this.dataset.status;
+          applyFilters();
+        });
+      });
+
+
+    })();
     </script>
   </body>
 </html>

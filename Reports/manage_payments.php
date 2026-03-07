@@ -332,6 +332,23 @@ foreach ($payments as $pay) {
     }
 }
 
+// ตัวเลขแยกตามสถานะ
+$pendingOnlyCount = 0;
+$unpaidOnlyCount = 0;
+$pendingOnlyTotal = 0;
+$unpaidOnlyTotal = 0;
+foreach ($payments as $pay) {
+    if (($pay['pay_status'] ?? '') === '0') {
+        $pendingOnlyCount++;
+        $pendingOnlyTotal += (int)($pay['pay_amount'] ?? 0);
+    } elseif (($pay['pay_status'] ?? '') === 'unpaid') {
+        $unpaidOnlyCount++;
+        $unpaidOnlyTotal += (int)($pay['pay_amount'] ?? 0);
+    }
+}
+$totalPaymentCount = count($payments);
+$verifiedPct = $totalPaymentCount > 0 ? round(($stats['verified'] / $totalPaymentCount) * 100) : 0;
+
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
@@ -2400,6 +2417,43 @@ $filterRoomOptions = array_values($filterRoomOptions);
           overflow-x: auto;
         }
       }
+
+      /* ===== Collection Progress Bar ===== */
+      .payment-collection-progress { margin-top: 1.25rem; }
+      .pcp-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem; }
+      .pcp-label { font-size: 0.85rem; color: rgba(255,255,255,0.5); font-weight: 500; }
+      .pcp-pct { font-size: 1.1rem; font-weight: 700; color: #22c55e; }
+      .pcp-bar-track { height: 10px; background: rgba(255,255,255,0.08); border-radius: 6px; overflow: hidden; }
+      .pcp-bar-fill { height: 100%; background: linear-gradient(90deg, #22c55e, #4ade80); border-radius: 6px; transition: width 1s cubic-bezier(.4,0,.2,1); }
+      .pcp-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.5rem; margin-top: 0.6rem; font-size: 0.8rem; color: rgba(255,255,255,0.5); align-items: center; }
+      .pcp-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 0.3rem; vertical-align: middle; }
+      .pcp-dot.verified { background: #22c55e; }
+      .pcp-dot.pending { background: #fbbf24; }
+      .pcp-dot.unpaid { background: #94a3b8; }
+      html.light-theme .pcp-label { color: rgba(0,0,0,0.5); }
+      html.light-theme .pcp-pct { color: #16a34a; }
+      html.light-theme .pcp-bar-track { background: rgba(0,0,0,0.08); }
+      html.light-theme .pcp-legend { color: rgba(0,0,0,0.5); }
+
+      /* ===== Payment Filter Tabs ===== */
+      .payment-filter-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+      .payment-filter-tab { padding: 0.45rem 1rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.6); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.4rem; }
+      .payment-filter-tab:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.9); }
+      .payment-filter-tab.active { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); color: #a5b4fc; }
+      .payment-filter-tab .tab-count { font-size: 0.75rem; background: rgba(255,255,255,0.1); padding: 0.1rem 0.45rem; border-radius: 12px; font-weight: 700; }
+      .payment-filter-tab.active .tab-count { background: rgba(99,102,241,0.3); color: #c7d2fe; }
+      html.light-theme .payment-filter-tab { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.55); }
+      html.light-theme .payment-filter-tab:hover { background: rgba(0,0,0,0.07); color: rgba(0,0,0,0.85); }
+      html.light-theme .payment-filter-tab.active { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.35); color: #4f46e5; }
+
+      /* ===== Payment Toolbar ===== */
+      .payment-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+      .payment-toolbar select { padding: 0.45rem 0.75rem; border-radius: 8px; border: 1px solid rgba(148,163,184,0.25); background: rgba(15,23,42,0.9); color: #e2e8f0; font-size: 0.88rem; cursor: pointer; }
+      .payment-toolbar-clear { padding: 0.45rem 0.9rem; border-radius: 8px; border: 1px solid rgba(148,163,184,0.25); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; transition: all 0.2s ease; }
+      .payment-toolbar-clear:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); }
+      html.light-theme .payment-toolbar select { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: #111827; }
+      html.light-theme .payment-toolbar-clear { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
+      html.light-theme .payment-toolbar-clear:hover { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.9); }
     </style>
   </head>
   <body class="reports-page">
@@ -2507,65 +2561,79 @@ $filterRoomOptions = array_values($filterRoomOptions);
                 <div class="stat-money">฿<?php echo number_format($stats['total_pending'] + $stats['total_verified']); ?></div>
               </div>
             </div>
+
+            <!-- Collection Progress Bar -->
+            <div class="payment-collection-progress">
+              <div class="pcp-header">
+                <span class="pcp-label">อัตราการตรวจสอบ</span>
+                <span class="pcp-pct"><?php echo $verifiedPct; ?>%</span>
+              </div>
+              <div class="pcp-bar-track">
+                <div class="pcp-bar-fill" id="pcpBarFill" style="width:0%" data-target="<?php echo $verifiedPct; ?>"></div>
+              </div>
+              <div class="pcp-legend">
+                <?php if ($stats['verified'] > 0): ?>
+                  <span><span class="pcp-dot verified"></span>ตรวจสอบแล้ว <?php echo number_format($stats['verified']); ?> รายการ</span>
+                <?php endif; ?>
+                <?php if ($pendingOnlyCount > 0): ?>
+                  <span><span class="pcp-dot pending"></span>รอตรวจสอบ <?php echo number_format($pendingOnlyCount); ?> รายการ</span>
+                <?php endif; ?>
+                <?php if ($unpaidOnlyCount > 0): ?>
+                  <span><span class="pcp-dot unpaid"></span>ยังไม่ชำระ <?php echo number_format($unpaidOnlyCount); ?> รายการ</span>
+                <?php endif; ?>
+              </div>
+            </div>
           </section>
 
           <!-- Bank Payment Destination Section removed -->
 
           <!-- Filter Section -->
           <section class="manage-panel">
-            <div class="filter-section">
-              <div class="filter-group">
-                <label>กรองตามห้อง</label>
-                <select id="filterRoom" onchange="applyFilters()">
-                  <option value="">ทุกห้อง</option>
-                  <?php foreach ($filterRoomOptions as $roomNumber): ?>
-                    <option value="<?php echo htmlspecialchars((string)$roomNumber); ?>" <?php echo $filterRoom === (string)$roomNumber ? 'selected' : ''; ?>>
-                      ห้อง <?php echo htmlspecialchars((string)$roomNumber); ?>
-                    </option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-              <div class="filter-group">
-                <label>กรองตามสถานะ</label>
-                <select id="filterStatus" onchange="applyFilters()">
-                  <option value="">ทั้งหมด</option>
-                  <option value="0" <?php echo $filterStatus === '0' ? 'selected' : ''; ?>>รอตรวจสอบ</option>
-                  <option value="1" <?php echo $filterStatus === '1' ? 'selected' : ''; ?>>ตรวจสอบแล้ว</option>
-                  <option value="unpaid" <?php echo $filterStatus === 'unpaid' ? 'selected' : ''; ?>>ยังไม่ชำระ</option>
-                </select>
-              </div>
-              <div class="filter-group">
-                <label>กรองตามเดือน</label>
-                <select id="filterMonth" onchange="applyFilters()">
-                  <option value="" <?php echo $filterMonth === '' ? 'selected' : ''; ?>>ทั้งหมด</option>
-                  <?php 
-                  $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-                  foreach ($availableMonthOptions as $monthOption):
-                    $m = (int)$monthOption;
-                  ?>
-                    <option value="<?php echo $m; ?>" <?php echo $filterMonth === (string)$m ? 'selected' : ''; ?>><?php echo $thaiMonths[$m]; ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-              <div class="filter-group">
-                <label>กรองตามปี</label>
-                <select id="filterYear" onchange="applyFilters()">
-                  <option value="">ทั้งหมด</option>
-                  <?php foreach ($availableYearOptions as $yearOption): ?>
-                    <?php $thaiYear = (int)$yearOption + 543; ?>
-                    <option value="<?php echo htmlspecialchars((string)$yearOption); ?>" <?php echo $filterYear === (string)$yearOption ? 'selected' : ''; ?>><?php echo $thaiYear; ?></option>
-                  <?php endforeach; ?>
-                </select>
-              </div>
-              <div class="filter-group">
-                <button type="button" onclick="clearFilters()" style="padding:0.5rem 1rem;background:rgba(148,163,184,0.2);border:1px solid rgba(148,163,184,0.3);color:#94a3b8;border-radius:8px;cursor:pointer;font-size:0.9rem;display:inline-flex;align-items:center;gap:4px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>ล้างตัวกรอง</button>
-              </div>
+            <!-- Status Filter Tabs -->
+            <div class="payment-filter-tabs" id="paymentFilterTabs">
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="">ทั้งหมด <span class="tab-count"><?php echo $totalPaymentCount; ?></span></button>
+              <?php if ($pendingOnlyCount > 0): ?>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
+              <?php endif; ?>
+              <?php if ($unpaidOnlyCount > 0): ?>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid">ยังไม่ชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
+              <?php endif; ?>
+              <?php if ($stats['verified'] > 0): ?>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1">ตรวจสอบแล้ว <span class="tab-count"><?php echo $stats['verified']; ?></span></button>
+              <?php endif; ?>
             </div>
-              <div id="paymentsRoomFilterNotice" style="margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;display:<?php echo $filterRoom !== '' ? 'flex' : 'none'; ?>;align-items:center;gap:0.5rem;">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2  2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                กำลังแสดงเฉพาะห้อง <strong id="paymentsRoomFilterValue"><?php echo htmlspecialchars($filterRoom); ?></strong>
-                <button type="button" onclick="clearRoomFilter()" style="margin-left:auto;color:#f59e0b;background:none;border:none;cursor:pointer;padding:0;font:inherit;">✕ ยกเลิก</button>
-              </div>
+            <!-- Hidden status input for filter state -->
+            <input type="hidden" id="filterStatus" value="<?php echo htmlspecialchars($filterStatus, ENT_QUOTES, 'UTF-8'); ?>">
+            <!-- Compact Toolbar -->
+            <div class="payment-toolbar">
+              <?php $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']; ?>
+              <select id="filterRoom" onchange="applyFilters()">
+                <option value="">ทุกห้อง</option>
+                <?php foreach ($filterRoomOptions as $roomNumber): ?>
+                  <option value="<?php echo htmlspecialchars((string)$roomNumber, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $filterRoom === (string)$roomNumber ? 'selected' : ''; ?>>ห้อง <?php echo htmlspecialchars((string)$roomNumber, ENT_QUOTES, 'UTF-8'); ?></option>
+                <?php endforeach; ?>
+              </select>
+              <select id="filterMonth" onchange="applyFilters()">
+                <option value="" <?php echo $filterMonth === '' ? 'selected' : ''; ?>>ทุกเดือน</option>
+                <?php foreach ($availableMonthOptions as $monthOption): $m = (int)$monthOption; ?>
+                  <option value="<?php echo $m; ?>" <?php echo $filterMonth === (string)$m ? 'selected' : ''; ?>><?php echo $thaiMonths[$m]; ?></option>
+                <?php endforeach; ?>
+              </select>
+              <select id="filterYear" onchange="applyFilters()">
+                <option value="">ทุกปี</option>
+                <?php foreach ($availableYearOptions as $yearOption): ?>
+                  <option value="<?php echo htmlspecialchars((string)$yearOption, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $filterYear === (string)$yearOption ? 'selected' : ''; ?>><?php echo (int)$yearOption + 543; ?></option>
+                <?php endforeach; ?>
+              </select>
+              <button type="button" onclick="clearFilters()" class="payment-toolbar-clear">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>ล้างตัวกรอง
+              </button>
+            </div>
+            <div id="paymentsRoomFilterNotice" style="margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;display:<?php echo $filterRoom !== '' ? 'flex' : 'none'; ?>;align-items:center;gap:0.5rem;">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              กำลังแสดงเฉพาะห้อง <strong id="paymentsRoomFilterValue"><?php echo htmlspecialchars($filterRoom, ENT_QUOTES, 'UTF-8'); ?></strong>
+              <button type="button" onclick="clearRoomFilter()" style="margin-left:auto;color:#f59e0b;background:none;border:none;cursor:pointer;padding:0;font:inherit;">✕ ยกเลิก</button>
+            </div>
           </section>
 
           <!-- Payments Table -->
@@ -3045,6 +3113,11 @@ $filterRoomOptions = array_values($filterRoomOptions);
         if (month) month.value = paymentsDefaultFilters.month || '';
         if (year) year.value = paymentsDefaultFilters.year || '';
 
+        // Reset tab UI to "ทั้งหมด"
+        document.querySelectorAll('.payment-filter-tab').forEach(function(t) {
+          t.classList.toggle('active', t.dataset.status === '');
+        });
+
         applyFilters();
       }
 
@@ -3339,6 +3412,28 @@ $filterRoomOptions = array_values($filterRoomOptions);
 
         ensurePaymentsViewVisible();
         applyFilters({ skipReload: true, updateHistory: false });
+
+        // Status filter tabs – instant client-side filter
+        const filterTabs = document.querySelectorAll('.payment-filter-tab');
+        const statusInput = document.getElementById('filterStatus');
+        filterTabs.forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            filterTabs.forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            if (statusInput) statusInput.value = this.dataset.status;
+            applyFilters({ skipReload: true });
+          });
+        });
+
+        // Animate progress bar fill
+        const fill = document.getElementById('pcpBarFill');
+        if (fill) {
+          requestAnimationFrame(function() {
+            setTimeout(function() {
+              fill.style.width = (fill.dataset.target || '0') + '%';
+            }, 250);
+          });
+        }
       });
     </script>
   </body>
