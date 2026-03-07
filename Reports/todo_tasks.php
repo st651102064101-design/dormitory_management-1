@@ -14,6 +14,7 @@ $utilities = [];
 $expenses = [];
 $pendingPayments = [];
 $pendingRepairs = [];
+$wizardItems = [];
 $pendingWater = 0;
 $pendingElec = 0;
 $wizardPendingCount = 0;
@@ -212,6 +213,27 @@ try {
         $wizardPendingCount = 0;
     }
 
+    try {
+        $wizardItemsStmt = $pdo->query(" 
+            SELECT b.bkg_id, b.bkg_date,
+                   COALESCE(t.tnt_name, '') AS tnt_name,
+                   COALESCE(r.room_number, '-') AS room_number,
+                   COALESCE(tw.current_step, 0) AS current_step,
+                   COALESCE(tw.completed, 0) AS completed
+            FROM booking b
+            LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
+            LEFT JOIN room r ON b.room_id = r.room_id
+            LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
+            WHERE b.bkg_status != '0'
+              AND (tw.id IS NULL OR tw.completed = 0)
+            ORDER BY b.bkg_date DESC, b.bkg_id DESC
+            LIMIT 50
+        ");
+        $wizardItems = $wizardItemsStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    } catch (Exception $e) {
+        $wizardItems = [];
+    }
+
 } catch (Exception $e) {
     // Keep partial data if some queries succeeded; fallback only for theme.
     $themeColor = '#0f172a';
@@ -301,6 +323,9 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         }
         .todo-tab.active[data-tab="repair"] {
             background: linear-gradient(135deg, #14b8a6, #0f766e);
+        }
+        .todo-tab.active[data-tab="wizard"] {
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
         }
         .todo-tab .tab-badge {
             display: inline-flex;
@@ -551,6 +576,11 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
             background: linear-gradient(135deg, #14b8a6, #0f766e) !important;
             box-shadow: 0 8px 18px rgba(15, 118, 110, 0.35) !important;
         }
+        body.reports-page .todo-tabs .todo-tab.active[data-tab="wizard"],
+        body.live-light.reports-page .todo-tabs .todo-tab.active[data-tab="wizard"] {
+            background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+            box-shadow: 0 8px 18px rgba(37, 99, 235, 0.35) !important;
+        }
         body.reports-page .todo-tabs .todo-tab.active svg,
         body.live-light.reports-page .todo-tabs .todo-tab.active svg {
             color: #ffffff !important;
@@ -619,7 +649,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
 
                 <!-- Tab Navigation -->
                 <div class="todo-tabs">
-                    <button type="button" class="todo-tab" aria-pressed="false">
+                    <button type="button" class="todo-tab" data-tab="wizard" onclick="switchTab('wizard')" aria-pressed="false">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg>
                         ตัวช่วยผู้เช่า
                         <?php if ($wizardPendingCount > 0): ?><span class="tab-badge wizard"><?php echo $wizardPendingCount; ?></span><?php endif; ?>
@@ -649,6 +679,49 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                         แจ้งซ่อม
                         <?php if ($repairCount > 0): ?><span class="tab-badge repair"><?php echo $repairCount; ?></span><?php endif; ?>
                     </button>
+                </div>
+
+                <!-- ═══ Tab 0: ตัวช่วยผู้เช่า ═══ -->
+                <div id="panel-wizard" class="todo-panel">
+                    <div class="todo-card">
+                        <div class="todo-card-header">
+                            <h3>รายการค้างในตัวช่วยผู้เช่า</h3>
+                            <a href="tenant_wizard.php" class="btn-action primary">เปิดหน้าตัวช่วย →</a>
+                        </div>
+                        <div class="todo-card-body">
+                            <?php if (empty($wizardItems)): ?>
+                                <div class="empty-state">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    <p>ไม่มีรายการค้างในตัวช่วยผู้เช่า</p>
+                                </div>
+                            <?php else: ?>
+                                <table class="todo-table">
+                                    <thead><tr>
+                                        <th>ห้อง</th>
+                                        <th>ผู้เช่า</th>
+                                        <th>วันที่จอง</th>
+                                        <th>ขั้นตอน</th>
+                                        <th>จัดการ</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <?php foreach ($wizardItems as $w): ?>
+                                        <?php
+                                            $wizardStep = (int)($w['current_step'] ?? 0);
+                                            $wizardStepText = 'ขั้นตอนที่ ' . max(1, $wizardStep + 1);
+                                        ?>
+                                        <tr>
+                                            <td><strong><?php echo htmlspecialchars($w['room_number'] ?? '-'); ?></strong></td>
+                                            <td><?php echo htmlspecialchars($w['tnt_name'] ?? '-'); ?></td>
+                                            <td><?php echo !empty($w['bkg_date']) ? date('d/m/Y', strtotime((string)$w['bkg_date'])) : '-'; ?></td>
+                                            <td><span class="status-chip pending"><?php echo htmlspecialchars($wizardStepText); ?></span></td>
+                                            <td><a class="btn-action primary todo-manage-link" href="tenant_wizard.php?bkg_id=<?php echo (int)($w['bkg_id'] ?? 0); ?>">จัดการ</a></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            <?php endif; ?>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ═══ Tab 1: การจอง ═══ -->
@@ -999,7 +1072,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         // Restore tab from URL hash on load
         document.addEventListener('DOMContentLoaded', function() {
             const hash = window.location.hash.replace('#', '');
-            const initialTab = ['booking', 'utility', 'expense', 'payment', 'repair'].includes(hash) ? hash : 'booking';
+            const initialTab = ['wizard', 'booking', 'utility', 'expense', 'payment', 'repair'].includes(hash) ? hash : 'booking';
             switchTab(initialTab);
 
             document.querySelectorAll('.todo-row-link').forEach(function(row) {

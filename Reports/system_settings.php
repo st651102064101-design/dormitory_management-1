@@ -183,6 +183,60 @@ include __DIR__ . '/settings/settings_data.php';
         height: auto !important;
         min-height: 100vh !important;
       }
+
+      /* apple-settings.css hides sidebar by default using translateX(-100%).
+         Force visible sidebar on desktop for consistent reports layout. */
+      @media (min-width: 1025px) {
+        body.apple-settings-page .app-sidebar {
+          position: fixed !important;
+          top: 0 !important;
+          left: 0 !important;
+          bottom: 0 !important;
+          transform: none !important;
+          z-index: 1100 !important;
+          overflow-y: auto !important;
+          width: 220px !important;
+          min-width: 220px !important;
+          max-width: 220px !important;
+          display: flex !important;
+          flex-direction: column !important;
+        }
+
+        body.apple-settings-page .app-main {
+          margin-left: 220px !important;
+          width: calc(100% - 220px) !important;
+          max-width: calc(100% - 220px) !important;
+        }
+
+        /* If collapsed state is carried from other pages, force full menu rendering here */
+        body.apple-settings-page .app-sidebar.collapsed,
+        body.apple-settings-page aside.sidebar-collapsed {
+          width: 220px !important;
+          min-width: 220px !important;
+          max-width: 220px !important;
+        }
+
+        body.apple-settings-page .app-sidebar.collapsed .app-nav-label,
+        body.apple-settings-page .app-sidebar.collapsed .summary-label,
+        body.apple-settings-page aside.sidebar-collapsed .app-nav-label,
+        body.apple-settings-page aside.sidebar-collapsed .summary-label {
+          display: inline !important;
+        }
+
+        body.apple-settings-page .app-sidebar.collapsed details[open] > :not(summary),
+        body.apple-settings-page aside.sidebar-collapsed details[open] > :not(summary) {
+          display: block !important;
+        }
+
+        body.apple-settings-page .app-sidebar.collapsed details summary .chev,
+        body.apple-settings-page aside.sidebar-collapsed details summary .chev {
+          display: inline-flex !important;
+        }
+
+        body.apple-settings-page .apple-menu-btn {
+          display: none !important;
+        }
+      }
       
       body.apple-settings-page .app-main {
         display: block !important;
@@ -197,6 +251,14 @@ include __DIR__ . '/settings/settings_data.php';
         margin: 0 !important;
         visibility: visible !important;
         opacity: 1 !important;
+      }
+
+      @media (min-width: 1025px) {
+        body.apple-settings-page .app-main {
+          margin-left: 220px !important;
+          width: calc(100% - 220px) !important;
+          max-width: calc(100% - 220px) !important;
+        }
       }
       
       body.apple-settings-page .apple-settings-wrapper {
@@ -325,6 +387,16 @@ include __DIR__ . '/settings/settings_data.php';
         appMain.style.visibility = 'visible';
         appMain.style.opacity = '1';
       }
+
+      const sidebar = document.querySelector('.app-sidebar');
+      if (sidebar && window.innerWidth > 1024) {
+        // Keep settings page in full sidebar mode on desktop.
+        sidebar.classList.remove('collapsed');
+        sidebar.classList.remove('sidebar-collapsed');
+        try {
+          localStorage.setItem('sidebarCollapsed', 'false');
+        } catch (e) {}
+      }
       
       if (wrapper) {
         wrapper.style.display = 'block';
@@ -342,6 +414,22 @@ include __DIR__ . '/settings/settings_data.php';
           appMain.style.width = '100%';
           appMain.style.maxWidth = '100%';
           appMain.style.marginLeft = '0';
+        }
+      }
+
+      if (window.innerWidth > 1024) {
+        if (appMain) {
+          appMain.style.marginLeft = '220px';
+          appMain.style.width = 'calc(100% - 220px)';
+          appMain.style.maxWidth = 'calc(100% - 220px)';
+        }
+        if (sidebar) {
+          sidebar.style.position = 'fixed';
+          sidebar.style.left = '0';
+          sidebar.style.top = '0';
+          sidebar.style.bottom = '0';
+          sidebar.style.transform = 'none';
+          sidebar.style.overflowY = 'auto';
         }
       }
     }
