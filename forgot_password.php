@@ -31,10 +31,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if ($action === 'verify_user') {
         // Step 1: Verify username exists
-        $username = trim($_POST['username'] ?? '');
+      $username = trim((string)($_POST['username'] ?? ''));
+      $recoveryEmail = trim((string)($_POST['recovery_email'] ?? ''));
         
         if (empty($username)) {
             $response = ['success' => false, 'error' => 'กรุณากรอกชื่อผู้ใช้'];
+      } elseif ($recoveryEmail !== '' && !filter_var($recoveryEmail, FILTER_VALIDATE_EMAIL)) {
+        $response = ['success' => false, 'error' => 'รูปแบบอีเมลกู้คืนไม่ถูกต้อง'];
         } else {
             try {
                 $pdo = connectDB();
@@ -43,14 +46,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $admin = $stmt->fetch(PDO::FETCH_ASSOC);
                 
                 if ($admin) {
-                    // Store in session for next step
-                    $_SESSION['reset_admin_id'] = $admin['admin_id'];
-                    $_SESSION['reset_admin_username'] = $admin['admin_username'];
-                    $response = [
-                        'success' => true, 
-                        'admin_name' => $admin['admin_name'] ?: $admin['admin_username'],
-                        'message' => 'พบบัญชีผู้ใช้'
-                    ];
+            $recoveryKey = 'admin_recovery_email_' . (int)$admin['admin_id'];
+            $recoveryStmt = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = :setting_key LIMIT 1');
+            $recoveryStmt->execute([':setting_key' => $recoveryKey]);
+            $configuredRecoveryEmail = trim((string)($recoveryStmt->fetchColumn() ?: ''));
+
+            if ($configuredRecoveryEmail !== '') {
+              if ($recoveryEmail === '') {
+                $response = ['success' => false, 'error' => 'กรุณากรอกอีเมลกู้คืนรหัสผ่าน'];
+              } elseif (strcasecmp($configuredRecoveryEmail, $recoveryEmail) !== 0) {
+                $response = ['success' => false, 'error' => 'อีเมลกู้คืนรหัสผ่านไม่ถูกต้อง'];
+              } else {
+                // Store in session for next step
+                $_SESSION['reset_admin_id'] = $admin['admin_id'];
+                $_SESSION['reset_admin_username'] = $admin['admin_username'];
+                $response = [
+                  'success' => true,
+                  'admin_name' => $admin['admin_name'] ?: $admin['admin_username'],
+                  'message' => 'ยืนยันบัญชีสำเร็จ'
+                ];
+              }
+            } else {
+              // Store in session for next step
+              $_SESSION['reset_admin_id'] = $admin['admin_id'];
+              $_SESSION['reset_admin_username'] = $admin['admin_username'];
+              $response = [
+                'success' => true,
+                'admin_name' => $admin['admin_name'] ?: $admin['admin_username'],
+                'message' => 'พบบัญชีผู้ใช้'
+              ];
+            }
                 } else {
                     $response = ['success' => false, 'error' => 'ไม่พบชื่อผู้ใช้นี้ในระบบ'];
                 }
@@ -1343,6 +1368,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                   <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
                   <circle cx="12" cy="7" r="4"/>
+                </svg>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>อีเมลกู้คืนรหัสผ่าน</label>
+              <div class="input-wrapper">
+                <input type="email" name="recovery_email" class="form-input" placeholder="กรอกอีเมลกู้คืน (ถ้ามี)" autocomplete="email">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
                 </svg>
               </div>
             </div>

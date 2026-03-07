@@ -9,6 +9,7 @@ $themeColor = '#0f172a';
 $fontSize = '1';
 $adminGoogleLinked = false;
 $adminGoogleEmail = '';
+$adminRecoveryEmail = '';
 $wizardIncompleteCount = 0;
 $pendingPaymentReviewCount = 0;
 $expenseStatusBadgeCounts = [
@@ -50,8 +51,15 @@ $canUseSidebarSnapshot = is_array($sidebarSnapshot)
 $sidebarAccountFlashSuccess = (string)($_SESSION['sidebar_account_flash_success'] ?? '');
 $sidebarAccountFlashError = (string)($_SESSION['sidebar_account_flash_error'] ?? '');
 $sidebarAccountModalUsername = (string)($_SESSION['sidebar_account_old_username'] ?? ($_SESSION['admin_username'] ?? ''));
+$sidebarAccountHasOldRecoveryEmail = array_key_exists('sidebar_account_old_recovery_email', $_SESSION);
+$sidebarAccountModalRecoveryEmail = (string)($_SESSION['sidebar_account_old_recovery_email'] ?? '');
 $sidebarAccountAutoOpen = ($sidebarAccountFlashError !== '');
-unset($_SESSION['sidebar_account_flash_success'], $_SESSION['sidebar_account_flash_error'], $_SESSION['sidebar_account_old_username']);
+unset(
+  $_SESSION['sidebar_account_flash_success'],
+  $_SESSION['sidebar_account_flash_error'],
+  $_SESSION['sidebar_account_old_username'],
+  $_SESSION['sidebar_account_old_recovery_email']
+);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_update'])) {
   $redirectTo = (string)($_SERVER['REQUEST_URI'] ?? 'dashboard.php');
@@ -61,6 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
   }
 
   $submittedUsername = trim((string)($_POST['new_admin_username'] ?? ''));
+  $submittedRecoveryEmail = trim((string)($_POST['recovery_email'] ?? ''));
   $currentPassword = (string)($_POST['current_admin_password'] ?? '');
   $newPassword = (string)($_POST['new_admin_password'] ?? '');
   $confirmPassword = (string)($_POST['confirm_admin_password'] ?? '');
@@ -72,6 +81,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
     $accountError = 'กรุณากรอกชื่อผู้ใช้';
   } elseif ($currentPassword === '') {
     $accountError = 'กรุณากรอกรหัสผ่านปัจจุบันเพื่อยืนยันตัวตน';
+  } elseif ($submittedRecoveryEmail !== '' && !filter_var($submittedRecoveryEmail, FILTER_VALIDATE_EMAIL)) {
+    $accountError = 'รูปแบบอีเมลกู้คืนไม่ถูกต้อง';
   } elseif ($newPassword !== '' && strlen($newPassword) < 6) {
     $accountError = 'รหัสผ่านใหม่ต้องมีอย่างน้อย 6 ตัวอักษร';
   } elseif ($newPassword !== $confirmPassword) {
@@ -115,10 +126,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
               $updateStmt->execute([$submittedUsername, $currentAdminId]);
             }
 
+            $recoverySettingKey = 'admin_recovery_email_' . $currentAdminId;
+            if ($submittedRecoveryEmail === '') {
+              $deleteRecoveryStmt = $pdoAccount->prepare('DELETE FROM system_settings WHERE setting_key = ?');
+              $deleteRecoveryStmt->execute([$recoverySettingKey]);
+            } else {
+              $updateRecoveryStmt = $pdoAccount->prepare('UPDATE system_settings SET setting_value = ?, updated_at = NOW() WHERE setting_key = ?');
+              $updateRecoveryStmt->execute([$submittedRecoveryEmail, $recoverySettingKey]);
+              if ($updateRecoveryStmt->rowCount() === 0) {
+                $insertRecoveryStmt = $pdoAccount->prepare('INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES (?, ?, NOW())');
+                $insertRecoveryStmt->execute([$recoverySettingKey, $submittedRecoveryEmail]);
+              }
+            }
+
             $_SESSION['admin_username'] = $submittedUsername;
-            $_SESSION['sidebar_account_flash_success'] = ($newPassword !== '')
-              ? 'อัปเดตชื่อผู้ใช้และรหัสผ่านเรียบร้อยแล้ว'
-              : 'อัปเดตชื่อผู้ใช้เรียบร้อยแล้ว';
+            if ($newPassword !== '' && $submittedRecoveryEmail !== '') {
+              $_SESSION['sidebar_account_flash_success'] = 'อัปเดตชื่อผู้ใช้ รหัสผ่าน และอีเมลกู้คืนเรียบร้อยแล้ว';
+            } elseif ($newPassword !== '') {
+              $_SESSION['sidebar_account_flash_success'] = 'อัปเดตชื่อผู้ใช้และรหัสผ่านเรียบร้อยแล้ว';
+            } elseif ($submittedRecoveryEmail !== '') {
+              $_SESSION['sidebar_account_flash_success'] = 'อัปเดตชื่อผู้ใช้และอีเมลกู้คืนเรียบร้อยแล้ว';
+            } else {
+              $_SESSION['sidebar_account_flash_success'] = 'อัปเดตชื่อผู้ใช้เรียบร้อยแล้ว';
+            }
             unset($_SESSION['__sidebar_snapshot_v1']);
             header('Location: ' . $redirectTo);
             exit;
@@ -132,6 +162,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
 
   $_SESSION['sidebar_account_flash_error'] = $accountError;
   $_SESSION['sidebar_account_old_username'] = $submittedUsername;
+  $_SESSION['sidebar_account_old_recovery_email'] = $submittedRecoveryEmail;
   header('Location: ' . $redirectTo);
   exit;
 }
@@ -144,6 +175,7 @@ if ($canUseSidebarSnapshot) {
     $fontSize = (string)($cached['fontSize'] ?? $fontSize);
     $adminGoogleLinked = !empty($cached['adminGoogleLinked']);
     $adminGoogleEmail = (string)($cached['adminGoogleEmail'] ?? $adminGoogleEmail);
+    $adminRecoveryEmail = (string)($cached['adminRecoveryEmail'] ?? $adminRecoveryEmail);
     $wizardIncompleteCount = (int)($cached['wizardIncompleteCount'] ?? $wizardIncompleteCount);
     $pendingPaymentReviewCount = (int)($cached['pendingPaymentReviewCount'] ?? $pendingPaymentReviewCount);
     $expenseStatusBadgeCounts = (array)($cached['expenseStatusBadgeCounts'] ?? $expenseStatusBadgeCounts);
@@ -185,6 +217,12 @@ try {
             }
         }
     }
+
+      if ($currentAdminId > 0) {
+        $recoveryEmailStmt = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1');
+        $recoveryEmailStmt->execute(['admin_recovery_email_' . $currentAdminId]);
+        $adminRecoveryEmail = (string)($recoveryEmailStmt->fetchColumn() ?: '');
+      }
 
     // ดึงจำนวนผู้เช่าที่ยังไม่ครบ 5 ขั้นตอน ใน wizard
     $wizardCountStmt = $pdo->query("
@@ -280,6 +318,7 @@ if ($sidebarDataLoadedFromDb) {
       'fontSize' => $fontSize,
       'adminGoogleLinked' => $adminGoogleLinked,
       'adminGoogleEmail' => $adminGoogleEmail,
+      'adminRecoveryEmail' => $adminRecoveryEmail,
       'adminPicture' => $_SESSION['admin_picture'] ?? '',
       'wizardIncompleteCount' => $wizardIncompleteCount,
       'pendingPaymentReviewCount' => $pendingPaymentReviewCount,
@@ -290,6 +329,10 @@ if ($sidebarDataLoadedFromDb) {
       'bookingStatusBadgeCounts' => $bookingStatusBadgeCounts,
     ],
   ];
+}
+
+if (!$sidebarAccountHasOldRecoveryEmail) {
+  $sidebarAccountModalRecoveryEmail = $adminRecoveryEmail;
 }
 ?>
 <style>
@@ -3743,7 +3786,7 @@ if ($sidebarDataLoadedFromDb) {
       <div class="user-meta">
         <div class="name"><?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?></div>
         <div class="email"><?php echo htmlspecialchars($_SESSION['admin_username'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
-        <div class="edit-hint">คลิกเพื่อจัดการชื่อผู้ใช้และรหัสผ่าน</div>
+        <div class="edit-hint">คลิกเพื่อจัดการชื่อผู้ใช้ รหัสผ่าน และอีเมลกู้คืน</div>
       </div>
     </div>
 
@@ -3767,6 +3810,9 @@ if ($sidebarDataLoadedFromDb) {
 
             <label for="sidebarCurrentAdminPassword">รหัสผ่านปัจจุบัน (ต้องกรอกทุกครั้ง)</label>
             <input id="sidebarCurrentAdminPassword" name="current_admin_password" type="password" autocomplete="current-password" required>
+
+            <label for="sidebarRecoveryEmail">อีเมลสำหรับกู้คืนรหัสผ่าน</label>
+            <input id="sidebarRecoveryEmail" name="recovery_email" type="email" autocomplete="email" placeholder="example@email.com" value="<?php echo htmlspecialchars($sidebarAccountModalRecoveryEmail, ENT_QUOTES, 'UTF-8'); ?>">
 
             <label for="sidebarNewAdminPassword">รหัสผ่านใหม่ (ไม่บังคับ)</label>
             <input id="sidebarNewAdminPassword" name="new_admin_password" type="password" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัวอักษร">

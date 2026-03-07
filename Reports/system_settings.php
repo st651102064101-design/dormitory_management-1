@@ -22,6 +22,8 @@ $pdo = connectDB();
 
 // Include settings data
 include __DIR__ . '/settings/settings_data.php';
+
+$pageTitle = 'ตั้งค่า';
 ?>
 <!doctype html>
 <html lang="th" class="apple-settings-html">
@@ -123,6 +125,15 @@ include __DIR__ . '/settings/settings_data.php';
       padding: 40px 24px 100px;
       min-height: 100vh;
       box-sizing: border-box;
+    }
+
+    body.apple-settings-page .apple-settings-wrapper .page-header-bar {
+      margin-top: 0.5rem !important;
+      margin-bottom: 1rem !important;
+    }
+
+    body.apple-settings-page .apple-settings-wrapper .apple-settings-header {
+      padding-top: 8px;
     }
 
     /* Mobile - sidebar hidden, full width content */
@@ -286,6 +297,8 @@ include __DIR__ . '/settings/settings_data.php';
     <main class="app-main">
       <!-- Apple Settings UI -->
       <div class="apple-settings-wrapper">
+        <?php include __DIR__ . '/../includes/page_header.php'; ?>
+
         <!-- Header -->
         <div class="apple-settings-header">
           <h1>ตั้งค่า</h1>
