@@ -13,6 +13,7 @@ $bookings = [];
 $utilities = [];
 $expenses = [];
 $pendingPayments = [];
+$pendingRepairs = [];
 $pendingWater = 0;
 $pendingElec = 0;
 $themeColor = '#0f172a';
@@ -177,6 +178,25 @@ try {
         $pendingPayments = [];
     }
 
+    // === Tab 5: แจ้งซ่อม (งานค้าง) ===
+    try {
+        $repairStmt = $pdo->query("
+            SELECT r.repair_id, r.repair_date, r.repair_status, r.repair_desc,
+                   rm.room_number,
+                   COALESCE(t.tnt_name, '') AS tnt_name
+            FROM repair r
+            LEFT JOIN contract c ON r.ctr_id = c.ctr_id
+            LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+            LEFT JOIN room rm ON c.room_id = rm.room_id
+            WHERE COALESCE(r.repair_status, '0') IN ('0', '1')
+            ORDER BY r.repair_date DESC, r.repair_id DESC
+            LIMIT 50
+        ");
+        $pendingRepairs = $repairStmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        $pendingRepairs = [];
+    }
+
 } catch (Exception $e) {
     // Keep partial data if some queries succeeded; fallback only for theme.
     $themeColor = '#0f172a';
@@ -188,6 +208,7 @@ $bookingCount = count($bookings);
 $utilityPendingCount = $pendingWater + $pendingElec;
 $expenseCount = count($expenses);
 $paymentCount = count($pendingPayments);
+$repairCount = count($pendingRepairs);
 $lightThemeClass = $isLight ? 'light-theme' : '';
 ?>
 <!DOCTYPE html>
@@ -263,6 +284,9 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         .todo-tab.active[data-tab="payment"] {
             background: linear-gradient(135deg, #ef4444, #dc2626);
         }
+        .todo-tab.active[data-tab="repair"] {
+            background: linear-gradient(135deg, #14b8a6, #0f766e);
+        }
         .todo-tab .tab-badge {
             display: inline-flex;
             align-items: center;
@@ -279,6 +303,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         .todo-tab .tab-badge.utility { background: #06b6d4; color: white; }
         .todo-tab .tab-badge.expense { background: #8b5cf6; color: white; }
         .todo-tab .tab-badge.payment { background: #ef4444; color: white; }
+        .todo-tab .tab-badge.repair { background: #14b8a6; color: white; }
 
         .todo-panel {
             display: none;
@@ -393,6 +418,8 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         .status-chip.done-water { background: rgba(6,182,212,0.15); color: #22d3ee; }
         .status-chip.done-elec { background: rgba(234,179,8,0.15); color: #facc15; }
         .status-chip.not-done { background: rgba(239,68,68,0.15); color: #f87171; }
+        .status-chip.repair-pending { background: rgba(249,115,22,0.15); color: #fb923c; }
+        .status-chip.repair-progress { background: rgba(96,165,250,0.15); color: #60a5fa; }
 
         .todo-card {
             background: rgba(255,255,255,0.04);
@@ -503,6 +530,11 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
             background: linear-gradient(135deg, #ef4444, #dc2626) !important;
             box-shadow: 0 8px 18px rgba(220, 38, 38, 0.35) !important;
         }
+        body.reports-page .todo-tabs .todo-tab.active[data-tab="repair"],
+        body.live-light.reports-page .todo-tabs .todo-tab.active[data-tab="repair"] {
+            background: linear-gradient(135deg, #14b8a6, #0f766e) !important;
+            box-shadow: 0 8px 18px rgba(15, 118, 110, 0.35) !important;
+        }
         body.reports-page .todo-tabs .todo-tab.active svg,
         body.live-light.reports-page .todo-tabs .todo-tab.active svg {
             color: #ffffff !important;
@@ -590,6 +622,11 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
                         รอชำระเงิน
                         <?php if ($paymentCount > 0): ?><span class="tab-badge payment"><?php echo $paymentCount; ?></span><?php endif; ?>
+                    </button>
+                    <button type="button" class="todo-tab" data-tab="repair" onclick="switchTab('repair')">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
+                        แจ้งซ่อม
+                        <?php if ($repairCount > 0): ?><span class="tab-badge repair"><?php echo $repairCount; ?></span><?php endif; ?>
                     </button>
                 </div>
 
@@ -814,6 +851,53 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                     </div>
                 </div>
 
+                <!-- ═══ Tab 5: แจ้งซ่อม ═══ -->
+                <div id="panel-repair" class="todo-panel">
+                    <div class="todo-card">
+                        <div class="todo-card-header">
+                            <h3>รายการแจ้งซ่อมที่ต้องจัดการ</h3>
+                            <a href="manage_repairs.php" class="btn-action primary">จัดการแจ้งซ่อม →</a>
+                        </div>
+                        <div class="todo-card-body">
+                            <?php if (empty($pendingRepairs)): ?>
+                                <div class="empty-state">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                                    <p>ไม่มีรายการแจ้งซ่อมที่ต้องจัดการ</p>
+                                </div>
+                            <?php else: ?>
+                                <table class="todo-table">
+                                    <thead><tr>
+                                        <th>ห้อง</th>
+                                        <th>ผู้เช่า</th>
+                                        <th>รายละเอียด</th>
+                                        <th>วันที่แจ้ง</th>
+                                        <th>สถานะ</th>
+                                        <th>จัดการ</th>
+                                    </tr></thead>
+                                    <tbody>
+                                        <?php foreach ($pendingRepairs as $rp): ?>
+                                        <?php
+                                            $repairStatus = (string)($rp['repair_status'] ?? '0');
+                                            $repairStatusClass = ($repairStatus === '1') ? 'repair-progress' : 'repair-pending';
+                                            $repairStatusText = ($repairStatus === '1') ? 'กำลังซ่อม' : 'รอซ่อม';
+                                            $repairDesc = trim((string)($rp['repair_desc'] ?? ''));
+                                        ?>
+                                        <tr>
+                                            <td><strong><?php echo htmlspecialchars($rp['room_number'] ?? '-'); ?></strong></td>
+                                            <td><?php echo htmlspecialchars($rp['tnt_name'] ?? '-'); ?></td>
+                                            <td><?php echo htmlspecialchars($repairDesc !== '' ? $repairDesc : '-'); ?></td>
+                                            <td><?php echo !empty($rp['repair_date']) ? date('d/m/Y H:i', strtotime((string)$rp['repair_date'])) : '-'; ?></td>
+                                            <td><span class="status-chip <?php echo $repairStatusClass; ?>"><?php echo $repairStatusText; ?></span></td>
+                                            <td><a class="btn-action primary todo-manage-link" href="manage_repairs.php">จัดการ</a></td>
+                                        </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                </div>
+
             </div>
         </main>
     </div>
@@ -894,7 +978,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         // Restore tab from URL hash on load
         document.addEventListener('DOMContentLoaded', function() {
             const hash = window.location.hash.replace('#', '');
-            const initialTab = ['booking', 'utility', 'expense', 'payment'].includes(hash) ? hash : 'booking';
+            const initialTab = ['booking', 'utility', 'expense', 'payment', 'repair'].includes(hash) ? hash : 'booking';
             switchTab(initialTab);
 
             document.querySelectorAll('.todo-row-link').forEach(function(row) {
