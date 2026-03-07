@@ -16,6 +16,7 @@ $pendingPayments = [];
 $pendingRepairs = [];
 $pendingWater = 0;
 $pendingElec = 0;
+$wizardPendingCount = 0;
 $themeColor = '#0f172a';
 $isLight = false;
 
@@ -197,6 +198,20 @@ try {
         $pendingRepairs = [];
     }
 
+    // === Wizard: ตัวช่วยผู้เช่าที่ยังค้าง ===
+    try {
+        $wizardStmt = $pdo->query(" 
+            SELECT COUNT(*) AS incomplete_count
+            FROM booking b
+            LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
+            WHERE b.bkg_status != '0'
+              AND (tw.id IS NULL OR tw.completed = 0)
+        ");
+        $wizardPendingCount = (int)($wizardStmt->fetch(PDO::FETCH_ASSOC)['incomplete_count'] ?? 0);
+    } catch (Exception $e) {
+        $wizardPendingCount = 0;
+    }
+
 } catch (Exception $e) {
     // Keep partial data if some queries succeeded; fallback only for theme.
     $themeColor = '#0f172a';
@@ -304,6 +319,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         .todo-tab .tab-badge.expense { background: #8b5cf6; color: white; }
         .todo-tab .tab-badge.payment { background: #ef4444; color: white; }
         .todo-tab .tab-badge.repair { background: #14b8a6; color: white; }
+        .todo-tab .tab-badge.wizard { background: #f59e0b; color: white; }
 
         .todo-panel {
             display: none;
@@ -603,6 +619,11 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
 
                 <!-- Tab Navigation -->
                 <div class="todo-tabs">
+                    <button type="button" class="todo-tab" aria-pressed="false">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg>
+                        ตัวช่วยผู้เช่า
+                        <?php if ($wizardPendingCount > 0): ?><span class="tab-badge wizard"><?php echo $wizardPendingCount; ?></span><?php endif; ?>
+                    </button>
                     <button type="button" class="todo-tab active" data-tab="booking" onclick="switchTab('booking')">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg>
                         การจอง
