@@ -1130,7 +1130,7 @@ try {
   
   /* Buttons */
   .quick-color,
-  button:not(.btn-save):not([type="submit"]):not(.expenses-view-toggle):not(.meter-tab) {
+  button:not(.btn-save):not([type="submit"]):not(.expenses-view-toggle):not(.payments-view-toggle):not(.meter-tab):not(.report-tab):not(.action-btn) {
     background: #f3f4f6 !important;
     border: 1px solid #d1d5db !important;
     color: #111827 !important;
@@ -2699,6 +2699,127 @@ try {
     margin: 0 !important;
     vertical-align: middle !important;
   }
+
+  /* Bootstrap 5.3 tooltip styles (component-only to avoid global CSS side effects). */
+  .tooltip {
+    --bs-tooltip-zindex: 1080;
+    --bs-tooltip-max-width: 200px;
+    --bs-tooltip-padding-x: 0.5rem;
+    --bs-tooltip-padding-y: 0.25rem;
+    --bs-tooltip-margin: 0;
+    --bs-tooltip-font-size: 0.875rem;
+    --bs-tooltip-color: #f8fafc;
+    --bs-tooltip-bg: #0f172a;
+    --bs-tooltip-border-radius: 0.375rem;
+    --bs-tooltip-opacity: 0.9;
+    --bs-tooltip-arrow-width: 0.8rem;
+    --bs-tooltip-arrow-height: 0.4rem;
+    z-index: var(--bs-tooltip-zindex);
+    display: block;
+    margin: var(--bs-tooltip-margin);
+    font-family: var(--bs-font-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Liberation Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");
+    font-style: normal;
+    font-weight: 400;
+    line-height: 1.5;
+    text-align: left;
+    text-decoration: none;
+    text-shadow: none;
+    text-transform: none;
+    letter-spacing: normal;
+    word-break: normal;
+    white-space: normal;
+    word-spacing: normal;
+    line-break: auto;
+    font-size: var(--bs-tooltip-font-size);
+    word-wrap: break-word;
+    opacity: 0;
+  }
+
+  .tooltip.show {
+    opacity: var(--bs-tooltip-opacity);
+  }
+
+  .tooltip .tooltip-arrow {
+    display: block;
+    width: var(--bs-tooltip-arrow-width);
+    height: var(--bs-tooltip-arrow-height);
+  }
+
+  .tooltip .tooltip-arrow::before {
+    position: absolute;
+    content: "";
+    border-color: transparent;
+    border-style: solid;
+  }
+
+  .bs-tooltip-top .tooltip-arrow,
+  .bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow {
+    bottom: calc(-1 * var(--bs-tooltip-arrow-height));
+  }
+
+  .bs-tooltip-top .tooltip-arrow::before,
+  .bs-tooltip-auto[data-popper-placement^="top"] .tooltip-arrow::before {
+    top: -1px;
+    border-width: var(--bs-tooltip-arrow-height) calc(var(--bs-tooltip-arrow-width) * 0.5) 0;
+    border-top-color: var(--bs-tooltip-bg);
+  }
+
+  .bs-tooltip-end .tooltip-arrow,
+  .bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow {
+    left: calc(-1 * var(--bs-tooltip-arrow-height));
+    width: var(--bs-tooltip-arrow-height);
+    height: var(--bs-tooltip-arrow-width);
+  }
+
+  .bs-tooltip-end .tooltip-arrow::before,
+  .bs-tooltip-auto[data-popper-placement^="right"] .tooltip-arrow::before {
+    right: -1px;
+    border-width: calc(var(--bs-tooltip-arrow-width) * 0.5) var(--bs-tooltip-arrow-height) calc(var(--bs-tooltip-arrow-width) * 0.5) 0;
+    border-right-color: var(--bs-tooltip-bg);
+  }
+
+  .bs-tooltip-bottom .tooltip-arrow,
+  .bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow {
+    top: calc(-1 * var(--bs-tooltip-arrow-height));
+  }
+
+  .bs-tooltip-bottom .tooltip-arrow::before,
+  .bs-tooltip-auto[data-popper-placement^="bottom"] .tooltip-arrow::before {
+    bottom: -1px;
+    border-width: 0 calc(var(--bs-tooltip-arrow-width) * 0.5) var(--bs-tooltip-arrow-height);
+    border-bottom-color: var(--bs-tooltip-bg);
+  }
+
+  .bs-tooltip-start .tooltip-arrow,
+  .bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow {
+    right: calc(-1 * var(--bs-tooltip-arrow-height));
+    width: var(--bs-tooltip-arrow-height);
+    height: var(--bs-tooltip-arrow-width);
+  }
+
+  .bs-tooltip-start .tooltip-arrow::before,
+  .bs-tooltip-auto[data-popper-placement^="left"] .tooltip-arrow::before {
+    left: -1px;
+    border-width: calc(var(--bs-tooltip-arrow-width) * 0.5) 0 calc(var(--bs-tooltip-arrow-width) * 0.5) var(--bs-tooltip-arrow-height);
+    border-left-color: var(--bs-tooltip-bg);
+  }
+
+  .tooltip-inner {
+    max-width: var(--bs-tooltip-max-width);
+    padding: var(--bs-tooltip-padding-y) var(--bs-tooltip-padding-x);
+    color: var(--bs-tooltip-color) !important;
+    text-align: center;
+    background-color: var(--bs-tooltip-bg) !important;
+    border-radius: var(--bs-tooltip-border-radius);
+    box-shadow: 0 8px 22px rgba(2, 6, 23, 0.35);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+  }
+
+  .tooltip,
+  .tooltip .tooltip-inner,
+  .tooltip .tooltip-inner * {
+    color: #f8fafc !important;
+  }
 </style>
 <script>
   // ====== Global Admin Font Scale Sync ======
@@ -2735,6 +2856,43 @@ try {
     localStorage.setItem('adminDefaultViewMode', mode);
   } catch (e) {}
 })();
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tooltipSelector = '[data-bs-toggle="tooltip"]';
+
+    function initTooltips() {
+      if (!window.bootstrap || !window.bootstrap.Tooltip) {
+        return;
+      }
+
+      document.querySelectorAll(tooltipSelector).forEach(function(el) {
+        if (!window.bootstrap.Tooltip.getInstance(el)) {
+          new window.bootstrap.Tooltip(el, {
+            container: 'body'
+          });
+        }
+      });
+    }
+
+    if (window.bootstrap && window.bootstrap.Tooltip) {
+      initTooltips();
+      return;
+    }
+
+    const existingBundle = document.querySelector('script[data-bootstrap-tooltip-bundle="true"]');
+    if (existingBundle) {
+      existingBundle.addEventListener('load', initTooltips, { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
+    script.defer = true;
+    script.dataset.bootstrapTooltipBundle = 'true';
+    script.addEventListener('load', initTooltips, { once: true });
+    document.head.appendChild(script);
+  });
 </script>
 <aside class="app-sidebar">
   <!-- Mobile Close Button -->
@@ -2798,14 +2956,14 @@ try {
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg></span>
             <span class="app-nav-label" style="font-weight: 600; color: #60a5fa;">ตัวช่วยผู้เช่า</span>
             <?php if ($wizardIncompleteCount > 0): ?>
-            <span style="position: absolute; top: 6px; right: 6px; transform: none; background: #ef4444; color: white; border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; font-weight: bold; pointer-events: none; z-index: 2;">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="มีรายการค้างในตัวช่วยผู้เช่า <?php echo $wizardIncompleteCount; ?> รายการ" style="position: absolute; top: 6px; right: 6px; transform: none; background: #ef4444; color: white; border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; font-weight: bold; pointer-events: auto; cursor: help; z-index: 2;">
               <?php echo $wizardIncompleteCount > 99 ? '99+' : $wizardIncompleteCount; ?>
             </span>
             <?php endif; ?>
         </a>
         <a class="" href="manage_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label">ผู้เช่า</span></a>
-        <a class="booking-nav-item" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span><?php if ($bookingStatusBadgeTotal > 0): ?><span class="booking-status-badges" aria-label="สถานะการจอง"><?php if ($bookingStatusBadgeCounts['reserved'] > 0): ?><span class="booking-status-badge reserved" title="จองแล้ว"><?php echo $bookingStatusBadgeCounts['reserved'] > 99 ? '99+' : $bookingStatusBadgeCounts['reserved']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['checkedin'] > 0): ?><span class="booking-status-badge checkedin" title="เข้าพักแล้ว"><?php echo $bookingStatusBadgeCounts['checkedin'] > 99 ? '99+' : $bookingStatusBadgeCounts['checkedin']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['cancelled'] > 0): ?><span class="booking-status-badge cancelled" title="ยกเลิก"><?php echo $bookingStatusBadgeCounts['cancelled'] > 99 ? '99+' : $bookingStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
-        <a class="utility-nav-item" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span><?php if ($utilityStatusBadgeTotal > 0): ?><span class="utility-status-badges" aria-label="สถานะจดมิเตอร์น้ำไฟ"><?php if ($utilityStatusBadgeCounts['water'] > 0): ?><span class="utility-status-badge water" title="น้ำยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['water'] > 99 ? '99+' : $utilityStatusBadgeCounts['water']; ?></span><?php endif; ?><?php if ($utilityStatusBadgeCounts['electric'] > 0): ?><span class="utility-status-badge electric" title="ไฟยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['electric'] > 99 ? '99+' : $utilityStatusBadgeCounts['electric']; ?></span><?php endif; ?></span><?php endif; ?></a>
+        <a class="booking-nav-item" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span><?php if ($bookingStatusBadgeTotal > 0): ?><span class="booking-status-badges" aria-label="สถานะการจอง"><?php if ($bookingStatusBadgeCounts['reserved'] > 0): ?><span class="booking-status-badge reserved" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="จองแล้ว"><?php echo $bookingStatusBadgeCounts['reserved'] > 99 ? '99+' : $bookingStatusBadgeCounts['reserved']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['checkedin'] > 0): ?><span class="booking-status-badge checkedin" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="เข้าพักแล้ว"><?php echo $bookingStatusBadgeCounts['checkedin'] > 99 ? '99+' : $bookingStatusBadgeCounts['checkedin']; ?></span><?php endif; ?><?php if ($bookingStatusBadgeCounts['cancelled'] > 0): ?><span class="booking-status-badge cancelled" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยกเลิก"><?php echo $bookingStatusBadgeCounts['cancelled'] > 99 ? '99+' : $bookingStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
+        <a class="utility-nav-item" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span><?php if ($utilityStatusBadgeTotal > 0): ?><span class="utility-status-badges" aria-label="สถานะจดมิเตอร์น้ำไฟ"><?php if ($utilityStatusBadgeCounts['water'] > 0): ?><span class="utility-status-badge water" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="น้ำยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['water'] > 99 ? '99+' : $utilityStatusBadgeCounts['water']; ?></span><?php endif; ?><?php if ($utilityStatusBadgeCounts['electric'] > 0): ?><span class="utility-status-badge electric" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ไฟยังไม่จดเดือนนี้"><?php echo $utilityStatusBadgeCounts['electric'] > 99 ? '99+' : $utilityStatusBadgeCounts['electric']; ?></span><?php endif; ?></span><?php endif; ?></a>
         <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
         <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span><span class="app-nav-label">ห้องพัก</span></a>
         <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label">จัดการสัญญา</span></a>
@@ -2816,16 +2974,16 @@ try {
           <?php if ($expenseStatusBadgeTotal > 0): ?>
           <span class="expense-status-badges" aria-label="สถานะค่าใช้จ่าย">
             <?php if ($expenseStatusBadgeCounts['unpaid'] > 0): ?>
-              <span class="expense-status-badge unpaid" title="ยังไม่ชำระ"><?php echo $expenseStatusBadgeCounts['unpaid'] > 99 ? '99+' : $expenseStatusBadgeCounts['unpaid']; ?></span>
+              <span class="expense-status-badge unpaid" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยังไม่ชำระ"><?php echo $expenseStatusBadgeCounts['unpaid'] > 99 ? '99+' : $expenseStatusBadgeCounts['unpaid']; ?></span>
             <?php endif; ?>
             <?php if ($expenseStatusBadgeCounts['pending'] > 0): ?>
-              <span class="expense-status-badge pending" title="รอตรวจสอบ"><?php echo $expenseStatusBadgeCounts['pending'] > 99 ? '99+' : $expenseStatusBadgeCounts['pending']; ?></span>
+              <span class="expense-status-badge pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="รอตรวจสอบ"><?php echo $expenseStatusBadgeCounts['pending'] > 99 ? '99+' : $expenseStatusBadgeCounts['pending']; ?></span>
             <?php endif; ?>
             <?php if ($expenseStatusBadgeCounts['partial'] > 0): ?>
-              <span class="expense-status-badge partial" title="ชำระยังไม่ครบ"><?php echo $expenseStatusBadgeCounts['partial'] > 99 ? '99+' : $expenseStatusBadgeCounts['partial']; ?></span>
+              <span class="expense-status-badge partial" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ชำระยังไม่ครบ"><?php echo $expenseStatusBadgeCounts['partial'] > 99 ? '99+' : $expenseStatusBadgeCounts['partial']; ?></span>
             <?php endif; ?>
             <?php if ($expenseStatusBadgeCounts['paid'] > 0): ?>
-              <span class="expense-status-badge paid" title="ชำระแล้ว"><?php echo $expenseStatusBadgeCounts['paid'] > 99 ? '99+' : $expenseStatusBadgeCounts['paid']; ?></span>
+              <span class="expense-status-badge paid" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ชำระแล้ว"><?php echo $expenseStatusBadgeCounts['paid'] > 99 ? '99+' : $expenseStatusBadgeCounts['paid']; ?></span>
             <?php endif; ?>
           </span>
           <?php endif; ?>
@@ -2836,18 +2994,18 @@ try {
           <?php if ($paymentStatusBadgeTotal > 0): ?>
           <span class="payment-status-badges" aria-label="สถานะการชำระเงิน">
             <?php if ($paymentStatusBadgeCounts['unpaid'] > 0): ?>
-              <span class="payment-status-badge unpaid" title="ยังไม่ชำระ"><?php echo $paymentStatusBadgeCounts['unpaid'] > 99 ? '99+' : $paymentStatusBadgeCounts['unpaid']; ?></span>
+              <span class="payment-status-badge unpaid" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยังไม่ชำระ"><?php echo $paymentStatusBadgeCounts['unpaid'] > 99 ? '99+' : $paymentStatusBadgeCounts['unpaid']; ?></span>
             <?php endif; ?>
             <?php if ($paymentStatusBadgeCounts['pending'] > 0): ?>
-              <span class="payment-status-badge pending" title="รอตรวจสอบ"><?php echo $paymentStatusBadgeCounts['pending'] > 99 ? '99+' : $paymentStatusBadgeCounts['pending']; ?></span>
+              <span class="payment-status-badge pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="รอตรวจสอบ"><?php echo $paymentStatusBadgeCounts['pending'] > 99 ? '99+' : $paymentStatusBadgeCounts['pending']; ?></span>
             <?php endif; ?>
             <?php if ($paymentStatusBadgeCounts['paid'] > 0): ?>
-              <span class="payment-status-badge paid" title="ตรวจสอบแล้ว"><?php echo $paymentStatusBadgeCounts['paid'] > 99 ? '99+' : $paymentStatusBadgeCounts['paid']; ?></span>
+              <span class="payment-status-badge paid" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ตรวจสอบแล้ว"><?php echo $paymentStatusBadgeCounts['paid'] > 99 ? '99+' : $paymentStatusBadgeCounts['paid']; ?></span>
             <?php endif; ?>
           </span>
           <?php endif; ?>
         </a>
-        <a class="repair-nav-item" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">แจ้งซ่อม</span><?php if ($repairStatusBadgeTotal > 0): ?><span class="repair-status-badges" aria-label="สถานะแจ้งซ่อม"><?php if ($repairStatusBadgeCounts['pending'] > 0): ?><span class="repair-status-badge pending" title="รอซ่อม"><?php echo $repairStatusBadgeCounts['pending'] > 99 ? '99+' : $repairStatusBadgeCounts['pending']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['inprogress'] > 0): ?><span class="repair-status-badge inprogress" title="กำลังซ่อม"><?php echo $repairStatusBadgeCounts['inprogress'] > 99 ? '99+' : $repairStatusBadgeCounts['inprogress']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['done'] > 0): ?><span class="repair-status-badge done" title="ซ่อมเสร็จแล้ว"><?php echo $repairStatusBadgeCounts['done'] > 99 ? '99+' : $repairStatusBadgeCounts['done']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['cancelled'] > 0): ?><span class="repair-status-badge cancelled" title="ยกเลิก"><?php echo $repairStatusBadgeCounts['cancelled'] > 99 ? '99+' : $repairStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
+        <a class="repair-nav-item" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">แจ้งซ่อม</span><?php if ($repairStatusBadgeTotal > 0): ?><span class="repair-status-badges" aria-label="สถานะแจ้งซ่อม"><?php if ($repairStatusBadgeCounts['pending'] > 0): ?><span class="repair-status-badge pending" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="รอซ่อม"><?php echo $repairStatusBadgeCounts['pending'] > 99 ? '99+' : $repairStatusBadgeCounts['pending']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['inprogress'] > 0): ?><span class="repair-status-badge inprogress" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="กำลังซ่อม"><?php echo $repairStatusBadgeCounts['inprogress'] > 99 ? '99+' : $repairStatusBadgeCounts['inprogress']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['done'] > 0): ?><span class="repair-status-badge done" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ซ่อมเสร็จแล้ว"><?php echo $repairStatusBadgeCounts['done'] > 99 ? '99+' : $repairStatusBadgeCounts['done']; ?></span><?php endif; ?><?php if ($repairStatusBadgeCounts['cancelled'] > 0): ?><span class="repair-status-badge cancelled" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ยกเลิก"><?php echo $repairStatusBadgeCounts['cancelled'] > 99 ? '99+' : $repairStatusBadgeCounts['cancelled']; ?></span><?php endif; ?></span><?php endif; ?></a>
         <a class="" href="system_settings.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="app-nav-label">ตั้งค่าระบบ</span></a>
       </details>
     </div>
@@ -2891,8 +3049,8 @@ try {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          <span class="google-email" title="<?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?></span>
-          <a href="../unlink_google.php" class="google-unlink-btn" title="ถอนการเชื่อมต่อบัญชี Google">
+          <span class="google-email" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?></span>
+          <a href="../unlink_google.php" class="google-unlink-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ถอนการเชื่อมต่อบัญชี Google">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -2925,7 +3083,7 @@ try {
 
     <!-- Rail shown only when sidebar is collapsed: icon-only controls -->
     <div class="sidebar-rail">
-      <div class="rail-user" title="<?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?>">
+      <div class="rail-user" data-bs-toggle="tooltip" data-bs-placement="right" data-bs-title="<?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?>">
         <?php if (!empty($_SESSION['admin_picture'])): ?>
           <!-- Google avatar for rail -->
           <img src="<?php echo htmlspecialchars($_SESSION['admin_picture'], ENT_QUOTES, 'UTF-8'); ?>" 

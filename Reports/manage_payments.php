@@ -2511,65 +2511,6 @@ $filterRoomOptions = array_values($filterRoomOptions);
 
           <!-- Bank Payment Destination Section removed -->
 
-          <!-- Room Payment Summary -->
-          <section class="manage-panel">
-            <div class="section-header">
-              <div>
-                <h2 style="margin:0;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 8px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                  สรุปการชำระเงินแยกตามห้อง
-                </h2>
-                <p style="color:#94a3b8;margin-top:0.2rem;">แสดงจำนวนครั้งและยอดชำระของแต่ละห้อง (เฉพาะห้องที่มีผู้เช่า)</p>
-              </div>
-              <button type="button" id="roomSummaryViewToggle" class="payments-view-toggle" onclick="(function(){var grid=document.getElementById('roomSummaryGrid');var text=document.getElementById('roomSummaryViewToggleText');if(!grid){return;}var isList=grid.classList.contains('list-mode');grid.classList.toggle('list-mode',!isList);if(text){text.textContent=!isList?'มุมมอง grid':'มุมมอง list';}})();">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#111827" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#111827;"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-                <span id="roomSummaryViewToggleText"><?php echo $defaultViewMode === 'list' ? 'มุมมอง grid' : 'มุมมอง list'; ?></span>
-              </button>
-            </div>
-            <?php if (empty($roomPaymentSummary)): ?>
-              <p style="text-align:center;color:#64748b;padding:2rem;">ยังไม่มีข้อมูลการชำระเงิน</p>
-            <?php else: ?>
-              <div id="roomSummaryGrid" class="room-summary-grid <?php echo $defaultViewMode === 'list' ? 'list-mode' : ''; ?>">
-                <?php foreach ($roomPaymentSummary as $room): ?>
-                  <div class="room-card<?php echo $filterRoom === (string)($room['room_number'] ?? '') ? ' is-active-filter' : ''; ?>" data-room-number="<?php echo htmlspecialchars((string)($room['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" onclick="filterByRoom('<?php echo htmlspecialchars((string)$room['room_number']); ?>')">
-                    <div class="room-card-header">
-                      <span class="room-number">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?>
-                      </span>
-                      <span class="payment-count">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-                        <?php echo (int)$room['payment_count']; ?> ครั้ง
-                      </span>
-                    </div>
-                    <div class="room-card-body">
-                      <div class="room-tenant">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        <?php echo htmlspecialchars($room['tnt_name'] ?? 'ไม่ระบุ'); ?>
-                      </div>
-                      <div class="room-stats">
-                        <div class="room-stat">
-                          <div class="room-stat-label">ยอดที่ตรวจสอบแล้ว</div>
-                          <div class="room-stat-value verified">฿<?php echo number_format((int)($room['total_verified'] ?? 0)); ?></div>
-                        </div>
-                        <div class="room-stat">
-                          <div class="room-stat-label">รอตรวจสอบ</div>
-                          <div class="room-stat-value pending">฿<?php echo number_format((int)($room['total_pending'] ?? 0)); ?></div>
-                        </div>
-                      </div>
-                      <?php if (!empty($room['last_payment_date'])): ?>
-                        <div class="room-last-payment">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle; margin-right: 4px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                          ชำระล่าสุด: <?php echo date('d/m/Y', strtotime($room['last_payment_date'])); ?>
-                        </div>
-                      <?php endif; ?>
-                    </div>
-                  </div>
-                <?php endforeach; ?>
-              </div>
-            <?php endif; ?>
-          </section>
-
           <!-- Toggle button for payment form -->
           <div style="margin:1.5rem 0;">
             <button type="button" id="togglePaymentFormBtn" class="toggle-form-btn collapsed" onclick="togglePaymentForm()" aria-expanded="false" aria-pressed="false" title="คลิกเพื่อแสดงฟอร์ม">
@@ -3631,7 +3572,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
         }
 
         // animate stat cards
-        const statCards = document.querySelectorAll('.payment-stat-card, .room-card');
+        const statCards = document.querySelectorAll('.payment-stat-card');
         statCards.forEach((card, i) => {
           card.style.animation = 'fadeInUp 0.6s cubic-bezier(.16,1,.3,1) forwards';
           card.style.animationDelay = (i * 0.08) + 's';
@@ -3640,28 +3581,6 @@ $filterRoomOptions = array_values($filterRoomOptions);
     </script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" type="text/javascript"></script>
     <script>
-      const roomSummarySettingMode = <?php echo json_encode($defaultViewMode, JSON_UNESCAPED_UNICODE); ?>;
-
-      function applyRoomSummaryView(mode) {
-        const summaryGrid = document.getElementById('roomSummaryGrid');
-        const toggleText = document.getElementById('roomSummaryViewToggleText');
-        const normalized = mode === 'list' ? 'list' : 'grid';
-
-        if (summaryGrid) {
-          summaryGrid.classList.toggle('list-mode', normalized === 'list');
-        }
-
-        if (toggleText) {
-          toggleText.textContent = normalized === 'list' ? 'มุมมอง grid' : 'มุมมอง list';
-        }
-      }
-
-      function toggleRoomSummaryView() {
-        const summaryGrid = document.getElementById('roomSummaryGrid');
-        const nextMode = summaryGrid && summaryGrid.classList.contains('list-mode') ? 'grid' : 'list';
-        applyRoomSummaryView(nextMode);
-      }
-
       function applyPaymentsView(mode) {
         const tableWrap = document.getElementById('paymentsTableWrap');
         const rowWrap = document.getElementById('paymentsRowView');
@@ -3724,8 +3643,6 @@ $filterRoomOptions = array_values($filterRoomOptions);
 
       // Initialize DataTable for payments table
       document.addEventListener('DOMContentLoaded', function() {
-        applyRoomSummaryView(roomSummarySettingMode);
-
         // Always start with table view to avoid hidden-table state from stale localStorage.
         applyPaymentsView('table');
 
