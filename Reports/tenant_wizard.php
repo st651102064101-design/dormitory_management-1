@@ -859,6 +859,78 @@ try {
         .modal-container img {
             border-color: #cbd5e1 !important;
         }
+
+        .billing-inline-icon {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.32rem;
+        }
+
+        .billing-svg-icon {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            vertical-align: -2px;
+            flex-shrink: 0;
+        }
+
+        .billing-svg-water {
+            animation: billingFloat 2.2s ease-in-out infinite;
+        }
+
+        .billing-svg-elec {
+            animation: billingFlicker 1.7s ease-in-out infinite;
+        }
+
+        .billing-svg-cal {
+            animation: billingTick 2.4s ease-in-out infinite;
+        }
+
+        .billing-svg-meter {
+            animation: billingMeterPulse 2.1s ease-in-out infinite;
+        }
+
+        .billing-svg-warning {
+            width: 15px;
+            height: 15px;
+            animation: billingWarningPulse 1.9s ease-in-out infinite;
+        }
+
+        @keyframes billingFloat {
+            0%,
+            100% { transform: translateY(0); }
+            50% { transform: translateY(-1.5px); }
+        }
+
+        @keyframes billingFlicker {
+            0%,
+            100% { opacity: 1; }
+            45% { opacity: 0.65; }
+            55% { opacity: 1; }
+        }
+
+        @keyframes billingTick {
+            0%,
+            100% { transform: rotate(0deg); }
+            40% { transform: rotate(-3deg); }
+            65% { transform: rotate(2deg); }
+        }
+
+        @keyframes billingMeterPulse {
+            0%,
+            100% { transform: scale(1); }
+            50% { transform: scale(1.06); }
+        }
+
+        @keyframes billingWarningPulse {
+            0%,
+            100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.75; transform: scale(1.06); }
+        }
     </style>
 </head>
 <body>
@@ -1363,11 +1435,27 @@ try {
                     <span style="color:rgba(255,255,255,0.25);">|</span>
                     <span id="billingBarRoom" style="color:#93c5fd;"></span>
                     <span style="color:rgba(255,255,255,0.25);">|</span>
-                    <span>💧 <span id="waterRateDisplay" style="color:#60a5fa;">-</span></span>
+                    <span class="billing-inline-icon" style="color:#60a5fa;">
+                        <svg class="billing-svg-icon billing-svg-water" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3C9 7 6 9.8 6 14a6 6 0 0 0 12 0c0-4.2-3-7-6-11z"></path>
+                        </svg>
+                        <span id="waterRateDisplay" style="color:#60a5fa;">-</span>
+                    </span>
                     <span style="color:rgba(255,255,255,0.25);">|</span>
-                    <span>⚡ <span id="elecRateDisplay" style="color:#fbbf24;">-</span></span>
+                    <span class="billing-inline-icon" style="color:#fbbf24;">
+                        <svg class="billing-svg-icon billing-svg-elec" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"></path>
+                        </svg>
+                        <span id="elecRateDisplay" style="color:#fbbf24;">-</span>
+                    </span>
                     <span style="color:rgba(255,255,255,0.25);">|</span>
-                    <span>📅 รอบแรก: <span id="nextMonthDisplay" style="color:#4ade80; font-weight:600;">-</span></span>
+                    <span class="billing-inline-icon" style="color:#4ade80;">
+                        <svg class="billing-svg-icon billing-svg-cal" viewBox="0 0 24 24" aria-hidden="true">
+                            <rect x="3" y="5" width="18" height="16" rx="2"></rect>
+                            <path d="M16 3v4M8 3v4M3 10h18"></path>
+                        </svg>
+                        <span>รอบแรก: <span id="nextMonthDisplay" style="color:#4ade80; font-weight:600;">-</span></span>
+                    </span>
                 </div>
 
                 <!-- Hidden fields -->
@@ -1382,21 +1470,39 @@ try {
                 <!-- Meter reading section -->
                 <div id="meterSection" style="margin-bottom:1.1rem;">
                     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.55rem;">
-                        <span style="font-size:0.88rem;font-weight:700;color:#fbbf24;">📊 จดมิเตอร์เดือนนี้</span>
+                        <span class="billing-inline-icon" style="font-size:0.88rem;font-weight:700;color:#fbbf24;">
+                            <svg class="billing-svg-icon billing-svg-meter" viewBox="0 0 24 24" aria-hidden="true">
+                                <path d="M4 20h16"></path>
+                                <rect x="6" y="11" width="2.8" height="6" rx="1"></rect>
+                                <rect x="10.6" y="8" width="2.8" height="9" rx="1"></rect>
+                                <rect x="15.2" y="5" width="2.8" height="12" rx="1"></rect>
+                            </svg>
+                            <span>จดมิเตอร์เดือนนี้</span>
+                        </span>
                         <span id="meterSavedBadge" style="display:none;padding:0.15rem 0.55rem;border-radius:20px;background:rgba(34,197,94,0.15);color:#4ade80;font-size:0.75rem;font-weight:600;">✓ บันทึกแล้ว</span>
                     </div>
                     <div id="meterBody" style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:0.9rem 1rem;">
                         <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
                             <!-- Water -->
                             <div>
-                                <div style="font-size:0.75rem;color:rgba(148,163,184,0.8);margin-bottom:0.3rem;">💧 มิเตอร์น้ำ (ครั้งก่อน: <span id="prevWaterDisplay">-</span>)</div>
+                                <div class="billing-inline-icon" style="font-size:0.75rem;color:rgba(148,163,184,0.8);margin-bottom:0.3rem;">
+                                    <svg class="billing-svg-icon billing-svg-water" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M12 3C9 7 6 9.8 6 14a6 6 0 0 0 12 0c0-4.2-3-7-6-11z"></path>
+                                    </svg>
+                                    <span>มิเตอร์น้ำ (ครั้งก่อน: <span id="prevWaterDisplay">-</span>)</span>
+                                </div>
                                 <input type="number" id="meterWaterInput" min="0" placeholder="เลขมิเตอร์ใหม่"
                                     style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.6);border:1px solid rgba(96,165,250,0.4);border-radius:7px;color:#f8fafc;padding:0.5rem 0.65rem;font-size:0.9rem;outline:none;"
                                     oninput="updateMeterPreview()">
                             </div>
                             <!-- Elec -->
                             <div>
-                                <div style="font-size:0.75rem;color:rgba(148,163,184,0.8);margin-bottom:0.3rem;">⚡ มิเตอร์ไฟ (ครั้งก่อน: <span id="prevElecDisplay">-</span>)</div>
+                                <div class="billing-inline-icon" style="font-size:0.75rem;color:rgba(148,163,184,0.8);margin-bottom:0.3rem;">
+                                    <svg class="billing-svg-icon billing-svg-elec" viewBox="0 0 24 24" aria-hidden="true">
+                                        <path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"></path>
+                                    </svg>
+                                    <span>มิเตอร์ไฟ (ครั้งก่อน: <span id="prevElecDisplay">-</span>)</span>
+                                </div>
                                 <input type="number" id="meterElecInput" min="0" placeholder="เลขมิเตอร์ใหม่"
                                     style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.6);border:1px solid rgba(251,191,36,0.4);border-radius:7px;color:#f8fafc;padding:0.5rem 0.65rem;font-size:0.9rem;outline:none;"
                                     oninput="updateMeterPreview()">
@@ -1417,7 +1523,13 @@ try {
 
                 <!-- Bill sections (hidden until meter is confirmed) -->
                 <div id="meterNoticeBlock" style="display:none;padding:0.75rem 1rem;border-radius:10px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.25);color:#fbbf24;font-size:0.85rem;font-weight:600;margin-bottom:0.85rem;text-align:center;">
-                    ⚠ กรุณาจดมิเตอร์ก่อน เพื่อดูรายการบิล
+                    <span class="billing-inline-icon">
+                        <svg class="billing-svg-icon billing-svg-warning" viewBox="0 0 24 24" aria-hidden="true">
+                            <path d="M12 3 2 21h20L12 3z"></path>
+                            <path d="M12 9v5M12 18h.01"></path>
+                        </svg>
+                        <span>กรุณาจดมิเตอร์ก่อน เพื่อดูรายการบิล</span>
+                    </span>
                 </div>
                 <div id="billSectionsWrapper" style="display:none;">
                     <div id="firstBillPaymentsSection" style="margin-bottom:0.85rem; color:#e2e8f0;"></div>
@@ -2307,12 +2419,12 @@ try {
         if (waterVal !== '') {
             const used = parseInt(waterVal, 10) - _meterPrevWater;
             const cost = used <= 0 ? 0 : (used <= 10 ? 200 : 200 + (used - 10) * 25);
-            parts.push(`💧 ใช้ <b style="color:#60a5fa">${Math.max(0,used)}</b> หน่วย → <b style="color:#4ade80">฿${cost.toLocaleString()}</b>`);
+            parts.push(`<span class="billing-inline-icon" style="color:#60a5fa;"><svg class="billing-svg-icon billing-svg-water" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C9 7 6 9.8 6 14a6 6 0 0 0 12 0c0-4.2-3-7-6-11z"></path></svg><span>ใช้ <b style="color:#60a5fa">${Math.max(0,used)}</b> หน่วย → <b style="color:#4ade80">฿${cost.toLocaleString()}</b></span></span>`);
         }
         if (elecVal !== '') {
             const used = parseInt(elecVal, 10) - _meterPrevElec;
             const cost = Math.max(0, used) * _meterRateElec;
-            parts.push(`⚡ ใช้ <b style="color:#fbbf24">${Math.max(0,used)}</b> หน่วย → <b style="color:#4ade80">฿${cost.toLocaleString()}</b>`);
+            parts.push(`<span class="billing-inline-icon" style="color:#fbbf24;"><svg class="billing-svg-icon billing-svg-elec" viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h6l-1 8 9-12h-6l1-8z"></path></svg><span>ใช้ <b style="color:#fbbf24">${Math.max(0,used)}</b> หน่วย → <b style="color:#4ade80">฿${cost.toLocaleString()}</b></span></span>`);
         }
         preview.innerHTML = parts.join('<span style="color:rgba(255,255,255,0.2);margin:0 0.25rem">|</span>');
     }

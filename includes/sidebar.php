@@ -859,6 +859,35 @@ try {
     padding-right: 0.65rem !important;
   }
 
+  .expense-nav-item,
+  .payment-nav-item,
+  .utility-nav-item,
+  .booking-nav-item,
+  .repair-nav-item {
+    display: grid !important;
+    grid-template-columns: 1.8rem minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 0.35rem;
+    width: 100% !important;
+  }
+
+  .expense-nav-item .app-nav-icon,
+  .payment-nav-item .app-nav-icon,
+  .utility-nav-item .app-nav-icon,
+  .booking-nav-item .app-nav-icon,
+  .repair-nav-item .app-nav-icon {
+    grid-column: 1;
+  }
+
+  .expense-nav-item .app-nav-label,
+  .payment-nav-item .app-nav-label,
+  .utility-nav-item .app-nav-label,
+  .booking-nav-item .app-nav-label,
+  .repair-nav-item .app-nav-label {
+    grid-column: 2;
+    min-width: 0;
+  }
+
   .expense-status-badges {
     margin-left: auto;
     display: inline-flex;
@@ -1014,6 +1043,16 @@ try {
   .repair-status-badge.inprogress { background: #60a5fa; }
   .repair-status-badge.done { background: #22c55e; }
   .repair-status-badge.cancelled { background: #ef4444; }
+
+  .expense-status-badges,
+  .payment-status-badges,
+  .utility-status-badges,
+  .booking-status-badges,
+  .repair-status-badges {
+    grid-column: 3;
+    justify-self: end;
+    margin-left: 0 !important;
+  }
 
   aside.sidebar-collapsed .expense-status-badges,
   .app-sidebar.collapsed .expense-status-badges,
@@ -2051,10 +2090,25 @@ try {
     gap: 0.35rem;
     padding: 0.6rem 0.85rem;
     margin: 0.1rem 0;
+    width: 100%;
     background: transparent;
     border: 1px solid transparent;
     border-radius: 12px;
     transition: all 0.3s ease;
+  }
+
+  .app-nav a .app-nav-label {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .app-nav a .expense-status-badges,
+  .app-nav a .payment-status-badges,
+  .app-nav a .booking-status-badges,
+  .app-nav a .utility-status-badges,
+  .app-nav a .repair-status-badges {
+    margin-left: auto !important;
+    flex-shrink: 0;
   }
   .group {
     display: flex;
