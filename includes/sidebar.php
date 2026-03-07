@@ -1054,7 +1054,7 @@ if ($sidebarDataLoadedFromDb) {
     font-weight: 700;
     line-height: 1;
     color: #ffffff !important;
-    background: #ef4444;
+    background: #f59e0b;
     border: 1px solid rgba(255, 255, 255, 0.3);
   }
 
@@ -3366,14 +3366,14 @@ if ($sidebarDataLoadedFromDb) {
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             <span class="summary-label">งานที่ต้องทำ</span>
           </a>
-          <?php if ($todoBadgeTotal > 0): ?><span class="todo-total-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="งานรอดำเนินการ <?php echo $todoBadgeTotal; ?> รายการ" style="background:#ef4444;color:white;border-radius:999px;min-width:20px;height:20px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;pointer-events:auto;"><?php echo $todoBadgeTotal > 99 ? '99+' : $todoBadgeTotal; ?></span><?php endif; ?>
+          <?php if ($todoBadgeTotal > 0): ?><span class="todo-total-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="งานรอดำเนินการ <?php echo $todoBadgeTotal; ?> รายการ" style="background:#f59e0b;color:white;border-radius:999px;min-width:20px;height:20px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;pointer-events:auto;"><?php echo $todoBadgeTotal > 99 ? '99+' : $todoBadgeTotal; ?></span><?php endif; ?>
           <span class="chev chev-toggle" data-target="nav-todo" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
         <a class="wizard-nav-item" href="tenant_wizard.php" style="position: relative; padding-right: 2.5rem; border-left: 4px solid #3b82f6; margin: 0; border-radius: 8px; overflow: visible;">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg></span>
             <span class="app-nav-label" style="font-weight: 600; color: #60a5fa;">ตัวช่วยผู้เช่า</span>
             <?php if ($wizardIncompleteCount > 0): ?>
-            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="มีรายการค้างในตัวช่วยผู้เช่า <?php echo $wizardIncompleteCount; ?> รายการ" style="position: absolute; top: 6px; right: 6px; transform: none; background: #ef4444; color: white; border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; font-weight: bold; pointer-events: auto; cursor: help; z-index: 2;">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="มีรายการค้างในตัวช่วยผู้เช่า <?php echo $wizardIncompleteCount; ?> รายการ" style="position: absolute; top: 6px; right: 6px; transform: none; background: #f59e0b; color: white; border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; font-weight: bold; pointer-events: auto; cursor: help; z-index: 2;">
               <?php echo $wizardIncompleteCount > 99 ? '99+' : $wizardIncompleteCount; ?>
             </span>
             <?php endif; ?>
