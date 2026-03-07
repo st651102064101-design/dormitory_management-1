@@ -144,6 +144,10 @@ $statusMap = [
             font-size: 1.8rem;
             box-shadow: 0 10px 30px rgba(59,130,246,0.3);
         }
+        .page-title-icon svg {
+            color: #f8fafc;
+            stroke: #f8fafc;
+        }
         .page-title h1 {
             font-size: 1.8rem;
             font-weight: 700;
@@ -486,13 +490,15 @@ $statusMap = [
             width: 40px;
             height: 40px;
             border-radius: 10px;
-            background: linear-gradient(135deg, var(--accent-blue), #8b5cf6);
+            background: linear-gradient(135deg, #60a5fa, #38bdf8) !important;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1rem;
             font-weight: 600;
-            color: white;
+            color: #f8fafc !important;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            text-shadow: 0 1px 2px rgba(15, 23, 42, 0.35);
             flex-shrink: 0;
         }
         
