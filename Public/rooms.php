@@ -278,6 +278,8 @@ foreach ($availableMonths as $monthKey) {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: nowrap;
+            gap: 1rem;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             transition: all 0.3s ease;
         }
@@ -292,6 +294,8 @@ foreach ($availableMonths as $monthKey) {
             align-items: center; 
             gap: 1rem; 
             text-decoration: none; 
+            flex-shrink: 0;
+            min-width: 0;
         }
         .logo img { 
             width: 45px; 
@@ -310,7 +314,30 @@ foreach ($availableMonths as $monthKey) {
             background-clip: text;
         }
 
-        .nav-links { display: flex; gap: 0.5rem; align-items: center; }
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: nowrap;
+            margin-left: auto;
+            min-width: 0;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+        }
+        .nav-links::-webkit-scrollbar {
+            height: 5px;
+        }
+        .nav-links::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.45);
+            border-radius: 999px;
+        }
+        .nav-links::-webkit-scrollbar-track {
+            background: transparent;
+        }
         .nav-links a {
             color: #94a3b8;
             text-decoration: none;
@@ -320,6 +347,13 @@ foreach ($availableMonths as $monthKey) {
             font-size: 0.95rem;
             position: relative;
             overflow: hidden;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-login {
+            flex-shrink: 0;
+            white-space: nowrap;
         }
         .nav-links a::before {
             content: '';
@@ -393,7 +427,7 @@ foreach ($availableMonths as $monthKey) {
         .container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 7rem 1.5rem 3rem;
+            padding: 7rem 1.25rem 3rem;
             position: relative;
             z-index: 1;
         }
@@ -405,6 +439,7 @@ foreach ($availableMonths as $monthKey) {
             gap: 0.5rem;
             color: #60a5fa;
             text-decoration: none;
+            margin-top: 0.8rem;
             margin-bottom: 2rem;
             padding: 0.5rem 1rem;
             border-radius: 10px;
@@ -447,22 +482,25 @@ foreach ($availableMonths as $monthKey) {
 
         /* Stats Bar */
         .stats-bar {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 1rem;
             margin-bottom: 2rem;
-            flex-wrap: wrap;
+            width: min(100%, 820px);
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .stat-item {
             display: flex;
             align-items: center;
             gap: 0.75rem;
-            padding: 1rem 1.5rem;
+            padding: 0.95rem 1rem;
             background: rgba(255, 255, 255, 0.03);
             backdrop-filter: blur(20px);
             border-radius: 16px;
             border: 1px solid rgba(255,255,255,0.1);
+            min-width: 0;
         }
 
         .stat-item .icon {
@@ -513,6 +551,9 @@ foreach ($availableMonths as $monthKey) {
             backdrop-filter: blur(20px);
             border-radius: 20px;
             border: 1px solid rgba(255,255,255,0.1);
+            width: min(100%, 900px);
+            margin-left: auto;
+            margin-right: auto;
         }
 
         .filters select {
@@ -523,6 +564,7 @@ foreach ($availableMonths as $monthKey) {
             color: #fff;
             font-size: 1rem;
             min-width: 200px;
+            max-width: 100%;
             cursor: pointer;
             transition: all 0.3s;
         }
@@ -1798,6 +1840,7 @@ foreach ($availableMonths as $monthKey) {
                 overflow-y: hidden;
                 display: flex;
                 flex-wrap: nowrap;
+                justify-content: flex-start;
                 gap: 0.5rem;
                 padding: 0.25rem 0;
                 -webkit-overflow-scrolling: touch;
@@ -1813,22 +1856,80 @@ foreach ($availableMonths as $monthKey) {
                 flex-shrink: 0;
             }
             .container {
-                padding-top: 8rem;
+                padding-top: 8.25rem;
+                padding-left: 0.85rem;
+                padding-right: 0.85rem;
             }
             .page-title h2 {
                 font-size: 1.75rem;
             }
+            .page-title p {
+                font-size: 0.98rem;
+                line-height: 1.45;
+            }
             .stats-bar {
-                gap: 1rem;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 0.75rem;
+                width: 100%;
             }
             .stat-item {
-                padding: 0.75rem 1rem;
+                padding: 0.75rem;
+                border-radius: 14px;
+            }
+            .stat-item .icon {
+                width: 42px;
+                height: 42px;
+            }
+            .stat-item .info .number {
+                font-size: 1.2rem;
+            }
+            .stat-item .info .label {
+                font-size: 0.78rem;
+            }
+            .stat-item.occupied {
+                grid-column: 1 / -1;
+                justify-self: center;
+                width: min(100%, 190px);
+                justify-content: center;
             }
             .filters {
                 flex-direction: column;
+                width: 100%;
+                padding: 1rem;
+                gap: 0.75rem;
+                border-radius: 16px;
             }
             .filters select {
                 width: 100%;
+                min-width: 0;
+                font-size: 0.96rem;
+                padding: 0.8rem 0.95rem;
+            }
+        }
+
+        @media (max-width: 420px) {
+            .page-title {
+                margin-bottom: 1.35rem;
+            }
+            .page-title h2 {
+                font-size: 1.55rem;
+            }
+            .stats-bar {
+                gap: 0.6rem;
+            }
+            .stat-item {
+                gap: 0.55rem;
+                padding: 0.68rem;
+            }
+            .stat-item .icon {
+                width: 38px;
+                height: 38px;
+            }
+            .stat-item .info .number {
+                font-size: 1.1rem;
+            }
+            .stat-item .info .label {
+                font-size: 0.74rem;
             }
         }
 
@@ -1953,9 +2054,9 @@ foreach ($availableMonths as $monthKey) {
 
         /* --- 5) Stats Bar --- */
         body.theme-light .stats-bar {
-            background: rgba(255,255,255,0.9) !important;
-            border: 1px solid rgba(148,163,184,0.18) !important;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.04) !important;
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
         }
         body.theme-light .stat-item {
             background: #fff !important;
@@ -2954,14 +3055,28 @@ if ($publicTheme === 'light') {
             setupCardFlip();
         }
 
-        // ===== HEADER SCROLL EFFECT =====
+        // ===== HEADER SCROLL EFFECT WITH HIDE/SHOW =====
+        let lastScrollTop = 0;
         window.addEventListener('scroll', function() {
             const header = document.getElementById('header');
-            if (window.scrollY > 50) {
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+
+            if (scrollTop > 50) {
                 header.classList.add('scrolled');
             } else {
                 header.classList.remove('scrolled');
+                header.classList.remove('hide');
             }
+
+            if (scrollTop > lastScrollTop && scrollTop > 100) {
+                // Scrolling down: hide header
+                header.classList.add('hide');
+            } else {
+                // Scrolling up: show header
+                header.classList.remove('hide');
+            }
+
+            lastScrollTop = scrollTop <= 0 ? 0 : scrollTop;
         });
 
         // ===== CARD FLIP ON HOVER WITH DELAY =====

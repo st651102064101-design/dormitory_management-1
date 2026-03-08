@@ -176,6 +176,8 @@ try {
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: nowrap;
+            gap: 1rem;
             border-bottom: 1px solid rgba(255,255,255,0.1);
             transition: all 0.3s ease;
         }
@@ -185,11 +187,19 @@ try {
             box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
+        .header.hide {
+            transform: translateY(-120%);
+            opacity: 0;
+            pointer-events: none;
+        }
+
         .logo { 
             display: flex; 
             align-items: center; 
             gap: 1rem; 
             text-decoration: none; 
+            flex-shrink: 0;
+            min-width: 0;
         }
         .logo img { 
             width: 45px; 
@@ -208,7 +218,30 @@ try {
             background-clip: text;
         }
 
-        .nav-links { display: flex; gap: 0.5rem; align-items: center; }
+        .nav-links {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: nowrap;
+            margin-left: auto;
+            min-width: 0;
+            max-width: 100%;
+            overflow-x: auto;
+            overflow-y: hidden;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+        }
+        .nav-links::-webkit-scrollbar {
+            height: 5px;
+        }
+        .nav-links::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.45);
+            border-radius: 999px;
+        }
+        .nav-links::-webkit-scrollbar-track {
+            background: transparent;
+        }
         .nav-links a {
             color: #94a3b8;
             text-decoration: none;
@@ -218,6 +251,13 @@ try {
             font-size: 0.95rem;
             position: relative;
             overflow: hidden;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+
+        .btn-login {
+            flex-shrink: 0;
+            white-space: nowrap;
         }
         .nav-links a::before {
             content: '';
@@ -267,6 +307,7 @@ try {
             gap: 0.5rem;
             color: #60a5fa;
             text-decoration: none;
+            margin-top: 0.8rem;
             margin-bottom: 2rem;
             padding: 0.5rem 1rem;
             border-radius: 10px;
@@ -523,9 +564,11 @@ try {
                 padding: 1rem; 
             }
             .nav-links { 
-                flex-wrap: wrap; 
-                justify-content: center;
+                width: 100%;
+                flex-wrap: nowrap; 
+                justify-content: flex-start;
                 gap: 0.5rem;
+                padding-bottom: 0.15rem;
             }
             .nav-links a {
                 padding: 0.5rem 0.8rem;
