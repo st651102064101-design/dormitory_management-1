@@ -63,6 +63,11 @@ foreach ($contracts as $contract) {
   }
 }
 // --- END อัตโนมัติ ---
+
+// --- อัปเดตสถานะค้างชำระอัตโนมัติ ---
+include __DIR__ . '/../Manage/auto_update_overdue.php';
+// --- END ค้างชำระ ---
+
 // ดึง theme color จากการตั้งค่าระบบ
 $settingsStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
 $themeColor = '#0f172a'; // ค่า default (dark mode)
@@ -144,7 +149,7 @@ if ($selectedMonth !== '' && preg_match('/^\d{4}-\d{2}$/', $selectedMonth) === 1
           $nextStatus = '2';
         }
       } elseif ($currentStatus === '2') {
-        // เมื่อจดมิเตอร์ครบแล้ว ให้กลับมาเป็นยังไม่ชำระเพื่อเปิดรอบบิล
+        // เมื่อจดมิเตอร์ครบแล้ว ให้กลับมาเป็นรอชำระเพื่อเปิดรอบบิล
         $nextStatus = '0';
       }
 
@@ -320,16 +325,18 @@ if (empty($waterRates)) {
 }
 
 $statusMap = [
-  '0' => 'ยังไม่ชำระ',
+  '0' => 'รอชำระ',
   '1' => 'ชำระแล้ว',
   '2' => 'รอตรวจสอบ',
   '3' => 'ชำระยังไม่ครบ',
+  '4' => 'ค้างชำระ',
 ];
 $statusColors = [
   '0' => '#ef4444',
   '1' => '#22c55e',
   '2' => '#ff9800',
   '3' => '#f59e0b',
+  '4' => '#dc2626',
 ];
 
 $buildExpenseStatus = function(array $exp) use (
@@ -371,17 +378,25 @@ $buildExpenseStatus = function(array $exp) use (
   $chargesRemain = max(0, $chargesTotal - $chargesPaid);
 
   $statusText = $statusMap[$status] ?? 'ไม่ระบุ';
+  // ตรวจสอบสถานะค้างชำระจากค่าใน DB (exp_status = '4')
+  $dbStatus = (string)($exp['exp_status'] ?? '0');
+  if ($dbStatus === '4' && in_array($status, ['0', '3'], true)) {
+    $status = '4';
+  }
+
   if ($status === '0') {
-    $statusText = 'ยังไม่ชำระ';
+    $statusText = 'รอชำระ';
   } elseif ($status === '3') {
     $statusText = 'ชำระยังไม่ครบ';
+  } elseif ($status === '4') {
+    $statusText = 'ค้างชำระ';
   }
 
   return [
     'status' => $status,
     'statusText' => $statusText,
     'statusColor' => $statusColors[$status] ?? '#94a3b8',
-    'totalColor' => in_array($status, ['0', '3'], true) ? '#ef4444' : '#22c55e',
+    'totalColor' => in_array($status, ['0', '3', '4'], true) ? '#ef4444' : '#22c55e',
     'chargesPaid' => $chargesPaid,
     'chargesTotal' => $chargesTotal,
     'chargesRemain' => $chargesRemain,
@@ -394,10 +409,12 @@ $stats = [
   'paid' => 0,
   'pending' => 0,
   'partial' => 0,
+  'overdue' => 0,
   'total_unpaid' => 0,
   'total_paid' => 0,
   'total_pending' => 0,
   'total_partial' => 0,
+  'total_overdue' => 0,
 ];
 foreach ($expenses as $exp) {
     $expStatus = (string)($exp['exp_status'] ?? '0');
@@ -414,6 +431,9 @@ foreach ($expenses as $exp) {
     } elseif ($expStatus === '3') {
         $stats['partial']++;
         $stats['total_partial'] += $expTotal;
+    } elseif ($expStatus === '4') {
+        $stats['overdue']++;
+        $stats['total_overdue'] += $expTotal;
     }
 }
 
@@ -421,11 +441,11 @@ foreach ($expenses as $exp) {
 $siteName = 'Sangthian Dormitory';
 
 // คำนวณ collection rate
-$totalAll = $stats['total_unpaid'] + $stats['total_paid'] + $stats['total_pending'] + $stats['total_partial'];
+$totalAll = $stats['total_unpaid'] + $stats['total_paid'] + $stats['total_pending'] + $stats['total_partial'] + $stats['total_overdue'];
 $collectionPct = $totalAll > 0 ? round(($stats['total_paid'] / $totalAll) * 100) : 0;
 $pendingPartialCount = $stats['pending'] + $stats['partial'];
 $pendingPartialTotal = $stats['total_pending'] + $stats['total_partial'];
-$totalExpenseCount = $stats['unpaid'] + $stats['paid'] + $stats['pending'] + $stats['partial'];
+$totalExpenseCount = $stats['unpaid'] + $stats['paid'] + $stats['pending'] + $stats['partial'] + $stats['overdue'];
 
 // --- END ตรวจสอบมิเตอร์ ---
 
@@ -573,6 +593,13 @@ try {
       .expense-stat-card.is-total .stat-money {
         color: #93c5fd;
       }
+      .expense-stat-card.is-overdue .status-dot {
+        background: #dc2626;
+      }
+      .expense-stat-card.is-overdue .stat-value,
+      .expense-stat-card.is-overdue .stat-money {
+        color: #fca5a5;
+      }
       
       /* Light theme overrides for expense stat cards */
       @media (prefers-color-scheme: light) {
@@ -599,6 +626,10 @@ try {
         .expense-stat-card.is-total .stat-value,
         .expense-stat-card.is-total .stat-money {
           color: #2563eb !important;
+        }
+        .expense-stat-card.is-overdue .stat-value,
+        .expense-stat-card.is-overdue .stat-money {
+          color: #b91c1c !important;
         }
       }
       
@@ -628,6 +659,10 @@ try {
       html.light-theme .expense-stat-card.is-total .stat-value,
       html.light-theme .expense-stat-card.is-total .stat-money {
         color: #2563eb !important;
+      }
+      html.light-theme .expense-stat-card.is-overdue .stat-value,
+      html.light-theme .expense-stat-card.is-overdue .stat-money {
+        color: #b91c1c !important;
       }
       html.light-theme .expense-stats-note {
         border-color: rgba(14, 116, 144, 0.35) !important;
@@ -1257,6 +1292,11 @@ try {
         box-shadow: 0 10px 30px rgba(239, 68, 68, 0.35);
       }
 
+      .payment-modal-check.overdue {
+        background: linear-gradient(135deg, #dc2626, #991b1b);
+        box-shadow: 0 10px 30px rgba(153, 27, 27, 0.4);
+      }
+
       .payment-modal-check svg {
         width: 30px;
         height: 30px;
@@ -1344,6 +1384,10 @@ try {
 
       .payment-modal-status.unpaid {
         color: #ef4444;
+      }
+
+      .payment-modal-status.overdue {
+        color: #991b1b;
       }
 
       .payment-proof-thumb {
@@ -1501,6 +1545,7 @@ try {
       .expense-filter-tab[data-status="0"] .tab-count { color: #dc2626; }
       .expense-filter-tab[data-status="2"] .tab-count { color: #d97706; }
       .expense-filter-tab[data-status="3"] .tab-count { color: #ea580c; }
+      .expense-filter-tab[data-status="4"] .tab-count { color: #b91c1c; }
       .expense-filter-tab[data-status="1"] .tab-count { color: #16a34a; }
       .expense-filter-tab.active .tab-count { color: #ffffff; }
 
@@ -1725,11 +1770,21 @@ try {
               <div class="expense-stat-card is-unpaid">
                 <div class="stat-head">
                   <span class="status-dot" aria-hidden="true"></span>
-                  <h3>ยังไม่ชำระ</h3>
+                  <h3>รอชำระ</h3>
                 </div>
                 <div class="stat-value"><?php echo number_format($stats['unpaid']); ?> <span style="font-size:0.85rem;font-weight:500;opacity:0.7;">รายการ</span></div>
                 <div class="stat-money">฿<?php echo number_format($stats['total_unpaid']); ?></div>
               </div>
+              <?php if ($stats['overdue'] > 0): ?>
+              <div class="expense-stat-card is-overdue">
+                <div class="stat-head">
+                  <span class="status-dot" aria-hidden="true"></span>
+                  <h3>ค้างชำระ</h3>
+                </div>
+                <div class="stat-value"><?php echo number_format($stats['overdue']); ?> <span style="font-size:0.85rem;font-weight:500;opacity:0.7;">รายการ</span></div>
+                <div class="stat-money">฿<?php echo number_format($stats['total_overdue']); ?></div>
+              </div>
+              <?php endif; ?>
               <?php if ($pendingPartialCount > 0): ?>
               <div class="expense-stat-card is-pending">
                 <div class="stat-head">
@@ -1772,7 +1827,10 @@ try {
                 <?php if ($pendingPartialTotal > 0): ?>
                 <div class="collection-segment"><span class="collection-segment-dot" style="background:#f59e0b;"></span> รอดำเนินการ ฿<?php echo number_format($pendingPartialTotal); ?></div>
                 <?php endif; ?>
-                <div class="collection-segment"><span class="collection-segment-dot" style="background:#ef4444;"></span> ค้างชำระ ฿<?php echo number_format($stats['total_unpaid']); ?></div>
+                <div class="collection-segment"><span class="collection-segment-dot" style="background:#ef4444;"></span> รอชำระ ฿<?php echo number_format($stats['total_unpaid']); ?></div>
+                <?php if ($stats['total_overdue'] > 0): ?>
+                <div class="collection-segment"><span class="collection-segment-dot" style="background:#dc2626;"></span> ค้างชำระ ฿<?php echo number_format($stats['total_overdue']); ?></div>
+                <?php endif; ?>
               </div>
             </div>
           </section>
@@ -1800,7 +1858,7 @@ try {
               </button>
               <?php if ($stats['unpaid'] > 0): ?>
               <button type="button" class="expense-filter-tab" data-status="0">
-                ยังไม่ชำระ <span class="tab-count"><?php echo $stats['unpaid']; ?></span>
+                รอชำระ <span class="tab-count"><?php echo $stats['unpaid']; ?></span>
               </button>
               <?php endif; ?>
               <?php if ($stats['pending'] > 0): ?>
@@ -1811,6 +1869,11 @@ try {
               <?php if ($stats['partial'] > 0): ?>
               <button type="button" class="expense-filter-tab" data-status="3">
                 ชำระยังไม่ครบ <span class="tab-count"><?php echo $stats['partial']; ?></span>
+              </button>
+              <?php endif; ?>
+              <?php if ($stats['overdue'] > 0): ?>
+              <button type="button" class="expense-filter-tab" data-status="4">
+                ค้างชำระ <span class="tab-count"><?php echo $stats['overdue']; ?></span>
               </button>
               <?php endif; ?>
               <?php if ($stats['paid'] > 0): ?>
@@ -2128,7 +2191,7 @@ try {
         }
         
         const statusNum = parseInt(newStatus);
-        const statusText = statusNum === 1 ? 'ชำระแล้ว' : 'ยังไม่ชำระ';
+        const statusText = statusNum === 1 ? 'ชำระแล้ว' : 'รอชำระ';
         
         // ใช้ custom confirm modal
         console.log('Showing confirm dialog...');
@@ -2713,8 +2776,10 @@ try {
         const fallbackStatusText = isVerified ? 'ชำระแล้ว' : 'รอตรวจสอบ';
         const statusText = String(context.statusText || '').trim() || fallbackStatusText;
         let statusClass = isVerified ? 'paid' : 'pending';
-        if (statusText.startsWith('ยังไม่ชำระ') || statusText.startsWith('ยังไม่ได้จดมิเตอร์')) {
+        if (statusText.startsWith('รอชำระ') || statusText.startsWith('ยังไม่ได้จดมิเตอร์')) {
           statusClass = 'unpaid';
+        } else if (statusText.startsWith('ค้างชำระ')) {
+          statusClass = 'overdue';
         } else if (statusText.startsWith('ชำระยังไม่ครบ')) {
           statusClass = 'partial';
         } else if (statusText.startsWith('รอตรวจสอบ')) {
@@ -2727,7 +2792,8 @@ try {
           paid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>',
           pending: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>',
           partial: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
-          unpaid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>'
+          unpaid: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><line x1="9" y1="9" x2="15" y2="15"></line><line x1="15" y1="9" x2="9" y2="15"></line></svg>',
+          overdue: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
         };
         const statusIcon = statusIconMap[statusClass] || statusIconMap.pending;
         const paymentRemark = String(payment.pay_remark || '').trim();

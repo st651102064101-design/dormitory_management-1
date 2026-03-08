@@ -159,7 +159,7 @@ try {
                        NULL AS pay_date,
                        '0' AS pay_status,
                        NULL AS pay_proof,
-                       'ยังไม่ชำระ' AS pay_remark,
+                       'รอชำระ' AS pay_remark,
                        e.exp_id, e.exp_month, e.exp_total,
                        r.room_number, COALESCE(t.tnt_name, '') AS tnt_name
                 FROM expense e
@@ -870,7 +870,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             elseif ($hasPending) { $statusClass = 'pending'; $statusText = 'รอตรวจสอบ'; }
                                             elseif ($paid >= $total && $total > 0) { $statusClass = 'paid'; $statusText = 'ชำระแล้ว'; }
                                             elseif ($paid > 0) { $statusClass = 'partial'; $statusText = 'ชำระบางส่วน'; }
-                                            else { $statusClass = 'unpaid'; $statusText = 'ยังไม่ชำระ'; }
+                                            else { $statusClass = 'unpaid'; $statusText = 'รอชำระ'; }
                                         ?>
                                         <tr>
                                             <td><strong><?php echo htmlspecialchars($exp['room_number'] ?? '-'); ?></strong></td>
@@ -928,7 +928,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             <td><?php echo $p['pay_date'] ? date('d/m/Y', strtotime($p['pay_date'])) : '-'; ?></td>
                                             <td>
                                                 <?php if (($p['payment_kind'] ?? '') === 'unpaid'): ?>
-                                                    <span class="status-chip unpaid">ยังไม่ชำระ</span>
+                                                    <span class="status-chip unpaid">รอชำระ</span>
                                                 <?php elseif (!empty($p['pay_proof'])): ?>
                                                     <span class="status-chip pending">รอตรวจสอบ</span>
                                                 <?php else: ?>

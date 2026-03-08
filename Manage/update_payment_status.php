@@ -77,7 +77,7 @@ try {
             $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = '3' WHERE exp_id = ?");
             $updateExpStmt->execute([$expId]);
         } else {
-            // ยังไม่ได้ชำระเลย -> exp_status = '0' (ยังไม่ชำระ)
+            // ยังไม่ได้ชำระเลย -> exp_status = '0' (รอชำระ)
             $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = '0' WHERE exp_id = ?");
             $updateExpStmt->execute([$expId]);
         }

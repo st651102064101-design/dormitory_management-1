@@ -46,7 +46,7 @@ try {
             SELECT MAX(exp_id) AS exp_id
             FROM expense
             WHERE ctr_id = ?
-                            AND exp_status IN ('0', '3')
+                            AND exp_status IN ('0', '3', '4')
                             AND EXISTS (
                                     SELECT 1
                                     FROM utility u
@@ -197,7 +197,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT MAX(exp_id) AS exp_id
                     FROM expense
                     WHERE ctr_id = ?
-                                                AND exp_status IN ('0', '3')
+                                                AND exp_status IN ('0', '3', '4')
                                                 AND EXISTS (
                                                         SELECT 1
                                                         FROM utility u
@@ -284,7 +284,7 @@ foreach ($unpaidExpenses as $exp) {
         'total' => $total,
         'submitted' => $submitted,
         'remaining' => $remaining,
-        'status' => $submitted > 0 ? 'ชำระบางส่วน' : 'ยังไม่ชำระ',
+        'status' => $submitted > 0 ? 'ชำระบางส่วน' : 'รอชำระ',
     ];
     $unpaidReportTotal += $remaining;
 }
@@ -889,7 +889,7 @@ $paymentStatusMap = [
         </div>
 
         <div class="unpaid-report">
-            <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span> รายงานยังไม่ชำระ</div>
+            <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span> รายงานรอชำระ</div>
             <?php if (empty($unpaidReportItems)): ?>
                 <div class="empty-state" style="padding:1rem 0;color:#34d399;">ไม่มียอดค้างชำระ</div>
             <?php else: ?>

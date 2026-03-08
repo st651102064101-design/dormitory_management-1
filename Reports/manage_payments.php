@@ -290,7 +290,7 @@ usort($payments, static function(array $a, array $b): int {
   return $bTime <=> $aTime;
 });
 
-// ดึงค่าใช้จ่ายที่ยังไม่ชำระและชำระยังไม่ครบ (สำหรับ dropdown ในฟอร์ม)
+// ดึงค่าใช้จ่ายที่รอชำระและชำระยังไม่ครบ (สำหรับ dropdown ในฟอร์ม)
 $unpaidExpenses = $pdo->query("
     SELECT e.exp_id, e.exp_month, e.exp_total, e.exp_status,
        e.room_price, e.exp_water, e.exp_elec_chg,
@@ -301,14 +301,14 @@ $unpaidExpenses = $pdo->query("
     LEFT JOIN contract c ON e.ctr_id = c.ctr_id
     LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
     LEFT JOIN room r ON c.room_id = r.room_id
-    WHERE e.exp_status IN ('0', '3')
+    WHERE e.exp_status IN ('0', '3', '4')
     ORDER BY r.room_number, e.exp_month DESC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 $statusMap = [
     '0' => 'รอตรวจสอบ',
     '1' => 'ตรวจสอบแล้ว',
-  'unpaid' => 'ยังไม่ชำระ',
+  'unpaid' => 'รอชำระ',
 ];
 $statusColors = [
     '0' => '#fbbf24',
@@ -2579,7 +2579,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
                   <span><span class="pcp-dot pending"></span>รอตรวจสอบ <?php echo number_format($pendingOnlyCount); ?> รายการ</span>
                 <?php endif; ?>
                 <?php if ($unpaidOnlyCount > 0): ?>
-                  <span><span class="pcp-dot unpaid"></span>ยังไม่ชำระ <?php echo number_format($unpaidOnlyCount); ?> รายการ</span>
+                  <span><span class="pcp-dot unpaid"></span>รอชำระ <?php echo number_format($unpaidOnlyCount); ?> รายการ</span>
                 <?php endif; ?>
               </div>
             </div>
@@ -2596,7 +2596,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
               <?php endif; ?>
               <?php if ($unpaidOnlyCount > 0): ?>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid">ยังไม่ชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
               <?php endif; ?>
               <?php if ($stats['verified'] > 0): ?>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1">ตรวจสอบแล้ว <span class="tab-count"><?php echo $stats['verified']; ?></span></button>

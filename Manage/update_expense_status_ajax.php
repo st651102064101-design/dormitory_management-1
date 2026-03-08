@@ -58,7 +58,7 @@ try {
     $success = $stmt->execute([$exp_status, $exp_id]);
     
     if ($success && $stmt->rowCount() > 0) {
-        $statusText = $exp_status === 0 ? 'ยังไม่จ่าย' : 'จ่ายแล้ว';
+        $statusText = $exp_status === 0 ? 'รอชำระ' : 'จ่ายแล้ว';
         echo json_encode(['success' => true, 'message' => "เปลี่ยนสถานะเป็น \"$statusText\" เรียบร้อยแล้ว"]);
     } else {
         echo json_encode(['success' => false, 'error' => 'ไม่พบรายการค่าใช้จ่ายที่ต้องการอัพเดท']);

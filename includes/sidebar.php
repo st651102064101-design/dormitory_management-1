@@ -3701,7 +3701,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
           <span class="app-nav-label">ค่าใช้จ่าย</span>
           <?php if ($expenseActionBadgeTotal > 0): ?>
           <span class="expense-status-badges" aria-label="สถานะค่าใช้จ่าย">
-            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: ยังไม่ชำระ/รอตรวจสอบ/ชำระไม่ครบ"><?php echo $expenseActionBadgeTotal > 99 ? '99+' : $expenseActionBadgeTotal; ?></span>
+            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: รอชำระ/รอตรวจสอบ/ชำระไม่ครบ"><?php echo $expenseActionBadgeTotal > 99 ? '99+' : $expenseActionBadgeTotal; ?></span>
           </span>
           <?php endif; ?>
         </a>
@@ -3710,7 +3710,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
           <span class="app-nav-label">การชำระเงิน</span>
           <?php if ($paymentActionBadgeTotal > 0): ?>
           <span class="payment-status-badges" aria-label="สถานะการชำระเงิน">
-            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: ยังไม่ชำระ/รอตรวจสอบ"><?php echo $paymentActionBadgeTotal > 99 ? '99+' : $paymentActionBadgeTotal; ?></span>
+            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: รอชำระ/รอตรวจสอบ"><?php echo $paymentActionBadgeTotal > 99 ? '99+' : $paymentActionBadgeTotal; ?></span>
           </span>
           <?php endif; ?>
         </a>
