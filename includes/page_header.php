@@ -360,8 +360,24 @@ $buildHeaderAttributes = static function (array $attributes): string {
   display: flex;
   align-items: center;
   gap: 0.45rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   justify-content: flex-end;
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+}
+.quick-actions::-webkit-scrollbar {
+  height: 4px;
+}
+.quick-actions::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.45);
+  border-radius: 999px;
+}
+.quick-actions::-webkit-scrollbar-track {
+  background: transparent;
 }
 .quick-action-link {
   display: inline-flex;
@@ -375,6 +391,8 @@ $buildHeaderAttributes = static function (array $attributes): string {
   text-decoration: none;
   font-size: 0.82rem;
   font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
   transition: all 0.2s ease;
 }
 .quick-action-button {
