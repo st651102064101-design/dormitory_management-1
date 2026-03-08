@@ -2,6 +2,15 @@
 <div class="apple-section-group">
   <h2 class="apple-section-title">ค่าใช้จ่าย</h2>
   <div class="apple-section-card">
+    <!-- Payment Due Day Setting -->
+    <div class="apple-settings-row" data-sheet="sheet-payment-due">
+      <div class="apple-row-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">กำหนดชำระค่าห้อง</p>
+        <p class="apple-row-sublabel">ทุกวันที่ <?php echo (int)$paymentDueDay; ?> ของเดือน</p>
+      </div>
+      <span class="apple-row-chevron">›</span>
+    </div>
     <!-- Current Rates Display -->
     <div class="apple-settings-row" data-sheet="sheet-rates" style="padding: 16px;">
       <div style="display: flex; gap: 20px; width: 100%;">
@@ -159,3 +168,105 @@
     <button type="button" class="apple-button" style="width: 100%; margin-top: 16px;" onclick="closeRateUsageModal()">ปิด</button>
   </div>
 </div>
+
+<!-- Sheet: Payment Due Day -->
+<div class="apple-sheet-overlay" id="sheet-payment-due">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-payment-due">เสร็จ</button>
+      <h3 class="apple-sheet-title">กำหนดชำระค่าห้อง</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 48px; color: #ef4444; margin-bottom: 8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>
+        </div>
+        <p style="font-size: 14px; color: var(--apple-text-secondary); margin: 0;">กำหนดวันที่ต้องชำระค่าห้องทุกเดือน<br>หากเลยกำหนดสถานะจะเปลี่ยนเป็น "<strong style="color:#ef4444;">ค้างชำระ</strong>" อัตโนมัติ</p>
+      </div>
+
+      <div class="apple-input-group" style="margin-bottom: 16px;">
+        <label class="apple-input-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+            <line x1="16" y1="2" x2="16" y2="6"/>
+            <line x1="8" y1="2" x2="8" y2="6"/>
+            <line x1="3" y1="10" x2="21" y2="10"/>
+          </svg>วันที่ครบกำหนดชำระ (1-28)
+        </label>
+        <input type="number" id="paymentDueDay" class="apple-input" value="<?php echo (int)$paymentDueDay; ?>" min="1" max="28" step="1">
+        <p style="font-size: 12px; color: var(--apple-text-secondary); margin-top: 6px;">
+          เช่น ตั้งเป็น 5 หมายความว่า ต้องชำระภายในวันที่ 5 ของทุกเดือน
+        </p>
+      </div>
+
+      <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 14px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" width="20" height="20" style="flex-shrink:0; margin-top: 2px;">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div style="font-size: 13px; color: var(--apple-text-secondary); line-height: 1.5;">
+            <strong style="color: var(--apple-text);">ตัวอย่าง:</strong> ถ้าตั้งเป็นวันที่ <strong id="dueDayExample"><?php echo (int)$paymentDueDay; ?></strong><br>
+            บิลเดือน มี.ค. 2569 → ต้องชำระภายใน <strong id="dueDateExample"><?php echo (int)$paymentDueDay; ?> มี.ค. 2569</strong><br>
+            หากยังไม่ชำระภายในกำหนด → สถานะจะเป็น <span style="color:#ef4444; font-weight:600;">ค้างชำระ</span>
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="apple-button primary" onclick="savePaymentDueDay()" style="width: 100%;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>บันทึก
+      </button>
+    </div>
+  </div>
+</div>
+
+<script>
+// Payment Due Day
+document.getElementById('paymentDueDay')?.addEventListener('input', function() {
+  const val = Math.max(1, Math.min(28, parseInt(this.value) || 5));
+  const exEl = document.getElementById('dueDayExample');
+  const dateEl = document.getElementById('dueDateExample');
+  if (exEl) exEl.textContent = val;
+  if (dateEl) dateEl.textContent = val + ' มี.ค. 2569';
+});
+
+function savePaymentDueDay() {
+  const val = Math.max(1, Math.min(28, parseInt(document.getElementById('paymentDueDay').value) || 5));
+  const formData = new FormData();
+  formData.append('payment_due_day', val);
+  
+  fetch('../Manage/save_system_settings.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      // Update the label on main settings page
+      const sublabel = document.querySelector('[data-sheet="sheet-payment-due"] .apple-row-sublabel');
+      if (sublabel) sublabel.textContent = 'ทุกวันที่ ' + val + ' ของเดือน';
+      
+      if (typeof appleToast === 'function') {
+        appleToast('บันทึกวันครบกำหนดชำระสำเร็จ', 'success');
+      } else {
+        alert('บันทึกสำเร็จ');
+      }
+    } else {
+      alert(data.error || 'เกิดข้อผิดพลาด');
+    }
+  })
+  .catch(() => alert('เกิดข้อผิดพลาดในการเชื่อมต่อ'));
+}
+</script>

@@ -55,8 +55,11 @@ sort($availableMonthOptions);
 rsort($availableYearOptions);
 
 $statusLabels = [
-  '0' => 'รอการตรวจสอบ',
-  '1' => 'ตรวจสอบแล้ว',
+  '0' => 'รอชำระ',
+  '1' => 'ชำระแล้ว',
+  '2' => 'รอตรวจสอบ',
+  '3' => 'ชำระยังไม่ครบ',
+  '4' => 'ค้างชำระ',
 ];
 
 function renderField(?string $value, string $fallback = '—'): string
@@ -247,6 +250,11 @@ try {
         background: rgba(34, 197, 94, 0.15);
         color: #22c55e;
         border: 1px solid rgba(34, 197, 94, 0.3);
+      }
+      .status-overdue {
+        background: rgba(153, 27, 27, 0.15);
+        color: #dc2626;
+        border: 1px solid rgba(153, 27, 27, 0.3);
       }
       .invoice-info {
         background: #f8fafc;
@@ -488,7 +496,7 @@ try {
             <?php
               $totalInvoices = count($rows);
               $totalAmount = array_sum(array_column($rows, 'exp_total'));
-              $pendingCount = count(array_filter($rows, fn($r) => ($r['exp_status'] ?? '') === '0'));
+              $pendingCount = count(array_filter($rows, fn($r) => in_array($r['exp_status'] ?? '', ['0', '3', '4'], true)));
               $verifiedCount = count(array_filter($rows, fn($r) => ($r['exp_status'] ?? '') === '1'));
             ?>
             <div class="invoice-stats-grid">
@@ -587,7 +595,11 @@ try {
               <?php 
                 $statusKey = (string)($r['exp_status'] ?? '');
                 $statusLabel = $statusLabels[$statusKey] ?? 'ยังไม่ระบุสถานะ';
-                $statusClass = $statusKey === '1' ? 'status-verified' : 'status-pending';
+                $statusClass = match($statusKey) {
+                  '1' => 'status-verified',
+                  '4' => 'status-overdue',
+                  default => 'status-pending',
+                };
                 $cardTotal = (int)($r['exp_total'] ?? 0);
                 $filterMonth_ = !empty($r['exp_month']) ? (int)date('n', strtotime($r['exp_month'])) : '';
                 $filterYear_  = !empty($r['exp_month']) ? date('Y', strtotime($r['exp_month'])) : '';
@@ -682,7 +694,11 @@ try {
                   <?php 
                     $statusKey = (string)($r['exp_status'] ?? '');
                     $statusLabel = $statusLabels[$statusKey] ?? 'ยังไม่ระบุสถานะ';
-                    $statusClass = $statusKey === '1' ? 'status-verified' : 'status-pending';
+                    $statusClass = match($statusKey) {
+                      '1' => 'status-verified',
+                      '4' => 'status-overdue',
+                      default => 'status-pending',
+                    };
                     $trMonth = !empty($r['exp_month']) ? (int)date('n', strtotime($r['exp_month'])) : '';
                     $trYear  = !empty($r['exp_month']) ? date('Y', strtotime($r['exp_month'])) : '';
                   ?>

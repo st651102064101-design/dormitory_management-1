@@ -46,7 +46,7 @@ try {
         }
     }
 
-    // ถ้าการชำระนี้ถูกยืนยันแล้ว ให้เปลี่ยนสถานะ expense กลับเป็นยังไม่ชำระ
+    // ถ้าการชำระนี้ถูกยืนยันแล้ว ให้เปลี่ยนสถานะ expense กลับเป็นรอชำระ
     if ($payment['pay_status'] === '1' && !empty($payment['exp_id'])) {
         // ตรวจสอบว่ามีการชำระอื่นที่ยืนยันแล้วหรือไม่
         $otherPayments = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_id != ? AND pay_status = '1'");

@@ -115,7 +115,7 @@ try {
             SELECT MAX(exp_id) AS exp_id
             FROM expense
             WHERE ctr_id = ?
-              AND exp_status IN ('0', '3')
+              AND exp_status IN ('0', '3', '4')
               AND DATE_FORMAT(exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
             GROUP BY DATE_FORMAT(exp_month, '%Y-%m')
         ) latest ON latest.exp_id = e.exp_id

@@ -44,7 +44,7 @@ try {
         } elseif ($totalPaid > 0) {
             $newStatus = '3'; // ชำระยังไม่ครบ
         } else {
-            $newStatus = '0'; // ยังไม่ชำระ
+            $newStatus = '0'; // รอชำระ
         }
         
         // อัปเดตถ้าสถานะเปลี่ยน
@@ -53,10 +53,11 @@ try {
             $update->execute([$newStatus, $expId]);
             
             $statusNames = [
-                '0' => 'ยังไม่ชำระ',
+                '0' => 'รอชำระ',
                 '1' => 'ชำระแล้ว',
                 '2' => 'รอตรวจสอบ',
-                '3' => 'ชำระยังไม่ครบ'
+                '3' => 'ชำระยังไม่ครบ',
+                '4' => 'ค้างชำระ'
             ];
             
             echo "Expense #{$expId}: เปลี่ยนสถานะจาก [{$oldStatus}] {$statusNames[$oldStatus]} -> [{$newStatus}] {$statusNames[$newStatus]}\n";

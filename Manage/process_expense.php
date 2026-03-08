@@ -64,7 +64,7 @@ try {
         die(json_encode(['success' => false, 'error' => 'มีการบันทึกค่าใช้จ่ายของเดือนนี้แล้ว']));
     }
 
-    // บันทึกข้อมูล (สถานะ 0 = ยังไม่จ่าย)
+    // บันทึกข้อมูล (สถานะ 0 = รอชำระ)
     $insert = $pdo->prepare("
         INSERT INTO expense 
         (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id)

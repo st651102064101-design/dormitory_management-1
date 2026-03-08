@@ -22,10 +22,11 @@ function buildExpensePayload(PDO $pdo, array $expense): array
     $expenseStatus = (string)($expense['exp_status'] ?? '0');
 
     $statusTextMap = [
-        '0' => 'ยังไม่ชำระ',
+        '0' => 'รอชำระ',
         '1' => 'ชำระแล้ว',
         '2' => 'รอตรวจสอบ',
         '3' => 'ชำระยังไม่ครบ',
+        '4' => 'ค้างชำระ',
     ];
 
     $paymentStmt = $pdo->prepare(" 
@@ -178,7 +179,7 @@ try {
             'expense_id' => null,
             'expense_total' => 0,
             'expense_status' => '0',
-            'expense_status_text' => 'ยังไม่ชำระ',
+            'expense_status_text' => 'รอชำระ',
             'approved_amount' => 0,
             'pending_amount' => 0,
             'payments' => [],
@@ -189,7 +190,7 @@ try {
             'expense_id' => null,
             'expense_total' => 0,
             'expense_status' => '0',
-            'expense_status_text' => 'ยังไม่ชำระ',
+            'expense_status_text' => 'รอชำระ',
             'approved_amount' => 0,
             'pending_amount' => 0,
             'payments' => [],

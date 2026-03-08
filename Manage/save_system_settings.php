@@ -599,6 +599,17 @@ try {
         exit;
     }
 
+    // บันทึกวันครบกำหนดชำระ
+    if (isset($_POST['payment_due_day'])) {
+        $paymentDueDay = max(1, min(28, (int)$_POST['payment_due_day']));
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['payment_due_day', (string)$paymentDueDay, (string)$paymentDueDay]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกวันครบกำหนดชำระสำเร็จ']);
+        exit;
+    }
+
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'error' => 'ไม่มีข้อมูลที่จะบันทึก']);
     exit;

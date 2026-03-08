@@ -55,9 +55,10 @@ try {
 } catch (PDOException $e) {}
 
 $expenseStatusMap = [
-    '0' => ['label' => 'ค้างชำระ', 'color' => '#ef4444', 'bg' => 'rgba(239, 68, 68, 0.2)'],
+    '0' => ['label' => 'รอชำระ', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
     '1' => ['label' => 'ชำระแล้ว', 'color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.2)'],
-    '3' => ['label' => 'ชำระยังไม่ครบ', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)']
+    '3' => ['label' => 'ชำระยังไม่ครบ', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
+    '4' => ['label' => 'ค้างชำระ', 'color' => '#ef4444', 'bg' => 'rgba(239, 68, 68, 0.2)']
 ];
 
 // Calculate totals
@@ -368,7 +369,7 @@ foreach ($expenses as $exp) {
                 </div>
                 <?php endif; ?>
             </div>
-            <?php if ($exp['exp_status'] === '0'): ?>
+            <?php if (in_array($exp['exp_status'], ['0', '3', '4'], true)): ?>
             <a href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo $exp['exp_id']; ?>" class="btn-pay"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ชำระเงิน</a>
             <?php endif; ?>
         </div>
