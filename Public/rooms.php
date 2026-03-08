@@ -393,9 +393,9 @@ foreach ($availableMonths as $monthKey) {
 
         /* Login Button */
         .btn-login {
-            background: linear-gradient(135deg, var(--primary, #3b82f6), #1d4ed8) !important;
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
+            background: var(--primary, #2563eb) !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
             padding: 0.75rem 1.5rem !important;
             border-radius: 10px !important;
             font-weight: 600;
@@ -404,9 +404,10 @@ foreach ($availableMonths as $monthKey) {
             text-decoration: none;
         }
         .btn-login .nav-icon {
-            stroke: #000000 !important;
+            stroke: #ffffff !important;
         }
         .btn-login:hover {
+            background: #1d4ed8 !important;
             transform: translateY(-2px);
             box-shadow: 0 8px 30px rgba(59,130,246,0.45);
         }
@@ -2009,16 +2010,17 @@ foreach ($availableMonths as $monthKey) {
         }
         /* btn-login in light theme */
         body.theme-light .btn-login {
-            background: linear-gradient(135deg, var(--primary), #1d4ed8) !important;
-            color: #000000 !important;
-            -webkit-text-fill-color: #000000 !important;
+            background: var(--primary) !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
             box-shadow: 0 4px 16px rgba(59,130,246,0.3) !important;
         }
         body.theme-light .btn-login:hover {
+            background: #1d4ed8 !important;
             box-shadow: 0 8px 28px rgba(59,130,246,0.45) !important;
         }
         body.theme-light .btn-login .nav-icon {
-            stroke: #000000 !important;
+            stroke: #ffffff !important;
         }
 
         /* --- 3) Page Title --- */
@@ -2519,6 +2521,83 @@ foreach ($availableMonths as $monthKey) {
         body.theme-light .dropdown-item:hover {
             background: rgba(99, 102, 241, 0.1);
             color: #6366f1;
+        }
+
+        /* Final nav hover contrast overrides */
+        .header .nav-links a:not(.btn-login):hover,
+        .header .nav-links a:not(.btn-login):focus-visible {
+            background: rgba(59, 130, 246, 0.24) !important;
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            border-color: rgba(125, 211, 252, 0.55) !important;
+        }
+
+        .header .nav-links a:not(.btn-login):hover .nav-icon,
+        .header .nav-links a:not(.btn-login):focus-visible .nav-icon {
+            stroke: #ffffff !important;
+        }
+
+        body.theme-light .header .nav-links a:not(.btn-login):hover,
+        body.theme-light .header .nav-links a:not(.btn-login):focus-visible {
+            background: #dbeafe !important;
+            color: #1d4ed8 !important;
+            -webkit-text-fill-color: #1d4ed8 !important;
+            border-color: #93c5fd !important;
+            box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.45) !important;
+        }
+
+        body.theme-light .header .nav-links a:not(.btn-login):hover .nav-icon,
+        body.theme-light .header .nav-links a:not(.btn-login):focus-visible .nav-icon {
+            stroke: #1d4ed8 !important;
+        }
+
+        /* Make btn-login use same style as other nav links */
+        .header .nav-links .btn-login,
+        .header .nav-links .btn-login:link,
+        .header .nav-links .btn-login:visited {
+            background: transparent !important;
+            color: #94a3b8 !important;
+            -webkit-text-fill-color: #94a3b8 !important;
+            border: 1px solid transparent !important;
+            box-shadow: none !important;
+            padding: 0.6rem 1.2rem !important;
+            border-radius: 10px !important;
+            font-weight: 400 !important;
+        }
+
+        .header .nav-links .btn-login .nav-icon {
+            stroke: currentColor !important;
+        }
+
+        .header .nav-links .btn-login::before {
+            display: block !important;
+        }
+
+        .header .nav-links .btn-login:hover,
+        .header .nav-links .btn-login:focus-visible {
+            color: #ffffff !important;
+            -webkit-text-fill-color: #ffffff !important;
+            background: rgba(59, 130, 246, 0.24) !important;
+            border-color: rgba(125, 211, 252, 0.55) !important;
+            transform: translateY(-2px) !important;
+        }
+
+        body.theme-light .header .nav-links .btn-login,
+        body.theme-light .header .nav-links .btn-login:link,
+        body.theme-light .header .nav-links .btn-login:visited {
+            color: #334155 !important;
+            -webkit-text-fill-color: #334155 !important;
+            background: rgba(255,255,255,0.9) !important;
+            border: 1px solid rgba(148,163,184,0.18) !important;
+        }
+
+        body.theme-light .header .nav-links .btn-login:hover,
+        body.theme-light .header .nav-links .btn-login:focus-visible {
+            color: #1d4ed8 !important;
+            -webkit-text-fill-color: #1d4ed8 !important;
+            background: #dbeafe !important;
+            border-color: #93c5fd !important;
+            box-shadow: inset 0 0 0 1px rgba(147, 197, 253, 0.45) !important;
         }
     </style>
 </head>

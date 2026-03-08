@@ -100,8 +100,9 @@ $pageTitle = 'ตั้งค่า';
 
     /* Override .app-main > div rules from page_header.php */
     body.apple-settings-page .app-main > .apple-settings-wrapper {
-      padding-left: 0 !important;
-      padding-right: 0 !important;
+      padding-top: 10px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
       width: 100% !important;
     }
 
@@ -122,13 +123,14 @@ $pageTitle = 'ตั้งค่า';
       opacity: 1 !important;
       max-width: 700px;
       margin: 0 auto;
-      padding: 40px 24px 100px;
+      padding: 0 24px 100px;
       min-height: 100vh;
       box-sizing: border-box;
     }
 
     body.apple-settings-page .apple-settings-wrapper .page-header-bar {
-      margin-top: 0.5rem !important;
+      top: 0 !important;
+      margin-top: 0 !important;
       margin-bottom: 1rem !important;
     }
 
@@ -151,7 +153,7 @@ $pageTitle = 'ตั้งค่า';
       }
 
       body.apple-settings-page .apple-settings-wrapper {
-        padding: 60px 16px 100px !important;
+        padding: 0 16px 100px !important;
         max-width: 100% !important;
       }
     }
@@ -167,7 +169,7 @@ $pageTitle = 'ตั้งค่า';
       body.apple-settings-page .apple-settings-wrapper {
         max-width: 700px !important;
         margin: 0 auto !important;
-        padding: 40px 24px 100px !important;
+        padding: 0 24px 100px !important;
       }
     }
 
@@ -278,7 +280,7 @@ $pageTitle = 'ตั้งค่า';
         opacity: 1 !important;
         max-width: 900px !important;
         margin: 0 auto !important;
-        padding: 40px 24px 100px !important;
+        padding: 0 24px 100px !important;
       }
       
       /* Mobile adjustments */
@@ -289,7 +291,7 @@ $pageTitle = 'ตั้งค่า';
         }
 
         body.apple-settings-page .apple-settings-wrapper {
-          padding: 60px 16px 100px !important;
+          padding: 0 16px 100px !important;
         }
       }
     </style>

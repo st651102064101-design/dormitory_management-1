@@ -2873,7 +2873,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
       height: 100vh !important;
       width: 260px !important;
       z-index: 9999 !important;
-      background: #0b162a !important;
+      background: #f9fafb !important;
       transform: translateX(-100%) !important;
       transition: transform 0.35s ease, visibility 0s linear 0.35s !important;
       will-change: transform;
@@ -2896,7 +2896,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
       height: 100vh !important;
       width: 260px !important;
       z-index: 9999 !important;
-      background: #0b162a !important;
+      background: #f9fafb !important;
       transform: translateX(-100%) !important;
       visibility: hidden;
       transition: transform 0.35s ease, visibility 0s linear 0.35s !important;
@@ -2922,7 +2922,8 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     /* Mobile: header stays at top */
     .app-sidebar .sidebar-header {
       flex-shrink: 0 !important;
-      background: #0b162a !important;
+      background: #f9fafb !important;
+      border-bottom: 1px solid #e5e7eb !important;
     }
 
     /* Light mode mobile sidebar */
@@ -2957,7 +2958,8 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     .app-sidebar .sidebar-footer {
       flex-shrink: 0 !important;
       position: relative !important;
-      background: #0b162a !important;
+      background: #f9fafb !important;
+      border-top: 1px solid #e5e7eb !important;
     }
     
     /* Show team avatar/logo on mobile/tablet */
@@ -2994,7 +2996,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     .team-meta .name {
         font-size: 1rem !important;
         font-weight: 700 !important;
-      color: #e2e8f0 !important;
+      color: #1f2937 !important;
         line-height: 1.4 !important;
     }
     
@@ -3025,7 +3027,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
       height: 100vh !important;
       width: 260px !important;
       z-index: 9999 !important;
-      background: #0b162a !important;
+      background: #f9fafb !important;
       transform: translateX(-100%) !important;
       transition: transform 0.35s ease, visibility 0s linear 0.35s !important;
       visibility: hidden;

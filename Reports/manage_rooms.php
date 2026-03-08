@@ -488,6 +488,29 @@ try {
         transform: translateY(-2px);
         box-shadow: 0 8px 20px rgba(239,68,68,0.2);
       }
+
+      /* Keep action button colors stable even if global button styles load later */
+      .rooms-grid .room-card-actions button.btn.btn-edit,
+      .rooms-table .room-card-actions button.btn.btn-edit {
+        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        border: 1px solid #1d4ed8 !important;
+        color: #ffffff !important;
+      }
+
+      .rooms-grid .room-card-actions button.btn.btn-delete,
+      .rooms-table .room-card-actions button.btn.btn-delete {
+        background: #dc2626 !important;
+        border: 1px solid #b91c1c !important;
+        color: #ffffff !important;
+      }
+
+      .rooms-grid .room-card-actions button.btn.btn-edit svg,
+      .rooms-grid .room-card-actions button.btn.btn-delete svg,
+      .rooms-table .room-card-actions button.btn.btn-edit svg,
+      .rooms-table .room-card-actions button.btn.btn-delete svg {
+        stroke: currentColor !important;
+        color: currentColor !important;
+      }
       
       /* Empty State */
       .room-empty {
@@ -573,6 +596,24 @@ try {
         display: flex;
         gap: 0.75rem;
         margin-top: 1rem;
+      }
+
+      #toggleRoomFormBtn {
+        max-width: 100%;
+      }
+
+      .room-form-split,
+      .booking-form-split {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+
+      .room-list-toolbar {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
       }
       
       /* Modal Styles - Apple Sheet */
@@ -807,6 +848,15 @@ try {
       
       .rooms-table-view { display: none; }
       .rooms-grid-view { display: grid; }
+
+      .rooms-table-view {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .rooms-table {
+        min-width: 720px;
+      }
       
       /* Load More Button */
       .load-more-container {
@@ -883,6 +933,111 @@ try {
         }
       }
 
+      @media (max-width: 1024px) {
+        .reports-page .manage-panel {
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+        }
+
+        .section-header h1 {
+          font-size: 1.3rem;
+        }
+
+        .room-form-split,
+        .booking-form-split {
+          grid-template-columns: 1fr !important;
+        }
+
+        .add-type-row {
+          flex-wrap: wrap;
+          align-items: stretch;
+        }
+
+        .add-type-btn {
+          padding: 0.75rem 0.9rem;
+          font-size: 0.9rem;
+        }
+
+        .room-form-actions,
+        .booking-form-actions {
+          flex-direction: column;
+        }
+
+        .room-form-actions > button,
+        .booking-form-actions > button {
+          width: 100%;
+        }
+
+        .room-list-toolbar {
+          width: 100%;
+        }
+
+        #sortSelect,
+        .view-toggle-btn {
+          flex: 1 1 220px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .reports-page .manage-panel {
+          border-radius: 16px;
+          padding-right: 0.85rem !important;
+        }
+
+        #toggleRoomFormBtn {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .room-list-toolbar {
+          display: grid;
+          grid-template-columns: 1fr;
+          width: 100%;
+        }
+
+        #sortSelect,
+        .view-toggle-btn {
+          width: 100%;
+        }
+
+        .rooms-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+          padding-right: 0.1rem;
+        }
+
+        .room-card-image {
+          height: 140px;
+        }
+
+        .room-card-content {
+          padding: 1rem;
+        }
+
+        .room-card-actions {
+          flex-direction: column;
+        }
+
+        .room-card-actions .btn {
+          width: 100%;
+        }
+
+        .load-more-btn {
+          width: 100%;
+          justify-content: center;
+        }
+
+        .rooms-table {
+          min-width: 640px;
+        }
+
+        .rooms-table th,
+        .rooms-table td {
+          padding: 0.75rem 0.85rem;
+          font-size: 0.86rem;
+        }
+      }
+
       .page-header-bar {
         margin-top: 1rem !important;
       }
@@ -955,7 +1110,7 @@ try {
                   <label for="room_number">หมายเลขห้อง <span style="color:#f87171;">*</span></label>
                   <input type="text" id="room_number" name="room_number" required maxlength="2" placeholder="เช่น 01, 02, ..." value="<?php echo htmlspecialchars($nextRoomNumber); ?>" />
                 </div>
-                <div class="room-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                <div class="room-form-group room-form-split" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                   <div>
                     <div class="add-type-row">
                       <label for="type_id" style="margin:0;">ประเภทห้อง <span style="color:#f87171;">*</span></label>
@@ -1002,7 +1157,7 @@ try {
                 <h1>รายการห้องพัก</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ห้องพักและข้อมูลทั้งหมด</p>
               </div>
-              <div style="display:flex;gap:0.75rem;align-items:center;">
+              <div class="room-list-toolbar" style="display:flex;gap:0.75rem;align-items:center;">
                 <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
                   <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
                   <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
@@ -1182,7 +1337,7 @@ try {
             <input type="text" name="room_number" id="edit_room_number" required maxlength="2">
           </div>
           
-          <div class="booking-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+          <div class="booking-form-group booking-form-split" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div>
               <div class="add-type-row" style="margin-bottom:0.35rem;">
                 <label style="margin:0;">ประเภทห้อง: <span style="color: red;">*</span></label>
