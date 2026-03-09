@@ -1,3 +1,31 @@
+<style>
+  .datatable-container {
+  width: 100%;
+  overflow-x: auto;
+  }
+  .datatable-table {
+  min-width: 600px;
+  width: 100%;
+  border-collapse: collapse;
+  }
+  .datatable-table th, .datatable-table td {
+  padding: 8px 12px;
+  text-align: left;
+  white-space: nowrap;
+  }
+  @media (max-width: 600px) {
+  .datatable-table th, .datatable-table td {
+  font-size: 14px;
+  padding: 6px 8px;
+  }
+  .datatable-table {
+  min-width: 480px;
+  }
+  }
+</style>
+<div class="datatable-container">
+  <table id="table-news-report" class="datatable-table"><thead><tr><th style="width: 120px;" data-sortable="true"><button class="datatable-sorter">วันที่</button></th><th data-sortable="true"><button class="datatable-sorter">หัวข้อข่าว</button></th><th data-sortable="true"><button class="datatable-sorter">เนื้อหา</button></th></tr></thead><tbody><tr data-index="0"><td>2026-01-05</td><td style="font-weight: 600;">เปิดรับสมัครผู้เช่าใหม่</td><td style="max-width: 400px;">ผู้ที่สนใจเข้าพักในปีการศึกษาหน้า สามารถยื่นเรื่องจองห้องพักได้ตั้งแต่วันที่ 15 ม.ค. 2569 เป็นต้นไป</td></tr><tr data-index="1"><td>2025-12-28</td><td style="font-weight: 600;">แจ้งเตือนวันชำระค่าเช่า</td><td style="max-width: 400px;">ค่าเช่าและค่าใช้จ่ายประจำเดือน ธ.ค. จะครบกำหนดชำระภายในวันที่ 5 ม.ค. 2569</td></tr><tr data-index="2"><td>2025-11-25</td><td style="font-weight: 600;">ตรวจสอบไฟฟ้านอก</td><td style="max-width: 400px;">การตรวจสอบระบบไฟฟ้าวันที่ 28 พ.ย. 2568</td></tr><tr data-index="3"><td>2025-11-18</td><td style="font-weight: 600;">งดปรับปรุงน้ำประปา</td><td style="max-width: 400px;">จะมีการปิดปรับปรุงน้ำประปาชั่วคราววันที่ 25 พ.ย. 2568</td></tr></tbody></table>
+</div>
 <?php
 declare(strict_types=1);
 session_start();
