@@ -199,6 +199,36 @@ button:focus-visible {
     transform: scale(0.98);
 }
 
+/* mobile offset for todo-tabs container */
+@media (max-width:768px) {
+    .todo-tabs {
+        margin-top: 12px;
+    }
+}
+
+/* generic responsive table wrapper */
+.table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+.table-responsive .datatable-table {
+    width: 100%;
+    min-width: 720px;
+    border-collapse: collapse;
+}
+.table-responsive th, .table-responsive td {
+    white-space: nowrap;
+}
+@media (max-width:768px) {
+    .table-responsive {
+        padding: 0 12px;
+        margin: 0 -12px;
+    }
+    .table-responsive .datatable-table {
+        min-width: 640px;
+    }
+}
+
 .animate-ui-cancel-btn {
     border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 0.75rem;
