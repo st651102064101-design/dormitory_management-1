@@ -25,8 +25,8 @@ try {
     if (isset($_POST['use_rate_id'])) {
         $useRateId = (int)$_POST['use_rate_id'];
         
-        // ดึงข้อมูลอัตราเดิม
-        $stmt = $pdo->prepare('SELECT rate_water, rate_elec FROM rate WHERE rate_id = ?');
+        // ดึงข้อมูลอัตราเดิมรวมค่าพื้นฐาน
+        $stmt = $pdo->prepare('SELECT rate_water, rate_elec, water_base_units, water_base_price, water_excess_rate FROM rate WHERE rate_id = ?');
         $stmt->execute([$useRateId]);
         $oldRate = $stmt->fetch(PDO::FETCH_ASSOC);
         
@@ -37,16 +37,20 @@ try {
         
         // สร้างอัตราใหม่ด้วยค่าเดิมแต่วันที่ปัจจุบัน
         $stmt = $pdo->prepare('INSERT INTO rate (rate_water, rate_elec, effective_date, water_base_units, water_base_price, water_excess_rate) VALUES (?, ?, ?, ?, ?, ?)');
-        $stmt->execute([$oldRate['rate_water'], $oldRate['rate_elec'], date('Y-m-d'),
-                        $settings['water_base_units'] ?? WATER_BASE_UNITS,
-                        $settings['water_base_price'] ?? WATER_BASE_PRICE,
-                        $settings['water_excess_rate'] ?? WATER_EXCESS_RATE]);
+        $stmt->execute([
+            $oldRate['rate_water'],
+            $oldRate['rate_elec'],
+            date('Y-m-d'),
+            $oldRate['water_base_units'] !== null ? (int)$oldRate['water_base_units'] : WATER_BASE_UNITS,
+            $oldRate['water_base_price'] !== null ? (int)$oldRate['water_base_price'] : WATER_BASE_PRICE,
+            $oldRate['water_excess_rate'] !== null ? (int)$oldRate['water_excess_rate'] : WATER_EXCESS_RATE
+        ]);
         $rateId = (int)$pdo->lastInsertId();
         // ensure base price setting reflects this rate
         $stmt3 = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES ('water_base_price', ?, NOW()) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = VALUES(updated_at)");
         $stmt3->execute([(int)$oldRate['rate_water']]);
 
-        // also return current water-base settings
+        // also return current water-base settings (may have been overridden by copy)
         $stmt2 = $pdo->prepare("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('water_base_units','water_base_price','water_excess_rate')");
         $stmt2->execute();
         $settings = [];
@@ -59,9 +63,10 @@ try {
             'rate_water' => (int)$oldRate['rate_water'],
             'rate_elec' => (int)$oldRate['rate_elec'],
             'effective_date' => date('Y-m-d'),
-            'water_base_units' => $settings['water_base_units'] ?? WATER_BASE_UNITS,
-            'water_base_price' => $settings['water_base_price'] ?? WATER_BASE_PRICE,
-            'water_excess_rate' => $settings['water_excess_rate'] ?? WATER_EXCESS_RATE,
+            // return the values that were actually stored (copied from the old rate)
+            'water_base_units' => $oldRate['water_base_units'] !== null ? (int)$oldRate['water_base_units'] : WATER_BASE_UNITS,
+            'water_base_price' => $oldRate['water_base_price'] !== null ? (int)$oldRate['water_base_price'] : WATER_BASE_PRICE,
+            'water_excess_rate' => $oldRate['water_excess_rate'] !== null ? (int)$oldRate['water_excess_rate'] : WATER_EXCESS_RATE,
             'message' => 'เปลี่ยนไปใช้อัตราที่เลือกสำเร็จ'
         ]);
         exit;
@@ -100,17 +105,34 @@ try {
     $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES ('water_base_price', ?, NOW()) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = VALUES(updated_at)");
     $stmt->execute([$basePrice]);
 
+    // normalize and store the units/excess if provided
     if (isset($_POST['water_base_units'])) {
         $units = (int)$_POST['water_base_units'];
         if ($units < 0) $units = 0;
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES ('water_base_units', ?, NOW()) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = VALUES(updated_at)");
         $stmt->execute([$units]);
+        $updatedUnits = $units;
     }
     if (isset($_POST['water_excess_rate'])) {
         $rate = (int)$_POST['water_excess_rate'];
         if ($rate < 0) $rate = 0;
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value, updated_at) VALUES ('water_excess_rate', ?, NOW()) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = VALUES(updated_at)");
         $stmt->execute([$rate]);
+        $updatedExcess = $rate;
+    }
+
+    // if we didn't get explicit values from POST, pull the current settings
+    if (!isset($updatedUnits)) {
+        $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key='water_base_units' LIMIT 1");
+        $stmt->execute();
+        $val = $stmt->fetchColumn();
+        $updatedUnits = $val !== false ? (int)$val : WATER_BASE_UNITS;
+    }
+    if (!isset($updatedExcess)) {
+        $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key='water_excess_rate' LIMIT 1");
+        $stmt->execute();
+        $val = $stmt->fetchColumn();
+        $updatedExcess = $val !== false ? (int)$val : WATER_EXCESS_RATE;
     }
 
     // สร้าง record ใหม่เสมอ (เก็บประวัติทุกครั้ง)
