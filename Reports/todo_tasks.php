@@ -278,8 +278,14 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
             display: flex;
             gap: 8px;
             padding: 0 4px;
-            margin-bottom: 24px;
+            margin: 24px 0 24px; /* top & bottom spacing so tabs aren’t tight against navbar */
             flex-wrap: wrap;
+        }
+        @media (max-width: 768px) {
+            /* additional room on small screens */
+            .todo-tabs {
+                margin-top: 32px;
+            }
         }
         .todo-tab {
             display: inline-flex;
@@ -393,6 +399,47 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         .todo-table tbody tr.todo-row-link td:last-child {
             text-align: right;
             white-space: nowrap;
+        }
+        /* mobile-friendly transform for todo tables */
+        @media (max-width: 768px) {
+            .todo-table thead {
+                display: none;
+            }
+            .todo-table tbody tr {
+                display: block;
+                margin-bottom: 1rem;
+                border: 1px solid rgba(255,255,255,0.08);
+                border-radius: 12px;
+                overflow: hidden;
+            }
+            .todo-table tbody td {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.75rem 1rem;
+                border-bottom: 1px solid rgba(255,255,255,0.05);
+            }
+            .todo-table tbody td:last-child {
+                border-bottom: none;
+            }
+            .todo-table tbody td::before {
+                content: attr(data-label);
+                font-weight: 600;
+                color: var(--text-secondary);
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                flex-shrink: 0;
+                margin-right: 1rem;
+            }
+            .todo-table tbody td:first-child {
+                margin-bottom: 0.5rem;
+                padding-bottom: 1rem;
+                border-bottom: 2px solid var(--glass-border);
+            }
+            .todo-table tbody td:first-child::before {
+                display: none;
+            }
         }
         .todo-manage-link {
             font-size: 12px;
@@ -695,6 +742,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <p>ไม่มีรายการค้างในตัวช่วยผู้เช่า</p>
                                 </div>
                             <?php else: ?>
+                                <div class="table-responsive">
                                 <table class="todo-table">
                                     <thead><tr>
                                         <th>ห้อง</th>
@@ -710,15 +758,16 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $wizardStepText = 'ขั้นตอนที่ ' . max(1, $wizardStep + 1);
                                         ?>
                                         <tr>
-                                            <td><strong><?php echo htmlspecialchars($w['room_number'] ?? '-'); ?></strong></td>
-                                            <td><?php echo htmlspecialchars($w['tnt_name'] ?? '-'); ?></td>
-                                            <td><?php echo !empty($w['bkg_date']) ? date('d/m/Y', strtotime((string)$w['bkg_date'])) : '-'; ?></td>
-                                            <td><span class="status-chip pending"><?php echo htmlspecialchars($wizardStepText); ?></span></td>
-                                            <td><a class="btn-action primary todo-manage-link" href="tenant_wizard.php?bkg_id=<?php echo (int)($w['bkg_id'] ?? 0); ?>">จัดการ</a></td>
+                                            <td data-label="ห้อง"><strong><?php echo htmlspecialchars($w['room_number'] ?? '-'); ?></strong></td>
+                                            <td data-label="ผู้เช่า"><?php echo htmlspecialchars($w['tnt_name'] ?? '-'); ?></td>
+                                            <td data-label="วันที่จอง"><?php echo !empty($w['bkg_date']) ? date('d/m/Y', strtotime((string)$w['bkg_date'])) : '-'; ?></td>
+                                            <td data-label="ขั้นตอน"><span class="status-chip pending"><?php echo htmlspecialchars($wizardStepText); ?></span></td>
+                                            <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="tenant_wizard.php?bkg_id=<?php echo (int)($w['bkg_id'] ?? 0); ?>">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -738,6 +787,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <p>ไม่มีรายการจองที่รอดำเนินการ</p>
                                 </div>
                             <?php else: ?>
+                                <div class="table-responsive">
                                 <table class="todo-table">
                                     <thead><tr>
                                         <th>ห้อง</th>
@@ -749,17 +799,17 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <tbody>
                                         <?php foreach ($bookings as $b): ?>
                                         <tr>
-                                            <td><strong><?php echo htmlspecialchars($b['room_number'] ?? '-'); ?></strong><br><small style="color:rgba(255,255,255,0.4)"><?php echo htmlspecialchars($b['roomtype_name'] ?? ''); ?></small></td>
-                                            <td><?php echo htmlspecialchars($b['tnt_name'] ?? '-'); ?></td>
-                                            <td><?php echo $b['bkg_date'] ? date('d/m/Y', strtotime($b['bkg_date'])) : '-'; ?></td>
-                                            <td>
+                                            <td data-label="ห้อง"><strong><?php echo htmlspecialchars($b['room_number'] ?? '-'); ?></strong><br><small style="color:rgba(255,255,255,0.4)"><?php echo htmlspecialchars($b['roomtype_name'] ?? ''); ?></small></td>
+                                            <td data-label="ผู้เช่า"><?php echo htmlspecialchars($b['tnt_name'] ?? '-'); ?></td>
+                                            <td data-label="วันที่จอง"><?php echo $b['bkg_date'] ? date('d/m/Y', strtotime($b['bkg_date'])) : '-'; ?></td>
+                                            <td data-label="สถานะ">
                                                 <?php if ($b['bkg_status'] == 1): ?>
                                                     <span class="status-chip reserved">จองแล้ว</span>
                                                 <?php elseif ($b['bkg_status'] == 2): ?>
                                                     <span class="status-chip checkedin">เข้าพักแล้ว</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td>
+                                            <td data-label="จัดการ">
                                                 <a class="btn-action primary todo-manage-link" href="manage_booking.php?todo_only=1&status=1&bkg_id=<?php echo (int)$b['bkg_id']; ?>">จัดการ</a>
                                                 <button type="button" class="btn-action btn-danger todo-cancel-booking" data-bkgid="<?php echo (int)$b['bkg_id']; ?>" style="margin-left:0.5rem;padding:0.35rem 0.6rem;">ยกเลิก</button>
                                             </td>
@@ -767,6 +817,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -786,6 +837,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <p>ไม่มีห้องที่ต้องจดมิเตอร์</p>
                                 </div>
                             <?php else: ?>
+                                <div class="table-responsive">
                                 <table class="todo-table">
                                     <thead><tr>
                                         <th>ห้อง</th>
@@ -802,23 +854,23 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $utilityCtrId = (int)($u['ctr_id'] ?? 0);
                                         ?>
                                         <tr>
-                                            <td><strong><?php echo htmlspecialchars($u['room_number'] ?? '-'); ?></strong></td>
-                                            <td><?php echo htmlspecialchars($u['tnt_name'] ?? '-'); ?></td>
-                                            <td>
+                                            <td data-label="ห้อง"><strong><?php echo htmlspecialchars($u['room_number'] ?? '-'); ?></strong></td>
+                                            <td data-label="ผู้เช่า"><?php echo htmlspecialchars($u['tnt_name'] ?? '-'); ?></td>
+                                            <td data-label="น้ำ">
                                                 <?php if ($waterDone): ?>
                                                     <span class="status-chip done-water">✓ จดแล้ว (<?php echo htmlspecialchars($u['utl_water_end']); ?>)</span>
                                                 <?php else: ?>
                                                     <span class="status-chip not-done">✗ ยังไม่จด</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td>
+                                            <td data-label="ไฟ">
                                                 <?php if ($elecDone): ?>
                                                     <span class="status-chip done-elec">✓ จดแล้ว (<?php echo htmlspecialchars($u['utl_elec_end']); ?>)</span>
                                                 <?php else: ?>
                                                     <span class="status-chip not-done">✗ ยังไม่จด</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td>
+                                            <td data-label="จัดการ">
                                                 <div class="utility-manage-actions">
                                                     <?php if (!$waterDone): ?>
                                                     <a class="btn-action primary todo-manage-link utility-water-btn" href="manage_utility.php?todo_only=1&ctr_id=<?php echo $utilityCtrId; ?>&tab=water">จัดการน้ำ</a>
@@ -832,6 +884,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -851,6 +904,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <p>ไม่มีค่าใช้จ่ายเดือนนี้</p>
                                 </div>
                             <?php else: ?>
+                                <div class="table-responsive">
                                 <table class="todo-table">
                                     <thead><tr>
                                         <th>ห้อง</th>
@@ -876,11 +930,11 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             else { $statusClass = 'unpaid'; $statusText = 'รอชำระ'; }
                                         ?>
                                         <tr>
-                                            <td><strong><?php echo htmlspecialchars($exp['room_number'] ?? '-'); ?></strong></td>
-                                            <td><?php echo htmlspecialchars($exp['tnt_name'] ?? '-'); ?></td>
-                                            <td><?php echo number_format($total, 2); ?> ฿</td>
-                                            <td><?php echo number_format($paid, 2); ?> ฿</td>
-                                            <td>
+                                            <td data-label="ห้อง"><strong><?php echo htmlspecialchars($exp['room_number'] ?? '-'); ?></strong></td>
+                                            <td data-label="ผู้เช่า"><?php echo htmlspecialchars($exp['tnt_name'] ?? '-'); ?></td>
+                                            <td data-label="ยอดรวม"><?php echo number_format($total, 2); ?> ฿</td>
+                                            <td data-label="ชำระแล้ว"><?php echo number_format($paid, 2); ?> ฿</td>
+                                            <td data-label="สถานะ">
                                                 <?php if (!$hasCompleteMeter): ?>
                                                     <a href="<?php echo htmlspecialchars($meterManageHref); ?>" class="status-chip <?php echo $statusClass; ?>" style="text-decoration:none;display:inline-flex;align-items:center;">
                                                         <?php echo $statusText; ?>
@@ -889,11 +943,12 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                     <span class="status-chip <?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><a class="btn-action primary todo-manage-link" href="manage_expenses.php">จัดการ</a></td>
+                                            <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_expenses.php">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -913,6 +968,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <p>ไม่มีรายการรอตรวจสอบ</p>
                                 </div>
                             <?php else: ?>
+                                <div class="table-responsive">
                                 <table class="todo-table">
                                     <thead><tr>
                                         <th>ห้อง</th>
@@ -925,11 +981,11 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <tbody>
                                         <?php foreach ($pendingPayments as $p): ?>
                                         <tr>
-                                            <td><strong><?php echo htmlspecialchars($p['room_number'] ?? '-'); ?></strong></td>
-                                            <td><?php echo htmlspecialchars($p['tnt_name'] ?? '-'); ?></td>
-                                            <td><?php echo number_format(floatval(($p['payment_kind'] ?? '') === 'unpaid' ? ($p['exp_total'] ?? 0) : ($p['pay_amount'] ?? 0)), 2); ?> ฿</td>
-                                            <td><?php echo $p['pay_date'] ? date('d/m/Y', strtotime($p['pay_date'])) : '-'; ?></td>
-                                            <td>
+                                            <td data-label="ห้อง"><strong><?php echo htmlspecialchars($p['room_number'] ?? '-'); ?></strong></td>
+                                            <td data-label="ผู้เช่า"><?php echo htmlspecialchars($p['tnt_name'] ?? '-'); ?></td>
+                                            <td data-label="จำนวนเงิน"><?php echo number_format(floatval(($p['payment_kind'] ?? '') === 'unpaid' ? ($p['exp_total'] ?? 0) : ($p['pay_amount'] ?? 0)), 2); ?> ฿</td>
+                                            <td data-label="วันที่ชำระ"><?php echo $p['pay_date'] ? date('d/m/Y', strtotime($p['pay_date'])) : '-'; ?></td>
+                                            <td data-label="สลิป">
                                                 <?php if (($p['payment_kind'] ?? '') === 'unpaid'): ?>
                                                     <span class="status-chip unpaid">รอชำระ</span>
                                                 <?php elseif (!empty($p['pay_proof'])): ?>
@@ -938,11 +994,12 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                     <span style="color:rgba(255,255,255,0.3);">-</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><a class="btn-action primary todo-manage-link" href="manage_payments.php">จัดการ</a></td>
+                                            <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_payments.php">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
                                 </table>
+                                </div>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -962,6 +1019,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <p>ไม่มีรายการแจ้งซ่อมที่ต้องจัดการ</p>
                                 </div>
                             <?php else: ?>
+                                <div class="table-responsive">
                                 <table class="todo-table">
                                     <thead><tr>
                                         <th>ห้อง</th>
@@ -980,12 +1038,12 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $repairDesc = trim((string)($rp['repair_desc'] ?? ''));
                                         ?>
                                         <tr>
-                                            <td><strong><?php echo htmlspecialchars($rp['room_number'] ?? '-'); ?></strong></td>
-                                            <td><?php echo htmlspecialchars($rp['tnt_name'] ?? '-'); ?></td>
-                                            <td><?php echo htmlspecialchars($repairDesc !== '' ? $repairDesc : '-'); ?></td>
-                                            <td><?php echo !empty($rp['repair_date']) ? date('d/m/Y H:i', strtotime((string)$rp['repair_date'])) : '-'; ?></td>
-                                            <td><span class="status-chip <?php echo $repairStatusClass; ?>"><?php echo $repairStatusText; ?></span></td>
-                                            <td><a class="btn-action primary todo-manage-link" href="manage_repairs.php">จัดการ</a></td>
+                                            <td data-label="ห้อง"><strong><?php echo htmlspecialchars($rp['room_number'] ?? '-'); ?></strong></td>
+                                            <td data-label="ผู้เช่า"><?php echo htmlspecialchars($rp['tnt_name'] ?? '-'); ?></td>
+                                            <td data-label="รายละเอียด"><?php echo htmlspecialchars($repairDesc !== '' ? $repairDesc : '-'); ?></td>
+                                            <td data-label="วันที่แจ้ง"><?php echo !empty($rp['repair_date']) ? date('d/m/Y H:i', strtotime((string)$rp['repair_date'])) : '-'; ?></td>
+                                            <td data-label="สถานะ"><span class="status-chip <?php echo $repairStatusClass; ?>"><?php echo $repairStatusText; ?></span></td>
+                                            <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_repairs.php">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>

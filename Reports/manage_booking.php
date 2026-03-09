@@ -1076,9 +1076,10 @@ try {
         background: rgba(255,255,255,0.1);
       }
       .booking-section { margin-bottom: 2rem; }
+      /* grid of cards – keep each column at least 240px so text isn’t cramped */
       .rooms-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
         gap: 2.5rem;
         margin-top: 1rem;
       }
@@ -1113,9 +1114,10 @@ try {
       @media (max-width: 480px) {
         .rooms-grid {
           grid-template-columns: 1fr;
-          max-width: 240px;
-          margin-left: auto;
-          margin-right: auto;
+          width: 100%;
+          max-width: none;
+          margin-left: 0;
+          margin-right: 0;
           gap: 1.5rem;
         }
         /* Override max-width for grid mode - allow full width */
@@ -1124,6 +1126,19 @@ try {
           margin-left: 0;
           margin-right: 0;
           width: 100%;
+        }
+        .rooms-grid.list-view {
+          width: 100%;
+          margin: 0;
+          /* allow internal scrolling when content overflows */
+          overflow: auto;
+        }
+        .rooms-grid.list-view .room-card {
+          width: 100%;
+          margin: 0 !important;
+        }
+        .room-card {
+            margin: 0 !important;
         }
       }
       .rooms-grid.list-view { display: flex; flex-direction: column; gap: 1rem; }
@@ -1471,17 +1486,20 @@ try {
       .room-card-face.front { 
         padding: 0 !important;
         display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
+        flex-direction: row; /* use row layout by default */
+        align-items: center;
+        justify-content: flex-start;
         position: absolute;
         inset: 0;
         background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #818cf8 100%);
-        overflow: hidden;
+        /* prevent the face from collapsing below a usable width */
+        min-width: 240px;
         border-radius: 24px;
       }
       
       /* Room image fills entire card */
       .room-card-face.front .room-image-container {
+        /* allow repositioning in list mode */
         position: absolute !important;
         inset: 0 !important;
         width: 100% !important;
@@ -1492,6 +1510,21 @@ try {
         margin: 0 !important;
         padding: 0 !important;
         display: block !important;
+      }
+      /* when in list-view, move image to left and constrain size */
+      .rooms-grid.list-view .room-card-face.front .room-image-container {
+        position: relative !important;
+        inset: auto !important;
+        width: 80px !important;
+        height: 80px !important;
+        flex-shrink: 0;
+        margin: 0 1rem 0 0;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+      /* ensure front face same behaviour in list view */
+      .rooms-grid.list-view .room-card-face.front {
+        /* no scrolling by default */
       }
       
       .room-card-face.front .room-image-container img {
@@ -1527,19 +1560,38 @@ try {
         gap: 0.1rem;
         color: white;
         text-align: left;
+        /* keep the info from shrinking so text doesn't stack or squash */
+        flex-shrink: 0;
+        white-space: nowrap;
       }
-      
+      /* when using row layout front face, make info normal flow */
+      .room-card-face.front {
+        /* ensure card-info is not absolute when row */
+      }
+      /* list-view front face modifications: move info into normal flow */
+      .rooms-grid.list-view .room-card-face.front .card-info-bottom {
+        position: relative;
+        bottom: auto;
+        left: auto;
+        right: auto;
+        margin: 0;
+        color: inherit;
+      }      
       .room-card-face.front .card-info-bottom .room-number-web3 {
         font-size: 1.4rem;
         font-weight: 700;
         color: #ffffff;
         text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       
       .room-card-face.front .card-info-bottom .room-type-web3 {
         font-size: 0.9rem;
         color: rgba(255,255,255,0.9);
         text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       
       .room-card-face.front .card-info-bottom .room-price-web3 {
@@ -1638,10 +1690,13 @@ try {
       .rooms-grid.list-view .room-card-face.front {
         position: relative;
         display: flex;
+        flex-direction: row;      /* arrange image + info horizontally */
+        align-items: center;
         padding: 1rem 1.5rem !important;
         background: rgba(30, 41, 59, 0.8) !important;
         border: 1px solid rgba(255,255,255,0.1) !important;
         pointer-events: auto !important;
+        gap: 1rem;                /* space between image and info */
       }
       .rooms-grid.list-view .room-card-face.front::before {
         display: none !important;
@@ -3252,6 +3307,60 @@ try {
         background: #ffffff !important;
       }
 
+      /* mobile-friendly conversion for bookings table */
+      /* also override compact rules so bookings table shows all columns */
+      #table-bookings th:nth-child(n+6),
+      #table-bookings td:nth-child(n+6) {
+        display: table-cell !important;
+      }
+
+      @media (max-width: 768px) {
+        #table-bookings thead { display: none; }
+        #table-bookings tbody tr {
+          display: block;
+          margin-bottom: 1rem;
+          border: 1px solid rgba(0,0,0,0.08);
+          border-radius: 12px;
+          overflow: hidden;
+        }
+        #table-bookings tbody td {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.75rem 1rem;
+          border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+        #table-bookings tbody td:last-child { border-bottom: none; }
+        #table-bookings tbody td::before {
+          content: attr(data-label);
+          font-weight: 600;
+          color: var(--text-secondary);
+          font-size: 0.85rem;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          flex-shrink: 0;
+          margin-right: 1rem;
+        }
+        #table-bookings tbody td:first-child {
+          margin-bottom: 0.5rem;
+          padding-bottom: 1rem;
+          border-bottom: 2px solid var(--glass-border);
+        }
+        #table-bookings tbody td:first-child::before { display: none; }
+
+        /* ensure datatable wrapper/container don’t force extra width */
+        .datatable-wrapper,
+        .datatable-container {
+          overflow-x: auto;
+          width: 100%;          /* fill parent */
+        }
+        .datatable-table {
+          min-width: 0 !important;
+          width: 100% !important;      /* occupy full container */
+          table-layout: fixed !important;
+        }
+      }
+
       /* Keep room card bottom info text white */
       .room-card-face.front .card-info-bottom,
       .room-card-face.front .card-info-bottom .room-number-web3,
@@ -3643,7 +3752,7 @@ try {
               </select>
             </div>
             <div class="report-table">
-              <table class="table--compact" id="table-bookings">
+              <table id="table-bookings">
                 <thead>
                   <tr>
                     <th>รหัส</th>
@@ -3659,12 +3768,12 @@ try {
                   <?php if (!empty($bookings)): ?>
                     <?php foreach($bookings as $bkg): ?>
                       <tr>
-                        <td>#<?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
-                        <td><?php echo htmlspecialchars($bkg['tnt_name'] ?? 'ยังไม่มีผู้เช่า'); ?></td>
-                        <td><?php echo !empty($bkg['room_number']) ? htmlspecialchars((string)$bkg['room_number']) : '-'; ?></td>
-                        <td><?php echo !empty($bkg['bkg_date']) ? date('Y-m-d', strtotime($bkg['bkg_date'])) : '-'; ?></td>
-                        <td><?php echo !empty($bkg['bkg_checkin_date']) ? date('Y-m-d', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
-                        <td>
+                        <td data-label="รหัส">#<?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
+                        <td data-label="ผู้เช่า"><?php echo htmlspecialchars($bkg['tnt_name'] ?? 'ยังไม่มีผู้เช่า'); ?></td>
+                        <td data-label="ห้องพัก"><?php echo !empty($bkg['room_number']) ? htmlspecialchars((string)$bkg['room_number']) : '-'; ?></td>
+                        <td data-label="วันที่จอง"><?php echo !empty($bkg['bkg_date']) ? date('Y-m-d', strtotime($bkg['bkg_date'])) : '-'; ?></td>
+                        <td data-label="วันเข้าพัก"><?php echo !empty($bkg['bkg_checkin_date']) ? date('Y-m-d', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
+                        <td data-label="สถานะ">
                           <span style="
                             padding: 0.25rem 0.75rem;
                             border-radius: 12px;
@@ -3701,6 +3810,7 @@ try {
                   <?php endif; ?>
                 </tbody>
               </table>
+              </div> <!-- /.report-table -->
             </div>
           </section>
         </div>
@@ -3709,7 +3819,7 @@ try {
 
     <!-- Booking Modal -->
     <div class="booking-modal" id="bookingModal">
-      <div class="booking-modal-content">
+      <div class="booking-modal-content" style="display:none;">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
           <h2 style="margin:0;">จองห้องพัก</h2>
           <button type="button" aria-label="ปิดหน้าต่าง" onclick="closeBookingModal()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#e2e8f0;width:36px;height:36px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;">×</button>
@@ -3844,10 +3954,12 @@ try {
             if (numEl) numEl.value = 'ห้อง ' + roomNumber;
             if (typeEl) typeEl.value = roomType;
             if (priceEl) priceEl.value = '฿' + roomPrice;
+            // Always hide modal
             const bookingModal = document.getElementById('bookingModal');
             if (bookingModal) {
-              bookingModal.classList.add('active');
-              document.body.classList.add('modal-open');
+              bookingModal.classList.remove('active');
+              bookingModal.style.display = 'none';
+              document.body.classList.remove('modal-open');
             }
             return;
           }

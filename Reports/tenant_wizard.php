@@ -414,6 +414,36 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         .wizard-table tbody tr:hover {
             background: #f8fafc;
         }
+            /* Responsive table for wizard-table */
+            @media (max-width: 900px) {
+                .wizard-table, .wizard-table thead, .wizard-table tbody, .wizard-table th, .wizard-table td, .wizard-table tr {
+                    display: block;
+                }
+                .wizard-table thead {
+                    display: none;
+                }
+                .wizard-table tr {
+                    margin-bottom: 1.2rem;
+                    border-radius: 12px;
+                    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+                    background: #fff;
+                    border: none;
+                }
+                .wizard-table td {
+                    padding: 0.8rem 1rem;
+                    border: none;
+                    position: relative;
+                    font-size: 1rem;
+                }
+                .wizard-table td:before {
+                    content: attr(data-label);
+                    font-weight: 600;
+                    color: #64748b;
+                    display: block;
+                    margin-bottom: 0.3rem;
+                    font-size: 0.95rem;
+                }
+            }
 
         .step-indicator {
             display: flex;
