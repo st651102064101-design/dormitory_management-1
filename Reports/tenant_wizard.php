@@ -200,15 +200,56 @@ try {
                                             OR tw.completed = 1
                                         )
                                     " . $bookingFilterCondition . "
-                                    AND (
-                                            current_room_contract.ctr_id IS NULL
-                                            OR COALESCE(c.ctr_id, tw.ctr_id, 0) = current_room_contract.ctr_id
+                                    -- Exclude bookings where a different active/notify-cancel contract already occupies the room
+                                    AND NOT EXISTS (
+                                        SELECT 1 FROM contract c2
+                                        WHERE c2.room_id = b.room_id
+                                          AND c2.ctr_status IN ('0','2')
+                                          AND (
+                                              COALESCE(c.ctr_id, tw.ctr_id, 0) = 0
+                                              OR c2.ctr_id <> COALESCE(c.ctr_id, tw.ctr_id)
+                                          )
+                                    )
+                                    -- Also exclude if any active/notify-cancel contract exists for the room with a different tenant
+                                    AND NOT EXISTS (
+                                        SELECT 1 FROM contract c3
+                                        WHERE c3.room_id = b.room_id
+                                          AND c3.ctr_status IN ('0','2')
+                                          AND COALESCE(c3.tnt_id, '') <> COALESCE(b.tnt_id, '')
                                     )
                                         " . $completionCondition . "
         ORDER BY COALESCE(tw.current_step, 1) ASC, b.bkg_date DESC";
     
     $stmt = $conn->query($sql);
     $wizardTenants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Server-side dedupe: if multiple wizard rows reference the same room, keep the one
+    // with the highest workflow progress (current_step) or the newest booking date.
+    if (!empty($wizardTenants)) {
+        $deduped = [];
+        foreach ($wizardTenants as $t) {
+            $roomKey = isset($t['room_id']) && $t['room_id'] !== null ? 'r' . (int)$t['room_id'] : 'b' . (int)($t['bkg_id'] ?? 0);
+            if (!isset($deduped[$roomKey])) {
+                $deduped[$roomKey] = $t;
+                continue;
+            }
+            $cur = $deduped[$roomKey];
+            $curStep = (int)($cur['current_step'] ?? 1);
+            $newStep = (int)($t['current_step'] ?? 1);
+            if ($newStep > $curStep) {
+                $deduped[$roomKey] = $t;
+                continue;
+            }
+            if ($newStep === $curStep) {
+                $curDate = strtotime($cur['bkg_date'] ?? '1970-01-01');
+                $newDate = strtotime($t['bkg_date'] ?? '1970-01-01');
+                if ($newDate > $curDate) {
+                    $deduped[$roomKey] = $t;
+                }
+            }
+        }
+        $wizardTenants = array_values($deduped);
+    }
 
     // Batch-fetch recorded utility months per contract (1 query, no N+1)
     $utilMonthsRecorded = [];
@@ -1160,7 +1201,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.7rem;border-radius:20px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);color:#f87171;font-size:0.82rem;font-weight:700;">
                                                     ⚠ ผู้เช่าแจ้งยกเลิกสัญญา
                                                 </div>
-                                                <a href="/dormitory_management/Reports/manage_stay.php" style="font-size:0.78rem;color:#60a5fa;text-decoration:none;font-weight:600;">จัดการสัญญา →</a>
+                                                <a href="http://project.3bbddns.com:36140/dormitory_management/Reports/manage_contracts.php?ctr_id=<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>" style="font-size:0.78rem;color:#60a5fa;text-decoration:none;font-weight:600;">จัดการสัญญา →</a>
                                             </div>
                                         <?php elseif ($tenant['workflow_id'] === null): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>, '<?php echo date('d/m/Y', strtotime($tenant['bkg_date'])); ?>')">ยืนยันจอง</button>

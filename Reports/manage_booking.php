@@ -1457,9 +1457,9 @@ try {
       body.live-light .book-btn { background: #2563eb !important; color: #ffffff !important; }
       body.live-light .book-btn:hover { background: #1d4ed8 !important; }
       body.live-light .view-toggle button { 
-        background: #f3f4f6 !important; 
-        color: #111827 !important; 
-        border: 1px solid #d1d5db !important; 
+        background: rgba(15, 23, 42, 0.85) !important; 
+        color: #f5f8ff !important; 
+        border: 1px solid rgba(255, 255, 255, 0.15) !important; 
       }
       body.live-light .view-toggle button.active { 
         background: linear-gradient(135deg, #2563eb, #1d4ed8) !important; 
@@ -2107,8 +2107,6 @@ try {
       body.live-light .rooms-grid.list-view button.list-book-btn svg *,
       html.light-theme .rooms-grid.list-view button.list-book-btn svg,
       html.light-theme .rooms-grid.list-view button.list-book-btn svg * {
-        color: #ffffff !important;
-        stroke: #ffffff !important;
         fill: none !important;
       }
       
@@ -2566,17 +2564,17 @@ try {
           color: #ffffff !important;
       }
       
-      /* View toggle buttons */
+      /* View toggle buttons (light-theme override) - keep dark look instead of white */
       html.light-theme .view-toggle button,
       html.light-theme .toggle-view-btn {
-          background: rgba(0, 0, 0, 0.05) !important;
-          border: 1px solid rgba(0, 0, 0, 0.15) !important;
-          color: #374151 !important;
+          background: rgba(15, 23, 42, 0.85) !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          color: #f5f8ff !important;
       }
       html.light-theme .view-toggle button.active,
       html.light-theme .toggle-view-btn.active {
-          background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-          border-color: #3b82f6 !important;
+          background: linear-gradient(135deg, #60a5fa, #2563eb) !important;
+          border-color: rgba(96,165,250,0.8) !important;
           color: #ffffff !important;
       }
       
@@ -3381,7 +3379,7 @@ try {
               </div>
             </div>
 
-            <div style="margin:0.75rem 0 0; padding:0.9rem 1rem; border-radius:10px; border:1px solid rgba(34,197,94,0.35); background: rgba(34,197,94,0.12); color:#e0f2fe;">
+            <div style="margin:0.75rem 0 0; padding:0.9rem 1rem; border-radius:10px; border:1px solid rgba(34,197,94,0.35); background: rgba(34,197,94,0.12);">
               กรุณาชำระค่ามัดจำ 2,000 บาท ก่อนยืนยันการจอง ระบบจะหักออกจากบิลแรกให้อัตโนมัติ
             </div>
             

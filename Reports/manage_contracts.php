@@ -27,19 +27,34 @@ if ($settingsStmt) {
     }
 }
 
-// Get all contracts with related data
+// Get contracts (optionally filter by ctr_id passed via querystring)
 try {
-    // ดึงทุกสถานะ (รวม null/อื่น ๆ) เพื่อให้เห็นข้อมูลแน่ ๆ
-    $stmt = $conn->prepare("SELECT c.*, 
-      t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_status,
-      r.room_number, r.room_status,
-      rt.type_name
-      FROM contract c
-      LEFT JOIN tenant t ON t.tnt_id = c.tnt_id
-      LEFT JOIN room r ON c.room_id = r.room_id
-      LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-      ORDER BY c.ctr_start DESC");
-    $stmt->execute();
+    $filterCtrId = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
+    if ($filterCtrId > 0) {
+        $stmt = $conn->prepare("SELECT c.*, 
+          t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_status,
+          r.room_number, r.room_status,
+          rt.type_name
+          FROM contract c
+          LEFT JOIN tenant t ON t.tnt_id = c.tnt_id
+          LEFT JOIN room r ON c.room_id = r.room_id
+          LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+          WHERE c.ctr_id = :ctr_id
+          ORDER BY c.ctr_start DESC");
+        $stmt->bindValue(':ctr_id', $filterCtrId, PDO::PARAM_INT);
+        $stmt->execute();
+    } else {
+        $stmt = $conn->prepare("SELECT c.*, 
+          t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_status,
+          r.room_number, r.room_status,
+          rt.type_name
+          FROM contract c
+          LEFT JOIN tenant t ON t.tnt_id = c.tnt_id
+          LEFT JOIN room r ON c.room_id = r.room_id
+          LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+          ORDER BY c.ctr_start DESC");
+        $stmt->execute();
+    }
     $contracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
     error_log("DEBUG: Contracts found: " . count($contracts));
     if(count($contracts) > 0) {
@@ -47,7 +62,7 @@ try {
     }
 } catch(Exception $e) {
     $contracts = [];
-      $error = "ข้อผิดพลาดในการดึงข้อมูล: " . $e->getMessage();
+    $error = "ข้อผิดพลาดในการดึงข้อมูล: " . $e->getMessage();
     error_log("ERROR: Contract query error: " . $e->getMessage());
 }
 
@@ -238,7 +253,7 @@ foreach ($contracts as $contract) {
       .form-toggle-btn {
         padding: 0.65rem 1.3rem;
         background: #22c55e;
-        color: #0f172a;
+        color: #ffffff !important; /* text color changed to white */
         border: 1px solid #16a34a;
         border-radius: 8px;
         cursor: pointer;
@@ -253,7 +268,7 @@ foreach ($contracts as $contract) {
       }
       .form-toggle-btn:hover {
         background: #16a34a;
-        color: #e2fbe9;
+        color: #ffffff !important; /* keep white on hover too */
         transform: translateY(-1px);
       }
       .contract-form {
@@ -454,6 +469,20 @@ foreach ($contracts as $contract) {
         font-weight: 500;
         text-align: center;
       }
+      /* Cancel contract button (แจ้งยกเลิก -> ยกเลิกสัญญา) */
+      .cancel-contract-btn {
+        background: #f59e0b !important; /* amber */
+        border: 1px solid #d97706 !important;
+        color: #ffffff !important;
+        padding: 0.45rem 0.8rem !important;
+        border-radius: 6px !important;
+        font-size: 0.9rem !important;
+        cursor: pointer !important;
+      }
+      .cancel-contract-btn:hover {
+        background: #d97706 !important;
+        color: #ffffff !important;
+      }
     </style>
     <script>
       // Define a global sidebar toggle early so the header button responds immediately
@@ -601,7 +630,7 @@ foreach ($contracts as $contract) {
                     font-size: 1rem;
                     background: #1e293b;
                     border: 1px solid #334155;
-                    color: #cbd5e1;
+                    color: #ffffff !important; /* force white text */
                     border-radius: 8px;
                     transition: all 0.2s;
                     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
@@ -611,13 +640,23 @@ foreach ($contracts as $contract) {
                   .form-toggle-btn:hover {
                     background: #334155;
                     border-color: #475569;
+                    color: #ffffff !important; /* keep white on hover */
+                  }
+                  /* Force any nested text or SVG strokes to white to avoid other rules overriding it */
+                  .form-toggle-btn, .form-toggle-btn * {
+                    color: #ffffff !important;
+                    stroke: #ffffff !important;
+                    fill: currentColor !important;
                   }
                   .form-toggle-btn.open {
                     border-color: #475569;
                   }
                 </style>
                 <!-- Add Contract Form Toggle -->
-                <button class="form-toggle-btn" id="toggleFormBtn" type="button" onclick="window.__toggleContractForm(event); return false;"><span id="toggleFormIcon">▶</span> <span id="toggleFormText">แสดงฟอร์ม</span></button>
+                <button class="form-toggle-btn" id="toggleFormBtn" type="button" onclick="window.__toggleContractForm(event); return false;" style="color: #ffffff;">
+                  <span id="toggleFormIcon" style="color: inherit;">▶</span>
+                  <span id="toggleFormText" style="color: inherit;">แสดงฟอร์ม</span>
+                </button>
                 <script>
                   // Bind click immediately after button is created
                   (function(){
@@ -785,6 +824,11 @@ foreach ($contracts as $contract) {
                                   $lbl = 'รอเข้าพัก';
                                   $col = '#FF9800';
                                 }
+                                // Prepare cancellation date display for notify-cancel (status '2')
+                                $cancelDateDisplay = '-';
+                                if ($s === '2' && !empty($contract['ctr_end']) && $contract['ctr_end'] !== '0000-00-00') {
+                                  $cancelDateDisplay = date('d/m/Y', strtotime($contract['ctr_end']));
+                                }
                           ?>
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
                               <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $ctr_id; ?></td>
@@ -796,8 +840,17 @@ foreach ($contracts as $contract) {
                                 <span class="status-badge" style="background-color: <?php echo $col; ?>; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.85rem;">
                                   <?php echo $lbl; ?>
                                 </span>
+                                <?php if ($s === '2' && $cancelDateDisplay !== '-'): ?>
+                                  <div style="margin-top:0.35rem;font-size:0.82rem;color:rgba(255,255,255,0.8);">วันที่จะยกเลิก: <?php echo $cancelDateDisplay; ?></div>
+                                <?php endif; ?>
                               </td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;">-</td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;">
+                                <?php if ($s === '2'): ?>
+                                  <button type="button" class="action-btn btn-warning cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ยกเลิกทันที</button>
+                                <?php else: ?>
+                                  -
+                                <?php endif; ?>
+                              </td>
                             </tr>
                           <?php
                               }
@@ -817,6 +870,63 @@ foreach ($contracts as $contract) {
 
     <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
     <script src="/dormitory_management/Public/Assets/Javascript/main.js" defer></script>
+    <script>
+      // Handle immediate cancel action from "แจ้งยกเลิก"
+      async function sendCancelContract(ctrId) {
+        try {
+          const form = new FormData();
+          form.append('ctr_id', ctrId);
+          form.append('ctr_status', '1');
+
+          const res = await fetch('../Manage/update_contract_status.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: form
+          });
+          const data = await res.json();
+          return data;
+        } catch (err) {
+          console.error('Cancel contract error', err);
+          return { success: false, error: 'ข้อผิดพลาดเครือข่าย' };
+        }
+      }
+
+      function findRowFromBtn(btn) {
+        return btn.closest('tr');
+      }
+
+      document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.cancel-contract-btn');
+        if (!btn) return;
+        e.preventDefault();
+        const ctrId = btn.getAttribute('data-ctrid');
+        if (!ctrId) return alert('ไม่พบรหัสสัญญา');
+
+        // Immediate cancel without confirmation (ยกเลิกทันที)
+        btn.disabled = true;
+        btn.textContent = 'กำลังยกเลิก...';
+
+        sendCancelContract(ctrId).then(function(resp) {
+          if (resp && resp.success) {
+            const row = findRowFromBtn(btn);
+            if (row) {
+              const badge = row.querySelector('.status-badge');
+              if (badge) {
+                badge.textContent = 'ยกเลิกแล้ว';
+                badge.style.backgroundColor = '#f44336';
+              }
+              // optionally mark tenant/room status visually
+            }
+            btn.remove();
+            alert(resp.message || 'ยกเลิกสัญญาเรียบร้อยแล้ว');
+          } else {
+            btn.disabled = false;
+            btn.textContent = 'ยกเลิกสัญญา';
+            alert((resp && resp.error) ? resp.error : 'ไม่สามารถยกเลิกสัญญาได้');
+          }
+        });
+      });
+    </script>
     <script>
         // Fallback sidebar toggle (in case animate-ui.js fails on this page)
         document.addEventListener('DOMContentLoaded', function() {
