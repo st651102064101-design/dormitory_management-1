@@ -578,6 +578,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             .meter-card { margin: 0; border-radius: 0; }
             .meter-table td, .meter-table th { padding: 0.45rem 0.25rem; font-size: 0.82rem; }
             .meter-input-field { max-width: 90px; font-size: 0.88rem; }
+            .table-responsive { overflow-x: auto; }
         }
         @media (max-width: 480px) {
             .meter-table td, .meter-table th { padding: 0.35rem 0.15rem; font-size: 0.75rem; }
@@ -664,9 +665,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                         <div id="waterPanel" style="<?php echo $activeTab!=='water'?'display:none':''; ?>">
                             <?php foreach ($floors as $floorNum => $floorRooms): ?>
                             <div class="floor-header">ชั้นที่ <?php echo $floorNum; ?></div>
+                            <div class="table-responsive">
                             <table class="meter-table">
                                 <thead><tr>
-                                    <th>ห้อง</th><th>สถานะ</th><th>เลขมิเตอร์เดือนก่อนหน้า</th><th>เลขมิเตอร์เดือนล่าสุด</th><th>หน่วยที่ใช้</th>
+                                    <th>ห้อง</th><th>สถานะ</th><th>เลขมิเตอร์เดือนก่อนหน้า</th><th>เลขมิเตอร์เดือนล่าสุด</th><th>หน่วยที่ใช้</th><th>จำนวนเงินที่ต้องจ่าย</th>
                                 </tr></thead>
                                 <tbody>
                                 <?php foreach ($floorRooms as $room):
@@ -684,10 +686,16 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                     <?php else: ?>-<?php endif; ?></td>
                                     <td class="usage-cell" data-room="<?php echo $room['room_id']; ?>" data-usage="water"><?php echo $hasCtr ? $wUsed : '-'; ?></td>
+                                    <td class="amount-to-pay" data-room="<?php echo $room['room_id']; ?>" data-amount="water">
+                                        <?php if ($hasCtr): ?>
+                                            <?php echo calculateWaterCost($wUsed); ?>
+                                        <?php else: ?>-<?php endif; ?>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                                 </tbody>
                             </table>
+                            </div>
                             <?php endforeach; ?>
                         </div>
 
@@ -695,9 +703,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                         <div id="electricPanel" style="<?php echo $activeTab!=='electric'?'display:none':''; ?>">
                             <?php foreach ($floors as $floorNum => $floorRooms): ?>
                             <div class="floor-header">ชั้นที่ <?php echo $floorNum; ?></div>
+                            <div class="table-responsive">
                             <table class="meter-table">
                                 <thead><tr>
-                                    <th>ห้อง</th><th>สถานะ</th><th>เลขมิเตอร์เดือนก่อนหน้า</th><th>เลขมิเตอร์เดือนล่าสุด</th><th>หน่วยที่ใช้</th>
+                                    <th>ห้อง</th><th>สถานะ</th><th>เลขมิเตอร์เดือนก่อนหน้า</th><th>เลขมิเตอร์เดือนล่าสุด</th><th>หน่วยที่ใช้</th><th>จำนวนเงินที่ต้องจ่าย</th>
                                 </tr></thead>
                                 <tbody>
                                 <?php foreach ($floorRooms as $room):
@@ -715,10 +724,16 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                     <?php else: ?>-<?php endif; ?></td>
                                     <td class="usage-cell elec-usage" data-room="<?php echo $room['room_id']; ?>" data-usage="electric"><?php echo $hasCtr ? $eUsed : '-'; ?></td>
+                                    <td class="amount-to-pay" data-room="<?php echo $room['room_id']; ?>" data-amount="electric">
+                                        <?php if ($hasCtr): ?>
+                                            <?php echo $eUsed * $electricRate; ?>
+                                        <?php else: ?>-<?php endif; ?>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                                 </tbody>
                             </table>
+                            </div>
                             <?php endforeach; ?>
                         </div>
 

@@ -72,6 +72,15 @@ button:focus-visible {
     stroke-width: 2;
 }
 
+/* calendar/date icons should always render in black */
+.date-icon svg,
+.reservation-date svg,
+.nav-icon,
+.label-icon {
+    stroke: #000 !important;
+    color: #000 !important;
+}
+
 
 /* Modal and Toast Styles (complementary to animate-ui.css) */
 .animate-ui-toast {

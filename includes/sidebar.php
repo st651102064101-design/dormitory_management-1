@@ -1484,9 +1484,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
   /* Buttons */
   .quick-color,
   button:not(.btn-save):not([type="submit"]):not(.expenses-view-toggle):not(.payments-view-toggle):not(.meter-tab):not(.report-tab):not(.action-btn) {
-    background: #f3f4f6 !important;
     border: 1px solid #d1d5db !important;
-    color: #111827 !important;
   }
   
   /* Sidebar Navigation */
@@ -1792,7 +1790,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
   body.reports-page section h4,
   body.reports-page section p,
   body.reports-page section span {
-    color: #111827 !important;
+    /* color removed per request */
   }
   
   /* Chart Cards */
@@ -3680,7 +3678,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     <div class="group">
       <details id="nav-todo" open>
         <summary>
-          <a href="todo_tasks.php" class="summary-link">
+          <a href="http://project.3bbddns.com:36140/dormitory_management/Reports/todo_tasks.php#wizard" class="summary-link">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
             <span class="summary-label">งานที่ต้องทำ</span>
           </a>

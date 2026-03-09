@@ -2852,13 +2852,16 @@ $filterRoomOptions = array_values($filterRoomOptions);
         year: <?php echo json_encode($filterYear, JSON_UNESCAPED_UNICODE); ?>
       };
 
+      // store the current status filter in a JS variable instead of a hidden input
+      let paymentsActiveStatus = paymentsDefaultFilters.status || '';
+
       let paymentsDataTable = null;
       let paymentsSourceRows = [];
 
       function getPaymentsFilterState() {
         return {
           room: document.getElementById('filterRoom')?.value || '',
-          status: document.getElementById('filterStatus')?.value || '',
+          status: paymentsActiveStatus,
           month: document.getElementById('filterMonth')?.value || '',
           year: document.getElementById('filterYear')?.value || ''
         };
@@ -2903,8 +2906,13 @@ $filterRoomOptions = array_values($filterRoomOptions);
           return false;
         }
 
-        if (filters.status && (element.dataset.status || '') !== filters.status) {
-          return false;
+        if (filters.status) {
+          // debug: log status comparison
+          const rowStatus = element.dataset.status || '';
+          if (rowStatus !== filters.status) {
+            console.debug('filter mismatch status', filters.status, 'row', rowStatus, element);
+            return false;
+          }
         }
 
         if (filters.month && (element.dataset.month || '') !== filters.month) {
@@ -3015,6 +3023,8 @@ $filterRoomOptions = array_values($filterRoomOptions);
 
       function applyFilters(options = {}) {
         const filters = getPaymentsFilterState();
+        // debug: log new filter state
+        console.debug('applyFilters called, filters=', filters);
 
         if (options.skipReload !== true) {
           const url = new URL(window.location.href);
@@ -3104,14 +3114,14 @@ $filterRoomOptions = array_values($filterRoomOptions);
 
       function clearFilters() {
         const room = document.getElementById('filterRoom');
-        const status = document.getElementById('filterStatus');
         const month = document.getElementById('filterMonth');
         const year = document.getElementById('filterYear');
 
         if (room) room.value = '';
-        if (status) status.value = '';
         if (month) month.value = paymentsDefaultFilters.month || '';
         if (year) year.value = paymentsDefaultFilters.year || '';
+
+        paymentsActiveStatus = '';
 
         // Reset tab UI to "ทั้งหมด"
         document.querySelectorAll('.payment-filter-tab').forEach(function(t) {
@@ -3218,6 +3228,10 @@ $filterRoomOptions = array_values($filterRoomOptions);
       }
 
       async function doUpdatePaymentStatus(payId, newStatus, expId) {
+        // capture current status from DOM for count adjustment
+        const rowElement = document.querySelector(`[data-pay-id="${payId}"]`);
+        const oldStatus = rowElement ? (rowElement.dataset.status || '') : '';
+
         try {
           const formData = new FormData();
           formData.append('pay_id', payId);
@@ -3235,7 +3249,9 @@ $filterRoomOptions = array_values($filterRoomOptions);
             if (typeof showSuccessToast === 'function') {
               showSuccessToast(data.message || 'อัปเดตสถานะเรียบร้อย');
             }
-            setTimeout(() => location.reload(), 1000);
+
+            // update DOM row(s) and counts without reloading
+            updatePaymentRowStatus(payId, newStatus, oldStatus);
           } else {
             if (typeof showErrorToast === 'function') {
               showErrorToast(data.error || 'เกิดข้อผิดพลาด');
@@ -3251,6 +3267,43 @@ $filterRoomOptions = array_values($filterRoomOptions);
             alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
           }
         }
+      }
+
+      // utility: adjust tab count by status delta
+      function adjustTabCount(status, delta) {
+        // `` status '' corresponds to "ทั้งหมด" tab
+        const selector = status === '' ? '.payment-filter-tab[data-status=""]' : `.payment-filter-tab[data-status="${status}"]`;
+        const tab = document.querySelector(selector);
+        if (!tab) return;
+        const countEl = tab.querySelector('.tab-count');
+        if (!countEl) return;
+        const n = parseInt(countEl.textContent, 10) || 0;
+        countEl.textContent = Math.max(0, n + delta);
+      }
+
+      // utility: update DOM row/card badge and counts
+      function updatePaymentRowStatus(payId, newStatus, oldStatus) {
+        const selector = `[data-pay-id="${payId}"]`;
+        document.querySelectorAll(selector).forEach(function(el) {
+          el.dataset.status = newStatus;
+          const badge = el.querySelector('.status-badge');
+          if (badge) {
+            const statusClass = newStatus === '1' ? 'status-verified' : (newStatus === '0' ? 'status-pending' : '');
+            const statusText = newStatus === '1' ? 'ตรวจสอบแล้ว' : 'รอตรวจสอบ';
+            badge.className = 'status-badge ' + statusClass;
+            badge.textContent = statusText;
+          }
+        });
+
+        // update tab counts (all, old, new)
+        adjustTabCount('', 0); // no change for tổng
+        if (oldStatus !== newStatus) {
+          if (oldStatus !== '') adjustTabCount(oldStatus, -1);
+          if (newStatus !== '') adjustTabCount(newStatus, +1);
+        }
+
+        // re-run the filtering to reflect any active filters
+        applyFilters({ skipReload: true });
       }
 
       // Delete payment
@@ -3413,17 +3466,32 @@ $filterRoomOptions = array_values($filterRoomOptions);
         ensurePaymentsViewVisible();
         applyFilters({ skipReload: true, updateHistory: false });
 
-        // Status filter tabs – instant client-side filter
-        const filterTabs = document.querySelectorAll('.payment-filter-tab');
-        const statusInput = document.getElementById('filterStatus');
-        filterTabs.forEach(function(tab) {
-          tab.addEventListener('click', function() {
-            filterTabs.forEach(function(t) { t.classList.remove('active'); });
-            this.classList.add('active');
-            if (statusInput) statusInput.value = this.dataset.status;
-            applyFilters({ skipReload: true });
+        // Status filter tabs – use delegated click handler for robustness
+        const tabsContainer = document.getElementById('paymentFilterTabs');
+        // clicking a filter tab should reload the page with the new status
+        if (tabsContainer) {
+          tabsContainer.addEventListener('click', function(e) {
+            const tab = e.target.closest('.payment-filter-tab');
+            if (!tab) return;
+            e.preventDefault();
+            tabsContainer.querySelectorAll('.payment-filter-tab').forEach(function(t) { t.classList.remove('active'); });
+            tab.classList.add('active');
+            paymentsActiveStatus = tab.dataset.status || '';
+            // navigate to updated URL (applyFilters without skipReload)
+            applyFilters();
           });
-        });
+        } else {
+          // Fallback: bind directly if container not present
+          document.querySelectorAll('.payment-filter-tab').forEach(function(tab) {
+            tab.addEventListener('click', function(e) {
+              e.preventDefault();
+              document.querySelectorAll('.payment-filter-tab').forEach(function(t) { t.classList.remove('active'); });
+              this.classList.add('active');
+              paymentsActiveStatus = tab.dataset.status || '';
+              applyFilters();
+            });
+          });
+        }
 
         // Animate progress bar fill
         const fill = document.getElementById('pcpBarFill');

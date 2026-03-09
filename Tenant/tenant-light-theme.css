@@ -331,7 +331,8 @@ body.light-theme .file-upload-icon svg {
     stroke: #94a3b8 !important;
 }
 body.light-theme .date-icon svg {
-    stroke: #94a3b8 !important;
+    /* make sure calendar icons remain black even in light theme */
+    stroke: #000 !important;
 }
 
 /* --- Contract card with gradient header --- */

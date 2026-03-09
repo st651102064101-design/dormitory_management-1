@@ -46,7 +46,7 @@ try {
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
                         LEFT JOIN contract active_ctr
                             ON active_ctr.room_id = b.room_id
-                         AND active_ctr.ctr_status = '0'
+                         AND active_ctr.ctr_status IN ('0','2')
             WHERE b.bkg_status = 1
                             AND active_ctr.ctr_id IS NULL
             ORDER BY b.bkg_date DESC
@@ -201,34 +201,34 @@ try {
 
     // === Wizard: ตัวช่วยผู้เช่าที่ยังค้าง ===
     try {
-        $wizardStmt = $pdo->query(" 
-            SELECT COUNT(*) AS incomplete_count
-            FROM booking b
-            LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-            WHERE b.bkg_status != '0'
-              AND (tw.id IS NULL OR tw.completed = 0)
-        ");
+                $wizardStmt = $pdo->query(" 
+                        SELECT COUNT(*) AS incomplete_count
+                        FROM booking b
+                        LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
+                        WHERE b.bkg_status != '0'
+                            AND (tw.id IS NULL OR tw.completed = 0)
+                ");
         $wizardPendingCount = (int)($wizardStmt->fetch(PDO::FETCH_ASSOC)['incomplete_count'] ?? 0);
     } catch (Exception $e) {
         $wizardPendingCount = 0;
     }
 
     try {
-        $wizardItemsStmt = $pdo->query(" 
-            SELECT b.bkg_id, b.bkg_date,
-                   COALESCE(t.tnt_name, '') AS tnt_name,
-                   COALESCE(r.room_number, '-') AS room_number,
-                   COALESCE(tw.current_step, 0) AS current_step,
-                   COALESCE(tw.completed, 0) AS completed
-            FROM booking b
-            LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
-            LEFT JOIN room r ON b.room_id = r.room_id
-            LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-            WHERE b.bkg_status != '0'
-              AND (tw.id IS NULL OR tw.completed = 0)
-            ORDER BY b.bkg_date DESC, b.bkg_id DESC
-            LIMIT 50
-        ");
+                $wizardItemsStmt = $pdo->query(" 
+                        SELECT b.bkg_id, b.bkg_date,
+                                     COALESCE(t.tnt_name, '') AS tnt_name,
+                                     COALESCE(r.room_number, '-') AS room_number,
+                                     COALESCE(tw.current_step, 0) AS current_step,
+                                     COALESCE(tw.completed, 0) AS completed
+                        FROM booking b
+                        LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
+                        LEFT JOIN room r ON b.room_id = r.room_id
+                        LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
+                        WHERE b.bkg_status != '0'
+                            AND (tw.id IS NULL OR tw.completed = 0)
+                        ORDER BY b.bkg_date DESC, b.bkg_id DESC
+                        LIMIT 50
+                ");
         $wizardItems = $wizardItemsStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     } catch (Exception $e) {
         $wizardItems = [];
@@ -759,7 +759,10 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                     <span class="status-chip checkedin">เข้าพักแล้ว</span>
                                                 <?php endif; ?>
                                             </td>
-                                            <td><a class="btn-action primary todo-manage-link" href="manage_booking.php?todo_only=1&status=1&bkg_id=<?php echo (int)$b['bkg_id']; ?>">จัดการ</a></td>
+                                            <td>
+                                                <a class="btn-action primary todo-manage-link" href="manage_booking.php?todo_only=1&status=1&bkg_id=<?php echo (int)$b['bkg_id']; ?>">จัดการ</a>
+                                                <button type="button" class="btn-action btn-danger todo-cancel-booking" data-bkgid="<?php echo (int)$b['bkg_id']; ?>" style="margin-left:0.5rem;padding:0.35rem 0.6rem;">ยกเลิก</button>
+                                            </td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -1085,6 +1088,42 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                     if (href) {
                         window.location.href = href;
                     }
+                });
+            });
+
+            // Cancel booking from todo list
+            document.querySelectorAll('.todo-cancel-booking').forEach(function(btn){
+                btn.addEventListener('click', function(e){
+                    e.preventDefault();
+                    const bkgId = btn.getAttribute('data-bkgid');
+                    if (!bkgId) return alert('ไม่พบรหัสการจอง');
+                    if (!confirm('ยืนยันการยกเลิกการจองใช่หรือไม่? รายการจะถูกลบถาวร')) return;
+
+                    btn.disabled = true;
+                    btn.textContent = 'กำลังยกเลิก...';
+
+                    const form = new FormData();
+                    form.append('bkg_id', bkgId);
+
+                    fetch('../Manage/cancel_booking.php', { method: 'POST', body: form })
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data && data.success) {
+                                // remove row or reload
+                                const row = btn.closest('tr');
+                                if (row) row.remove();
+                                alert(data.message || 'ยกเลิกการจองเรียบร้อยแล้ว');
+                            } else {
+                                btn.disabled = false;
+                                btn.textContent = 'ยกเลิก';
+                                alert((data && data.error) ? data.error : 'ไม่สามารถยกเลิกได้');
+                            }
+                        }).catch(err => {
+                            console.error(err);
+                            btn.disabled = false;
+                            btn.textContent = 'ยกเลิก';
+                            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+                        });
                 });
             });
         });
