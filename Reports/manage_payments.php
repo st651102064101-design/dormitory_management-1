@@ -2416,6 +2416,38 @@ $filterRoomOptions = array_values($filterRoomOptions);
           display: block;
           overflow-x: auto;
         }
+        }
+      
+        /* Responsive table for manage-table (mobile) */
+        @media (max-width: 900px) {
+          .manage-table, .manage-table thead, .manage-table tbody, .manage-table th, .manage-table td, .manage-table tr {
+            display: block;
+          }
+          .manage-table thead {
+            display: none;
+          }
+          .manage-table tr {
+            margin-bottom: 1.2rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            background: #fff;
+            border: none;
+          }
+          .manage-table td {
+            padding: 0.8rem 1rem;
+            border: none;
+            position: relative;
+            font-size: 1rem;
+          }
+          .manage-table td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #64748b;
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.95rem;
+          }
+        }
       }
 
       /* ===== Collection Progress Bar ===== */
