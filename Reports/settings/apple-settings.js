@@ -1322,7 +1322,7 @@ class AppleSettings {
     const unitLabel = document.getElementById('currentWaterUnit');
     const excessLabel = document.getElementById('currentWaterExcess');
     if (unitLabel && baseUnits !== undefined) {
-      unitLabel.textContent = `เหมาจ่าย ฿${Number(basePrice).toLocaleString()} ≤${baseUnits} หน่วย`;
+      unitLabel.textContent = `เหมาจ่าย ฿${Number(basePrice).toLocaleString()} สำหรับ ≤${baseUnits} หน่วย`;
     }
     if (excessLabel) {
       excessLabel.textContent = `เกินหน่วยละ ฿${excessRate ?? WATER_EXCESS_RATE}`;
@@ -1336,7 +1336,7 @@ class AppleSettings {
     const rateUnitElem = document.querySelector('.apple-rate-unit');
     if (rateUnitElem && baseUnits !== undefined) {
       rateUnitElem.innerHTML =
-        `เหมาจ่าย ฿${Number(basePrice).toLocaleString()} ≤${baseUnits} หน่วย` +
+        `เหมาจ่าย ฿${Number(basePrice).toLocaleString()} สำหรับ ≤${baseUnits} หน่วย` +
         `<br><span style="font-size:11px;">เกินหน่วยละ ฿${excessRate ?? WATER_EXCESS_RATE}</span>`;
     }
     if (currentDateLabel) {
@@ -1404,7 +1404,7 @@ class AppleSettings {
         <td style="text-align: center; color: var(--apple-blue); font-weight: 600;">
           ฿${Number(waterRate).toLocaleString()}
           <div style="font-size:0.75rem;color:#64748b;">
-            ≤${baseUnits} u @ ฿${Number(basePrice).toLocaleString()}<br>
+            ${baseUnits !== undefined ? `เหมาจ่าย ฿${Number(basePrice).toLocaleString()} สำหรับ ≤${baseUnits} หน่วย` : ''}<br>
             เกิน ฿${excessRate}
           </div>
         </td>
