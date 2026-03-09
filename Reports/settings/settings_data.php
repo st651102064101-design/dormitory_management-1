@@ -145,6 +145,17 @@ try {
     // ดึงประวัติทั้งหมด
     $allRatesStmt = $pdo->query("SELECT * FROM rate ORDER BY effective_date DESC, rate_id DESC");
     $allRates = $allRatesStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // กรองแถวซ้ำที่มีค่าเหมือนกันทุกคอลัมน์เพื่อป้องกันการแสดงข้อมูลซ้ำ
+    $dedup = [];
+    foreach ($allRates as $row) {
+        $key = $row['rate_water'] . '_' . $row['rate_elec'] . '_'
+             . ($row['water_base_units'] ?? '') . '_' . ($row['water_base_price'] ?? '') . '_' . ($row['water_excess_rate'] ?? '');
+        if (!isset($dedup[$key])) {
+            $dedup[$key] = $row;
+        }
+    }
+    $allRates = array_values($dedup);
     
     // ดึงข้อมูลการใช้งานของแต่ละอัตรา (จาก expense)
     $usageStmt = $pdo->query("
