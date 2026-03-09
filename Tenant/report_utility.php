@@ -286,13 +286,16 @@ if (empty($utilities)) {
                     <?php
                         $wUnit = (int)($util['exp_water_unit'] ?? 0);
                         $wAmt  = (int)($util['exp_water'] ?? 0);
+                        $base = getWaterBaseUnits();
+                        $basePrice = getWaterBasePrice();
+                        $excessRate = getWaterExcessRate();
                         if ($wUnit <= 0) {
                             $wDetail = 'ยังไม่มีข้อมูลมิเตอร์';
-                        } elseif ($wUnit <= WATER_BASE_UNITS) {
-                            $wDetail = 'เหมาจ่าย ≤' . WATER_BASE_UNITS . ' หน่วย (ใช้ ' . $wUnit . ' หน่วย)';
+                        } elseif ($wUnit <= $base) {
+                            $wDetail = 'เหมาจ่าย ≤' . $base . ' หน่วย (ใช้ ' . $wUnit . ' หน่วย)';
                         } else {
-                            $excess = $wUnit - WATER_BASE_UNITS;
-                            $wDetail = WATER_BASE_UNITS . ' หน่วยแรก ' . WATER_BASE_PRICE . '฿ + เกิน ' . $excess . ' หน่วย × ' . WATER_EXCESS_RATE . '฿';
+                            $excess = $wUnit - $base;
+                            $wDetail = $base . ' หน่วยแรก ' . $basePrice . '฿ + เกิน ' . $excess . ' หน่วย × ' . $excessRate . '฿';
                         }
                     ?>
                     <div class="utility-detail"><?php echo $wDetail; ?></div>

@@ -385,6 +385,50 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
             .report-tab { font-size: 0.82rem; padding: 0.65rem 0.4rem; }
             .curr-val { padding: 0.15rem 0.3rem; font-size: 0.8rem; }
         }
+
+        /* Mobile card conversion for utility tables */
+        @media (max-width:768px) {
+            .report-table { display:block; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+            .report-table thead { display:none; }
+            .report-table tbody { display:block; }
+            .report-table tbody tr {
+                display:block;
+                background:#fff;
+                border:1px solid #eee;
+                border-radius:12px;
+                margin-bottom:1rem;
+                padding:1rem;
+            }
+            .report-table tbody td {
+                display:flex;
+                justify-content:space-between;
+                align-items:center;
+                padding:0.75rem 0;
+                border-bottom:1px solid rgba(0,0,0,0.05);
+            }
+            .report-table tbody td:last-child { border-bottom:none; }
+            .report-table tbody td::before {
+                content:attr(data-label);
+                font-weight:600;
+                color:#555;
+                font-size:0.85rem;
+                text-transform:uppercase;
+                letter-spacing:0.5px;
+                flex-shrink:0;
+                margin-right:1rem;
+            }
+            .report-table tbody td:first-child {
+                margin-bottom:0.5rem;
+                padding-bottom:1rem;
+                border-bottom:2px solid #eee;
+            }
+            .report-table tbody td:first-child::before { display:none; }
+        }
+        @media (max-width:480px) {
+            .report-table tbody tr { padding:0.875rem; }
+            .report-table tbody td { padding:0.625rem 0; font-size:0.9rem; }
+            .report-table tbody td::before { font-size:0.75rem; }
+        }
     </style>
 </head>
 <body class="reports-page" data-report-tab="<?php echo htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8'); ?>">
@@ -460,6 +504,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                     <div id="waterPanel" style="<?php echo $activeTab!=='water'?'display:none':''; ?>">
                         <?php foreach ($floors as $floorNum => $floorUtils): ?>
                         <div class="floor-header">ชั้นที่ <?php echo $floorNum; ?></div>
+                        <div class="table-responsive">
                         <table class="report-table">
                             <thead><tr>
                                 <th>ห้อง</th>
@@ -473,19 +518,20 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                 $waterUsage = (int)($util['utl_water_end'] ?? 0) - (int)($util['utl_water_start'] ?? 0);
                             ?>
                             <tr>
-                                <td class="room-num-cell"><?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></td>
-                                <td class="status-icon">
+                                <td class="room-num-cell" data-label="ห้อง"><?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></td>
+                                <td class="status-icon" data-label="สถานะ">
                                     <?php if (!empty($util['tnt_name'])): ?>
                                     <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                                     <?php endif; ?>
                                 </td>
-                                <td class="prev-val"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></td>
-                                <td><span class="curr-val"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></span></td>
-                                <td class="usage-cell"><?php echo number_format($waterUsage); ?></td>
+                                <td class="prev-val" data-label="เลขมิเตอร์เดือนก่อนหน้า"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></td>
+                                <td data-label="เลขมิเตอร์เดือนล่าสุด"><span class="curr-val"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></span></td>
+                                <td class="usage-cell" data-label="หน่วยที่ใช้"><?php echo number_format($waterUsage); ?></td>
                             </tr>
                             <?php endforeach; ?>
                             </tbody>
                         </table>
+                        </div>
                         <?php endforeach; ?>
                     </div>
 
@@ -493,6 +539,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                     <div id="electricPanel" style="<?php echo $activeTab!=='electric'?'display:none':''; ?>">
                         <?php foreach ($floors as $floorNum => $floorUtils): ?>
                         <div class="floor-header">ชั้นที่ <?php echo $floorNum; ?></div>
+                        <div class="table-responsive">
                         <table class="report-table">
                             <thead><tr>
                                 <th>ห้อง</th>
@@ -506,19 +553,20 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                 $elecUsage = (int)($util['utl_elec_end'] ?? 0) - (int)($util['utl_elec_start'] ?? 0);
                             ?>
                             <tr>
-                                <td class="room-num-cell"><?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></td>
-                                <td class="status-icon">
+                                <td class="room-num-cell" data-label="ห้อง"><?php echo htmlspecialchars((string)($util['room_number'] ?? '-')); ?></td>
+                                <td class="status-icon" data-label="สถานะ">
                                     <?php if (!empty($util['tnt_name'])): ?>
                                     <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                                     <?php endif; ?>
                                 </td>
-                                <td class="prev-val"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></td>
-                                <td><span class="curr-val elec-val"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></span></td>
-                                <td class="usage-cell elec-usage"><?php echo number_format($elecUsage); ?></td>
+                                <td class="prev-val" data-label="เลขมิเตอร์เดือนก่อนหน้า"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></td>
+                                <td data-label="เลขมิเตอร์เดือนล่าสุด"><span class="curr-val elec-val"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></span></td>
+                                <td class="usage-cell elec-usage" data-label="หน่วยที่ใช้"><?php echo number_format($elecUsage); ?></td>
                             </tr>
                             <?php endforeach; ?>
                             </tbody>
                         </table>
+                        </div>
                         <?php endforeach; ?>
                     </div>
 

@@ -344,6 +344,52 @@ try {
       .payments-table tbody tr:last-child td {
         border-bottom: none;
       }
+
+      /* mobile card style for payments table */
+      @media (max-width:768px) {
+          .payments-table-container { overflow-x:auto; }
+          .payments-table { display:block; }
+          .payments-table thead { display:none; }
+          .payments-table tbody { display:block; }
+          .payments-table tbody tr {
+              display:block;
+              background:#fff;
+              border:1px solid #eee;
+              border-radius:12px;
+              margin-bottom:1rem;
+              padding:1rem;
+          }
+          .payments-table tbody td {
+              display:flex;
+              justify-content:space-between;
+              align-items:center;
+              padding:0.75rem 0;
+              border-bottom:1px solid rgba(0,0,0,0.05);
+          }
+          .payments-table tbody td:last-child { border-bottom:none; }
+          .payments-table tbody td::before {
+              content:attr(data-label);
+              font-weight:600;
+              color:#555;
+              font-size:0.85rem;
+              text-transform:uppercase;
+              letter-spacing:0.5px;
+              flex-shrink:0;
+              margin-right:1rem;
+          }
+          .payments-table tbody td:first-child {
+              margin-bottom:0.5rem;
+              padding-bottom:1rem;
+              border-bottom:2px solid #eee;
+          }
+          .payments-table tbody td:first-child::before { display:none; }
+      }
+      @media (max-width:480px) {
+          .payments-table tbody tr { padding:0.875rem; }
+          .payments-table tbody td { padding:0.625rem 0; font-size:0.9rem; }
+          .payments-table tbody td::before { font-size:0.75rem; }
+      }
+
       .status-badge {
         display: inline-flex;
         align-items: center;
@@ -727,6 +773,7 @@ try {
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;vertical-align:middle;margin-right:6px;"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>ไม่มีข้อมูลการชำระเงิน
                 </div>
               <?php else: ?>
+                <div class="table-responsive">
                 <table id="table-payments-report" class="payments-table">
                   <thead>
                     <tr>
@@ -741,8 +788,8 @@ try {
                   <tbody>
                     <?php foreach ($rows as $row): ?>
                       <tr>
-                        <td><strong>#<?php echo htmlspecialchars((string)($row['pay_id'] ?? '')); ?></strong></td>
-                        <td>
+                        <td data-label="รหัส"><strong>#<?php echo htmlspecialchars((string)($row['pay_id'] ?? '')); ?></strong></td>
+                        <td data-label="ห้อง">
                           <?php if (!empty($row['room_number'])): ?>
                             <strong>ห้อง <?php echo htmlspecialchars((string)$row['room_number']); ?></strong>
                           <?php else: ?>
@@ -750,7 +797,7 @@ try {
                           <?php endif; ?>
                         </td>
                         <?php if ($hasPayDate): ?>
-                          <td class="payment-date-cell">
+                          <td data-label="วันที่ชำระ" class="payment-date-cell">
                             <?php 
                               echo formatThaiDate($row['pay_date'] ?? null);
                               $ago = timeAgoThai($row['pay_date'] ?? null);
@@ -759,12 +806,12 @@ try {
                           </td>
                         <?php endif; ?>
                         <?php if ($hasPayAmount): ?>
-                          <td style="text-align:right;" class="amount-cell">
+                          <td data-label="ยอดชำระ" style="text-align:right;" class="amount-cell">
                             ฿<?php echo number_format((float)($row['pay_amount'] ?? 0), 2); ?>
                           </td>
                         <?php endif; ?>
                         <?php if ($hasPayStatus): ?>
-                          <td style="text-align:center;">
+                          <td data-label="สถานะ" style="text-align:center;">
                             <?php
                               $status = $row['pay_status'] ?? '';
                               if ($status === '0' || $status === 0):
@@ -778,7 +825,7 @@ try {
                           </td>
                         <?php endif; ?>
                         <?php if ($hasPayProof): ?>
-                          <td style="text-align:center;">
+                          <td data-label="หลักฐาน" style="text-align:center;">
                             <?php if (!empty($row['pay_proof'])): ?>
                               <button type="button" 
                                       class="proof-badge" 
@@ -796,6 +843,7 @@ try {
                     <?php endforeach; ?>
                   </tbody>
                 </table>
+                </div>
               <?php endif; ?>
             </div>
 

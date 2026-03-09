@@ -12,13 +12,23 @@
       <span class="apple-row-chevron">›</span>
     </div>
     <!-- Current Rates Display -->
-    <div class="apple-settings-row" data-sheet="sheet-rates" style="padding: 16px;">
+    <?php
+      // retrieve water base units, price, & excess rate from system_settings (defaults if not set)
+      $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1");
+      $stmt->execute(['water_base_units']);
+      $waterBaseUnits = (int)($stmt->fetchColumn() ?: 10);
+      $stmt->execute(['water_base_price']);
+      $waterBasePrice = (int)($stmt->fetchColumn() ?: 200);
+      $stmt->execute(['water_excess_rate']);
+      $waterExcessRate = (int)($stmt->fetchColumn() ?: 25);
+  ?>
+  <div class="apple-settings-row" data-sheet="sheet-rates" style="padding: 16px;">
       <div style="display: flex; gap: 20px; width: 100%;">
         <div style="flex: 1; text-align: center;">
           <div style="font-size: 28px; color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="icon-animated"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
-          <div id="currentWaterRate" style="font-size: 24px; font-weight: 700; color: var(--apple-blue);">฿200</div>
-          <div style="font-size: 12px; color: var(--apple-text-secondary);">เหมาจ่าย ≤10 หน่วย</div>
-          <div style="font-size: 11px; color: var(--apple-text-secondary);">เกินหน่วยละ ฿25</div>
+          <div id="currentWaterRate" style="font-size: 24px; font-weight: 700; color: var(--apple-blue);">฿<?php echo number_format($waterRate); ?></div>
+          <div id="currentWaterUnit" style="font-size: 12px; color: var(--apple-text-secondary);">เหมาจ่าย ฿<?php echo number_format($waterBasePrice); ?> ≤<?php echo $waterBaseUnits;?> หน่วย</div>
+          <div id="currentWaterExcess" style="font-size: 11px; color: var(--apple-text-secondary);">เกินหน่วยละ ฿<?php echo $waterExcessRate;?></div>
         </div>
         <div style="flex: 1; text-align: center;">
           <div style="font-size: 28px; color: #f59e0b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="icon-animated"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
@@ -54,8 +64,8 @@
       <div class="apple-rate-display">
         <div class="apple-rate-item">
           <div class="apple-rate-icon" style="color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
-          <div class="apple-rate-value" id="sheetWaterRate">฿200</div>
-          <div class="apple-rate-unit">เหมาจ่าย ≤10 หน่วย<br><span style="font-size:11px;">เกินหน่วยละ ฿25</span></div>
+          <div class="apple-rate-value" id="sheetWaterRate">฿<?php echo number_format($waterRate); ?></div>
+          <div class="apple-rate-unit">เหมาจ่าย ฿<?php echo number_format($waterBasePrice); ?> ≤<?php echo $waterBaseUnits;?> หน่วย<br><span style="font-size:11px;">เกินหน่วยละ ฿<?php echo $waterExcessRate;?></span></div>
         </div>
         <div class="apple-rate-item">
           <div class="apple-rate-icon" style="color: #f59e0b;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="28" height="28"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
@@ -74,8 +84,16 @@
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
           <div class="apple-input-group" style="margin-bottom: 0;">
-            <label class="apple-input-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>ค่าน้ำ</label>
+            <label class="apple-input-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>ราคาเหมาจ่าย</label>
             <input type="number" id="waterRate" class="apple-input" value="<?php echo $waterRate; ?>" min="0" step="1">
+          </div>
+          <div class="apple-input-group" style="margin-bottom: 0;">
+            <label class="apple-input-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>หน่วยฐาน (เหมาจ่าย)</label>
+            <input type="number" id="waterBaseUnits" class="apple-input" value="<?php echo $waterBaseUnits; ?>" min="0" step="1">
+          </div>
+          <div class="apple-input-group" style="margin-bottom: 0;">
+            <label class="apple-input-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>ค่าเกินหน่วย</label>
+            <input type="number" id="waterExcessRate" class="apple-input" value="<?php echo $waterExcessRate; ?>" min="0" step="1">
           </div>
           <div class="apple-input-group" style="margin-bottom: 0;">
             <label class="apple-input-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>ค่าไฟ</label>
@@ -85,7 +103,10 @@
         
         <div class="apple-input-group" style="margin-bottom: 12px;">
           <label class="apple-input-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>วันที่เริ่มใช้</label>
-          <input type="date" id="effectiveDate" class="apple-input" value="<?php echo date('Y-m-d'); ?>">
+          <input type="text" id="effectiveDate" class="apple-input" value="<?php echo date('Y-m-d'); ?>" placeholder="YYYY-MM-DD">
+          <div style="font-size:11px;color:var(--apple-text-secondary);margin-top:4px;">
+            พิมพ์ yyyy-mm-dd หรือ dd/mm/yyyy แล้วระบบจะปรับให้โดยอัตโนมัติ
+          </div>
         </div>
         
         <button type="button" class="apple-button primary" onclick="saveUtilityRates()">บันทึกอัตราใหม่</button>
@@ -99,8 +120,8 @@
           <thead>
             <tr>
               <th>วันที่</th>
-              <th style="text-align: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></th>
-              <th style="text-align: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></th>
+              <th style="text-align: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg> น้ำ</th>
+              <th style="text-align: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ไฟ</th>
               <th style="text-align: center;">สถานะ</th>
               <th></th>
             </tr>
@@ -117,11 +138,24 @@
               $isUsed = !empty($usage);
               $isActive = ($i === 0);
             ?>
-            <tr id="rate-row-<?php echo $r['rate_id']; ?>" class="<?php echo $isActive ? 'current-rate' : ''; ?>" data-rate-id="<?php echo $r['rate_id']; ?>" data-water="<?php echo $r['rate_water']; ?>" data-elec="<?php echo $r['rate_elec']; ?>">
+            <?php 
+            $baseUnits = isset($r['water_base_units']) ? (int)$r['water_base_units'] : '';
+            $basePrice = isset($r['water_base_price']) ? (int)$r['water_base_price'] : '';
+            $excessRate = isset($r['water_excess_rate']) ? (int)$r['water_excess_rate'] : '';
+            ?>
+            <tr id="rate-row-<?php echo $r['rate_id']; ?>" class="<?php echo $isActive ? 'current-rate' : ''; ?>" data-rate-id="<?php echo $r['rate_id']; ?>" data-water="<?php echo $r['rate_water']; ?>" data-elec="<?php echo $r['rate_elec']; ?>" data-base-units="<?php echo $baseUnits; ?>" data-base-price="<?php echo $basePrice; ?>" data-excess-rate="<?php echo $excessRate; ?>">
               <td>
                 <?php echo date('d/m/Y', strtotime($r['effective_date'] ?? '2025-01-01')); ?>
               </td>
-              <td style="text-align: center; color: var(--apple-blue); font-weight: 600;">฿<?php echo number_format($r['rate_water']); ?></td>
+              <td style="text-align: center; color: var(--apple-blue); font-weight: 600;">
+                ฿<?php echo number_format($r['rate_water']); ?>
+                <?php if ($baseUnits !== '' || $basePrice !== '' || $excessRate !== ''): ?>
+                <div style="font-size:0.75rem;color:#64748b;">
+                  ≤<?php echo $baseUnits; ?> u<?php if ($basePrice !== ''): ?> @ ฿<?php echo number_format($basePrice); ?><?php endif; ?>
+                  <?php if ($excessRate !== ''): ?><br>เกิน ฿<?php echo number_format($excessRate); ?><?php endif; ?>
+                </div>
+                <?php endif; ?>
+              </td>
               <td style="text-align: center; color: var(--apple-orange); font-weight: 600;">฿<?php echo number_format($r['rate_elec']); ?></td>
               <td style="text-align: center;">
                 <?php if ($isActive): ?>

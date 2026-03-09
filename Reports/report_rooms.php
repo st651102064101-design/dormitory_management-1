@@ -312,6 +312,51 @@ $pageTitle = 'รายงานห้องพัก';
     .room-table th:nth-child(4) {
       text-align: center;
     }
+
+    /* mobile card style for type-stats and room-table */
+    @media (max-width:768px) {
+        .type-stats-table, .room-table-wrapper { overflow-x:auto; }
+        .type-stats-table table, .room-table { display:block; }
+        .type-stats-table thead, .room-table thead { display:none; }
+        .type-stats-table tbody, .room-table tbody { display:block; }
+        .type-stats-table tbody tr, .room-table tbody tr {
+            display:block;
+            background:#fff;
+            border:1px solid #eee;
+            border-radius:12px;
+            margin-bottom:1rem;
+            padding:1rem;
+        }
+        .type-stats-table tbody td, .room-table tbody td {
+            display:flex;
+            justify-content:space-between;
+            align-items:center;
+            padding:0.75rem 0;
+            border-bottom:1px solid rgba(0,0,0,0.05);
+        }
+        .type-stats-table tbody td:last-child, .room-table tbody td:last-child { border-bottom:none; }
+        .type-stats-table tbody td::before, .room-table tbody td::before {
+            content:attr(data-label);
+            font-weight:600;
+            color:#555;
+            font-size:0.85rem;
+            text-transform:uppercase;
+            letter-spacing:0.5px;
+            flex-shrink:0;
+            margin-right:1rem;
+        }
+        .type-stats-table tbody td:first-child, .room-table tbody td:first-child {
+            margin-bottom:0.5rem;
+            padding-bottom:1rem;
+            border-bottom:2px solid #eee;
+        }
+        .type-stats-table tbody td:first-child::before, .room-table tbody td:first-child::before { display:none; }
+    }
+    @media (max-width:480px) {
+        .type-stats-table tbody tr, .room-table tbody tr { padding:0.875rem; }
+        .type-stats-table tbody td, .room-table tbody td { padding:0.625rem 0; font-size:0.9rem; }
+        .type-stats-table tbody td::before, .room-table tbody td::before { font-size:0.75rem; }
+    }
   </style>
 </head>
 <body class="reports-page">
@@ -379,6 +424,7 @@ $pageTitle = 'รายงานห้องพัก';
 
           <!-- สถิติตามประเภทห้อง -->
           <div class="type-stats-table">
+            <div class="table-responsive">
             <table>
               <thead>
                 <tr>
@@ -396,20 +442,20 @@ $pageTitle = 'รายงานห้องพัก';
                     $typeOccupancyRate = $stat['total'] > 0 ? ($stat['occupied_count'] / $stat['total']) * 100 : 0;
                   ?>
                   <tr>
-                    <td><strong><?php echo htmlspecialchars($stat['type_name']); ?></strong></td>
-                    <td style="text-align:center;">฿<?php echo number_format((int)$stat['type_price']); ?></td>
-                    <td style="text-align:center;font-weight:600;"><?php echo number_format((int)$stat['total']); ?></td>
-                    <td style="text-align:center;">
+                    <td data-label="ประเภทห้อง"><strong><?php echo htmlspecialchars($stat['type_name']); ?></strong></td>
+                    <td data-label="ราคา/เดือน" style="text-align:center;">฿<?php echo number_format((int)$stat['type_price']); ?></td>
+                    <td data-label="จำนวนทั้งหมด" style="text-align:center;font-weight:600;"><?php echo number_format((int)$stat['total']); ?></td>
+                    <td data-label="ว่าง" style="text-align:center;">
                       <span class="status-indicator status-vacant">
                         ✓ <?php echo number_format((int)$stat['vacant_count']); ?>
                       </span>
                     </td>
-                    <td style="text-align:center;">
+                    <td data-label="ไม่ว่าง" style="text-align:center;">
                       <span class="status-indicator status-occupied">
                         ✗ <?php echo number_format((int)$stat['occupied_count']); ?>
                       </span>
                     </td>
-                    <td style="text-align:center;font-weight:700;color:#60a5fa;">
+                    <td data-label="อัตราเข้าพัก" style="text-align:center;font-weight:700;color:#60a5fa;">
                       <?php echo number_format($typeOccupancyRate, 1); ?>%
                     </td>
                   </tr>
@@ -442,6 +488,7 @@ $pageTitle = 'รายงานห้องพัก';
             </div>
 
             <div id="room-table-view" class="room-table-wrapper" style="display:none;">
+              <div class="table-responsive">
               <table class="room-table">
                 <thead>
                   <tr>
@@ -454,10 +501,10 @@ $pageTitle = 'รายงานห้องพัก';
                 <tbody>
                   <?php foreach ($rooms as $room): ?>
                     <tr>
-                      <td>ห้อง <?php echo htmlspecialchars($room['room_number']); ?></td>
-                      <td><?php echo htmlspecialchars($room['type_name'] ?? '-'); ?></td>
-                      <td>฿<?php echo number_format((int)($room['type_price'] ?? 0)); ?></td>
-                      <td>
+                      <td data-label="ห้อง">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></td>
+                      <td data-label="ประเภทห้อง"><?php echo htmlspecialchars($room['type_name'] ?? '-'); ?></td>
+                      <td data-label="ราคา/เดือน">฿<?php echo number_format((int)($room['type_price'] ?? 0)); ?></td>
+                      <td data-label="สถานะ">
                         <?php if ($room['room_status'] === '0'): ?>
                           <span class="status-indicator status-vacant">✓ ว่าง</span>
                         <?php else: ?>

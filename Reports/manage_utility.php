@@ -1,6 +1,16 @@
 <?php
 declare(strict_types=1);
 session_start();
+// catch any uncaught exceptions to avoid blank 500 responses
+set_exception_handler(function(Throwable $e) {
+    error_log('[manage_utility] ' . $e->getMessage());
+    // show basic error page
+    http_response_code(500);
+    echo '<h1>เกิดข้อผิดพลาดในระบบ</h1>';
+    echo '<p>' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
+    exit;
+});
+
 if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
     exit;
@@ -89,9 +99,10 @@ try {
 $success = '';
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
-    $saved = 0;
-    $lockedRooms = 0;
-    foreach ($_POST['meter'] as $roomId => $data) {
+    try {
+        $saved = 0;
+        $lockedRooms = 0;
+        foreach ($_POST['meter'] as $roomId => $data) {
         if (empty($data['ctr_id'])) continue;
 
         $waterInput = (isset($data['water']) && $data['water'] !== '') ? (int)$data['water'] : null;
@@ -147,11 +158,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                 $ctrId, $month, $year
             ]);
             
+            
             $saved++;
         } catch (PDOException $e) {
             $error = $e->getMessage();
         }
     }
+} catch (Throwable $e) {
+    error_log('[manage_utility][POST] ' . $e->getMessage());
+    $error = 'เกิดข้อผิดพลาดในการบันทึกมิเตอร์: ' . $e->getMessage();
+}
     if ($saved > 0) {
         $_SESSION['success'] = "บันทึกสำเร็จ {$saved} ห้อง";
         if ($lockedRooms > 0) {
@@ -657,7 +673,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                         <span class="stat-badge pending"><?php echo max(0, $totalPending); ?> รอ</span>
                     </div>
                     <div class="rate-info">
-                        <span><span class="rate-dot water"></span>น้ำ เหมาจ่าย <?php echo WATER_BASE_PRICE; ?>฿ (≤<?php echo WATER_BASE_UNITS; ?> หน่วย) เกินหน่วยละ <?php echo WATER_EXCESS_RATE; ?>฿</span>
+                        <span><span class="rate-dot water"></span>น้ำ เหมาจ่าย <?php echo getWaterBasePrice(); ?>฿ (≤<?php echo getWaterBaseUnits(); ?> หน่วย) เกินหน่วยละ <?php echo getWaterExcessRate(); ?>฿</span>
                         <span><span class="rate-dot elec"></span>ไฟ <?php echo $electricRate; ?>฿/หน่วย</span>
                     </div>
 

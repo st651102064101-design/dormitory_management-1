@@ -329,6 +329,50 @@ try {
       .invoice-table tbody tr:hover {
         background: #f8fafc;
       }
+      /* mobile card-style for invoice table */
+      @media (max-width:768px) {
+          .invoice-table { overflow-x:auto; }
+          .invoice-table table { display:block; }
+          .invoice-table thead { display:none; }
+          .invoice-table tbody { display:block; }
+          .invoice-table tbody tr {
+              display:block;
+              background:#fff;
+              border:1px solid #eee;
+              border-radius:12x;
+              margin-bottom:1rem;
+              padding:1rem;
+          }
+          .invoice-table tbody td {
+              display:flex;
+              justify-content:space-between;
+              align-items:center;
+              padding:0.75rem 0;
+              border-bottom:1px solid rgba(0,0,0,0.05);
+          }
+          .invoice-table tbody td:last-child { border-bottom:none; }
+          .invoice-table tbody td::before {
+              content:attr(data-label);
+              font-weight:600;
+              color:#555;
+              font-size:0.85rem;
+              text-transform:uppercase;
+              letter-spacing:0.5px;
+              flex-shrink:0;
+              margin-right:1rem;
+          }
+          .invoice-table tbody td:first-child {
+              margin-bottom:0.5rem;
+              padding-bottom:1rem;
+              border-bottom:2px solid #eee;
+          }
+          .invoice-table tbody td:first-child::before { display:none; }
+      }
+      @media (max-width:480px) {
+          .invoice-table tbody tr { padding:0.875rem; }
+          .invoice-table tbody td { padding:0.625rem 0; font-size:0.9rem; }
+          .invoice-table tbody td::before { font-size:0.75rem; }
+      }
       .filter-section {
         background: #ffffff;
         border: 1px solid #e5e7eb;
@@ -677,6 +721,7 @@ try {
 
             <!-- Table View -->
             <div id="table-view" class="invoice-table" style="display:none;overflow-x:auto;">
+              <div class="table-responsive">
               <table id="table-invoice">
                 <thead>
                   <tr>
@@ -707,7 +752,7 @@ try {
                     data-status="<?php echo htmlspecialchars($statusKey, ENT_QUOTES, 'UTF-8'); ?>"
                     data-month="<?php echo $trMonth; ?>"
                     data-year="<?php echo $trYear; ?>">
-                    <td>
+                    <td data-label="วันที่">
                       <div style="display:flex;flex-direction:column;gap:0.3rem;">
                         <div style="background:#a7f3d0;color:#065f46;padding:0.4rem 0.8rem;border-radius:16px;font-weight:600;font-size:0.85rem;text-align:center;white-space:nowrap;display:inline-block;width:fit-content;">
                           <?php echo getRelativeTime($r['exp_month'] ?? null); ?>
@@ -723,10 +768,10 @@ try {
                         </div>
                       </div>
                     </td>
-                    <td>#<?php echo renderField((string)($r['ctr_id'] ?? ''), '-'); ?></td>
-                    <td><?php echo renderField($r['tnt_name'], '-'); ?></td>
-                    <td><strong><?php echo renderField($r['room_number'], '-'); ?></strong></td>
-                    <td style="text-align:right;font-weight:600;">
+                    <td data-label="สัญญา">#<?php echo renderField((string)($r['ctr_id'] ?? ''), '-'); ?></td>
+                    <td data-label="ผู้เช่า"><?php echo renderField($r['tnt_name'], '-'); ?></td>
+                    <td data-label="ห้อง"><strong><?php echo renderField($r['room_number'], '-'); ?></strong></td>
+                    <td data-label="ค่าใช้" style="text-align:right;font-weight:600;">
                       <div style="font-size:0.85rem;color:#64748b;">ไฟ ฿<?php echo renderNumber($r['exp_elec_chg']); ?></div>
                       <div style="font-size:0.85rem;color:#64748b;">น้ำ ฿<?php echo renderNumber($r['exp_water']); ?></div>
                       <div style="font-size:0.85rem;color:#64748b;">ห้อง ฿<?php echo renderNumber($r['room_price']); ?></div>
@@ -734,8 +779,8 @@ try {
                       <div style="font-size:0.85rem;color:#64748b;">อื่นๆ ฿<?php echo renderNumber($r['exp_other']); ?></div>
                       <?php endif; ?>
                     </td>
-                    <td style="text-align:right;font-weight:700;font-size:1.1rem;">฿<?php echo renderNumber($r['exp_total']); ?></td>
-                    <td style="text-align:center;">
+                    <td data-label="ยอดรวม" style="text-align:right;font-weight:700;font-size:1.1rem;">฿<?php echo renderNumber($r['exp_total']); ?></td>
+                    <td data-label="สถานะ" style="text-align:center;">
                       <span class="invoice-status <?php echo $statusClass; ?>">
                         <?php echo $statusLabel; ?>
                       </span>
@@ -744,7 +789,7 @@ try {
 <?php endforeach; ?>
                 </tbody>
               </table>
-            </div>
+              </div>
 
           </div>
         </main>
