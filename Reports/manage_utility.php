@@ -533,6 +533,28 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         .usage-cell { font-weight: 700; color: #0277bd; }
         .usage-cell.elec-usage { color: #c2185b; }
 
+        /* Highlight rows that still need meter entries */
+        .meter-table tbody tr.needs-meter { 
+            transition: background 0.15s ease, border-left 0.15s ease;
+        }
+        /* Water missing: blue accent */
+        .meter-table tbody tr.needs-meter.needs-water {
+            background: linear-gradient(90deg, rgba(235,249,255,1) 0%, rgba(229,246,255,1) 100%);
+            border-left: 6px solid #0288d1;
+        }
+        .meter-table tbody tr.needs-meter.needs-water .room-num-cell { color: #01579b; }
+        .meter-table tbody tr.needs-meter.needs-water .usage-cell { color: #01579b; font-weight: 800; }
+        .meter-table tbody tr.needs-meter.needs-water .meter-input-field { background: #e1f5fe; border-color: #81d4fa; }
+
+        /* Electric missing: orange accent */
+        .meter-table tbody tr.needs-meter.needs-electric {
+            background: linear-gradient(90deg, rgba(255,249,236,1) 0%, rgba(255,244,229,1) 100%);
+            border-left: 6px solid #fb923c;
+        }
+        .meter-table tbody tr.needs-meter.needs-electric .room-num-cell { color: #b45309; }
+        .meter-table tbody tr.needs-meter.needs-electric .usage-cell { color: #b45309; font-weight: 800; }
+        .meter-table tbody tr.needs-meter.needs-electric .meter-input-field { background: #fff7ed; border-color: #fb923c; }
+
         /* Save Bar */
         .save-bar {
             position: sticky;
@@ -676,7 +698,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $hasCtr = !empty($room['ctr_id']);
                                     $wUsed = ($r['water_new']!==''&&$r['water_new']!==null) ? ((int)$r['water_new']-$r['water_old']) : 0;
                                 ?>
-                                <tr class="<?php echo $r['saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?>">
+                                <?php $needsWater = $hasCtr && !$r['saved'] && ($r['water_new'] === '' || $r['water_new'] === null); ?>
+                                <tr class="<?php echo $r['saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsWater ? 'needs-meter needs-water' : ''; ?>">
                                     <td class="room-num-cell"><?php echo htmlspecialchars($room['room_number']); ?></td>
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
                                     <td><?php echo $hasCtr ? number_format($r['water_old']) : '-'; ?></td>
@@ -714,7 +737,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $hasCtr = !empty($room['ctr_id']);
                                     $eUsed = ($r['elec_new']!==''&&$r['elec_new']!==null) ? ((int)$r['elec_new']-$r['elec_old']) : 0;
                                 ?>
-                                <tr class="<?php echo $r['saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?>">
+                                <?php $needsElec = $hasCtr && !$r['saved'] && ($r['elec_new'] === '' || $r['elec_new'] === null); ?>
+                                <tr class="<?php echo $r['saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsElec ? 'needs-meter needs-electric' : ''; ?>">
                                     <td class="room-num-cell"><?php echo htmlspecialchars($room['room_number']); ?></td>
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
                                     <td><?php echo $hasCtr ? number_format($r['elec_old']) : '-'; ?></td>

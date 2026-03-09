@@ -321,6 +321,73 @@ try {
       .reservation-table th { background: rgba(255, 255, 255, 0.05); color: #cbd5e1; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; }
       .reservation-table td { color: #e2e8f0; font-size: 0.95rem; }
       .reservation-table tr:hover { background: rgba(255, 255, 255, 0.02); }
+
+      /* Mobile responsive rules copied from tenant report */
+      @media (max-width:768px) {
+          #table-reservations {
+              display: block;
+              overflow-x: auto;
+              -webkit-overflow-scrolling: touch;
+          }
+          #table-reservations thead {
+              display: none;
+          }
+          #table-reservations tbody {
+              display: block;
+          }
+          #table-reservations tbody tr {
+              display: block;
+              background: linear-gradient(160deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));
+              border: 1px solid var(--glass-border);
+              border-radius: 12px;
+              margin-bottom: 1rem;
+              padding: 1rem;
+          }
+          #table-reservations tbody tr:hover {
+              background: linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,1));
+          }
+          #table-reservations tbody td {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 0.75rem 0;
+              border-bottom: 1px solid rgba(255,255,255,0.05);
+          }
+          #table-reservations tbody td:last-child {
+              border-bottom: none;
+          }
+          #table-reservations tbody td::before {
+              content: attr(data-label);
+              font-weight: 600;
+              color: var(--text-secondary);
+              font-size: 0.85rem;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              flex-shrink: 0;
+              margin-right: 1rem;
+          }
+          #table-reservations tbody td:first-child {
+              margin-bottom: 0.5rem;
+              padding-bottom: 1rem;
+              border-bottom: 2px solid var(--glass-border);
+          }
+          #table-reservations tbody td:first-child::before {
+              display: none;
+          }
+      }
+      @media (max-width:480px) {
+          #table-reservations tbody tr {
+              padding: 0.875rem;
+          }
+          #table-reservations tbody td {
+              padding: 0.625rem 0;
+              font-size: 0.9rem;
+          }
+          #table-reservations tbody td::before {
+              font-size: 0.75rem;
+          }
+      }
+
       .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
       .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
       .empty-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
@@ -447,13 +514,13 @@ try {
   $tenantStatusClass = ($r['tnt_status'] === '2') ? 'status-pending' : 'status-confirmed';
 ?>
                   <tr>
-                    <td>#<?php echo renderField((string)$r['bkg_id'], '—'); ?></td>
-                    <td><?php echo renderField($r['tnt_name'] ?? '', '—'); ?></td>
-                    <td><strong><?php echo renderField($r['room_number'], '—'); ?></strong></td>
-                    <td><?php echo renderField($r['bkg_date'], '—'); ?></td>
-                    <td><?php echo renderField($r['bkg_checkin_date'], '—'); ?></td>
-                    <td><span class="reservation-status <?php echo $tenantStatusClass; ?>"><?php echo $tenantStatus; ?></span></td>
-                    <td><span class="reservation-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
+                    <td data-label="รหัส">#<?php echo renderField((string)$r['bkg_id'], '—'); ?></td>
+                    <td data-label="ผู้เช่า"><?php echo renderField($r['tnt_name'] ?? '', '—'); ?></td>
+                    <td data-label="ห้องพัก"><strong><?php echo renderField($r['room_number'], '—'); ?></strong></td>
+                    <td data-label="วันที่จอง"><?php echo renderField($r['bkg_date'], '—'); ?></td>
+                    <td data-label="วันเข้าพัก"><?php echo renderField($r['bkg_checkin_date'], '—'); ?></td>
+                    <td data-label="สถานะการเข้าพัก"><span class="reservation-status <?php echo $tenantStatusClass; ?>"><?php echo $tenantStatus; ?></span></td>
+                    <td data-label="สถานะการจอง"><span class="reservation-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
                   </tr>
 <?php endforeach; ?>
                 </tbody>
