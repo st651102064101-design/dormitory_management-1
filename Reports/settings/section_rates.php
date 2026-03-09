@@ -13,14 +13,40 @@
     </div>
     <!-- Current Rates Display -->
     <?php
-      // retrieve water base units, price, & excess rate from system_settings (defaults if not set)
-      $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1");
-      $stmt->execute(['water_base_units']);
-      $waterBaseUnits = (int)($stmt->fetchColumn() ?: 10);
-      $stmt->execute(['water_base_price']);
-      $waterBasePrice = (int)($stmt->fetchColumn() ?: 200);
-      $stmt->execute(['water_excess_rate']);
-      $waterExcessRate = (int)($stmt->fetchColumn() ?: 25);
+      // Prefer base-unit/pricing values from the current/latest rate (if available),
+      // otherwise fall back to system_settings (with sensible defaults).
+      $waterBaseUnits = null;
+      $waterBasePrice = null;
+      $waterExcessRate = null;
+
+      if (!empty($allRates) && isset($allRates[0]) && is_array($allRates[0])) {
+        $currentRateRow = $allRates[0];
+        if (isset($currentRateRow['water_base_units'])) {
+          $waterBaseUnits = (int)$currentRateRow['water_base_units'];
+        }
+        if (isset($currentRateRow['water_base_price'])) {
+          $waterBasePrice = (int)$currentRateRow['water_base_price'];
+        }
+        if (isset($currentRateRow['water_excess_rate'])) {
+          $waterExcessRate = (int)$currentRateRow['water_excess_rate'];
+        }
+      }
+
+      if ($waterBaseUnits === null || $waterBasePrice === null || $waterExcessRate === null) {
+        $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1");
+        if ($waterBaseUnits === null) {
+          $stmt->execute(['water_base_units']);
+          $waterBaseUnits = (int)($stmt->fetchColumn() ?: 10);
+        }
+        if ($waterBasePrice === null) {
+          $stmt->execute(['water_base_price']);
+          $waterBasePrice = (int)($stmt->fetchColumn() ?: 200);
+        }
+        if ($waterExcessRate === null) {
+          $stmt->execute(['water_excess_rate']);
+          $waterExcessRate = (int)($stmt->fetchColumn() ?: 25);
+        }
+      }
   ?>
   <div class="apple-settings-row" data-sheet="sheet-rates" style="padding: 16px;">
       <div style="display: flex; gap: 20px; width: 100%;">
@@ -150,10 +176,10 @@
               <td style="text-align: center; color: var(--apple-blue); font-weight: 600;">
                 ฿<?php echo number_format($r['rate_water']); ?>
                 <?php if ($baseUnits !== '' || $basePrice !== '' || $excessRate !== ''): ?>
-                <div style="font-size:0.75rem;color:#64748b;">
-                  ≤<?php echo $baseUnits; ?> u<?php if ($basePrice !== ''): ?> @ ฿<?php echo number_format($basePrice); ?><?php endif; ?>
-                  <?php if ($excessRate !== ''): ?><br>เกิน ฿<?php echo number_format($excessRate); ?><?php endif; ?>
-                </div>
+                  <div style="font-size:0.75rem;color:#64748b;">
+                    <?php if ($baseUnits !== ''): ?>≤<?php echo $baseUnits; ?> หน่วย<?php endif; ?><?php if ($basePrice !== ''): ?> เหมาจ่าย ฿<?php echo number_format($basePrice); ?><?php endif; ?>
+                    <?php if ($excessRate !== ''): ?><br>เกิน ฿<?php echo number_format($excessRate); ?><?php endif; ?>
+                  </div>
                 <?php endif; ?>
               </td>
               <td style="text-align: center; color: var(--apple-orange); font-weight: 600;">฿<?php echo number_format($r['rate_elec']); ?></td>
