@@ -324,6 +324,57 @@ try {
         pointer-events: none;
       }
 
+      /* mobile-responsive rules for stayTable */
+      @media (max-width:768px) {
+          #stayTable {
+              display: block;
+              overflow-x: auto;
+              -webkit-overflow-scrolling: touch;
+          }
+          #stayTable thead { display: none; }
+          #stayTable tbody { display: block; }
+          #stayTable tbody tr {
+              display: block;
+              background: linear-gradient(160deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));
+              border: 1px solid var(--glass-border);
+              border-radius: 12px;
+              margin-bottom: 1rem;
+              padding: 1rem;
+          }
+          #stayTable tbody tr:hover {
+              background: linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,1));
+          }
+          #stayTable tbody td {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              padding: 0.75rem 0;
+              border-bottom: 1px solid rgba(255,255,255,0.05);
+          }
+          #stayTable tbody td:last-child { border-bottom: none; }
+          #stayTable tbody td::before {
+              content: attr(data-label);
+              font-weight: 600;
+              color: var(--text-secondary);
+              font-size: 0.85rem;
+              text-transform: uppercase;
+              letter-spacing: 0.5px;
+              flex-shrink: 0;
+              margin-right: 1rem;
+          }
+          #stayTable tbody td:first-child {
+              margin-bottom: 0.5rem;
+              padding-bottom: 1rem;
+              border-bottom: 2px solid var(--glass-border);
+          }
+          #stayTable tbody td:first-child::before { display: none; }
+      }
+      @media (max-width:480px) {
+          #stayTable tbody tr { padding: 0.875rem; }
+          #stayTable tbody td { padding: 0.625rem 0; font-size: 0.9rem; }
+          #stayTable tbody td::before { font-size: 0.75rem; }
+      }
+
       .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
       .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
       .empty-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
@@ -552,6 +603,7 @@ try {
             <!-- Table View -->
             <div id="table-view" class="stay-table" style="display:none;">
 <?php if (count($rows) > 0): ?>
+              <div class="table-responsive">
               <table id="stayTable">
                 <thead>
                   <tr>
@@ -573,17 +625,18 @@ try {
   };
   $statusLabel = $statusLabels[$r['ctr_status']] ?? 'ไม่ทราบ';
 ?>
-                  <tr>
-                    <td>#<?php echo renderField((string)$r['ctr_id'], '—'); ?></td>
-                    <td><?php echo renderField($r['tnt_name'], '—'); ?></td>
-                    <td><?php echo renderField($r['room_number'], '—'); ?></td>
-                    <td><?php echo renderField($r['ctr_start'], '—'); ?> → <?php echo renderField($r['ctr_end'], '—'); ?></td>
-                    <td><?php echo number_format((int)($r['ctr_deposit'] ?? 0)); ?></td>
-                    <td><span class="stay-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
+                      <tr>
+                    <td data-label="รหัสสัญญา">#<?php echo renderField((string)$r['ctr_id'], '—'); ?></td>
+                    <td data-label="ผู้เช่า"><?php echo renderField($r['tnt_name'], '—'); ?></td>
+                    <td data-label="ห้อง"><?php echo renderField($r['room_number'], '—'); ?></td>
+                    <td data-label="ช่วงเข้าพัก"><?php echo renderField($r['ctr_start'], '—'); ?> → <?php echo renderField($r['ctr_end'], '—'); ?></td>
+                    <td data-label="มัดจำ"><?php echo number_format((int)($r['ctr_deposit'] ?? 0)); ?></td>
+                    <td data-label="สถานะ"><span class="stay-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
                   </tr>
 <?php endforeach; ?>
                 </tbody>
               </table>
+              </div>
 <?php else: ?>
               <div class="empty-state">
                 <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>

@@ -2561,12 +2561,13 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         // โหลดอัตราค่าน้ำ-ไฟจาก DB
         fetch('../Manage/get_latest_rate.php')
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to load latest rates');
-                }
+                // even if response.ok, server may signal failure via JSON
                 return response.json();
             })
             .then(data => {
+                if (data.success === false || data.error) {
+                    throw new Error(data.message || 'ไม่สามารถดึงอัตราล่าสุดได้');
+                }
                 const waterRate = data.rate_water || 0;
                 const elecRate = data.rate_elec || 0;
                 
@@ -2575,7 +2576,8 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 document.getElementById('waterRateDisplay').textContent = `฿${Number(waterRate).toFixed(2)}/หน่วย`;
                 document.getElementById('elecRateDisplay').textContent = `฿${Number(elecRate).toFixed(2)}/หน่วย`;
             })
-            .catch(() => {
+            .catch((err) => {
+                console.error('rate fetch error', err);
                 // ใช้ค่า default ถ้าโหลดไม่ได้
                 document.getElementById('modal_billing_rate_water').value = 18;
                 document.getElementById('modal_billing_rate_elec').value = 8;

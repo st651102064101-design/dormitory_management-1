@@ -37,9 +37,14 @@ try {
     }
     
 } catch (Throwable $e) {
-    http_response_code(500);
+    // Log the exception for debugging but do not propagate 500 to client
+    error_log('[get_latest_rate] ' . $e->getMessage());
+    // return defaults and indicate failure so caller can fallback elegantly
     echo json_encode([
+        'success' => false,
         'error' => 'Database error',
-        'message' => $e->getMessage()
+        'message' => $e->getMessage(),
+        'rate_water' => 18.0,
+        'rate_elec' => 8.0
     ]);
 }

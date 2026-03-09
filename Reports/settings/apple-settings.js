@@ -1123,7 +1123,22 @@ class AppleSettings {
   async saveUtilityRates() {
     const waterRate = document.getElementById('waterRate')?.value;
     const electricRate = document.getElementById('electricRate')?.value;
-    const effectiveDate = document.getElementById('effectiveDate')?.value;
+    const waterBaseUnits = document.getElementById('waterBaseUnits')?.value;
+    const waterBasePrice = document.getElementById('waterRate')?.value; // same field
+    const waterExcessRate = document.getElementById('waterExcessRate')?.value;
+    let effectiveDate = document.getElementById('effectiveDate')?.value;
+
+    // normalize Thai-style date entry (dd/mm/yyyy) into ISO
+    if (effectiveDate && !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(effectiveDate)) {
+      const m = effectiveDate.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+      if (m) {
+        effectiveDate = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+        document.getElementById('effectiveDate').value = effectiveDate;
+      } else {
+        this.showToast('วันที่ไม่ถูกต้อง (พิมพ์ YYYY-MM-DD หรือเลือกจากปฏิทิน)', 'error');
+        return;
+      }
+    }
 
     if (!waterRate || !electricRate || !effectiveDate) {
       this.showToast('กรุณากรอกข้อมูลให้ครบ', 'error');
@@ -1131,16 +1146,31 @@ class AppleSettings {
     }
 
     try {
+      const params = new URLSearchParams();
+      params.append('rate_water', waterRate);
+      params.append('rate_elec', electricRate);
+      if (waterBaseUnits !== undefined) params.append('water_base_units', waterBaseUnits);
+      if (waterExcessRate !== undefined) params.append('water_excess_rate', waterExcessRate);
+      params.append('effective_date', effectiveDate);
+
       const response = await fetch('../Manage/add_rate.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: `rate_water=${waterRate}&rate_elec=${electricRate}&effective_date=${effectiveDate}`
+        body: params.toString()
       });
 
       const result = await response.json();
+      console.log('add_rate result', result);
       if (result.success) {
         // Update UI without reload - Apple style
-        this.updateRateUI(result.rate_water, result.rate_elec, result.rate_id);
+        this.updateRateUI(
+          result.rate_water,
+          result.rate_elec,
+          result.rate_id,
+          result.water_base_units,
+          result.water_base_price,
+          result.water_excess_rate
+        );
         this.showToast('บันทึกอัตราค่าน้ำค่าไฟสำเร็จ', 'success');
         
         // Reset date to today for next entry
@@ -1155,6 +1185,40 @@ class AppleSettings {
     } catch (error) {
       this.showToast(error.message, 'error');
     }
+  }
+
+  // live-update sheet preview when rate inputs change
+  bindRateInputs() {
+    const baseUnitsEl = document.getElementById('waterBaseUnits');
+    const basePriceEl = document.getElementById('waterRate');
+    const excessEl = document.getElementById('waterExcessRate');
+    const sheetUnit = document.querySelector('#sheet-rates .apple-rate-unit');
+    const sheetWater = document.getElementById('sheetWaterRate');
+
+    function refresh() {
+      const units = baseUnitsEl ? baseUnitsEl.value : '';
+      const price = basePriceEl ? basePriceEl.value : '';
+      const excess = excessEl ? excessEl.value : '';
+      if (sheetUnit) {
+        sheetUnit.innerHTML =
+          `เหมาจ่าย ฿${Number(price).toLocaleString()} ≤${units} หน่วย` +
+          `<br><span style="font-size:11px;">เกินหน่วยละ ฿${excess}</span>`;
+      }
+      // update main card previews too
+      const unitLabel = document.getElementById('currentWaterUnit');
+      const excessLabel = document.getElementById('currentWaterExcess');
+      const mainWater = document.getElementById('currentWaterRate');
+      if (unitLabel) unitLabel.textContent = `เหมาจ่าย ฿${Number(price).toLocaleString()} ≤${units} หน่วย`;
+      if (excessLabel) excessLabel.textContent = `เกินหน่วยละ ฿${excess}`;
+      if (mainWater && price !== '') mainWater.textContent = '฿' + Number(price).toLocaleString();
+      if (sheetWater && price !== '') {
+        sheetWater.textContent = '฿' + Number(price).toLocaleString();
+      }
+    }
+
+    [baseUnitsEl, basePriceEl, excessEl].forEach(el => {
+      if (el) el.addEventListener('input', refresh);
+    });
   }
 
   async deleteRate(rateId) {
@@ -1220,7 +1284,14 @@ class AppleSettings {
       const result = await response.json();
       if (result.success) {
         // Update UI without reload - Apple style
-        this.updateRateUI(result.rate_water, result.rate_elec, rateId);
+        this.updateRateUI(
+          result.rate_water,
+          result.rate_elec,
+          rateId,
+          result.water_base_units,
+          result.water_base_price,
+          result.water_excess_rate
+        );
         this.showToast('เปลี่ยนอัตราสำเร็จ', 'success');
       } else {
         throw new Error(result.message || result.error || 'เกิดข้อผิดพลาด');
@@ -1231,25 +1302,42 @@ class AppleSettings {
   }
 
   // Update rate UI without page reload
-  updateRateUI(waterRate, elecRate, newActiveRateId) {
+  updateRateUI(waterRate, elecRate, newActiveRateId, baseUnits, basePrice, excessRate) {
     const today = new Date();
     const dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear() + 543}`;
     
-    // Update main display - ค่าน้ำเป็นแบบเหมาจ่ายคงที่ ไม่ต้องอัพเดต
+    // Update main display - ค่าน้ำเหมาจ่ายจะแสดงราคาและหน่วยฐานจาก response/settings
     const currentWater = document.getElementById('currentWaterRate');
     const currentElec = document.getElementById('currentElecRate');
     const currentDateLabel = document.getElementById('currentRateDateLabel');
     
-    // ค่าน้ำเหมาจ่าย - แสดงคงที่
+    // water display: show base price (waterRate) which is same as flat charge
     if (currentWater) {
       currentWater.style.transform = 'scale(1.1)';
-      currentWater.textContent = '฿200';
+      let basePriceText = '฿' + Number(basePrice ?? waterRate).toLocaleString();
+      currentWater.textContent = basePriceText;
       setTimeout(() => currentWater.style.transform = 'scale(1)', 200);
+    }
+    // update the summary labels on the main card as well
+    const unitLabel = document.getElementById('currentWaterUnit');
+    const excessLabel = document.getElementById('currentWaterExcess');
+    if (unitLabel && baseUnits !== undefined) {
+      unitLabel.textContent = `เหมาจ่าย ฿${Number(basePrice).toLocaleString()} ≤${baseUnits} หน่วย`;
+    }
+    if (excessLabel) {
+      excessLabel.textContent = `เกินหน่วยละ ฿${excessRate ?? WATER_EXCESS_RATE}`;
     }
     if (currentElec) {
       currentElec.style.transform = 'scale(1.1)';
       currentElec.textContent = `฿${Number(elecRate).toLocaleString()}`;
       setTimeout(() => currentElec.style.transform = 'scale(1)', 200);
+    }
+    // also update threshold display areas if present
+    const rateUnitElem = document.querySelector('.apple-rate-unit');
+    if (rateUnitElem && baseUnits !== undefined) {
+      rateUnitElem.innerHTML =
+        `เหมาจ่าย ฿${Number(basePrice).toLocaleString()} ≤${baseUnits} หน่วย` +
+        `<br><span style="font-size:11px;">เกินหน่วยละ ฿${excessRate ?? WATER_EXCESS_RATE}</span>`;
     }
     if (currentDateLabel) {
       currentDateLabel.textContent = `เริ่มใช้: ${dateStr}`;
@@ -1260,7 +1348,7 @@ class AppleSettings {
     const sheetElec = document.getElementById('sheetElecRate');
     const sheetDateLabel = document.getElementById('sheetRateDateLabel');
     
-    if (sheetWater) sheetWater.textContent = '฿200';
+    if (sheetWater) sheetWater.textContent = '฿' + Number(basePrice ?? waterRate).toLocaleString();
     if (sheetElec) sheetElec.textContent = `฿${Number(elecRate).toLocaleString()}`;
     if (sheetDateLabel) sheetDateLabel.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>อัตราปัจจุบัน (ใช้ตั้งแต่ ${dateStr})`;
     
@@ -1308,9 +1396,18 @@ class AppleSettings {
       newRow.dataset.rateId = rateId;
       newRow.dataset.water = waterRate;
       newRow.dataset.elec = elecRate;
+      newRow.dataset.baseUnits = baseUnits;
+      newRow.dataset.basePrice = basePrice;
+      newRow.dataset.excessRate = excessRate;
       newRow.innerHTML = `
         <td>${dateStr}</td>
-        <td style="text-align: center; color: var(--apple-blue); font-weight: 600;">฿${Number(waterRate).toLocaleString()}</td>
+        <td style="text-align: center; color: var(--apple-blue); font-weight: 600;">
+          ฿${Number(waterRate).toLocaleString()}
+          <div style="font-size:0.75rem;color:#64748b;">
+            ≤${baseUnits} u @ ฿${Number(basePrice).toLocaleString()}<br>
+            เกิน ฿${excessRate}
+          </div>
+        </td>
         <td style="text-align: center; color: var(--apple-orange); font-weight: 600;">฿${Number(elecRate).toLocaleString()}</td>
         <td style="text-align: center;">
           <span class="apple-badge green rate-active-badge" style="font-size: 10px;">✓ ใช้งานอยู่</span>
@@ -1538,6 +1635,30 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Initialize sidebar toggle for Apple Settings page
   initSidebarToggle();
+
+  // bind live preview handlers to rate inputs if available
+  if (typeof appleSettings.bindRateInputs === 'function') {
+    appleSettings.bindRateInputs();
+  }
+
+  // treat effectiveDate as free text and normalize user input
+  const effEl = document.getElementById('effectiveDate');
+  if (effEl) {
+    // on blur convert common formats to ISO
+    effEl.addEventListener('blur', function() {
+      let v = this.value.trim();
+      let m;
+      if ((m = v.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/))) {
+        v = `${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;
+      }
+      // if user typed iso with slashes, also normalize
+      if ((m = v.match(/^(\d{4})\/(\d{1,2})\/(\d{1,2})$/))) {
+        v = `${m[1]}-${m[2].padStart(2,'0')}-${m[3].padStart(2,'0')}`;
+      }
+      this.value = v;
+    });
+    effEl.addEventListener('input', () => effEl.setCustomValidity(''));
+  }
 });
 
 // ===== Sidebar Toggle =====

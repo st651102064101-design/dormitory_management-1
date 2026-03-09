@@ -1,6 +1,14 @@
 <?php
 declare(strict_types=1);
 session_start();
+// global exception handler to avoid blank 500 pages
+set_exception_handler(function(Throwable $e) {
+    error_log('[manage_expenses] ' . $e->getMessage());
+    http_response_code(500);
+    echo '<h1>เกิดข้อผิดพลาดในระบบ</h1>';
+    echo '<p>' . htmlspecialchars($e->getMessage(), ENT_QUOTES, 'UTF-8') . '</p>';
+    exit;
+});
 
 if (empty($_SESSION['admin_username'])) {
   header('Location: ../Login.php');
@@ -2432,10 +2440,10 @@ try {
         const waterRate = document.getElementById('rate_water');
         const preview = document.getElementById('calcPreview');
 
-        // ค่าน้ำแบบเหมาจ่าย: ≤ 10 หน่วย = 200฿, เกินหน่วยละ 25฿
-        var WATER_BASE_UNITS = 10;
-        var WATER_BASE_PRICE = 200;
-        var WATER_EXCESS_RATE = 25;
+        // ค่าน้ำแบบเหมาจ่าย (ค่าตั้งค่าปรับได้)
+        var WATER_BASE_UNITS = <?php echo getWaterBaseUnits(); ?>;
+        var WATER_BASE_PRICE = <?php echo getWaterBasePrice(); ?>;
+        var WATER_EXCESS_RATE = <?php echo getWaterExcessRate(); ?>;
         function calcWaterCost(units) {
           if (units <= 0) return 0;
           if (units <= WATER_BASE_UNITS) return WATER_BASE_PRICE;
