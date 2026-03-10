@@ -960,42 +960,88 @@ foreach ($availableMonths as $monthKey) {
         .room-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 2.5rem;
+            gap: 0;
             margin-top: 1rem;
         }
-        
+
         /* Desktop: 5 cards per row */
         @media (min-width: 1400px) {
             .room-grid {
                 grid-template-columns: repeat(5, minmax(0, 1fr));
-                gap: 2.5rem;
+                gap: 0;
             }
         }
         @media (min-width: 1200px) and (max-width: 1399px) {
             .room-grid {
                 grid-template-columns: repeat(4, minmax(0, 1fr));
-                gap: 2rem;
+                gap: 0;
             }
         }
         @media (max-width: 1199px) and (min-width: 768px) {
             .room-grid {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 1.5rem;
+                gap: 0;
             }
         }
         @media (max-width: 767px) and (min-width: 481px) {
             .room-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
-                gap: 1.25rem;
+                gap: 0;
             }
         }
         @media (max-width: 480px) {
             .room-grid {
                 grid-template-columns: 1fr;
-                max-width: 280px;
                 margin-left: auto;
                 margin-right: auto;
-                gap: 1.5rem;
+                gap: 0.75rem;
+            }
+
+            /* Row layout on mobile */
+            .room-card {
+                aspect-ratio: unset;
+                height: 120px;
+                min-height: unset;
+            }
+
+            .room-card-face {
+                flex-direction: row;
+            }
+
+            .room-image-container {
+                position: relative;
+                width: 110px;
+                flex-shrink: 0;
+                height: 100%;
+            }
+
+            .card-info-bottom {
+                position: relative;
+                bottom: auto;
+                left: auto;
+                right: auto;
+                flex: 1;
+                padding: 0.75rem;
+                justify-content: center;
+            }
+
+            .room-number-web3 {
+                font-size: 1rem;
+            }
+
+            .room-type-web3 {
+                font-size: 0.75rem;
+            }
+
+            .room-price-web3 {
+                font-size: 0.8rem;
+            }
+
+            .status-badge-web3 {
+                top: 0.4rem;
+                right: 0.4rem;
+                font-size: 0.65rem;
+                padding: 0.15rem 0.4rem;
             }
         }
 

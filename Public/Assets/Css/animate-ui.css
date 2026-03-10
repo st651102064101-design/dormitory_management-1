@@ -121,11 +121,13 @@ body {
 
 /* Responsive table wrapper for reports */
 .report-table {
-    overflow: auto;
+    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
 }
 .report-table table {
-    min-width: 820px;
+    min-width: 600px;
     width: 100%;
     border-collapse: collapse;
 }
