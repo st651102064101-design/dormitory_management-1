@@ -1127,7 +1127,7 @@ try {
           width: 100%;
         }
       }
-      .rooms-grid.list-view { display: flex; flex-direction: column; gap: 1rem; }
+      .rooms-grid.list-view { display: flex; flex-direction: column; gap: 0; }
       .view-toggle { display: inline-flex; gap: 0.5rem; margin-top: 1rem; }
       .view-toggle button {
         padding: 0.5rem 0.9rem;
@@ -1964,7 +1964,7 @@ try {
       
       /* Base room-image-container - for list view only */
       .rooms-grid.list-view .room-image-container {
-        aspect-ratio: unset;
+        aspect-ratio: 16 / 9;
         overflow: hidden;
         border-radius: 0;
         background: linear-gradient(135deg, rgba(99, 102, 241, 0.3), rgba(79, 70, 229, 0.4));
@@ -1974,9 +1974,8 @@ try {
         margin: 0; 
         width: 100%; 
         max-width: none; 
-        min-height: 120px; 
-        height: 100%; 
-        flex-shrink: 0; 
+        min-height: unset; 
+        height: auto; 
         position: static !important; 
         inset: auto !important;
       }
@@ -2043,6 +2042,21 @@ try {
         text-shadow: none !important;
       }
       
+      /* List view - force Bootstrap columns to stack vertically and fill full width */
+      .rooms-grid.list-view .room-card-face.front > .row.g-0 {
+        display: flex !important;
+        flex-direction: column !important;
+      }
+      .rooms-grid.list-view .room-card-face.front > .row.g-0 > [class*="col-"] {
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+        width: 100% !important;
+      }
+      .rooms-grid.list-view .room-card-face.front > .row.g-0 > .col-12.col-md-8 {
+        background: none !important;
+        padding-top: 0 !important;
+      }
+
       /* List view - extra info and book button */
       .list-view-extra {
         display: none !important;
