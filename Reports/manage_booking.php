@@ -1114,8 +1114,9 @@ try {
       @media (max-width: 480px) {
         .rooms-grid {
           grid-template-columns: 1fr;
-
-          width: 100%;
+          max-width: 240px;
+          margin-left: auto;
+          margin-right: auto;
           gap: 1.5rem;
         }
         /* Override max-width for grid mode - allow full width */
@@ -3259,89 +3260,6 @@ try {
       .room-card-face.front .card-info-bottom .room-price-web3 {
         color: #ffffff !important;
       }
-
-      /* ===== Booking Table Overflow Fix ===== */
-      .report-table .datatable-container {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-      }
-
-      /* ===== Responsive Booking Table ===== */
-      @media (max-width: 768px) {
-        .report-table .datatable-top {
-          flex-direction: column;
-          gap: 0.5rem;
-          align-items: stretch;
-        }
-        .report-table .datatable-search,
-        .report-table .datatable-input {
-          width: 100%;
-          box-sizing: border-box;
-        }
-        .report-table .datatable-container {
-          overflow-x: unset;
-        }
-        .report-table .datatable-table,
-        .report-table .datatable-table thead,
-        .report-table .datatable-table tbody,
-        .report-table .datatable-table th,
-        .report-table .datatable-table td,
-        .report-table .datatable-table tr {
-          display: block;
-          width: 100% !important;
-        }
-        .report-table .datatable-table thead {
-          display: none;
-        }
-        .report-table .datatable-table tbody tr {
-          margin-bottom: 1rem;
-          border-radius: 10px;
-          background: rgba(255,255,255,0.05);
-          border: 1px solid rgba(255,255,255,0.10);
-          overflow: hidden;
-        }
-        .report-table .datatable-table td {
-          padding: 0.65rem 1rem;
-          border: none !important;
-          border-bottom: 1px solid rgba(255,255,255,0.06) !important;
-          font-size: 0.9rem;
-        }
-        .report-table .datatable-table td:last-child {
-          border-bottom: none !important;
-        }
-        .report-table .datatable-table td::before {
-          content: attr(data-label);
-          display: block;
-          margin-bottom: 0.2rem;
-          font-weight: 600;
-          font-size: 0.72rem;
-          color: rgba(255,255,255,0.45);
-          text-transform: uppercase;
-          letter-spacing: 0.04em;
-        }
-        .report-table .datatable-table td[data-label="จัดการ"]::before {
-          display: none;
-        }
-
-        /* Light theme overrides */
-        html.light-theme .report-table .datatable-table tbody tr,
-        body.live-light .report-table .datatable-table tbody tr,
-        body.reports-page .report-table .datatable-table tbody tr {
-          background: #ffffff !important;
-          border: 1px solid #e5e7eb !important;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-        }
-        html.light-theme .report-table .datatable-table td,
-        body.live-light .report-table .datatable-table td,
-        body.reports-page .report-table .datatable-table td {
-          border-bottom: 1px solid #f1f5f9 !important;
-        }
-        html.light-theme .report-table .datatable-table td::before,
-        body.live-light .report-table .datatable-table td::before,
-        body.reports-page .report-table .datatable-table td::before {
-          color: #64748b !important;
-        }
-      }
     </style>
   </head>
   <body class="reports-page">
@@ -3481,78 +3399,61 @@ try {
                         <!-- Status Badge Top Right -->
                         <span class="status-badge-web3">ว่าง</span>
                         
-                        <!-- Room Image + Info (Bootstrap 5.3) -->
-                        <div class="row g-0 align-items-center">
-                          <!-- Image Column -->
-                          <div class="col-12 col-md-4">
-                            <div class="room-image-container">
-                              <?php if (!empty($room['room_image'])):
-                                $img = basename($room['room_image']);
-                              ?>
-                                <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>" class="img-fluid w-100">
-                              <?php else: ?>
-                                <div class="room-image-placeholder" aria-label="ไม่มีรูปห้อง">
-                                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="4" width="18" height="14" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="9.5" r="1.5"></circle>
-                                    <path d="M21 15l-4.5-4.5a2 2 0 0 0-3 0L5 19"></path>
-                                  </svg>
-                                  <span>ไม่มีรูป</span>
-                                </div>
-                              <?php endif; ?>
+                        <!-- Room Image Centered -->
+                        <div class="room-image-container">
+                          <?php if (!empty($room['room_image'])): 
+                            $img = basename($room['room_image']); 
+                          ?>
+                            <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($img); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
+                          <?php else: ?>
+                            <div class="room-image-placeholder" aria-label="ไม่มีรูปห้อง">
+                              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="14" rx="2" ry="2"></rect>
+                                <circle cx="8.5" cy="9.5" r="1.5"></circle>
+                                <path d="M21 15l-4.5-4.5a2 2 0 0 0-3 0L5 19"></path>
+                              </svg>
+                              <span>ไม่มีรูป</span>
                             </div>
+                          <?php endif; ?>
+                        </div>
+                        
+                        <!-- Info at Bottom Left -->
+                        <div class="card-info-bottom">
+                          <div class="room-number-web3">ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></div>
+                          <div class="room-type-web3"><?php echo htmlspecialchars($room['type_name']); ?></div>
+                          <div class="room-price-web3"><?php echo number_format((int)$room['type_price']); ?>/เดือน</div>
+                        </div>
+                        
+                        <!-- List view extra info -->
+                        <div class="list-view-extra" style="display:none;">
+                          <div class="list-deposit">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <circle cx="12" cy="12" r="10"></circle>
+                              <path d="M12 6v6l4 2"></path>
+                            </svg>
+                            มัดจำ ฿2,000
                           </div>
-
-                          <!-- Info Column -->
-                          <div class="col-12 col-md-8">
-                            <div class="p-3">
-                              <div class="row">
-                                <div class="col-12">
-                                  <div class="room-number-web3">ห้อง <?php echo htmlspecialchars((string)$room['room_number']); ?></div>
-                                  <div class="room-type-web3"><?php echo htmlspecialchars($room['type_name']); ?></div>
-                                  <div class="room-price-web3"><?php echo number_format((int)$room['type_price']); ?>/เดือน</div>
-                                </div>
-                              </div>
-
-                              <!-- List view extra info -->
-                              <div class="row mt-2 list-view-extra" style="display:none;">
-                                <div class="col-12 col-sm-6">
-                                  <div class="list-deposit">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                      <circle cx="12" cy="12" r="10"></circle>
-                                      <path d="M12 6v6l4 2"></path>
-                                    </svg>
-                                    มัดจำ ฿2,000
-                                  </div>
-                                </div>
-                                <div class="col-12 col-sm-6">
-                                  <div class="list-view-features">
-                                    <?php
-                                    $displayFeatures = array_slice($roomFeatures, 0, 3);
-                                    foreach ($displayFeatures as $feature): ?>
-                                    <span class="list-feature-tag"><?php echo htmlspecialchars($feature); ?></span>
-                                    <?php endforeach; ?>
-                                  </div>
-                                </div>
-                                <div class="col-12 mt-2">
-                                  <button type="button" class="list-book-btn"
-                                          onclick="return window.__openBookingModal ? window.__openBookingModal(this, event) : true;"
-                                          data-room-id="<?php echo $room['room_id']; ?>"
-                                          data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
-                                          data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
-                                          data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16">
-                                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                      <line x1="16" y1="2" x2="16" y2="6"></line>
-                                      <line x1="8" y1="2" x2="8" y2="6"></line>
-                                      <line x1="3" y1="10" x2="21" y2="10"></line>
-                                    </svg>
-                                    จองห้องนี้
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
+                          <div class="list-view-features">
+                            <?php 
+                            $displayFeatures = array_slice($roomFeatures, 0, 3);
+                            foreach ($displayFeatures as $feature): ?>
+                            <span class="list-feature-tag"><?php echo htmlspecialchars($feature); ?></span>
+                            <?php endforeach; ?>
                           </div>
+                          <button type="button" class="list-book-btn" 
+                                  onclick="return window.__openBookingModal ? window.__openBookingModal(this, event) : true;"
+                                  data-room-id="<?php echo $room['room_id']; ?>"
+                                  data-room-number="<?php echo htmlspecialchars((string)$room['room_number']); ?>"
+                                  data-room-type="<?php echo htmlspecialchars($room['type_name']); ?>"
+                                  data-room-price="<?php echo number_format((int)$room['type_price']); ?>">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                              <line x1="16" y1="2" x2="16" y2="6"></line>
+                              <line x1="8" y1="2" x2="8" y2="6"></line>
+                              <line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                            จองห้องนี้
+                          </button>
                         </div>
                       </div>
 
@@ -3759,26 +3660,26 @@ try {
                   <?php if (!empty($bookings)): ?>
                     <?php foreach($bookings as $bkg): ?>
                       <tr>
-                        <td data-label="รหัส">#<?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
-                        <td data-label="ผู้เช่า"><?php echo htmlspecialchars($bkg['tnt_name'] ?? 'ยังไม่มีผู้เช่า'); ?></td>
-                        <td data-label="ห้องพัก"><?php echo !empty($bkg['room_number']) ? htmlspecialchars((string)$bkg['room_number']) : '-'; ?></td>
-                        <td data-label="วันที่จอง"><?php echo !empty($bkg['bkg_date']) ? date('Y-m-d', strtotime($bkg['bkg_date'])) : '-'; ?></td>
-                        <td data-label="วันเข้าพัก"><?php echo !empty($bkg['bkg_checkin_date']) ? date('Y-m-d', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
-                        <td data-label="สถานะ">
+                        <td>#<?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
+                        <td><?php echo htmlspecialchars($bkg['tnt_name'] ?? 'ยังไม่มีผู้เช่า'); ?></td>
+                        <td><?php echo !empty($bkg['room_number']) ? htmlspecialchars((string)$bkg['room_number']) : '-'; ?></td>
+                        <td><?php echo !empty($bkg['bkg_date']) ? date('Y-m-d', strtotime($bkg['bkg_date'])) : '-'; ?></td>
+                        <td><?php echo !empty($bkg['bkg_checkin_date']) ? date('Y-m-d', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
+                        <td>
                           <span style="
                             padding: 0.25rem 0.75rem;
                             border-radius: 12px;
                             font-size: 0.875rem;
-                            background: <?php
-                              echo $bkg['bkg_status'] === '0' ? '#f44336' :
-                                  ($bkg['bkg_status'] === '1' ? '#ff9800' : '#4caf50');
+                            background: <?php 
+                              echo $bkg['bkg_status'] === '0' ? '#f44336' : 
+                                  ($bkg['bkg_status'] === '1' ? '#ff9800' : '#4caf50'); 
                             ?>;
                             color: white;
                           ">
                             <?php echo $statusMap[$bkg['bkg_status']] ?? 'ไม่ทราบ'; ?>
                           </span>
                         </td>
-                        <td class="crud-column" data-label="จัดการ">
+                        <td class="crud-column">
                           <?php if ($bkg['bkg_status'] === '1'): ?>
                             <button type="button" 
                                     class="animate-ui-action-btn btn-success" 
