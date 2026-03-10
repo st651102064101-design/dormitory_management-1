@@ -285,7 +285,6 @@ try {
         background: #f1f5f9 !important;
         border-color: #94a3b8 !important;
       }
-      .status-filter-btn.active { color: #ffffff !important; }
 
       #sortSelect {
         background: #ffffff !important;
