@@ -146,13 +146,12 @@ try {
     $allRatesStmt = $pdo->query("SELECT * FROM rate ORDER BY effective_date DESC, rate_id DESC");
     $allRates = $allRatesStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // กรองแถวซ้ำที่มีค่าเหมือนกันทุกคอลัมน์เพื่อป้องกันการแสดงข้อมูลซ้ำ
+    // กรองแถวซ้ำ: เก็บแค่แถวล่าสุด (rate_id สูงสุด) ต่อวันที่เดียวกัน
     $dedup = [];
     foreach ($allRates as $row) {
-        $key = $row['rate_water'] . '_' . $row['rate_elec'] . '_'
-             . ($row['water_base_units'] ?? '') . '_' . ($row['water_base_price'] ?? '') . '_' . ($row['water_excess_rate'] ?? '');
-        if (!isset($dedup[$key])) {
-            $dedup[$key] = $row;
+        $dateKey = $row['effective_date'] ?? '';
+        if (!isset($dedup[$dateKey]) || (int)$row['rate_id'] > (int)$dedup[$dateKey]['rate_id']) {
+            $dedup[$dateKey] = $row;
         }
     }
     $allRates = array_values($dedup);
