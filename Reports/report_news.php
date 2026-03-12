@@ -218,6 +218,96 @@ try {
         color: #ffffff !important;
         border-color: #60a5fa !important;
       }
+
+      /* ===== Mobile Responsive ===== */
+      @media (max-width: 768px) {
+        .reports-container .container { padding: 0 0.75rem 1rem; }
+        .news-stats-grid { grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem; }
+        .stat-card { padding: 1rem; }
+        .stat-value { font-size: 1.5rem; }
+        .stat-label { font-size: 0.75rem; }
+        .filter-section { padding: 1rem; margin-bottom: 1.25rem; }
+        .filter-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+        .news-cards { grid-template-columns: 1fr; gap: 1rem; }
+        .news-card { padding: 1rem; }
+        .news-title { font-size: 1.05rem; }
+        .news-content { font-size: 0.88rem; }
+        .view-toggle { margin-bottom: 1.25rem; }
+        .view-toggle-btn { padding: 0.6rem 1rem; font-size: 0.85rem; }
+
+        /* Table View: แปลง table เป็น card layout บนมือถือ */
+        #table-view .datatable-table thead { display: none !important; }
+        #table-view .datatable-table,
+        #table-view .datatable-table tbody,
+        #table-view .datatable-table tr,
+        #table-view .datatable-table td {
+          display: block !important;
+          width: 100% !important;
+        }
+        #table-view .datatable-table tbody tr {
+          border: 1px solid #e2e8f0 !important;
+          border-radius: 10px !important;
+          margin-bottom: 0.75rem !important;
+          padding: 0.75rem 1rem !important;
+          box-shadow: 0 1px 4px rgba(15,23,42,0.06);
+        }
+        #table-view .datatable-table tbody td {
+          border-bottom: none !important;
+          padding: 0.3rem 0 !important;
+          text-align: left !important;
+          max-width: 100% !important;
+        }
+        #table-view .datatable-table tbody td::before {
+          content: attr(data-label);
+          display: block;
+          font-size: 0.7rem;
+          font-weight: 700;
+          color: #64748b !important;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          margin-bottom: 0.15rem;
+        }
+        /* วันที่ cell */
+        #table-view .datatable-table tbody td:first-child {
+          font-size: 0.8rem;
+          color: #60a5fa !important;
+          font-weight: 600;
+          padding-bottom: 0.4rem !important;
+        }
+        /* หัวข้อข่าว cell */
+        #table-view .datatable-table tbody td:nth-child(2) {
+          font-size: 1rem !important;
+          padding-bottom: 0.4rem !important;
+        }
+        /* เนื้อหา cell */
+        #table-view .datatable-table tbody td:last-child {
+          font-size: 0.85rem !important;
+          color: #475569 !important;
+          line-height: 1.5;
+        }
+
+        #table-view .datatable-top,
+        #table-view .datatable-bottom {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 0.75rem !important;
+        }
+        #table-view .datatable-search { margin-left: 0 !important; }
+        #table-view .datatable-input { min-width: 100% !important; width: 100% !important; }
+      }
+
+      @media (max-width: 480px) {
+        .news-stats-grid { grid-template-columns: 1fr; gap: 0.6rem; }
+        .stat-card { padding: 0.85rem; display: flex; align-items: center; gap: 0.75rem; }
+        .stat-card .lottie-icon { margin-bottom: 0; flex-shrink: 0; }
+        .stat-value { font-size: 1.3rem; margin: 0; }
+        .stat-label { font-size: 0.7rem; margin: 0; }
+        .news-card { padding: 0.85rem; }
+        .news-title { font-size: 1rem; margin: 6px 0; }
+        .news-content { font-size: 0.85rem; margin: 8px 0; }
+        .news-time-badge { font-size: 0.75rem; padding: 4px 10px; }
+        .news-date { font-size: 0.75rem; }
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -328,9 +418,9 @@ try {
                 <tbody>
 <?php foreach ($rows as $r): ?>
                   <tr>
-                    <td><?php echo renderField($r['news_date'], '-'); ?></td>
-                    <td style="font-weight: 600;"><?php echo renderField($r['news_title'], '-'); ?></td>
-                    <td style="max-width: 400px;"><?php echo renderField($r['news_details'], '-'); ?></td>
+                    <td data-label="วันที่"><?php echo renderField($r['news_date'], '-'); ?></td>
+                    <td data-label="หัวข้อข่าว" style="font-weight: 600;"><?php echo renderField($r['news_title'], '-'); ?></td>
+                    <td data-label="เนื้อหา" style="max-width: 400px;"><?php echo renderField($r['news_details'], '-'); ?></td>
                   </tr>
 <?php endforeach; ?>
                 </tbody>

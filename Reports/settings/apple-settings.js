@@ -1363,8 +1363,8 @@ class AppleSettings {
       const wasActive = tr.classList.contains('current-rate');
       tr.classList.remove('current-rate');
       
-      // Get status cell (4th column)
-      const statusCell = tr.querySelectorAll('td')[3];
+      // Get status cell (6th column, index 5)
+      const statusCell = tr.querySelectorAll('td')[5];
       
       // If this row was active, update status to "ยังไม่ถูกใช้"
       if (wasActive && statusCell) {
@@ -1400,16 +1400,18 @@ class AppleSettings {
       newRow.dataset.basePrice = basePrice;
       newRow.dataset.excessRate = excessRate;
       newRow.innerHTML = `
-        <td>${dateStr}</td>
-        <td style="text-align: center; color: var(--apple-blue); font-weight: 600;">
-          ฿${Number(waterRate).toLocaleString()}
-          <div style="font-size:0.75rem;color:#64748b;">
-            ${baseUnits !== undefined ? `เหมาจ่าย ฿${Number(basePrice).toLocaleString()} สำหรับ ≤${baseUnits} หน่วย` : ''}<br>
-            เกิน ฿${excessRate}
-          </div>
+        <td data-label="วันที่">${dateStr}</td>
+        <td data-label="เหมาจ่าย" style="text-align: center; color: var(--apple-blue); font-weight: 600;">
+          ฿${basePrice !== undefined ? Number(basePrice).toLocaleString() : Number(waterRate).toLocaleString()}
         </td>
-        <td style="text-align: center; color: var(--apple-orange); font-weight: 600;">฿${Number(elecRate).toLocaleString()}</td>
-        <td style="text-align: center;">
+        <td data-label="หน่วยฐาน" style="text-align: center; color: var(--apple-blue);">
+          ${baseUnits !== undefined && baseUnits !== '' ? `≤${baseUnits} หน่วย` : '-'}
+        </td>
+        <td data-label="เกิน/หน่วย" style="text-align: center; color: var(--apple-blue);">
+          ${excessRate !== undefined && excessRate !== '' ? `฿${Number(excessRate).toLocaleString()}` : '-'}
+        </td>
+        <td data-label="ค่าไฟ" style="text-align: center; color: var(--apple-orange); font-weight: 600;">฿${Number(elecRate).toLocaleString()}</td>
+        <td data-label="สถานะ" style="text-align: center;">
           <span class="apple-badge green rate-active-badge" style="font-size: 10px;">✓ ใช้งานอยู่</span>
         </td>
         <td style="text-align: right; white-space: nowrap;"></td>

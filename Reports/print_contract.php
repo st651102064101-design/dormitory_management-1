@@ -74,6 +74,7 @@ if ($ctr_id === 0) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>เลือกสัญญาเพื่อพิมพ์</title>
+    <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <!-- DataTable Modern -->
@@ -97,7 +98,7 @@ if ($ctr_id === 0) {
         .header p { font-size: 15px; color: #64748b; }
         .count { background: rgba(96,165,250,0.12); padding: 10px 16px; border-radius: 10px; margin-top: 4px; font-weight: 700; color: #60a5fa; display: block; border: 1px solid rgba(96,165,250,0.3); }
         .toolbar { display: flex; width: 100%; justify-content: flex-start; gap: 12px; margin: 4px 0 18px; flex-wrap: wrap; }
-        .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.12); transition: transform 0.15s ease, box-shadow 0.15s ease; background: #2563eb; color: #fff; }
+        .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.12); transition: transform 0.15s ease, box-shadow 0.15s ease; background: #2563eb; color: #ffffff !important; }
         .btn.secondary {
             background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: #ffffff;
@@ -174,6 +175,141 @@ if ($ctr_id === 0) {
             border-color: #60a5fa !important;
         }
         .hidden { display: none; }
+
+        /* Mobile Responsive */
+        @media screen and (max-width: 768px) {
+            .container {
+                padding: 0 10px 16px 10px;
+                gap: 10px;
+            }
+            .header {
+                padding: 16px;
+                border-radius: 10px;
+                margin-bottom: 12px;
+            }
+            .header h1 {
+                font-size: 20px;
+            }
+            .header p {
+                font-size: 13px;
+            }
+            .toolbar {
+                margin: 0 0 10px;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+            .card {
+                padding: 14px;
+            }
+            .table-wrap {
+                padding: 8px;
+                border-radius: 8px;
+            }
+
+            /* DataTable controls */
+            #table-view .datatable-top,
+            #table-view .datatable-bottom {
+                flex-direction: column;
+                gap: 8px;
+                padding: 8px 0 !important;
+            }
+            #table-view .datatable-top .datatable-dropdown,
+            #table-view .datatable-top .datatable-search {
+                width: 100%;
+            }
+            #table-view .datatable-input {
+                width: 100% !important;
+            }
+
+            /* Table to card layout on mobile */
+            #table-view .datatable-table thead {
+                display: none;
+            }
+            #table-view .datatable-table,
+            #table-view .datatable-table tbody {
+                display: block;
+            }
+            #table-view .datatable-table tbody tr {
+                display: flex;
+                flex-wrap: wrap;
+                padding: 12px;
+                margin-bottom: 8px;
+                border: 1px solid #e2e8f0 !important;
+                border-radius: 10px;
+                position: relative;
+                gap: 4px 0;
+            }
+            #table-view .datatable-table tbody tr td {
+                display: flex;
+                align-items: center;
+                border: none !important;
+                padding: 4px 8px;
+                font-size: 13px;
+            }
+            #table-view .datatable-table tbody tr td::before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #64748b;
+                min-width: 60px;
+                margin-right: 8px;
+                font-size: 12px;
+            }
+            /* # column - full width, bold */
+            #table-view .datatable-table tbody tr td:nth-child(1) {
+                width: 100%;
+                font-weight: 700;
+                font-size: 15px;
+                color: #60a5fa !important;
+                padding-bottom: 6px;
+                border-bottom: 1px solid #f1f5f9 !important;
+                margin-bottom: 4px;
+            }
+            #table-view .datatable-table tbody tr td:nth-child(1)::before {
+                content: none;
+            }
+            /* ผู้เช่า - full width */
+            #table-view .datatable-table tbody tr td:nth-child(2) {
+                width: 100%;
+            }
+            /* ห้อง - half */
+            #table-view .datatable-table tbody tr td:nth-child(3) {
+                width: 50%;
+            }
+            /* วันที่ - half */
+            #table-view .datatable-table tbody tr td:nth-child(4) {
+                width: 50%;
+            }
+            /* พิมพ์ button - full width */
+            #table-view .datatable-table tbody tr td:nth-child(5) {
+                width: 100%;
+                justify-content: center;
+                margin-top: 6px;
+                padding-top: 8px;
+                border-top: 1px solid #f1f5f9 !important;
+            }
+            #table-view .datatable-table tbody tr td:nth-child(5)::before {
+                content: none;
+            }
+            #table-view .datatable-table tbody tr td:nth-child(5) .btn {
+                width: 100%;
+                text-align: center;
+                padding: 8px 10px;
+            }
+
+            /* Pagination responsive */
+            #table-view .datatable-pagination ul {
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 4px;
+            }
+            #table-view .datatable-pagination a,
+            #table-view .datatable-pagination button {
+                padding: 6px 10px !important;
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 <body class="reports-page">
@@ -273,7 +409,15 @@ if ($ctr_id === 0) {
                   document.addEventListener('DOMContentLoaded', function() {
                     const contractsTable = document.getElementById('table-print-contracts');
                     if (contractsTable && typeof simpleDatatables !== 'undefined') {
-                      new simpleDatatables.DataTable(contractsTable, {
+                      var labels = ['#', 'ผู้เช่า', 'ห้อง', 'วันที่', 'พิมพ์'];
+                      function addDataLabels() {
+                        contractsTable.querySelectorAll('tbody tr').forEach(function(row) {
+                          row.querySelectorAll('td').forEach(function(td, i) {
+                            if (labels[i]) td.setAttribute('data-label', labels[i]);
+                          });
+                        });
+                      }
+                      var dt = new simpleDatatables.DataTable(contractsTable, {
                         searchable: true,
                         fixedHeight: false,
                         perPage: 10,
@@ -285,6 +429,12 @@ if ($ctr_id === 0) {
                           info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
                         }
                       });
+                      addDataLabels();
+                      dt.on('datatable.page', addDataLabels);
+                      dt.on('datatable.perpage', addDataLabels);
+                      dt.on('datatable.search', addDataLabels);
+                      dt.on('datatable.sort', addDataLabels);
+                      dt.on('datatable.update', addDataLabels);
                     }
                   });
                 </script>

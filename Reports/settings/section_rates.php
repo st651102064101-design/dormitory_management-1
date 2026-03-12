@@ -143,47 +143,65 @@
       
       <div style="background: var(--apple-card); border-radius: 14px; overflow: hidden;">
         <table class="apple-rate-table">
+          <colgroup>
+            <col style="width: 16%;">
+            <col style="width: 13%;">
+            <col style="width: 13%;">
+            <col style="width: 13%;">
+            <col style="width: 11%;">
+            <col style="width: 16%;">
+            <col style="width: 18%;">
+          </colgroup>
           <thead>
             <tr>
               <th>วันที่</th>
-              <th style="text-align: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg> น้ำ</th>
+              <th style="text-align: center;" colspan="3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg> น้ำ</th>
               <th style="text-align: center;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> ไฟ</th>
               <th style="text-align: center;">สถานะ</th>
+              <th></th>
+            </tr>
+            <tr class="apple-rate-subheader">
+              <th></th>
+              <th style="text-align: center;">เหมาจ่าย</th>
+              <th style="text-align: center;">หน่วยฐาน</th>
+              <th style="text-align: center;">เกิน/หน่วย</th>
+              <th style="text-align: center;">บาท/หน่วย</th>
+              <th></th>
               <th></th>
             </tr>
           </thead>
           <tbody>
             <?php if (empty($allRates)): ?>
             <tr>
-              <td colspan="5" style="text-align: center; color: var(--apple-text-secondary);">ยังไม่มีข้อมูล</td>
+              <td colspan="7" style="text-align: center; color: var(--apple-text-secondary);">ยังไม่มีข้อมูล</td>
             </tr>
             <?php else: ?>
-            <?php foreach ($allRates as $i => $r): 
+            <?php foreach ($allRates as $i => $r):
               $rateKey = $r['rate_water'] . '_' . $r['rate_elec'];
               $usage = $rateUsage[$rateKey] ?? null;
               $isUsed = !empty($usage);
               $isActive = ($i === 0);
             ?>
-            <?php 
+            <?php
             $baseUnits = isset($r['water_base_units']) ? (int)$r['water_base_units'] : '';
             $basePrice = isset($r['water_base_price']) ? (int)$r['water_base_price'] : '';
             $excessRate = isset($r['water_excess_rate']) ? (int)$r['water_excess_rate'] : '';
             ?>
             <tr id="rate-row-<?php echo $r['rate_id']; ?>" class="<?php echo $isActive ? 'current-rate' : ''; ?>" data-rate-id="<?php echo $r['rate_id']; ?>" data-water="<?php echo $r['rate_water']; ?>" data-elec="<?php echo $r['rate_elec']; ?>" data-base-units="<?php echo $baseUnits; ?>" data-base-price="<?php echo $basePrice; ?>" data-excess-rate="<?php echo $excessRate; ?>">
-              <td>
+              <td data-label="วันที่">
                 <?php echo date('d/m/Y', strtotime($r['effective_date'] ?? '2025-01-01')); ?>
               </td>
-              <td style="text-align: center; color: var(--apple-blue); font-weight: 600;">
-                ฿<?php echo number_format($r['rate_water']); ?>
-                <?php if ($baseUnits !== '' || $basePrice !== '' || $excessRate !== ''): ?>
-                  <div style="font-size:0.75rem;color:#64748b;">
-                    <?php if ($baseUnits !== ''): ?>≤<?php echo $baseUnits; ?> หน่วย<?php endif; ?><?php if ($basePrice !== ''): ?> เหมาจ่าย ฿<?php echo number_format($basePrice); ?><?php endif; ?>
-                    <?php if ($excessRate !== ''): ?><br>เกิน ฿<?php echo number_format($excessRate); ?><?php endif; ?>
-                  </div>
-                <?php endif; ?>
+              <td data-label="เหมาจ่าย" style="text-align: center; color: var(--apple-blue); font-weight: 600;">
+                ฿<?php echo ($basePrice !== '') ? number_format($basePrice) : number_format($r['rate_water']); ?>
               </td>
-              <td style="text-align: center; color: var(--apple-orange); font-weight: 600;">฿<?php echo number_format($r['rate_elec']); ?></td>
-              <td style="text-align: center;">
+              <td data-label="หน่วยฐาน" style="text-align: center; color: var(--apple-blue);">
+                <?php echo ($baseUnits !== '') ? '≤' . $baseUnits . ' หน่วย' : '-'; ?>
+              </td>
+              <td data-label="เกิน/หน่วย" style="text-align: center; color: var(--apple-blue);">
+                <?php echo ($excessRate !== '') ? '฿' . number_format($excessRate) : '-'; ?>
+              </td>
+              <td data-label="ค่าไฟ" style="text-align: center; color: var(--apple-orange); font-weight: 600;">฿<?php echo number_format($r['rate_elec']); ?></td>
+              <td data-label="สถานะ" style="text-align: center;">
                 <?php if ($isActive): ?>
                 <span class="apple-badge green rate-active-badge" style="font-size: 10px;">✓ ใช้งานอยู่</span>
                 <?php elseif ($isUsed): ?>
@@ -196,8 +214,11 @@
                 <span style="font-size: 11px; color: var(--apple-text-secondary);">ยังไม่ถูกใช้</span>
                 <?php endif; ?>
               </td>
-              <td style="text-align: right; white-space: nowrap;">
-                <?php if (!$isActive): ?>
+              <td style="text-align: center; white-space: nowrap;">
+                <?php if ($isActive): ?>
+                <button type="button" class="apple-use-btn" disabled title="อัตรานี้ใช้งานอยู่แล้ว" style="opacity: 0.4; cursor: not-allowed;">ใช้</button>
+                <button type="button" class="apple-delete-btn" disabled title="ไม่สามารถลบอัตราที่ใช้งานอยู่ได้" style="opacity: 0.4; cursor: not-allowed;">ลบ</button>
+                <?php else: ?>
                 <button type="button" class="apple-use-btn" onclick="useRate(<?php echo $r['rate_id']; ?>)" title="ใช้อัตรานี้">ใช้</button>
                 <?php if (!$isUsed): ?>
                 <button type="button" class="apple-delete-btn" onclick="deleteRate(<?php echo $r['rate_id']; ?>)">ลบ</button>

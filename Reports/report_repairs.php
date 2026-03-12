@@ -272,6 +272,118 @@ try {
         color: #64748b !important;
         border: 1px solid #cbd5e1 !important;
       }
+
+      /* ===== MOBILE RESPONSIVE ===== */
+      @media (max-width: 767px) {
+        .reports-container .container { padding: 0 0.75rem 1rem; }
+
+        /* Stats grid: 2 columns */
+        .repair-stats-grid {
+          grid-template-columns: repeat(2, 1fr);
+          gap: 0.75rem;
+          margin-bottom: 1.25rem;
+        }
+        .stat-card { padding: 1rem; }
+        .stat-icon { font-size: 1.8rem; }
+        .stat-value { font-size: 1.5rem; }
+        .stat-label { font-size: 0.75rem; }
+
+        /* Filter section */
+        .filter-section { padding: 1rem; margin-bottom: 1.25rem; }
+        .filter-grid { grid-template-columns: 1fr; gap: 0.75rem; }
+
+        /* Status filter buttons */
+        .filter-btn { padding: 0.5rem 0.75rem !important; font-size: 0.8rem; }
+        .filter-btn svg { width: 14px !important; height: 14px !important; }
+
+        /* Card view */
+        .repair-cards {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+        }
+        .repair-card { padding: 1rem; }
+        .repair-header { flex-direction: column; gap: 0.75rem; }
+
+        /* View toggle */
+        .view-toggle-btn { padding: 0.5rem 1rem; font-size: 0.85rem; }
+
+        /* Table view - card layout */
+        #table-repairs-report thead {
+          display: none;
+        }
+        #table-repairs-report tbody tr {
+          display: flex;
+          flex-direction: column;
+          padding: 0.75rem;
+          margin-bottom: 0.5rem;
+          border-radius: 10px;
+          border: 1px solid #e5e7eb;
+          background: #ffffff;
+        }
+        #table-repairs-report tbody td {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 0.4rem 0 !important;
+          border-bottom: 1px solid #f1f5f9 !important;
+          font-size: 0.88rem !important;
+          gap: 0.5rem;
+          max-width: none !important;
+          text-align: left !important;
+        }
+        #table-repairs-report tbody td:last-child {
+          border-bottom: none !important;
+          padding-top: 0.6rem !important;
+        }
+        #table-repairs-report tbody td::before {
+          content: attr(data-label);
+          font-weight: 600;
+          font-size: 0.8rem;
+          color: #6b7280;
+          flex-shrink: 0;
+          min-width: 80px;
+        }
+        #table-repairs-report .datatable-sorter {
+          pointer-events: none;
+        }
+        .repair-table {
+          overflow-x: hidden !important;
+        }
+        .repair-table .datatable-container {
+          overflow-x: hidden !important;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .reports-container .container { padding: 0 0.5rem 0.75rem; }
+
+        /* Stats grid: still 2 columns but tighter */
+        .repair-stats-grid { gap: 0.5rem; }
+        .stat-card { padding: 0.75rem; }
+        .stat-value { font-size: 1.25rem; }
+        .stat-label { font-size: 0.7rem; }
+
+        /* Filter buttons: wrap nicely */
+        .filter-btn { padding: 0.4rem 0.6rem !important; font-size: 0.75rem; }
+
+        /* Table card layout */
+        #table-repairs-report tbody tr {
+          padding: 0.6rem;
+        }
+        #table-repairs-report tbody td {
+          font-size: 0.82rem !important;
+          padding: 0.35rem 0 !important;
+        }
+        #table-repairs-report tbody td::before {
+          font-size: 0.75rem;
+          min-width: 70px;
+        }
+
+        /* Card view */
+        .repair-card { padding: 0.75rem; }
+        .repair-desc { padding: 0.75rem; }
+        .repair-image-preview { height: 150px; }
+      }
     </style>
   </head>
   <body class="reports-page">
@@ -396,13 +508,13 @@ try {
 <?php foreach($rows as $r): ?>
                   <?php $statusKey = (string)($r['repair_status'] ?? ''); $statusLabel = $statusLabels[$statusKey] ?? 'ยังไม่ระบุสถานะ'; $statusClass = $statusKey === '2' ? 'status-completed' : ($statusKey === '1' ? 'status-progress' : 'status-pending'); ?>
                   <tr>
-                    <td><div style="display:flex;flex-direction:column;gap:0.3rem;"><div style="background:#a7f3d0;color:#065f46;padding:0.4rem 0.8rem;border-radius:16px;font-weight:600;font-size:0.85rem;text-align:center;white-space:nowrap;display:inline-block;width:fit-content;"><?php echo getRelativeTime($r['repair_date'] ?? null); ?></div><div style="font-size:0.75rem;color:#94a3b8;"><?php if ($repairDate = $r['repair_date'] ?? '') { $date = new DateTime($repairDate); echo $date->format('Y-m-d'); } ?></div></div></td>
-                    <td>#<?php echo renderField((string)($r['ctr_id'] ?? ''), '-'); ?></td>
-                    <td><?php echo renderField($r['tnt_name'], '-'); ?></td>
-                    <td><strong><?php echo renderField($r['room_number'], '-'); ?></strong></td>
-                    <td style="max-width:300px;"><?php echo renderField($r['repair_desc'], '-'); ?></td>
-                    <td style="text-align:center;"><?php if (!empty($r['repair_image'])): ?><img src="/dormitory_management/Public/Assets/Images/Repairs/<?php echo htmlspecialchars($r['repair_image']); ?>" alt="Repair" style="width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;" onclick="showImage('<?php echo htmlspecialchars($r['repair_image']); ?>')"><?php else: ?><span style="color:#94a3b8;">ไม่มีรูป</span><?php endif; ?></td>
-                    <td style="text-align:center;"><span class="repair-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
+                    <td data-label="วันที่"><div style="display:flex;flex-direction:column;gap:0.3rem;"><div style="background:#a7f3d0;color:#065f46;padding:0.4rem 0.8rem;border-radius:16px;font-weight:600;font-size:0.85rem;text-align:center;white-space:nowrap;display:inline-block;width:fit-content;"><?php echo getRelativeTime($r['repair_date'] ?? null); ?></div><div style="font-size:0.75rem;color:#94a3b8;"><?php if ($repairDate = $r['repair_date'] ?? '') { $date = new DateTime($repairDate); echo $date->format('Y-m-d'); } ?></div></div></td>
+                    <td data-label="สัญญา">#<?php echo renderField((string)($r['ctr_id'] ?? ''), '-'); ?></td>
+                    <td data-label="ผู้แจ้ง"><?php echo renderField($r['tnt_name'], '-'); ?></td>
+                    <td data-label="ห้อง"><strong><?php echo renderField($r['room_number'], '-'); ?></strong></td>
+                    <td data-label="รายละเอียด" style="max-width:300px;"><?php echo renderField($r['repair_desc'], '-'); ?></td>
+                    <td data-label="รูปภาพ" style="text-align:center;"><?php if (!empty($r['repair_image'])): ?><img src="/dormitory_management/Public/Assets/Images/Repairs/<?php echo htmlspecialchars($r['repair_image']); ?>" alt="Repair" style="width:60px;height:60px;object-fit:cover;border-radius:8px;cursor:pointer;" onclick="showImage('<?php echo htmlspecialchars($r['repair_image']); ?>')"><?php else: ?><span style="color:#94a3b8;">ไม่มีรูป</span><?php endif; ?></td>
+                    <td data-label="สถานะ" style="text-align:center;"><span class="repair-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
                   </tr>
 <?php endforeach; ?>
                 </tbody>
