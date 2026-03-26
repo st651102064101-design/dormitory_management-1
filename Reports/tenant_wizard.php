@@ -200,21 +200,15 @@ try {
                                             OR tw.completed = 1
                                         )
                                     " . $bookingFilterCondition . "
-                                    -- Exclude bookings where a different active/notify-cancel contract already occupies the room
-                                    AND NOT EXISTS (
-                                        SELECT 1 FROM contract c2
-                                        WHERE c2.room_id = b.room_id
-                                          AND c2.ctr_status IN ('0','2')
-                                          AND (
-                                              COALESCE(c.ctr_id, tw.ctr_id, 0) = 0
-                                              OR c2.ctr_id <> COALESCE(c.ctr_id, tw.ctr_id)
-                                          )
-                                    )
-                                    -- Also exclude if any active/notify-cancel contract exists for the room with a different tenant
+                                    -- Exclude bookings where a different active/notify-cancel contract exists in the same room
                                     AND NOT EXISTS (
                                         SELECT 1 FROM contract c3
+                                        LEFT JOIN termination t3 ON c3.ctr_id = t3.ctr_id
                                         WHERE c3.room_id = b.room_id
-                                          AND c3.ctr_status IN ('0','2')
+                                          AND (
+                                              (c3.ctr_status = '0' AND (c3.ctr_end IS NULL OR c3.ctr_end >= CURDATE()))
+                                              OR (c3.ctr_status = '2' AND (t3.term_date IS NULL OR t3.term_date >= CURDATE()))
+                                          )
                                           AND COALESCE(c3.tnt_id, '') <> COALESCE(b.tnt_id, '')
                                     )
                                         " . $completionCondition . "
@@ -2465,13 +2459,14 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 document.getElementById('prevElecDisplay').textContent  = _meterPrevElec;
 
                 if (d.saved) {
-                    // already saved this month — show read-only + reveal bill sections
+                    // already saved this month — show saved badge + allow edit and re-save
                     badge.style.display = 'inline-block';
-                    btn.style.display   = 'none';
+                    btn.style.display   = 'inline-block';
+                    btn.textContent     = 'อัปเดตมิเตอร์';
                     document.getElementById('meterWaterInput').value    = d.curr_water ?? '';
                     document.getElementById('meterElecInput').value     = d.curr_elec  ?? '';
-                    document.getElementById('meterWaterInput').disabled = true;
-                    document.getElementById('meterElecInput').disabled  = true;
+                    document.getElementById('meterWaterInput').disabled = false;
+                    document.getElementById('meterElecInput').disabled  = false;
                     updateMeterPreview();
                     // โหลดและแสดงรายการบิล
                     document.getElementById('billSectionsWrapper').style.display = '';
@@ -2539,10 +2534,12 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 if (d.success) {
                     msg.style.color = '#4ade80';
                     msg.textContent = '✓ บันทึกสำเร็จ';
-                    btn.style.display = 'none';
+                    // Keep button to allow update/edit if needed
+                    btn.style.display = 'inline-block';
+                    btn.textContent = 'อัปเดตมิเตอร์';
                     document.getElementById('meterSavedBadge').style.display = 'inline-block';
-                    document.getElementById('meterWaterInput').disabled = true;
-                    document.getElementById('meterElecInput').disabled  = true;
+                    document.getElementById('meterWaterInput').disabled = false;
+                    document.getElementById('meterElecInput').disabled  = false;
                     // รีโหลดยอดบิลใหม่หลังจดมิเตอร์ และแสดง bill sections
                     document.getElementById('billSectionsWrapper').style.display = '';
                     document.getElementById('meterNoticeBlock').style.display = 'none';

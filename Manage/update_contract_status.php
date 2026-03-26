@@ -54,7 +54,14 @@ try {
     }
 
     if ($ctr_status === '0') {
-        $conflict = $pdo->prepare("SELECT COUNT(*) FROM contract WHERE room_id = ? AND ctr_id <> ? AND ctr_status IN ('0','2')");
+        $conflict = $pdo->prepare(
+            "SELECT COUNT(*) FROM contract c\n" .
+            "LEFT JOIN termination t ON c.ctr_id = t.ctr_id\n" .
+            "WHERE c.room_id = ? AND c.ctr_id <> ? AND (\n" .
+            "    (c.ctr_status = '0' AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE())) OR \n" .
+            "    (c.ctr_status = '2' AND (t.term_date IS NULL OR t.term_date >= CURDATE()))\n" .
+            ")"
+        );
         $conflict->execute([(int)$contract['room_id'], $ctr_id]);
         if ((int)$conflict->fetchColumn() > 0) {
             $errorMsg = 'ไม่สามารถกลับเป็นสถานะปกติได้ เนื่องจากมีสัญญาอื่นที่ใช้งานอยู่ในห้องนี้';

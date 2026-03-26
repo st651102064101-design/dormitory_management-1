@@ -432,84 +432,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        :root {
-            /* Default Dark Mode Theme */
-            --bg-body-start: #0f172a;
-            --bg-body-end: #1e293b;
-            --bg-header: rgba(15, 23, 42, 0.95);
-            --text-primary: #e2e8f0;
-            --text-secondary: #94a3b8;
-            --text-muted: #64748b;
-            --border-color: rgba(255, 255, 255, 0.1);
-            --border-hover: rgba(255, 255, 255, 0.2);
-            --card-bg: rgba(30, 41, 59, 0.5);
-            --card-bg-solid: rgba(30, 41, 59, 0.8);
-            --input-bg: rgba(15, 23, 42, 0.6);
-            --input-focus-bg: rgba(15, 23, 42, 0.8);
-            --input-border: rgba(255, 255, 255, 0.15);
-            --input-text: #fff;
-            --input-placeholder: #64748b;
-            --button-bg: rgba(255, 255, 255, 0.1);
-            --button-hover: rgba(255, 255, 255, 0.15);
-            --primary-color: #3b82f6;
-            --primary-hover: #2563eb;
-            --primary-light: #60a5fa;
-            --success-color: #22c55e;
-            --success-bg: rgba(34, 197, 94, 0.1);
-            --success-text: #86efac;
-            --error-color: #ef4444;
-            --error-bg: rgba(239, 68, 68, 0.15);
-            --error-text: #fca5a5;
-            --mobile-sheet-start: #1e293b;
-            --mobile-sheet-end: #0f172a;
-            --dropdown-bg: rgba(15, 23, 42, 0.98);
-        }
-
-        <?php if (isset($publicTheme) && $publicTheme === 'light'): ?>
-        :root {
-            /* Light Mode Overrides */
-            --bg-body-start: #f8fafc;
-            --bg-body-end: #e2e8f0;
-            --bg-header: rgba(255, 255, 255, 0.95);
-            --text-primary: #1e293b;
-            --text-secondary: #475569;
-            --text-muted: #64748b;
-            --border-color: rgba(0, 0, 0, 0.1);
-            --border-hover: rgba(0, 0, 0, 0.2);
-            --card-bg: rgba(255, 255, 255, 0.8);
-            --card-bg-solid: rgba(255, 255, 255, 0.9);
-            --input-bg: #ffffff;
-            --input-focus-bg: #ffffff;
-            --input-border: #cbd5e1;
-            --input-text: #1e293b;
-            --input-placeholder: #94a3b8;
-            --button-bg: rgba(0, 0, 0, 0.05);
-            --button-hover: rgba(0, 0, 0, 0.1);
-            --primary-color: #2563eb;
-            --primary-hover: #1d4ed8;
-            --primary-light: #3b82f6;
-            --success-text: #15803d;
-            --error-text: #b91c1c;
-            --mobile-sheet-start: #ffffff;
-            --mobile-sheet-end: #f1f5f9;
-            --dropdown-bg: rgba(255, 255, 255, 0.98);
-        }
-        <?php endif; ?>
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
         body {
             font-family: 'Prompt', system-ui, sans-serif;
-            background: linear-gradient(135deg, var(--bg-body-start) 0%, var(--bg-body-end) 100%);
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
             min-height: 100vh;
-            color: var(--text-primary);
+            color: #e2e8f0;
         }
         
         /* Header */
         .header {
-            background: var(--bg-header);
+            background: rgba(15, 23, 42, 0.95);
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             padding: 16px 24px;
             position: sticky;
             top: 0;
@@ -529,7 +465,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 12px;
             text-decoration: none;
-            color: var(--text-primary);
+            color: #fff;
         }
         
         .logo img {
@@ -549,10 +485,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 8px;
             padding: 10px 20px;
-            background: var(--border-color);
-            border: 1px solid var(--border-hover);
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
             border-radius: 10px;
-            color: var(--text-primary);
+            color: #e2e8f0;
             text-decoration: none;
             font-size: 0.9rem;
             transition: all 0.3s;
@@ -582,7 +518,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .page-title p {
-            color: var(--text-secondary);
+            color: #94a3b8;
             font-size: 1rem;
         }
         
@@ -604,10 +540,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .room-section-fullscreen {
-            background: var(--card-bg);
+            background: rgba(30, 41, 59, 0.5);
             border-radius: 24px;
             padding: 48px;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(255,255,255,0.1);
             max-width: 600px;
             width: 100%;
             text-align: center;
@@ -626,7 +562,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .room-section-fullscreen .section-title svg {
             width: 28px;
             height: 28px;
-            color: var(--primary-light);
+            color: #60a5fa;
         }
         
         .room-section-fullscreen .no-rooms {
@@ -650,10 +586,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         /* Room Selection */
         .room-section {
-            background: var(--card-bg);
+            background: rgba(30, 41, 59, 0.5);
             border-radius: 20px;
             padding: 28px;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
         .section-title {
@@ -668,7 +604,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .section-title svg {
             width: 24px;
             height: 24px;
-            color: var(--primary-light);
+            color: #60a5fa;
         }
         
         .room-grid {
@@ -679,8 +615,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .room-card {
-            background: var(--input-bg);
-            border: 2px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.6);
+            border: 2px solid rgba(255,255,255,0.1);
             border-radius: 16px;
             padding: 20px;
             cursor: pointer;
@@ -694,7 +630,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .room-card.selected {
-            border-color: var(--success-color);
+            border-color: #22c55e;
             background: rgba(34, 197, 94, 0.1);
         }
         
@@ -717,25 +653,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .room-number {
             font-size: 1.5rem;
             font-weight: 700;
-            color: var(--text-primary);
+            color: #fff;
             margin-bottom: 8px;
         }
         
         .room-type {
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: #94a3b8;
             margin-bottom: 12px;
         }
         
         .room-price {
             font-size: 1.1rem;
             font-weight: 600;
-            color: var(--success-color);
+            color: #22c55e;
         }
         
         .room-price span {
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: #64748b;
             font-weight: 400;
         }
         
@@ -743,7 +679,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .no-rooms {
             text-align: center;
             padding: 60px 20px;
-            color: var(--text-secondary);
+            color: #94a3b8;
         }
         
         .no-rooms svg {
@@ -760,10 +696,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .booking-box {
-            background: var(--card-bg-solid);
+            background: rgba(30, 41, 59, 0.8);
             border-radius: 20px;
             padding: 28px;
-            border: 1px solid var(--border-color);
+            border: 1px solid rgba(255,255,255,0.1);
         }
         
         .booking-box-title {
@@ -801,7 +737,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .selected-room-price {
-            color: var(--success-color);
+            color: #22c55e;
             font-weight: 600;
         }
         
@@ -813,21 +749,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-label {
             display: block;
             font-size: 0.9rem;
-            color: var(--text-secondary);
+            color: #94a3b8;
             margin-bottom: 8px;
         }
         
         .form-label .required {
-            color: var(--error-color);
+            color: #ef4444;
         }
         
         .form-input {
             width: 100%;
             padding: 14px 16px;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: 12px;
-            color: var(--input-text);
+            color: #fff;
             font-size: 1rem;
             font-family: inherit;
             transition: all 0.3s;
@@ -835,12 +771,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .form-input:focus {
             outline: none;
-            border-color: var(--primary-light);
-            background: var(--input-focus-bg);
+            border-color: #60a5fa;
+            background: rgba(15, 23, 42, 0.8);
         }
         
         .form-input::placeholder {
-            color: var(--text-muted);
+            color: #64748b;
         }
         
         /* Autocomplete Suggestions */
@@ -849,7 +785,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             top: 100%;
             left: 0;
             right: 0;
-            background: var(--dropdown-bg);
+            background: rgba(15, 23, 42, 0.98);
             border: 1px solid rgba(96, 165, 250, 0.3);
             border-radius: 12px;
             margin-top: 4px;
@@ -863,7 +799,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .autocomplete-item {
             padding: 14px 16px;
             cursor: pointer;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             transition: all 0.2s;
         }
         
@@ -877,14 +813,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .autocomplete-item-name {
             font-weight: 600;
-            color: var(--text-primary);
+            color: #fff;
             font-size: 1rem;
             margin-bottom: 4px;
         }
         
         .autocomplete-item-info {
             font-size: 0.85rem;
-            color: var(--text-secondary);
+            color: #94a3b8;
         }
         
         .autocomplete-item-status {
@@ -897,18 +833,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .autocomplete-item-status.active {
             background: rgba(34, 197, 94, 0.2);
-            color: var(--success-color);
+            color: #22c55e;
         }
         
         .autocomplete-item-status.inactive {
             background: rgba(148, 163, 184, 0.2);
-            color: var(--text-secondary);
+            color: #94a3b8;
         }
         
         .autocomplete-new {
             padding: 14px 16px;
             background: rgba(34, 197, 94, 0.1);
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -921,7 +857,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: var(--success-color);
+            color: #22c55e;
             font-weight: 600;
         }
         
@@ -930,7 +866,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 6px;
             background: rgba(34, 197, 94, 0.15);
-            color: var(--success-color);
+            color: #22c55e;
             padding: 6px 12px;
             border-radius: 8px;
             font-size: 0.85rem;
@@ -940,7 +876,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .tenant-selected-badge button {
             background: none;
             border: none;
-            color: var(--error-color);
+            color: #ef4444;
             cursor: pointer;
             padding: 2px;
             display: flex;
@@ -950,7 +886,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Duration Pills */
         .duration-label {
             font-size: 0.9rem;
-            color: var(--text-secondary);
+            color: #94a3b8;
             margin-bottom: 12px;
             display: block;
         }
@@ -964,10 +900,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .duration-pill {
             padding: 12px 20px;
-            background: var(--input-bg);
+            background: rgba(15, 23, 42, 0.6);
             border: 2px solid rgba(255,255,255,0.15);
             border-radius: 30px;
-            color: var(--text-primary);
+            color: #e2e8f0;
             font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.3s;
@@ -981,7 +917,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .duration-pill.selected {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             border-color: #3b82f6;
             color: #fff;
         }
@@ -990,10 +926,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-select {
             width: 100%;
             padding: 14px 16px;
-            background: var(--input-bg);
-            border: 1px solid var(--input-border);
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.15);
             border-radius: 12px;
-            color: var(--input-text);
+            color: #fff;
             font-size: 1rem;
             font-family: inherit;
             cursor: pointer;
@@ -1006,12 +942,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .form-select:focus {
             outline: none;
-            border-color: var(--primary-light);
+            border-color: #60a5fa;
         }
         
         .form-select option {
-            background: var(--bg-body-end);
-            color: var(--input-text);
+            background: #1e293b;
+            color: #fff;
         }
         
         /* Contract Summary */
@@ -1030,11 +966,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .summary-row:not(:last-child) {
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         
         .summary-label {
-            color: var(--text-secondary);
+            color: #94a3b8;
         }
         
         .summary-value {
@@ -1043,7 +979,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .summary-total {
             font-size: 1.1rem;
-            color: var(--success-color);
+            color: #22c55e;
             font-weight: 600;
         }
         
@@ -1063,27 +999,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 10px;
             padding: 12px 16px;
-            background: var(--input-bg);
-            border: 1px solid var(--border-color);
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255,255,255,0.1);
             border-radius: 12px;
             transition: all 0.3s;
         }
         
         .form-step.active {
             background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.1));
-            border-color: var(--primary-light);
+            border-color: #60a5fa;
         }
         
         .form-step.completed {
             background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
-            border-color: var(--success-color);
+            border-color: #22c55e;
         }
         
         .step-number {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: var(--border-color);
+            background: rgba(255,255,255,0.1);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -1104,16 +1040,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .step-label {
             font-size: 0.9rem;
-            color: var(--text-secondary);
+            color: #94a3b8;
         }
         
         .form-step.active .step-label {
-            color: var(--primary-light);
+            color: #60a5fa;
             font-weight: 600;
         }
         
         .form-step.completed .step-label {
-            color: var(--success-color);
+            color: #22c55e;
             font-weight: 600;
         }
         
@@ -1168,8 +1104,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .btn-prev {
-            background: var(--border-color);
-            color: var(--text-primary);
+            background: rgba(255,255,255,0.1);
+            color: #e2e8f0;
         }
         
         .btn-prev:hover {
@@ -1177,7 +1113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .btn-next {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: white;
             margin-left: auto;
         }
@@ -1220,13 +1156,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .optional-toggle:hover {
-            background: var(--input-bg);
+            background: rgba(15, 23, 42, 0.6);
         }
         
         .optional-toggle svg {
             width: 20px;
             height: 20px;
-            color: var(--primary-light);
+            color: #60a5fa;
             transition: transform 0.3s;
         }
         
@@ -1236,7 +1172,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .optional-toggle span {
             font-size: 0.9rem;
-            color: var(--text-secondary);
+            color: #94a3b8;
         }
         
         .optional-fields {
@@ -1291,7 +1227,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 20px;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid rgba(255,255,255,0.1);
         }
         
         .trust-badge {
@@ -1299,13 +1235,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 6px;
             font-size: 0.8rem;
-            color: var(--text-muted);
+            color: #64748b;
         }
         
         .trust-badge svg {
             width: 16px;
             height: 16px;
-            color: var(--success-color);
+            color: #22c55e;
         }
         
         /* Messages */
@@ -1321,13 +1257,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .message.error {
             background: rgba(239, 68, 68, 0.15);
             border: 1px solid rgba(239, 68, 68, 0.3);
-            color: var(--error-text);
+            color: #fca5a5;
         }
         
         .message.success {
             background: rgba(34, 197, 94, 0.15);
             border: 1px solid rgba(34, 197, 94, 0.3);
-            color: var(--success-text);
+            color: #86efac;
         }
         
         .message svg {
@@ -1366,7 +1302,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .success-message {
-            color: var(--text-secondary);
+            color: #94a3b8;
             margin-bottom: 32px;
         }
         
@@ -1387,14 +1323,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .success-btn.primary {
-            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
             color: #fff;
         }
         
         .success-btn.secondary {
-            background: var(--border-color);
-            color: var(--text-primary);
-            border: 1px solid var(--border-hover);
+            background: rgba(255,255,255,0.1);
+            color: #e2e8f0;
+            border: 1px solid rgba(255,255,255,0.2);
         }
         
         /* Mobile Bottom Bar */
@@ -1404,9 +1340,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             bottom: 0;
             left: 0;
             right: 0;
-            background: var(--dropdown-bg);
+            background: rgba(15, 23, 42, 0.98);
             backdrop-filter: blur(20px);
-            border-top: 1px solid var(--border-color);
+            border-top: 1px solid rgba(255,255,255,0.1);
             padding: 16px 20px;
             z-index: 1000;
             box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
@@ -1426,12 +1362,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .mobile-bar-room {
             font-weight: 600;
             font-size: 1rem;
-            color: var(--text-primary);
+            color: #fff;
         }
         
         .mobile-bar-price {
             font-size: 0.9rem;
-            color: var(--success-color);
+            color: #22c55e;
         }
         
         .mobile-bar-btn {
@@ -1463,7 +1399,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .mobile-form-sheet {
-            background: linear-gradient(180deg, var(--bg-body-end) 0%, var(--bg-body-start) 100%);
+            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
             width: 100%;
             max-height: 90vh;
             border-radius: 24px 24px 0 0;
@@ -1481,7 +1417,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             justify-content: space-between;
             padding: 20px 24px;
-            border-bottom: 1px solid var(--border-color);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
             position: sticky;
             top: 0;
             background: inherit;
@@ -1497,9 +1433,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: var(--border-color);
+            background: rgba(255,255,255,0.1);
             border: none;
-            color: var(--text-primary);
+            color: #fff;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -1526,7 +1462,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .error-message {
-            color: var(--error-color);
+            color: #ef4444;
             font-size: 12px;
             margin-top: 6px;
             display: none;
@@ -1576,7 +1512,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .mobile-room-summary .room-price {
-            color: var(--success-color);
+            color: #22c55e;
             font-weight: 600;
         }
         
@@ -1772,9 +1708,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </p>
                 <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; max-width: 100%;">
                     <?php if ($lastBookingId): ?>
-                    <div style="background: var(--border-color); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
                         <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">เลขที่การจอง</div>
-                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: var(--text-primary); font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="bookingIdText"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
+                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="bookingIdText"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
                         <button onclick="copyBookingId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
                             <svg class="animated-clipboard" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -1784,9 +1720,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <?php endif; ?>
                     <?php if ($lastTenantId): ?>
-                    <div style="background: var(--border-color); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
+                    <div style="background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
                         <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">รหัสผู้เช่า</div>
-                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: var(--text-primary); font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="tenantIdText"><?php echo htmlspecialchars($lastTenantId); ?></div>
+                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="tenantIdText"><?php echo htmlspecialchars($lastTenantId); ?></div>
                         <button onclick="copyTenantId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
                             <svg class="animated-clipboard" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -2003,7 +1939,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    value="<?php echo htmlspecialchars($loggedInTenant['tnt_name'] ?? ''); ?>" required autocomplete="off">
                             <input type="hidden" name="existing_tenant_id" id="existingTenantId" value="<?php echo htmlspecialchars($_SESSION['tenant_id'] ?? ''); ?>">
                             <div id="tenantSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
-                            <div class="form-hint" style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                            <div class="form-hint" style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
                                 พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกข้อมูลใหม่ทั้งหมด
                                 <?php if ($loggedInTenant): ?>
@@ -2126,16 +2062,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <!-- Payment Info -->
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
                                 <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
-                                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">ค่ามัดจำ</div>
+                                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px;">ค่ามัดจำ</div>
                                     <div id="paymentAmountDisplay" style="font-size: 1.2rem; font-weight: 700; color: #fbbf24;">฿2,000</div>
                                     <input type="hidden" name="payment_amount" id="paymentAmountInput" value="2000">
                                 </div>
                                 <?php if (!empty($bankAccountNumber)): ?>
                                 <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
-                                    <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px;">เลขบัญชี</div>
-                                    <div style="font-size: 1rem; font-weight: 600; color: var(--text-primary); font-family: monospace;"><?php echo htmlspecialchars($bankAccountNumber); ?></div>
+                                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px;">เลขบัญชี</div>
+                                    <div style="font-size: 1rem; font-weight: 600; color: #fff; font-family: monospace;"><?php echo htmlspecialchars($bankAccountNumber); ?></div>
                                     <?php if (!empty($bankName)): ?>
-                                    <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;"><?php echo htmlspecialchars($bankName); ?></div>
+                                    <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;"><?php echo htmlspecialchars($bankName); ?></div>
                                     <?php endif; ?>
                                 </div>
                                 <?php endif; ?>
@@ -2150,7 +2086,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                          alt="PromptPay QR Code" 
                                          style="width: 180px; height: auto; display: block;">
                                 </div>
-                                <div style="margin-top: 8px; font-size: 0.8rem; color: var(--text-secondary);">
+                                <div style="margin-top: 8px; font-size: 0.8rem; color: #94a3b8;">
                                     สแกน QR พร้อมเพย์: <span style="color: #fbbf24; font-weight: 600;"><?php echo htmlspecialchars($promptpayNumber); ?></span>
                                 </div>
                             </div>
@@ -2164,7 +2100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                         <polyline points="17 8 12 3 7 8"/>
                                         <line x1="12" y1="3" x2="12" y2="15"/>
                                     </svg>
-                                    อัพโหลดสลิปการโอนเงิน <span style="color: var(--error-color);">*</span>
+                                    อัพโหลดสลิปการโอนเงิน <span style="color: #ef4444;">*</span>
                                 </label>
                                 <div class="upload-zone" id="paymentUploadZone" style="border: 2px dashed rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(0,0,0,0.2);">
                                     <input type="file" name="pay_proof" id="payProofInput" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" style="display: none;">
@@ -2174,8 +2110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <polyline points="17 8 12 3 7 8"/>
                                             <line x1="12" y1="3" x2="12" y2="15"/>
                                         </svg>
-                                        <p style="color: var(--text-primary); font-size: 0.9rem; margin-bottom: 4px;">คลิกเพื่อเลือกไฟล์</p>
-                                        <p style="color: var(--text-muted); font-size: 0.75rem;">รองรับ JPG, PNG, PDF (ไม่เกิน 5MB)</p>
+                                        <p style="color: #e2e8f0; font-size: 0.9rem; margin-bottom: 4px;">คลิกเพื่อเลือกไฟล์</p>
+                                        <p style="color: #64748b; font-size: 0.75rem;">รองรับ JPG, PNG, PDF (ไม่เกิน 5MB)</p>
                                     </div>
                                     <div id="uploadPreview" style="display: none;">
                                         <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
@@ -2185,16 +2121,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                                     <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
                                                     <polyline points="14 2 14 8 20 8"/>
                                                 </svg>
-                                                <div style="color: var(--error-color); font-size: 0.75rem; margin-top: 4px;">PDF</div>
+                                                <div style="color: #ef4444; font-size: 0.75rem; margin-top: 4px;">PDF</div>
                                             </div>
                                         </div>
                                         <div style="margin-top: 10px;">
-                                            <span id="uploadFileName" style="color: var(--success-color); font-size: 0.85rem;"></span>
-                                            <button type="button" onclick="removePaymentFile()" style="background: none; border: none; color: var(--error-color); cursor: pointer; margin-left: 10px; font-size: 0.8rem;">ลบ</button>
+                                            <span id="uploadFileName" style="color: #22c55e; font-size: 0.85rem;"></span>
+                                            <button type="button" onclick="removePaymentFile()" style="background: none; border: none; color: #ef4444; cursor: pointer; margin-left: 10px; font-size: 0.8rem;">ลบ</button>
                                         </div>
                                     </div>
                                 </div>
-                                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 8px;">
+                                <p style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">
                                     💡 กรุณาอัพโหลดสลิปการโอนเงินเพื่อยืนยันการจอง
                                 </p>
                             </div>
@@ -2518,7 +2454,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         เพิ่มผู้เช่าใหม่: "${escapeHtml(query)}"
                     </div>
                 </div>
-                <div class="autocomplete-item" style="color: var(--text-secondary); cursor: default;">
+                <div class="autocomplete-item" style="color: #94a3b8; cursor: default;">
                     <div class="autocomplete-item-info">ไม่พบผู้เช่าที่ตรงกับ "${escapeHtml(query)}"</div>
                 </div>
             `;
@@ -2650,7 +2586,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 background: rgba(239, 68, 68, 0.1);
                 border: 1px solid rgba(239, 68, 68, 0.3);
                 border-radius: 8px;
-                color: var(--error-color);
+                color: #ef4444;
                 font-size: 0.8rem;
                 border-left: 3px solid #ef4444;
             `;
@@ -2774,8 +2710,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 : (fileSizeKB + ' KB');
             
             uploadFileName.innerHTML = `
-                <span style="color: var(--success-color); font-weight: 600;">✓ ${escapeHtml(file.name)}</span>
-                <span style="color: var(--text-secondary); font-size: 0.75rem; margin-left: 6px;">(${fileSizeDisplay})</span>
+                <span style="color: #22c55e; font-weight: 600;">✓ ${escapeHtml(file.name)}</span>
+                <span style="color: #94a3b8; font-size: 0.75rem; margin-left: 6px;">(${fileSizeDisplay})</span>
             `;
             
             if (file.type === 'application/pdf') {
