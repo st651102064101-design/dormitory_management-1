@@ -33,14 +33,39 @@ try {
 
     $pdo->beginTransaction();
 
-    $activeContractStmt = $pdo->prepare("SELECT ctr_id FROM contract WHERE room_id = ? AND ctr_status IN ('0', '2') LIMIT 1 FOR UPDATE");
+    // ตรวจสอบการมีสัญญาในห้องที่ยังถือว่าไม่ว่าง
+    // - ctr_status = '0' และ ctr_end >= วันนี้ (ยังใช้งาน)
+    // - ctr_status = '2' และ term_date (แจ้งยกเลิก) ยังไม่ถึง หรือยังไม่มี term_date
+    $activeContractStmt = $pdo->prepare(
+        "SELECT c.ctr_id FROM contract c\n" .
+        "LEFT JOIN termination t ON c.ctr_id = t.ctr_id\n" .
+        "WHERE c.room_id = ? AND (\n" .
+        "    (c.ctr_status = '0' AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE())) OR \n" .
+        "    (c.ctr_status = '2' AND (t.term_date IS NULL OR t.term_date >= CURDATE()))\n" .
+        ") LIMIT 1 FOR UPDATE"
+    );
     $activeContractStmt->execute([$room_id]);
     $existingContractId = $activeContractStmt->fetchColumn();
+
     if ($existingContractId) {
-        throw new Exception('ห้องนี้มีผู้เช่าอยู่แล้ว ไม่สามารถสร้างสัญญาซ้ำได้');
+        // ถ้ามีสัญญาปัจจุบันของห้องนี้ ให้อัปเดตค่าสัญญาเท่านั้น
+        $updateStmt = $pdo->prepare(
+            "UPDATE contract SET ctr_start = ?, ctr_end = ?, ctr_deposit = ?, ctr_status = '0', tnt_id = ? WHERE ctr_id = ?"
+        );
+        $updateStmt->execute([$ctr_start, $ctr_end, $ctr_deposit, $tnt_id, $existingContractId]);
+        $ctr_id = (int)$existingContractId;
+    } else {
+        // สร้างสัญญาใหม่
+        $stmt = $pdo->prepare(
+            "INSERT INTO contract (ctr_start, ctr_end, ctr_deposit, ctr_status, tnt_id, room_id, contract_created_date) VALUES (?, ?, ?, '0', ?, ?, NOW())"
+        );
+        $stmt->execute([$ctr_start, $ctr_end, $ctr_deposit, $tnt_id, $room_id]);
+        $ctr_id = (int)$pdo->lastInsertId();
     }
 
-    // สร้างสัญญา
+    // NOTE: ห้องจะเปลี่ยนเป็น "ไม่ว่าง" เมื่อเช็คอิน (Step 4) เท่านั้น
+    // $stmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
+    // $stmt->execute([$room_id]);
     $stmt = $pdo->prepare("
         INSERT INTO contract (ctr_start, ctr_end, ctr_deposit, ctr_status, tnt_id, room_id, contract_created_date)
         VALUES (?, ?, ?, '0', ?, ?, NOW())
