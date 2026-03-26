@@ -434,18 +434,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         
+        /* === Light Mode (Default) === */
+        :root {
+            --bg-primary: #f8fafc;
+            --bg-secondary: #f1f5f9;
+            --bg-tertiary: rgba(241, 245, 249, 0.85);
+            --bg-input: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #475569;
+            --text-muted: #64748b;
+            --border-color: rgba(0,0,0,0.1);
+            --border-color-focus: rgba(0,0,0,0.2);
+            --accent-primary: #0284c7;
+            --accent-success: #16a34a;
+            --accent-warning: #ea580c;
+            --accent-error: #dc2626;
+            --header-bg: rgba(248, 250, 252, 0.95);
+        }
+        
+        /* === Dark Mode === */
+        :root[data-theme="dark"] {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-tertiary: rgba(30, 41, 59, 0.5);
+            --bg-input: rgba(15, 23, 42, 0.6);
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: rgba(255,255,255,0.1);
+            --border-color-focus: rgba(255,255,255,0.15);
+            --accent-primary: #60a5fa;
+            --accent-success: #22c55e;
+            --accent-warning: #f59e0b;
+            --accent-error: #ef4444;
+            --header-bg: rgba(15, 23, 42, 0.95);
+        }
+        
         body {
             font-family: 'Prompt', system-ui, sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             min-height: 100vh;
-            color: #e2e8f0;
+            color: var(--text-primary);
+            transition: background 0.3s, color 0.3s;
         }
         
         /* Header */
         .header {
-            background: rgba(15, 23, 42, 0.95);
+            background: var(--header-bg, rgba(248, 250, 252, 0.95));
             backdrop-filter: blur(20px);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid var(--border-color);
             padding: 16px 24px;
             position: sticky;
             top: 0;
@@ -465,7 +502,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 12px;
             text-decoration: none;
-            color: #fff;
+            color: var(--text-primary);
         }
         
         .logo img {
@@ -485,17 +522,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 8px;
             padding: 10px 20px;
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
             border-radius: 10px;
-            color: #e2e8f0;
+            color: var(--text-primary);
             text-decoration: none;
             font-size: 0.9rem;
             transition: all 0.3s;
         }
         
         .back-btn:hover {
-            background: rgba(255,255,255,0.15);
+            background: var(--border-color-focus);
+        }
+        
+        /* Theme Toggle Button */
+        .theme-toggle {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s;
+            padding: 0;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--border-color-focus);
+        }
+        
+        .theme-toggle svg {
+            width: 20px;
+            height: 20px;
         }
         
         /* Main Container */
@@ -515,10 +577,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 2rem;
             font-weight: 600;
             margin-bottom: 8px;
+            color: var(--text-primary);
         }
         
         .page-title p {
-            color: #94a3b8;
+            color: var(--text-secondary);
             font-size: 1rem;
         }
         
@@ -540,10 +603,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .room-section-fullscreen {
-            background: rgba(30, 41, 59, 0.5);
+            background: var(--bg-tertiary);
             border-radius: 24px;
             padding: 48px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--border-color);
             max-width: 600px;
             width: 100%;
             text-align: center;
@@ -557,12 +620,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             justify-content: center;
             gap: 12px;
+            color: var(--text-primary);
         }
         
         .room-section-fullscreen .section-title svg {
             width: 28px;
             height: 28px;
-            color: #60a5fa;
+            color: var(--accent-primary);
         }
         
         .room-section-fullscreen .no-rooms {
@@ -572,24 +636,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .room-section-fullscreen .no-rooms svg {
             width: 80px;
             height: 80px;
+            color: var(--text-secondary);
         }
         
         .room-section-fullscreen .no-rooms h3 {
             font-size: 1.5rem;
             margin-top: 24px;
+            color: var(--text-primary);
         }
         
         .room-section-fullscreen .no-rooms p {
             font-size: 1rem;
             margin-top: 12px;
+            color: var(--text-secondary);
         }
         
         /* Room Selection */
         .room-section {
-            background: rgba(30, 41, 59, 0.5);
+            background: var(--bg-tertiary);
             border-radius: 20px;
             padding: 28px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--border-color);
         }
         
         .section-title {
@@ -599,12 +666,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             align-items: center;
             gap: 12px;
+            color: var(--text-primary);
         }
         
         .section-title svg {
             width: 24px;
             height: 24px;
-            color: #60a5fa;
+            color: var(--accent-primary);
         }
         
         .room-grid {
@@ -615,8 +683,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .room-card {
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(255,255,255,0.1);
+            background: var(--bg-input);
+            border: 2px solid var(--border-color);
             border-radius: 16px;
             padding: 20px;
             cursor: pointer;
@@ -625,12 +693,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .room-card:hover {
-            border-color: rgba(96, 165, 250, 0.5);
+            border-color: var(--accent-primary);
             transform: translateY(-2px);
         }
         
         .room-card.selected {
-            border-color: #22c55e;
+            border-color: var(--accent-success);
             background: rgba(34, 197, 94, 0.1);
         }
         
@@ -641,7 +709,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             right: 12px;
             width: 24px;
             height: 24px;
-            background: #22c55e;
+            background: var(--accent-success);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -653,25 +721,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .room-number {
             font-size: 1.5rem;
             font-weight: 700;
-            color: #fff;
+            color: var(--text-primary);
             margin-bottom: 8px;
         }
         
         .room-type {
             font-size: 0.85rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
             margin-bottom: 12px;
         }
         
         .room-price {
             font-size: 1.1rem;
             font-weight: 600;
-            color: #22c55e;
+            color: var(--accent-success);
         }
         
         .room-price span {
             font-size: 0.8rem;
-            color: #64748b;
+            color: var(--text-muted);
             font-weight: 400;
         }
         
@@ -679,7 +747,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .no-rooms {
             text-align: center;
             padding: 60px 20px;
-            color: #94a3b8;
+            color: var(--text-secondary);
         }
         
         .no-rooms svg {
@@ -687,6 +755,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             height: 80px;
             margin-bottom: 20px;
             opacity: 0.5;
+            color: var(--text-secondary);
         }
         
         /* Booking Sidebar */
@@ -696,10 +765,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .booking-box {
-            background: rgba(30, 41, 59, 0.8);
+            background: var(--bg-tertiary);
             border-radius: 20px;
             padding: 28px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--border-color);
         }
         
         .booking-box-title {
@@ -709,6 +778,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: flex;
             align-items: center;
             gap: 10px;
+            color: var(--text-primary);
         }
         
         /* Selected Room Display */
@@ -734,10 +804,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .selected-room-name {
             font-weight: 600;
             font-size: 1.1rem;
+            color: var(--text-primary);
         }
         
         .selected-room-price {
-            color: #22c55e;
+            color: var(--accent-success);
             font-weight: 600;
         }
         
@@ -749,21 +820,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-label {
             display: block;
             font-size: 0.9rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
             margin-bottom: 8px;
         }
         
         .form-label .required {
-            color: #ef4444;
+            color: var(--accent-error);
         }
         
         .form-input {
             width: 100%;
             padding: 14px 16px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255,255,255,0.15);
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            color: #fff;
+            color: var(--text-primary);
             font-size: 1rem;
             font-family: inherit;
             transition: all 0.3s;
@@ -771,12 +842,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .form-input:focus {
             outline: none;
-            border-color: #60a5fa;
-            background: rgba(15, 23, 42, 0.8);
+            border-color: var(--accent-primary);
+            background: var(--bg-secondary);
         }
         
         .form-input::placeholder {
-            color: #64748b;
+            color: var(--text-muted);
         }
         
         /* Autocomplete Suggestions */
@@ -785,8 +856,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             top: 100%;
             left: 0;
             right: 0;
-            background: rgba(15, 23, 42, 0.98);
-            border: 1px solid rgba(96, 165, 250, 0.3);
+            background: var(--bg-primary);
+            border: 1px solid var(--accent-primary);
             border-radius: 12px;
             margin-top: 4px;
             max-height: 300px;
@@ -799,7 +870,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .autocomplete-item {
             padding: 14px 16px;
             cursor: pointer;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid var(--border-color);
             transition: all 0.2s;
         }
         
@@ -808,19 +879,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .autocomplete-item:hover {
-            background: rgba(96, 165, 250, 0.15);
+            background: var(--bg-secondary);
         }
         
         .autocomplete-item-name {
             font-weight: 600;
-            color: #fff;
+            color: var(--text-primary);
             font-size: 1rem;
             margin-bottom: 4px;
         }
         
         .autocomplete-item-info {
             font-size: 0.85rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
         }
         
         .autocomplete-item-status {
@@ -833,18 +904,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .autocomplete-item-status.active {
             background: rgba(34, 197, 94, 0.2);
-            color: #22c55e;
+            color: var(--accent-success);
         }
         
         .autocomplete-item-status.inactive {
             background: rgba(148, 163, 184, 0.2);
-            color: #94a3b8;
+            color: var(--text-secondary);
         }
         
         .autocomplete-new {
             padding: 14px 16px;
             background: rgba(34, 197, 94, 0.1);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid var(--border-color);
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -857,7 +928,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: #22c55e;
+            color: var(--accent-success);
             font-weight: 600;
         }
         
@@ -866,7 +937,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 6px;
             background: rgba(34, 197, 94, 0.15);
-            color: #22c55e;
+            color: var(--accent-success);
             padding: 6px 12px;
             border-radius: 8px;
             font-size: 0.85rem;
@@ -876,7 +947,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .tenant-selected-badge button {
             background: none;
             border: none;
-            color: #ef4444;
+            color: var(--accent-error);
             cursor: pointer;
             padding: 2px;
             display: flex;
@@ -886,7 +957,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         /* Duration Pills */
         .duration-label {
             font-size: 0.9rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
             margin-bottom: 12px;
             display: block;
         }
@@ -900,10 +971,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .duration-pill {
             padding: 12px 20px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 2px solid rgba(255,255,255,0.15);
+            background: var(--bg-input);
+            border: 2px solid var(--border-color);
             border-radius: 30px;
-            color: #e2e8f0;
+            color: var(--text-primary);
             font-size: 0.95rem;
             cursor: pointer;
             transition: all 0.3s;
@@ -913,7 +984,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .duration-pill:hover {
-            border-color: rgba(96, 165, 250, 0.5);
+            border-color: var(--accent-primary);
         }
         
         .duration-pill.selected {
@@ -926,10 +997,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .form-select {
             width: 100%;
             padding: 14px 16px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255,255,255,0.15);
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
-            color: #fff;
+            color: var(--text-primary);
             font-size: 1rem;
             font-family: inherit;
             cursor: pointer;
@@ -942,17 +1013,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .form-select:focus {
             outline: none;
-            border-color: #60a5fa;
+            border-color: var(--accent-primary);
         }
         
         .form-select option {
-            background: #1e293b;
-            color: #fff;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
         }
         
         /* Contract Summary */
         .contract-summary {
-            background: rgba(15, 23, 42, 0.4);
+            background: var(--bg-input);
             border-radius: 12px;
             padding: 16px;
             margin-bottom: 20px;
@@ -966,20 +1037,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .summary-row:not(:last-child) {
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid var(--border-color);
         }
         
         .summary-label {
-            color: #94a3b8;
+            color: var(--text-secondary);
         }
         
         .summary-value {
             font-weight: 500;
+            color: var(--text-primary);
         }
         
         .summary-total {
             font-size: 1.1rem;
-            color: #22c55e;
+            color: var(--accent-success);
             font-weight: 600;
         }
         
@@ -999,57 +1071,58 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 10px;
             padding: 12px 16px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255,255,255,0.1);
+            background: var(--bg-input);
+            border: 1px solid var(--border-color);
             border-radius: 12px;
             transition: all 0.3s;
         }
         
         .form-step.active {
             background: linear-gradient(135deg, rgba(96, 165, 250, 0.2), rgba(59, 130, 246, 0.1));
-            border-color: #60a5fa;
+            border-color: var(--accent-primary);
         }
         
         .form-step.completed {
             background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.1));
-            border-color: #22c55e;
+            border-color: var(--accent-success);
         }
         
         .step-number {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.1);
+            background: var(--border-color);
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: 600;
             font-size: 0.9rem;
             flex-shrink: 0;
+            color: var(--text-secondary);
         }
         
         .form-step.active .step-number {
-            background: #60a5fa;
+            background: var(--accent-primary);
             color: #fff;
         }
         
         .form-step.completed .step-number {
-            background: #22c55e;
+            background: var(--accent-success);
             color: #fff;
         }
         
         .step-label {
             font-size: 0.9rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
         }
         
         .form-step.active .step-label {
-            color: #60a5fa;
+            color: var(--accent-primary);
             font-weight: 600;
         }
         
         .form-step.completed .step-label {
-            color: #22c55e;
+            color: var(--accent-success);
             font-weight: 600;
         }
         
@@ -1104,12 +1177,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .btn-prev {
-            background: rgba(255,255,255,0.1);
-            color: #e2e8f0;
+            background: var(--bg-input);
+            color: var(--text-primary);
         }
         
         .btn-prev:hover {
-            background: rgba(255,255,255,0.15);
+            background: var(--border-color-focus);
         }
         
         .btn-next {
@@ -1148,7 +1221,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 10px;
             padding: 14px;
-            background: rgba(15, 23, 42, 0.4);
+            background: var(--bg-input);
             border-radius: 12px;
             cursor: pointer;
             margin-bottom: 16px;
@@ -1156,13 +1229,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .optional-toggle:hover {
-            background: rgba(15, 23, 42, 0.6);
+            background: var(--bg-secondary);
         }
         
         .optional-toggle svg {
             width: 20px;
             height: 20px;
-            color: #60a5fa;
+            color: var(--accent-primary);
             transition: transform 0.3s;
         }
         
@@ -1172,7 +1245,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         .optional-toggle span {
             font-size: 0.9rem;
-            color: #94a3b8;
+            color: var(--text-secondary);
         }
         
         .optional-fields {
@@ -1188,7 +1261,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .submit-btn {
             width: 100%;
             padding: 16px 24px;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
+            background: linear-gradient(135deg, var(--accent-success), #16a34a);
             border: none;
             border-radius: 14px;
             color: #fff;
@@ -1227,7 +1300,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             gap: 20px;
             margin-top: 20px;
             padding-top: 20px;
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid var(--border-color);
         }
         
         .trust-badge {
@@ -1235,13 +1308,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             gap: 6px;
             font-size: 0.8rem;
-            color: #64748b;
+            color: var(--text-muted);
         }
         
         .trust-badge svg {
             width: 16px;
             height: 16px;
-            color: #22c55e;
+            color: var(--accent-success);
         }
         
         /* Messages */
@@ -1257,13 +1330,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .message.error {
             background: rgba(239, 68, 68, 0.15);
             border: 1px solid rgba(239, 68, 68, 0.3);
-            color: #fca5a5;
+            color: #ef4444;
+        }
+        
+        @media (prefers-color-scheme: light) {
+            .message.error {
+                color: #991b1b;
+            }
         }
         
         .message.success {
             background: rgba(34, 197, 94, 0.15);
             border: 1px solid rgba(34, 197, 94, 0.3);
-            color: #86efac;
+            color: var(--accent-success);
         }
         
         .message svg {
@@ -1281,7 +1360,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .success-icon {
             width: 100px;
             height: 100px;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
+            background: linear-gradient(135deg, var(--accent-success), #16a34a);
             border-radius: 50%;
             display: flex;
             align-items: center;
@@ -1299,10 +1378,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             font-size: 1.8rem;
             font-weight: 600;
             margin-bottom: 12px;
+            color: var(--text-primary);
         }
         
         .success-message {
-            color: #94a3b8;
+            color: var(--text-secondary);
             margin-bottom: 32px;
         }
         
@@ -1328,9 +1408,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .success-btn.secondary {
-            background: rgba(255,255,255,0.1);
-            color: #e2e8f0;
-            border: 1px solid rgba(255,255,255,0.2);
+            background: var(--bg-input);
+            color: var(--text-primary);
+            border: 1px solid var(--border-color);
+        }
+        
+        .success-btn.secondary:hover {
+            background: var(--bg-secondary);
         }
         
         /* Mobile Bottom Bar */
@@ -1340,9 +1424,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             bottom: 0;
             left: 0;
             right: 0;
-            background: rgba(15, 23, 42, 0.98);
+            background: var(--bg-primary);
             backdrop-filter: blur(20px);
-            border-top: 1px solid rgba(255,255,255,0.1);
+            border-top: 1px solid var(--border-color);
             padding: 16px 20px;
             z-index: 1000;
             box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
@@ -1362,17 +1446,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .mobile-bar-room {
             font-weight: 600;
             font-size: 1rem;
-            color: #fff;
+            color: var(--text-primary);
         }
         
         .mobile-bar-price {
             font-size: 0.9rem;
-            color: #22c55e;
+            color: var(--accent-success);
         }
         
         .mobile-bar-btn {
             padding: 14px 28px;
-            background: linear-gradient(135deg, #22c55e, #16a34a);
+            background: linear-gradient(135deg, var(--accent-success), #16a34a);
             border: none;
             border-radius: 12px;
             color: #fff;
@@ -1399,7 +1483,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         .mobile-form-sheet {
-            background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%);
+            background: linear-gradient(180deg, var(--bg-secondary) 0%, var(--bg-primary) 100%);
             width: 100%;
             max-height: 90vh;
             border-radius: 24px 24px 0 0;
@@ -1417,7 +1501,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             align-items: center;
             justify-content: space-between;
             padding: 20px 24px;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             background: inherit;
@@ -1427,15 +1511,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .mobile-form-title {
             font-size: 1.1rem;
             font-weight: 600;
+            color: var(--text-primary);
         }
         
         .mobile-form-close {
             width: 36px;
             height: 36px;
             border-radius: 50%;
-            background: rgba(255,255,255,0.1);
+            background: var(--bg-input);
             border: none;
-            color: #fff;
+            color: var(--text-primary);
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -1509,10 +1594,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         .mobile-room-summary .room-name {
             font-weight: 600;
             font-size: 1.1rem;
+            color: var(--text-primary);
         }
         
         .mobile-room-summary .room-price {
-            color: #22c55e;
+            color: var(--accent-success);
             font-weight: 600;
         }
         
@@ -1642,8 +1728,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             .room-price span {
                 font-size: 0.65rem;
             }
-                font-size: 1rem;
-            }
             
             .mobile-bar-btn {
                 padding: 12px 20px;
@@ -1655,6 +1739,77 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         input[type="radio"].room-radio {
             display: none;
         }
+        
+        /* Form Hint */
+        .form-hint {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        /* Payment Info Box */
+        .payment-info-box {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            padding: 12px;
+            border-radius: 10px;
+            color: var(--text-primary);
+        }
+        
+        .payment-info-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 4px;
+        }
+        
+        .payment-info-value {
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: monospace;
+        }
+        
+        .payment-info-sub {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        
+        /* Upload Zone */
+        .upload-zone-inner {
+            border: 2px dashed rgba(245, 158, 11, 0.4);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--bg-secondary);
+        }
+        
+        .upload-placeholder-text {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            margin-bottom: 4px;
+        }
+        
+        .upload-placeholder-sub {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+        }
+        
+        .upload-hint {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+        
+        /* Message error fix for light mode */
+        .message.error {
+            color: var(--accent-error);
+        }
     </style>
 </head>
 <body>
@@ -1665,12 +1820,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo">
                 <span class="logo-text"><?php echo htmlspecialchars($siteName); ?></span>
             </a>
-            <a href="/dormitory_management/" class="back-btn">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M19 12H5M12 19l-7-7 7-7"/>
-                </svg>
-                กลับหน้าหลัก
-            </a>
+            <div style="display: flex; align-items: center; gap: 12px;">
+                <button class="theme-toggle" id="themeToggleBtn" type="button" aria-label="สลับโหมด">
+                    <!-- Moon icon: shown in light mode to indicate click = go dark -->
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" id="themeIcon">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                    </svg>
+                </button>
+                <a href="/dormitory_management/" class="back-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M19 12H5M12 19l-7-7 7-7"/>
+                    </svg>
+                    กลับหน้าหลัก
+                </a>
+            </div>
         </div>
     </header>
 
@@ -1708,9 +1871,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </p>
                 <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; max-width: 100%;">
                     <?php if ($lastBookingId): ?>
-                    <div style="background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
-                        <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">เลขที่การจอง</div>
-                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="bookingIdText"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">เลขที่การจอง</div>
+                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: var(--text-primary); font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="bookingIdText"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
                         <button onclick="copyBookingId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
                             <svg class="animated-clipboard" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -1720,9 +1883,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <?php endif; ?>
                     <?php if ($lastTenantId): ?>
-                    <div style="background: rgba(255,255,255,0.1); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
-                        <div style="font-size: 11px; color: rgba(255,255,255,0.7); margin-bottom: 4px;">รหัสผู้เช่า</div>
-                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: #ffffff; font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="tenantIdText"><?php echo htmlspecialchars($lastTenantId); ?></div>
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
+                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">รหัสผู้เช่า</div>
+                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: var(--text-primary); font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="tenantIdText"><?php echo htmlspecialchars($lastTenantId); ?></div>
                         <button onclick="copyTenantId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
                             <svg class="animated-clipboard" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -1764,7 +1927,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </div>
                 
-                <p style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 16px 0 0 0; line-height: 1.6; display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap;">
+                <p style="color: var(--text-primary); font-size: 14px; margin: 16px 0 0 0; line-height: 1.6; display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
                     <span><strong>กรุณาบันทึกหมายเลขนี้</strong> เพื่อใช้ตรวจสอบสถานะการจองและข้อมูลการชำระเงินภายหลัง<br>
                     <a href="/dormitory_management/Public/booking_status.php" style="color: #10b981; text-decoration: underline; font-weight: 600;">คลิกที่นี่เพื่อตรวจสอบสถานะ</a></span>
@@ -1939,7 +2102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                    value="<?php echo htmlspecialchars($loggedInTenant['tnt_name'] ?? ''); ?>" required autocomplete="off">
                             <input type="hidden" name="existing_tenant_id" id="existingTenantId" value="<?php echo htmlspecialchars($_SESSION['tenant_id'] ?? ''); ?>">
                             <div id="tenantSuggestions" class="autocomplete-suggestions" style="display: none;"></div>
-                            <div class="form-hint" style="font-size: 0.75rem; color: #94a3b8; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+                            <div class="form-hint">
                                 <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
                                 พิมพ์ชื่อเพื่อค้นหาผู้เช่าเดิม หรือกรอกข้อมูลใหม่ทั้งหมด
                                 <?php if ($loggedInTenant): ?>
@@ -2058,20 +2221,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </h3>
                             
                         <!-- Payment Section -->
-                        <div class="payment-section" style="margin: 24px 0; padding: 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(251, 191, 36, 0.05) 100%); border-radius: 16px; border: 1px solid rgba(245, 158, 11, 0.3);">
+                        <div class="payment-section" style="margin: 24px 0; padding: 20px; background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(251, 191, 36, 0.04) 100%); border-radius: 16px; border: 1px solid rgba(245, 158, 11, 0.3);">
                             <!-- Payment Info -->
                             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
-                                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
-                                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px;">ค่ามัดจำ</div>
-                                    <div id="paymentAmountDisplay" style="font-size: 1.2rem; font-weight: 700; color: #fbbf24;">฿2,000</div>
+                                <div class="payment-info-box">
+                                    <div class="payment-info-label">ค่ามัดจำ</div>
+                                    <div id="paymentAmountDisplay" style="font-size: 1.2rem; font-weight: 700; color: #d97706;">฿2,000</div>
                                     <input type="hidden" name="payment_amount" id="paymentAmountInput" value="2000">
                                 </div>
                                 <?php if (!empty($bankAccountNumber)): ?>
-                                <div style="background: rgba(0,0,0,0.2); padding: 12px; border-radius: 10px;">
-                                    <div style="font-size: 0.8rem; color: #94a3b8; margin-bottom: 4px;">เลขบัญชี</div>
-                                    <div style="font-size: 1rem; font-weight: 600; color: #fff; font-family: monospace;"><?php echo htmlspecialchars($bankAccountNumber); ?></div>
+                                <div class="payment-info-box">
+                                    <div class="payment-info-label">เลขบัญชี</div>
+                                    <div class="payment-info-value"><?php echo htmlspecialchars($bankAccountNumber); ?></div>
                                     <?php if (!empty($bankName)): ?>
-                                    <div style="font-size: 0.75rem; color: #94a3b8; margin-top: 2px;"><?php echo htmlspecialchars($bankName); ?></div>
+                                    <div class="payment-info-sub"><?php echo htmlspecialchars($bankName); ?></div>
                                     <?php endif; ?>
                                 </div>
                                 <?php endif; ?>
@@ -2080,29 +2243,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <?php if (!empty($promptpayNumber)): ?>
                             <!-- PromptPay QR Code -->
                             <div style="text-align: center; margin-bottom: 16px;">
-                                <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.15);">
+                                <div style="background: white; padding: 15px; border-radius: 12px; display: inline-block; box-shadow: 0 4px 12px rgba(0,0,0,0.1);">
                                     <img id="qrCodeImage" 
                                          src="https://promptpay.io/<?php echo urlencode($promptpayNumber); ?>/2000.png" 
                                          alt="PromptPay QR Code" 
                                          style="width: 180px; height: auto; display: block;">
                                 </div>
-                                <div style="margin-top: 8px; font-size: 0.8rem; color: #94a3b8;">
-                                    สแกน QR พร้อมเพย์: <span style="color: #fbbf24; font-weight: 600;"><?php echo htmlspecialchars($promptpayNumber); ?></span>
+                                <div style="margin-top: 8px; font-size: 0.8rem; color: var(--text-secondary);">
+                                    สแกน QR พร้อมเพย์: <span style="color: #d97706; font-weight: 600;"><?php echo htmlspecialchars($promptpayNumber); ?></span>
                                 </div>
                             </div>
                             <?php endif; ?>
                             
                             <!-- Upload Slip -->
                             <div class="form-group" style="margin-bottom: 0;">
-                                <label class="form-label" style="color: #fbbf24; margin-bottom: 8px;">
+                                <label class="form-label" style="color: #b45309; margin-bottom: 8px;">
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
                                         <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
                                         <polyline points="17 8 12 3 7 8"/>
                                         <line x1="12" y1="3" x2="12" y2="15"/>
                                     </svg>
-                                    อัพโหลดสลิปการโอนเงิน <span style="color: #ef4444;">*</span>
+                                    อัพโหลดสลิปการโอนเงิน <span style="color: var(--accent-error);">*</span>
                                 </label>
-                                <div class="upload-zone" id="paymentUploadZone" style="border: 2px dashed rgba(245, 158, 11, 0.4); border-radius: 12px; padding: 20px; text-align: center; cursor: pointer; transition: all 0.3s; background: rgba(0,0,0,0.2);">
+                                <div class="upload-zone upload-zone-inner" id="paymentUploadZone">
                                     <input type="file" name="pay_proof" id="payProofInput" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" style="display: none;">
                                     <div id="uploadPlaceholder">
                                         <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" style="margin-bottom: 10px;">
@@ -2110,8 +2273,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <polyline points="17 8 12 3 7 8"/>
                                             <line x1="12" y1="3" x2="12" y2="15"/>
                                         </svg>
-                                        <p style="color: #e2e8f0; font-size: 0.9rem; margin-bottom: 4px;">คลิกเพื่อเลือกไฟล์</p>
-                                        <p style="color: #64748b; font-size: 0.75rem;">รองรับ JPG, PNG, PDF (ไม่เกิน 5MB)</p>
+                                        <p class="upload-placeholder-text">คลิกเพื่อเลือกไฟล์</p>
+                                        <p class="upload-placeholder-sub">รองรับ JPG, PNG, PDF (ไม่เกิน 5MB)</p>
                                     </div>
                                     <div id="uploadPreview" style="display: none;">
                                         <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
@@ -2125,12 +2288,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             </div>
                                         </div>
                                         <div style="margin-top: 10px;">
-                                            <span id="uploadFileName" style="color: #22c55e; font-size: 0.85rem;"></span>
-                                            <button type="button" onclick="removePaymentFile()" style="background: none; border: none; color: #ef4444; cursor: pointer; margin-left: 10px; font-size: 0.8rem;">ลบ</button>
+                                            <span id="uploadFileName" style="color: var(--accent-success); font-size: 0.85rem;"></span>
+                                            <button type="button" onclick="removePaymentFile()" style="background: none; border: none; color: var(--accent-error); cursor: pointer; margin-left: 10px; font-size: 0.8rem;">ลบ</button>
                                         </div>
                                     </div>
                                 </div>
-                                <p style="font-size: 0.75rem; color: #64748b; margin-top: 8px;">
+                                <p class="upload-hint">
                                     💡 กรุณาอัพโหลดสลิปการโอนเงินเพื่อยืนยันการจอง
                                 </p>
                             </div>
@@ -3408,6 +3571,120 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }, 2000);
             }
         });
+        
+        // ==========================================
+        // Theme Toggle Feature
+        // ==========================================
+        const THEME_KEY = 'dormitory_theme_preference';
+        
+        // Initialize theme on page load
+        function initTheme() {
+            const savedTheme = localStorage.getItem(THEME_KEY);
+            let currentTheme = savedTheme || 'light';
+            
+            // Apply saved theme
+            applyTheme(currentTheme);
+        }
+        
+        // Apply theme to document
+        function applyTheme(theme) {
+            const html = document.documentElement;
+            
+            if (theme === 'dark') {
+                html.style.colorScheme = 'dark';
+                html.setAttribute('data-theme', 'dark');
+                updateThemeIcon('dark');
+            } else {
+                // Light mode (default)
+                html.style.colorScheme = 'light';
+                html.removeAttribute('data-theme');
+                updateThemeIcon('light');
+            }
+            
+            localStorage.setItem(THEME_KEY, theme);
+        }
+        
+        // Update theme icon based on current theme
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('themeIcon');
+            if (!icon) return;
+            
+            if (theme === 'dark') {
+                // Show sun icon (click to go light)
+                icon.innerHTML = '<circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>';
+            } else {
+                // Show moon icon (click to go dark)
+                icon.innerHTML = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>';
+            }
+        }
+        
+        // Toggle theme on button click
+        document.getElementById('themeToggleBtn')?.addEventListener('click', function() {
+            const currentTheme = localStorage.getItem(THEME_KEY) || 'light';
+            let nextTheme;
+            
+            if (currentTheme === 'light') {
+                nextTheme = 'dark';
+            } else {
+                nextTheme = 'light';
+            }
+            
+            applyTheme(nextTheme);
+            showThemeToast(nextTheme);
+        });
+        
+        // Show notification about theme change
+        function showThemeToast(theme) {
+            const messages = {
+                'light': '🌞 สลับเป็นโหมด Light',
+                'dark': '🌙 สลับเป็นโหมด Dark'
+            };
+            
+            // Create toast element
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                bottom: 24px;
+                left: 24px;
+                background: rgba(0,0,0,0.8);
+                color: white;
+                padding: 12px 16px;
+                border-radius: 8px;
+                font-size: 14px;
+                font-weight: 500;
+                z-index: 3000;
+                animation: slideInUp 0.3s ease;
+            `;
+            toast.textContent = messages[theme];
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideOutDown 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 2000);
+        }
+        
+        // Add animation styles
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+            @keyframes slideInUp {
+                from { transform: translateY(100px); opacity: 0; }
+                to { transform: translateY(0); opacity: 1; }
+            }
+            @keyframes slideOutDown {
+                from { transform: translateY(0); opacity: 1; }
+                to { transform: translateY(100px); opacity: 0; }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+        
+        // Initialize theme when page loads
+        window.addEventListener('DOMContentLoaded', initTheme);
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initTheme);
+        } else {
+            initTheme();
+        }
     </script>
     
     <style>
