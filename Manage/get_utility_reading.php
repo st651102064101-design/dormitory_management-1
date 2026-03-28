@@ -10,6 +10,9 @@ require_once __DIR__ . '/../ConnectDB.php';
 header('Content-Type: application/json; charset=utf-8');
 
 $ctrId = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
+$targetMonth = isset($_GET['target_month']) ? (int)$_GET['target_month'] : 0;
+$targetYear = isset($_GET['target_year']) ? (int)$_GET['target_year'] : 0;
+
 if ($ctrId <= 0) {
     echo json_encode(['error' => 'Invalid ctr_id']);
     exit;
@@ -19,8 +22,9 @@ try {
     $pdo = connectDB();
 
     $now = new DateTimeImmutable();
-    $meterMonth = (int)$now->format('n');
-    $meterYear  = (int)$now->format('Y');
+    // Use provided target month/year if given, otherwise use current month
+    $meterMonth = $targetMonth > 0 && $targetMonth <= 12 ? $targetMonth : (int)$now->format('n');
+    $meterYear = $targetYear > 0 ? $targetYear : (int)$now->format('Y');
     $targetMonthStart = sprintf('%04d-%02d-01', $meterYear, $meterMonth);
     $targetMonthEnd = (new DateTimeImmutable($targetMonthStart))->modify('+1 month')->format('Y-m-d');
 
