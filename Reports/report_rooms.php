@@ -220,9 +220,9 @@ $pageTitle = 'รายงานห้องพัก';
       margin-bottom: 1rem;
     }
     .view-toggle-btn {
-      background: #334155;
-      border: 1px solid #475569;
-      color: #fff;
+      background: #334155 !important;
+      border: 1px solid #475569 !important;
+      color: #fff !important;
       padding: 0.5rem 1rem;
       border-radius: 8px;
       cursor: pointer;
@@ -233,9 +233,13 @@ $pageTitle = 'รายงานห้องพัก';
       gap: 0.4rem;
       transition: all 0.2s;
     }
+    .view-toggle-btn svg {
+      stroke: #fff !important;
+    }
     .view-toggle-btn:hover {
-      background: #1e293b;
-      border-color: #334155;
+      background: #1e293b !important;
+      border-color: #334155 !important;
+      color: #fff !important;
     }
     .room-list {
       display: grid;

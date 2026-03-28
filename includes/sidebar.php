@@ -2271,13 +2271,13 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
   }
   
   .apple-alert-dialog {
-    background: rgba(30, 41, 59, 0.95);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: #ffffff;
+    border: 1px solid rgba(0, 0, 0, 0.12);
     border-radius: 14px;
     width: 90%;
     max-width: 320px;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
     animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
   
@@ -2289,20 +2289,20 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
   .apple-alert-title {
     font-size: 17px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.95);
+    color: #111827;
     margin-bottom: 8px;
     line-height: 1.4;
   }
   
   .apple-alert-message {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.7);
+    color: #6b7280;
     line-height: 1.5;
   }
   
   .apple-alert-buttons {
     display: flex;
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .apple-alert-button {
@@ -2310,7 +2310,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     padding: 14px 16px;
     background: transparent;
     border: none;
-    color: #3b82f6;
+    color: #2563eb;
     font-size: 17px;
     font-weight: 400;
     cursor: pointer;
@@ -2319,20 +2319,20 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
   }
   
   .apple-alert-button:not(:last-child) {
-    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: 1px solid rgba(0, 0, 0, 0.1);
   }
   
   .apple-alert-button:hover {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.04);
   }
   
   .apple-alert-button:active {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.08);
   }
   
   .apple-alert-button.primary {
     font-weight: 600;
-    color: #60a5fa;
+    color: #2563eb;
   }
   
   .apple-alert-button.destructive {
@@ -3840,7 +3840,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
           <span class="google-email" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?></span>
-          <button type="button" class="google-unlink-btn" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ถอนการเชื่อมต่อบัญชี Google" style="background: none; border: none; padding: 0; cursor: pointer;">
+          <button type="button" class="google-unlink-btn" title="ถอนการเชื่อมต่อบัญชี Google" onclick="handleGoogleUnlink(event)" style="background: none; border: none; padding: 4px; cursor: pointer;">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -3908,6 +3908,128 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     document.body.classList.add('theme-fade');
     setTimeout(() => document.body.classList.remove('theme-fade'), 500);
   });
+</script>
+<script>
+// Apple-style Alert Function (global — must be outside IIFE so onclick handlers can access)
+function appleAlert(message, title = 'project.3bbddns.com:36140 บอกว่า') {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'apple-alert-overlay';
+    overlay.innerHTML = `
+      <div class="apple-alert-dialog">
+        <div class="apple-alert-content">
+          <div class="apple-alert-title">${title}</div>
+          <div class="apple-alert-message">${message}</div>
+        </div>
+        <div class="apple-alert-buttons">
+          <button class="apple-alert-button primary">ตกลง</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const button = overlay.querySelector('.apple-alert-button');
+    button.addEventListener('click', () => {
+      overlay.style.animation = 'fadeOut 0.2s ease forwards';
+      setTimeout(() => { overlay.remove(); resolve(); }, 200);
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.style.animation = 'fadeOut 0.2s ease forwards';
+        setTimeout(() => { overlay.remove(); resolve(); }, 200);
+      }
+    });
+  });
+}
+
+// Apple-style Confirm Function (global)
+function appleConfirm(message, title = 'project.3bbddns.com:36140 บอกว่า') {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'apple-alert-overlay';
+    overlay.innerHTML = `
+      <div class="apple-alert-dialog">
+        <div class="apple-alert-content">
+          <div class="apple-alert-title">${title}</div>
+          <div class="apple-alert-message">${message}</div>
+        </div>
+        <div class="apple-alert-buttons">
+          <button class="apple-alert-button">ยกเลิก</button>
+          <button class="apple-alert-button destructive">ตกลง</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const buttons = overlay.querySelectorAll('.apple-alert-button');
+    buttons[0].addEventListener('click', () => {
+      overlay.style.animation = 'fadeOut 0.2s ease forwards';
+      setTimeout(() => { overlay.remove(); resolve(false); }, 200);
+    });
+    buttons[1].addEventListener('click', () => {
+      overlay.style.animation = 'fadeOut 0.2s ease forwards';
+      setTimeout(() => { overlay.remove(); resolve(true); }, 200);
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.style.animation = 'fadeOut 0.2s ease forwards';
+        setTimeout(() => { overlay.remove(); resolve(false); }, 200);
+      }
+    });
+  });
+}
+
+// AJAX สำหรับลบบัญชี Google (global — called from onclick)
+async function handleGoogleUnlink(e) {
+  if (e && e.preventDefault) { e.preventDefault(); e.stopPropagation(); }
+  const unlinkBtn = (e && e.currentTarget) || document.querySelector('.google-unlink-btn');
+  if (!unlinkBtn) return;
+  console.log('\u2713 Unlink button clicked');
+  const sidebar = document.querySelector('[role="complementary"]') || document.querySelector('.sidebar') || document.querySelector('#sidebar');
+  if (sidebar) sidebar.classList.remove('collapsed');
+  console.log('\u2713 Showing confirmation dialog');
+  const confirmed = await appleConfirm('คุณต้องการถอนการเชื่อมต่อบัญชี Google นี้หรือไม่?');
+  if (!confirmed) { console.log('\u2713 User cancelled unlink'); return; }
+  console.log('\u2713 User confirmed, starting unlink process');
+  try {
+    unlinkBtn.style.opacity = '0.5';
+    unlinkBtn.style.pointerEvents = 'none';
+    const response = await fetch('/dormitory_management/unlink_google.php', { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+    const result = await response.json();
+    console.log('\u2713 Unlink result:', result);
+    if (result.success) {
+      if (sidebar) sidebar.classList.remove('collapsed');
+      const avatarDiv = document.querySelector('.sidebar-footer .avatar');
+      if (avatarDiv) { const img = avatarDiv.querySelector('img'); if (img) img.style.display='none'; const svg = avatarDiv.querySelector('svg'); if (svg) svg.style.display='block'; }
+      const userRowAvatar = document.querySelector('.user-row .avatar');
+      if (userRowAvatar) { const img = userRowAvatar.querySelector('img'); if (img) img.style.display='none'; const svg = userRowAvatar.querySelector('svg'); if (svg) svg.style.display='block'; }
+      const railUser = document.querySelector('.rail-user');
+      if (railUser) { const img = railUser.querySelector('img'); if (img) img.style.display='none'; const span = railUser.querySelector('span.app-nav-icon'); if (span) span.style.display='inline-block'; }
+      const googleLinkWrap = unlinkBtn.closest('.google-link-wrap');
+      if (googleLinkWrap) {
+        googleLinkWrap.innerHTML = `
+          <a href="/dormitory_management/link_google.php?action=link" class="google-link-btn">
+            <svg class="google-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            <span class="app-nav-label">เชื่อมบัญชี Google</span>
+          </a>
+        `;
+        if (window.AnimateUI && typeof window.AnimateUI.showNotification === 'function') {
+          window.AnimateUI.showNotification('ถอนการเชื่อมต่อบัญชี Google สำเร็จ', 'success');
+        }
+      }
+    } else {
+      console.error('\u2717 Unlink failed:', result.message);
+      if (window.AnimateUI && typeof window.AnimateUI.showNotification === 'function') {
+        window.AnimateUI.showNotification(result.message, 'error');
+      } else {
+        await appleAlert('เกิดข้อผิดพลาด: ' + result.message);
+      }
+      unlinkBtn.style.opacity = '1';
+      unlinkBtn.style.pointerEvents = 'auto';
+    }
+  } catch (error) {
+    console.error('\u2717 Exception during unlink:', error);
+    await appleAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+  }
+}
 </script>
 <script>
 (function() {
@@ -4042,7 +4164,16 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     document.body.classList.remove('sidebar-account-modal-open');
   }
 
-  trigger.addEventListener('click', openModal);
+  trigger.addEventListener('click', function(e) {
+    // ❌ ไม่เปิด modal ถ้าคลิกปุ่ม unlink/link Google หรือ logout
+    if (e.target.closest('.google-unlink-btn') ||
+        e.target.closest('.google-link-btn') ||
+        e.target.closest('.google-link-wrap') ||
+        e.target.closest('.logout-btn')) {
+      return;
+    }
+    openModal();
+  });
   trigger.addEventListener('keydown', function(e) {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -4321,207 +4452,6 @@ document.addEventListener('keydown', function(e) {
   }
 });
 
-// Apple-style Alert Function
-function appleAlert(message, title = 'project.3bbddns.com:36140 บอกว่า') {
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.className = 'apple-alert-overlay';
-    
-    overlay.innerHTML = `
-      <div class="apple-alert-dialog">
-        <div class="apple-alert-content">
-          <div class="apple-alert-title">${title}</div>
-          <div class="apple-alert-message">${message}</div>
-        </div>
-        <div class="apple-alert-buttons">
-          <button class="apple-alert-button primary">ตกลง</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(overlay);
-    
-    const button = overlay.querySelector('.apple-alert-button');
-    button.addEventListener('click', () => {
-      overlay.style.animation = 'fadeOut 0.2s ease forwards';
-      setTimeout(() => {
-        overlay.remove();
-        resolve();
-      }, 200);
-    });
-    
-    // คลิกนอก dialog ก็ปิดได้
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        overlay.style.animation = 'fadeOut 0.2s ease forwards';
-        setTimeout(() => {
-          overlay.remove();
-          resolve();
-        }, 200);
-      }
-    });
-  });
-}
-
-// Apple-style Confirm Function
-function appleConfirm(message, title = 'project.3bbddns.com:36140 บอกว่า') {
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.className = 'apple-alert-overlay';
-    
-    overlay.innerHTML = `
-      <div class="apple-alert-dialog">
-        <div class="apple-alert-content">
-          <div class="apple-alert-title">${title}</div>
-          <div class="apple-alert-message">${message}</div>
-        </div>
-        <div class="apple-alert-buttons">
-          <button class="apple-alert-button">ยกเลิก</button>
-          <button class="apple-alert-button destructive">ตกลง</button>
-        </div>
-      </div>
-    `;
-    
-    document.body.appendChild(overlay);
-    
-    const buttons = overlay.querySelectorAll('.apple-alert-button');
-    
-    // ยกเลิก
-    buttons[0].addEventListener('click', () => {
-      overlay.style.animation = 'fadeOut 0.2s ease forwards';
-      setTimeout(() => {
-        overlay.remove();
-        resolve(false);
-      }, 200);
-    });
-    
-    // ตกลง
-    buttons[1].addEventListener('click', () => {
-      overlay.style.animation = 'fadeOut 0.2s ease forwards';
-      setTimeout(() => {
-        overlay.remove();
-        resolve(true);
-      }, 200);
-    });
-    
-    // คลิกนอก dialog = ยกเลิก
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        overlay.style.animation = 'fadeOut 0.2s ease forwards';
-        setTimeout(() => {
-          overlay.remove();
-          resolve(false);
-        }, 200);
-      }
-    });
-  });
-}
-
-// AJAX สำหรับลบบัญชี Google (using event delegation)
-(function() {
-  document.addEventListener('click', async (e) => {
-    const unlinkBtn = e.target.closest('.google-unlink-btn');
-    if (!unlinkBtn) return;
-    
-    e.preventDefault();
-    e.stopPropagation();
-    
-    const sidebar = document.querySelector('[role="complementary"]') || document.querySelector('.sidebar') || document.querySelector('#sidebar');
-    
-    // ป้องกันไม่ให้ sidebar ปิด
-    if (sidebar) {
-      sidebar.classList.remove('collapsed');
-    }
-    
-    const confirmed = await appleConfirm('คุณต้องการถอนการเชื่อมต่อบัญชี Google นี้หรือไม่?');
-    if (!confirmed) {
-      return;
-    }
-    
-    try {
-      // แสดง loading state
-      unlinkBtn.style.opacity = '0.5';
-      unlinkBtn.style.pointerEvents = 'none';
-      
-      const response = await fetch('/dormitory_management/unlink_google.php', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      
-      const result = await response.json();
-      
-      if (result.success) {
-        // ป้องกันไม่ให้ sidebar ปิด
-        if (sidebar) {
-          sidebar.classList.remove('collapsed');
-        }
-        
-        // ลบรูปภาพ Google จากทั้งหมดตำแหน่ง
-        // 1. ตำแหน่ง sidebar footer
-        const avatarDiv = document.querySelector('.sidebar-footer .avatar');
-        if (avatarDiv) {
-          // ซ่อนภาพและแสดง SVG แทน
-          const img = avatarDiv.querySelector('img');
-          if (img) img.style.display = 'none';
-          const svg = avatarDiv.querySelector('svg');
-          if (svg) svg.style.display = 'block';
-        }
-        
-        // 2. ตำแหน่ง user row (หน้าหลัก)
-        const userRowAvatar = document.querySelector('.user-row .avatar');
-        if (userRowAvatar) {
-          const img = userRowAvatar.querySelector('img');
-          if (img) img.style.display = 'none';
-          const svg = userRowAvatar.querySelector('svg');
-          if (svg) svg.style.display = 'block';
-        }
-        
-        // 3. ตำแหน่ง rail user (ข้างขวา)
-        const railUser = document.querySelector('.rail-user');
-        if (railUser) {
-          const img = railUser.querySelector('img');
-          if (img) img.style.display = 'none';
-          const span = railUser.querySelector('span.app-nav-icon');
-          if (span) span.style.display = 'inline-block';
-        }
-        
-        // แทนที่ส่วน Google linked info ด้วยปุ่ม "เชื่อมบัญชี Google"
-        const googleLinkWrap = unlinkBtn.closest('.google-link-wrap');
-        if (googleLinkWrap) {
-          googleLinkWrap.innerHTML = `
-            <a href="/dormitory_management/link_google.php?action=link" class="google-link-btn">
-              <svg class="google-icon" viewBox="0 0 24 24" width="16" height="16">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-              </svg>
-              <span class="app-nav-label">เชื่อมบัญชี Google</span>
-            </a>
-          `;
-          
-          // แสดงการบอกให้ทราบว่าสำเร็จ
-          if (window.AnimateUI && typeof window.AnimateUI.showNotification === 'function') {
-            window.AnimateUI.showNotification('ถอนการเชื่อมต่อบัญชี Google สำเร็จ', 'success');
-          }
-        }
-      } else {
-        // แสดงข้อความ error
-        if (window.AnimateUI && typeof window.AnimateUI.showNotification === 'function') {
-          window.AnimateUI.showNotification(result.message, 'error');
-        } else {
-          await appleAlert('เกิดข้อผิดพลาด: ' + result.message);
-        }
-      }
-    } catch (error) {
-      console.error('Error unlinking Google account:', error);
-      await appleAlert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-    }
-  });
-})();
-
 // ===============================================
 // Google Link Button Handler - Open in popup (with event delegation)
 // ===============================================
@@ -4593,6 +4523,7 @@ function appleConfirm(message, title = 'project.3bbddns.com:36140 บอกว�
         } else {
           await appleAlert('เกิดข้อผิดพลาด: ' + (event.data.message || 'ไม่ทราบสาเหตุ'));
         }
+      }
     };
     
     window.addEventListener('message', messageHandler);
@@ -4602,35 +4533,27 @@ function appleConfirm(message, title = 'project.3bbddns.com:36140 บอกว�
       if (popup.closed) {
         clearInterval(checkClosedInterval);
         window.removeEventListener('message', messageHandler);
-        
-        // รอ 1 วินาที เพื่อให้ database บันทึกข้อมูลสำเร็จ
         await new Promise(resolve => setTimeout(resolve, 1000));
-        
         try {
-          // ตรวจสอบว่า Google ถูกเชื่อมสำเร็จหรือไม่
           const response = await fetch('/dormitory_management/api/check_google_link.php', {
             method: 'GET',
             headers: { 'Content-Type': 'application/json' }
           });
-          
           const result = await response.json();
-          
           if (result.success) {
             if (result.linked) {
-              // ✅ Google ถูกเชื่อมสำเร็จ - reload page เพื่อแสดงข้อมูลใหม่
               window.location.reload();
             } else {
-              // ❌ Popup ปิดแล้วแต่ Google ยังไม่ถูกเชื่อม (User ยกเลิก)
               console.log('User cancelled Google linking');
-                }
-              } else {
-                console.error('Error checking Google link:', result.message);
-              }
-            } catch (error) {
-              console.error('Error checking Google link status:', error);
             }
+          } else {
+            console.error('Error checking Google link:', result.message);
           }
-        }, 500);
+        } catch (error) {
+          console.error('Error checking Google link status:', error);
+        }
+      }
+    }, 500);
   });
 })();
 </script>
