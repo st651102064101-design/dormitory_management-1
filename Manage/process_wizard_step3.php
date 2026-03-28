@@ -95,8 +95,30 @@ try {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
-    error_log("Process Wizard Step 3 Error: " . $e->getMessage());
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    
+    $rawErrorMsg = $e->getMessage();
+    error_log("Process Wizard Step 3 Error: " . $rawErrorMsg);
+    
+    // แปล database trigger errors เป็นภาษาไทย
+    $errorMsg = 'เกิดข้อผิดพลาด: ' . $rawErrorMsg;
+    
+    // Extract MESSAGE_TEXT from trigger (format: "1644 Message Text")
+    if (preg_match('/\b\d+\s+(.+)$/i', $rawErrorMsg, $matches)) {
+        $triggerMsg = trim($matches[1]);
+    } else {
+        $triggerMsg = $rawErrorMsg;
+    }
+    
+    // ตรวจสอบ trigger error messages และแปล
+    if (stripos($triggerMsg, 'Room already has active contract') !== false) {
+        $errorMsg = '❌ ห้องนี้มีสัญญาที่ยังใช้อยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
+    } elseif (stripos($triggerMsg, 'Tenant already has active contract') !== false) {
+        $errorMsg = '❌ ผู้เช่าคนนี้มีสัญญาที่ยังใช้อยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
+    } elseif (stripos($triggerMsg, 'Duplicate') !== false) {
+        $errorMsg = '❌ สัญญาซ้ำ - ไม่สามารถสร้างสัญญาซ้ำสำหรับห้องหรือผู้เช่าเดียวกันได้';
+    }
+    
+    $_SESSION['error'] = $errorMsg;
     header('Location: ../Reports/tenant_wizard.php');
     exit;
 }

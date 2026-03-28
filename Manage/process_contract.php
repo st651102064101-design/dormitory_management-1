@@ -127,7 +127,28 @@ try {
         $pdo->rollBack();
     }
     
-    $errorMsg = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    // แปล database trigger errors เป็นภาษาไทย
+    $rawErrorMsg = $e->getMessage();
+    $errorMsg = 'เกิดข้อผิดพลาด: ' . $rawErrorMsg;
+    
+    // Extract MESSAGE_TEXT from trigger (format: "1644 Message Text")
+    if (preg_match('/\b\d+\s+(.+)$/i', $rawErrorMsg, $matches)) {
+        $triggerMsg = trim($matches[1]);
+    } else {
+        $triggerMsg = $rawErrorMsg;
+    }
+    
+    // ตรวจสอบ trigger error messages และแปล
+    if (stripos($triggerMsg, 'Room already has active contract') !== false) {
+        $errorMsg = '❌ ห้องนี้มีสัญญาที่ยังใช้อยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
+    } elseif (stripos($triggerMsg, 'Tenant already has active contract') !== false) {
+        $errorMsg = '❌ ผู้เช่าคนนี้มีสัญญาที่ยังใช้อยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
+    } elseif (stripos($triggerMsg, 'date overlap') !== false || stripos($triggerMsg, 'overlap') !== false) {
+        $errorMsg = '❌ วันที่ของสัญญาทับซ้อนกับสัญญาอื่นของห้องนี้';
+    } elseif (stripos($triggerMsg, 'Duplicate') !== false) {
+        // Generic catch-all for any "Duplicate" message
+        $errorMsg = '❌ สัญญาซ้ำ - ไม่สามารถสร้างสัญญาซ้ำสำหรับห้องหรือผู้เช่าเดียวกันได้';
+    }
     
     // ตรวจสอบว่าเป็น AJAX request หรือไม่
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
