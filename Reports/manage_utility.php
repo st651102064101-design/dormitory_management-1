@@ -102,8 +102,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     try {
         $saved = 0;
         $lockedRooms = 0;
+        $blockedByStep = 0;
         foreach ($_POST['meter'] as $roomId => $data) {
         if (empty($data['ctr_id'])) continue;
+        
+        // Check workflow step restriction
+        $workflowStep = isset($data['workflow_step']) ? (int)$data['workflow_step'] : 1;
+        if ($workflowStep <= 3) {
+            $blockedByStep++;
+            continue;
+        }
 
         $waterInput = (isset($data['water']) && $data['water'] !== '') ? (int)$data['water'] : null;
         $elecInput = (isset($data['electric']) && $data['electric'] !== '') ? (int)$data['electric'] : null;
@@ -173,6 +181,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         if ($lockedRooms > 0) {
             $_SESSION['success'] .= " (ข้าม {$lockedRooms} ห้องที่บันทึกเดือนนี้แล้ว)";
         }
+        if ($blockedByStep > 0) {
+            $_SESSION['success'] .= " (ข้าม {$blockedByStep} ห้องในขั้นตอนยังไม่ถึงเช็คอิน)";
+        }
         $redirectQuery = "month=$month&year=$year&show=$showMode";
         if ($selectedCtrFilterActive) {
             $redirectQuery .= "&todo_only=1&ctr_id=" . $selectedCtrId;
@@ -180,7 +191,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         header("Location: manage_utility.php?$redirectQuery");
         exit;
     }
-    if ($lockedRooms > 0) {
+    if ($blockedByStep > 0 && $saved === 0) {
+        $error = "ไม่สามารถบันทึกได้: มี {$blockedByStep} ห้องในขั้นตอนยังไม่ถึงเช็คอิน (ต้องผ่านขั้นตอน 4 เช็คอิน)";
+    }
+    if ($lockedRooms > 0 && $saved === 0 && $blockedByStep === 0) {
         $error = "ไม่สามารถแก้ไขข้อมูลเดือนนี้ได้: มี {$lockedRooms} ห้องที่บันทึกแล้ว";
     }
 }
@@ -188,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 // ดึงห้อง
 if ($showMode === 'occupied') {
     $occupiedSql = "
-        SELECT r.room_id, r.room_number, c.ctr_id, t.tnt_name
+        SELECT r.room_id, r.room_number, c.ctr_id, t.tnt_name, COALESCE(tw.current_step, 1) AS workflow_step
         FROM room r
         JOIN (
             SELECT room_id, MAX(ctr_id) AS ctr_id
@@ -198,6 +212,7 @@ if ($showMode === 'occupied') {
         ) lc ON r.room_id = lc.room_id
         JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+        LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
     ";
 
     $occupiedParams = [];
@@ -212,7 +227,7 @@ if ($showMode === 'occupied') {
     $rooms = $occupiedStmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
     $allSql = "
-        SELECT r.room_id, r.room_number, c.ctr_id, COALESCE(t.tnt_name, '') as tnt_name
+        SELECT r.room_id, r.room_number, c.ctr_id, COALESCE(t.tnt_name, '') as tnt_name, COALESCE(tw.current_step, 1) AS workflow_step
         FROM room r
         LEFT JOIN (
             SELECT room_id, MAX(ctr_id) AS ctr_id
@@ -222,6 +237,7 @@ if ($showMode === 'occupied') {
         ) lc ON r.room_id = lc.room_id
         LEFT JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+        LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
     ";
 
     $allParams = [];
@@ -240,9 +256,13 @@ if ($showMode === 'occupied') {
 $readings = [];
 foreach ($rooms as $room) {
     if (!$room['ctr_id']) {
-        $readings[$room['room_id']] = ['water_old' => 0, 'elec_old' => 0, 'water_new' => '', 'elec_new' => '', 'saved' => false];
+        $readings[$room['room_id']] = ['water_old' => 0, 'elec_old' => 0, 'water_new' => '', 'elec_new' => '', 'saved' => false, 'workflow_step' => 1, 'meter_blocked' => false];
         continue;
     }
+    
+    // Check if meter recording is blocked due to low workflow step
+    $workflowStep = (int)($room['workflow_step'] ?? 1);
+    $meterBlocked = $workflowStep <= 3;
     $prevStmt = $pdo->prepare("SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? ORDER BY utl_date DESC LIMIT 1");
     $prevStmt->execute([$room['ctr_id']]);
     $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
@@ -256,7 +276,9 @@ foreach ($rooms as $room) {
         'elec_old' => $prev ? (int)$prev['utl_elec_end'] : 0,
         'water_new' => $current ? (int)$current['utl_water_end'] : '',
         'elec_new' => $current ? (int)$current['utl_elec_end'] : '',
-        'saved' => $current ? true : false
+        'saved' => $current ? true : false,
+        'workflow_step' => $workflowStep,
+        'meter_blocked' => $meterBlocked
     ];
     
     if ($current) {
@@ -546,6 +568,15 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             color: #6b7280 !important;
             cursor: not-allowed;
         }
+        .meter-input-field.blocked-by-step {
+            background: #fed7aa !important;
+            border-color: #f59e0b !important;
+            color: #92400e !important;
+            cursor: not-allowed;
+        }
+        .meter-input-field.blocked-by-step::placeholder {
+            color: #d97706 !important;
+        }
         .usage-cell { font-weight: 700; color: #0277bd; }
         .usage-cell.elec-usage { color: #c2185b; }
 
@@ -720,9 +751,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
                                     <td><?php echo $hasCtr ? number_format($r['water_old']) : '-'; ?></td>
                                     <td><?php if($hasCtr): ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['saved'] ? 'locked' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" placeholder="<?php echo $r['water_old']; ?>" value="<?php echo $r['water_new']; ?>" min="<?php echo $r['water_old']; ?>" <?php echo $r['saved'] ? 'disabled title="บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" placeholder="<?php echo $r['water_old']; ?>" value="<?php echo $r['water_new']; ?>" min="<?php echo $r['water_old']; ?>" <?php echo $r['saved'] ? 'disabled title="บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้"' : ($r['meter_blocked'] ? 'disabled title="ต้องผ่านขั้นตอน 4 เช็คอิน ก่อนจดมิเตอร์ (ขั้นตอนปัจจุบัน: ' . $r['workflow_step'] . '/5)"' : ''); ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
+                                        <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
                                     <?php else: ?>-<?php endif; ?></td>
                                     <td class="usage-cell" data-room="<?php echo $room['room_id']; ?>" data-usage="water"><?php echo $hasCtr ? $wUsed : '-'; ?></td>
                                     <td class="amount-to-pay" data-room="<?php echo $room['room_id']; ?>" data-amount="water">
@@ -759,9 +791,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
                                     <td><?php echo $hasCtr ? number_format($r['elec_old']) : '-'; ?></td>
                                     <td><?php if($hasCtr): ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['saved'] ? 'locked' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" placeholder="<?php echo $r['elec_old']; ?>" value="<?php echo $r['elec_new']; ?>" min="<?php echo $r['elec_old']; ?>" <?php echo $r['saved'] ? 'disabled title="บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" placeholder="<?php echo $r['elec_old']; ?>" value="<?php echo $r['elec_new']; ?>" min="<?php echo $r['elec_old']; ?>" <?php echo $r['saved'] ? 'disabled title="บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้"' : ($r['meter_blocked'] ? 'disabled title="ต้องผ่านขั้นตอน 4 เช็คอิน ก่อนจดมิเตอร์ (ขั้นตอนปัจจุบัน: ' . $r['workflow_step'] . '/5)"' : ''); ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
+                                        <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
                                     <?php else: ?>-<?php endif; ?></td>
                                     <td class="usage-cell elec-usage" data-room="<?php echo $room['room_id']; ?>" data-usage="electric"><?php echo $hasCtr ? $eUsed : '-'; ?></td>
                                     <td class="amount-to-pay" data-room="<?php echo $room['room_id']; ?>" data-amount="electric">

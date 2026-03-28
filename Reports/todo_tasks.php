@@ -754,8 +754,11 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <tbody>
                                         <?php foreach ($wizardItems as $w): ?>
                                         <?php
+                                            // Match the logic from tenant_wizard.php
+                                            // If no workflow exists, default to step 2 (since booking already means step 1 is done)
                                             $wizardStep = (int)($w['current_step'] ?? 0);
-                                            $wizardStepText = 'ขั้นตอนที่ ' . max(1, $wizardStep + 1);
+                                            $displayStep = ($wizardStep > 0) ? $wizardStep : 2;
+                                            $wizardStepText = 'ขั้นตอนที่ ' . $displayStep;
                                         ?>
                                         <tr>
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($w['room_number'] ?? '-'); ?></strong></td>
