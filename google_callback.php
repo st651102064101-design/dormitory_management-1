@@ -7,7 +7,7 @@
 
 // Set error handling
 $debugMode = isset($_GET['debug']) && $_GET['debug'] === '1';
-ini_set('display_errors', $debugMode ? '1' : '0');
+ini_set('display_errors', '1');  // ✅ Always show errors during callback
 ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
@@ -52,7 +52,27 @@ function buildGoogleRedirectUri(string $redirectUri): string {
 // ฟังก์ชันสำหรับ redirect พร้อม error
 function redirectWithError($error) {
     error_log("Redirecting with error: " . $error);
-    header('Location: /dormitory_management/Login.php?google_error=' . urlencode($error));
+    
+    // ✅ ส่งข้อมูลข้อผิดพลาดไปยังหน้าหลัก
+    echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>เกิดข้อผิดพลาด</title>
+</head>
+<body>
+    <script>
+        window.opener.postMessage({
+            type: "google_link_error",
+            message: "' . addslashes($error) . '"
+        }, "*");
+        setTimeout(() => {
+            window.close();
+        }, 1000);
+    </script>
+    <p style="color: red; font-family: Arial;">เกิดข้อผิดพลาด: ' . htmlspecialchars($error) . '</p>
+</body>
+</html>';
     exit;
 }
 
@@ -71,10 +91,67 @@ function getGoogleSettings($pdo) {
 }
 
 try {
+    // ✅ แสดงข้อความให้ผู้ใช้ทราบว่ากำลังประมวลผล
+    echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>กำลังประมวลผล Google OAuth...</title>
+    <style>
+        body { 
+            margin: 0; 
+            padding: 0; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            background: #f5f5f5; 
+            font-family: Arial, sans-serif; 
+        }
+        .container { text-align: center; }
+        .spinner { 
+            border: 4px solid #f3f3f3; 
+            border-top: 4px solid #3498db; 
+            border-radius: 50%; 
+            width: 50px; 
+            height: 50px; 
+            animation: spin 1s linear infinite; 
+            margin: 20px auto; 
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        p { color: #666; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <p>กำลังตรวจสอบข้อมูล Google...</p>
+    </div>
+</body>
+</html>';
+    flush();
+    ob_flush();
+    
     error_log("=== Google Callback Started ===");
     
     $pdo = connectDB();
     error_log("✓ Database connected");
+    
+    // ✅ Ensure google_oauth_state table exists
+    try {
+        $pdo->exec('
+            CREATE TABLE IF NOT EXISTS google_oauth_state (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                state VARCHAR(255) NOT NULL UNIQUE,
+                admin_id INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_state (state),
+                INDEX idx_created_at (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ');
+    } catch (Exception $e) {
+        error_log("Warning: Could not ensure google_oauth_state table exists: " . $e->getMessage());
+    }
     
     $settings = getGoogleSettings($pdo);
     
@@ -105,13 +182,47 @@ try {
     
     error_log("✓ Got code from Google");
     
-    // ตรวจสอบ state เพื่อป้องกัน CSRF
-    if (!isset($_GET['state']) || !isset($_SESSION['google_state']) || $_GET['state'] !== $_SESSION['google_state']) {
-        error_log("Invalid state token");
+    // ✅ ตรวจสอบ state เพื่อป้องกัน CSRF (ค้นหาจาก database เพื่อรองรับ popup)
+    if (!isset($_GET['state'])) {
+        error_log("No state provided from Google");
         redirectWithError('Invalid state token');
     }
     
-    error_log("✓ State token verified");
+    $stateFromGoogle = $_GET['state'];
+    
+    // ตรวจสอบจาก database ก่อน (สำหรับ popup scenario)
+    $stateValid = false;
+    try {
+        $stateCheckStmt = $pdo->prepare('
+            SELECT id, admin_id FROM google_oauth_state 
+            WHERE state = ? AND created_at > DATE_SUB(NOW(), INTERVAL 1 HOUR)
+            LIMIT 1
+        ');
+        $stateCheckStmt->execute([$stateFromGoogle]);
+        $stateRecord = $stateCheckStmt->fetch(PDO::FETCH_ASSOC);
+        
+        if ($stateRecord) {
+            $stateValid = true;
+            error_log("✓ State token verified from database");
+            
+            // ลบ state token ที่ใช้แล้ว
+            $deleteStateStmt = $pdo->prepare('DELETE FROM google_oauth_state WHERE id = ?');
+            $deleteStateStmt->execute([$stateRecord['id']]);
+        }
+    } catch (Exception $e) {
+        error_log("Warning: Could not check database for state token: " . $e->getMessage());
+    }
+    
+    // ถ้าไม่พบในฐานข้อมูล ให้ตรวจสอบจาก session (compatibility)
+    if (!$stateValid && isset($_SESSION['google_state']) && $stateFromGoogle === $_SESSION['google_state']) {
+        $stateValid = true;
+        error_log("✓ State token verified from session");
+    }
+    
+    if (!$stateValid) {
+        error_log("Invalid state token: $stateFromGoogle");
+        redirectWithError('Invalid state token');
+    }
     
     $code = $_GET['code'];
     
@@ -260,7 +371,30 @@ try {
         }
         
         $_SESSION['admin_picture'] = $picture;
-        header('Location: /dormitory_management/Reports/dashboard.php?google_success=' . urlencode($message));
+        
+        // ✓ ปิด popup โดยอัตโนมัติ (สำหรับการเชื่อม Google)
+        echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>เชื่อมบัญชี Google</title>
+</head>
+<body>
+    <script>
+        // ส่งข้อมูลสำเร็จไปยังหน้าหลัก
+        window.opener.postMessage({
+            type: "google_link_success",
+            email: "' . addslashes($email) . '",
+            message: "' . addslashes($message) . '"
+        }, "*");
+        
+        // ปิด popup โดยอัตโนมัติหลังจาก 100ms
+        setTimeout(() => {
+            window.close();
+        }, 100);
+    </script>
+</body>
+</html>';
         exit;
     }
     
@@ -493,5 +627,27 @@ try {
 } catch (Exception $e) {
     error_log("Exception in google_callback.php: " . $e->getMessage());
     error_log("Stack trace: " . $e->getTraceAsString());
-    redirectWithError('Error: ' . $e->getMessage());
+    
+    // ✅ แสดงข้อผิดพลาดและปิด popup
+    $errorMsg = $e->getMessage();
+    echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>เกิดข้อผิดพลาด</title>
+</head>
+<body>
+    <script>
+        window.opener.postMessage({
+            type: "google_link_error",
+            message: "' . addslashes($errorMsg) . '"
+        }, "*");
+        setTimeout(() => {
+            window.close();
+        }, 1000);
+    </script>
+    <p style="color: red; font-family: Arial;">เกิดข้อผิดพลาด: ' . htmlspecialchars($errorMsg) . '</p>
+</body>
+</html>';
+    exit;
 }

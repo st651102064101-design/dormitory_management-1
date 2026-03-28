@@ -81,6 +81,23 @@ if (empty($_SESSION['admin_id']) && !empty($_SESSION['admin_username'])) {
 // ดึงค่าตั้งค่า Google OAuth จากฐานข้อมูล
 try {
     $pdo = connectDB();
+    
+    // ✅ Ensure google_oauth_state table exists
+    try {
+        $pdo->exec('
+            CREATE TABLE IF NOT EXISTS google_oauth_state (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                state VARCHAR(255) NOT NULL UNIQUE,
+                admin_id INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_state (state),
+                INDEX idx_created_at (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        ');
+    } catch (Exception $e) {
+        error_log("Warning: Could not ensure google_oauth_state table exists: " . $e->getMessage());
+    }
+    
     $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('google_client_id', 'google_redirect_uri')");
     $settings = [];
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
@@ -102,6 +119,18 @@ try {
     // สร้าง state token เพื่อป้องกัน CSRF
     $state = bin2hex(random_bytes(32));
     $_SESSION['google_state'] = $state;  // ใช้ชื่อเดียวกับ google_login.php
+    
+    // ✅ บันทึก state token ลงในฐานข้อมูลด้วย (สำหรับ popup scenario)
+    try {
+        $storeStateStmt = $pdo->prepare('
+            INSERT INTO google_oauth_state (state, admin_id, created_at)
+            VALUES (?, ?, NOW())
+            ON DUPLICATE KEY UPDATE created_at = NOW()
+        ');
+        $storeStateStmt->execute([$state, $_SESSION['admin_id']]);
+    } catch (Exception $e) {
+        error_log("Warning: Could not store state token in database: " . $e->getMessage());
+    }
     
     // บันทึกว่านี่คือการ link account
     $_SESSION['google_link_mode'] = true;
