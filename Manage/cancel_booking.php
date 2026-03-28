@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 require_once __DIR__ . '/../ConnectDB.php';
 
+$pdo = null;
+
 try {
     $pdo = connectDB();
     
@@ -175,14 +177,14 @@ try {
     ]);
     
 } catch (PDOException $e) {
-    if ($pdo->inTransaction()) {
+    if ($pdo && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
     error_log('Cancel Booking Error: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['success' => false, 'error' => 'เกิดข้อผิดพลาดในฐานข้อมูล: ' . $e->getMessage()]);
 } catch (Exception $e) {
-    if ($pdo->inTransaction()) {
+    if ($pdo && $pdo->inTransaction()) {
         $pdo->rollBack();
     }
     error_log('Cancel Booking Error: ' . $e->getMessage());
