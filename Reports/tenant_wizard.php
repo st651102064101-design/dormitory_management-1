@@ -1128,8 +1128,27 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 } else {
                                     $billDisp   = $firstBillMonthDisplay !== '-' ? $firstBillMonthDisplay : '';
                                     $openMeterYm = $billYearMonth ?? '';
-                                    $meterStatusHtml = '<button type="button" onclick="' . htmlspecialchars($openMeterJs($openMeterYm), ENT_QUOTES, 'UTF-8') . '"'
-                                        . ' style="display:inline-block;margin-top:0.25rem;background:rgba(20,184,166,0.12);border:1px solid rgba(20,184,166,0.35);color:#2dd4bf;font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:12px;cursor:pointer;"'
+                                    
+                                    // Check if target month is in the future
+                                    $disabledAttr = '';
+                                    $tooltipAttr = '';
+                                    $buttonStyle = 'style="display:inline-block;margin-top:0.25rem;background:rgba(20,184,166,0.12);border:1px solid rgba(20,184,166,0.35);color:#2dd4bf;font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:12px;cursor:pointer;"';
+                                    
+                                    if ($openMeterYm) {
+                                        try {
+                                            $targetDate = DateTime::createFromFormat('Y-m-d', $openMeterYm . '-01');
+                                            $today = new DateTime('today');
+                                            if ($targetDate && $targetDate > $today) {
+                                                $disabledAttr = 'disabled';
+                                                $tooltipAttr = 'data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="สามารถจดมิเตอร์ได้เมื่อถึง ' . $billDisp . '"';
+                                                $buttonStyle = 'style="display:inline-block;margin-top:0.25rem;background:rgba(107,114,128,0.12);border:1px solid rgba(107,114,128,0.35);color:#9ca3af;font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:12px;cursor:not-allowed;"';
+                                            }
+                                        } catch (Exception $e) {
+                                            // If date parsing fails, allow the button
+                                        }
+                                    }
+                                    
+                                    $meterStatusHtml = '<button type="button"' . ($disabledAttr ? ' ' . $disabledAttr : '') . ' ' . $buttonStyle . ($tooltipAttr ? ' ' . $tooltipAttr : '') . ' onclick="' . htmlspecialchars($openMeterJs($openMeterYm), ENT_QUOTES, 'UTF-8') . '"'
                                         . '>📋 จดมิเตอร์' . ($billDisp ? ' (' . htmlspecialchars($billDisp, ENT_QUOTES, 'UTF-8') . ')' : '') . '</button>';
                                 }
                                 // ---------------------------------------------------
@@ -2321,10 +2340,27 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             _moMonth = n.getMonth() + 1;
         }
 
+        // Check if target month is in the future
+        const today = new Date();
+        const todayYear = today.getFullYear();
+        const todayMonth = today.getMonth() + 1;
+        const isTargetFuture = _moYear > todayYear || (_moYear === todayYear && _moMonth > todayMonth);
+        
+        if (isTargetFuture) {
+            // Disable inputs and show message
+            document.getElementById('moWaterInput').disabled = true;
+            document.getElementById('moElecInput').disabled = true;
+            btn.disabled = true;
+            btn.style.display = 'none';
+            const msgDiv = document.getElementById('moMsg');
+            msgDiv.style.color = '#f59e0b';
+            msgDiv.textContent = 'สามารถจดมิเตอร์ได้เมื่อถึงเดือน ' + formatMonthDisplay(targetYm + '-01');
+        }
+
         document.getElementById('meterOnlyModal').classList.add('active');
         document.body.style.overflow = 'hidden';
 
-        fetch('../Manage/get_utility_reading.php?ctr_id=' + encodeURIComponent(ctrId))
+        fetch('../Manage/get_utility_reading.php?ctr_id=' + encodeURIComponent(ctrId) + '&target_month=' + _moMonth + '&target_year=' + _moYear)
             .then(r => r.json())
             .then(d => {
                 if (d.error) return;
@@ -2339,11 +2375,11 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 if (d.saved && d.meter_month == _moMonth && d.meter_year == _moYear) {
                     document.getElementById('moWaterInput').value    = d.curr_water ?? '';
                     document.getElementById('moElecInput').value     = d.curr_elec  ?? '';
-                    document.getElementById('moWaterInput').disabled = true;
-                    document.getElementById('moElecInput').disabled  = true;
-                    btn.style.display = 'none';
+                    // Allow editing even after saved - just show the current values
+                    btn.style.display = 'inline-block';
+                    btn.textContent = 'อัปเดตมิเตอร์';
                     const m = document.getElementById('moMsg');
-                    m.style.color = '#4ade80'; m.textContent = '✓ บันทึกแล้ว';
+                    m.style.color = '#4ade80'; m.textContent = '✓ บันทึกแล้ว (สามารถแก้ไขได้)';
                     updateMoPreview();
                 }
             })
@@ -2384,11 +2420,6 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         const ev  = document.getElementById('moElecInput').value.trim();
         const btn = document.getElementById('moSaveBtn');
         const msg = document.getElementById('moMsg');
-        if (wv === '' && ev === '') {
-            msg.style.color = '#fca5a5';
-            msg.textContent = 'กรุณากรอกค่ามิเตอร์อย่างน้อย 1 ค่า';
-            return;
-        }
         btn.disabled = true;
         btn.textContent = 'กำลังบันทึก...';
         msg.textContent = '';
@@ -2527,11 +2558,6 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         const elecVal  = document.getElementById('meterElecInput').value.trim();
         const btn      = document.getElementById('saveMeterBtn');
         const msg      = document.getElementById('meterMsg');
-        if (waterVal === '' && elecVal === '') {
-            msg.style.color = '#fca5a5';
-            msg.textContent = 'กรุณากรอกค่ามิเตอร์อย่างน้อย 1 ค่า';
-            return;
-        }
         btn.disabled = true;
         btn.textContent = 'กำลังบันทึก...';
         msg.textContent = '';
