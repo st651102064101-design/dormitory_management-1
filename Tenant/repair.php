@@ -82,13 +82,22 @@ try {
     // Check if schedule columns exist
     $checkCol = $pdo->query("SHOW COLUMNS FROM repair LIKE 'scheduled_date'");
     $hasScheduleColumns = $checkCol->rowCount() > 0;
-    
+
+    // ค้นหาประวัติซ่อมจาก ctr_id ปัจจุบัน รวมถึงสัญญาเดิมทั้งหมดของผู้เช่าคนนี้
+    // (ป้องกันกรณีต่อสัญญาใหม่ แต่ repair ผูกกับสัญญาเดิม)
     $stmt = $pdo->prepare("
-        SELECT * FROM repair WHERE ctr_id = ? ORDER BY repair_date DESC, repair_time DESC
+        SELECT r.*
+        FROM repair r
+        WHERE r.ctr_id IN (
+            SELECT ctr_id FROM contract WHERE tnt_id = ?
+        )
+        ORDER BY r.repair_date DESC, r.repair_time DESC
     ");
-    $stmt->execute([$contract['ctr_id']]);
+    $stmt->execute([$contract['tnt_id']]);
     $repairs = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) {
+    error_log('[repair.php] PDO Error: ' . $e->getMessage());
+}
 
 $repairStatusMap = [
     '0' => ['label' => 'รอซ่อม', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],

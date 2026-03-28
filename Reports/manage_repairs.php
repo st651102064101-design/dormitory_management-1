@@ -24,6 +24,7 @@ if ($settingsStmt) {
 
 // รับค่า sort จาก query parameter
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+// Build ORDER BY with COALESCE for room_number to handle NULL cases
 $orderBy = 'r.repair_date DESC, r.repair_id DESC';
 
 switch ($sortBy) {
@@ -31,7 +32,8 @@ switch ($sortBy) {
     $orderBy = 'r.repair_date ASC, r.repair_id ASC';
     break;
   case 'room_number':
-    $orderBy = 'rm.room_number ASC';
+    // Sort numerically even with NULL values
+    $orderBy = 'CAST(COALESCE(rm.room_number, (SELECT room_number FROM room WHERE room_id = c.room_id LIMIT 1), 0) AS UNSIGNED) ASC';
     break;
   case 'newest':
   default:
@@ -46,8 +48,10 @@ try {
 } catch (Exception $e) {}
 
 // รายการการแจ้งซ่อม
+// Ensure all room numbers are retrieved - use subquery to get room number even if contract JOIN fails
 $scheduleFields = $hasScheduleColumns ? ", r.scheduled_date, r.scheduled_time_start, r.scheduled_time_end, r.technician_name, r.technician_phone, r.schedule_note" : "";
-$repairStmt = $pdo->query("SELECT r.*, c.ctr_id, t.tnt_name, t.tnt_phone, rm.room_number $scheduleFields
+$repairStmt = $pdo->query("SELECT r.*, c.ctr_id, c.tnt_id, c.room_id, t.tnt_name, t.tnt_phone, 
+  COALESCE(rm.room_number, (SELECT room_number FROM room WHERE room_id = c.room_id LIMIT 1)) as room_number $scheduleFields
   FROM repair r
   LEFT JOIN contract c ON r.ctr_id = c.ctr_id
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
@@ -57,13 +61,14 @@ $repairs = $repairStmt->fetchAll(PDO::FETCH_ASSOC);
 
 // รายการสัญญาสำหรับเลือกห้อง/ผู้เช่า (แสดงแค่สัญญาที่ใช้งาน และไม่มีการซ่อมในสถานะ 0 หรือ 1)
 $contracts = $pdo->query("
-  SELECT c.ctr_id, c.ctr_status, t.tnt_name, rm.room_number
+  SELECT c.ctr_id, c.ctr_status, t.tnt_name, 
+         COALESCE(rm.room_number, (SELECT room_number FROM room WHERE room_id = c.room_id LIMIT 1)) as room_number
   FROM contract c
   LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
   LEFT JOIN room rm ON c.room_id = rm.room_id
   WHERE c.ctr_status = '0'
     AND c.ctr_id NOT IN (SELECT DISTINCT ctr_id FROM repair WHERE repair_status IN ('0', '1'))
-  ORDER BY rm.room_number
+  ORDER BY CAST(COALESCE(rm.room_number, (SELECT room_number FROM room WHERE room_id = c.room_id LIMIT 1), 0) AS UNSIGNED) ASC
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 $statusMap = [
