@@ -465,6 +465,21 @@ foreach ($contracts as $contract) {
       }
       .cancel-contract-btn:hover { background: #d97706 !important; }
 
+      /* --- Delete button --- */
+      .delete-contract-btn,
+      .btn-danger {
+        background: #ef4444 !important;
+        border: 1px solid #dc2626 !important;
+        color: #ffffff !important;
+        padding: 0.4rem 0.75rem !important;
+        border-radius: 6px !important;
+        font-size: 0.85rem !important;
+        cursor: pointer !important;
+        white-space: nowrap !important;
+      }
+      .delete-contract-btn:hover,
+      .btn-danger:hover { background: #dc2626 !important; }
+
       /* =====================================================
          MOBILE RESPONSIVE  (≤ 768px)
          ===================================================== */
@@ -988,6 +1003,8 @@ foreach ($contracts as $contract) {
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="จัดการ" class="action-cell">
                                 <?php if ($s === '2'): ?>
                                   <button type="button" class="action-btn btn-warning cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ยกเลิกทันที</button>
+                                <?php elseif (in_array($s, ['0', ''])): ?>
+                                  <button type="button" class="action-btn btn-danger delete-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ลบ</button>
                                 <?php else: ?>
                                   -
                                 <?php endif; ?>
@@ -1064,6 +1081,58 @@ foreach ($contracts as $contract) {
             btn.disabled = false;
             btn.textContent = 'ยกเลิกสัญญา';
             alert((resp && resp.error) ? resp.error : 'ไม่สามารถยกเลิกสัญญาได้');
+          }
+        });
+      });
+
+      // Handle delete contract action
+      async function deleteContract(ctrId) {
+        try {
+          const form = new FormData();
+          form.append('ctr_id', ctrId);
+
+          const res = await fetch('../Manage/delete_contract.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: form
+          });
+          const data = await res.json();
+          return data;
+        } catch (err) {
+          console.error('Delete contract error', err);
+          return { success: false, error: 'ข้อผิดพลาดเครือข่าย' };
+        }
+      }
+
+      document.addEventListener('click', function(e) {
+        const btn = e.target.closest('.delete-contract-btn');
+        if (!btn) return;
+        e.preventDefault();
+        const ctrId = btn.getAttribute('data-ctrid');
+        if (!ctrId) return alert('ไม่พบรหัสสัญญา');
+
+        // Confirm before delete
+        if (!confirm('คุณแน่ใจหรือว่าต้องการลบสัญญานี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
+          return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'กำลังลบ...';
+
+        deleteContract(ctrId).then(function(resp) {
+          if (resp && resp.success) {
+            const row = findRowFromBtn(btn);
+            if (row) {
+              row.style.opacity = '0.5';
+              row.style.textDecoration = 'line-through';
+            }
+            btn.remove();
+            alert(resp.message || 'ลบสัญญาเรียบร้อยแล้ว');
+            setTimeout(() => window.location.reload(), 500);
+          } else {
+            btn.disabled = false;
+            btn.textContent = 'ลบ';
+            alert((resp && resp.error) ? resp.error : 'ไม่สามารถลบสัญญาได้');
           }
         });
       });
