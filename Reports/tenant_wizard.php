@@ -1175,12 +1175,13 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     }
                                 }
 
-                                if ($step3 && !$step4 && $currentStep >= 4) {
-                                    $currentStep = 4;
-                                }
-                                if ($step4 && !$step5 && $currentStep >= 5) {
-                                    $currentStep = 5;
-                                }
+                                // Advance currentStep based on completed steps
+                                // Ensure we move to the next action step based on what's completed
+                                if ($step1) $currentStep = max($currentStep, 1);
+                                if ($step2) $currentStep = max($currentStep, 2);
+                                if ($step3) $currentStep = max($currentStep, 3);
+                                if ($step4) $currentStep = max($currentStep, 5); // Jump to 5 since check-in is done
+                                if ($step5) $currentStep = 5;
                                 ?>
                                 <tr<?php if ($isCancelPending): ?> style="background:rgba(239,68,68,0.05)!important;border-left:3px solid rgba(239,68,68,0.45);"<?php endif; ?>>
                                     <td>
