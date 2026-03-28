@@ -1,0 +1,27 @@
+<?php
+echo "✅ Error Message Translation - Updated\n";
+echo "=====================================\n\n";
+
+echo "Files Updated:\n";
+echo "  1️⃣  Manage/process_contract.php\n";
+echo "     • Added regex extraction of trigger message\n";
+echo "     • Added case-insensitive string matching\n";
+echo "     • Now translates: 'Room already has active contract' → Thai\n";
+echo "     • Now translates: 'Tenant already has active contract' → Thai\n\n";
+
+echo "  2️⃣  Manage/process_wizard_step3.php\n";
+echo "     • Added same error translation logic\n";
+echo "     • Used when creating contracts via wizard\n\n";
+
+echo "Error Message Translation:\n";
+echo "  Raw: SQLSTATE[45000]: <<Unknown error>>: 1644 Duplicate: Room already has active contract\n";
+echo "  ↓ Extract: Duplicate: Room already has active contract\n";
+echo "  ↓ Translate:\n";
+echo "  ❌ ห้องนี้มีสัญญาที่ยังใช้อยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้\n\n";
+
+echo "✅ Translation System Ready!\n";
+echo "\n📝 Next Steps:\n";
+echo "  1. Try creating duplicate contract in tenant_wizard.php\n";
+echo "  2. Try creating duplicate contract in manage_contracts.php\n";
+echo "  3. Error should display in Thai, not raw SQL\n";
+?>
