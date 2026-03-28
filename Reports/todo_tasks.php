@@ -72,10 +72,13 @@ try {
             LEFT JOIN room r ON c.room_id = r.room_id
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
             LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+            LEFT JOIN tenant_workflow tw ON t.tnt_id = tw.tnt_id
             LEFT JOIN utility u ON u.ctr_id = c.ctr_id
                 AND MONTH(u.utl_date) = MONTH(CURDATE())
                 AND YEAR(u.utl_date) = YEAR(CURDATE())
             WHERE (u.utl_id IS NULL OR u.utl_water_end IS NULL OR u.utl_elec_end IS NULL)
+            AND COALESCE(tw.step_3_confirmed, 0) = 1
+            AND COALESCE(tw.step_4_confirmed, 0) = 1
             ORDER BY r.room_number ASC
         ");
         $utilities = $utilityStmt->fetchAll(PDO::FETCH_ASSOC);
