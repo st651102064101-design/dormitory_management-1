@@ -56,11 +56,43 @@ try {
         exit;
     }
 
-    // ตรวจสอบสัญญาที่ทับซ้อนกันของห้องนี้
+    // ตรวจสอบซ้ำ: ห้องนี้มีสัญญาที่ยังใช้อยู่หรือไม่
     $activeContractStmt = $pdo->prepare("SELECT COUNT(*) FROM contract WHERE room_id = ? AND ctr_status IN ('0','2')");
     $activeContractStmt->execute([$room_id]);
     if ((int)$activeContractStmt->fetchColumn() > 0) {
-        $_SESSION['error'] = 'ห้องนี้มีสัญญาอยู่แล้ว';
+        $_SESSION['error'] = 'ห้องนี้มีสัญญาอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
+        header('Location: ../Reports/manage_contracts.php');
+        exit;
+    }
+
+    // ตรวจสอบซ้ำ: ผู้เช่าคนนี้มีสัญญาที่ยังใช้อยู่หรือไม่
+    $tenantActiveStmt = $pdo->prepare("SELECT COUNT(*) FROM contract WHERE tnt_id = ? AND ctr_status IN ('0','2')");
+    $tenantActiveStmt->execute([$tnt_id]);
+    if ((int)$tenantActiveStmt->fetchColumn() > 0) {
+        $_SESSION['error'] = 'ผู้เช่าคนนี้มีสัญญาอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
+        header('Location: ../Reports/manage_contracts.php');
+        exit;
+    }
+
+    // ตรวจสอบซ้ำ: วันที่ของสัญญาไม่ทับซ้อนกันสำหรับห้องนี้
+    $overlapStmt = $pdo->prepare(
+        "SELECT COUNT(*) FROM contract 
+         WHERE room_id = ? 
+         AND ctr_status IN ('0','2')
+         AND (
+           (ctr_start <= ? AND ctr_end >= ?)
+           OR (ctr_start <= ? AND ctr_end >= ?)
+           OR (ctr_start >= ? AND ctr_end <= ?)
+         )"
+    );
+    $overlapStmt->execute([
+        $room_id,
+        $ctr_end, $ctr_start,          // existing overlaps with new period
+        $ctr_start, $ctr_start,        // existing starts before new ends
+        $ctr_start, $ctr_end           // new period fully contains existing
+    ]);
+    if ((int)$overlapStmt->fetchColumn() > 0) {
+        $_SESSION['error'] = 'วันที่ของสัญญาทับซ้อนกับสัญญาอื่นของห้องนี้';
         header('Location: ../Reports/manage_contracts.php');
         exit;
     }

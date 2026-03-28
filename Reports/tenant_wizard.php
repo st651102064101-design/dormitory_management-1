@@ -1234,7 +1234,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 <?php echo $step4 ? '✓' : '4'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step5CircleClass; ?>" data-tooltip="<?php echo htmlspecialchars($step5Tooltip, ENT_QUOTES, 'UTF-8'); ?>" <?php if ($step5): ?>onclick="openBillingModal(<?php echo $tenant['ctr_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step5CircleClass; ?>" data-ctr-id="<?php echo $tenant['ctr_id']; ?>" data-tooltip="<?php echo htmlspecialchars($step5Tooltip, ENT_QUOTES, 'UTF-8'); ?>" <?php if ($step5): ?>onclick="openBillingModal(<?php echo $tenant['ctr_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step5CircleLabel; ?>
                                             </div>
                                         </div>
@@ -2584,6 +2584,22 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     // รีโหลดยอดบิลใหม่หลังจดมิเตอร์ และแสดง bill sections
                     document.getElementById('billSectionsWrapper').style.display = '';
                     document.getElementById('meterNoticeBlock').style.display = 'none';
+                    // อัพเดท step 5 circle — เปลี่ยนจาก meter-pending เป็น completed
+                    var step5Circles = document.querySelectorAll('[data-ctr-id="' + _meterCtrId + '"]');
+                    step5Circles.forEach(function(circle) {
+                        circle.classList.remove('meter-pending', 'wait', 'pending', 'current');
+                        circle.classList.add('completed');
+                        circle.setAttribute('data-tooltip', '5. จดมิเตอร์แล้ว');
+                        circle.innerHTML = '✓';
+                        // Reinitialize bootstrap tooltip
+                        if (typeof bootstrap !== 'undefined' && typeof circle.getAttribute('data-bs-toggle') === 'string') {
+                            var tooltipEl = circle._bsTooltip;
+                            if (tooltipEl) tooltipEl.dispose();
+                            new bootstrap.Tooltip(circle, { title: '5. จดมิเตอร์แล้ว' });
+                        }
+                    });
+                    // รีโหลด page หลังจดมิเตอร์สำเร็จ 1 วินาที
+                    setTimeout(() => { window.location.reload(); }, 1000);
                     refreshBillingPayments(_meterCtrId);
                 } else {
                     msg.style.color = '#fca5a5';
@@ -2602,6 +2618,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
     // ---- end meter helpers ----
 
     function openBillingModal(ctrId, tntId, tntName, roomNumber, roomType, roomPrice) {
+        // เก็บ ctrId สำหรับ meter update later
+        _meterCtrId = ctrId;
+        
         // ตั้งค่า hidden fields
         document.getElementById('modal_billing_ctr_id').value = ctrId;
         document.getElementById('modal_billing_tnt_id').value = tntId;
