@@ -63,7 +63,8 @@ try {
             SELECT r.room_id, r.room_number, rt.type_name AS roomtype_name,
                    COALESCE(t.tnt_name, '') AS tnt_name,
                    c.ctr_id,
-                   u.utl_id, u.utl_water_start, u.utl_water_end, u.utl_elec_start, u.utl_elec_end
+                   u_bill.utl_id, u_bill.utl_water_start, u_bill.utl_water_end,
+                   u_bill.utl_elec_start, u_bill.utl_elec_end
             FROM contract c
             INNER JOIN (
                 SELECT room_id, MAX(ctr_id) AS ctr_id
@@ -73,12 +74,18 @@ try {
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
             LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
             LEFT JOIN tenant_workflow tw ON t.tnt_id = tw.tnt_id
-            LEFT JOIN utility u ON u.ctr_id = c.ctr_id
-                AND MONTH(u.utl_date) = MONTH(CURDATE())
-                AND YEAR(u.utl_date) = YEAR(CURDATE())
-            WHERE (u.utl_id IS NULL OR u.utl_water_end IS NULL OR u.utl_elec_end IS NULL)
+            INNER JOIN checkin_record cr ON cr.ctr_id = c.ctr_id
+            -- billing month = first day of month after contract start
+            LEFT JOIN utility u_bill ON u_bill.ctr_id = c.ctr_id
+                AND DATE_FORMAT(u_bill.utl_date, '%Y-%m') = DATE_FORMAT(
+                    DATE_ADD(DATE_FORMAT(c.ctr_start, '%Y-%m-01'), INTERVAL 1 MONTH), '%Y-%m'
+                )
+            WHERE (u_bill.utl_id IS NULL OR u_bill.utl_water_end IS NULL OR u_bill.utl_elec_end IS NULL)
             AND COALESCE(tw.step_3_confirmed, 0) = 1
-            AND COALESCE(tw.step_4_confirmed, 0) = 1
+            -- billing month must be within 2 months from today
+            AND DATE_FORMAT(
+                DATE_ADD(DATE_FORMAT(c.ctr_start, '%Y-%m-01'), INTERVAL 1 MONTH), '%Y-%m'
+            ) <= DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 2 MONTH), '%Y-%m')
             ORDER BY r.room_number ASC
         ");
         $utilities = $utilityStmt->fetchAll(PDO::FETCH_ASSOC);
