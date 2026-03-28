@@ -408,10 +408,10 @@ $repairStatusMap = [
         
         /* Schedule Info Styles */
         .schedule-info {
-            background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(168, 85, 247, 0.1));
-            border: 1px solid rgba(139, 92, 246, 0.3);
-            border-radius: 10px;
-            padding: 0.75rem;
+            background: rgba(30, 41, 59, 0.9);
+            border: 1px solid rgba(168, 85, 247, 0.4);
+            border-radius: 12px;
+            padding: 1rem;
             margin-top: 0.75rem;
         }
         .schedule-header {
@@ -419,46 +419,62 @@ $repairStatusMap = [
             align-items: center;
             gap: 0.5rem;
             color: #a78bfa;
-            font-size: 0.8rem;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 700;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.2);
         }
         .schedule-header svg {
-            width: 16px;
-            height: 16px;
+            width: 18px;
+            height: 18px;
             stroke: #a78bfa;
         }
         .schedule-row {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
             color: #e2e8f0;
-            font-size: 0.85rem;
-            margin-bottom: 0.35rem;
+            font-size: 0.9rem;
+            margin-bottom: 0.5rem;
+            padding: 0.5rem 0;
         }
         .schedule-row:last-child {
             margin-bottom: 0;
         }
         .schedule-row svg {
-            width: 14px;
-            height: 14px;
-            stroke: rgba(255,255,255,0.5);
+            width: 16px;
+            height: 16px;
+            stroke: #a78bfa;
             flex-shrink: 0;
         }
         .schedule-label {
-            color: rgba(255,255,255,0.5);
+            color: #94a3b8;
             min-width: 60px;
+            font-weight: 600;
+            font-size: 0.8rem;
         }
         .schedule-value {
-            font-weight: 500;
+            color: #f8fafc;
+            font-weight: 600;
+            flex: 1;
+        }
+        .schedule-value a {
+            color: #f8fafc;
+            text-decoration: none;
+            font-weight: 600;
         }
         .schedule-note {
-            background: rgba(0,0,0,0.2);
+            background: rgba(168, 85, 247, 0.15);
+            border-left: 3px solid #a78bfa;
             border-radius: 6px;
-            padding: 0.5rem 0.75rem;
-            margin-top: 0.5rem;
-            font-size: 0.8rem;
-            color: rgba(255,255,255,0.7);
+            padding: 0.75rem 1rem;
+            margin-top: 0.75rem;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
     </style>
     <?php if (($settings['public_theme'] ?? '') === 'light'): ?>
@@ -605,7 +621,7 @@ $repairStatusMap = [
                     <div class="schedule-row">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                         <span class="schedule-label">โทร</span>
-                        <span class="schedule-value"><a href="tel:<?php echo htmlspecialchars($technicianPhone); ?>" style="color:#a78bfa; text-decoration:none;"><?php echo htmlspecialchars($technicianPhone); ?></a></span>
+                        <span class="schedule-value"><a href="tel:<?php echo htmlspecialchars($technicianPhone); ?>"><?php echo htmlspecialchars($technicianPhone); ?></a></span>
                     </div>
                     <?php endif; ?>
                     <?php if ($scheduleNote): ?>

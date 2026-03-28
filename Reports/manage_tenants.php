@@ -386,6 +386,83 @@ try {
         background: #b91c1c !important;
         border-color: #991b1b !important;
       }
+
+      /* ── Mobile responsive ────────────────────────────────── */
+      @media (max-width: 640px) {
+        /* Prevent horizontal scroll on page and table wrapper */
+        html, body { overflow-x: hidden !important; }
+        .app-main { overflow-x: hidden !important; }
+        .datatable-container {
+          overflow: visible !important;
+          width: 100% !important;
+        }
+        .report-table { overflow: hidden !important; }
+
+        /* Filter bar wraps nicely */
+        .section-controls {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 0.5rem !important;
+        }
+        .status-filters { flex-wrap: wrap; }
+        #sortSelect { width: 100%; }
+
+        /* Card layout for table rows — kills the table layout entirely */
+        #table-tenants,
+        #table-tenants tbody,
+        #table-tenants tr,
+        #table-tenants td {
+          display: block !important;
+          width: 100% !important;
+          box-sizing: border-box !important;
+        }
+        #table-tenants thead { display: none !important; }
+        #table-tenants tbody tr {
+          border-radius: 12px !important;
+          border: 1px solid rgba(255,255,255,0.1) !important;
+          margin-bottom: 0.75rem !important;
+          padding: 0.75rem !important;
+          background: rgba(15,23,42,0.55) !important;
+        }
+        #table-tenants td {
+          padding: 0.3rem 0 !important;
+          border: none !important;
+        }
+        /* Status badge row */
+        #table-tenants td:nth-child(2) {
+          padding-bottom: 0.5rem !important;
+        }
+        /* Hide สถานศึกษา column — usually empty */
+        #table-tenants td:nth-child(3) {
+          display: none !important;
+        }
+        /* Action buttons: side-by-side */
+        #table-tenants td.crud-column {
+          display: flex !important;
+          gap: 0.5rem !important;
+          padding-top: 0.6rem !important;
+          border-top: 1px solid rgba(255,255,255,0.08) !important;
+          margin-top: 0.3rem !important;
+        }
+        #table-tenants td.crud-column .animate-ui-action-btn {
+          flex: 1 !important;
+          text-align: center !important;
+          justify-content: center !important;
+        }
+        /* Light theme overrides */
+        body.reports-page #table-tenants tbody tr {
+          background: #f8fafc !important;
+          border-color: #e2e8f0 !important;
+        }
+        body.reports-page #table-tenants td.crud-column {
+          border-top-color: #e2e8f0 !important;
+        }
+        /* Datatable top/bottom controls stack vertically */
+        .datatable-top, .datatable-bottom {
+          flex-direction: column !important;
+          gap: 0.5rem !important;
+        }
+      }
     </style>
   </head>
   <body class="reports-page">

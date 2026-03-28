@@ -184,7 +184,7 @@ try {
             $deleteStmt->execute([$adminId]);
         }
         
-        $existingStmt = $pdo->prepare('SELECT oauth_id FROM admin_oauth WHERE admin_id = ? AND provider = "google"');
+        $existingStmt = $pdo->prepare('SELECT provider_id FROM admin_oauth WHERE admin_id = ? AND provider = "google"');
         $existingStmt->execute([$adminId]);
         $existingOAuth = $existingStmt->fetch();
         
