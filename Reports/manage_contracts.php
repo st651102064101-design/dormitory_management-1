@@ -168,38 +168,58 @@ foreach ($contracts as $contract) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
+      /* ============================================================
+         MANAGE CONTRACTS - Responsive Styles (Clean Rewrite)
+         ============================================================ */
       :root {
         --theme-bg-color: <?php echo $themeColor; ?>;
       }
-      
+
+      /* --- Base --- */
+      html, body {
+        max-width: 100vw;
+        overflow-x: hidden;
+      }
       body {
         background: var(--bg-primary);
         color: var(--text-primary);
       }
-      main::-webkit-scrollbar {
-        display: none;
+      main::-webkit-scrollbar { display: none; }
+
+      /* --- Layout wrapper --- */
+      .app-layout-wrapper {
+        display: flex;
+        max-width: 100vw;
+        overflow: hidden;
       }
+      .app-main-content {
+        flex: 1;
+        min-width: 0;
+        overflow-x: hidden;
+      }
+
+      /* --- Header area --- */
+      .contracts-header-wrap {
+        margin: 1.5rem 1.5rem 1rem;
+      }
+      .contracts-header-wrap .page-header-bar { margin: 0; }
+
+      /* --- Panel --- */
       .manage-panel {
         margin: 0 1.5rem 3rem;
-        margin-bottom: 3rem;
         padding: 1.5rem;
         background: var(--card-bg);
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+        box-sizing: border-box;
       }
-      .contracts-header-wrap {
-        margin: 1.5rem 1.5rem 1rem;
-      }
-      .contracts-header-wrap .page-header-bar {
-        margin: 0;
-      }
-      h1 {
-        margin: 0 0 1.5rem 0;
-        color: var(--text-primary);
-      }
+      
+      /* --- Statistics cards --- */
+      h1 { margin: 0 0 1.5rem 0; color: var(--text-primary); }
       .contract-stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
         gap: 1rem;
         margin-bottom: 2rem;
       }
@@ -229,31 +249,27 @@ foreach ($contracts as $contract) {
         border-radius: 999px;
         background: rgba(255,255,255,0.1);
       }
-      
-      /* Light theme overrides for stat cards */
       @media (prefers-color-scheme: light) {
         .contract-stat-card {
           background: linear-gradient(135deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.03) 100%) !important;
           border: 1px solid rgba(0,0,0,0.1) !important;
         }
-        .contract-stat-card .stat-chip {
-          background: rgba(0,0,0,0.08) !important;
-        }
+        .contract-stat-card .stat-chip { background: rgba(0,0,0,0.08) !important; }
       }
-      
-      /* JavaScript-detected light theme class */
       html.light-theme .contract-stat-card {
         background: linear-gradient(135deg, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.03) 100%) !important;
         border: 1px solid rgba(0,0,0,0.1) !important;
       }
-      
-      html.light-theme .contract-stat-card .stat-chip {
-        background: rgba(0,0,0,0.08) !important;
-      }
+      html.light-theme .contract-stat-card .stat-chip { background: rgba(0,0,0,0.08) !important; }
+
+      /* --- Form toggle button --- */
       .form-toggle-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
         padding: 0.65rem 1.3rem;
         background: #22c55e;
-        color: #ffffff !important; /* text color changed to white */
+        color: #ffffff !important;
         border: 1px solid #16a34a;
         border-radius: 8px;
         cursor: pointer;
@@ -265,12 +281,18 @@ foreach ($contracts as $contract) {
         z-index: 9999;
         pointer-events: auto;
         touch-action: manipulation;
+        white-space: nowrap;
       }
       .form-toggle-btn:hover {
         background: #16a34a;
-        color: #ffffff !important; /* keep white on hover too */
+        color: #ffffff !important;
         transform: translateY(-1px);
       }
+      .form-toggle-btn, .form-toggle-btn * {
+        color: #ffffff !important;
+      }
+
+      /* --- Add Contract Form --- */
       .contract-form {
         display: block;
         padding: 1.5rem;
@@ -278,20 +300,16 @@ foreach ($contracts as $contract) {
         border: 1px solid rgba(255,255,255,0.1);
         border-radius: 6px;
         margin-bottom: 2rem;
+        box-sizing: border-box;
       }
-      .contract-form.hide {
-        display: none;
-      }
+      .contract-form.hide { display: none; }
       .form-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
         gap: 1rem;
         margin-bottom: 1rem;
       }
-      .form-group {
-        display: flex;
-        flex-direction: column;
-      }
+      .form-group { display: flex; flex-direction: column; }
       .form-group label {
         margin-bottom: 0.3rem;
         font-size: 0.9rem;
@@ -305,6 +323,8 @@ foreach ($contracts as $contract) {
         background: rgba(255,255,255,0.05);
         color: #e2e8f0;
         font-size: 0.95rem;
+        width: 100%;
+        box-sizing: border-box;
       }
       .form-group input:focus,
       .form-group select:focus {
@@ -312,71 +332,25 @@ foreach ($contracts as $contract) {
         border-color: var(--primary-color);
         box-shadow: 0 0 4px rgba(255,255,255,0.1);
       }
-      
-      /* Style for select options in dark mode */
-      .form-group select option {
-        background: #1e293b;
-        color: #e2e8f0;
-      }
-      
-      .form-group select option:checked {
-        background: #334155;
-        color: #e2e8f0;
-      }
-      
-      /* Light theme overrides for form inputs */
+      .form-group select option { background: #1e293b; color: #e2e8f0; }
+      .form-group select option:checked { background: #334155; color: #e2e8f0; }
       @media (prefers-color-scheme: light) {
-        .form-group input,
-        .form-group select {
-          background: #ffffff !important;
-          color: #1f2937 !important;
-          border: 1px solid #e5e7eb !important;
+        .form-group input, .form-group select {
+          background: #ffffff !important; color: #1f2937 !important; border: 1px solid #e5e7eb !important;
         }
-        .form-group input::placeholder {
-          color: #9ca3af !important;
-        }
-        .form-group label {
-          color: #374151 !important;
-        }
-        .form-group select option {
-          background: #ffffff !important;
-          color: #1f2937 !important;
-        }
-        .form-group select option:checked {
-          background: #e5e7eb !important;
-          color: #1f2937 !important;
-        }
+        .form-group input::placeholder { color: #9ca3af !important; }
+        .form-group label { color: #374151 !important; }
+        .form-group select option { background: #ffffff !important; color: #1f2937 !important; }
+        .form-group select option:checked { background: #e5e7eb !important; color: #1f2937 !important; }
       }
-      
-      /* JavaScript-detected light theme class */
-      html.light-theme .form-group input,
-      html.light-theme .form-group select {
-        background: #ffffff !important;
-        color: #1f2937 !important;
-        border: 1px solid #e5e7eb !important;
+      html.light-theme .form-group input, html.light-theme .form-group select {
+        background: #ffffff !important; color: #1f2937 !important; border: 1px solid #e5e7eb !important;
       }
-      
-      html.light-theme .form-group input::placeholder {
-        color: #9ca3af !important;
-      }
-      
-      html.light-theme .form-group label {
-        color: #374151 !important;
-      }
-      
-      html.light-theme .form-group select option {
-        background: #ffffff !important;
-        color: #1f2937 !important;
-      }
-      
-      html.light-theme .form-group select option:checked {
-        background: #e5e7eb !important;
-        color: #1f2937 !important;
-      }
-      .form-actions {
-        display: flex;
-        gap: 0.5rem;
-      }
+      html.light-theme .form-group input::placeholder { color: #9ca3af !important; }
+      html.light-theme .form-group label { color: #374151 !important; }
+      html.light-theme .form-group select option { background: #ffffff !important; color: #1f2937 !important; }
+      html.light-theme .form-group select option:checked { background: #e5e7eb !important; color: #1f2937 !important; }
+      .form-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
       .form-actions button {
         padding: 0.6rem 1.2rem;
         border: none;
@@ -384,21 +358,12 @@ foreach ($contracts as $contract) {
         cursor: pointer;
         font-size: 0.95rem;
         transition: all 0.3s ease;
+        min-width: 100px;
       }
-      .btn-submit {
-        background: #4CAF50;
-        color: white;
-      }
-      .btn-submit:hover {
-        background: #45a049;
-      }
-      .btn-cancel {
-        background: rgba(255,255,255,0.1);
-        color: var(--text-primary);
-      }
-      .btn-cancel:hover {
-        background: rgba(255,255,255,0.15);
-      }
+      .btn-submit { background: #4CAF50; color: white; }
+      .btn-submit:hover { background: #45a049; }
+      .btn-cancel { background: rgba(255,255,255,0.1); color: var(--text-primary); }
+      .btn-cancel:hover { background: rgba(255,255,255,0.15); }
       .quick-date-btn {
         padding: 0.4rem 0.8rem;
         background: rgba(255,255,255,0.1);
@@ -409,79 +374,284 @@ foreach ($contracts as $contract) {
         font-size: 0.85rem;
         transition: all 0.2s ease;
       }
-      .quick-date-btn:hover {
-        background: rgba(255,255,255,0.2);
-        border-color: var(--primary-color);
+      .quick-date-btn:hover { background: rgba(255,255,255,0.2); border-color: var(--primary-color); }
+
+      /* --- Table (desktop) --- */
+      .table-responsive-wrap {
+        width: 100%;
+        overflow-x: auto;
+        box-sizing: border-box;
       }
-      /* Table overrides for proper display */
       .report-table {
         width: 100%;
-        display: table !important;
-        overflow-x: auto;
-        border-collapse: collapse !important;
-        table-layout: auto !important;
-        color: #e2e8f0 !important;
-        margin-bottom: 2rem;
+        border-collapse: collapse;
+        color: #e2e8f0;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
-      .report-table thead { 
-        display: table-header-group !important; 
-        background: #0a1929 !important;
-      }
-      .report-table tbody { 
-        display: table-row-group !important; 
-        max-height: none !important; 
-        overflow: visible !important;
-      }
-      .report-table tr { 
-        display: table-row !important; 
-      }
+      .report-table thead { background: #0a1929; }
+      .report-table tbody tr:hover { background: rgba(30,41,59,0.4); }
       .report-table th,
       .report-table td {
-        display: table-cell !important;
         padding: 0.75rem;
         text-align: left;
         border-bottom: 1px solid rgba(255,255,255,0.1);
         color: #e2e8f0 !important;
-        background: transparent !important;
         vertical-align: middle;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
       .report-table th {
         background: rgba(10,25,41,0.8) !important;
         color: #cbd5e1 !important;
         font-weight: 600;
       }
-      .report-table tbody tr { 
-        height: auto !important;
+
+      /* --- DataTable controls (all sizes) --- */
+      .datatable-wrapper,
+      .datatable-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow: hidden !important;
+        box-sizing: border-box !important;
       }
-      .report-table tbody tr:hover {
-        background: rgba(30,41,59,0.4) !important;
+      .datatable-top {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
+        width: 100%;
+        box-sizing: border-box;
       }
-      /* force visible in case of rogue styles */
-      .report-table, .report-table * {
-        opacity: 1 !important;
-        visibility: visible !important;
+      .datatable-bottom {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        width: 100%;
+        box-sizing: border-box;
       }
+      .datatable-selector,
+      .datatable-input {
+        box-sizing: border-box;
+        max-width: 100%;
+      }
+
+      /* --- Status badge --- */
       .status-badge {
         display: inline-block;
-        padding: 0.4rem 0.8rem;
+        padding: 0.35rem 0.75rem;
         border-radius: 4px;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         font-weight: 500;
         text-align: center;
+        white-space: nowrap;
       }
-      /* Cancel contract button (แจ้งยกเลิก -> ยกเลิกสัญญา) */
+
+      /* --- Cancel button --- */
       .cancel-contract-btn {
-        background: #f59e0b !important; /* amber */
+        background: #f59e0b !important;
         border: 1px solid #d97706 !important;
         color: #ffffff !important;
-        padding: 0.45rem 0.8rem !important;
+        padding: 0.4rem 0.75rem !important;
         border-radius: 6px !important;
-        font-size: 0.9rem !important;
+        font-size: 0.85rem !important;
         cursor: pointer !important;
+        white-space: nowrap !important;
       }
-      .cancel-contract-btn:hover {
-        background: #d97706 !important;
-        color: #ffffff !important;
+      .cancel-contract-btn:hover { background: #d97706 !important; }
+
+      /* =====================================================
+         MOBILE RESPONSIVE  (≤ 768px)
+         ===================================================== */
+      @media (max-width: 768px) {
+        /* Prevent ALL horizontal overflow */
+        html, body { overflow-x: hidden !important; max-width: 100vw !important; }
+        * { box-sizing: border-box; }
+
+        /* Layout */
+        main, .app-main {
+          overflow-x: hidden !important;
+          width: 100% !important;
+          max-width: 100% !important;
+        }
+
+        /* Header */
+        .contracts-header-wrap {
+          margin: 0.75rem 0.5rem 0.5rem !important;
+        }
+
+        /* Panel */
+        .manage-panel {
+          margin: 0 0.5rem 1.5rem !important;
+          padding: 0.75rem !important;
+          border-radius: 6px !important;
+        }
+
+        /* Stats: single column on small phones */
+        .contract-stats {
+          grid-template-columns: 1fr !important;
+          gap: 0.6rem !important;
+          margin-bottom: 1rem !important;
+        }
+        .contract-stat-card { padding: 1rem !important; }
+        .contract-stat-card .stat-value { font-size: 1.6rem !important; }
+
+        /* Summary info bar */
+        .info-bar {
+          font-size: 0.82rem !important;
+          word-break: break-word;
+          line-height: 1.6;
+        }
+
+        /* Form toggle button */
+        .form-toggle-btn {
+          width: 100% !important;
+          justify-content: center !important;
+          white-space: normal !important;
+        }
+
+        /* Add Contract Form */
+        .contract-form { padding: 0.875rem !important; }
+        .form-grid { grid-template-columns: 1fr !important; }
+        .form-actions { flex-direction: column !important; }
+        .form-actions button { width: 100% !important; }
+
+        /* DataTable controls: stack vertically */
+        .datatable-top {
+          flex-direction: column !important;
+          align-items: stretch !important;
+          gap: 0.5rem !important;
+        }
+        .datatable-dropdown,
+        .datatable-search {
+          width: 100% !important;
+        }
+        .datatable-dropdown label {
+          display: flex !important;
+          align-items: center !important;
+          gap: 0.5rem !important;
+          flex-wrap: wrap !important;
+          width: 100% !important;
+          font-size: 0.9rem !important;
+        }
+        .datatable-selector {
+          flex: 1 !important;
+          width: auto !important;
+          min-width: 60px !important;
+          padding: 0.45rem 0.5rem !important;
+          font-size: 0.9rem !important;
+        }
+        .datatable-input {
+          width: 100% !important;
+          padding: 0.5rem 0.75rem !important;
+          font-size: 0.9rem !important;
+          box-sizing: border-box !important;
+        }
+
+        /* DataTable pagination: center & wrap */
+        .datatable-bottom {
+          flex-direction: column !important;
+          align-items: center !important;
+          gap: 0.5rem !important;
+        }
+        .datatable-info {
+          font-size: 0.82rem !important;
+          text-align: center !important;
+          width: 100% !important;
+        }
+        .datatable-pagination {
+          display: flex !important;
+          flex-wrap: wrap !important;
+          justify-content: center !important;
+          gap: 0.2rem !important;
+          width: 100% !important;
+        }
+        .datatable-pagination li { display: inline-block !important; }
+        .datatable-pagination li a,
+        .datatable-pagination li button {
+          padding: 0.3rem 0.6rem !important;
+          font-size: 0.85rem !important;
+          min-width: 32px !important;
+          text-align: center !important;
+        }
+
+        /* DataTable wrapper overflow guard */
+        .datatable-wrapper,
+        .datatable-container {
+          width: 100% !important;
+          max-width: 100% !important;
+          overflow: hidden !important;
+        }
+        .datatable-table,
+        .report-table,
+        .report-table.table-responsive,
+        .table-responsive-wrap {
+          width: 100% !important;
+          overflow-x: hidden !important;
+        }
+
+        /* ---- Table → Card layout ---- */
+        #table-contracts { display: block !important; width: 100% !important; }
+        #table-contracts thead { display: none !important; }
+        #table-contracts tbody { display: block !important; width: 100% !important; }
+        #table-contracts tbody tr {
+          display: block !important;
+          width: 100% !important;
+          margin-bottom: 0.875rem !important;
+          border: 1px solid rgba(255,255,255,0.12) !important;
+          border-radius: 10px !important;
+          overflow: hidden !important;
+          background: rgba(255,255,255,0.03) !important;
+        }
+        #table-contracts tbody td {
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: flex-start !important;
+          padding: 0.55rem 0.875rem !important;
+          border-bottom: 1px solid rgba(255,255,255,0.06) !important;
+          width: 100% !important;
+          font-size: 0.9rem !important;
+          word-break: break-word !important;
+          overflow-wrap: break-word !important;
+          min-height: unset !important;
+          height: auto !important;
+          justify-content: unset !important;
+        }
+        #table-contracts tbody td:last-child { border-bottom: none !important; }
+        #table-contracts tbody td::before {
+          content: attr(data-label) !important;
+          display: block !important;
+          font-size: 0.7rem !important;
+          font-weight: 700 !important;
+          text-transform: uppercase !important;
+          letter-spacing: 0.6px !important;
+          color: #64748b !important;
+          margin-bottom: 0.2rem !important;
+        }
+        #table-contracts tbody td:first-child {
+          padding-bottom: 0.75rem !important;
+          border-bottom: 2px solid rgba(255,255,255,0.1) !important;
+          font-weight: 700 !important;
+          color: #e2e8f0 !important;
+          font-size: 0.975rem !important;
+        }
+        #table-contracts tbody td:first-child::before { display: none !important; }
+        #table-contracts tbody td.action-cell { align-items: flex-start !important; }
+        #table-contracts tbody td.action-cell::before { display: none !important; }
+      }
+
+      /* =====================================================
+         VERY SMALL PHONES  (≤ 400px)
+         ===================================================== */
+      @media (max-width: 400px) {
+        .contract-stat-card .stat-value { font-size: 1.4rem !important; }
+        .manage-panel { padding: 0.5rem !important; }
+        #table-contracts tbody td { padding: 0.45rem 0.625rem !important; }
       }
     </style>
     <script>
@@ -543,9 +713,9 @@ foreach ($contracts as $contract) {
     </script>
 </head>
 <body>
-    <div style="display: flex;">
+    <div style="display: flex; max-width: 100vw; overflow: hidden;">
         <?php include '../includes/sidebar.php'; ?>
-        <main style="flex: 1; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem;">
+        <main style="flex: 1; min-width: 0; overflow-x: hidden; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem;">
             <div class="contracts-header-wrap">
               <?php $pageTitle = 'จัดการสัญญาเช่า'; include '../includes/page_header.php'; ?>
             </div>
@@ -587,9 +757,9 @@ foreach ($contracts as $contract) {
                     </div>
                   </div>
                 <?php endif; ?>
-                <div style="margin: 0.5rem 0 1rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.95rem;">
-                  สัญญาที่พบ: <strong><?php echo $ctrCount; ?></strong> รายการ (แสดงทุกสถานะ) |
-                  ปกติ: <?php echo $ctrStatusBuckets['0']; ?> | ยกเลิกแล้ว: <?php echo $ctrStatusBuckets['1']; ?> | แจ้งยกเลิก: <?php echo $ctrStatusBuckets['2']; ?> | อื่นๆ: <?php echo $ctrStatusBuckets['other']; ?>
+                <div class="info-bar" style="margin: 0.5rem 0 1rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.95rem; word-break: break-word;">
+                  สัญญาที่พบ: <strong><?php echo $ctrCount; ?></strong> รายการ |
+                  ปกติ: <?php echo $ctrStatusBuckets['0']; ?> | ยกเลิกแล้ว: <?php echo $ctrStatusBuckets['1']; ?> | แจ้งยกเลิก: <?php echo $ctrStatusBuckets['2']; ?>
                 </div>
 
                 <!-- Statistics -->
@@ -623,35 +793,6 @@ foreach ($contracts as $contract) {
                     </div>
                 </div>
 
-                <style>
-                  .form-toggle-btn {
-                    padding: 0.8rem 1.5rem;
-                    cursor: pointer;
-                    font-size: 1rem;
-                    background: #1e293b;
-                    border: 1px solid #334155;
-                    color: #ffffff !important; /* force white text */
-                    border-radius: 8px;
-                    transition: all 0.2s;
-                    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-                    margin-bottom: 20px;
-                    white-space: nowrap;
-                  }
-                  .form-toggle-btn:hover {
-                    background: #334155;
-                    border-color: #475569;
-                    color: #ffffff !important; /* keep white on hover */
-                  }
-                  /* Force any nested text or SVG strokes to white to avoid other rules overriding it */
-                  .form-toggle-btn, .form-toggle-btn * {
-                    color: #ffffff !important;
-                    stroke: #ffffff !important;
-                    fill: currentColor !important;
-                  }
-                  .form-toggle-btn.open {
-                    border-color: #475569;
-                  }
-                </style>
                 <!-- Add Contract Form Toggle -->
                 <button class="form-toggle-btn" id="toggleFormBtn" type="button" onclick="window.__toggleContractForm(event); return false;" style="color: #ffffff;">
                   <span id="toggleFormIcon" style="color: inherit;">▶</span>
@@ -786,22 +927,22 @@ foreach ($contracts as $contract) {
                     </div>
                 </form>
 
-                <div style="display: block !important; width: 100%;">
+                <div style="width: 100%; box-sizing: border-box;">
                     <h3>รายชื่อสัญญา</h3>
-                    <div style="margin:0.25rem 0 0.75rem; padding:0.5rem 0.75rem; background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:6px; color:rgba(255,255,255,0.9);">
+                    <div class="info-bar" style="margin:0.25rem 0 0.75rem; padding:0.5rem 0.75rem; background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:6px; color:rgba(255,255,255,0.9); word-break: break-word;">
                       สัญญาทั้งหมดที่แสดง: <strong><?php echo $ctrCount; ?></strong> รายการ (ทุกสถานะ)
                     </div>
-                    <div class="report-table">
-                    <table id="table-contracts" style="margin-bottom: 2rem; width: 100%; border-collapse: collapse;">
+                    <div class="table-responsive-wrap">
+                    <table id="table-contracts" class="report-table" style="margin-bottom: 2rem; width: 100%; border-collapse: collapse;">
                         <thead>
                             <tr>
-                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">เลขที่สัญญา</th>
-                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">ผู้เช่า</th>
-                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">ห้องพัก</th>
-                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">วันเริ่มสัญญา</th>
-                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">วันสิ้นสุด</th>
-                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">สถานะ</th>
-                                <th style="padding: 0.75rem; text-align: left; background: rgba(10,25,41,0.8); color: #cbd5e1; border-bottom: 1px solid rgba(255,255,255,0.1);">จัดการ</th>
+                                <th>เลขที่สัญญา</th>
+                                <th>ผู้เช่า</th>
+                                <th>ห้องพัก</th>
+                                <th>วันเริ่มสัญญา</th>
+                                <th>วันสิ้นสุด</th>
+                                <th>สถานะ</th>
+                                <th>จัดการ</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -831,12 +972,12 @@ foreach ($contracts as $contract) {
                                 }
                           ?>
                             <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
-                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $ctr_id; ?></td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $tnt_name; ?></td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $room_number; ?></td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $ctr_start; ?></td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;"><?php echo $ctr_end; ?></td>
-                              <td style="padding: 0.75rem;">
+                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="เลขที่สัญญา"><?php echo $ctr_id; ?></td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="ผู้เช่า"><?php echo $tnt_name; ?></td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="ห้องพัก"><?php echo $room_number; ?></td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="วันเริ่มสัญญา"><?php echo $ctr_start; ?></td>
+                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="วันสิ้นสุด"><?php echo $ctr_end; ?></td>
+                              <td style="padding: 0.75rem;" data-label="สถานะ">
                                 <span class="status-badge" style="background-color: <?php echo $col; ?>; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.85rem;">
                                   <?php echo $lbl; ?>
                                 </span>
@@ -844,7 +985,7 @@ foreach ($contracts as $contract) {
                                   <div style="margin-top:0.35rem;font-size:0.82rem;color:rgba(255,255,255,0.8);">วันที่จะยกเลิก: <?php echo $cancelDateDisplay; ?></div>
                                 <?php endif; ?>
                               </td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;">
+                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="จัดการ" class="action-cell">
                                 <?php if ($s === '2'): ?>
                                   <button type="button" class="action-btn btn-warning cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ยกเลิกทันที</button>
                                 <?php else: ?>
@@ -952,16 +1093,16 @@ foreach ($contracts as $contract) {
 
         // Ensure table rows are visible even if any CSS override hides them
         const forceTableVisible = () => {
+          // On mobile, let handleContractsTableResponsive() manage the layout
+          if (window.innerWidth <= 768) return;
+
           const table = document.getElementById('table-contracts');
-          console.log('forceTableVisible called - table found:', !!table);
           if (!table) return;
           
           const tbody = table.querySelector('tbody');
-          console.log('tbody found:', !!tbody);
           if (!tbody) return;
 
           const rows = tbody.querySelectorAll('tr');
-          console.log('tbody rows count:', rows.length);
 
           table.style.display = 'table';
           table.style.visibility = 'visible';
@@ -970,31 +1111,19 @@ foreach ($contracts as $contract) {
           tbody.style.visibility = 'visible';
           tbody.style.opacity = '1';
 
-          rows.forEach((row, idx) => {
+          rows.forEach((row) => {
             row.style.display = 'table-row';
             row.style.visibility = 'visible';
             row.style.opacity = '1';
             row.style.color = '#e2e8f0';
-            console.log('Row ' + idx + ' style applied');
           });
-          console.log('Contract table rows (server rendered):', rows.length);
         };
 
         // run immediately and after DOM ready
-        console.log('Running forceTableVisible immediately...');
         forceTableVisible();
-        document.addEventListener('DOMContentLoaded', () => {
-          console.log('DOMContentLoaded - running forceTableVisible');
-          forceTableVisible();
-        });
-        setTimeout(() => {
-          console.log('setTimeout 300ms - running forceTableVisible');
-          forceTableVisible();
-        }, 300);
-        setTimeout(() => {
-          console.log('setTimeout 800ms - running forceTableVisible');
-          forceTableVisible();
-        }, 800);
+        document.addEventListener('DOMContentLoaded', () => { forceTableVisible(); });
+        setTimeout(() => { forceTableVisible(); }, 300);
+        setTimeout(() => { forceTableVisible(); }, 800);
 
         // Auto-calculate dates
         function formatDateDisplay(dateObj) {
@@ -1087,6 +1216,107 @@ foreach ($contracts as $contract) {
     <!-- DataTable Initialization -->
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
+      /**
+       * Apply or remove mobile card-layout styles on the contracts table.
+       * Uses element.style.setProperty(prop, value, 'important') so that
+       * !important actually works via the CSSOM (plain assignment ignores it).
+       */
+      function handleContractsTableResponsive() {
+        const contractsTable = document.getElementById('table-contracts');
+        if (!contractsTable) return;
+
+        const isMobile = window.innerWidth <= 768;
+
+        // Always keep datatable wrapper overflow hidden
+        document.querySelectorAll('.datatable-wrapper, .datatable-container').forEach(el => {
+          el.style.setProperty('overflow', 'hidden', 'important');
+          el.style.setProperty('width', '100%', 'important');
+          el.style.setProperty('max-width', '100%', 'important');
+          el.style.setProperty('box-sizing', 'border-box', 'important');
+        });
+
+        if (isMobile) {
+          // Table itself
+          contractsTable.style.setProperty('display', 'block', 'important');
+          contractsTable.style.setProperty('width', '100%', 'important');
+
+          // Hide thead
+          const thead = contractsTable.querySelector('thead');
+          if (thead) thead.style.setProperty('display', 'none', 'important');
+
+          // tbody
+          const tbody = contractsTable.querySelector('tbody');
+          if (tbody) {
+            tbody.style.setProperty('display', 'block', 'important');
+            tbody.style.setProperty('width', '100%', 'important');
+          }
+
+          // Rows → cards
+          contractsTable.querySelectorAll('tbody tr').forEach(row => {
+            row.style.setProperty('display', 'block', 'important');
+            row.style.setProperty('width', '100%', 'important');
+            row.style.setProperty('margin-bottom', '0.875rem', 'important');
+            row.style.setProperty('border', '1px solid rgba(255,255,255,0.12)', 'important');
+            row.style.setProperty('border-radius', '10px', 'important');
+            row.style.setProperty('overflow', 'hidden', 'important');
+            row.style.setProperty('background', 'rgba(255,255,255,0.03)', 'important');
+
+            const cells = row.querySelectorAll('td');
+            cells.forEach((cell, index) => {
+              // Clear any conflicting DataTable inline styles
+              cell.style.removeProperty('justify-content');
+              cell.style.removeProperty('height');
+              cell.style.removeProperty('min-height');
+
+              cell.style.setProperty('display', 'flex', 'important');
+              cell.style.setProperty('flex-direction', 'column', 'important');
+              cell.style.setProperty('align-items', 'flex-start', 'important');
+              cell.style.setProperty('justify-content', 'unset', 'important');
+              cell.style.setProperty('padding', '0.55rem 0.875rem', 'important');
+              cell.style.setProperty('border-bottom', '1px solid rgba(255,255,255,0.06)', 'important');
+              cell.style.setProperty('width', '100%', 'important');
+              cell.style.setProperty('box-sizing', 'border-box', 'important');
+              cell.style.setProperty('font-size', '0.9rem', 'important');
+              cell.style.setProperty('word-break', 'break-word', 'important');
+              cell.style.setProperty('overflow-wrap', 'break-word', 'important');
+
+              if (index === cells.length - 1) {
+                cell.style.setProperty('border-bottom', 'none', 'important');
+              }
+              if (index === 0) {
+                cell.style.setProperty('padding-bottom', '0.75rem', 'important');
+                cell.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                cell.style.setProperty('font-weight', '700', 'important');
+                cell.style.setProperty('color', '#e2e8f0', 'important');
+                cell.style.setProperty('font-size', '0.975rem', 'important');
+              }
+            });
+          });
+        } else {
+          // Desktop: clear all inline overrides and let CSS handle it
+          contractsTable.style.removeProperty('display');
+          contractsTable.style.removeProperty('width');
+
+          const thead = contractsTable.querySelector('thead');
+          if (thead) thead.style.removeProperty('display');
+
+          const tbody = contractsTable.querySelector('tbody');
+          if (tbody) {
+            tbody.style.removeProperty('display');
+            tbody.style.removeProperty('width');
+          }
+
+          contractsTable.querySelectorAll('tbody tr').forEach(row => {
+            ['display','width','margin-bottom','border','border-radius','overflow','background'].forEach(p => row.style.removeProperty(p));
+            row.querySelectorAll('td').forEach(cell => {
+              ['display','flex-direction','align-items','justify-content','padding','padding-bottom',
+               'border-bottom','width','box-sizing','font-size','word-break','overflow-wrap',
+               'font-weight','color'].forEach(p => cell.style.removeProperty(p));
+            });
+          });
+        }
+      }
+      
       document.addEventListener('DOMContentLoaded', function() {
         const contractsTable = document.getElementById('table-contracts');
         if (contractsTable && typeof simpleDatatables !== 'undefined') {
@@ -1103,6 +1333,19 @@ foreach ($contracts as $contract) {
             }
           });
         }
+        // Apply responsive styles after DataTable finishes rendering
+        setTimeout(handleContractsTableResponsive, 150);
+        setTimeout(handleContractsTableResponsive, 400);
+      });
+      
+      // Re-apply on resize
+      let resizeTimer;
+      window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(handleContractsTableResponsive, 200);
+      });
+      window.addEventListener('orientationchange', function() {
+        setTimeout(handleContractsTableResponsive, 150);
       });
     </script>
 </body>

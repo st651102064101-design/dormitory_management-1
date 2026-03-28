@@ -42,11 +42,18 @@ if ($bookingIdFilter > 0) {
 }
 
 $fetchBookings = static function(PDO $pdo, string $orderBy, string $bookingFilterSql, array $bookingFilterParams): array {
-  $baseCondition = "(COALESCE(b.bkg_status, '0') <> '1' OR active_ctr.ctr_id IS NULL)";
   $extraFilter = preg_replace('/^\s*WHERE\s+/i', '', trim($bookingFilterSql ?? ''));
-  $whereSql = "WHERE $baseCondition";
-  if ($extraFilter !== '') {
-    $whereSql .= " AND ($extraFilter)";
+  
+  // When filtering by specific booking ID, show ONLY that booking without base conditions
+  if (strpos($extraFilter, 'b.bkg_id') !== false) {
+    $whereSql = "WHERE $extraFilter";
+  } else {
+    // For other filters, apply base condition to show "available to manage" bookings
+    $baseCondition = "(COALESCE(b.bkg_status, '0') <> '1' OR active_ctr.ctr_id IS NULL)";
+    $whereSql = "WHERE $baseCondition";
+    if ($extraFilter !== '') {
+      $whereSql .= " AND ($extraFilter)";
+    }
   }
 
   $sql = "
@@ -3621,7 +3628,8 @@ try {
             </div>
           </section>
 
-          <!-- Toggle button for available rooms -->
+          <!-- Toggle button for available rooms (only show when not filtering by specific booking) -->
+          <?php if ($bookingIdFilter === 0): ?>
           <div style="margin:1.5rem 0;">
             <button type="button" id="toggleRoomsBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleAvailableRooms()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
               <span id="toggleRoomsIcon">▼</span> <span id="toggleRoomsText">ซ่อนห้องพักที่ว่าง</span>
@@ -3890,12 +3898,18 @@ try {
               </div>
             <?php endif; ?>
           </section>
+          <?php endif; ?>
 
           <!-- ส่วนแสดงรายการจอง -->
           <section class="manage-panel">
             <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1><?php echo ($bookingIdFilter > 0) ? 'รายการจองที่เลือก' : (($statusFilter === '1') ? 'รายการจองที่ต้องจัดการ' : 'รายการจองทั้งหมด'); ?></h1>
+                <?php if ($bookingIdFilter > 0): ?>
+                <a href="manage_booking.php?todo_only=1&status=1" style="display:inline-block;margin-top:0.5rem;font-size:0.85rem;color:#60a5fa;text-decoration:none;padding:0.4rem 0.8rem;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.3);border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(96,165,250,0.2)'" onmouseout="this.style.background='rgba(96,165,250,0.1)'">
+                  ← ยกเลิกการกรอง
+                </a>
+                <?php endif; ?>
               </div>
               <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
                 <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>จองล่าสุด</option>
