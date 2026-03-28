@@ -16,7 +16,7 @@ try {
     $pdo = connectDB();
     
     // ตรวจสอบว่ามีการเชื่อม Google อยู่หรือไม่
-    $checkStmt = $pdo->prepare("SELECT oauth_id FROM admin_oauth WHERE admin_id = ? AND provider = 'google'");
+    $checkStmt = $pdo->prepare("SELECT provider_id FROM admin_oauth WHERE admin_id = ? AND provider = 'google'");
     $checkStmt->execute([$adminId]);
     
     if ($checkStmt->rowCount() === 0) {
