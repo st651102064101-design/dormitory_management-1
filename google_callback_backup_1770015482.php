@@ -128,18 +128,34 @@ try {
         unset($_SESSION['google_link_admin_id']);
         unset($_SESSION['google_link_action']);
         
-        // ตรวจสอบว่า Google account นี้ถูกใช้กับ admin อื่นหรือไม่
-        $checkStmt = $pdo->prepare('SELECT admin_id FROM admin_oauth WHERE provider = "google" AND provider_id = ? AND admin_id != ?');
-        $checkStmt->execute([$googleId, $adminId]);
-        if ($checkStmt->fetch()) {
+        // ✓ เช็คว่า Gmail นี้ถูกใช้โดย admin อื่นแล้วหรือไม่
+        $checkStmtEmail = $pdo->prepare('SELECT admin_id FROM admin_oauth WHERE provider = "google" AND provider_email = ? AND admin_id != ?');
+        $checkStmtEmail->execute([$email, $adminId]);
+        
+        if ($checkStmtEmail->fetch()) {
+            header('Location: Reports/dashboard.php?google_error=' . urlencode('อีเมล Google นี้ถูกเชื่อมกับบัญชีผู้ดูแลระบบอื่นแล้ว'));
+            exit;
+        }
+        
+        // ✓ เช็คว่า Gmail นี้ถูกใช้โดย tenant แล้วหรือไม่
+        $checkTenantStmt = $pdo->prepare('SELECT tnt_id FROM tenant_oauth WHERE provider = "google" AND provider_email = ?');
+        $checkTenantStmt->execute([$email]);
+        if ($checkTenantStmt->fetch()) {
+            header('Location: Reports/dashboard.php?google_error=' . urlencode('อีเมล Google นี้ถูกเชื่อมกับบัญชีผู้เช่าอยู่แล้ว ไม่สามารถใช้กับบัญชีผู้ดูแลระบบได้'));
+            exit;
+        }
+        
+        // ✓ เช็คว่า Google ID นี้ถูกใช้โดย user อื่นแล้วหรือไม่ (admin หรือ tenant)
+        $checkGoogleIdAdmin = $pdo->prepare('SELECT admin_id FROM admin_oauth WHERE provider = "google" AND provider_id = ? AND admin_id != ?');
+        $checkGoogleIdAdmin->execute([$googleId, $adminId]);
+        if ($checkGoogleIdAdmin->fetch()) {
             header('Location: Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้ดูแลระบบอื่นแล้ว'));
             exit;
         }
         
-        // ตรวจสอบว่า Google account นี้ถูกใช้กับ tenant หรือไม่
-        $checkTenantStmt = $pdo->prepare('SELECT tnt_id FROM tenant_oauth WHERE provider = "google" AND (provider_id = ? OR provider_email = ?)');
-        $checkTenantStmt->execute([$googleId, $email]);
-        if ($checkTenantStmt->fetch()) {
+        $checkGoogleIdTenant = $pdo->prepare('SELECT tnt_id FROM tenant_oauth WHERE provider = "google" AND provider_id = ?');
+        $checkGoogleIdTenant->execute([$googleId]);
+        if ($checkGoogleIdTenant->fetch()) {
             header('Location: Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้เช่าอยู่แล้ว ไม่สามารถใช้กับบัญชีผู้ดูแลระบบได้'));
             exit;
         }
