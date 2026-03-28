@@ -7,8 +7,8 @@ declare(strict_types=1);
  */
 
 // Set error handling
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
+ini_set('display_errors', '1');  // ✅ Always show errors during callback
+ini_set('log_errors', '1');
 error_reporting(E_ALL);
 
 session_start();
@@ -223,7 +223,30 @@ try {
         }
         
         $_SESSION['admin_picture'] = $picture;
-        header('Location: /dormitory_management/Reports/dashboard.php?google_success=' . urlencode($message));
+        
+        // ✓ ปิด popup โดยอัตโนมัติ (สำหรับการเชื่อม Google)
+        echo '<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>เชื่อมบัญชี Google</title>
+</head>
+<body>
+    <script>
+        // ส่งข้อมูลสำเร็จไปยังหน้าหลัก
+        window.opener.postMessage({
+            type: "google_link_success",
+            email: "' . addslashes($email) . '",
+            message: "' . addslashes($message) . '"
+        }, "*");
+        
+        // ปิด popup โดยอัตโนมัติหลังจาก 100ms
+        setTimeout(() => {
+            window.close();
+        }, 100);
+    </script>
+</body>
+</html>';
         exit;
     }
     
