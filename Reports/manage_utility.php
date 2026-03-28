@@ -77,7 +77,11 @@ if (empty($availableYears)) {
     $availableMonthsByYear[$year] = [$month];
 }
 
-if (!in_array($year, $availableYears, true)) {
+// Check if user explicitly selected month/year (not just auto-defaulted)
+$isExplicitSelection = isset($_GET['month']) || isset($_GET['year']);
+
+// Only override year if user didn't explicitly select AND current year not in list
+if (!$isExplicitSelection && !in_array($year, $availableYears, true)) {
     $year = $availableYears[0];
 }
 
@@ -87,7 +91,8 @@ if (empty($yearMonths)) {
     $availableMonthsByYear[$year] = $yearMonths;
 }
 
-if (!in_array($month, $yearMonths, true)) {
+// Only override month if user didn't explicitly select AND current month not in list
+if (!$isExplicitSelection && !in_array($month, $yearMonths, true)) {
     $month = $yearMonths[0];
 }
 
@@ -110,16 +115,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     try {
         $saved = 0;
         $lockedRooms = 0;
-        $blockedByStep = 0;
         foreach ($_POST['meter'] as $roomId => $data) {
         if (empty($data['ctr_id'])) continue;
-        
-        // Check workflow step restriction
-        $workflowStep = isset($data['workflow_step']) ? (int)$data['workflow_step'] : 1;
-        if ($workflowStep <= 3) {
-            $blockedByStep++;
-            continue;
-        }
 
         $waterInput = (isset($data['water']) && $data['water'] !== '') ? (int)$data['water'] : null;
         $elecInput = (isset($data['electric']) && $data['electric'] !== '') ? (int)$data['electric'] : null;
@@ -189,9 +186,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         if ($lockedRooms > 0) {
             $_SESSION['success'] .= " (ข้าม {$lockedRooms} ห้องที่บันทึกเดือนนี้แล้ว)";
         }
-        if ($blockedByStep > 0) {
-            $_SESSION['success'] .= " (ข้าม {$blockedByStep} ห้องในขั้นตอนยังไม่ถึงเช็คอิน)";
-        }
         $redirectQuery = "month=$month&year=$year&show=$showMode";
         if ($selectedCtrFilterActive) {
             $redirectQuery .= "&todo_only=1&ctr_id=" . $selectedCtrId;
@@ -199,10 +193,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         header("Location: manage_utility.php?$redirectQuery");
         exit;
     }
-    if ($blockedByStep > 0 && $saved === 0) {
-        $error = "ไม่สามารถบันทึกได้: มี {$blockedByStep} ห้องในขั้นตอนยังไม่ถึงเช็คอิน (ต้องผ่านขั้นตอน 4 เช็คอิน)";
-    }
-    if ($lockedRooms > 0 && $saved === 0 && $blockedByStep === 0) {
+    if ($lockedRooms > 0 && $saved === 0) {
         $error = "ไม่สามารถแก้ไขข้อมูลเดือนนี้ได้: มี {$lockedRooms} ห้องที่บันทึกแล้ว";
     }
 }
@@ -221,11 +212,11 @@ if ($showMode === 'occupied') {
         JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
         LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
-        WHERE c.contract_start_date <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
-        AND c.contract_end_date >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
+        WHERE c.ctr_start <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
+        AND c.ctr_end >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
     ";
 
-    $occupiedParams = [$year, $month, $year, $month];
+    $occupiedParams = [$year, $month, $year];
     if ($selectedCtrFilterActive) {
         $occupiedSql .= "\n        AND c.ctr_id = ?";
         $occupiedParams[] = $selectedCtrId;
@@ -243,8 +234,8 @@ if ($showMode === 'occupied') {
             SELECT room_id, MAX(ctr_id) AS ctr_id
             FROM contract
             WHERE ctr_status = '0'
-            AND contract_start_date <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
-            AND contract_end_date >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
+            AND ctr_start <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
+            AND ctr_end >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
             GROUP BY room_id
         ) lc ON r.room_id = lc.room_id
         LEFT JOIN contract c ON c.ctr_id = lc.ctr_id
@@ -252,7 +243,7 @@ if ($showMode === 'occupied') {
         LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
     ";
 
-    $allParams = [$year, $month, $year, $month];
+    $allParams = [$year, $month, $year];
     if ($selectedCtrFilterActive) {
         $allSql .= "\n        WHERE c.ctr_id = ?";
         $allParams[] = $selectedCtrId;
@@ -283,8 +274,8 @@ foreach ($rooms as $room) {
     $checkinCheck = $checkinCheckStmt->fetch(PDO::FETCH_ASSOC);
     $hasCheckinRecord = ($checkinCheck['cnt'] ?? 0) > 0;
     
-    // Block if: step <= 3 OR (step = 4 but no checkin record)
-    $meterBlocked = ($workflowStep <= 3) || ($workflowStep === 4 && !$hasCheckinRecord);
+    // Allow meter recording anytime - no day restrictions
+    $meterBlocked = false;
 
     $targetMonthStart = sprintf('%04d-%02d-01', $year, $month);
 
@@ -297,16 +288,10 @@ foreach ($rooms as $room) {
     $currentStmt->execute([$room['ctr_id'], $month, $year]);
     $current = $currentStmt->fetch(PDO::FETCH_ASSOC);
     
-    // If meter is blocked, don't show existing values
-    if ($meterBlocked) {
-        $water_new = '';
-        $elec_new = '';
-        $saved = false;
-    } else {
-        $water_new = $current ? (int)$current['utl_water_end'] : '';
-        $elec_new = $current ? (int)$current['utl_elec_end'] : '';
-        $saved = $current ? true : false;
-    }
+    // ให้สามารถจดมิเตอร์ได้ทันทีจากขั้นตอนใด ๆ ของ workflow
+    $water_new = $current ? (int)$current['utl_water_end'] : '';
+    $elec_new = $current ? (int)$current['utl_elec_end'] : '';
+    $saved = $current ? true : false;
     
     $readings[$room['room_id']] = [
         'water_old' => $prev ? (int)$prev['utl_water_end'] : 0,
@@ -315,8 +300,7 @@ foreach ($rooms as $room) {
         'elec_new' => $elec_new,
         'saved' => $saved,
         'workflow_step' => $workflowStep,
-        'meter_blocked' => $meterBlocked,
-        'has_checkin_record' => $hasCheckinRecord
+        'meter_blocked' => $meterBlocked
     ];
     
     if ($current && !$meterBlocked) {
@@ -477,6 +461,14 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         .stat-badge.rooms { background: #e3f2fd; color: #1565c0; }
         .stat-badge.done { background: #e8f5e9; color: #2e7d32; }
         .stat-badge.pending { background: #fff3e0; color: #e65100; }
+        
+        .meter-schedule-text .highlight {
+            background: #fff59d;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        
         .rate-info {
             display: flex;
             justify-content: center;
@@ -741,6 +733,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                         <span class="stat-badge done"><?php echo $totalRecorded; ?> บันทึกแล้ว</span>
                         <span class="stat-badge pending"><?php echo max(0, $totalPending); ?> รอ</span>
                     </div>
+                    
+                    
                     <div class="rate-info">
                         <span><span class="rate-dot water"></span>น้ำ เหมาจ่าย <?php echo getWaterBasePrice(); ?>฿ (≤<?php echo getWaterBaseUnits(); ?> หน่วย) เกินหน่วยละ <?php echo getWaterExcessRate(); ?>฿</span>
                         <span><span class="rate-dot elec"></span>ไฟ <?php echo $electricRate; ?>฿/หน่วย</span>
@@ -789,7 +783,19 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
                                     <td><?php echo $hasCtr ? number_format($r['water_old']) : '-'; ?></td>
                                     <td><?php if($hasCtr): ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" placeholder="<?php echo $r['water_old']; ?>" value="<?php echo $r['water_new']; ?>" min="<?php echo $r['water_old']; ?>" <?php echo $r['saved'] ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้"' : ($r['meter_blocked'] ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="ต้องผ่านขั้นตอน 4 เช็คอิน ก่อนจดมิเตอร์ (ขั้นตอนปัจจุบัน: ' . $r['workflow_step'] . '/5)"' : ''); ?>
+                                        <?php 
+                                            $tooltipMsg = '';
+                                            if ($r['saved']) {
+                                                $tooltipMsg = 'บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้';
+                                            } elseif ($r['meter_blocked']) {
+                                                if ($r['workflow_step'] < 4) {
+                                                    $tooltipMsg = "ต้องผ่านขั้นตอน 4 เช็คอิน ก่อน (ขั้นตอนปัจจุบัน: {$r['workflow_step']}/5)";
+                                                } else {
+                                                    $tooltipMsg = "ยังไม่ได้เช็คอิน";
+                                                }
+                                            }
+                                        ?>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" placeholder="<?php echo $r['water_old']; ?>" value="<?php echo $r['water_new']; ?>" min="<?php echo $r['water_old']; ?>" <?php echo ($r['saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
@@ -829,7 +835,19 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
                                     <td><?php echo $hasCtr ? number_format($r['elec_old']) : '-'; ?></td>
                                     <td><?php if($hasCtr): ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" placeholder="<?php echo $r['elec_old']; ?>" value="<?php echo $r['elec_new']; ?>" min="<?php echo $r['elec_old']; ?>" <?php echo $r['saved'] ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้"' : ($r['meter_blocked'] ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="ต้องผ่านขั้นตอน 4 เช็คอิน ก่อนจดมิเตอร์ (ขั้นตอนปัจจุบัน: ' . $r['workflow_step'] . '/5)"' : ''); ?>
+                                        <?php 
+                                            $tooltipMsg = '';
+                                            if ($r['saved']) {
+                                                $tooltipMsg = 'บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้';
+                                            } elseif ($r['meter_blocked']) {
+                                                if ($r['workflow_step'] < 4) {
+                                                    $tooltipMsg = "ต้องผ่านขั้นตอน 4 เช็คอิน ก่อน (ขั้นตอนปัจจุบัน: {$r['workflow_step']}/5)";
+                                                } else {
+                                                    $tooltipMsg = "ยังไม่ได้เช็คอิน";
+                                                }
+                                            }
+                                        ?>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" placeholder="<?php echo $r['elec_old']; ?>" value="<?php echo $r['elec_new']; ?>" min="<?php echo $r['elec_old']; ?>" <?php echo ($r['saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
@@ -870,8 +888,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         if (shouldSyncUrl === undefined) shouldSyncUrl = true;
         var safeTab = tab === 'electric' ? 'electric' : 'water';
 
-        document.getElementById('waterPanel').style.display = safeTab === 'water' ? '' : 'none';
-        document.getElementById('electricPanel').style.display = safeTab === 'electric' ? '' : 'none';
+        var waterPanel = document.getElementById('waterPanel');
+        var electricPanel = document.getElementById('electricPanel');
+        if (waterPanel) waterPanel.style.display = safeTab === 'water' ? '' : 'none';
+        if (electricPanel) electricPanel.style.display = safeTab === 'electric' ? '' : 'none';
 
         var waterBtn = document.querySelector('.water-tab');
         var elecBtn = document.querySelector('.elec-tab');
@@ -909,10 +929,14 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             if (d.he) te += d.electric;
             if (d.hw || d.he) rc++;
         });
-        document.getElementById('totalWater').textContent = tw.toLocaleString();
-        document.getElementById('totalElec').textContent = te.toLocaleString();
-        document.getElementById('grandTotal').textContent = (tw+te).toLocaleString();
-        document.getElementById('readyCount').textContent = rc;
+        var totalWater = document.getElementById('totalWater');
+        var totalElec = document.getElementById('totalElec');
+        var grandTotal = document.getElementById('grandTotal');
+        var readyCount = document.getElementById('readyCount');
+        if (totalWater) totalWater.textContent = tw.toLocaleString();
+        if (totalElec) totalElec.textContent = te.toLocaleString();
+        if (grandTotal) grandTotal.textContent = (tw+te).toLocaleString();
+        if (readyCount) readyCount.textContent = rc;
     }
 
     document.querySelectorAll('.meter-input').forEach(function(i) { i.addEventListener('input', updateTotals); });

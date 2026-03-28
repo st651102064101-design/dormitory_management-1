@@ -33,11 +33,16 @@ if ($waterNew === null && $elecNew === null) {
 
 try {
     $pdo = connectDB();
+    
     $targetMonthStart = sprintf('%04d-%02d-01', $meterYear, $meterMonth);
     $targetMonthEnd = (new DateTimeImmutable($targetMonthStart))->modify('+1 month')->format('Y-m-d');
 
     // อัตราค่าน้ำ-ไฟล่าสุด
-    $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY effective_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    try {
+        $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY effective_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        $rateRow = null;
+    }
     $rateWater = $rateRow ? (float)$rateRow['rate_water'] : 18.0;
     $rateElec  = $rateRow ? (float)$rateRow['rate_elec']  : 8.0;
 
@@ -100,11 +105,23 @@ try {
         $insertStmt->execute([$ctrId, $waterStart, $waterEnd, $elecStart, $elecEnd, $meterDate]);
     }
 
-    // คำนวณค่าใช้จ่าย
+    // คำนวณค่าใช้จ่าย - แต่ถ้าเป็นการจดมิเตอร์ครั้งแรก ให้บันทึกเฉพาะค่าเบื้องต้น ไม่คิดค่าใช้จ่าย
     $waterUsed = $waterEnd - $waterStart;
     $elecUsed  = $elecEnd  - $elecStart;
-    $waterCost = calculateWaterCost($waterUsed);
-    $elecCost  = (int)round($elecUsed * $rateElec);
+    
+    // ตรวจสอบว่าเป็นการจดมิเตอร์ครั้งแรกหรือไม่ (ไม่มีค่า utl_water_start ที่มา จาก previous record)
+    // ถ้า $prev เป็น empty/null แสดงว่าไม่มี utility record ก่อนหน้านี้ = ครั้งแรก
+    $isFirstReading = ($prev === false || $prev === null);
+    
+    if ($isFirstReading) {
+        // ครั้งแรกของการจดมิเตอร์ - ไม่คิดค่าใช้จ่าย เฉพาะบันทึกค่าเบื้องต้น
+        $waterCost = 0;
+        $elecCost  = 0;
+    } else {
+        // มีการจดมิเตอร์ก่อนหน้า - คิดค่าใช้จ่ายปกติ
+        $waterCost = calculateWaterCost($waterUsed);
+        $elecCost  = (int)round($elecUsed * $rateElec);
+    }
 
     // อัปเดต expense เดือนนี้
     $updateExpStmt = $pdo->prepare("
