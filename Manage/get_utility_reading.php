@@ -34,16 +34,17 @@ try {
     $rateElec  = $rateRow ? (float)$rateRow['rate_elec']  : 8.0;
     
     // ค่าน้ำเหมาจ่าย (tiered pricing)
-    $settingsStmt = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1');
+    $settingsStmt1 = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1');
+    $settingsStmt1->execute(['water_base_units']);
+    $waterBaseUnits = (int)($settingsStmt1->fetchColumn() ?: 10);
     
-    $settingsStmt->execute(['water_base_units']);
-    $waterBaseUnits = (int)($settingsStmt->fetchColumn() ?: 10);
+    $settingsStmt2 = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1');
+    $settingsStmt2->execute(['water_base_price']);
+    $waterBasePrice = (int)($settingsStmt2->fetchColumn() ?: 200);
     
-    $settingsStmt->execute(['water_base_price']);
-    $waterBasePrice = (int)($settingsStmt->fetchColumn() ?: 200);
-    
-    $settingsStmt->execute(['water_excess_rate']);
-    $waterExcessRate = (int)($settingsStmt->fetchColumn() ?: 25);
+    $settingsStmt3 = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1');
+    $settingsStmt3->execute(['water_excess_rate']);
+    $waterExcessRate = (int)($settingsStmt3->fetchColumn() ?: 25);
 
     // มิเตอร์ล่าสุดก่อนเดือนเป้าหมาย (ค่าปลาย = ค่าต้นของเดือนเป้าหมาย)
     $prevStmt = $pdo->prepare(
@@ -58,6 +59,9 @@ try {
 
     $prevWater = $prev ? (int)$prev['utl_water_end'] : 0;
     $prevElec  = $prev ? (int)$prev['utl_elec_end']  : 0;
+    
+    // ตรวจสอบว่าเป็นการจดมิเตอร์ครั้งแรกหรือไม่ (ไม่มีการบันทึกใด ๆ มาก่อน)
+    $isFirstReading = !$prev;  // $prev will be null if no previous record exists
 
     // ตรวจสอบว่าบันทึกเดือนนี้แล้วหรือยัง
     $currStmt = $pdo->prepare(
@@ -81,6 +85,7 @@ try {
         'saved'       => $curr ? true : false,
         'curr_water'  => $curr ? (int)$curr['utl_water_end'] : null,
         'curr_elec'   => $curr ? (int)$curr['utl_elec_end']  : null,
+        'is_first_reading' => $isFirstReading,
         'meter_month' => $meterMonth,
         'meter_year'  => $meterYear,
         'rate_water'  => $rateWater,
