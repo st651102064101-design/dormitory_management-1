@@ -56,57 +56,82 @@ try {
         exit;
     }
 
-    // ตรวจสอบซ้ำ: ห้องนี้มีสัญญาที่ยังใช้อยู่หรือไม่
-    $activeContractStmt = $pdo->prepare("SELECT COUNT(*) FROM contract WHERE room_id = ? AND ctr_status IN ('0','2')");
-    $activeContractStmt->execute([$room_id]);
-    if ((int)$activeContractStmt->fetchColumn() > 0) {
-        $_SESSION['error'] = 'ห้องนี้มีสัญญาอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
-        header('Location: ../Reports/manage_contracts.php');
-        exit;
-    }
-
-    // ตรวจสอบซ้ำ: ผู้เช่าคนนี้มีสัญญาที่ยังใช้อยู่หรือไม่
-    $tenantActiveStmt = $pdo->prepare("SELECT COUNT(*) FROM contract WHERE tnt_id = ? AND ctr_status IN ('0','2')");
-    $tenantActiveStmt->execute([$tnt_id]);
-    if ((int)$tenantActiveStmt->fetchColumn() > 0) {
-        $_SESSION['error'] = 'ผู้เช่าคนนี้มีสัญญาอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
-        header('Location: ../Reports/manage_contracts.php');
-        exit;
-    }
-
-    // ตรวจสอบซ้ำ: วันที่ของสัญญาไม่ทับซ้อนกันสำหรับห้องนี้
-    $overlapStmt = $pdo->prepare(
-        "SELECT COUNT(*) FROM contract 
-         WHERE room_id = ? 
-         AND ctr_status IN ('0','2')
-         AND (
-           (ctr_start <= ? AND ctr_end >= ?)
-           OR (ctr_start <= ? AND ctr_end >= ?)
-           OR (ctr_start >= ? AND ctr_end <= ?)
-         )"
+    // ค้นหาสัญญาเดิมของห้องนี้ + ผู้เช่า
+    $existingContractStmt = $pdo->prepare(
+        "SELECT ctr_id, ctr_status FROM contract 
+         WHERE room_id = ? AND tnt_id = ? 
+         ORDER BY ctr_id DESC LIMIT 1"
     );
-    $overlapStmt->execute([
-        $room_id,
-        $ctr_end, $ctr_start,          // existing overlaps with new period
-        $ctr_start, $ctr_start,        // existing starts before new ends
-        $ctr_start, $ctr_end           // new period fully contains existing
-    ]);
-    if ((int)$overlapStmt->fetchColumn() > 0) {
-        $_SESSION['error'] = 'วันที่ของสัญญาทับซ้อนกับสัญญาอื่นของห้องนี้';
-        header('Location: ../Reports/manage_contracts.php');
-        exit;
+    $existingContractStmt->execute([$room_id, $tnt_id]);
+    $existingContract = $existingContractStmt->fetch(PDO::FETCH_ASSOC);
+    
+    $isUpdate = false;
+    $ctrId = null;
+    
+    if ($existingContract) {
+        // พบสัญญาเดิม
+        $existingStatus = $existingContract['ctr_status'];
+        
+        // ถ้าสัญญาเดิมเป็นสถานะ ยกเลิก (1) สามารถสร้างใหม่ได้
+        if ($existingStatus === '1') {
+            // สัญญาเก่าถูกยกเลิกแล้ว สามารถสร้างใหม่ได้
+        } else {
+            // สัญญาเดิมยังอยู่ (status 0 หรือ 2) → UPDATE แทน INSERT
+            $isUpdate = true;
+            $ctrId = (int)$existingContract['ctr_id'];
+        }
+    }
+    
+    // ถ้าเป็น UPDATE → ตรวจสอบเฉพาะว่าไม่มี contract อื่นของห้องนี้
+    if (!$isUpdate) {
+        $otherContractsStmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM contract 
+             WHERE room_id = ? AND ctr_status IN ('0','2') 
+             AND (tnt_id != ? OR ctr_id != ?)"
+        );
+        $otherContractsStmt->execute([$room_id, $tnt_id, $ctrId ?? 0]);
+        if ((int)$otherContractsStmt->fetchColumn() > 0) {
+            $_SESSION['error'] = 'ห้องนี้มีสัญญาห้องอื่นอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
+            header('Location: ../Reports/manage_contracts.php');
+            exit;
+        }
+        
+        $otherTenantStmt = $pdo->prepare(
+            "SELECT COUNT(*) FROM contract 
+             WHERE tnt_id = ? AND ctr_status IN ('0','2') 
+             AND (room_id != ? OR ctr_id != ?)"
+        );
+        $otherTenantStmt->execute([$tnt_id, $room_id, $ctrId ?? 0]);
+        if ((int)$otherTenantStmt->fetchColumn() > 0) {
+            $_SESSION['error'] = 'ผู้เช่าคนนี้มีสัญญาอื่นอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
+            header('Location: ../Reports/manage_contracts.php');
+            exit;
+        }
     }
 
     $pdo->beginTransaction();
 
-    $insert = $pdo->prepare("INSERT INTO contract (ctr_start, ctr_end, ctr_deposit, ctr_status, tnt_id, room_id) VALUES (?, ?, ?, '0', ?, ?)");
-    $insert->execute([$ctr_start, $ctr_end, $depositValue, $tnt_id, $room_id]);
+    if ($isUpdate) {
+        // UPDATE สัญญาเดิม
+        $updateContract = $pdo->prepare(
+            "UPDATE contract 
+             SET ctr_start = ?, ctr_end = ?, ctr_deposit = ?, ctr_status = '0'
+             WHERE ctr_id = ?"
+        );
+        $updateContract->execute([$ctr_start, $ctr_end, $depositValue, $ctrId]);
+        $actionMsg = 'อัปเดตสัญญาเรียบร้อยแล้ว';
+    } else {
+        // INSERT สัญญาใหม่
+        $insert = $pdo->prepare("INSERT INTO contract (ctr_start, ctr_end, ctr_deposit, ctr_status, tnt_id, room_id) VALUES (?, ?, ?, '0', ?, ?)");
+        $insert->execute([$ctr_start, $ctr_end, $depositValue, $tnt_id, $room_id]);
+        $actionMsg = 'เพิ่มสัญญาเรียบร้อยแล้ว';
+    }
 
-    // ห้องที่มีสัญญาใหม่ให้เป็นไม่ว่าง (1)
+    // ห้องที่มีสัญญาให้เป็นไม่ว่าง (1)
     $updateRoom = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
     $updateRoom->execute([$room_id]);
 
-    // ผู้เช่าที่มีสัญญาใหม่ให้เป็นสถานะมีสัญญา/พักอาศัย (1)
+    // ผู้เช่าที่มีสัญญาให้เป็นสถานะมีสัญญา/พักอาศัย (1)
     $updateTenant = $pdo->prepare("UPDATE tenant SET tnt_status = '1' WHERE tnt_id = ?");
     $updateTenant->execute([$tnt_id]);
 
@@ -115,7 +140,7 @@ try {
     // ตรวจสอบว่าเป็น AJAX request หรือไม่
     if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
         header('Content-Type: application/json');
-        echo json_encode(['success' => true, 'message' => 'เพิ่มสัญญาเรียบร้อยแล้ว']);
+        echo json_encode(['success' => true, 'message' => $actionMsg]);
         exit;
     }
 

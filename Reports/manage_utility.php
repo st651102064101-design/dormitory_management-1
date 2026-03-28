@@ -221,11 +221,13 @@ if ($showMode === 'occupied') {
         JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
         LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
+        WHERE c.contract_start_date <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
+        AND c.contract_end_date >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
     ";
 
-    $occupiedParams = [];
+    $occupiedParams = [$year, $month, $year, $month];
     if ($selectedCtrFilterActive) {
-        $occupiedSql .= "\n        WHERE c.ctr_id = ?";
+        $occupiedSql .= "\n        AND c.ctr_id = ?";
         $occupiedParams[] = $selectedCtrId;
     }
 
@@ -241,6 +243,8 @@ if ($showMode === 'occupied') {
             SELECT room_id, MAX(ctr_id) AS ctr_id
             FROM contract
             WHERE ctr_status = '0'
+            AND contract_start_date <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
+            AND contract_end_date >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
             GROUP BY room_id
         ) lc ON r.room_id = lc.room_id
         LEFT JOIN contract c ON c.ctr_id = lc.ctr_id
@@ -248,7 +252,7 @@ if ($showMode === 'occupied') {
         LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
     ";
 
-    $allParams = [];
+    $allParams = [$year, $month, $year, $month];
     if ($selectedCtrFilterActive) {
         $allSql .= "\n        WHERE c.ctr_id = ?";
         $allParams[] = $selectedCtrId;
@@ -268,9 +272,19 @@ foreach ($rooms as $room) {
         continue;
     }
     
-    // Check if meter recording is blocked due to low workflow step
+    // Check if meter recording is blocked:
+    // 1. Workflow step <= 3 (not reached checkin step)
+    // 2. OR no actual checkin_record exists (checkin not truly completed)
     $workflowStep = (int)($room['workflow_step'] ?? 1);
-    $meterBlocked = $workflowStep <= 3;
+    
+    // Verify checkin_record actually exists
+    $checkinCheckStmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM checkin_record WHERE ctr_id = ?");
+    $checkinCheckStmt->execute([$room['ctr_id']]);
+    $checkinCheck = $checkinCheckStmt->fetch(PDO::FETCH_ASSOC);
+    $hasCheckinRecord = ($checkinCheck['cnt'] ?? 0) > 0;
+    
+    // Block if: step <= 3 OR (step = 4 but no checkin record)
+    $meterBlocked = ($workflowStep <= 3) || ($workflowStep === 4 && !$hasCheckinRecord);
 
     $targetMonthStart = sprintf('%04d-%02d-01', $year, $month);
 
@@ -283,17 +297,29 @@ foreach ($rooms as $room) {
     $currentStmt->execute([$room['ctr_id'], $month, $year]);
     $current = $currentStmt->fetch(PDO::FETCH_ASSOC);
     
+    // If meter is blocked, don't show existing values
+    if ($meterBlocked) {
+        $water_new = '';
+        $elec_new = '';
+        $saved = false;
+    } else {
+        $water_new = $current ? (int)$current['utl_water_end'] : '';
+        $elec_new = $current ? (int)$current['utl_elec_end'] : '';
+        $saved = $current ? true : false;
+    }
+    
     $readings[$room['room_id']] = [
         'water_old' => $prev ? (int)$prev['utl_water_end'] : 0,
         'elec_old' => $prev ? (int)$prev['utl_elec_end'] : 0,
-        'water_new' => $current ? (int)$current['utl_water_end'] : '',
-        'elec_new' => $current ? (int)$current['utl_elec_end'] : '',
-        'saved' => $current ? true : false,
+        'water_new' => $water_new,
+        'elec_new' => $elec_new,
+        'saved' => $saved,
         'workflow_step' => $workflowStep,
-        'meter_blocked' => $meterBlocked
+        'meter_blocked' => $meterBlocked,
+        'has_checkin_record' => $hasCheckinRecord
     ];
     
-    if ($current) {
+    if ($current && !$meterBlocked) {
         $startStmt = $pdo->prepare("SELECT utl_water_start, utl_elec_start FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
         $startStmt->execute([$room['ctr_id'], $month, $year]);
         $startData = $startStmt->fetch(PDO::FETCH_ASSOC);
