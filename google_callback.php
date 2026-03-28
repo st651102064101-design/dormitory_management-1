@@ -243,15 +243,28 @@ try {
     ]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);  // ✅ Add 10 second timeout
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  // ✅ Add 5 second connection timeout
+    
+    error_log("Exchanging code for access token...");
+    flush();
+    ob_flush();
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
     curl_close($ch);
+    
+    // ✅ Check for cURL errors
+    if ($curlError) {
+        error_log("cURL error: $curlError");
+        redirectWithError('cURL error: ' . $curlError);
+    }
     
     if ($httpCode !== 200) {
         error_log("Token exchange failed: HTTP $httpCode");
         error_log("Response: " . $response);
-        redirectWithError('ไม่สามารถแลกเปลี่ยน code เป็น token ได้');
+        redirectWithError('ไม่สามารถแลกเปลี่ยน code เป็น token ได้ (HTTP ' . $httpCode . ')');
     }
     
     error_log("✓ Got access token");
@@ -272,13 +285,28 @@ try {
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: Bearer ' . $accessToken]);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);  // ✅ Add timeout
+    curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  // ✅ Add connection timeout
+    
+    error_log("Fetching user info from Google...");
+    flush();
+    ob_flush();
+    
     $userResponse = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlError = curl_error($ch);
     curl_close($ch);
+    
+    // ✅ Check for cURL errors
+    if ($curlError) {
+        error_log("cURL error fetching user info: $curlError");
+        redirectWithError('cURL error: ' . $curlError);
+    }
     
     if ($httpCode !== 200) {
         error_log("User info fetch failed: HTTP $httpCode");
-        redirectWithError('ไม่สามารถดึงข้อมูลผู้ใช้จาก Google ได้');
+        error_log("Response: " . $userResponse);
+        redirectWithError('ไม่สามารถดึงข้อมูลผู้ใช้จาก Google ได้ (HTTP ' . $httpCode . ')');
     }
     
     error_log("✓ Got user info from Google");
@@ -305,8 +333,11 @@ try {
     // ตรวจสอบว่าเป็นการ Link Account หรือไม่
     // =============================================
     if (!empty($_SESSION['google_link_mode']) && !empty($_SESSION['google_link_admin_id'])) {
+        error_log("✓ Detected Google link mode");
         $adminId = $_SESSION['google_link_admin_id'];
         $action = $_SESSION['google_link_action'] ?? 'link';
+        
+        error_log("Admin ID: $adminId, Action: $action");
         
         unset($_SESSION['google_link_mode']);
         unset($_SESSION['google_link_admin_id']);
@@ -354,6 +385,7 @@ try {
         $existingOAuth = $existingStmt->fetch();
         
         if ($existingOAuth) {
+            error_log("Updating existing OAuth link for admin $adminId");
             $updateStmt = $pdo->prepare('
                 UPDATE admin_oauth
                 SET provider_id = ?, provider_email = ?, picture = ?, updated_at = NOW()
@@ -361,18 +393,22 @@ try {
             ');
             $updateStmt->execute([$googleId, $email, $picture, $adminId]);
             $message = 'เปลี่ยนบัญชี Google เป็น ' . $email . ' สำเร็จ';
+            error_log("✓ OAuth link updated: " . $message);
         } else {
+            error_log("Creating new OAuth link for admin $adminId with email $email");
             $insertStmt = $pdo->prepare('
                 INSERT INTO admin_oauth (admin_id, provider, provider_id, provider_email, picture, created_at, updated_at)
                 VALUES (?, "google", ?, ?, ?, NOW(), NOW())
             ');
             $insertStmt->execute([$adminId, $googleId, $email, $picture]);
             $message = 'เชื่อมบัญชี Google ' . $email . ' สำเร็จ';
+            error_log("✓ OAuth link created: " . $message);
         }
         
         $_SESSION['admin_picture'] = $picture;
         
         // ✓ ปิด popup โดยอัตโนมัติ (สำหรับการเชื่อม Google)
+        error_log("Sending auto-close response to popup for email: $email");
         echo '<!DOCTYPE html>
 <html>
 <head>
