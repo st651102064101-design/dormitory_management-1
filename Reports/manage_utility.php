@@ -27,9 +27,12 @@ $todoOnly = isset($_GET['todo_only']) && $_GET['todo_only'] === '1';
 $selectedCtrId = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
 $selectedCtrFilterActive = $selectedCtrId > 0;
 
-// เดือน/ปีที่มีอยู่จริงในฐานข้อมูล (utility)
+// เดือน/ปีที่มีอยู่จริงในฐานข้อมูล (utility) แต่เฉพาะที่ไม่ใช่เดือนอนาคต
 $availableYears = [];
 $availableMonthsByYear = [];
+$currentYear = (int)date('Y');
+$currentMonth = (int)date('n');
+
 try {
     $periodStmt = $pdo->query("\n        SELECT DISTINCT YEAR(utl_date) AS y, MONTH(utl_date) AS m\n        FROM utility\n        WHERE utl_date IS NOT NULL\n        ORDER BY y DESC, m DESC\n    ");
     $periods = $periodStmt->fetchAll(PDO::FETCH_ASSOC);
@@ -37,6 +40,12 @@ try {
     foreach ($periods as $period) {
         $periodYear = (int)$period['y'];
         $periodMonth = (int)$period['m'];
+        
+        // ข้ามเดือนอนาคต
+        if ($periodYear > $currentYear || ($periodYear === $currentYear && $periodMonth > $currentMonth)) {
+            continue;
+        }
+        
         if (!isset($availableMonthsByYear[$periodYear])) {
             $availableMonthsByYear[$periodYear] = [];
             $availableYears[] = $periodYear;
@@ -45,9 +54,7 @@ try {
     }
 } catch (PDOException $e) {}
 
-$currentYear = (int)date('Y');
-$currentMonth = (int)date('n');
-
+// ตรวจสอบเดือนปัจจุบัน
 if (!isset($availableMonthsByYear[$currentYear])) {
     $availableYears[] = $currentYear;
     $availableMonthsByYear[$currentYear] = [];
@@ -56,6 +63,7 @@ if (!in_array($currentMonth, $availableMonthsByYear[$currentYear], true)) {
     $availableMonthsByYear[$currentYear][] = $currentMonth;
 }
 
+// เรียงลำดับ
 $availableYears = array_values(array_unique(array_map('intval', $availableYears)));
 rsort($availableYears);
 foreach ($availableMonthsByYear as $yearKey => $monthsList) {
