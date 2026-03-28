@@ -1091,16 +1091,40 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 // --- มิเตอร์: เช็คว่าจดเดือนบิล + เดือนก่อนไว้แล้วหรือยัง ---
                                 $ctrIdInt      = (int)($tenant['ctr_id'] ?? 0);
                                 $currentStepInt = (int)($tenant['current_step'] ?? 1);
-                                $billYearMonth = ($firstBillMonthRaw !== '' && strtotime($firstBillMonthRaw) !== false)
-                                    ? date('Y-m', strtotime($firstBillMonthRaw)) : null;
+                                
+                                // ดึก billYearMonth จากฐานข้อมูล (เน็ต exp_month format)
+                                $billYearMonth = null;
+                                if ($firstBillMonthRaw !== '' && strtotime($firstBillMonthRaw) !== false) {
+                                    $expMonthDt = new DateTime(date('Y-m-01', strtotime($firstBillMonthRaw)));
+                                    $billYearMonth = $expMonthDt->format('Y-m');
+                                }
+                                
                                 $prevYearMonth = $billYearMonth
                                     ? date('Y-m', strtotime($billYearMonth . '-01 -1 month')) : null;
-                                // Only show meter as recorded if workflow reached checkin step (step 4+)
-                                $meterBillDone = $currentStepInt >= 4
-                                    && $billYearMonth !== null
-                                    && !empty($utilMonthsRecorded[$ctrIdInt][$billYearMonth]);
-                                $meterPrevDone = $prevYearMonth === null
-                                    || !empty($utilMonthsRecorded[$ctrIdInt][$prevYearMonth]);
+                                
+                                // ตรวจสอบว่าจดมิเตอร์เดือนบิลแล้วหรือไม่ โดย query database โดยตรง
+                                $meterBillDone = false;
+                                if ($currentStepInt >= 4 && $billYearMonth !== null) {
+                                    $billCheckStmt = $conn->prepare("
+                                        SELECT COUNT(*) as cnt FROM utility 
+                                        WHERE ctr_id = ? AND DATE_FORMAT(utl_date, '%Y-%m') = ?
+                                    ");
+                                    $billCheckStmt->execute([$ctrIdInt, $billYearMonth]);
+                                    $billCheckResult = $billCheckStmt->fetch(PDO::FETCH_ASSOC);
+                                    $meterBillDone = ($billCheckResult['cnt'] ?? 0) > 0;
+                                }
+                                
+                                // ตรวจสอบว่าจดมิเตอร์เดือนก่อนหน้าแล้วหรือไม่
+                                $meterPrevDone = $prevYearMonth === null;  // if no prev month, consider it done
+                                if (!$meterPrevDone && $prevYearMonth !== null) {
+                                    $prevCheckStmt = $conn->prepare("
+                                        SELECT COUNT(*) as cnt FROM utility 
+                                        WHERE ctr_id = ? AND DATE_FORMAT(utl_date, '%Y-%m') = ?
+                                    ");
+                                    $prevCheckStmt->execute([$ctrIdInt, $prevYearMonth]);
+                                    $prevCheckResult = $prevCheckStmt->fetch(PDO::FETCH_ASSOC);
+                                    $meterPrevDone = ($prevCheckResult['cnt'] ?? 0) > 0;
+                                }
 
                                 // HTML สถานะมิเตอร์ (แสดงใต้สถานะบิล สำหรับแถว ⏳ เท่านั้น)
                                 $openBillingJs = "openBillingModal({$tenant['ctr_id']}, '"
@@ -1117,7 +1141,20 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     . htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8') . "', '"
                                     . htmlspecialchars($ym, ENT_QUOTES, 'UTF-8') . "')";
                                 if ($meterBillDone) {
-                                    $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#4ade80;">✓ จดมิเตอร์แล้ว</span>';
+                                    // Check if it's first meter and bill is unpaid
+                                    $isFirstMeter = $prevYearMonth === null;
+                                    $firstBillUnpaid = ((string)($tenant['first_exp_status'] ?? '') === '0');
+                                    
+                                    if ($isFirstMeter && $firstBillUnpaid) {
+                                        // For first month reading - show awaiting payment status
+                                        $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">รอชำระเงิน</span>';
+                                    } elseif ($firstBillPaid) {
+                                        // Bill already paid
+                                        $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#4ade80;">✓ ชำระแล้ว</span>';
+                                    } else {
+                                        // Default: meter recorded (subsequent months)
+                                        $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#4ade80;">✓ จดมิเตอร์แล้ว</span>';
+                                    }
                                 } elseif (!$meterPrevDone && $prevYearMonth !== null) {
                                     $prevDisp = date('m/Y', strtotime($prevYearMonth . '-01'));
                                     $meterStatusHtml = '<button type="button" onclick="' . htmlspecialchars($openMeterJs($prevYearMonth), ENT_QUOTES, 'UTF-8') . '"'
@@ -1648,6 +1685,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     </div>
                 </div>
                 <div id="moPreview" style="display:none;flex-wrap:wrap;gap:0.75rem;padding:0.6rem 0.75rem;border-radius:8px;background:rgba(15,23,42,0.4);border:1px solid rgba(255,255,255,0.08);font-size:0.82rem;color:rgba(226,232,240,0.9);margin-bottom:0.85rem;"></div>
+                <div id="moFirstReadingMsg" style="display:none;padding:0.6rem 0.75rem;border-radius:8px;background:rgba(52,211,153,0.08);border:1px solid rgba(52,211,153,0.25);font-size:0.82rem;color:#4ade80;margin-bottom:0.85rem;font-weight:600;">
+                    ℹ️ จดมิเตอร์ครั้งแรก — ไม่มีค่าใช้จ่าย (เฉพาะค่าห้อง)
+                </div>
                 <div style="display:flex;align-items:center;gap:0.65rem;">
                     <button type="button" id="moSaveBtn" onclick="saveMeterOnly()"
                         style="padding:0.55rem 1.4rem;border:none;border-radius:8px;background:#059669;color:#fff;cursor:pointer;font-size:0.9rem;font-weight:700;transition:background 0.2s;"
@@ -2274,6 +2314,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         document.getElementById('moWaterInput').disabled = false;
         document.getElementById('moElecInput').disabled  = false;
         document.getElementById('moPreview').style.display = 'none';
+        document.getElementById('moFirstReadingMsg').style.display = 'none';
         document.getElementById('moMsg').textContent = '';
         const btn = document.getElementById('moSaveBtn');
         btn.style.display = 'inline-block';
@@ -2306,9 +2347,10 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 _moWaterBaseUnits  = d.water_base_units  || 10;
                 _moWaterBasePrice  = d.water_base_price  || 200;
                 _moWaterExcessRate = d.water_excess_rate || 25;
+                _meterIsFirstReading = d.is_first_reading || false;  // ตั้งค่า first reading flag
                 document.getElementById('moPrevWater').textContent = _moPrevWater;
                 document.getElementById('moPrevElec').textContent  = _moPrevElec;
-                if (d.saved && d.meter_month == _moMonth && d.meter_year == _moYear && !_moIsFuture) {
+                if (d.saved && d.meter_month == _moMonth && d.meter_year == _moYear && !_moIsFuture && d.curr_water !== null && d.curr_elec !== null) {
                     document.getElementById('moWaterInput').value    = d.curr_water ?? '';
                     document.getElementById('moElecInput').value     = d.curr_elec  ?? '';
                     // Allow editing even after saved - just show the current values
@@ -2334,18 +2376,28 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         const wv  = document.getElementById('moWaterInput').value.trim();
         const ev  = document.getElementById('moElecInput').value.trim();
         const pre = document.getElementById('moPreview');
-        if (wv === '' && ev === '') { pre.style.display = 'none'; return; }
+        const msg = document.getElementById('moFirstReadingMsg');
+        if (wv === '' && ev === '') { pre.style.display = 'none'; msg.style.display = 'none'; return; }
         pre.style.display = 'flex';
+        
+        // Show first reading message if applicable
+        if (_meterIsFirstReading) {
+            msg.style.display = 'block';
+        } else {
+            msg.style.display = 'none';
+        }
+        
         const parts = [];
         if (wv !== '') {
             const used = parseInt(wv, 10) - _moPrevWater;
-            // ใช้ค่าน้ำเหมาจ่าย (tiered pricing) แทนค่าคงที่
-            const cost = used <= 0 ? 0 : (used <= _moWaterBaseUnits ? _moWaterBasePrice : _moWaterBasePrice + (used - _moWaterBaseUnits) * _moWaterExcessRate);
+            // ครั้งแรกไม่เสียตัง (cost = 0)
+            const cost = _meterIsFirstReading ? 0 : (used <= 0 ? 0 : (used <= _moWaterBaseUnits ? _moWaterBasePrice : _moWaterBasePrice + (used - _moWaterBaseUnits) * _moWaterExcessRate));
             parts.push('💧 ใช้ <b style="color:#60a5fa">' + Math.max(0, used) + '</b> หน่วย → <b style="color:#4ade80">฿' + cost.toLocaleString() + '</b>');
         }
         if (ev !== '') {
             const used = parseInt(ev, 10) - _moPrevElec;
-            const cost = Math.max(0, used) * _moRateElec;
+            // ครั้งแรกไม่เสียตัง (cost = 0)
+            const cost = _meterIsFirstReading ? 0 : (Math.max(0, used) * _moRateElec);
             parts.push('⚡ ใช้ <b style="color:#fbbf24">' + Math.max(0, used) + '</b> หน่วย → <b style="color:#4ade80">฿' + cost.toLocaleString() + '</b>');
         }
         pre.innerHTML = parts.join('<span style="color:rgba(255,255,255,0.2);margin:0 0.35rem">|</span>');

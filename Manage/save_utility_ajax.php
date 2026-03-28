@@ -47,14 +47,18 @@ try {
     $rateElec  = $rateRow ? (float)$rateRow['rate_elec']  : 8.0;
 
     // ค่าปลายล่าสุดก่อนเดือนเป้าหมาย → เป็นค่าต้นของเดือนนี้
+    // คำนวณเดือน/ปีที่แล้ว
+    $prevMonth = $meterMonth > 1 ? $meterMonth - 1 : 12;
+    $prevYear = $meterMonth > 1 ? $meterYear : $meterYear - 1;
+    
     $prevStmt = $pdo->prepare(
         "SELECT utl_water_end, utl_elec_end
          FROM utility
-         WHERE ctr_id = ? AND utl_date < ?
+         WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?
          ORDER BY utl_date DESC, utl_id DESC
          LIMIT 1"
     );
-    $prevStmt->execute([$ctrId, $targetMonthStart]);
+    $prevStmt->execute([$ctrId, $prevMonth, $prevYear]);
     $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
     $prevWater = $prev ? (int)$prev['utl_water_end'] : 0;
     $prevElec  = $prev ? (int)$prev['utl_elec_end']  : 0;
@@ -85,7 +89,13 @@ try {
     $elecStart  = $prevElec;
     $waterEnd   = $waterNew  ?? $prevWater;
     $elecEnd    = $elecNew   ?? $prevElec;
-    $meterDate  = $meterYear . '-' . str_pad((string)$meterMonth, 2, '0', STR_PAD_LEFT) . '-' . date('d');
+    
+    // ใช้วันสุดท้ายของเดือนที่บันทึก (หรือวันนี้ถ้าเป็นเดือนปัจจุบัน)
+    $meterDateDt = new DateTimeImmutable(sprintf('%04d-%02d-01', $meterYear, $meterMonth));
+    $lastDayOfMonth = (int)$meterDateDt->format('t');
+    $currentDay = (int)date('d');
+    $meterDay = min($currentDay, $lastDayOfMonth);
+    $meterDate = $meterYear . '-' . str_pad((string)$meterMonth, 2, '0', STR_PAD_LEFT) . '-' . str_pad((string)$meterDay, 2, '0', STR_PAD_LEFT);
 
     // บันทึก utility - INSERT หรือ UPDATE ถ้ามีอยู่แล้ว
     if ($existingUtlId) {
