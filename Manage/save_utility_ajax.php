@@ -54,7 +54,7 @@ try {
     $prevWater = $prev ? (int)$prev['utl_water_end'] : 0;
     $prevElec  = $prev ? (int)$prev['utl_elec_end']  : 0;
 
-    // ตรวจซ้ำ
+    // ตรวจซ้ำ - ถ้ามีแล้วจะเป็นการแก้ไข (UPDATE) ไม่ใช่ข้อผิดพลาด
     $checkStmt = $pdo->prepare(
         "SELECT utl_id
          FROM utility
@@ -63,10 +63,8 @@ try {
          LIMIT 1"
     );
     $checkStmt->execute([$ctrId, $targetMonthStart, $targetMonthEnd]);
-    if ($checkStmt->fetch()) {
-        echo json_encode(['success' => false, 'error' => 'บันทึกมิเตอร์เดือนนี้แล้ว ไม่สามารถแก้ไขได้']);
-        exit;
-    }
+    $existingRecord = $checkStmt->fetch(PDO::FETCH_ASSOC);
+    $existingUtlId = $existingRecord ? (int)$existingRecord['utl_id'] : null;
 
     // Validate: new >= prev
     if ($waterNew !== null && $waterNew < $prevWater) {
@@ -84,12 +82,23 @@ try {
     $elecEnd    = $elecNew   ?? $prevElec;
     $meterDate  = $meterYear . '-' . str_pad((string)$meterMonth, 2, '0', STR_PAD_LEFT) . '-' . date('d');
 
-    // บันทึก utility
-    $insertStmt = $pdo->prepare(
-        "INSERT INTO utility (ctr_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end, utl_date)
-         VALUES (?, ?, ?, ?, ?, ?)"
-    );
-    $insertStmt->execute([$ctrId, $waterStart, $waterEnd, $elecStart, $elecEnd, $meterDate]);
+    // บันทึก utility - INSERT หรือ UPDATE ถ้ามีอยู่แล้ว
+    if ($existingUtlId) {
+        // UPDATE existing record
+        $updateUtlStmt = $pdo->prepare(
+            "UPDATE utility
+             SET utl_water_start = ?, utl_water_end = ?, utl_elec_start = ?, utl_elec_end = ?, utl_date = ?
+             WHERE utl_id = ?"
+        );
+        $updateUtlStmt->execute([$waterStart, $waterEnd, $elecStart, $elecEnd, $meterDate, $existingUtlId]);
+    } else {
+        // INSERT new record
+        $insertStmt = $pdo->prepare(
+            "INSERT INTO utility (ctr_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end, utl_date)
+             VALUES (?, ?, ?, ?, ?, ?)"
+        );
+        $insertStmt->execute([$ctrId, $waterStart, $waterEnd, $elecStart, $elecEnd, $meterDate]);
+    }
 
     // คำนวณค่าใช้จ่าย
     $waterUsed = $waterEnd - $waterStart;

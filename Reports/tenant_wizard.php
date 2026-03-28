@@ -2344,9 +2344,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         const today = new Date();
         const todayYear = today.getFullYear();
         const todayMonth = today.getMonth() + 1;
-        const isTargetFuture = _moYear > todayYear || (_moYear === todayYear && _moMonth > todayMonth);
+        _moIsFuture = _moYear > todayYear || (_moYear === todayYear && _moMonth > todayMonth);
         
-        if (isTargetFuture) {
+        if (_moIsFuture) {
             // Disable inputs and show message
             document.getElementById('moWaterInput').disabled = true;
             document.getElementById('moElecInput').disabled = true;
@@ -2372,7 +2372,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 _moWaterExcessRate = d.water_excess_rate || 25;
                 document.getElementById('moPrevWater').textContent = _moPrevWater;
                 document.getElementById('moPrevElec').textContent  = _moPrevElec;
-                if (d.saved && d.meter_month == _moMonth && d.meter_year == _moYear) {
+                if (d.saved && d.meter_month == _moMonth && d.meter_year == _moYear && !_moIsFuture) {
                     document.getElementById('moWaterInput').value    = d.curr_water ?? '';
                     document.getElementById('moElecInput').value     = d.curr_elec  ?? '';
                     // Allow editing even after saved - just show the current values
@@ -2443,14 +2443,14 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     msg.style.color = '#fca5a5';
                     msg.textContent = d.error || 'เกิดข้อผิดพลาด';
                     btn.disabled = false;
-                    btn.textContent = '✓ บันทึกมิเตอร์';
+                    btn.textContent = 'อัปเดตมิเตอร์';
                 }
             })
             .catch(() => {
                 msg.style.color = '#fca5a5';
                 msg.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
                 btn.disabled = false;
-                btn.textContent = '✓ บันทึกมิเตอร์';
+                btn.textContent = 'อัปเดตมิเตอร์';
             });
     }
 
