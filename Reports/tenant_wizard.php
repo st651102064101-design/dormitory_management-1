@@ -2731,9 +2731,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             const data = await response.json();
 
             if (data.success) {
-                if (typeof showSuccessToast === 'function') {
-                    showSuccessToast(data.message || 'ยกเลิกการจองเรียบร้อยแล้ว');
-                }
+                alert(data.message || 'ยกเลิกการจองเรียบร้อยแล้ว');
                 setTimeout(() => location.reload(), 1500);
             } else {
                 if (typeof showErrorToast === 'function') {
@@ -2752,3 +2750,4 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         }
     }
 </script>
+<?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
