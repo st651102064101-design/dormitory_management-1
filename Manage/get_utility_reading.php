@@ -24,10 +24,22 @@ try {
     $targetMonthStart = sprintf('%04d-%02d-01', $meterYear, $meterMonth);
     $targetMonthEnd = (new DateTimeImmutable($targetMonthStart))->modify('+1 month')->format('Y-m-d');
 
-    // อัตราค่าน้ำ-ไฟล่าสุด
+    // อัตราค่าน้ำ-ไฟล่าสุด และค่าน้ำเหมาจ่าย
     $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY effective_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
     $rateWater = $rateRow ? (float)$rateRow['rate_water'] : 18.0;
     $rateElec  = $rateRow ? (float)$rateRow['rate_elec']  : 8.0;
+    
+    // ค่าน้ำเหมาจ่าย (tiered pricing)
+    $settingsStmt = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = ? LIMIT 1');
+    
+    $settingsStmt->execute(['water_base_units']);
+    $waterBaseUnits = (int)($settingsStmt->fetchColumn() ?: 10);
+    
+    $settingsStmt->execute(['water_base_price']);
+    $waterBasePrice = (int)($settingsStmt->fetchColumn() ?: 200);
+    
+    $settingsStmt->execute(['water_excess_rate']);
+    $waterExcessRate = (int)($settingsStmt->fetchColumn() ?: 25);
 
     // มิเตอร์ล่าสุดก่อนเดือนเป้าหมาย (ค่าปลาย = ค่าต้นของเดือนเป้าหมาย)
     $prevStmt = $pdo->prepare(
@@ -69,6 +81,9 @@ try {
         'meter_year'  => $meterYear,
         'rate_water'  => $rateWater,
         'rate_elec'   => $rateElec,
+        'water_base_units'  => $waterBaseUnits,
+        'water_base_price'  => $waterBasePrice,
+        'water_excess_rate' => $waterExcessRate,
     ]);
 } catch (Exception $e) {
     http_response_code(500);

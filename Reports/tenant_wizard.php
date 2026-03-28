@@ -2289,6 +2289,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
     // ---- Meter-Only Modal ----
     var _moCtrId = 0, _moPrevWater = 0, _moPrevElec = 0;
     var _moMonth = 0, _moYear = 0, _moRateElec = 8;
+    var _moWaterBaseUnits  = 10;    // ค่าน้ำเหมาจ่าย - หน่วยฐาน
+    var _moWaterBasePrice  = 200;   // ค่าน้ำเหมาจ่าย - ราคาเหมาจ่าย
+    var _moWaterExcessRate = 25;    // ค่าน้ำเหมาจ่าย - ค่าส่วนเกิน
 
     function openMeterOnlyModal(ctrId, tntName, roomNumber, targetYm) {
         _moCtrId = ctrId;
@@ -2328,6 +2331,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 _moPrevWater = d.prev_water || 0;
                 _moPrevElec  = d.prev_elec  || 0;
                 _moRateElec  = d.rate_elec  || 8;
+                _moWaterBaseUnits  = d.water_base_units  || 10;
+                _moWaterBasePrice  = d.water_base_price  || 200;
+                _moWaterExcessRate = d.water_excess_rate || 25;
                 document.getElementById('moPrevWater').textContent = _moPrevWater;
                 document.getElementById('moPrevElec').textContent  = _moPrevElec;
                 if (d.saved && d.meter_month == _moMonth && d.meter_year == _moYear) {
@@ -2361,7 +2367,8 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         const parts = [];
         if (wv !== '') {
             const used = parseInt(wv, 10) - _moPrevWater;
-            const cost = used <= 0 ? 0 : (used <= 10 ? 200 : 200 + (used - 10) * 25);
+            // ใช้ค่าน้ำเหมาจ่าย (tiered pricing) แทนค่าคงที่
+            const cost = used <= 0 ? 0 : (used <= _moWaterBaseUnits ? _moWaterBasePrice : _moWaterBasePrice + (used - _moWaterBaseUnits) * _moWaterExcessRate);
             parts.push('💧 ใช้ <b style="color:#60a5fa">' + Math.max(0, used) + '</b> หน่วย → <b style="color:#4ade80">฿' + cost.toLocaleString() + '</b>');
         }
         if (ev !== '') {
@@ -2429,6 +2436,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
     var _meterYear  = 0;
     var _meterRateWater = 18;
     var _meterRateElec  = 8;
+    var _meterWaterBaseUnits  = 10;    // ค่าน้ำเหมาจ่าย - หน่วยฐาน
+    var _meterWaterBasePrice  = 200;   // ค่าน้ำเหมาจ่าย - ราคาเหมาจ่าย
+    var _meterWaterExcessRate = 25;    // ค่าน้ำเหมาจ่าย - ค่าส่วนเกิน
 
     function loadMeterReading(ctrId) {
         _meterCtrId = ctrId;
@@ -2455,6 +2465,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 _meterYear       = d.meter_year  || (new Date().getFullYear());
                 _meterRateWater  = d.rate_water  || 18;
                 _meterRateElec   = d.rate_elec   || 8;
+                _meterWaterBaseUnits  = d.water_base_units  || 10;
+                _meterWaterBasePrice  = d.water_base_price  || 200;
+                _meterWaterExcessRate = d.water_excess_rate || 25;
 
                 document.getElementById('prevWaterDisplay').textContent = _meterPrevWater;
                 document.getElementById('prevElecDisplay').textContent  = _meterPrevElec;
@@ -2497,7 +2510,8 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         let parts = [];
         if (waterVal !== '') {
             const used = parseInt(waterVal, 10) - _meterPrevWater;
-            const cost = used <= 0 ? 0 : (used <= 10 ? 200 : 200 + (used - 10) * 25);
+            // ใช้ค่าน้ำเหมาจ่าย (tiered pricing) แทนค่าคงที่
+            const cost = used <= 0 ? 0 : (used <= _meterWaterBaseUnits ? _meterWaterBasePrice : _meterWaterBasePrice + (used - _meterWaterBaseUnits) * _meterWaterExcessRate);
             parts.push(`<span class="billing-inline-icon" style="color:#60a5fa;"><svg class="billing-svg-icon billing-svg-water" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3C9 7 6 9.8 6 14a6 6 0 0 0 12 0c0-4.2-3-7-6-11z"></path></svg><span>ใช้ <b style="color:#60a5fa">${Math.max(0,used)}</b> หน่วย → <b style="color:#4ade80">฿${cost.toLocaleString()}</b></span></span>`);
         }
         if (elecVal !== '') {
