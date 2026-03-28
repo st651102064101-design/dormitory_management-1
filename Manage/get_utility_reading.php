@@ -46,15 +46,20 @@ try {
     $settingsStmt3->execute(['water_excess_rate']);
     $waterExcessRate = (int)($settingsStmt3->fetchColumn() ?: 25);
 
+    // คำนวณเดือน/ปีที่แล้ว
+    $prevMonth = $meterMonth > 1 ? $meterMonth - 1 : 12;
+    $prevYear = $meterMonth > 1 ? $meterYear : $meterYear - 1;
+
     // มิเตอร์ล่าสุดก่อนเดือนเป้าหมาย (ค่าปลาย = ค่าต้นของเดือนเป้าหมาย)
+    // ดึงจากเดือนก่อนหน้า ไม่ว่า utl_date จะเป็นวันไหนก็ตาม
     $prevStmt = $pdo->prepare(
         "SELECT utl_water_end, utl_elec_end
          FROM utility
-         WHERE ctr_id = ? AND utl_date < ?
+         WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?
          ORDER BY utl_date DESC, utl_id DESC
          LIMIT 1"
     );
-    $prevStmt->execute([$ctrId, $targetMonthStart]);
+    $prevStmt->execute([$ctrId, $prevMonth, $prevYear]);
     $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
 
     $prevWater = $prev ? (int)$prev['utl_water_end'] : 0;
