@@ -138,8 +138,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                 continue;
             }
 
-            $waterOld = isset($data['water_old']) ? (int)$data['water_old'] : ($existing ? (int)$existing['utl_water_start'] : (int)($prev['utl_water_end'] ?? 0));
-            $elecOld = isset($data['elec_old']) ? (int)$data['elec_old'] : ($existing ? (int)$existing['utl_elec_start'] : (int)($prev['utl_elec_end'] ?? 0));
+            // ตรวจสอบว่าเป็นการจดมิเตอร์ครั้งแรกจาก ctr_start ของสัญญา
+            $ctrStartStmt = $pdo->prepare('SELECT ctr_start FROM contract WHERE ctr_id = ? LIMIT 1');
+            $ctrStartStmt->execute([$ctrId]);
+            $ctrStartRow = $ctrStartStmt->fetch(PDO::FETCH_ASSOC);
+            $ctrStartYmPost = $ctrStartRow ? date('Y-m', strtotime((string)$ctrStartRow['ctr_start'])) : null;
+            $currentYmPost = sprintf('%04d-%02d', $year, $month);
+            $isFirstReading = $ctrStartYmPost !== null && $currentYmPost === $ctrStartYmPost;
+
+            // fallback: เมื่อไม่มี prev utility และไม่ใช่เดือนแรก ให้ใช้ checkin_record
+            $prevWaterEnd = (int)($prev['utl_water_end'] ?? 0);
+            $prevElecEnd  = (int)($prev['utl_elec_end']  ?? 0);
+            if (!$prev && !$isFirstReading) {
+                $chkPost = $pdo->prepare('SELECT water_meter_start, elec_meter_start FROM checkin_record WHERE ctr_id = ? LIMIT 1');
+                $chkPost->execute([$ctrId]);
+                $chkRowPost = $chkPost->fetch(PDO::FETCH_ASSOC);
+                if ($chkRowPost && $chkRowPost['water_meter_start'] !== null) {
+                    $prevWaterEnd = (int)$chkRowPost['water_meter_start'];
+                    $prevElecEnd  = (int)$chkRowPost['elec_meter_start'];
+                }
+            }
+
+            $waterOld = isset($data['water_old']) ? (int)$data['water_old'] : ($existing ? (int)$existing['utl_water_start'] : $prevWaterEnd);
+            $elecOld = isset($data['elec_old']) ? (int)$data['elec_old'] : ($existing ? (int)$existing['utl_elec_start'] : $prevElecEnd);
 
             $waterNew = $waterInput ?? ($existing ? (int)$existing['utl_water_end'] : $waterOld);
             $elecNew = $elecInput ?? ($existing ? (int)$existing['utl_elec_end'] : $elecOld);
@@ -149,9 +170,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             
             $waterUsed = $waterNew - $waterOld;
             $elecUsed = $elecNew - $elecOld;
-            
-            // ตรวจสอบว่าเป็นการจดมิเตอร์ครั้งแรก (ไม่มี utility record ก่อนหน้า)
-            $isFirstReading = !$prev;
             
             // คำนวณค่าน้ำแบบเหมาจ่าย - ครั้งแรกไม่เสียตัง
             if ($isFirstReading) {
@@ -237,7 +255,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 // ดึงห้อง
 if ($showMode === 'occupied') {
     $occupiedSql = "
-        SELECT r.room_id, r.room_number, c.ctr_id, t.tnt_name, COALESCE(tw.current_step, 1) AS workflow_step
+        SELECT r.room_id, r.room_number, c.ctr_id, c.ctr_start, t.tnt_name, COALESCE(tw.current_step, 1) AS workflow_step
         FROM room r
         JOIN (
             SELECT room_id, MAX(ctr_id) AS ctr_id
@@ -264,7 +282,7 @@ if ($showMode === 'occupied') {
     $rooms = $occupiedStmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
     $allSql = "
-        SELECT r.room_id, r.room_number, c.ctr_id, COALESCE(t.tnt_name, '') as tnt_name, COALESCE(tw.current_step, 1) AS workflow_step
+        SELECT r.room_id, r.room_number, c.ctr_id, c.ctr_start, COALESCE(t.tnt_name, '') as tnt_name, COALESCE(tw.current_step, 1) AS workflow_step
         FROM room r
         LEFT JOIN (
             SELECT room_id, MAX(ctr_id) AS ctr_id
@@ -340,10 +358,25 @@ foreach ($rooms as $room) {
     $elec_new = $hasRealData ? (int)$current['utl_elec_end'] : '';
     $saved = $hasRealData ? true : false;
     
-    // สำหรับ row ที่ครั้งแรก ต้องแสดง water_old ให้ถูกต้อง
+    // การจดมิเตอร์ครั้งแรก = เดือนปัจจุบันตรงกับเดือนเริ่มสัญญาเท่านั้น
+    $ctrStartYm = !empty($room['ctr_start']) ? date('Y-m', strtotime((string)$room['ctr_start'])) : null;
+    $currentYm = sprintf('%04d-%02d', $year, $month);
+    $isFirstReading = $ctrStartYm !== null && $currentYm === $ctrStartYm;
+
+    // ค่าเริ่มต้น: ดึงจาก utility เดือนก่อน หรือ checkin_record (ถ้าไม่มี utility เดือนก่อน)
     $water_old_value = $prev ? (int)$prev['utl_water_end'] : 0;
-    $elec_old_value = $prev ? (int)$prev['utl_elec_end'] : 0;
-    
+    $elec_old_value  = $prev ? (int)$prev['utl_elec_end']  : 0;
+    if (!$prev && !$isFirstReading) {
+        // ไม่มี utility เดือนก่อน แต่ไม่ใช่เดือนแรก — ดึงค่า checkin เป็น prev
+        $chkFallback = $pdo->prepare('SELECT water_meter_start, elec_meter_start FROM checkin_record WHERE ctr_id = ? LIMIT 1');
+        $chkFallback->execute([$room['ctr_id']]);
+        $chkRow = $chkFallback->fetch(PDO::FETCH_ASSOC);
+        if ($chkRow && $chkRow['water_meter_start'] !== null) {
+            $water_old_value = (int)$chkRow['water_meter_start'];
+            $elec_old_value  = (int)$chkRow['elec_meter_start'];
+        }
+    }
+
     $readings[$room['room_id']] = [
         'water_old' => $water_old_value,
         'elec_old' => $elec_old_value,
@@ -352,10 +385,10 @@ foreach ($rooms as $room) {
         'saved' => $saved,
         'workflow_step' => $workflowStep,
         'meter_blocked' => $meterBlocked,
-        'isFirstReading' => !$prev  // ไม่มี record ก่อนหน้า = ครั้งแรก
+        'isFirstReading' => $isFirstReading,
     ];
-    
-    // สำหรับ non-first reading เช็คว่า current บันทึกแล้ว ดึง water_start/elec_start มาแสดง
+
+    // เมื่อบันทึกแล้ว ใช้ water_start/elec_start จาก utility record ปัจจุบัน
     if ($hasRealData && !$meterBlocked) {
         $readings[$room['room_id']]['water_old'] = (int)$current['utl_water_start'];
         $readings[$room['room_id']]['elec_old'] = (int)$current['utl_elec_start'];
