@@ -531,6 +531,15 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             align-items: center;
             justify-content: center;
         }
+        .step-circle.overdue {
+            background: rgba(239,68,68,0.15);
+            color: #f87171;
+            border: 1px solid rgba(239,68,68,0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+        }
         .wait-spinner {
             width: 20px;
             height: 20px;
@@ -1086,8 +1095,11 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     $firstBillMonthDisplay = date('m/Y', strtotime($firstBillMonthRaw));
                                     $firstBillDueReached = strtotime(date('Y-m-d')) >= strtotime(date('Y-m-01', strtotime($firstBillMonthRaw)));
                                 }
-                                $firstBillPaid    = ((string)($tenant['first_exp_status'] ?? '') === '1');
-                                $firstBillWaiting = ((string)($tenant['first_exp_status'] ?? '') === '2');
+                                $firstExpStatus   = (string)($tenant['first_exp_status'] ?? '');
+                                $firstBillPaid    = ($firstExpStatus === '1');
+                                $firstBillWaiting = ($firstExpStatus === '2');
+                                $firstBillOverdue = in_array($firstExpStatus, ['3', '4']);
+                                $firstBillUnpaid  = in_array($firstExpStatus, ['0', '3', '4']);
 
                                 // --- มิเตอร์: เช็คว่าจดเดือนบิล + เดือนก่อนไว้แล้วหรือยัง ---
                                 $ctrIdInt      = (int)($tenant['ctr_id'] ?? 0);
@@ -1118,6 +1130,11 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     $billCheckResult = $billCheckStmt->fetch(PDO::FETCH_ASSOC);
                                     $meterBillDone = ($billCheckResult['cnt'] ?? 0) > 0;
                                 }
+                                // เมื่อบิลเดือนแรก = เดือนเริ่มสัญญา: checkin คือการจดมิเตอร์ครั้งแรก
+                                // ไม่ต้องมี utility record แยกต่างหาก — ถือว่าจดมิเตอร์แล้วเมื่อยืนยัน step 5
+                                if (!$meterBillDone && $step5 == 1 && $billYearMonth !== null && $ctrStartYm !== null && $billYearMonth === $ctrStartYm) {
+                                    $meterBillDone = true;
+                                }
                                 
                                 // ตรวจสอบว่าจดมิเตอร์เดือนก่อนหน้าแล้วหรือไม่
                                 $meterPrevDone = $prevYearMonth === null;  // if no prev month, consider it done
@@ -1146,12 +1163,14 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     . htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8') . "', '"
                                     . htmlspecialchars($ym, ENT_QUOTES, 'UTF-8') . "')";
                                 if ($meterBillDone) {
-                                    // Check if it's first meter and bill is unpaid
+                                    // Check if it's first meter and bill status
                                     $isFirstMeter = $prevYearMonth === null;
-                                    $firstBillUnpaid = ((string)($tenant['first_exp_status'] ?? '') === '0');
                                     
-                                    if ($isFirstMeter && $firstBillUnpaid) {
-                                        // For first month reading - show awaiting payment status
+                                    if ($isFirstMeter && $firstBillOverdue) {
+                                        // First bill is overdue (status 3/4)
+                                        $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f87171;font-weight:600;">⚠ ค้างชำระ</span>';
+                                    } elseif ($isFirstMeter && $firstBillUnpaid) {
+                                        // For first month reading - show awaiting payment status (status 0)
                                         $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">รอชำระเงิน</span>';
                                     } elseif ($firstBillPaid) {
                                         // Bill already paid
@@ -1198,6 +1217,10 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                         $step5CircleClass = 'wait';
                                         $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
                                         $step5Tooltip = '5. บิลเดือนแรก (' . $firstBillMonthDisplay . ') รอตรวจสอบหลักฐาน';
+                                    } elseif ($firstBillOverdue && $meterBillDone) {
+                                        $step5CircleClass = 'overdue';
+                                        $step5CircleLabel = '!';
+                                        $step5Tooltip = '5. บิลค้างชำระ (' . $firstBillMonthDisplay . ')';
                                     } elseif (!$meterBillDone) {
                                         if ($meterPrevDone && !$firstBillDueReached && $prevYearMonth !== null) {
                                             // จดมิเตอร์ต้นแล้ว (เดือนก่อน) แต่ยังไม่ถึงเดือนบิล — รอ

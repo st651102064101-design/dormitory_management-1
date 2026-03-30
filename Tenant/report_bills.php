@@ -16,7 +16,7 @@ $firstBillMonth = $currentBillMonth;
 if (!empty($contract['ctr_start'])) {
     try {
         $ctrStartDate = new DateTime((string)$contract['ctr_start']);
-        $firstBillMonth = $ctrStartDate->modify('first day of next month')->format('Y-m');
+        $firstBillMonth = $ctrStartDate->format('Y-m');
     } catch (Exception $e) {
         $firstBillMonth = $currentBillMonth;
     }
@@ -37,20 +37,24 @@ try {
             WHERE ctr_id = ?
               AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
               AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
-                            AND EXISTS (
-                                    SELECT 1
-                                    FROM utility u
-                                    WHERE u.ctr_id = expense.ctr_id
-                                        AND YEAR(u.utl_date) = YEAR(expense.exp_month)
-                                        AND MONTH(u.utl_date) = MONTH(expense.exp_month)
-                                        AND u.utl_water_end IS NOT NULL
-                                        AND u.utl_elec_end IS NOT NULL
+                            AND (
+                                    -- บิลเดือนแรก (= เดือนเริ่มสัญญา) ไม่มี utility record — ใช้ค่ามิเตอร์จาก checkin
+                                    DATE_FORMAT(expense.exp_month, '%Y-%m') = ?
+                                    OR EXISTS (
+                                        SELECT 1
+                                        FROM utility u
+                                        WHERE u.ctr_id = expense.ctr_id
+                                            AND YEAR(u.utl_date) = YEAR(expense.exp_month)
+                                            AND MONTH(u.utl_date) = MONTH(expense.exp_month)
+                                            AND u.utl_water_end IS NOT NULL
+                                            AND u.utl_elec_end IS NOT NULL
+                                    )
                             )
             GROUP BY exp_month
         ) latest ON e.exp_id = latest.exp_id
         ORDER BY e.exp_month DESC
     ");
-    $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
+    $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth, $firstBillMonth]);
     $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
 
