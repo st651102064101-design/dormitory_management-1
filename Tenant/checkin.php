@@ -520,12 +520,12 @@ $hasCheckIn = !empty($data['checkin_id']);
                 <div class="meter-grid">
                     <div class="meter-box">
                         <div class="meter-label">💧 มิเตอร์น้ำ</div>
-                        <div class="meter-value"><?php echo number_format((float)$data['water_meter_start'], 2); ?></div>
+                        <div class="meter-value"><?php echo str_pad((string)(int)$data['water_meter_start'], 7, '0', STR_PAD_LEFT); ?></div>
                         <div class="meter-unit">หน่วย</div>
                     </div>
                     <div class="meter-box">
                         <div class="meter-label">⚡ มิเตอร์ไฟฟ้า</div>
-                        <div class="meter-value"><?php echo number_format((float)$data['elec_meter_start'], 2); ?></div>
+                        <div class="meter-value"><?php echo str_pad((string)(int)$data['elec_meter_start'], 5, '0', STR_PAD_LEFT); ?></div>
                         <div class="meter-unit">หน่วย</div>
                     </div>
                 </div>

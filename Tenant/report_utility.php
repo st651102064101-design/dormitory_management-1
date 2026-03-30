@@ -313,12 +313,12 @@ if (empty($utilities)) {
                     <div class="meter-cells">
                         <div class="meter-cell">
                             <div class="meter-cell-label">เลขเริ่ม</div>
-                            <div class="meter-cell-val"><?php echo number_format($util['utl_elec_start']); ?></div>
+                            <div class="meter-cell-val"><?php echo str_pad((string)(int)($util['utl_elec_start'] ?? 0), 5, '0', STR_PAD_LEFT); ?></div>
                         </div>
                         <div class="meter-arrow">→</div>
                         <div class="meter-cell">
                             <div class="meter-cell-label">เลขสิ้นสุด</div>
-                            <div class="meter-cell-val"><?php echo number_format($util['utl_elec_end'] ?? 0); ?></div>
+                            <div class="meter-cell-val"><?php echo str_pad((string)(int)($util['utl_elec_end'] ?? 0), 5, '0', STR_PAD_LEFT); ?></div>
                         </div>
                         <div class="meter-divider"></div>
                         <div class="meter-cell usage">
@@ -338,12 +338,12 @@ if (empty($utilities)) {
                     <div class="meter-cells">
                         <div class="meter-cell">
                             <div class="meter-cell-label">เลขเริ่ม</div>
-                            <div class="meter-cell-val"><?php echo number_format($util['utl_water_start']); ?></div>
+                            <div class="meter-cell-val"><?php echo str_pad((string)(int)($util['utl_water_start'] ?? 0), 7, '0', STR_PAD_LEFT); ?></div>
                         </div>
                         <div class="meter-arrow">→</div>
                         <div class="meter-cell">
                             <div class="meter-cell-label">เลขสิ้นสุด</div>
-                            <div class="meter-cell-val"><?php echo number_format($util['utl_water_end'] ?? 0); ?></div>
+                            <div class="meter-cell-val"><?php echo str_pad((string)(int)($util['utl_water_end'] ?? 0), 7, '0', STR_PAD_LEFT); ?></div>
                         </div>
                         <div class="meter-divider"></div>
                         <div class="meter-cell usage">

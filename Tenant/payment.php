@@ -26,7 +26,7 @@ $firstBillMonth = $currentBillMonth;
 if (!empty($contract['ctr_start'])) {
     try {
         $ctrStartDate = new DateTime((string)$contract['ctr_start']);
-        $firstBillMonth = $ctrStartDate->modify('first day of next month')->format('Y-m');
+        $firstBillMonth = $ctrStartDate->format('Y-m');
     } catch (Exception $e) {
         $firstBillMonth = $currentBillMonth;
     }
@@ -46,16 +46,8 @@ try {
             SELECT MAX(exp_id) AS exp_id
             FROM expense
             WHERE ctr_id = ?
-                            AND exp_status IN ('0', '3', '4')
-                            AND EXISTS (
-                                    SELECT 1
-                                    FROM utility u
-                                    WHERE u.ctr_id = expense.ctr_id
-                                        AND YEAR(u.utl_date) = YEAR(expense.exp_month)
-                                        AND MONTH(u.utl_date) = MONTH(expense.exp_month)
-                                        AND u.utl_water_end IS NOT NULL
-                                        AND u.utl_elec_end IS NOT NULL
-                            )
+              AND exp_status IN ('0', '3', '4')
+              AND (\n                  DATE_FORMAT(expense.exp_month, '%Y-%m') = ?\n                  OR EXISTS (\n                      SELECT 1\n                      FROM utility u\n                      WHERE u.ctr_id = expense.ctr_id\n                          AND YEAR(u.utl_date) = YEAR(expense.exp_month)\n                          AND MONTH(u.utl_date) = MONTH(expense.exp_month)\n                          AND u.utl_water_end IS NOT NULL\n                          AND u.utl_elec_end IS NOT NULL\n                  )\n              )
               AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
               AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
             GROUP BY exp_month
@@ -71,7 +63,7 @@ try {
         WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
         ORDER BY e.exp_month DESC
     ");
-    $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
+    $stmt->execute([$contract['ctr_id'], $firstBillMonth, $firstBillMonth, $currentBillMonth]);
     $unpaidExpenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
     
     // หา expense ที่เลือก
@@ -851,7 +843,7 @@ $paymentStatusMap = [
                 <div class="form-group" id="payment-summary" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                         <span style="color: #94a3b8;">ยอดรวมทั้งหมด:</span>
-                        <span id="summary-total" style="color: #f8fafc; font-weight: 600;">0 บาท</span>
+                        <span id="summary-total" style="color: #ef4444; font-weight: 600;">0 บาท</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
                         <span style="color: #10b981;">ส่งแล้ว:</span>

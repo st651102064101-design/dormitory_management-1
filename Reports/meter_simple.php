@@ -298,20 +298,20 @@ $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.�
                     <div class="input-group">
                         <label><span class="water-dot"></span> น้ำ</label>
                         <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" 
-                               class="water" placeholder="<?php echo $r['water_old']; ?>" 
-                               value="<?php echo $r['water_new']; ?>"
-                               min="<?php echo $r['water_old']; ?>">
-                        <div class="old-val">เดิม: <?php echo number_format($r['water_old']); ?></div>
+                               class="water" placeholder="<?php echo str_pad((string)(int)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" 
+                               value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>"
+                               min="<?php echo $r['water_old']; ?>" max="9999999">
+                        <div class="old-val">เดิม: <?php echo str_pad((string)(int)$r['water_old'], 7, '0', STR_PAD_LEFT); ?></div>
                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                     </div>
                     <div class="input-group">
                         <label><span class="elec-dot"></span> ไฟ</label>
                         <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" 
-                               class="electric" placeholder="<?php echo $r['elec_old']; ?>"
-                               value="<?php echo $r['elec_new']; ?>"
-                               min="<?php echo $r['elec_old']; ?>">
-                        <div class="old-val">เดิม: <?php echo number_format($r['elec_old']); ?></div>
+                               class="electric" placeholder="<?php echo str_pad((string)(int)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>"
+                               value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>"
+                               min="<?php echo $r['elec_old']; ?>" max="99999">
+                        <div class="old-val">เดิม: <?php echo str_pad((string)(int)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?></div>
                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                     </div>
                 </div>

@@ -21,8 +21,8 @@ try {
     $ctr_id = isset($_POST['ctr_id']) ? (int)$_POST['ctr_id'] : 0;
     $tnt_id = trim($_POST['tnt_id'] ?? '');
     $checkin_date = $_POST['checkin_date'] ?? '';
-    $water_meter_start = isset($_POST['water_meter_start']) ? (float)$_POST['water_meter_start'] : 0;
-    $elec_meter_start = isset($_POST['elec_meter_start']) ? (float)$_POST['elec_meter_start'] : 0;
+    $water_meter_start = isset($_POST['water_meter_start']) ? min(9999999, max(0, (int)$_POST['water_meter_start'])) : 0;
+    $elec_meter_start  = isset($_POST['elec_meter_start'])  ? min(99999,   max(0, (int)$_POST['elec_meter_start']))  : 0;
 
     if ($ctr_id <= 0 || empty($tnt_id) || empty($checkin_date)) {
         throw new Exception('ข้อมูลไม่ครบถ้วน');

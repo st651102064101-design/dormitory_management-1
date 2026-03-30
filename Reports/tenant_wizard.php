@@ -1634,7 +1634,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     </svg>
                                     <span>มิเตอร์น้ำ (ครั้งก่อน: <span id="prevWaterDisplay">-</span>)</span>
                                 </div>
-                                <input type="number" id="meterWaterInput" min="0" placeholder="เลขมิเตอร์ใหม่"
+                                <input type="number" id="meterWaterInput" min="0" max="9999999" placeholder="เลขมิเตอร์ใหม่"
                                     style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.6);border:1px solid rgba(96,165,250,0.4);border-radius:7px;color:#f8fafc;padding:0.5rem 0.65rem;font-size:0.9rem;outline:none;"
                                     oninput="updateMeterPreview()">
                             </div>
@@ -1646,7 +1646,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     </svg>
                                     <span>มิเตอร์ไฟ (ครั้งก่อน: <span id="prevElecDisplay">-</span>)</span>
                                 </div>
-                                <input type="number" id="meterElecInput" min="0" placeholder="เลขมิเตอร์ใหม่"
+                                <input type="number" id="meterElecInput" min="0" max="99999" placeholder="เลขมิเตอร์ใหม่"
                                     style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.6);border:1px solid rgba(251,191,36,0.4);border-radius:7px;color:#f8fafc;padding:0.5rem 0.65rem;font-size:0.9rem;outline:none;"
                                     oninput="updateMeterPreview()">
                             </div>
@@ -1707,14 +1707,14 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     <div>
                         <div style="font-size:0.8rem;font-weight:600;color:#60a5fa;margin-bottom:0.3rem;">💧 มิเตอร์น้ำ</div>
                         <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;">ค่าก่อน: <span id="moPrevWater" style="color:#f8fafc;font-weight:600;">...</span></div>
-                        <input type="number" id="moWaterInput" min="0" placeholder="เลขมิเตอร์ใหม่"
+                        <input type="number" id="moWaterInput" min="0" max="9999999" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(96,165,250,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
                             onfocus="this.style.borderColor='#60a5fa'" onblur="this.style.borderColor='rgba(96,165,250,0.4)'" oninput="updateMoPreview()">
                     </div>
                     <div>
                         <div style="font-size:0.8rem;font-weight:600;color:#fbbf24;margin-bottom:0.3rem;">⚡ มิเตอร์ไฟ</div>
                         <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;">ค่าก่อน: <span id="moPrevElec" style="color:#f8fafc;font-weight:600;">...</span></div>
-                        <input type="number" id="moElecInput" min="0" placeholder="เลขมิเตอร์ใหม่"
+                        <input type="number" id="moElecInput" min="0" max="99999" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(251,191,36,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
                             onfocus="this.style.borderColor='#fbbf24'" onblur="this.style.borderColor='rgba(251,191,36,0.4)'" oninput="updateMoPreview()">
                     </div>
@@ -2407,11 +2407,11 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 _moWaterBasePrice  = d.water_base_price  || 200;
                 _moWaterExcessRate = d.water_excess_rate || 25;
                 _meterIsFirstReading = d.is_first_reading || false;  // ตั้งค่า first reading flag
-                document.getElementById('moPrevWater').textContent = _moPrevWater;
-                document.getElementById('moPrevElec').textContent  = _moPrevElec;
+                document.getElementById('moPrevWater').textContent = String(_moPrevWater).padStart(7, '0');
+                document.getElementById('moPrevElec').textContent  = String(_moPrevElec).padStart(5, '0');
                 if (d.saved && d.meter_month == _moMonth && d.meter_year == _moYear && !_moIsFuture && d.curr_water !== null && d.curr_elec !== null) {
-                    document.getElementById('moWaterInput').value    = d.curr_water ?? '';
-                    document.getElementById('moElecInput').value     = d.curr_elec  ?? '';
+                    document.getElementById('moWaterInput').value    = String(d.curr_water || '').padStart(7, '0');
+                    document.getElementById('moElecInput').value     = String(d.curr_elec  || '').padStart(5, '0');
                     // Allow editing even after saved - just show the current values
                     btn.style.display = 'inline-block';
                     btn.textContent = 'อัปเดตมิเตอร์';
@@ -2551,16 +2551,16 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 _meterWaterExcessRate = d.water_excess_rate || 25;
                 _meterIsFirstReading  = d.is_first_reading || false;
 
-                document.getElementById('prevWaterDisplay').textContent = _meterPrevWater;
-                document.getElementById('prevElecDisplay').textContent  = _meterPrevElec;
+                document.getElementById('prevWaterDisplay').textContent = String(_meterPrevWater).padStart(7, '0');
+                document.getElementById('prevElecDisplay').textContent  = String(_meterPrevElec).padStart(5, '0');
 
                 if (d.saved) {
                     // already saved this month — show saved badge + allow edit and re-save
                     badge.style.display = 'inline-block';
                     btn.style.display   = 'inline-block';
                     btn.textContent     = 'อัปเดตมิเตอร์';
-                    document.getElementById('meterWaterInput').value    = d.curr_water ?? '';
-                    document.getElementById('meterElecInput').value     = d.curr_elec  ?? '';
+                    document.getElementById('meterWaterInput').value    = String(d.curr_water || '').padStart(7, '0');
+                    document.getElementById('meterElecInput').value     = String(d.curr_elec  || '').padStart(5, '0');
                     document.getElementById('meterWaterInput').disabled = false;
                     document.getElementById('meterElecInput').disabled  = false;
                     updateMeterPreview();

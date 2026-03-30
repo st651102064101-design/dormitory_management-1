@@ -524,8 +524,8 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                     <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                                     <?php endif; ?>
                                 </td>
-                                <td class="prev-val" data-label="เลขมิเตอร์เดือนก่อนหน้า"><?php echo number_format((int)($util['utl_water_start'] ?? 0)); ?></td>
-                                <td data-label="เลขมิเตอร์เดือนล่าสุด"><span class="curr-val"><?php echo number_format((int)($util['utl_water_end'] ?? 0)); ?></span></td>
+                                <td class="prev-val" data-label="เลขมิเตอร์เดือนก่อนหน้า"><?php echo str_pad((string)(int)($util['utl_water_start'] ?? 0), 7, '0', STR_PAD_LEFT); ?></td>
+                                <td data-label="เลขมิเตอร์เดือนล่าสุด"><span class="curr-val"><?php echo str_pad((string)(int)($util['utl_water_end'] ?? 0), 7, '0', STR_PAD_LEFT); ?></span></td>
                                 <td class="usage-cell" data-label="หน่วยที่ใช้"><?php echo number_format($waterUsage); ?></td>
                             </tr>
                             <?php endforeach; ?>
@@ -559,8 +559,8 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                     <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
                                     <?php endif; ?>
                                 </td>
-                                <td class="prev-val" data-label="เลขมิเตอร์เดือนก่อนหน้า"><?php echo number_format((int)($util['utl_elec_start'] ?? 0)); ?></td>
-                                <td data-label="เลขมิเตอร์เดือนล่าสุด"><span class="curr-val elec-val"><?php echo number_format((int)($util['utl_elec_end'] ?? 0)); ?></span></td>
+                                <td class="prev-val" data-label="เลขมิเตอร์เดือนก่อนหน้า"><?php echo str_pad((string)(int)($util['utl_elec_start'] ?? 0), 5, '0', STR_PAD_LEFT); ?></td>
+                                <td data-label="เลขมิเตอร์เดือนล่าสุด"><span class="curr-val elec-val"><?php echo str_pad((string)(int)($util['utl_elec_end'] ?? 0), 5, '0', STR_PAD_LEFT); ?></span></td>
                                 <td class="usage-cell elec-usage" data-label="หน่วยที่ใช้"><?php echo number_format($elecUsage); ?></td>
                             </tr>
                             <?php endforeach; ?>
