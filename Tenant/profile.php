@@ -242,6 +242,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             stroke-width: 2;
             fill: none;
         }
+        .nav-badge {
+            position: absolute;
+            top: -2px;
+            right: -6px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 12px;
+            min-width: 20px;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .nav-item {
+            position: relative;
+        }
         .section-icon {
             display: inline-flex;
             align-items: center;
@@ -395,6 +414,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
     </div>
     
+    <?php
+    // นับรายการแจ้งซ่อมที่ยังไม่เสร็จ
+    $repairCount = 0;
+    try {
+        $repairStmt = $pdo->prepare("
+            SELECT COUNT(*) as cnt FROM repair
+            WHERE ctr_id IN (SELECT ctr_id FROM contract WHERE tnt_id = ?)
+            AND repair_status = '0'
+        ");
+        $repairStmt->execute([$contract['tnt_id']]);
+        $repairCount = (int)($repairStmt->fetchColumn() ?? 0);
+    } catch (Exception $e) {}
+    
+    // นับรายการบิลที่ยังไม่ชำระ
+    $billCount = 0;
+    try {
+        $billStmt = $pdo->prepare("
+            SELECT COUNT(*) as cnt FROM expense e
+            INNER JOIN contract c ON e.ctr_id = c.ctr_id
+            LEFT JOIN payment p ON p.exp_id = e.exp_id
+            WHERE c.tnt_id = ?
+            AND p.exp_id IS NULL
+            AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+            AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+        ");
+        $billStmt->execute([$contract['tnt_id']]);
+        $billCount = (int)($billStmt->fetchColumn() ?? 0);
+    } catch (Exception $e) {}
+    ?>
+    
     <nav class="bottom-nav">
         <div class="bottom-nav-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="nav-item">
@@ -403,12 +452,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </a>
             <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="nav-item">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
-                บิล
+                บิล<?php if ($billCount > 0): ?><span class="nav-badge"><?php echo $billCount > 99 ? '99+' : $billCount; ?></span><?php endif; ?>
             </a>
             <a href="repair.php?token=<?php echo urlencode($token); ?>" class="nav-item">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
-                แจ้งซ่อม
-            </a>
+                แจ้งซ่อม<?php if ($repairCount > 0): ?><span class="nav-badge"><?php echo $repairCount > 99 ? '99+' : $repairCount; ?></span><?php endif; ?></a>
             <a href="profile.php?token=<?php echo urlencode($token); ?>" class="nav-item active">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                 โปรไฟล์

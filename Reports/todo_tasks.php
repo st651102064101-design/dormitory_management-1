@@ -235,7 +235,6 @@ try {
                         LEFT JOIN room r ON b.room_id = r.room_id
                         LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
                         WHERE b.bkg_status != '0'
-                            AND (tw.id IS NULL OR tw.completed = 0)
                         ORDER BY b.bkg_date DESC, b.bkg_id DESC
                         LIMIT 50
                 ");
@@ -772,10 +771,11 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $wizardStepText = 'ขั้นตอนที่ ' . $displayStep;
                                             // Determine remaining tasks based on current step
                                             $remainingTasksWizard = '';
-                                            if ($displayStep == 2) $remainingTasksWizard = 'ยืนยันข้อมูลการเช่า';
-                                            elseif ($displayStep == 3) $remainingTasksWizard = 'จดมิเตอร์';
-                                            elseif ($displayStep == 4) $remainingTasksWizard = 'ชำระค่าประกัน';
-                                            elseif ($displayStep == 5) $remainingTasksWizard = 'ยืนยันค่าใช้จ่าย';
+                                            if ($displayStep == 1) $remainingTasksWizard = 'ยืนยันการจอง';
+                                            elseif ($displayStep == 2) $remainingTasksWizard = 'ยืนยันการชำระเงินจอง';
+                                            elseif ($displayStep == 3) $remainingTasksWizard = 'สร้างสัญญาเช่า';
+                                            elseif ($displayStep == 4) $remainingTasksWizard = 'เช็คอินผู้เช่า';
+                                            elseif ($displayStep == 5) $remainingTasksWizard = 'บิลรายเดือน';
                                             else $remainingTasksWizard = 'ทำให้เสร็จสิ้น';
                                         ?>
                                         <tr>

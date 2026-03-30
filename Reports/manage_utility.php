@@ -423,6 +423,20 @@ foreach ($rooms as $room) {
     $currentYm = sprintf('%04d-%02d', $year, $month);
     $isFirstReading = $ctrStartYm !== null && $currentYm === $ctrStartYm;
 
+    // สำหรับเดือนแรก: ถ้ายังไม่มี utility record ให้ตรวจสอบ checkin_record
+    // ถ้า checkin_record มีค่ามิเตอร์ครบทั้งน้ำและไฟ → ถือว่าจดมิเตอร์แล้ว
+    if ($isFirstReading && !$saved) {
+        $chkFirst = $pdo->prepare('SELECT water_meter_start, elec_meter_start FROM checkin_record WHERE ctr_id = ? ORDER BY checkin_id DESC LIMIT 1');
+        $chkFirst->execute([$room['ctr_id']]);
+        $chkFirstRow = $chkFirst->fetch(PDO::FETCH_ASSOC);
+        if ($chkFirstRow && $chkFirstRow['water_meter_start'] !== null && $chkFirstRow['elec_meter_start'] !== null) {
+            $saved = true;
+            $water_new = (int)$chkFirstRow['water_meter_start'];
+            $elec_new  = (int)$chkFirstRow['elec_meter_start'];
+            $meterBlocked = $isPastMonth; // ปิดกั้นถ้าเป็นเดือนที่ผ่านแล้ว
+        }
+    }
+
     // ค่าเริ่มต้น: ดึงจาก utility เดือนก่อน หรือ checkin_record (ถ้าไม่มี utility เดือนก่อน)
     $water_old_value = $prev ? (int)$prev['utl_water_end'] : 0;
     $elec_old_value  = $prev ? (int)$prev['utl_elec_end']  : 0;

@@ -1904,6 +1904,10 @@ body.apple-settings-page .manage-panel {
   .apple-profile-name {
     font-size: calc(18px * var(--font-scale, 1));
   }
+
+  .lottie-icon {
+    margin: 0 0 10px;
+  }
 }
 
 @media (max-width: 400px) {
