@@ -668,6 +668,74 @@ foreach ($contracts as $contract) {
         .manage-panel { padding: 0.5rem !important; }
         #table-contracts tbody td { padding: 0.45rem 0.625rem !important; }
       }
+
+      /* =====================================================
+         CONTRACT DETAIL DRAWER
+         ===================================================== */
+      #cdrDrawer * { box-sizing: border-box; }
+      .cdr-tab {
+        flex: 1; padding: 0.75rem 0.5rem;
+        background: none; border: none; border-bottom: 2px solid transparent;
+        color: #94a3b8; cursor: pointer; font-size: 0.9rem;
+        transition: color .18s, border-color .18s;
+      }
+      .cdr-tab.active { color: #38bdf8; border-bottom-color: #38bdf8; font-weight: 600; }
+      .cdr-tab:hover:not(.active) { color: #cbd5e1; }
+      .cdr-section { margin-bottom: 1.5rem; }
+      .cdr-section-title {
+        font-size: 0.72rem; font-weight: 700; letter-spacing: .06em;
+        color: #475569; text-transform: uppercase; margin-bottom: 0.65rem;
+        padding-bottom: 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.07);
+      }
+      .cdr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 1.25rem; }
+      .cdr-field label {
+        font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.1rem;
+      }
+      .cdr-field span { font-size: 0.9rem; color: #e2e8f0; font-weight: 500; }
+      .cdr-bill-card {
+        border: 1px solid rgba(255,255,255,0.09);
+        border-radius: 10px; padding: 1rem 1.1rem;
+        margin-bottom: 0.85rem;
+        background: rgba(255,255,255,0.025);
+        transition: border-color .2s;
+      }
+      .cdr-bill-card:hover { border-color: rgba(255,255,255,0.18); }
+      .cdr-pay-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 0.45rem 0; border-top: 1px solid rgba(255,255,255,0.06);
+        font-size: 0.83rem;
+      }
+      .cdr-meter-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
+      .cdr-meter-table th {
+        text-align: left; color: #64748b; font-weight: 600;
+        padding: 0.4rem 0.55rem; border-bottom: 1px solid rgba(255,255,255,0.1);
+      }
+      .cdr-meter-table td {
+        padding: 0.45rem 0.55rem;
+        border-top: 1px solid rgba(255,255,255,0.05);
+        color: #e2e8f0;
+      }
+      .cdr-meta-cell {
+        flex: 1; padding: 0.7rem 1rem;
+        border-right: 1px solid rgba(255,255,255,0.07);
+      }
+      .cdr-meta-cell:last-child { border-right: none; }
+      .cdr-meta-cell .cdr-meta-label {
+        font-size: 0.7rem; color: #64748b; margin-bottom: 0.15rem;
+      }
+      .cdr-meta-cell .cdr-meta-val {
+        font-size: 0.92rem; color: #e2e8f0; font-weight: 600;
+      }
+      /* row hover hint */
+      #table-contracts tbody tr.cdr-clickable {
+        cursor: pointer;
+        transition: background .15s;
+      }
+      #table-contracts tbody tr.cdr-clickable:hover { background: rgba(56,189,248,0.07) !important; }
+      @media (max-width: 640px) {
+        #cdrDrawer { width: 100% !important; }
+        .cdr-grid { grid-template-columns: 1fr !important; }
+      }
     </style>
     <script>
       // Define a global sidebar toggle early so the header button responds immediately
@@ -986,7 +1054,7 @@ foreach ($contracts as $contract) {
                                   $cancelDateDisplay = date('d/m/Y', strtotime($contract['ctr_end']));
                                 }
                           ?>
-                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1);">
+                            <tr class="cdr-clickable" style="border-bottom: 1px solid rgba(255,255,255,0.1);" onclick="openContractDetail(<?php echo $ctr_id; ?>)">
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="เลขที่สัญญา"><?php echo $ctr_id; ?></td>
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="ผู้เช่า"><?php echo $tnt_name; ?></td>
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="ห้องพัก"><?php echo $room_number; ?></td>
@@ -1002,11 +1070,11 @@ foreach ($contracts as $contract) {
                               </td>
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="จัดการ" class="action-cell">
                                 <?php if ($s === '2'): ?>
-                                  <button type="button" class="action-btn btn-warning cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ยกเลิกทันที</button>
+                                  <button type="button" class="action-btn btn-warning cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>" onclick="event.stopPropagation()">ยกเลิกทันที</button>
                                 <?php elseif (in_array($s, ['0', ''])): ?>
-                                  <button type="button" class="action-btn btn-danger delete-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ลบ</button>
+                                  <button type="button" class="action-btn btn-danger delete-contract-btn" data-ctrid="<?php echo $ctr_id; ?>" onclick="event.stopPropagation()">ลบ</button>
                                 <?php else: ?>
-                                  -
+                                  <span style="color:#475569;font-size:0.82rem;">คลิกเพื่อดูรายละเอียด</span>
                                 <?php endif; ?>
                               </td>
                             </tr>
@@ -1416,6 +1484,373 @@ foreach ($contracts as $contract) {
       window.addEventListener('orientationchange', function() {
         setTimeout(handleContractsTableResponsive, 150);
       });
+    </script>
+
+    <!-- ========= CONTRACT DETAIL DRAWER ========= -->
+    <div id="cdrOverlay"
+         onclick="closeContractDetail()"
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1040;"></div>
+
+    <div id="cdrDrawer"
+         style="display:none;position:fixed;top:0;right:0;height:100%;width:min(600px,100vw);
+                background:#1e293b;border-left:1px solid rgba(255,255,255,0.1);
+                z-index:1050;box-shadow:-6px 0 40px rgba(0,0,0,0.55);
+                flex-direction:column;overflow:hidden;">
+
+      <!-- Header -->
+      <div style="padding:1.1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,0.1);
+                  display:flex;align-items:flex-start;justify-content:space-between;
+                  flex-shrink:0;gap:0.75rem;">
+        <div style="min-width:0;">
+          <div id="cdrTitle"
+               style="font-size:1.1rem;font-weight:700;color:#f1f5f9;
+                      white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">---</div>
+          <div id="cdrSubtitle"
+               style="font-size:0.82rem;color:#64748b;margin-top:0.2rem;">---</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.6rem;flex-shrink:0;">
+          <span id="cdrStatusBadge"
+                style="font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:999px;
+                       font-weight:600;white-space:nowrap;">---</span>
+          <button onclick="closeContractDetail()"
+                  style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);
+                         color:#94a3b8;width:30px;height:30px;border-radius:7px;
+                         cursor:pointer;font-size:1rem;line-height:1;flex-shrink:0;"
+                  title="ปิด">✕</button>
+        </div>
+      </div>
+
+      <!-- Quick-stat strip -->
+      <div id="cdrMeta"
+           style="display:flex;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;"></div>
+
+      <!-- Tabs -->
+      <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0;">
+        <button class="cdr-tab active" data-tab="overview" onclick="switchCdrTab('overview')">ภาพรวม</button>
+        <button class="cdr-tab"        data-tab="billing"  onclick="switchCdrTab('billing')">ค่าใช้จ่าย</button>
+        <button class="cdr-tab"        data-tab="meter"    onclick="switchCdrTab('meter')">มิเตอร์น้ำ/ไฟ</button>
+      </div>
+
+      <!-- Scrollable body -->
+      <div id="cdrBody" style="overflow-y:auto;flex:1;padding:1.2rem 1.4rem;">
+        <div id="cdrLoading" style="text-align:center;padding:3rem 0;color:#475569;">⏳ กำลังโหลด...</div>
+        <div id="cdrTabOverview" class="cdr-tab-panel" style="display:none;"></div>
+        <div id="cdrTabBilling"  class="cdr-tab-panel" style="display:none;"></div>
+        <div id="cdrTabMeter"    class="cdr-tab-panel" style="display:none;"></div>
+      </div>
+    </div>
+
+    <script>
+    /* ============================================================
+       CONTRACT DETAIL DRAWER — JavaScript
+       ============================================================ */
+    let _cdrCurrentTab = 'overview';
+
+    function openContractDetail(ctrId) {
+      const drawer  = document.getElementById('cdrDrawer');
+      const overlay = document.getElementById('cdrOverlay');
+      const loading = document.getElementById('cdrLoading');
+
+      // Reset
+      document.querySelectorAll('.cdr-tab-panel').forEach(p => p.style.display = 'none');
+      document.querySelectorAll('.cdr-tab').forEach(b => b.classList.toggle('active', b.dataset.tab === 'overview'));
+      _cdrCurrentTab = 'overview';
+      loading.style.display = 'block';
+
+      overlay.style.display = 'block';
+      drawer.style.display  = 'flex';
+
+      fetch('../Manage/get_contract_detail.php?ctr_id=' + encodeURIComponent(ctrId), {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (data.error) { loading.textContent = '⚠ ' + data.error; return; }
+          loading.style.display = 'none';
+          _renderCdrDrawer(data);
+          switchCdrTab('overview');
+        })
+        .catch(() => { loading.textContent = '⚠ ไม่สามารถโหลดข้อมูลได้'; });
+    }
+
+    function closeContractDetail() {
+      document.getElementById('cdrDrawer').style.display  = 'none';
+      document.getElementById('cdrOverlay').style.display = 'none';
+    }
+
+    function switchCdrTab(tab) {
+      _cdrCurrentTab = tab;
+      document.querySelectorAll('.cdr-tab').forEach(b =>
+        b.classList.toggle('active', b.dataset.tab === tab)
+      );
+      document.querySelectorAll('.cdr-tab-panel').forEach(p => p.style.display = 'none');
+      const panel = document.getElementById('cdrTab' + tab.charAt(0).toUpperCase() + tab.slice(1));
+      if (panel) panel.style.display = 'block';
+    }
+
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeContractDetail(); });
+
+    /* ---- Helpers ---- */
+    function _fmtDate(d) {
+      if (!d || d === '0000-00-00' || d === '0000-00-00 00:00:00') return '-';
+      const s = String(d).slice(0, 10).split('-');
+      return s[2] + '/' + s[1] + '/' + s[0];
+    }
+    function _fmtMoney(n) {
+      return Number(n || 0).toLocaleString('th-TH') + ' ฿';
+    }
+    function _ctrStatusInfo(s) {
+      const map = {
+        '0': { label: 'ปกติ',       color: '#22c55e' },
+        '1': { label: 'ยกเลิกแล้ว', color: '#ef4444' },
+        '2': { label: 'แจ้งยกเลิก', color: '#f59e0b' },
+      };
+      return map[s] || { label: s, color: '#64748b' };
+    }
+    function _expStatusInfo(s) {
+      const map = {
+        '0': { label: 'รอชำระ',       color: '#fbbf24' },
+        '1': { label: 'ชำระแล้ว',     color: '#22c55e' },
+        '2': { label: 'รอจดมิเตอร์', color: '#94a3b8' },
+        '3': { label: 'ค้างชำระ',     color: '#f87171' },
+        '4': { label: 'ค้างชำระ',     color: '#f87171' },
+      };
+      return map[s] || { label: s, color: '#94a3b8' };
+    }
+    function _payStatusLabel(s) {
+      return { '0': 'รอตรวจสอบ', '1': '✓ อนุมัติ', '2': 'ปฎิเสธ' }[s] || s;
+    }
+    function _metaCell(label, val) {
+      return `<div class="cdr-meta-cell">
+        <div class="cdr-meta-label">${label}</div>
+        <div class="cdr-meta-val">${val}</div>
+      </div>`;
+    }
+    function _field(label, val) {
+      return `<div class="cdr-field"><label>${label}</label><span>${val || '-'}</span></div>`;
+    }
+
+    /* ---- Renderer ---- */
+    function _renderCdrDrawer(data) {
+      const c = data.contract;
+
+      /* Header */
+      document.getElementById('cdrTitle').textContent =
+        'ห้อง ' + (c.room_number || '?') + ' — ' + (c.tnt_name || '-');
+      document.getElementById('cdrSubtitle').textContent =
+        'สัญญา #' + c.ctr_id + '  ·  ' + (c.type_name || '-') +
+        '  ·  ' + _fmtMoney(c.type_price) + '/เดือน';
+
+      const si = _ctrStatusInfo(c.ctr_status);
+      const badge = document.getElementById('cdrStatusBadge');
+      badge.textContent = si.label;
+      badge.style.background  = si.color + '22';
+      badge.style.color       = si.color;
+      badge.style.border      = '1px solid ' + si.color + '55';
+
+      /* Quick-stat strip */
+      const monthsApart = (() => {
+        if (!c.ctr_start || !c.ctr_end) return '-';
+        const d1 = new Date(c.ctr_start), d2 = new Date(c.ctr_end);
+        const m = Math.round((d2 - d1) / (1000 * 60 * 60 * 24 * 30.44));
+        return m + ' เดือน';
+      })();
+      const totalPaid = (data.expenses || []).reduce((sum, e) =>
+        sum + (e.payments || []).filter(p => p.pay_status === '1')
+          .reduce((s2, p) => s2 + Number(p.pay_amount), 0), 0);
+
+      document.getElementById('cdrMeta').innerHTML =
+        _metaCell('เริ่มสัญญา', _fmtDate(c.ctr_start)) +
+        _metaCell('สิ้นสุด',    _fmtDate(c.ctr_end)) +
+        _metaCell('ระยะเวลา',   monthsApart) +
+        _metaCell('ชำระรวม',    _fmtMoney(totalPaid));
+
+      /* ===== TAB: ภาพรวม ===== */
+      const dep = data.deposit;
+      const ci  = data.checkin;
+
+      document.getElementById('cdrTabOverview').innerHTML = `
+        <div class="cdr-section">
+          <div class="cdr-section-title">👤 ข้อมูลผู้เช่า</div>
+          <div class="cdr-grid">
+            ${_field('ชื่อ-นามสกุล', c.tnt_name)}
+            ${_field('เบอร์โทร', c.tnt_phone)}
+            ${_field('อายุ', c.tnt_age ? c.tnt_age + ' ปี' : '-')}
+            ${_field('ยานพาหนะ', c.tnt_vehicle || '-')}
+            ${_field('การศึกษา', c.tnt_education || '-')}
+            ${_field('คณะ / สาขา', c.tnt_faculty || '-')}
+            ${_field('ชั้นปี', c.tnt_year || '-')}
+            ${_field('ผู้ติดต่อฉุกเฉิน', c.tnt_parent || '-')}
+            ${_field('เบอร์ฉุกเฉิน', c.tnt_parentsphone || '-')}
+          </div>
+          ${c.tnt_address ? `<div class="cdr-field" style="margin-top:0.6rem;grid-column:1/-1">
+            <label>ที่อยู่</label><span>${c.tnt_address}</span></div>` : ''}
+        </div>
+
+        <div class="cdr-section">
+          <div class="cdr-section-title">🏠 ห้องพัก</div>
+          <div class="cdr-grid">
+            ${_field('ห้องเลขที่', c.room_number)}
+            ${_field('ประเภทห้อง', c.type_name || '-')}
+            ${_field('ค่าห้อง/เดือน', _fmtMoney(c.type_price))}
+          </div>
+        </div>
+
+        <div class="cdr-section">
+          <div class="cdr-section-title">📄 รายละเอียดสัญญา</div>
+          <div class="cdr-grid">
+            ${_field('เลขที่สัญญา', '#' + c.ctr_id)}
+            ${_field('วันเริ่มสัญญา', _fmtDate(c.ctr_start))}
+            ${_field('วันสิ้นสุด', _fmtDate(c.ctr_end))}
+            ${_field('สถานะ', si.label)}
+          </div>
+          ${c.contract_pdf_path ? `
+            <div style="margin-top:0.8rem;">
+              <a href="/${c.contract_pdf_path}" target="_blank" rel="noopener"
+                 style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;
+                        background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);
+                        color:#60a5fa;border-radius:8px;text-decoration:none;font-size:0.85rem;">
+                📄 เปิดเอกสารสัญญา PDF
+              </a>
+            </div>` : `<div style="margin-top:0.5rem;font-size:0.8rem;color:#475569;">ไม่มีเอกสารสัญญา PDF ในระบบ</div>`}
+        </div>
+
+        <div class="cdr-section">
+          <div class="cdr-section-title">💰 ค่ามัดจำ & เช็คอิน</div>
+          <div class="cdr-grid">
+            ${dep ? _field('ค่ามัดจำ', _fmtMoney(dep.bp_amount)) : _field('ค่ามัดจำ', '-')}
+            ${dep ? _field('สถานะมัดจำ', dep.bp_status === '1' ? '✓ ยืนยันแล้ว' : 'รอยืนยัน') : _field('สถานะมัดจำ', '-')}
+            ${ci  ? _field('วันเช็คอิน', _fmtDate(ci.checkin_date)) : _field('วันเช็คอิน', '-')}
+            ${ci  ? _field('มิเตอร์น้ำเริ่มต้น', ci.water_meter_start || '0') : ''}
+            ${ci  ? _field('มิเตอร์ไฟเริ่มต้น', ci.elec_meter_start || '0') : ''}
+          </div>
+          ${dep && dep.bp_proof ? `
+            <div style="margin-top:0.6rem;">
+              <a href="/${dep.bp_proof}" target="_blank" rel="noopener"
+                 style="font-size:0.82rem;color:#38bdf8;">📎 ดูหลักฐานการชำระมัดจำ</a>
+            </div>` : ''}
+        </div>
+      `;
+
+      /* ===== TAB: ค่าใช้จ่าย ===== */
+      const exps = data.expenses || [];
+      if (exps.length === 0) {
+        document.getElementById('cdrTabBilling').innerHTML =
+          '<div style="text-align:center;padding:3rem;color:#475569;">ยังไม่มีรายการค่าใช้จ่าย</div>';
+      } else {
+        document.getElementById('cdrTabBilling').innerHTML = exps.map(e => {
+          const st  = _expStatusInfo(e.exp_status);
+          const mth = e.exp_month
+            ? (() => { const p = e.exp_month.slice(0,7).split('-'); return p[1]+'/'+p[0]; })()
+            : '-';
+          const paidAmt = (e.payments || []).filter(p => p.pay_status === '1')
+            .reduce((s, p) => s + Number(p.pay_amount), 0);
+          const remaining = Math.max(0, Number(e.exp_total) - paidAmt);
+
+          return `
+          <div class="cdr-bill-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;">
+              <div>
+                <div style="font-size:0.75rem;color:#64748b;">บิลเดือน</div>
+                <div style="font-size:1rem;font-weight:700;color:#e2e8f0;">${mth}</div>
+              </div>
+              <span style="font-size:0.76rem;padding:0.22rem 0.6rem;border-radius:999px;
+                           background:${st.color}22;color:${st.color};border:1px solid ${st.color}44;">
+                ${st.label}
+              </span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;
+                        margin-bottom:0.75rem;font-size:0.8rem;">
+              <div><div style="color:#64748b;">ค่าห้อง</div>
+                   <div style="color:#e2e8f0;font-weight:600;">${_fmtMoney(e.room_price)}</div></div>
+              <div><div style="color:#64748b;">ค่าน้ำ&nbsp;(${e.exp_water_unit||0}&nbsp;หน่วย)</div>
+                   <div style="color:#38bdf8;font-weight:600;">${_fmtMoney(e.exp_water)}</div></div>
+              <div><div style="color:#64748b;">ค่าไฟ&nbsp;(${e.exp_elec_unit||0}&nbsp;หน่วย)</div>
+                   <div style="color:#fbbf24;font-weight:600;">${_fmtMoney(e.exp_elec_chg)}</div></div>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;font-weight:700;
+                        padding:0.45rem 0;border-top:1px solid rgba(255,255,255,0.08);
+                        margin-bottom:${(e.payments||[]).length?'0.6rem':'0'};">
+              <span style="color:#94a3b8;font-size:0.9rem;">ยอดรวม</span>
+              <span style="color:#f1f5f9;font-size:0.95rem;">${_fmtMoney(e.exp_total)}</span>
+            </div>
+
+            ${(e.payments||[]).length > 0 ? `
+              <div style="font-size:0.72rem;color:#64748b;margin-bottom:0.2rem;
+                          text-transform:uppercase;letter-spacing:.04em;">การชำระเงิน</div>
+              ${(e.payments||[]).map(p => `
+                <div class="cdr-pay-row">
+                  <div style="display:flex;flex-direction:column;gap:0.1rem;">
+                    <span style="color:${p.pay_status==='1'?'#22c55e':'#fbbf24'};
+                                 font-weight:600;font-size:0.82rem;">${_payStatusLabel(p.pay_status)}</span>
+                    <span style="color:#64748b;font-size:0.77rem;">
+                      ${_fmtDate(p.pay_date)}
+                      ${p.pay_remark ? ' · ' + p.pay_remark : ''}
+                    </span>
+                  </div>
+                  <div style="display:flex;align-items:center;gap:0.5rem;">
+                    <span style="color:#e2e8f0;font-weight:600;">${_fmtMoney(p.pay_amount)}</span>
+                    ${p.pay_proof ? `<a href="/${p.pay_proof}" target="_blank" rel="noopener"
+                       title="ดูหลักฐาน" style="color:#38bdf8;font-size:0.85rem;text-decoration:none;">📎</a>` : ''}
+                  </div>
+                </div>`).join('')}
+              <div style="display:flex;justify-content:space-between;padding:0.5rem 0;
+                          border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;
+                          margin-top:0.1rem;">
+                <span style="color:#64748b;">ชำระแล้ว / คงเหลือ</span>
+                <span>
+                  <span style="color:#22c55e;font-weight:600;">${_fmtMoney(paidAmt)}</span>
+                  ${remaining > 0
+                    ? ' <span style="color:#94a3b8;">/ </span><span style="color:#f87171;font-weight:600;">'+_fmtMoney(remaining)+'</span>'
+                    : ' <span style="color:#22c55e;">✓</span>'}
+                </span>
+              </div>` : `<div style="font-size:0.82rem;color:#475569;">ยังไม่มีการชำระ</div>`}
+          </div>`;
+        }).join('');
+      }
+
+      /* ===== TAB: มิเตอร์ ===== */
+      const utils = data.utility || [];
+      if (utils.length === 0) {
+        document.getElementById('cdrTabMeter').innerHTML =
+          '<div style="text-align:center;padding:3rem;color:#475569;">ยังไม่มีประวัติการจดมิเตอร์</div>';
+      } else {
+        document.getElementById('cdrTabMeter').innerHTML = `
+          <table class="cdr-meter-table">
+            <thead>
+              <tr>
+                <th>วันที่</th>
+                <th style="color:#38bdf8;">น้ำเริ่ม</th>
+                <th style="color:#38bdf8;">น้ำสิ้นสุด</th>
+                <th style="color:#38bdf8;">ใช้ (หน่วย)</th>
+                <th style="color:#fbbf24;">ไฟเริ่ม</th>
+                <th style="color:#fbbf24;">ไฟสิ้นสุด</th>
+                <th style="color:#fbbf24;">ใช้ (หน่วย)</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${utils.map(u => {
+                const wUsed = u.utl_water_end != null
+                  ? Math.max(0, (Number(u.utl_water_end)||0) - (Number(u.utl_water_start)||0)) : '-';
+                const eUsed = u.utl_elec_end != null
+                  ? Math.max(0, (Number(u.utl_elec_end)||0) - (Number(u.utl_elec_start)||0)) : '-';
+                return `<tr>
+                  <td>${_fmtDate(u.utl_date)}</td>
+                  <td>${u.utl_water_start ?? 0}</td>
+                  <td>${u.utl_water_end ?? '-'}</td>
+                  <td style="color:#38bdf8;font-weight:600;">${wUsed}</td>
+                  <td>${u.utl_elec_start ?? 0}</td>
+                  <td>${u.utl_elec_end ?? '-'}</td>
+                  <td style="color:#fbbf24;font-weight:600;">${eUsed}</td>
+                </tr>`;
+              }).join('')}
+            </tbody>
+          </table>
+        `;
+      }
+    }
     </script>
 </body>
 </html>
