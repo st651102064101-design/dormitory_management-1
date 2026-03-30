@@ -108,6 +108,7 @@ try {
 // บันทึกมิเตอร์
 $success = '';
 $error = '';
+$firstBillRooms = []; // Track rooms with first meter reading
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     try {
         $saved = 0;
@@ -176,6 +177,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                 $ctrId, $month, $year
             ]);
             
+            // Track first meter readings for display
+            if ($isFirstReading) {
+                $firstBillRooms[] = $ctrId;
+            }
             
             $saved++;
         } catch (PDOException $e) {
@@ -187,10 +192,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     $error = 'เกิดข้อผิดพลาดในการบันทึกมิเตอร์: ' . $e->getMessage();
 }
     if ($saved > 0) {
+        // Retrieve first bill details for display
+        $firstBills = [];
+        if (!empty($firstBillRooms)) {
+            $placeholders = implode(',', array_fill(0, count($firstBillRooms), '?'));
+            $billStmt = $pdo->prepare("
+                SELECT e.exp_id, e.exp_total, e.room_price, e.exp_elec_chg, e.exp_water,
+                       r.room_number, t.tnt_name
+                FROM expense e
+                INNER JOIN contract c ON e.ctr_id = c.ctr_id
+                LEFT JOIN room r ON c.room_id = r.room_id
+                LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
+                WHERE e.ctr_id IN ($placeholders)
+                  AND MONTH(e.exp_month) = ? 
+                  AND YEAR(e.exp_month) = ?
+            ");
+            $billParams = array_merge($firstBillRooms, [$month, $year]);
+            $billStmt->execute($billParams);
+            $firstBills = $billStmt->fetchAll(PDO::FETCH_ASSOC);
+        }
+        
         $_SESSION['success'] = "บันทึกสำเร็จ {$saved} ห้อง";
         if ($lockedRooms > 0) {
             $_SESSION['success'] .= " (ข้าม {$lockedRooms} ห้องที่บันทึกเดือนนี้แล้ว)";
         }
+        
+        // Store first bills in session for display
+        if (!empty($firstBills)) {
+            $_SESSION['first_bills'] = $firstBills;
+        }
+        
         $redirectQuery = "month=$month&year=$year&show=$showMode";
         if ($selectedCtrFilterActive) {
             $redirectQuery .= "&todo_only=1&ctr_id=" . $selectedCtrId;
@@ -713,10 +744,53 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
 
                 <?php if (isset($_SESSION['success'])): ?>
                 <div class="toast-msg success" id="toast"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
-                <script>setTimeout(function(){var t=document.getElementById('toast');if(t)t.remove();},3000);</script>
+                <script>setTimeout(function(){var t=document.getElementById('toast');if(t)t.remove();},5000);</script>
                 <?php endif; ?>
                 <?php if ($error): ?>
                 <div class="toast-msg error"><?php echo htmlspecialchars($error); ?></div>
+                <?php endif; ?>
+
+                <!-- First Bills Display Modal -->
+                <?php if (isset($_SESSION['first_bills']) && !empty($_SESSION['first_bills'])): ?>
+                <?php $firstBills = $_SESSION['first_bills']; unset($_SESSION['first_bills']); ?>
+                <div class="first-bills-modal" id="firstBillsModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;">
+                    <div class="first-bills-card" style="background:white;border-radius:16px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,0.3);color:#000;">
+                        <div style="padding:24px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
+                            <h2 style="margin:0;font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px;">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><line x1="22" y1="4" x2="12" y2="14.01"/></svg>
+                                บิลเดือนแรกที่สร้างขึ้นแล้ว
+                            </h2>
+                            <button onclick="document.getElementById('firstBillsModal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">×</button>
+                        </div>
+                        <div style="padding:20px;">
+                            <?php foreach ($firstBills as $bill): ?>
+                            <div style="margin-bottom:16px;padding:16px;background:#f9fafb;border-radius:8px;border-left:4px solid #10b981;">
+                                <div style="font-size:14px;color:#666;margin-bottom:8px;">ห้อง <strong><?php echo htmlspecialchars($bill['room_number']); ?></strong> - <?php echo htmlspecialchars($bill['tnt_name']); ?></div>
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;font-size:13px;">
+                                    <div style="background:white;padding:8px;border-radius:4px;">
+                                        <div style="color:#666;font-size:12px;margin-bottom:2px;">ค่าห้อง</div>
+                                        <div style="font-weight:600;color:#1f2937;font-size:14px;"><?php echo number_format((int)$bill['room_price'], 0); ?> ฿</div>
+                                    </div>
+                                    <div style="background:white;padding:8px;border-radius:4px;">
+                                        <div style="color:#666;font-size:12px;margin-bottom:2px;">ค่าสาธารณูปโภค</div>
+                                        <div style="font-weight:600;color:#1f2937;font-size:14px;"><?php echo number_format((int)($bill['exp_elec_chg']) + (int)($bill['exp_water']), 0); ?> ฿</div>
+                                    </div>
+                                </div>
+                                <div style="padding:8px;background:white;border-radius:4px;border-top:2px solid #e5e7eb;">
+                                    <div style="color:#666;font-size:12px;margin-bottom:4px;">ยอดรวมทั้งสิ้น</div>
+                                    <div style="font-weight:700;color:#059669;font-size:16px;"><?php echo number_format((int)$bill['exp_total'], 0); ?> ฿</div>
+                                </div>
+                            </div>
+                            <?php endforeach; ?>
+                            <div style="margin-top:20px;padding:12px;background:#eff6ff;border-radius:8px;border-left:4px solid #3b82f6;font-size:13px;color:#1e40af;">
+                                ✓ ใบบิลเดือนแรกได้ถูกสร้างเรียบร้อยแล้ว ผู้เช่าสามารถดูรายงานค่าใช้จ่ายได้
+                            </div>
+                        </div>
+                        <div style="padding:16px;text-align:right;border-top:1px solid #e5e7eb;">
+                            <button onclick="document.getElementById('firstBillsModal').remove()" style="background:#3b82f6;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;">เสร็จสิ้น</button>
+                        </div>
+                    </div>
+                </div>
                 <?php endif; ?>
 
                 <div class="meter-card">

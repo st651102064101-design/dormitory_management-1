@@ -150,6 +150,32 @@ try {
         $ctrId, $meterMonth, $meterYear,
     ]);
 
+    // ถ้าไม่มี expense record อยู่แล้ว ให้ INSERT ใหม่ (ไม่ใช่ครั้งแรก = มีค่าใช้จ่าย)
+    if ($updateExpStmt->rowCount() === 0 && !$isFirstReading) {
+        $roomStmt = $pdo->prepare("
+            SELECT rt.type_price
+            FROM contract c
+            LEFT JOIN room r ON c.room_id = r.room_id
+            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+            WHERE c.ctr_id = ?
+        ");
+        $roomStmt->execute([$ctrId]);
+        $roomRow = $roomStmt->fetch(PDO::FETCH_ASSOC);
+        $roomPrice = (int)($roomRow['type_price'] ?? 0);
+        $expTotal  = $roomPrice + $elecCost + $waterCost;
+        $expMonth  = sprintf('%04d-%02d-01', $meterYear, $meterMonth);
+        $insertExpStmt = $pdo->prepare("
+            INSERT INTO expense
+                (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water,
+                 room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '2', ?)
+        ");
+        $insertExpStmt->execute([
+            $expMonth, $elecUsed, $waterUsed, $rateElec, $rateWater,
+            $roomPrice, $elecCost, $waterCost, $expTotal, $ctrId,
+        ]);
+    }
+
     echo json_encode([
         'success'     => true,
         'message'     => 'บันทึกมิเตอร์สำเร็จ',

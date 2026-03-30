@@ -32,13 +32,9 @@ foreach ($contracts as $contract) {
   $ctr_end = $ctrEndDate->format('Y-m');
   // เริ่มคิดบิลรายเดือนเดือนถัดไปเสมอ
   $firstBillMonth = (clone $ctrStartDate)->modify('first day of next month')->format('Y-m');
-  // ตรวจสอบเดือนล่าสุดที่บันทึก
-  $lastExpStmt = $pdo->prepare("SELECT MAX(DATE_FORMAT(exp_month, '%Y-%m')) AS last_month FROM expense WHERE ctr_id = ?");
-  $lastExpStmt->execute([$ctr_id]);
-  $lastMonth = $lastExpStmt->fetchColumn();
-  // ถ้าไม่มีเลย ให้เริ่มจากเดือนแรกที่ควรคิดบิล
-  $nextMonth = $lastMonth ? (new DateTime($lastMonth . '-01'))->modify('+1 month')->format('Y-m') : $firstBillMonth;
-  // ถ้า nextMonth <= currentMonth และ nextMonth <= ctr_end ให้สร้างรายการใหม่
+  // วนสร้างทุกเดือนตั้งแต่ firstBillMonth ถึง currentMonth
+  // (ใช้ firstBillMonth เสมอ ไม่ใช่ last_month+1 เพื่อป้องกันเดือนที่หายไป)
+  $nextMonth = $firstBillMonth;
   while ($nextMonth <= $currentMonth && $nextMonth <= $ctr_end) {
     // ตรวจสอบว่ามีรายการแล้วหรือยัง
     $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM expense WHERE ctr_id = ? AND DATE_FORMAT(exp_month, '%Y-%m') = ?");
@@ -104,7 +100,7 @@ switch ($sortBy) {
 
 $availableMonths = [];
 try {
-  $monthStmt = $pdo->prepare("\n    SELECT DISTINCT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key\n    FROM expense e\n    LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n    LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n    WHERE c.ctr_status = '0'\n      AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n      AND e.exp_month IS NOT NULL\n      AND DATE_FORMAT(e.exp_month, '%Y-%m') <= :currentMonth\n      AND NOT (\n        DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m')\n      )\n    ORDER BY month_key DESC\n  ");
+  $monthStmt = $pdo->prepare("\n    SELECT DISTINCT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key\n    FROM expense e\n    LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n    LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n    WHERE c.ctr_status = '0'\n      AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n      AND e.exp_month IS NOT NULL\n      AND DATE_FORMAT(e.exp_month, '%Y-%m') <= :currentMonth\n    ORDER BY month_key DESC\n  ");
   $monthStmt->execute([':currentMonth' => $currentMonth]);
   $availableMonths = $monthStmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {}
@@ -124,7 +120,7 @@ if ($selectedMonth !== '' && preg_match('/^\d{4}-\d{2}$/', $selectedMonth) === 1
   $syncMonthInt = (int)$syncMonth;
 
   try {
-    $syncStmt = $pdo->prepare("\n      SELECT\n        e.exp_id,\n        e.room_price,\n        e.rate_elec,\n        e.exp_status,\n        u.utl_water_start,\n        u.utl_water_end,\n        u.utl_elec_start,\n        u.utl_elec_end\n      FROM expense e\n      LEFT JOIN utility u\n        ON u.ctr_id = e.ctr_id\n       AND YEAR(u.utl_date) = :syncYear\n       AND MONTH(u.utl_date) = :syncMonth\n      LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n      LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n      WHERE DATE_FORMAT(e.exp_month, '%Y-%m') = :syncMonthKey\n        AND c.ctr_status = '0'\n        AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n        AND NOT (\n          DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m')\n        )\n    ");
+    $syncStmt = $pdo->prepare("\n      SELECT\n        e.exp_id,\n        e.room_price,\n        e.rate_elec,\n        e.exp_status,\n        u.utl_water_start,\n        u.utl_water_end,\n        u.utl_elec_start,\n        u.utl_elec_end\n      FROM expense e\n      LEFT JOIN utility u\n        ON u.ctr_id = e.ctr_id\n       AND YEAR(u.utl_date) = :syncYear\n       AND MONTH(u.utl_date) = :syncMonth\n      LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n      LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n      WHERE DATE_FORMAT(e.exp_month, '%Y-%m') = :syncMonthKey\n        AND c.ctr_status = '0'\n        AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n    ");
     $syncStmt->execute([
       ':syncYear' => $syncYearInt,
       ':syncMonth' => $syncMonthInt,
@@ -194,9 +190,6 @@ $expenseSql = "\n  SELECT e.*,
       FROM tenant_workflow tw
       WHERE tw.ctr_id = c.ctr_id
         AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
-    )
-    AND NOT (
-      DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m')
     )";
 
 $expenseParams = [];

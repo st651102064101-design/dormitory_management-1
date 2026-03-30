@@ -759,6 +759,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>ผู้เช่า</th>
                                         <th>วันที่จอง</th>
                                         <th>ขั้นตอน</th>
+                                        <th>เหลือทำ</th>
                                         <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
@@ -769,12 +770,20 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $wizardStep = (int)($w['current_step'] ?? 0);
                                             $displayStep = ($wizardStep > 0) ? $wizardStep : 2;
                                             $wizardStepText = 'ขั้นตอนที่ ' . $displayStep;
+                                            // Determine remaining tasks based on current step
+                                            $remainingTasksWizard = '';
+                                            if ($displayStep == 2) $remainingTasksWizard = 'ยืนยันข้อมูลการเช่า';
+                                            elseif ($displayStep == 3) $remainingTasksWizard = 'จดมิเตอร์';
+                                            elseif ($displayStep == 4) $remainingTasksWizard = 'ชำระค่าประกัน';
+                                            elseif ($displayStep == 5) $remainingTasksWizard = 'ยืนยันค่าใช้จ่าย';
+                                            else $remainingTasksWizard = 'ทำให้เสร็จสิ้น';
                                         ?>
                                         <tr>
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($w['room_number'] ?? '-'); ?></strong></td>
                                             <td data-label="ผู้เช่า"><?php echo htmlspecialchars($w['tnt_name'] ?? '-'); ?></td>
                                             <td data-label="วันที่จอง"><?php echo !empty($w['bkg_date']) ? date('d/m/Y', strtotime((string)$w['bkg_date'])) : '-'; ?></td>
                                             <td data-label="ขั้นตอน"><span class="status-chip pending"><?php echo htmlspecialchars($wizardStepText); ?></span></td>
+                                            <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingTasksWizard); ?></td>
                                             <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="tenant_wizard.php?bkg_id=<?php echo (int)($w['bkg_id'] ?? 0); ?>">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
@@ -807,6 +816,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>ผู้เช่า</th>
                                         <th>วันที่จอง</th>
                                         <th>สถานะ</th>
+                                        <th>เหลือทำ</th>
                                         <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
@@ -822,6 +832,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                     <span class="status-chip checkedin">เข้าพักแล้ว</span>
                                                 <?php endif; ?>
                                             </td>
+                                            <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;">ยืนยันการจอง</td>
                                             <td data-label="จัดการ">
                                                 <a class="btn-action primary todo-manage-link" href="manage_booking.php?todo_only=1&status=1&bkg_id=<?php echo (int)$b['bkg_id']; ?>">จัดการ</a>
                                                 <button type="button" class="btn-action btn-danger todo-cancel-booking" data-bkgid="<?php echo (int)$b['bkg_id']; ?>" style="margin-left:0.5rem;padding:0.35rem 0.6rem;">ยกเลิก</button>
@@ -857,6 +868,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>ผู้เช่า</th>
                                         <th>น้ำ</th>
                                         <th>ไฟ</th>
+                                        <th>เหลือทำ</th>
                                         <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
@@ -865,6 +877,12 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $waterDone = !empty($u['utl_id']) && $u['utl_water_end'] !== null;
                                             $elecDone = !empty($u['utl_id']) && $u['utl_elec_end'] !== null;
                                             $utilityCtrId = (int)($u['ctr_id'] ?? 0);
+                                            // Determine remaining tasks
+                                            $remainingTasksUtility = '';
+                                            if (!$waterDone && !$elecDone) $remainingTasksUtility = 'จดน้ำและไฟ';
+                                            elseif (!$waterDone) $remainingTasksUtility = 'จดน้ำ';
+                                            elseif (!$elecDone) $remainingTasksUtility = 'จดไฟ';
+                                            else $remainingTasksUtility = '-';
                                         ?>
                                         <tr>
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($u['room_number'] ?? '-'); ?></strong></td>
@@ -883,6 +901,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                     <span class="status-chip not-done">✗ ยังไม่จด</span>
                                                 <?php endif; ?>
                                             </td>
+                                            <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingTasksUtility); ?></td>
                                             <td data-label="จัดการ">
                                                 <div class="utility-manage-actions">
                                                     <?php if (!$waterDone): ?>
@@ -925,6 +944,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>ยอดรวม</th>
                                         <th>ชำระแล้ว</th>
                                         <th>สถานะ</th>
+                                        <th>เหลือทำ</th>
                                         <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
@@ -936,11 +956,11 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $hasCompleteMeter = intval($exp['has_complete_meter'] ?? 0) === 1;
                                             $meterCtrId = (int)($exp['ctr_id'] ?? 0);
                                             $meterManageHref = ($meterCtrId > 0) ? ('manage_utility.php?todo_only=1&ctr_id=' . $meterCtrId) : 'manage_utility.php';
-                                            if (!$hasCompleteMeter) { $statusClass = 'unpaid'; $statusText = 'ยังไม่ได้จดมิเตอร์'; }
-                                            elseif ($hasPending) { $statusClass = 'pending'; $statusText = 'รอตรวจสอบ'; }
-                                            elseif ($paid >= $total && $total > 0) { $statusClass = 'paid'; $statusText = 'ชำระแล้ว'; }
-                                            elseif ($paid > 0) { $statusClass = 'partial'; $statusText = 'ชำระบางส่วน'; }
-                                            else { $statusClass = 'unpaid'; $statusText = 'รอชำระ'; }
+                                            if (!$hasCompleteMeter) { $statusClass = 'unpaid'; $statusText = 'ยังไม่ได้จดมิเตอร์'; $remainingExp = 'จดมิเตอร์'; }
+                                            elseif ($hasPending) { $statusClass = 'pending'; $statusText = 'รอตรวจสอบ'; $remainingExp = 'ตรวจสอบใบสลิป'; }
+                                            elseif ($paid >= $total && $total > 0) { $statusClass = 'paid'; $statusText = 'ชำระแล้ว'; $remainingExp = '-'; }
+                                            elseif ($paid > 0) { $statusClass = 'partial'; $statusText = 'ชำระบางส่วน'; $remainingExp = 'ชำระให้ครบ'; }
+                                            else { $statusClass = 'unpaid'; $statusText = 'รอชำระ'; $remainingExp = 'ชำระค่าใช้จ่าย'; }
                                         ?>
                                         <tr>
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($exp['room_number'] ?? '-'); ?></strong></td>
@@ -956,6 +976,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                     <span class="status-chip <?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
                                                 <?php endif; ?>
                                             </td>
+                                            <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingExp); ?></td>
                                             <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_expenses.php">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
@@ -989,10 +1010,21 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>จำนวนเงิน</th>
                                         <th>วันที่ชำระ</th>
                                         <th>สลิป</th>
+                                        <th>เหลือทำ</th>
                                         <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
                                         <?php foreach ($pendingPayments as $p): ?>
+                                        <?php
+                                             $remainingPay = '';
+                                             if (($p['payment_kind'] ?? '') === 'unpaid') {
+                                                 $remainingPay = 'ชำระเงิน';
+                                             } elseif (!empty($p['pay_proof'])) {
+                                                 $remainingPay = 'ตรวจสอบใบสลิป';
+                                             } else {
+                                                 $remainingPay = '-';
+                                             }
+                                        ?>
                                         <tr>
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($p['room_number'] ?? '-'); ?></strong></td>
                                             <td data-label="ผู้เช่า"><?php echo htmlspecialchars($p['tnt_name'] ?? '-'); ?></td>
@@ -1007,6 +1039,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                     <span style="color:rgba(255,255,255,0.3);">-</span>
                                                 <?php endif; ?>
                                             </td>
+                                            <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingPay); ?></td>
                                             <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_payments.php">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
@@ -1040,6 +1073,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <th>รายละเอียด</th>
                                         <th>วันที่แจ้ง</th>
                                         <th>สถานะ</th>
+                                        <th>เหลือทำ</th>
                                         <th>จัดการ</th>
                                     </tr></thead>
                                     <tbody>
@@ -1049,6 +1083,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $repairStatusClass = ($repairStatus === '1') ? 'repair-progress' : 'repair-pending';
                                             $repairStatusText = ($repairStatus === '1') ? 'กำลังซ่อม' : 'รอซ่อม';
                                             $repairDesc = trim((string)($rp['repair_desc'] ?? ''));
+                                            $remainingRepair = ($repairStatus === '1') ? 'รอเสร็จสิ้น' : 'ซ่อมแซม';
                                         ?>
                                         <tr>
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($rp['room_number'] ?? '-'); ?></strong></td>
@@ -1056,6 +1091,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             <td data-label="รายละเอียด"><?php echo htmlspecialchars($repairDesc !== '' ? $repairDesc : '-'); ?></td>
                                             <td data-label="วันที่แจ้ง"><?php echo !empty($rp['repair_date']) ? date('d/m/Y H:i', strtotime((string)$rp['repair_date'])) : '-'; ?></td>
                                             <td data-label="สถานะ"><span class="status-chip <?php echo $repairStatusClass; ?>"><?php echo $repairStatusText; ?></span></td>
+                                            <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingRepair); ?></td>
                                             <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_repairs.php">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>

@@ -36,7 +36,7 @@ try {
                         WHERE e_first.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
                             AND (
                                 c.ctr_start IS NULL
-                                OR DATE_FORMAT(e_first.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                OR DATE_FORMAT(e_first.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
                             )
                             AND e_first.exp_month = (
                                 SELECT MIN(e_min.exp_month)
@@ -44,7 +44,7 @@ try {
                                 WHERE e_min.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
                                     AND (
                                         c.ctr_start IS NULL
-                                        OR DATE_FORMAT(e_min.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                        OR DATE_FORMAT(e_min.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
                                     )
                             )
                             AND COALESCE(e_first.exp_status, '0') = '1'
@@ -119,7 +119,7 @@ try {
                                 WHERE e.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
                                     AND (
                                         c.ctr_start IS NULL
-                                        OR DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                        OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
                                     )
                                 ORDER BY e.exp_month ASC, e.exp_id DESC
                                 LIMIT 1
@@ -130,7 +130,7 @@ try {
                                 WHERE e.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
                                     AND (
                                         c.ctr_start IS NULL
-                                        OR DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                        OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
                                     )
                                 ORDER BY e.exp_month ASC, e.exp_id DESC
                                 LIMIT 1
@@ -1072,7 +1072,8 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 $contractStartRaw = (string)($tenant['ctr_start'] ?? '');
                                 $expectedFirstBillMonthRaw = '';
                                 if ($contractStartRaw !== '' && strtotime($contractStartRaw) !== false) {
-                                    $expectedFirstBillMonthRaw = date('Y-m-01', strtotime('first day of next month', strtotime($contractStartRaw)));
+                                    // บิลเดือนแรก = เดือนเดียวกับวันเริ่มสัญญา (ไม่ใช่เดือนถัดไป)
+                                    $expectedFirstBillMonthRaw = date('Y-m-01', strtotime($contractStartRaw));
                                 }
 
                                 $firstBillMonthRaw = (string)($tenant['first_exp_month'] ?? '');
@@ -1099,12 +1100,16 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     $billYearMonth = $expMonthDt->format('Y-m');
                                 }
                                 
-                                $prevYearMonth = $billYearMonth
-                                    ? date('Y-m', strtotime($billYearMonth . '-01 -1 month')) : null;
+                                // prevYearMonth = null เมื่อบิลเดือนแรก = เดือนที่เริ่มสัญญา (ไม่ต้องจดมิเตอร์ก่อนหน้า)
+                                $ctrStartYm = ($contractStartRaw !== '' && strtotime($contractStartRaw) !== false)
+                                    ? date('Y-m', strtotime($contractStartRaw)) : null;
+                                $prevYearMonth = ($billYearMonth && $ctrStartYm && $billYearMonth !== $ctrStartYm)
+                                    ? date('Y-m', strtotime($billYearMonth . '-01 -1 month'))
+                                    : null;
                                 
                                 // ตรวจสอบว่าจดมิเตอร์เดือนบิลแล้วหรือไม่ โดย query database โดยตรง
                                 $meterBillDone = false;
-                                if ($currentStepInt >= 4 && $billYearMonth !== null) {
+                                if (($step4 == 1 || $step5 == 1) && $billYearMonth !== null) {
                                     $billCheckStmt = $conn->prepare("
                                         SELECT COUNT(*) as cnt FROM utility 
                                         WHERE ctr_id = ? AND DATE_FORMAT(utl_date, '%Y-%m') = ?
@@ -1194,18 +1199,25 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                         $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
                                         $step5Tooltip = '5. บิลเดือนแรก (' . $firstBillMonthDisplay . ') รอตรวจสอบหลักฐาน';
                                     } elseif (!$meterBillDone) {
-                                        // ยังไม่จดมิเตอร์เดือนนี้ (หรือเดือนก่อน)
-                                        $step5CircleClass = 'meter-pending';
-                                        $meterSvg = '<svg class="meter-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
-                                            . '<rect x="3" y="11" width="18" height="10" rx="2" stroke="#34d399" stroke-width="2"/>'
-                                            . '<path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="#34d399" stroke-width="2" stroke-linecap="round"/>'
-                                            . '<circle cx="12" cy="16" r="1.5" fill="#34d399"/>'
-                                            . '</svg>';
-                                        $step5CircleLabel = $meterSvg;
-                                        $tooltipPrefix = !$meterPrevDone && $prevYearMonth !== null
-                                            ? '5. จดมิเตอร์ (' . date('m/Y', strtotime($prevYearMonth . '-01')) . ')'
-                                            : '5. ยังไม่จดมิเตอร์';
-                                        $step5Tooltip = $tooltipPrefix . ($firstBillMonthDisplay !== '-' ? ' (' . $firstBillMonthDisplay . ')' : '');
+                                        if ($meterPrevDone && !$firstBillDueReached && $prevYearMonth !== null) {
+                                            // จดมิเตอร์ต้นแล้ว (เดือนก่อน) แต่ยังไม่ถึงเดือนบิล — รอ
+                                            $step5CircleClass = 'wait';
+                                            $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
+                                            $step5Tooltip = '5. จดมิเตอร์ต้นบันทึกแล้ว - รอถึงเดือนบิล (' . $firstBillMonthDisplay . ')';
+                                        } else {
+                                            // ยังไม่จดมิเตอร์เดือนนี้ (หรือเดือนก่อน)
+                                            $step5CircleClass = 'meter-pending';
+                                            $meterSvg = '<svg class="meter-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
+                                                . '<rect x="3" y="11" width="18" height="10" rx="2" stroke="#34d399" stroke-width="2"/>'
+                                                . '<path d="M7 11V8a5 5 0 0 1 10 0v3" stroke="#34d399" stroke-width="2" stroke-linecap="round"/>'
+                                                . '<circle cx="12" cy="16" r="1.5" fill="#34d399"/>'
+                                                . '</svg>';
+                                            $step5CircleLabel = $meterSvg;
+                                            $tooltipPrefix = !$meterPrevDone && $prevYearMonth !== null
+                                                ? '5. จดมิเตอร์ (' . date('m/Y', strtotime($prevYearMonth . '-01')) . ')'
+                                                : '5. ยังไม่จดมิเตอร์';
+                                            $step5Tooltip = $tooltipPrefix . ($firstBillMonthDisplay !== '-' ? ' (' . $firstBillMonthDisplay . ')' : '');
+                                        }
                                     } else {
                                         $step5CircleClass = 'wait';
                                         $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
@@ -2001,7 +2013,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         const dd = String(today.getDate()).padStart(2, '0');
         const defaultStart = `${yyyy}-${mm}-${dd}`;
 
-        const startDate = toDateInputValue(bkgCheckinDate) || toDateInputValue(ctrStart) || defaultStart;
+        // ถ้ามีสัญญาอยู่แล้ว (ctrStart) ให้ใช้วันที่จากสัญญาเสมอ
+        // ถ้ายังไม่มีสัญญา ให้ใช้ bkgCheckinDate เป็นค่าแนะนำ
+        const startDate = toDateInputValue(ctrStart) || toDateInputValue(bkgCheckinDate) || defaultStart;
         document.getElementById('modal_contract_start').value = startDate;
 
         let durationMonths = 6;
@@ -2200,6 +2214,28 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 // ถ้า first bill และ latest bill เป็นเดือนเดียวกัน (expense เดียวกัน) → แสดงแค่ตารางเดียว
                 const isSameExpense = firstBill?.has_expense && latestBill?.has_expense
                     && Number(firstBill.expense_id) === Number(latestBill.expense_id);
+
+                // Check if first bill (or latest if same) is fully paid
+                const billToCheck = isSameExpense ? latestBill : firstBill;
+                const billTotal = Number(billToCheck?.expense_total || 0);
+                const billApproved = Number(billToCheck?.approved_amount || 0);
+                const isFirstBillFullyPaid = billTotal > 0 && billApproved >= billTotal;
+
+                // Disable update meter button if first bill is fully paid
+                const moSaveBtn = document.getElementById('moSaveBtn');
+                if (moSaveBtn && isFirstBillFullyPaid) {
+                    moSaveBtn.style.display = 'none';
+                    moSaveBtn.disabled = true;
+                    // Show payment complete message
+                    const meterNoticeBlock = document.getElementById('meterNoticeBlock');
+                    if (meterNoticeBlock) {
+                        meterNoticeBlock.innerHTML = '<span class="billing-inline-icon" style="color:#4ade80;"><svg class="billing-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M1 4.5L8.5 12 15 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><span>ชำระค่าเสร็จแล้ว - ไม่สามารถอัปเดตมิเตอร์วดได้</span></span>';
+                        meterNoticeBlock.style.background = 'rgba(34, 197, 94, 0.08)';
+                        meterNoticeBlock.style.borderColor = 'rgba(34, 197, 94, 0.25)';
+                        meterNoticeBlock.style.color = '#4ade80';
+                        meterNoticeBlock.style.display = '';
+                    }
+                }
 
                 if (isSameExpense) {
                     firstBillPaymentsSection.style.display = 'none';
