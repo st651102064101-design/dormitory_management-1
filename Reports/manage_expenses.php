@@ -30,8 +30,8 @@ foreach ($contracts as $contract) {
   $ctrEndDate = new DateTime($contract['ctr_end']);
   $ctr_start = $ctrStartDate->format('Y-m');
   $ctr_end = $ctrEndDate->format('Y-m');
-  // เริ่มคิดบิลรายเดือนเดือนถัดไปเสมอ
-  $firstBillMonth = (clone $ctrStartDate)->modify('first day of next month')->format('Y-m');
+  // เริ่มคิดบิลรายเดือนตั้งแต่เดือนที่เริ่มสัญญา (ไม่ใช่เดือนถัดไป)
+  $firstBillMonth = $ctrStartDate->format('Y-m');
   // วนสร้างทุกเดือนตั้งแต่ firstBillMonth ถึง currentMonth
   // (ใช้ firstBillMonth เสมอ ไม่ใช่ last_month+1 เพื่อป้องกันเดือนที่หายไป)
   $nextMonth = $firstBillMonth;

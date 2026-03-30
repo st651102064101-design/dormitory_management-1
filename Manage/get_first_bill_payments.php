@@ -99,7 +99,8 @@ try {
     $ctrStart = $contract['ctr_start'] ?? null;
     $expectedFirstMonth = null;
     if (!empty($ctrStart) && strtotime((string)$ctrStart) !== false) {
-        $expectedFirstMonth = date('Y-m-01', strtotime('first day of next month', strtotime((string)$ctrStart)));
+        // บิลเดือนแรก = เดือนเดียวกับวันเริ่มสัญญา (ไม่ใช่เดือนถัดไป)
+        $expectedFirstMonth = date('Y-m-01', strtotime((string)$ctrStart));
     }
 
     $expenseSql = "
@@ -109,7 +110,7 @@ try {
     ";
 
     if ($ctrStart) {
-        $expenseSql .= " AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(:ctr_start, '%Y-%m')";
+        $expenseSql .= " AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(:ctr_start, '%Y-%m')";
     }
 
     $expenseSql .= " ORDER BY e.exp_month ASC, e.exp_id DESC LIMIT 1";
@@ -129,7 +130,7 @@ try {
         WHERE e.ctr_id = :ctr_id
           AND (
             :ctr_start_null IS NULL
-            OR DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(:ctr_start_cmp, '%Y-%m')
+            OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(:ctr_start_cmp, '%Y-%m')
           )
           AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
         ORDER BY e.exp_month DESC, e.exp_id DESC
@@ -153,7 +154,7 @@ try {
             WHERE e.ctr_id = :ctr_id
               AND (
                 :ctr_start_null IS NULL
-                OR DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(:ctr_start_cmp, '%Y-%m')
+                OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(:ctr_start_cmp, '%Y-%m')
               )
             ORDER BY e.exp_month DESC, e.exp_id DESC
             LIMIT 1

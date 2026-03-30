@@ -672,61 +672,93 @@ foreach ($contracts as $contract) {
       /* =====================================================
          CONTRACT DETAIL DRAWER
          ===================================================== */
+      /* --- CSS variables (dark default) --- */
+      #cdrDrawer {
+        --cdr-bg:          #1e293b;
+        --cdr-border:      rgba(255,255,255,0.10);
+        --cdr-text-pri:    #f1f5f9;
+        --cdr-text-body:   #e2e8f0;
+        --cdr-text-muted:  #64748b;
+        --cdr-text-dim:    #475569;
+        --cdr-divider:     rgba(255,255,255,0.08);
+        --cdr-card-bg:     rgba(255,255,255,0.025);
+        --cdr-card-bdr:    rgba(255,255,255,0.09);
+        --cdr-card-hover:  rgba(255,255,255,0.16);
+        --cdr-close-bg:    rgba(255,255,255,0.07);
+        --cdr-close-bdr:   rgba(255,255,255,0.10);
+      }
+      /* --- Light theme override --- */
+      html.light-theme #cdrDrawer {
+        --cdr-bg:          #ffffff;
+        --cdr-border:      rgba(0,0,0,0.10);
+        --cdr-text-pri:    #0f172a;
+        --cdr-text-body:   #1e293b;
+        --cdr-text-muted:  #64748b;
+        --cdr-text-dim:    #94a3b8;
+        --cdr-divider:     rgba(0,0,0,0.07);
+        --cdr-card-bg:     rgba(0,0,0,0.025);
+        --cdr-card-bdr:    rgba(0,0,0,0.09);
+        --cdr-card-hover:  rgba(0,0,0,0.06);
+        --cdr-close-bg:    rgba(0,0,0,0.05);
+        --cdr-close-bdr:   rgba(0,0,0,0.12);
+      }
+      html.light-theme #cdrOverlay { background: rgba(0,0,0,0.35) !important; }
+
       #cdrDrawer * { box-sizing: border-box; }
       .cdr-tab {
         flex: 1; padding: 0.75rem 0.5rem;
         background: none; border: none; border-bottom: 2px solid transparent;
-        color: #94a3b8; cursor: pointer; font-size: 0.9rem;
+        color: var(--cdr-text-muted); cursor: pointer; font-size: 0.9rem;
         transition: color .18s, border-color .18s;
       }
-      .cdr-tab.active { color: #38bdf8; border-bottom-color: #38bdf8; font-weight: 600; }
-      .cdr-tab:hover:not(.active) { color: #cbd5e1; }
+      .cdr-tab.active { color: #0ea5e9; border-bottom-color: #0ea5e9; font-weight: 600; }
+      html.light-theme .cdr-tab.active { color: #0284c7; border-bottom-color: #0284c7; }
+      .cdr-tab:hover:not(.active) { color: var(--cdr-text-body); }
       .cdr-section { margin-bottom: 1.5rem; }
       .cdr-section-title {
         font-size: 0.72rem; font-weight: 700; letter-spacing: .06em;
-        color: #475569; text-transform: uppercase; margin-bottom: 0.65rem;
-        padding-bottom: 0.4rem; border-bottom: 1px solid rgba(255,255,255,0.07);
+        color: var(--cdr-text-muted); text-transform: uppercase; margin-bottom: 0.65rem;
+        padding-bottom: 0.4rem; border-bottom: 1px solid var(--cdr-divider);
       }
       .cdr-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem 1.25rem; }
       .cdr-field label {
-        font-size: 0.75rem; color: #64748b; display: block; margin-bottom: 0.1rem;
+        font-size: 0.75rem; color: var(--cdr-text-muted); display: block; margin-bottom: 0.1rem;
       }
-      .cdr-field span { font-size: 0.9rem; color: #e2e8f0; font-weight: 500; }
+      .cdr-field span { font-size: 0.9rem; color: var(--cdr-text-body); font-weight: 500; }
       .cdr-bill-card {
-        border: 1px solid rgba(255,255,255,0.09);
+        border: 1px solid var(--cdr-card-bdr);
         border-radius: 10px; padding: 1rem 1.1rem;
         margin-bottom: 0.85rem;
-        background: rgba(255,255,255,0.025);
+        background: var(--cdr-card-bg);
         transition: border-color .2s;
       }
-      .cdr-bill-card:hover { border-color: rgba(255,255,255,0.18); }
+      .cdr-bill-card:hover { border-color: var(--cdr-card-hover); }
       .cdr-pay-row {
         display: flex; justify-content: space-between; align-items: center;
-        padding: 0.45rem 0; border-top: 1px solid rgba(255,255,255,0.06);
+        padding: 0.45rem 0; border-top: 1px solid var(--cdr-divider);
         font-size: 0.83rem;
       }
       .cdr-meter-table { width: 100%; border-collapse: collapse; font-size: 0.83rem; }
       .cdr-meter-table th {
-        text-align: left; color: #64748b; font-weight: 600;
-        padding: 0.4rem 0.55rem; border-bottom: 1px solid rgba(255,255,255,0.1);
+        text-align: left; color: var(--cdr-text-muted); font-weight: 600;
+        padding: 0.4rem 0.55rem; border-bottom: 1px solid var(--cdr-border);
       }
       .cdr-meter-table td {
         padding: 0.45rem 0.55rem;
-        border-top: 1px solid rgba(255,255,255,0.05);
-        color: #e2e8f0;
+        border-top: 1px solid var(--cdr-divider);
+        color: var(--cdr-text-body);
       }
       .cdr-meta-cell {
         flex: 1; padding: 0.7rem 1rem;
-        border-right: 1px solid rgba(255,255,255,0.07);
+        border-right: 1px solid var(--cdr-divider);
       }
       .cdr-meta-cell:last-child { border-right: none; }
       .cdr-meta-cell .cdr-meta-label {
-        font-size: 0.7rem; color: #64748b; margin-bottom: 0.15rem;
+        font-size: 0.7rem; color: var(--cdr-text-muted); margin-bottom: 0.15rem;
       }
       .cdr-meta-cell .cdr-meta-val {
-        font-size: 0.92rem; color: #e2e8f0; font-weight: 600;
+        font-size: 0.92rem; color: var(--cdr-text-body); font-weight: 600;
       }
-      /* row hover hint */
       #table-contracts tbody tr.cdr-clickable {
         cursor: pointer;
         transition: background .15s;
@@ -1489,32 +1521,32 @@ foreach ($contracts as $contract) {
     <!-- ========= CONTRACT DETAIL DRAWER ========= -->
     <div id="cdrOverlay"
          onclick="closeContractDetail()"
-         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:1040;"></div>
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1040;"></div>
 
     <div id="cdrDrawer"
          style="display:none;position:fixed;top:0;right:0;height:100%;width:min(600px,100vw);
-                background:#1e293b;border-left:1px solid rgba(255,255,255,0.1);
-                z-index:1050;box-shadow:-6px 0 40px rgba(0,0,0,0.55);
+                background:var(--cdr-bg);border-left:1px solid var(--cdr-border);
+                z-index:1050;box-shadow:-6px 0 40px rgba(0,0,0,0.3);
                 flex-direction:column;overflow:hidden;">
 
       <!-- Header -->
-      <div style="padding:1.1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,0.1);
+      <div style="padding:1.1rem 1.4rem;border-bottom:1px solid var(--cdr-border);
                   display:flex;align-items:flex-start;justify-content:space-between;
-                  flex-shrink:0;gap:0.75rem;">
+                  flex-shrink:0;gap:0.75rem;background:var(--cdr-bg);">
         <div style="min-width:0;">
           <div id="cdrTitle"
-               style="font-size:1.1rem;font-weight:700;color:#f1f5f9;
+               style="font-size:1.1rem;font-weight:700;color:var(--cdr-text-pri);
                       white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">---</div>
           <div id="cdrSubtitle"
-               style="font-size:0.82rem;color:#64748b;margin-top:0.2rem;">---</div>
+               style="font-size:0.82rem;color:var(--cdr-text-muted);margin-top:0.2rem;">---</div>
         </div>
         <div style="display:flex;align-items:center;gap:0.6rem;flex-shrink:0;">
           <span id="cdrStatusBadge"
                 style="font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:999px;
                        font-weight:600;white-space:nowrap;">---</span>
           <button onclick="closeContractDetail()"
-                  style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);
-                         color:#94a3b8;width:30px;height:30px;border-radius:7px;
+                  style="background:var(--cdr-close-bg);border:1px solid var(--cdr-close-bdr);
+                         color:var(--cdr-text-muted);width:30px;height:30px;border-radius:7px;
                          cursor:pointer;font-size:1rem;line-height:1;flex-shrink:0;"
                   title="ปิด">✕</button>
         </div>
@@ -1522,18 +1554,20 @@ foreach ($contracts as $contract) {
 
       <!-- Quick-stat strip -->
       <div id="cdrMeta"
-           style="display:flex;border-bottom:1px solid rgba(255,255,255,0.08);flex-shrink:0;"></div>
+           style="display:flex;border-bottom:1px solid var(--cdr-divider);flex-shrink:0;
+                  background:var(--cdr-bg);"></div>
 
       <!-- Tabs -->
-      <div style="display:flex;border-bottom:1px solid rgba(255,255,255,0.1);flex-shrink:0;">
+      <div style="display:flex;border-bottom:1px solid var(--cdr-border);flex-shrink:0;
+                  background:var(--cdr-bg);">
         <button class="cdr-tab active" data-tab="overview" onclick="switchCdrTab('overview')">ภาพรวม</button>
         <button class="cdr-tab"        data-tab="billing"  onclick="switchCdrTab('billing')">ค่าใช้จ่าย</button>
         <button class="cdr-tab"        data-tab="meter"    onclick="switchCdrTab('meter')">มิเตอร์น้ำ/ไฟ</button>
       </div>
 
       <!-- Scrollable body -->
-      <div id="cdrBody" style="overflow-y:auto;flex:1;padding:1.2rem 1.4rem;">
-        <div id="cdrLoading" style="text-align:center;padding:3rem 0;color:#475569;">⏳ กำลังโหลด...</div>
+      <div id="cdrBody" style="overflow-y:auto;flex:1;padding:1.2rem 1.4rem;background:var(--cdr-bg);">
+        <div id="cdrLoading" style="text-align:center;padding:3rem 0;color:var(--cdr-text-dim);">⏳ กำลังโหลด...</div>
         <div id="cdrTabOverview" class="cdr-tab-panel" style="display:none;"></div>
         <div id="cdrTabBilling"  class="cdr-tab-panel" style="display:none;"></div>
         <div id="cdrTabMeter"    class="cdr-tab-panel" style="display:none;"></div>
@@ -1545,6 +1579,23 @@ foreach ($contracts as $contract) {
        CONTRACT DETAIL DRAWER — JavaScript
        ============================================================ */
     let _cdrCurrentTab = 'overview';
+
+    /* ---- Theme helper: returns color set for current theme ---- */
+    function _getCdrTheme() {
+      const light = document.documentElement.classList.contains('light-theme');
+      return {
+        primary: light ? '#0f172a'              : '#f1f5f9',
+        body:    light ? '#1e293b'              : '#e2e8f0',
+        muted:   '#64748b',
+        dim:     light ? '#94a3b8'              : '#475569',
+        divider: light ? 'rgba(0,0,0,0.07)'    : 'rgba(255,255,255,0.08)',
+        water:   light ? '#0284c7'             : '#38bdf8',
+        elec:    light ? '#d97706'             : '#fbbf24',
+        green:   light ? '#16a34a'             : '#22c55e',
+        red:     light ? '#dc2626'             : '#f87171',
+        link:    light ? '#0284c7'             : '#38bdf8',
+      };
+    }
 
     function openContractDetail(ctrId) {
       const drawer  = document.getElementById('cdrDrawer');
@@ -1633,6 +1684,7 @@ foreach ($contracts as $contract) {
     /* ---- Renderer ---- */
     function _renderCdrDrawer(data) {
       const c = data.contract;
+      const t = _getCdrTheme();
 
       /* Header */
       document.getElementById('cdrTitle').textContent =
@@ -1709,10 +1761,10 @@ foreach ($contracts as $contract) {
               <a href="/${c.contract_pdf_path}" target="_blank" rel="noopener"
                  style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.4rem 0.9rem;
                         background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.3);
-                        color:#60a5fa;border-radius:8px;text-decoration:none;font-size:0.85rem;">
+                        color:${t.link};border-radius:8px;text-decoration:none;font-size:0.85rem;">
                 📄 เปิดเอกสารสัญญา PDF
               </a>
-            </div>` : `<div style="margin-top:0.5rem;font-size:0.8rem;color:#475569;">ไม่มีเอกสารสัญญา PDF ในระบบ</div>`}
+            </div>` : `<div style="margin-top:0.5rem;font-size:0.8rem;color:${t.dim};">ไม่มีเอกสารสัญญา PDF ในระบบ</div>`}
         </div>
 
         <div class="cdr-section">
@@ -1727,7 +1779,7 @@ foreach ($contracts as $contract) {
           ${dep && dep.bp_proof ? `
             <div style="margin-top:0.6rem;">
               <a href="/${dep.bp_proof}" target="_blank" rel="noopener"
-                 style="font-size:0.82rem;color:#38bdf8;">📎 ดูหลักฐานการชำระมัดจำ</a>
+                 style="font-size:0.82rem;color:${t.link};">📎 ดูหลักฐานการชำระมัดจำ</a>
             </div>` : ''}
         </div>
       `;
@@ -1736,7 +1788,7 @@ foreach ($contracts as $contract) {
       const exps = data.expenses || [];
       if (exps.length === 0) {
         document.getElementById('cdrTabBilling').innerHTML =
-          '<div style="text-align:center;padding:3rem;color:#475569;">ยังไม่มีรายการค่าใช้จ่าย</div>';
+          `<div style="text-align:center;padding:3rem;color:${t.dim};">ยังไม่มีรายการค่าใช้จ่าย</div>`;
       } else {
         document.getElementById('cdrTabBilling').innerHTML = exps.map(e => {
           const st  = _expStatusInfo(e.exp_status);
@@ -1751,8 +1803,8 @@ foreach ($contracts as $contract) {
           <div class="cdr-bill-card">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.8rem;">
               <div>
-                <div style="font-size:0.75rem;color:#64748b;">บิลเดือน</div>
-                <div style="font-size:1rem;font-weight:700;color:#e2e8f0;">${mth}</div>
+                <div style="font-size:0.75rem;color:${t.muted};">บิลเดือน</div>
+                <div style="font-size:1rem;font-weight:700;color:${t.body};">${mth}</div>
               </div>
               <span style="font-size:0.76rem;padding:0.22rem 0.6rem;border-radius:999px;
                            background:${st.color}22;color:${st.color};border:1px solid ${st.color}44;">
@@ -1762,51 +1814,51 @@ foreach ($contracts as $contract) {
 
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;
                         margin-bottom:0.75rem;font-size:0.8rem;">
-              <div><div style="color:#64748b;">ค่าห้อง</div>
-                   <div style="color:#e2e8f0;font-weight:600;">${_fmtMoney(e.room_price)}</div></div>
-              <div><div style="color:#64748b;">ค่าน้ำ&nbsp;(${e.exp_water_unit||0}&nbsp;หน่วย)</div>
-                   <div style="color:#38bdf8;font-weight:600;">${_fmtMoney(e.exp_water)}</div></div>
-              <div><div style="color:#64748b;">ค่าไฟ&nbsp;(${e.exp_elec_unit||0}&nbsp;หน่วย)</div>
-                   <div style="color:#fbbf24;font-weight:600;">${_fmtMoney(e.exp_elec_chg)}</div></div>
+              <div><div style="color:${t.muted};">ค่าห้อง</div>
+                   <div style="color:${t.body};font-weight:600;">${_fmtMoney(e.room_price)}</div></div>
+              <div><div style="color:${t.muted};">ค่าน้ำ&nbsp;(${e.exp_water_unit||0}&nbsp;หน่วย)</div>
+                   <div style="color:${t.water};font-weight:600;">${_fmtMoney(e.exp_water)}</div></div>
+              <div><div style="color:${t.muted};">ค่าไฟ&nbsp;(${e.exp_elec_unit||0}&nbsp;หน่วย)</div>
+                   <div style="color:${t.elec};font-weight:600;">${_fmtMoney(e.exp_elec_chg)}</div></div>
             </div>
 
             <div style="display:flex;justify-content:space-between;font-weight:700;
-                        padding:0.45rem 0;border-top:1px solid rgba(255,255,255,0.08);
+                        padding:0.45rem 0;border-top:1px solid ${t.divider};
                         margin-bottom:${(e.payments||[]).length?'0.6rem':'0'};">
-              <span style="color:#94a3b8;font-size:0.9rem;">ยอดรวม</span>
-              <span style="color:#f1f5f9;font-size:0.95rem;">${_fmtMoney(e.exp_total)}</span>
+              <span style="color:${t.muted};font-size:0.9rem;">ยอดรวม</span>
+              <span style="color:${t.primary};font-size:0.95rem;">${_fmtMoney(e.exp_total)}</span>
             </div>
 
             ${(e.payments||[]).length > 0 ? `
-              <div style="font-size:0.72rem;color:#64748b;margin-bottom:0.2rem;
+              <div style="font-size:0.72rem;color:${t.muted};margin-bottom:0.2rem;
                           text-transform:uppercase;letter-spacing:.04em;">การชำระเงิน</div>
               ${(e.payments||[]).map(p => `
                 <div class="cdr-pay-row">
                   <div style="display:flex;flex-direction:column;gap:0.1rem;">
-                    <span style="color:${p.pay_status==='1'?'#22c55e':'#fbbf24'};
+                    <span style="color:${p.pay_status==='1'?t.green:t.elec};
                                  font-weight:600;font-size:0.82rem;">${_payStatusLabel(p.pay_status)}</span>
-                    <span style="color:#64748b;font-size:0.77rem;">
+                    <span style="color:${t.muted};font-size:0.77rem;">
                       ${_fmtDate(p.pay_date)}
                       ${p.pay_remark ? ' · ' + p.pay_remark : ''}
                     </span>
                   </div>
                   <div style="display:flex;align-items:center;gap:0.5rem;">
-                    <span style="color:#e2e8f0;font-weight:600;">${_fmtMoney(p.pay_amount)}</span>
+                    <span style="color:${t.body};font-weight:600;">${_fmtMoney(p.pay_amount)}</span>
                     ${p.pay_proof ? `<a href="/${p.pay_proof}" target="_blank" rel="noopener"
-                       title="ดูหลักฐาน" style="color:#38bdf8;font-size:0.85rem;text-decoration:none;">📎</a>` : ''}
+                       title="ดูหลักฐาน" style="color:${t.link};font-size:0.85rem;text-decoration:none;">📎</a>` : ''}
                   </div>
                 </div>`).join('')}
               <div style="display:flex;justify-content:space-between;padding:0.5rem 0;
-                          border-top:1px solid rgba(255,255,255,0.08);font-size:0.85rem;
+                          border-top:1px solid ${t.divider};font-size:0.85rem;
                           margin-top:0.1rem;">
-                <span style="color:#64748b;">ชำระแล้ว / คงเหลือ</span>
+                <span style="color:${t.muted};">ชำระแล้ว / คงเหลือ</span>
                 <span>
-                  <span style="color:#22c55e;font-weight:600;">${_fmtMoney(paidAmt)}</span>
+                  <span style="color:${t.green};font-weight:600;">${_fmtMoney(paidAmt)}</span>
                   ${remaining > 0
-                    ? ' <span style="color:#94a3b8;">/ </span><span style="color:#f87171;font-weight:600;">'+_fmtMoney(remaining)+'</span>'
-                    : ' <span style="color:#22c55e;">✓</span>'}
+                    ? ' <span style="color:' + t.dim + ';">/ </span><span style="color:' + t.red + ';font-weight:600;">'+_fmtMoney(remaining)+'</span>'
+                    : ' <span style="color:' + t.green + ';">✓</span>'}
                 </span>
-              </div>` : `<div style="font-size:0.82rem;color:#475569;">ยังไม่มีการชำระ</div>`}
+              </div>` : `<div style="font-size:0.82rem;color:${t.dim};">ยังไม่มีการชำระ</div>`}
           </div>`;
         }).join('');
       }
@@ -1815,19 +1867,19 @@ foreach ($contracts as $contract) {
       const utils = data.utility || [];
       if (utils.length === 0) {
         document.getElementById('cdrTabMeter').innerHTML =
-          '<div style="text-align:center;padding:3rem;color:#475569;">ยังไม่มีประวัติการจดมิเตอร์</div>';
+          `<div style="text-align:center;padding:3rem;color:${t.dim};">ยังไม่มีประวัติการจดมิเตอร์</div>`;
       } else {
         document.getElementById('cdrTabMeter').innerHTML = `
           <table class="cdr-meter-table">
             <thead>
               <tr>
                 <th>วันที่</th>
-                <th style="color:#38bdf8;">น้ำเริ่ม</th>
-                <th style="color:#38bdf8;">น้ำสิ้นสุด</th>
-                <th style="color:#38bdf8;">ใช้ (หน่วย)</th>
-                <th style="color:#fbbf24;">ไฟเริ่ม</th>
-                <th style="color:#fbbf24;">ไฟสิ้นสุด</th>
-                <th style="color:#fbbf24;">ใช้ (หน่วย)</th>
+                <th style="color:${t.water};">น้ำเริ่ม</th>
+                <th style="color:${t.water};">น้ำสิ้นสุด</th>
+                <th style="color:${t.water};">ใช้ (หน่วย)</th>
+                <th style="color:${t.elec};">ไฟเริ่ม</th>
+                <th style="color:${t.elec};">ไฟสิ้นสุด</th>
+                <th style="color:${t.elec};">ใช้ (หน่วย)</th>
               </tr>
             </thead>
             <tbody>
@@ -1840,10 +1892,10 @@ foreach ($contracts as $contract) {
                   <td>${_fmtDate(u.utl_date)}</td>
                   <td>${u.utl_water_start ?? 0}</td>
                   <td>${u.utl_water_end ?? '-'}</td>
-                  <td style="color:#38bdf8;font-weight:600;">${wUsed}</td>
+                  <td style="color:${t.water};font-weight:600;">${wUsed}</td>
                   <td>${u.utl_elec_start ?? 0}</td>
                   <td>${u.utl_elec_end ?? '-'}</td>
-                  <td style="color:#fbbf24;font-weight:600;">${eUsed}</td>
+                  <td style="color:${t.elec};font-weight:600;">${eUsed}</td>
                 </tr>`;
               }).join('')}
             </tbody>
