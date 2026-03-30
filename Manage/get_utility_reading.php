@@ -64,9 +64,15 @@ try {
 
     $prevWater = $prev ? (int)$prev['utl_water_end'] : 0;
     $prevElec  = $prev ? (int)$prev['utl_elec_end']  : 0;
-    
-    // ตรวจสอบว่าเป็นการจดมิเตอร์ครั้งแรกหรือไม่ (ไม่มีการบันทึกใด ๆ มาก่อน)
-    $isFirstReading = !$prev;  // $prev will be null if no previous record exists
+
+    // การจดมิเตอร์ครั้งแรก = เดือนเป้าหมาย ตรงกับเดือนเริ่มสัญญา (ctr_start) เท่านั้น
+    // ไม่ใช่ "ไม่มี utility เดือนก่อน" เพราะเดือนแรกสุดไม่มี utility อยู่แล้ว
+    $ctrRow = $pdo->prepare("SELECT ctr_start FROM contract WHERE ctr_id = ? LIMIT 1");
+    $ctrRow->execute([$ctrId]);
+    $ctrData = $ctrRow->fetch(PDO::FETCH_ASSOC);
+    $ctrStartYm = $ctrData ? date('Y-m', strtotime((string)$ctrData['ctr_start'])) : null;
+    $isFirstReading = $ctrStartYm !== null
+        && date('Y-m', strtotime($targetMonthStart)) === $ctrStartYm;
 
     // ตรวจสอบว่าบันทึกเดือนนี้แล้วหรือยัง
     $currStmt = $pdo->prepare(
@@ -82,6 +88,15 @@ try {
     if ($curr) {
         $prevWater = (int)$curr['utl_water_start'];
         $prevElec = (int)$curr['utl_elec_start'];
+    } elseif (!$prev) {
+        // ไม่มีทั้ง utility เดือนนี้และเดือนก่อน — ใช้ค่า checkin_record เป็นค่าเริ่มต้น
+        $chkStmt = $pdo->prepare("SELECT water_meter_start, elec_meter_start FROM checkin_record WHERE ctr_id = ? LIMIT 1");
+        $chkStmt->execute([$ctrId]);
+        $chkRow = $chkStmt->fetch(PDO::FETCH_ASSOC);
+        if ($chkRow && $chkRow['water_meter_start'] !== null) {
+            $prevWater = (int)$chkRow['water_meter_start'];
+            $prevElec  = (int)$chkRow['elec_meter_start'];
+        }
     }
 
     echo json_encode([
