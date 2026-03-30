@@ -34,15 +34,15 @@ $currentYear = (int)date('Y');
 $currentMonth = (int)date('n');
 
 try {
-    // ดึงข้อมูลที่อยู่ก่อนหน้า + เดือนปัจจุบัน + เดือนถัดไป (เพื่อให้สามารถเห็นข้อมูลที่บันทึกล่วงหน้าได้)
-    $periodStmt = $pdo->query("\n        SELECT DISTINCT YEAR(utl_date) AS y, MONTH(utl_date) AS m\n        FROM utility\n        WHERE utl_date IS NOT NULL\n        ORDER BY y DESC, m DESC\n    ");
+    // ดึงข้อมูลเฉพาะเดือนปัจจุบัน + เดือนที่ผ่านมา (ไม่มีเดือนอนาคต)
+    $periodStmt = $pdo->query("\n        SELECT DISTINCT YEAR(utl_date) AS y, MONTH(utl_date) AS m\n        FROM utility\n        WHERE utl_date IS NOT NULL\n        AND DATE_FORMAT(utl_date, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')\n        ORDER BY y DESC, m DESC\n    ");
     $periods = $periodStmt->fetchAll(PDO::FETCH_ASSOC);
 
     foreach ($periods as $period) {
         $periodYear = (int)$period['y'];
         $periodMonth = (int)$period['m'];
         
-        // อนุญาตเดือนปัจจุบัน เดือนถัดไป และเดือนที่ผ่านมา (ไม่ข้ามวันตัดสิน)
+        // เพิ่มเดือนที่แล้ว + เดือนปัจจุบัน (ไม่รวมเดือนอนาคต)
         if (!isset($availableMonthsByYear[$periodYear])) {
             $availableMonthsByYear[$periodYear] = [];
             $availableYears[] = $periodYear;
