@@ -134,7 +134,15 @@ try {
                                     )
                                 ORDER BY e.exp_month ASC, e.exp_id DESC
                                 LIMIT 1
-                        ) AS first_exp_status
+                        ) AS first_exp_status,
+                        (
+                                SELECT e.exp_status
+                                FROM expense e
+                                WHERE e.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                                    AND DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+                                ORDER BY e.exp_id DESC
+                                LIMIT 1
+                        ) AS current_exp_status
         FROM booking b
         INNER JOIN tenant t ON b.tnt_id = t.tnt_id
         LEFT JOIN (
@@ -1101,6 +1109,11 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 $firstBillOverdue = in_array($firstExpStatus, ['3', '4']);
                                 $firstBillUnpaid  = in_array($firstExpStatus, ['0', '3', '4']);
 
+                                // Check if current month is also paid
+                                $currentExpStatus = (string)($tenant['current_exp_status'] ?? '');
+                                $currentBillPaid  = ($currentExpStatus === '1');
+                                $currentMonthDisplay = date('m/Y', strtotime(date('Y-m-d')));
+
                                 // --- มิเตอร์: เช็คว่าจดเดือนบิล + เดือนก่อนไว้แล้วหรือยัง ---
                                 $ctrIdInt      = (int)($tenant['ctr_id'] ?? 0);
                                 $currentStepInt = (int)($tenant['current_step'] ?? 1);
@@ -1131,9 +1144,22 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     $meterBillDone = ($billCheckResult['cnt'] ?? 0) > 0;
                                 }
                                 // เมื่อบิลเดือนแรก = เดือนเริ่มสัญญา: checkin คือการจดมิเตอร์ครั้งแรก
-                                // ไม่ต้องมี utility record แยกต่างหาก — ถือว่าจดมิเตอร์แล้วเมื่อยืนยัน step 5
+                                // ไม่ต้องมี utility record แยกต่างหาก — ถือว่าจดมิเตอร์แล้วเมื่อมี checkin record พร้อมข้อมูลมิเตอร์
                                 if (!$meterBillDone && $step5 == 1 && $billYearMonth !== null && $ctrStartYm !== null && $billYearMonth === $ctrStartYm) {
-                                    $meterBillDone = true;
+                                    // ตรวจสอบว่า checkin record มี meter data
+                                    $checkinCheckStmt = $conn->prepare("
+                                        SELECT water_meter_start, elec_meter_start 
+                                        FROM checkin_record 
+                                        WHERE ctr_id = ? 
+                                        ORDER BY checkin_id DESC 
+                                        LIMIT 1
+                                    ");
+                                    $checkinCheckStmt->execute([$ctrIdInt]);
+                                    $checkinData = $checkinCheckStmt->fetch(PDO::FETCH_ASSOC);
+                                    // ถ้า checkin มีข้อมูลมิเตอร์ ถือว่าจดมิเตอร์แล้ว
+                                    if ($checkinData && $checkinData['water_meter_start'] !== null && $checkinData['elec_meter_start'] !== null) {
+                                        $meterBillDone = true;
+                                    }
                                 }
                                 
                                 // ตรวจสอบว่าจดมิเตอร์เดือนก่อนหน้าแล้วหรือไม่
@@ -1342,7 +1368,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                             <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo $tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now')); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now')); ?>', '<?php echo htmlspecialchars((string)($tenant['checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars((string)($tenant['water_meter_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars((string)($tenant['elec_meter_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>')">เช็คอิน</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
                                         <?php elseif ($currentStep == 5): ?>
-                                            <?php if ($step5 && $firstBillPaid): ?>
+                                            <?php if ($step5 && $firstBillPaid && $currentBillPaid && $firstBillMonthDisplay !== $currentMonthDisplay): ?>
+                                                <span style="color: #16a34a; font-weight: 600;">✓ ชำระเงินเดือนแรก (<?php echo htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>) และเดือนปัจจุบัน (<?php echo htmlspecialchars($currentMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>) แล้ว</span>
+                                            <?php elseif ($step5 && $firstBillPaid): ?>
                                                 <span style="color: #16a34a; font-weight: 600;">✓ บิลเดือนแรกชำระแล้ว (<?php echo htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>
                                             <?php elseif ($step5 && $firstBillWaiting): ?>
                                                 <button type="button"
@@ -1636,7 +1664,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 </div>
                                 <input type="number" id="meterWaterInput" min="0" max="9999999" placeholder="เลขมิเตอร์ใหม่"
                                     style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.6);border:1px solid rgba(96,165,250,0.4);border-radius:7px;color:#f8fafc;padding:0.5rem 0.65rem;font-size:0.9rem;outline:none;"
-                                    oninput="updateMeterPreview()">
+                                    oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); updateMeterPreview()">
                             </div>
                             <!-- Elec -->
                             <div>
@@ -1648,7 +1676,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 </div>
                                 <input type="number" id="meterElecInput" min="0" max="99999" placeholder="เลขมิเตอร์ใหม่"
                                     style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.6);border:1px solid rgba(251,191,36,0.4);border-radius:7px;color:#f8fafc;padding:0.5rem 0.65rem;font-size:0.9rem;outline:none;"
-                                    oninput="updateMeterPreview()">
+                                    oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); updateMeterPreview()">
                             </div>
                         </div>
                         <!-- preview -->
@@ -1709,6 +1737,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                         <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;">ค่าก่อน: <span id="moPrevWater" style="color:#f8fafc;font-weight:600;">...</span></div>
                         <input type="number" id="moWaterInput" min="0" max="9999999" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(96,165,250,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
+                            oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)"
                             onfocus="this.style.borderColor='#60a5fa'" onblur="this.style.borderColor='rgba(96,165,250,0.4)'" oninput="updateMoPreview()">
                     </div>
                     <div>
@@ -1716,6 +1745,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                         <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;">ค่าก่อน: <span id="moPrevElec" style="color:#f8fafc;font-weight:600;">...</span></div>
                         <input type="number" id="moElecInput" min="0" max="99999" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(251,191,36,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
+                            oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)"
                             onfocus="this.style.borderColor='#fbbf24'" onblur="this.style.borderColor='rgba(251,191,36,0.4)'" oninput="updateMoPreview()">
                     </div>
                 </div>
@@ -2564,7 +2594,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     document.getElementById('meterWaterInput').disabled = false;
                     document.getElementById('meterElecInput').disabled  = false;
                     updateMeterPreview();
-                    // โหลดและแสดงรายการบิล
+                    // โหลดและแสดงรายการบิล เฉพาะเมื่อจดมิเตอร์แล้วเท่านั้น
                     document.getElementById('billSectionsWrapper').style.display = '';
                     document.getElementById('meterNoticeBlock').style.display = 'none';
                     refreshBillingPayments(_meterCtrId);
@@ -2580,6 +2610,12 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                         noticeDiv.style.background = 'rgba(52, 211, 153, 0.08)';
                         noticeDiv.style.borderColor = 'rgba(52, 211, 153, 0.25)';
                         noticeDiv.style.color = '#4ade80';
+                    } else {
+                        const noticeDiv = document.getElementById('meterNoticeBlock');
+                        noticeDiv.innerHTML = '<span class="billing-inline-icon" style="color:#ef4444;"><svg class="billing-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><line x1="12" y1="8" x2="12" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><line x1="12" y1="16" x2="12" y2="16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/></svg><span>ยังไม่ได้จดมิเตอร์ — ไม่ได้มีข้อมูล</span></span>';
+                        noticeDiv.style.background = 'rgba(239, 68, 68, 0.08)';
+                        noticeDiv.style.borderColor = 'rgba(239, 68, 68, 0.25)';
+                        noticeDiv.style.color = '#ef4444';
                     }
                     document.getElementById('meterNoticeBlock').style.display = '';
                 }

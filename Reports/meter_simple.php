@@ -300,7 +300,7 @@ $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.�
                         <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" 
                                class="water" placeholder="<?php echo str_pad((string)(int)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" 
                                value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>"
-                               min="<?php echo $r['water_old']; ?>" max="9999999">
+                               min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)">
                         <div class="old-val">เดิม: <?php echo str_pad((string)(int)$r['water_old'], 7, '0', STR_PAD_LEFT); ?></div>
                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
@@ -310,7 +310,7 @@ $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.�
                         <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" 
                                class="electric" placeholder="<?php echo str_pad((string)(int)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>"
                                value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>"
-                               min="<?php echo $r['elec_old']; ?>" max="99999">
+                               min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)">
                         <div class="old-val">เดิม: <?php echo str_pad((string)(int)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?></div>
                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                     </div>

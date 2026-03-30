@@ -390,22 +390,23 @@ foreach ($rooms as $room) {
     $currentStmt->execute([$room['ctr_id'], $month, $year]);
     $current = $currentStmt->fetch(PDO::FETCH_ASSOC);
     
-    // Check if เคยบันทึกจริง ๆ (มิเตอร์มีค่า != 0) หรือเพียง placeholder (0→0)
+    // Check if มี utility record สำหรับเดือนนี้ (รวมถึง first reading ที่ start == end)
+    $hasRecord = ($current !== false);
+    // Check if มีค่าจริง (start != end) — ใช้สำหรับ water_old override
     $hasRealData = $current && (
         ((int)$current['utl_water_end'] !== (int)$current['utl_water_start']) ||
         ((int)$current['utl_elec_end'] !== (int)$current['utl_elec_start'])
     );
     
-    // ให้สามารถจดมิเตอร์ได้ทันทีจากขั้นตอนใด ๆ ของ workflow
-    // ถ้า hasRealData = true แสดงค่าสิ้นสุด ถ้า false แสดง empty string (input field ว่าง)
-    $water_new = $hasRealData ? (int)$current['utl_water_end'] : '';
-    $elec_new = $hasRealData ? (int)$current['utl_elec_end'] : '';
-    $saved = $hasRealData ? true : false;
-    // ล็อคเฉพาะเดือนที่ผ่านมาที่บันทึกแล้วเท่านั้น ถ้ายังไม่เคยบันทึกให้เปิดให้กรอกได้
-    $meterBlocked = $isPastMonth && $hasRealData;
+    // แสดงค่า input จาก utility record (รวมถึง first reading ที่ start == end)
+    $water_new = $hasRecord ? (int)$current['utl_water_end'] : '';
+    $elec_new = $hasRecord ? (int)$current['utl_elec_end'] : '';
+    $saved = $hasRecord;
+    // ล็อคเดือนที่ผ่านมาทั้งหมดที่มี utility record แล้ว ถ้ายังไม่มีให้กรอกได้
+    $meterBlocked = $isPastMonth && $hasRecord;
     
     // Fallback: ถ้าเดือนปัจจุบันยังไม่บันทึก แต่เดือนถัดไปบันทึกแล้ว → ใช้ค่าจากเดือนถัดไป
-    if (!$hasRealData && $water_new === '') {
+    if (!$hasRecord && $water_new === '') {
         $nextMonth = $month < 12 ? $month + 1 : 1;
         $nextYear = $month < 12 ? $year : $year + 1;
         $nextStmt = $pdo->prepare("SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ? ORDER BY utl_date DESC LIMIT 1");
@@ -985,7 +986,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                                 }
                                             }
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" <?php echo ($r['saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)" <?php echo ($r['saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
@@ -1045,7 +1046,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                                 }
                                             }
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" <?php echo ($r['saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)" <?php echo ($r['saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">

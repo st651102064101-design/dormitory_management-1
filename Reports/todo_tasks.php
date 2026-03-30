@@ -1040,7 +1040,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                 <?php endif; ?>
                                             </td>
                                             <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingPay); ?></td>
-                                            <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_payments.php">จัดการ</a></td>
+                                            <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_payments.php?room=<?php echo urlencode((string)($p['room_number'] ?? '')); ?>&status=<?php echo ($p['payment_kind'] ?? '') === 'unpaid' ? 'unpaid' : '0'; ?>&filter_month=all">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>

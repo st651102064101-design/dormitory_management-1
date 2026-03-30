@@ -75,8 +75,8 @@ try {
   }
 } catch (PDOException $e) {}
 
-// รับค่า filter จาก query parameter
-$filterStatus = isset($_GET['status']) ? $_GET['status'] : '';
+// รับค่า filter จาก query parameter — default filter to status='0' (awaiting verification)
+$filterStatus = isset($_GET['status']) ? $_GET['status'] : '0';
 $filterMonth = isset($_GET['filter_month']) ? $_GET['filter_month'] : '';
 $filterYear = isset($_GET['filter_year']) ? $_GET['filter_year'] : '';
 $filterRoom = isset($_GET['room']) ? $_GET['room'] : '';
@@ -2604,9 +2604,6 @@ $filterRoomOptions = array_values($filterRoomOptions);
                 <div class="pcp-bar-fill" id="pcpBarFill" style="width:0%" data-target="<?php echo $verifiedPct; ?>"></div>
               </div>
               <div class="pcp-legend">
-                <?php if ($stats['verified'] > 0): ?>
-                  <span><span class="pcp-dot verified"></span>ตรวจสอบแล้ว <?php echo number_format($stats['verified']); ?> รายการ</span>
-                <?php endif; ?>
                 <?php if ($pendingOnlyCount > 0): ?>
                   <span><span class="pcp-dot pending"></span>รอตรวจสอบ <?php echo number_format($pendingOnlyCount); ?> รายการ</span>
                 <?php endif; ?>
@@ -2623,7 +2620,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
           <section class="manage-panel">
             <!-- Status Filter Tabs -->
             <div class="payment-filter-tabs" id="paymentFilterTabs">
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="">ทั้งหมด <span class="tab-count"><?php echo $totalPaymentCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="">ทั้งหมด <span class="tab-count"><?php echo $pendingOnlyCount + $unpaidOnlyCount; ?></span></button>
               <?php if ($pendingOnlyCount > 0): ?>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
               <?php endif; ?>
@@ -2885,7 +2882,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
       };
 
       // store the current status filter in a JS variable instead of a hidden input
-      let paymentsActiveStatus = paymentsDefaultFilters.status || '';
+      let paymentsActiveStatus = paymentsDefaultFilters.status !== undefined && paymentsDefaultFilters.status !== '' ? paymentsDefaultFilters.status : '';
 
       let paymentsDataTable = null;
       let paymentsSourceRows = [];
@@ -3315,8 +3312,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
 
       // utility: update DOM row/card badge and counts
       function updatePaymentRowStatus(payId, newStatus, oldStatus) {
-        const selector = `[data-pay-id="${payId}"]`;
-        document.querySelectorAll(selector).forEach(function(el) {
+        function patchRowEl(el) {
           el.dataset.status = newStatus;
           const badge = el.querySelector('.status-badge');
           if (badge) {
@@ -3325,17 +3321,38 @@ $filterRoomOptions = array_values($filterRoomOptions);
             badge.className = 'status-badge ' + statusClass;
             badge.textContent = statusText;
           }
+          // Remove verify button so it doesn't re-appear after re-filter
+          const verifyBtn = el.querySelector('.btn-verify');
+          if (verifyBtn) verifyBtn.remove();
+        }
+
+        // Patch live DOM rows/cards
+        document.querySelectorAll(`[data-pay-id="${payId}"]`).forEach(patchRowEl);
+
+        // Patch the snapshot array so applyFilters rebuilds with updated data
+        paymentsSourceRows = paymentsSourceRows.map(function(row) {
+          if (String(row.getAttribute('data-pay-id')) === String(payId)) {
+            const clone = row.cloneNode(true);
+            patchRowEl(clone);
+            return clone;
+          }
+          return row;
         });
 
-        // update tab counts (all, old, new)
-        adjustTabCount('', 0); // no change for tổng
+        // update tab counts
         if (oldStatus !== newStatus) {
           if (oldStatus !== '') adjustTabCount(oldStatus, -1);
           if (newStatus !== '') adjustTabCount(newStatus, +1);
         }
 
-        // re-run the filtering to reflect any active filters
-        applyFilters({ skipReload: true });
+        // Switch to "ทั้งหมด" tab so the verified row stays visible
+        paymentsActiveStatus = '';
+        document.querySelectorAll('.payment-filter-tab').forEach(function(t) {
+          t.classList.toggle('active', t.dataset.status === '');
+        });
+
+        // Re-render table with updated snapshot (no page navigation, preserve URL)
+        applyFilters({ skipReload: true, updateHistory: false });
       }
 
       // Delete payment

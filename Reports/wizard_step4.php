@@ -245,11 +245,11 @@ if ($settingsStmt) {
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
                         <div class="form-group">
                             <label>มิเตอร์น้ำเริ่มต้น *</label>
-                            <input type="number" name="water_meter_start" step="1" min="0" max="9999999" required placeholder="0">
+                            <input type="number" name="water_meter_start" step="1" min="0" max="9999999" required placeholder="0" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)">
                         </div>
                         <div class="form-group">
                             <label>มิเตอร์ไฟเริ่มต้น *</label>
-                            <input type="number" name="elec_meter_start" step="1" min="0" max="99999" required placeholder="0">
+                            <input type="number" name="elec_meter_start" step="1" min="0" max="99999" required placeholder="0" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)">
                         </div>
                     </div>
 

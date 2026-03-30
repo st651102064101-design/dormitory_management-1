@@ -140,10 +140,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('ไม่พบบิลที่ระบุ');
             }
 
-            $meterCheckStmt = $pdo->prepare("\n                SELECT 1\n                FROM utility\n                WHERE ctr_id = ?\n                  AND YEAR(utl_date) = YEAR(?)\n                  AND MONTH(utl_date) = MONTH(?)\n                  AND utl_water_end IS NOT NULL\n                  AND utl_elec_end IS NOT NULL\n                LIMIT 1\n            ");
-            $meterCheckStmt->execute([$contract['ctr_id'], (string)$expense['exp_month'], (string)$expense['exp_month']]);
-            if (!$meterCheckStmt->fetchColumn()) {
-                throw new Exception('บิลนี้ยังไม่ได้จดมิเตอร์ครบ จึงยังไม่สามารถชำระได้');
+            // ข้ามการตรวจมิเตอร์สำหรับบิลเดือนแรก (ctr_start) เพราะใช้ค่าจาก checkin record
+            $expMonthYm = date('Y-m', strtotime((string)$expense['exp_month']));
+            $isFirstBill = ($expMonthYm === $firstBillMonth);
+            if (!$isFirstBill) {
+                $meterCheckStmt = $pdo->prepare("
+                    SELECT 1
+                    FROM utility
+                    WHERE ctr_id = ?
+                      AND YEAR(utl_date) = YEAR(?)
+                      AND MONTH(utl_date) = MONTH(?)
+                      AND utl_water_end IS NOT NULL
+                      AND utl_elec_end IS NOT NULL
+                    LIMIT 1
+                ");
+                $meterCheckStmt->execute([$contract['ctr_id'], (string)$expense['exp_month'], (string)$expense['exp_month']]);
+                if (!$meterCheckStmt->fetchColumn()) {
+                    throw new Exception('บิลนี้ยังไม่ได้จดมิเตอร์ครบ จึงยังไม่สามารถชำระได้');
+                }
             }
 
             $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') FOR UPDATE");
@@ -190,14 +204,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     FROM expense
                     WHERE ctr_id = ?
                                                 AND exp_status IN ('0', '3', '4')
-                                                AND EXISTS (
-                                                        SELECT 1
-                                                        FROM utility u
-                                                        WHERE u.ctr_id = expense.ctr_id
-                                                            AND YEAR(u.utl_date) = YEAR(expense.exp_month)
-                                                            AND MONTH(u.utl_date) = MONTH(expense.exp_month)
-                                                            AND u.utl_water_end IS NOT NULL
-                                                            AND u.utl_elec_end IS NOT NULL
+                                                AND (
+                                                        DATE_FORMAT(exp_month, '%Y-%m') = ?
+                                                        OR EXISTS (
+                                                            SELECT 1
+                                                            FROM utility u
+                                                            WHERE u.ctr_id = expense.ctr_id
+                                                                AND YEAR(u.utl_date) = YEAR(expense.exp_month)
+                                                                AND MONTH(u.utl_date) = MONTH(expense.exp_month)
+                                                                AND u.utl_water_end IS NOT NULL
+                                                                AND u.utl_elec_end IS NOT NULL
+                                                        )
                                                 )
                       AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
                       AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
@@ -214,7 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
                 ORDER BY e.exp_month DESC
             ");
-            $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
+            $stmt->execute([$contract['ctr_id'], $firstBillMonth, $firstBillMonth, $currentBillMonth]);
             $unpaidExpenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
         
