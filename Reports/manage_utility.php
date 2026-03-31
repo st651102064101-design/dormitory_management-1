@@ -1089,9 +1089,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             flex-shrink: 0;
             transition: transform 0.4s cubic-bezier(.34,1.56,.64,1);
             filter: drop-shadow(0 0 3px rgba(99,102,241,0.4));
+            stroke: #374151 !important;
         }
-        .view-toggle-btn:hover svg { transform: rotate(22deg) scale(1.2); }
-        .view-toggle-btn.active svg { filter: drop-shadow(0 0 5px rgba(168,85,247,0.75)); }
+        .view-toggle-btn:hover svg { transform: rotate(22deg) scale(1.2); stroke: #374151 !important; }
+        .view-toggle-btn.active svg { filter: drop-shadow(0 0 5px rgba(168,85,247,0.75)); stroke: #374151 !important; }
         /* shimmer sweep */
         .view-toggle-btn .vtb-shimmer {
             position: absolute;

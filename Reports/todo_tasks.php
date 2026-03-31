@@ -57,7 +57,7 @@ try {
         $bookings = [];
     }
 
-    // === Tab 2: จดมิเตอร์ (ห้องที่ยังไม่จด) ===
+    // === Tab 2: จดมิเตอร์ (ห้องที่ยังไม่จดสำหรับเดือนปัจจุบัน) ===
     try {
         $utilityStmt = $pdo->query("
             SELECT r.room_id, r.room_number, rt.type_name AS roomtype_name,
@@ -73,20 +73,15 @@ try {
             LEFT JOIN room r ON c.room_id = r.room_id
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
             LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-            LEFT JOIN tenant_workflow tw ON t.tnt_id = tw.tnt_id
             INNER JOIN checkin_record cr ON cr.ctr_id = c.ctr_id
-            -- billing month = first day of month after contract start
+            -- จดมิเตอร์เดือนปัจจุบัน
             LEFT JOIN utility u_bill ON u_bill.ctr_id = c.ctr_id
-                AND DATE_FORMAT(u_bill.utl_date, '%Y-%m') = DATE_FORMAT(
-                    DATE_ADD(DATE_FORMAT(c.ctr_start, '%Y-%m-01'), INTERVAL 1 MONTH), '%Y-%m'
-                )
+                AND DATE_FORMAT(u_bill.utl_date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
             WHERE (u_bill.utl_id IS NULL OR u_bill.utl_water_end IS NULL OR u_bill.utl_elec_end IS NULL)
-            AND COALESCE(tw.step_3_confirmed, 0) = 1
-            -- billing month must be within 2 months from today
-            AND DATE_FORMAT(
-                DATE_ADD(DATE_FORMAT(c.ctr_start, '%Y-%m-01'), INTERVAL 1 MONTH), '%Y-%m'
-            ) <= DATE_FORMAT(DATE_ADD(CURDATE(), INTERVAL 2 MONTH), '%Y-%m')
-            ORDER BY r.room_number ASC
+            -- สัญญาต้องครอบคลุมเดือนปัจจุบัน
+            AND c.ctr_start <= LAST_DAY(CURDATE())
+            AND c.ctr_end >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
+            ORDER BY CAST(r.room_number AS UNSIGNED) ASC
         ");
         $utilities = $utilityStmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (Exception $e) {

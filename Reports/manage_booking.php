@@ -344,29 +344,25 @@ try {
 
       window.loadMoreRooms = function() {
         const hiddenRooms = document.querySelectorAll('.room-card.hidden-room');
-        const totalRooms = document.querySelectorAll('.room-card').length;
         let showCount = 0;
-        
-        hiddenRooms.forEach((room, index) => {
+        hiddenRooms.forEach((room) => {
           if (showCount < 5) {
             room.classList.remove('hidden-room');
             showCount++;
           }
         });
-        
-        try {
-          localStorage.setItem('bookingVisibleRooms', String(Math.min(5 + showCount, totalRooms)));
-        } catch (e) {}
-        
-        const remaining = totalRooms - Math.min(5 + showCount, totalRooms);
+        const remaining = document.querySelectorAll('.room-card.hidden-room').length;
         const remainingCountEl = document.getElementById('remainingCount');
         const loadMoreBtn = document.getElementById('loadMoreBtn');
-        
-        if (remaining > 0 && remainingCountEl) {
-          remainingCountEl.textContent = remaining;
-        } else if (loadMoreBtn) {
-          loadMoreBtn.classList.add('hidden');
+        if (remaining > 0) {
+          if (remainingCountEl) remainingCountEl.textContent = remaining;
+        } else {
+          if (loadMoreBtn) loadMoreBtn.classList.add('hidden');
         }
+        try {
+          const totalRooms = document.querySelectorAll('.room-card').length;
+          localStorage.setItem('bookingVisibleRooms', String(totalRooms - remaining));
+        } catch (e) {}
       };
 
       window.closeBookingModal = function() {
@@ -741,17 +737,31 @@ try {
       
       /* ===== THEME VARIABLES ===== */
       :root {
-        --card-bg: linear-gradient(135deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));
-        --card-border: rgba(255,255,255,0.08);
-        --card-shadow: 0 15px 35px rgba(3,7,18,0.4);
-        --text-primary: #f5f8ff;
-        --text-secondary: rgba(255,255,255,0.7);
-        --text-muted: rgba(255,255,255,0.5);
-        --accent-blue: #60a5fa;
-        --accent-green: #22c55e;
-        --accent-red: #ef4444;
-        --accent-purple: #a78bfa;
-        --stat-bg: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95));
+        --card-bg: linear-gradient(145deg, #ffffff 0%, #f0f4f8 100%);
+        --card-border: rgba(0,0,0,0.08);
+        --card-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+        --text-primary: #1a202c;
+        --text-secondary: #4a5568;
+        --text-muted: #a0aec0;
+        --accent-blue: #3182ce;
+        --accent-green: #38a169;
+        --accent-red: #e53e3e;
+        --accent-purple: #805ad5;
+        --stat-bg: linear-gradient(145deg, #ffffff 0%, #f7fafc 100%);
+        /* Warm dormitory tones */
+        --warm-cream: #fdf6ee;
+        --warm-peach: #ffecd2;
+        --warm-wood: #c4956a;
+        --warm-blue: #81d4fa;
+        --warm-sky: #e3f2fd;
+        --surface-raised: #ffffff;
+        --surface-sunken: #f7fafc;
+        --border-light: #e2e8f0;
+        --border-card: #d6dce5;
+        --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
+        --shadow-md: 0 4px 14px rgba(0,0,0,0.1);
+        --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+        --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.08);
       }
       
       /* Light Theme Variables */
@@ -3527,6 +3537,491 @@ try {
           font-size: 0.78rem;
         }
       }
+
+      /* ================================================================
+         REALISTIC BRIGHT DORMITORY THEME - Override
+         ================================================================ */
+      
+      /* === Global surfaces === */
+      body, body.reports-page, .app-main, .app-main * {
+        --text-primary: #1a202c;
+        --text-secondary: #4a5568;
+        --text-muted: #a0aec0;
+      }
+      
+      .manage-panel {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 20px !important;
+        box-shadow: 0 2px 12px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04) !important;
+        color: #1a202c !important;
+      }
+      
+      .section-header h1 {
+        color: #1a202c !important;
+      }
+      .section-header p {
+        color: #718096 !important;
+      }
+      .section-header .header-icon {
+        stroke: #3182ce !important;
+      }
+      
+      /* === Stat cards - warm realistic === */
+      .booking-stats {
+        gap: 1.25rem !important;
+      }
+      
+      .booking-stat-card {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 18px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05),
+                    0 8px 24px rgba(0,0,0,0.04),
+                    inset 0 1px 0 rgba(255,255,255,0.9) !important;
+        color: #1a202c !important;
+        position: relative;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease !important;
+      }
+      
+      .booking-stat-card::before {
+        background: linear-gradient(135deg, 
+          rgba(255,236,210,0.4) 0%, 
+          rgba(129,212,250,0.2) 50%, 
+          rgba(255,236,210,0.3) 100%) !important;
+        opacity: 1 !important;
+        filter: none !important;
+      }
+      
+      .booking-stat-card:hover {
+        transform: translateY(-4px) !important;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.08),
+                    0 12px 40px rgba(0,0,0,0.06),
+                    inset 0 1px 0 rgba(255,255,255,0.9) !important;
+      }
+      
+      .booking-stat-card:hover::before {
+        opacity: 1 !important;
+      }
+      
+      .booking-stat-card h3 {
+        color: #718096 !important;
+        font-weight: 500 !important;
+      }
+      
+      .booking-stat-card .stat-value {
+        background: linear-gradient(135deg, #2d3748, #1a202c) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        font-weight: 800 !important;
+      }
+      
+      .booking-stat-card .stat-chip {
+        background: #f7fafc !important;
+        color: #4a5568 !important;
+        border: 1px solid #e2e8f0 !important;
+        font-weight: 500 !important;
+      }
+      
+      .booking-stat-card .stat-icon {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+      }
+      .booking-stat-card .stat-icon.blue {
+        background: linear-gradient(135deg, #ebf8ff, #bee3f8) !important;
+        color: #2b6cb0 !important;
+      }
+      .booking-stat-card .stat-icon.green {
+        background: linear-gradient(135deg, #f0fff4, #c6f6d5) !important;
+        color: #276749 !important;
+      }
+      .booking-stat-card .stat-icon.red {
+        background: linear-gradient(135deg, #fff5f5, #fed7d7) !important;
+        color: #c53030 !important;
+      }
+      
+      /* === Room cards - realistic dormitory style === */
+      .room-card {
+        border-radius: 20px !important;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.06),
+                    0 8px 30px rgba(0,0,0,0.08) !important;
+        color: #1a202c !important;
+        /* Simpler, subtler animation */
+        animation: fadeInUp 0.5s ease-out backwards !important;
+      }
+      
+      /* Remove aurora glow - replace with realistic warm shadow */
+      .room-card::before {
+        background: linear-gradient(145deg, 
+          rgba(196,149,106,0.3) 0%,
+          rgba(129,212,250,0.2) 50%,
+          rgba(253,246,238,0.3) 100%) !important;
+        background-size: 100% 100% !important;
+        opacity: 0 !important;
+        filter: blur(20px) !important;
+        animation: none !important;
+        transition: opacity 0.4s ease !important;
+      }
+      
+      .room-card:hover::before {
+        opacity: 0.5 !important;
+      }
+      
+      /* Remove shimmer overlay */
+      .room-card::after {
+        display: none !important;
+      }
+      
+      .room-card .card-particles {
+        display: none !important;
+      }
+      
+      .room-card:hover:not(.flipped) {
+        transform: translateY(-6px) scale(1.01) !important;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.1),
+                    0 16px 48px rgba(0,0,0,0.08) !important;
+      }
+      
+      /* Front face - realistic photo card */
+      .room-card-face.front {
+        background: linear-gradient(145deg, #f7f3ef 0%, #e8ddd3 50%, #d4c4b0 100%) !important;
+        border: 1px solid rgba(196,149,106,0.25) !important;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.6),
+                    inset 0 -2px 4px rgba(0,0,0,0.03) !important;
+      }
+      
+      .room-card-face.front::before {
+        background: linear-gradient(to top, 
+          rgba(26,32,44,0.75) 0%, 
+          rgba(26,32,44,0.4) 30%, 
+          rgba(26,32,44,0.1) 50%, 
+          transparent 70%) !important;
+      }
+      
+      /* Room number and info - bright clear */
+      .room-card-face.front .card-info-bottom .room-number-web3 {
+        color: #ffffff !important;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.5) !important;
+        font-weight: 800 !important;
+      }
+      .room-card-face.front .card-info-bottom .room-type-web3 {
+        color: rgba(255,255,255,0.95) !important;
+        text-shadow: 0 1px 6px rgba(0,0,0,0.4) !important;
+      }
+      .room-card-face.front .card-info-bottom .room-price-web3 {
+        color: #fbd38d !important;
+        text-shadow: 0 2px 8px rgba(0,0,0,0.4) !important;
+        font-weight: 700 !important;
+      }
+      
+      /* Available badge - vibrant green */
+      .room-card-face.front .status-badge-web3 {
+        background: linear-gradient(135deg, #48bb78, #38a169) !important;
+        border: 2px solid rgba(255,255,255,0.5) !important;
+        box-shadow: 0 2px 10px rgba(56,161,105,0.35) !important;
+        animation: none !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.02em !important;
+      }
+      .room-card-face.front .status-badge-web3::before {
+        display: none !important;
+      }
+      
+      /* Room image placeholder */
+      .room-card-face.front .room-image-placeholder {
+        color: rgba(160,140,120,0.7) !important;
+      }
+      .room-card-face.front .room-image-placeholder svg {
+        opacity: 0.5 !important;
+        stroke: #a08c78 !important;
+      }
+      
+      /* Back card face - warm light */
+      .room-card-face.back {
+        background: linear-gradient(145deg, #ffffff 0%, #fdf6ee 40%, #f7f3ef 100%) !important;
+        border: 1px solid #e2d5c8 !important;
+        color: #1a202c !important;
+        box-shadow: inset 0 2px 0 rgba(255,255,255,0.8),
+                    inset 0 -1px 3px rgba(0,0,0,0.03) !important;
+      }
+      
+      .back-header {
+        border-bottom-color: #e2d5c8 !important;
+      }
+      
+      .room-number-back {
+        color: #2d3748 !important;
+      }
+      .room-icon-animated {
+        stroke: #3182ce !important;
+      }
+      
+      .availability-badge {
+        background: linear-gradient(135deg, #f0fff4, #c6f6d5) !important;
+        color: #276749 !important;
+        border: 1px solid #9ae6b4 !important;
+        animation: none !important;
+        font-weight: 600 !important;
+      }
+      
+      .detail-item {
+        background: rgba(247,243,239,0.8) !important;
+        border: 1px solid rgba(226,213,200,0.5) !important;
+        border-radius: 12px !important;
+      }
+      .detail-item:hover {
+        background: rgba(237,230,223,0.8) !important;
+      }
+      .detail-item.highlight {
+        background: rgba(235,248,255,0.7) !important;
+        border-color: rgba(144,205,244,0.5) !important;
+      }
+      
+      .detail-icon {
+        background: linear-gradient(135deg, #ebf8ff, #bee3f8) !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.06) !important;
+      }
+      .detail-icon svg {
+        stroke: #2b6cb0 !important;
+      }
+      
+      .detail-label {
+        color: #a0aec0 !important;
+      }
+      .detail-value {
+        color: #2d3748 !important;
+      }
+      .detail-value.price {
+        color: #2b6cb0 !important;
+      }
+      
+      .feature-tag {
+        background: linear-gradient(135deg, #faf5ff, #e9d8fd) !important;
+        color: #6b46c1 !important;
+        border: 1px solid #d6bcfa !important;
+        font-weight: 500 !important;
+      }
+      
+      .book-btn-back {
+        background: linear-gradient(135deg, #3182ce, #2b6cb0) !important;
+        box-shadow: 0 4px 14px rgba(49,130,206,0.3),
+                    inset 0 1px 0 rgba(255,255,255,0.2) !important;
+        border-radius: 14px !important;
+        font-weight: 700 !important;
+      }
+      .book-btn-back:hover {
+        background: linear-gradient(135deg, #2b6cb0, #2c5282) !important;
+        box-shadow: 0 6px 20px rgba(49,130,206,0.4),
+                    inset 0 1px 0 rgba(255,255,255,0.2) !important;
+      }
+      
+      /* === Toggle button === */
+      #toggleRoomsBtn {
+        background: linear-gradient(135deg, #ffffff, #f7fafc) !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #2d3748 !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.06) !important;
+        border-radius: 12px !important;
+        font-weight: 600 !important;
+      }
+      #toggleRoomsBtn:hover {
+        background: linear-gradient(135deg, #f7fafc, #edf2f7) !important;
+        border-color: #cbd5e0 !important;
+      }
+      
+      /* === View toggle buttons === */
+      .view-toggle button {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #4a5568 !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05) !important;
+        font-weight: 500 !important;
+      }
+      .view-toggle button.active {
+        background: linear-gradient(135deg, #3182ce, #2b6cb0) !important;
+        border-color: #2b6cb0 !important;
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(49,130,206,0.3) !important;
+      }
+      
+      /* === Deposit notice === */
+      .booking-section > div[style*="border:1px solid rgba(34,197,94"] {
+        background: linear-gradient(135deg, #f0fff4, #c6f6d5) !important;
+        border: 1px solid #9ae6b4 !important;
+        color: #276749 !important;
+        font-weight: 500 !important;
+        border-radius: 14px !important;
+      }
+      
+      /* === Load more button === */
+      .load-more-btn {
+        background: #ffffff !important;
+        color: #3182ce !important;
+        border: 1px solid #bee3f8 !important;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.05) !important;
+        font-weight: 600 !important;
+      }
+      .load-more-btn:hover {
+        background: #ebf8ff !important;
+        border-color: #90cdf4 !important;
+      }
+      
+      /* === Booking Modal - bright warm === */
+      .booking-modal {
+        background: rgba(26,32,44,0.5) !important;
+        backdrop-filter: blur(12px) !important;
+      }
+      .booking-modal-content {
+        background: linear-gradient(145deg, #ffffff, #fdf6ee) !important;
+        border: 1px solid #e2d5c8 !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15),
+                    0 4px 16px rgba(0,0,0,0.08),
+                    inset 0 1px 0 rgba(255,255,255,0.9) !important;
+        color: #1a202c !important;
+      }
+      .booking-modal-content h2 {
+        color: #1a202c !important;
+      }
+      .booking-form-group label {
+        color: #4a5568 !important;
+        font-weight: 600 !important;
+      }
+      .booking-form-group input,
+      .booking-form-group select {
+        background: #ffffff !important;
+        border: 1.5px solid #e2e8f0 !important;
+        color: #1a202c !important;
+        border-radius: 12px !important;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.04) !important;
+      }
+      .booking-form-group input:focus,
+      .booking-form-group select:focus {
+        border-color: #3182ce !important;
+        box-shadow: 0 0 0 3px rgba(49,130,206,0.15),
+                    inset 0 1px 3px rgba(0,0,0,0.04) !important;
+      }
+      .booking-form-group input[readonly] {
+        background: #f7fafc !important;
+        color: #4a5568 !important;
+        border-color: #e2e8f0 !important;
+      }
+      .booking-form-group .tenant-select option {
+        background: #ffffff !important;
+        color: #1a202c !important;
+      }
+      
+      .btn-submit {
+        background: linear-gradient(135deg, #3182ce, #2b6cb0) !important;
+        color: #ffffff !important;
+        border-radius: 12px !important;
+        box-shadow: 0 4px 14px rgba(49,130,206,0.3) !important;
+        font-weight: 700 !important;
+      }
+      .btn-submit:hover {
+        background: linear-gradient(135deg, #2b6cb0, #2c5282) !important;
+      }
+      .btn-cancel {
+        background: linear-gradient(135deg, #fc8181, #e53e3e) !important;
+        color: #ffffff !important;
+        border-radius: 12px !important;
+        font-weight: 700 !important;
+      }
+      
+      /* === Alert dialog - bright === */
+      .booking-alert-dialog {
+        background: #ffffff !important;
+        color: #1a202c !important;
+        border: 1px solid #e2e8f0 !important;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.15) !important;
+      }
+      .booking-alert-message {
+        color: #2d3748 !important;
+      }
+      
+      /* === List view overrides === */
+      .rooms-grid.list-view .room-card-face {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+      .rooms-grid.list-view .room-card-face:hover {
+        background: #f7fafc !important;
+        border-color: #90cdf4 !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.06) !important;
+      }
+      .rooms-grid.list-view .room-card-face.front {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+      .rooms-grid.list-view .room-number-web3 {
+        color: #1a202c !important;
+      }
+      .rooms-grid.list-view .room-type-web3 {
+        color: #3182ce !important;
+        background: rgba(49,130,206,0.08) !important;
+        border: 1px solid rgba(49,130,206,0.2) !important;
+      }
+      .rooms-grid.list-view .room-price-web3 {
+        color: #2b6cb0 !important;
+      }
+      .rooms-grid.list-view .list-feature-tag {
+        background: #f7fafc !important;
+        color: #4a5568 !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+      .rooms-grid.list-view .list-deposit {
+        color: #718096 !important;
+      }
+      .rooms-grid.list-view button.list-book-btn {
+        background: linear-gradient(135deg, #3182ce, #2b6cb0) !important;
+        border: 1px solid #2b6cb0 !important;
+        box-shadow: 0 2px 8px rgba(49,130,206,0.25) !important;
+      }
+      .rooms-grid.list-view button.list-book-btn:hover {
+        background: linear-gradient(135deg, #2b6cb0, #2c5282) !important;
+        box-shadow: 0 4px 14px rgba(49,130,206,0.35) !important;
+      }
+      
+      /* === Table overrides === */
+      #table-bookings {
+        color: #1a202c !important;
+      }
+      
+      .room-number { 
+        color: #1a202c !important; 
+      }
+      .room-info { color: #718096 !important; }
+      .room-price { color: #2b6cb0 !important; }
+      .room-info-item { color: #4a5568 !important; }
+      .price-badge {
+        color: #2b6cb0 !important;
+        background: #ebf8ff !important;
+        border: 1px solid #bee3f8 !important;
+      }
+      .status-available {
+        background: #f0fff4 !important;
+        color: #276749 !important;
+        border: 1px solid #9ae6b4 !important;
+      }
+      
+      /* === Sort/filter section === */
+      .animate-ui-action-btn {
+        color: #4a5568 !important;
+      }
+      
+      /* === Room image in list view === */
+      .rooms-grid.list-view .room-image-container {
+        background: linear-gradient(135deg, #fdf6ee, #ffecd2) !important;
+        border: 1px solid #e2d5c8 !important;
+      }
+      .room-image-placeholder {
+        color: rgba(160,140,120,0.6) !important;
+      }
+      
+      /* === Particle effects override for bright theme === */
+      .booking-stat-card .particle-container {
+        opacity: 0.4 !important;
+      }
+
     </style>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/futuristic-bright.css" />
   </head>
@@ -3572,7 +4067,7 @@ try {
                   </svg>
                   ภาพรวมผู้เช่า
                 </h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">สถิติผู้เช่าปัจจุบัน</p>
+                <p style="color:#718096;margin-top:0.2rem;">สถิติผู้เช่าปัจจุบัน</p>
               </div>
             </div>
             <div class="booking-stats">
@@ -3589,7 +4084,7 @@ try {
                 <h3>ผู้เช่าทั้งหมด</h3>
                 <div class="stat-value"><?php echo number_format($stats['total']); ?></div>
                 <div class="stat-chip">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#60a5fa;animation:pulse 2s infinite;"></span>
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#3182ce;animation:pulse 2s infinite;"></span>
                   รวมทั้งหมด
                 </div>
               </div>
@@ -3607,7 +4102,7 @@ try {
                 <h3>จองแล้ว</h3>
                 <div class="stat-value"><?php echo number_format($stats['reserved']); ?></div>
                 <div class="stat-chip">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#22c55e;animation:pulse 2s infinite;"></span>
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#38a169;animation:pulse 2s infinite;"></span>
                   รอเข้าพัก
                 </div>
               </div>
@@ -3622,7 +4117,7 @@ try {
                 <h3>พักอยู่</h3>
                 <div class="stat-value"><?php echo number_format($stats['checkedin']); ?></div>
                 <div class="stat-chip">
-                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#ef4444;animation:pulse 2s infinite;"></span>
+                  <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:#e53e3e;animation:pulse 2s infinite;"></span>
                   กำลังเข้าพัก
                 </div>
               </div>
@@ -3654,7 +4149,7 @@ try {
             </div>
             
             <?php if (empty($availableRooms)): ?>
-              <div style="padding: 2rem; text-align: center; color: #666;">
+              <div style="padding: 2rem; text-align: center; color: #718096;">
                 <p style="font-size: 1.2rem;">ไม่มีห้องว่างในขณะนี้</p>
               </div>
             <?php else: ?>
@@ -3907,12 +4402,12 @@ try {
               <div>
                 <h1><?php echo ($bookingIdFilter > 0) ? 'รายการจองที่เลือก' : (($statusFilter === '1') ? 'รายการจองที่ต้องจัดการ' : 'รายการจองทั้งหมด'); ?></h1>
                 <?php if ($bookingIdFilter > 0): ?>
-                <a href="manage_booking.php?todo_only=1&status=1" style="display:inline-block;margin-top:0.5rem;font-size:0.85rem;color:#60a5fa;text-decoration:none;padding:0.4rem 0.8rem;background:rgba(96,165,250,0.1);border:1px solid rgba(96,165,250,0.3);border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='rgba(96,165,250,0.2)'" onmouseout="this.style.background='rgba(96,165,250,0.1)'">
+                <a href="manage_booking.php?todo_only=1&status=1" style="display:inline-block;margin-top:0.5rem;font-size:0.85rem;color:#3182ce;text-decoration:none;padding:0.4rem 0.8rem;background:#ebf8ff;border:1px solid #bee3f8;border-radius:6px;transition:all 0.2s;" onmouseover="this.style.background='#bee3f8'" onmouseout="this.style.background='#ebf8ff'">
                   ← ยกเลิกการกรอง
                 </a>
                 <?php endif; ?>
               </div>
-              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:10px;border:1px solid #e2e8f0;background:#ffffff;color:#2d3748;font-size:0.95rem;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.05);">
                 <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>จองล่าสุด</option>
                 <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>จองเก่าสุด</option>
                 <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
@@ -3997,7 +4492,7 @@ try {
       <div class="booking-modal-content">
         <div style="display:flex;align-items:center;justify-content:space-between;gap:0.75rem;">
           <h2 style="margin:0;">จองห้องพัก</h2>
-          <button type="button" aria-label="ปิดหน้าต่าง" onclick="closeBookingModal()" style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);color:#e2e8f0;width:36px;height:36px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;">×</button>
+          <button type="button" aria-label="ปิดหน้าต่าง" onclick="closeBookingModal()" style="background:#f7fafc;border:1px solid #e2e8f0;color:#4a5568;width:36px;height:36px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.2rem;">×</button>
         </div>
         <form id="bookingForm" method="POST" action="../Manage/process_booking.php">
           <input type="hidden" name="room_id" id="modal_room_id">

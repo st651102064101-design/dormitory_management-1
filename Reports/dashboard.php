@@ -153,7 +153,26 @@ try {
             GROUP BY DATE_FORMAT(utl_date, '%Y-%m')
             ORDER BY month DESC LIMIT 6");
     $utility_trend = array_reverse($stmt->fetchAll() ?: []);
-    
+
+    // Current & last month utility for mini meter display
+    $curMonth = date('Y-m');
+    $lastMonth = date('Y-m', strtotime('-1 month'));
+    $stmt = $pdo->prepare("SELECT SUM(utl_water_end - utl_water_start) as total_water, SUM(utl_elec_end - utl_elec_start) as total_elec, MAX(utl_water_end) as latest_water_read, MAX(utl_elec_end) as latest_elec_read, COUNT(*) as room_count FROM utility WHERE DATE_FORMAT(utl_date,'%Y-%m') = ?");
+    $stmt->execute([$curMonth]); $cur_utility = $stmt->fetch() ?? [];
+    $stmt->execute([$lastMonth]); $last_utility = $stmt->fetch() ?? [];
+    $cur_water_total  = intval($cur_utility['total_water'] ?? 0);
+    $cur_elec_total   = intval($cur_utility['total_elec'] ?? 0);
+    $cur_water_read   = intval($cur_utility['latest_water_read'] ?? 0);
+    $cur_elec_read    = intval($cur_utility['latest_elec_read'] ?? 0);
+    $cur_rooms_count  = intval($cur_utility['room_count'] ?? 0);
+    $last_water_total = intval($last_utility['total_water'] ?? 0);
+    $last_elec_total  = intval($last_utility['total_elec'] ?? 0);
+    // Format reading as 7-digit string for odometer
+    $water_digits = str_pad($cur_water_read, 7, '0', STR_PAD_LEFT);
+    $elec_digits  = str_pad($cur_elec_read,  7, '0', STR_PAD_LEFT);
+    $water_delta = $cur_water_total - $last_water_total;
+    $elec_delta  = $cur_elec_total  - $last_elec_total;
+
     // Weekly Tenant Check-in (7 วันล่าสุด)
     $stmt = $pdo->query("SELECT DATE(ctr_start) as date, COUNT(*) as count 
             FROM contract 
@@ -869,6 +888,205 @@ try {
                 height: 14px;
             }
         }
+
+        /* ===== DASHBOARD MINI METERS ===== */
+        .dash-meters-wrap {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            margin: 6px 0 10px;
+        }
+        .dash-mini-meter {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            flex: 1;
+        }
+        /* Housing */
+        .dmm-body {
+            position: relative;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .dmm-body.water {
+            background:
+                radial-gradient(ellipse at 35% 30%, rgba(255,255,255,0.22) 0%, transparent 55%),
+                radial-gradient(circle at 50% 50%, #1da1c8 0%, #0c7a9e 40%, #085d7a 70%, #043d52 100%);
+            box-shadow:
+                0 0 0 3px #0a6a88,
+                0 4px 18px rgba(8,90,120,0.55),
+                inset 0 3px 8px rgba(255,255,255,0.18),
+                inset 0 -4px 10px rgba(0,0,0,0.35);
+        }
+        .dmm-body.elec {
+            background:
+                radial-gradient(ellipse at 35% 30%, rgba(255,255,255,0.2) 0%, transparent 55%),
+                radial-gradient(circle at 50% 50%, #5a5a6e 0%, #3a3a4e 40%, #252534 70%, #141420 100%);
+            box-shadow:
+                0 0 0 3px #2a2a3a,
+                0 4px 18px rgba(10,10,30,0.55),
+                inset 0 3px 8px rgba(255,255,255,0.12),
+                inset 0 -4px 10px rgba(0,0,0,0.45);
+        }
+        /* Brass ring */
+        .dmm-face {
+            width: 84px;
+            height: 84px;
+            border-radius: 50%;
+            background: #fff;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 1px;
+            padding: 4px;
+            box-sizing: border-box;
+            overflow: hidden;
+            box-shadow:
+                0 0 0 1.5px #7a5c28,
+                0 0 0 4px #c9972a,
+                0 0 0 4.5px #7a5c28,
+                0 0 0 6px #e8b84b,
+                0 0 0 6.5px #7a5c28,
+                0 0 0 8px #b8871e,
+                inset 0 2px 6px rgba(0,0,0,0.25),
+                inset 0 -1px 3px rgba(0,0,0,0.15);
+        }
+        /* Glass reflection */
+        .dmm-face::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            background: radial-gradient(ellipse 70% 45% at 38% 25%, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.06) 60%, transparent 100%);
+            pointer-events: none;
+            z-index: 10;
+        }
+        .dmm-unit {
+            font-size: 9px;
+            font-weight: 700;
+            color: #333;
+            letter-spacing: 0.5px;
+            margin-bottom: 1px;
+            font-family: 'Arial', sans-serif;
+            z-index: 2;
+        }
+        /* Odometer strip */
+        .dmm-odo {
+            display: flex;
+            gap: 1px;
+            background: #1a1a1a;
+            border-radius: 3px;
+            padding: 2px 2px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.7), inset 0 -1px 3px rgba(0,0,0,0.5);
+            z-index: 2;
+        }
+        .dmm-digit {
+            width: 13px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            font-weight: 900;
+            font-family: 'Courier New', monospace;
+            border-radius: 2px;
+            background: linear-gradient(180deg, #2a2a2a 0%, #0a0a0a 45%, #1a1a1a 55%, #2a2a2a 100%);
+            color: #f0f0f0;
+            box-shadow: inset 0 1px 3px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.6);
+        }
+        .dmm-digit.red {
+            background: linear-gradient(180deg, #cc2222 0%, #880000 45%, #aa1111 55%, #cc2222 100%);
+            color: #fff;
+        }
+        .dmm-specs {
+            font-size: 7.5px;
+            color: #555;
+            font-family: Arial, sans-serif;
+            text-align: center;
+            line-height: 1.3;
+            z-index: 2;
+        }
+        /* Sub-dial */
+        .dmm-sub {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: conic-gradient(
+                #ddd 0deg 30deg, #aaa 30deg 36deg,
+                #ddd 36deg 66deg, #aaa 66deg 72deg,
+                #ddd 72deg 102deg, #aaa 102deg 108deg,
+                #ddd 108deg 138deg, #aaa 138deg 144deg,
+                #ddd 144deg 174deg, #aaa 174deg 180deg,
+                #ddd 180deg 210deg, #aaa 210deg 216deg,
+                #ddd 216deg 246deg, #aaa 246deg 252deg,
+                #ddd 252deg 282deg, #aaa 282deg 288deg,
+                #ddd 288deg 318deg, #aaa 318deg 324deg,
+                #ddd 324deg 354deg, #aaa 354deg 360deg
+            );
+            box-shadow: 0 0 0 1px #c00, inset 0 0 3px rgba(0,0,0,0.3);
+            position: absolute;
+            bottom: 9px;
+            right: 9px;
+            z-index: 3;
+        }
+        .dmm-sub::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 60%; height: 2px;
+            background: linear-gradient(90deg, #c00 0%, #ff4444 100%);
+            transform-origin: 15% 50%;
+            transform: translate(-15%, -50%) rotate(40deg);
+            border-radius: 1px;
+        }
+        .dmm-sub::before {
+            content: '';
+            position: absolute;
+            inset: 35%;
+            background: #c00;
+            border-radius: 50%;
+            z-index: 4;
+        }
+        /* Info below meter */
+        .dmm-info {
+            text-align: center;
+        }
+        .dmm-label {
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 3px;
+        }
+        .dmm-label.water { color: #0a7a9e; }
+        .dmm-label.elec  { color: #d97706; }
+        .dmm-stat {
+            font-size: 10px;
+            color: #6b7280;
+        }
+        .dmm-delta {
+            display: inline-block;
+            font-size: 9.5px;
+            font-weight: 600;
+            padding: 1px 5px;
+            border-radius: 10px;
+            margin-top: 2px;
+        }
+        .dmm-delta.up   { background: #fef3c7; color: #b45309; }
+        .dmm-delta.down { background: #d1fae5; color: #065f46; }
+        .dmm-delta.same { background: #f3f4f6; color: #6b7280; }
+        .dmm-divider {
+            width: 1px;
+            background: #e5e7eb;
+            align-self: stretch;
+            margin: 4px 0;
+        }
     </style>
 </head>
 <body class="reports-page <?php echo ($isLight ? 'live-light' : 'live-dark'); ?>">
@@ -1296,25 +1514,53 @@ try {
                 <!-- น้ำ-ไฟ -->
                 <div class="report-section" data-link="report_utility.php">
                     <h3><span class="section-icon teal"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-4V4a2 2 0 0 0-4 0v6H6a2 2 0 0 0-2 2v8h16v-8a2 2 0 0 0-2-2z"/><path d="M8 20v-6"/><path d="M16 20v-6"/></svg></span>รายงานสรุปการใช้น้ำ-ไฟ</h3>
-                    <div class="report-flex">
-                        <div class="mini-chart-container">
-                            <canvas id="miniUtilityChart"></canvas>
-                        </div>
-                        <div>
-                            <div class="report-grid">
-                                <div class="report-item">
-                                    <label>เฉลี่ยน้ำ/เดือน</label>
-                                    <div class="value" style="color: #0ea5e9;"><?php echo $avg_water; ?></div>
-                                </div>
-                                <div class="report-item">
-                                    <label>เฉลี่ยไฟ/เดือน</label>
-                                    <div class="value" style="color: #f59e0b;"><?php echo $avg_elec; ?></div>
+                    <div class="dash-meters-wrap">
+                        <!-- Water Meter -->
+                        <div class="dash-mini-meter">
+                            <div class="dmm-body water">
+                                <div class="dmm-face">
+                                    <div class="dmm-unit">m³</div>
+                                    <div class="dmm-odo">
+                                        <?php for($i=0;$i<7;$i++): $d=$water_digits[$i]; $rc=($i>=5)?'red':''; ?>
+                                        <div class="dmm-digit <?php echo $rc; ?>"><?php echo $d; ?></div>
+                                        <?php endfor; ?>
+                                    </div>
+                                    <div class="dmm-specs">20mm · Qn2.5<br>m³/hB</div>
+                                    <div class="dmm-sub"></div>
                                 </div>
                             </div>
-                            <div style="margin-top: 10px; text-align: center;">
-                                <a href="report_utility.php" style="color: #14b8a6; text-decoration: none; font-size: 13px;">ดูรายละเอียด →</a>
+                            <div class="dmm-info">
+                                <div class="dmm-label water">มิเตอร์น้ำ</div>
+                                <div class="dmm-stat">เดือนนี้รวม <?php echo number_format($cur_water_total); ?> หน่วย</div>
+                                <?php $wd = $water_delta; $wc = $wd>0?'up':($wd<0?'down':'same'); $ws=$wd>0?'▲':'▼'; ?>
+                                <span class="dmm-delta <?php echo $wc; ?>"><?php echo ($wd!=0?$ws:'—').' '.abs($wd); ?> vs เดิม</span>
                             </div>
                         </div>
+                        <div class="dmm-divider"></div>
+                        <!-- Electric Meter -->
+                        <div class="dash-mini-meter">
+                            <div class="dmm-body elec">
+                                <div class="dmm-face">
+                                    <div class="dmm-unit">kWh</div>
+                                    <div class="dmm-odo">
+                                        <?php for($i=0;$i<7;$i++): $d=$elec_digits[$i]; $rc=($i>=5)?'red':''; ?>
+                                        <div class="dmm-digit <?php echo $rc; ?>"><?php echo $d; ?></div>
+                                        <?php endfor; ?>
+                                    </div>
+                                    <div class="dmm-specs">220V · 50Hz<br>kWh METER</div>
+                                    <div class="dmm-sub"></div>
+                                </div>
+                            </div>
+                            <div class="dmm-info">
+                                <div class="dmm-label elec">มิเตอร์ไฟ</div>
+                                <div class="dmm-stat">เดือนนี้รวม <?php echo number_format($cur_elec_total); ?> หน่วย</div>
+                                <?php $ed=$elec_delta; $ec=$ed>0?'up':($ed<0?'down':'same'); $es=$ed>0?'▲':'▼'; ?>
+                                <span class="dmm-delta <?php echo $ec; ?>"><?php echo ($ed!=0?$es:'—').' '.abs($ed); ?> vs เดิม</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px;text-align:center;">
+                        <a href="report_utility.php" style="color:#14b8a6;text-decoration:none;font-size:12px;">ดูรายละเอียด →</a>
                     </div>
                 </div>
             </div>
