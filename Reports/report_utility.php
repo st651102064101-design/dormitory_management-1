@@ -517,7 +517,8 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         .vm-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; padding: 0.75rem 1rem; }
         .vm-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 1rem; transition: box-shadow 0.2s; }
         .vm-card:hover { box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
-        .vm-card.vm-empty { opacity: 0.35; }
+        .vm-card.vm-empty { opacity: 0.45; }
+        .vm-card.vm-empty .vm-card-header::after { content: '\u0e2b\u0e49\u0e2d\u0e07\u0e27\u0e48\u0e32\u0e07'; font-size: 0.65rem; color: #94a3b8; font-weight: 500; background: #f1f5f9; padding: 2px 8px; border-radius: 8px; }
         .vm-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid #f3f4f6; }
         .vm-room-num { font-size: 1.1rem; font-weight: 800; color: #1e293b; }
         .vm-tenant-name { font-size: 0.7rem; color: #94a3b8; margin-top: 1px; }
@@ -525,11 +526,11 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         /* ===============================================================
            HYPER-REALISTIC SKEUOMORPHIC WATER METER — ASAHI STYLE
            =============================================================== */
-        .vm-water-body { display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 260px; position: relative; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.35)); }
+        .vm-water-body { display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 280px; position: relative; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
 
         /* ── Industrial Blue Pipes ── */
         .vm-pipe-left, .vm-pipe-right {
-            width: 38px; height: 44px; flex-shrink: 0; position: relative; z-index: 2;
+            width: 42px; height: 48px; flex-shrink: 0; position: relative; z-index: 2;
             background:
                 linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 8%, transparent 92%, rgba(0,0,0,0.10) 100%),
                 linear-gradient(180deg, #52c8da 0%, #3cb8cc 5%, #2ea0b6 12%, #2290a8 22%, #1a7d96 35%, #146d84 50%, #0f5c72 65%, #0b4e62 78%, #084454 90%, #063a4a 100%);
@@ -540,7 +541,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
 
         /* ── Coupling nut / Flange ── */
         .vm-pipe-flange {
-            position: absolute; width: 12px; height: 110%; top: -5%; z-index: 3; border-radius: 2px;
+            position: absolute; width: 14px; height: 110%; top: -5%; z-index: 3; border-radius: 2px;
             background: linear-gradient(180deg, #6ad0e0 0%, #48bcd0 8%, #30a4ba 20%, #228c9e 38%, #187888 55%, #106878 70%, #0c5868 85%, #084a5a 100%);
             border-top: 1px solid rgba(120,220,240,0.4); border-bottom: 1.5px solid #042830;
             box-shadow: inset 0 3px 5px rgba(255,255,255,0.20), inset 0 -3px 5px rgba(0,0,0,0.20);
@@ -549,17 +550,17 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         .vm-pipe-right .vm-pipe-flange { left: -2px; border-left: 2px solid #0a3540; border-right: 1px solid #0a3540; box-shadow: -3px 0 6px rgba(0,0,0,0.25), inset 0 3px 5px rgba(255,255,255,0.20), inset 0 -3px 5px rgba(0,0,0,0.20); }
 
         /* ── Hex bolt ── */
-        .vm-pipe-bolt { position: absolute; width: 11px; height: 11px; background: radial-gradient(circle at 38% 30%, #a0e4ef 0%, #60c8d8 20%, #38a8bc 40%, #1e8ca0 60%, #0f6a7c 80%, #084a5a 100%); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 2px 3px rgba(255,255,255,0.50), inset 0 -2px 3px rgba(0,0,0,0.35), 0 1.5px 4px rgba(0,0,0,0.45); border: 0.5px solid #063a4a; }
-        .vm-pipe-bolt::after { content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6px; font-weight: 900; color: rgba(0,0,0,0.22); line-height: 1; text-shadow: 0 0.5px 0 rgba(255,255,255,0.2); }
+        .vm-pipe-bolt { position: absolute; width: 12px; height: 12px; background: radial-gradient(circle at 38% 30%, #a0e4ef 0%, #60c8d8 20%, #38a8bc 40%, #1e8ca0 60%, #0f6a7c 80%, #084a5a 100%); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 2px 3px rgba(255,255,255,0.50), inset 0 -2px 3px rgba(0,0,0,0.35), 0 1.5px 4px rgba(0,0,0,0.45); border: 0.5px solid #063a4a; }
+        .vm-pipe-bolt::after { content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 7px; font-weight: 900; color: rgba(0,0,0,0.22); line-height: 1; text-shadow: 0 0.5px 0 rgba(255,255,255,0.2); }
 
         /* ── Meter Housing — cast blue body ── */
         .vm-dial-water {
-            width: 148px; height: 148px; border-radius: 50%; flex-shrink: 0; position: relative; z-index: 1;
+            width: 190px; height: 190px; border-radius: 50%; flex-shrink: 0; position: relative; z-index: 1;
             background:
                 radial-gradient(ellipse at 38% 25%, rgba(80,200,220,0.20) 0%, transparent 50%),
                 radial-gradient(circle at 50% 50%, #1e8fa2 0%, #1a8496 12%, #157688 25%, #10687a 38%, #0c5a6c 52%, #094e60 65%, #074456 78%, #053a4c 90%, #043242 100%);
-            border: 4px solid #053545;
-            box-shadow: 0 0 0 1px rgba(60,180,210,0.25), inset 0 4px 10px rgba(80,200,230,0.12), inset 0 -6px 14px rgba(0,0,0,0.30), inset 4px 0 8px rgba(0,0,0,0.10), inset -4px 0 8px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.30), 0 3px 8px rgba(0,0,0,0.18);
+            border: 4.5px solid #053545;
+            box-shadow: 0 0 0 1px rgba(60,180,210,0.25), inset 0 4px 10px rgba(80,200,230,0.12), inset 0 -6px 14px rgba(0,0,0,0.30), inset 4px 0 8px rgba(0,0,0,0.10), inset -4px 0 8px rgba(0,0,0,0.10), 0 10px 30px rgba(0,0,0,0.35), 0 3px 10px rgba(0,0,0,0.20);
         }
         .vm-dial-water::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 40%; border-radius: 50%; background: radial-gradient(ellipse at 50% 0%, rgba(100,210,230,0.15) 0%, transparent 70%); pointer-events: none; z-index: 0; }
 
@@ -567,31 +568,31 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         .vm-dial-face {
             position: absolute; top: 9px; left: 9px; right: 9px; bottom: 9px; border-radius: 50%;
             background: radial-gradient(ellipse at 45% 35%, #ffffff 0%, #fefcf6 15%, #faf6ec 30%, #f4efe2 48%, #eee8d8 65%, #e6dfce 80%, #ddd6c4 100%);
-            border: 5px solid transparent; background-clip: padding-box;
-            display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;
-            box-shadow: inset 0 3px 10px rgba(0,0,0,0.12), inset 0 -2px 6px rgba(0,0,0,0.06), inset 2px 0 4px rgba(0,0,0,0.04), inset -2px 0 4px rgba(0,0,0,0.04), 0 0 0 1px #6b5504, 0 0 0 2.5px #8c6d08, 0 0 0 4px #b8920e, 0 0 0 5px #d4aa18, 0 0 0 6px #e4bc28, 0 0 0 7px #d4aa18, 0 0 0 8px #b08010, 0 0 0 8.5px #8c6d08, 0 0 0 9px #6b5504;
+            border: 6px solid transparent; background-clip: padding-box;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; overflow: hidden;
+            box-shadow: inset 0 3px 10px rgba(0,0,0,0.12), inset 0 -2px 6px rgba(0,0,0,0.06), inset 2px 0 4px rgba(0,0,0,0.04), inset -2px 0 4px rgba(0,0,0,0.04), 0 0 0 1px #6b5504, 0 0 0 2.5px #8c6d08, 0 0 0 4px #b8920e, 0 0 0 5.5px #d4aa18, 0 0 0 6.5px #e4bc28, 0 0 0 7.5px #d4aa18, 0 0 0 8.5px #b08010, 0 0 0 9px #8c6d08, 0 0 0 9.5px #6b5504;
         }
         /* Brass metallic gradient overlay */
         .vm-dial-face::before { content: ''; position: absolute; top: -9px; left: -9px; right: -9px; bottom: -9px; border-radius: 50%; border: 8px solid transparent; background: linear-gradient(145deg, rgba(255,240,160,0.80) 0%, rgba(230,200,80,0.50) 15%, rgba(200,160,30,0.70) 30%, rgba(160,120,10,0.80) 45%, rgba(140,105,8,0.60) 55%, rgba(180,140,20,0.70) 65%, rgba(220,180,50,0.50) 78%, rgba(255,230,120,0.75) 88%, rgba(200,160,30,0.60) 100%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 5; }
         /* Glass dome reflection */
         .vm-dial-face::after { content: ''; position: absolute; top: 2%; left: 6%; width: 65%; height: 40%; background: radial-gradient(ellipse at 40% 30%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.30) 25%, rgba(255,255,255,0.10) 50%, transparent 70%); border-radius: 50%; pointer-events: none; z-index: 10; transform: rotate(-8deg); }
 
-        .vm-dial-unit-top { font-size: 0.58rem; font-weight: 900; color: #1a1a1a; letter-spacing: 0.5px; margin-bottom: 1px; position: relative; z-index: 2; text-shadow: 0 0.5px 0 rgba(255,255,255,0.6); }
-        .vm-dial-deco { font-size: 1.1rem; color: #555; margin: 2px 0; line-height: 1; opacity: 0.45; animation: waterMeterSpin 2.5s linear infinite; position: relative; z-index: 2; }
+        .vm-dial-unit-top { font-size: 0.65rem; font-weight: 900; color: #1a1a1a; letter-spacing: 0.5px; margin-bottom: 2px; position: relative; z-index: 2; text-shadow: 0 0.5px 0 rgba(255,255,255,0.6); }
+        .vm-dial-deco { font-size: 1rem; color: #555; margin: 1px 0; line-height: 1; opacity: 0.45; animation: waterMeterSpin 2.5s linear infinite; position: relative; z-index: 2; }
         @keyframes waterMeterSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .vm-dial-specs { font-size: 0.32rem; color: #888; position: relative; z-index: 2; }
-        .vm-dial-label { font-size: 0.42rem; font-weight: 800; color: #555; letter-spacing: 2px; text-transform: uppercase; position: relative; z-index: 2; }
+        .vm-dial-specs { font-size: 0.36rem; color: #888; letter-spacing: 0.3px; margin: 0; white-space: nowrap; position: relative; z-index: 2; }
+        .vm-dial-label { font-size: 0.42rem; font-weight: 800; color: #555; letter-spacing: 1.5px; text-transform: uppercase; position: relative; z-index: 2; }
 
         /* ── Red Sub-Dial with Tick Marks ── */
         .vm-sub-dial {
-            position: absolute; bottom: 13%; right: 16%; width: 21px; height: 21px; border-radius: 50%; z-index: 3;
+            position: absolute; bottom: 13%; right: 16%; width: 24px; height: 24px; border-radius: 50%; z-index: 3;
             background:
                 conic-gradient(from 0deg, #ccc 0deg, #ccc 1deg, transparent 1deg, transparent 36deg, #ccc 36deg, #ccc 37deg, transparent 37deg, transparent 72deg, #ccc 72deg, #ccc 73deg, transparent 73deg, transparent 108deg, #ccc 108deg, #ccc 109deg, transparent 109deg, transparent 144deg, #ccc 144deg, #ccc 145deg, transparent 145deg, transparent 180deg, #ccc 180deg, #ccc 181deg, transparent 181deg, transparent 216deg, #ccc 216deg, #ccc 217deg, transparent 217deg, transparent 252deg, #ccc 252deg, #ccc 253deg, transparent 253deg, transparent 288deg, #ccc 288deg, #ccc 289deg, transparent 289deg, transparent 324deg, #ccc 324deg, #ccc 325deg, transparent 325deg, transparent 360deg),
                 radial-gradient(circle at 45% 38%, #fff 0%, #fcf8f8 40%, #f5eaea 65%, #eedede 100%);
             border: 2px solid #c62828; box-shadow: inset 0 1.5px 4px rgba(0,0,0,0.15), inset 0 -1px 2px rgba(0,0,0,0.05), 0 1.5px 4px rgba(0,0,0,0.18);
         }
-        .vm-sub-dial::before { content: ''; position: absolute; top: 50%; left: 50%; width: 7px; height: 1.2px; background: linear-gradient(90deg, #c62828 0%, #e53935 100%); transform-origin: 0 50%; transform: translate(0, -50%) rotate(-30deg); border-radius: 1px; animation: subDialSpin 8s linear infinite; box-shadow: 0 0.5px 1px rgba(0,0,0,0.3); }
-        .vm-sub-dial::after { content: ''; position: absolute; top: 50%; left: 50%; width: 3.5px; height: 3.5px; background: radial-gradient(circle at 40% 35%, #f44336, #b71c1c); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 0.5px 1px rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.3); }
+        .vm-sub-dial::before { content: ''; position: absolute; top: 50%; left: 50%; width: 8px; height: 1.5px; background: linear-gradient(90deg, #c62828 0%, #e53935 100%); transform-origin: 0 50%; transform: translate(0, -50%) rotate(-30deg); border-radius: 1px; animation: subDialSpin 8s linear infinite; box-shadow: 0 0.5px 1px rgba(0,0,0,0.3); }
+        .vm-sub-dial::after { content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: radial-gradient(circle at 40% 35%, #f44336, #b71c1c); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 0.5px 1px rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.3); }
         @keyframes subDialSpin { from { transform: translate(0, -50%) rotate(-30deg); } to { transform: translate(0, -50%) rotate(330deg); } }
 
         /* Electric Meter */
@@ -615,8 +616,11 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
            MECHANICAL ODOMETER — Rotating Number Drums
            =============================================================== */
         .vm-digits { display: flex; gap: 0px; background: linear-gradient(180deg, #050505 0%, #111 8%, #1a1a1a 15%, #222 50%, #1a1a1a 85%, #111 92%, #050505 100%); padding: 3px 4px; border-radius: 4px; border: 1.5px solid #333; box-shadow: inset 0 3px 8px rgba(0,0,0,0.85), inset 0 -2px 6px rgba(0,0,0,0.60), inset 2px 0 4px rgba(0,0,0,0.40), inset -2px 0 4px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.2); position: relative; z-index: 2; }
+        .vm-digits::before { content: ''; position: absolute; top: 0; left: 4px; right: 4px; height: 3px; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); border-radius: 4px 4px 0 0; pointer-events: none; z-index: 1; }
         .vm-digit { width: 18px; height: 24px; text-align: center; font-family: 'Courier New', 'Lucida Console', monospace; font-size: 0.85rem; font-weight: 900; border: none; padding: 0; -moz-appearance: textfield; appearance: textfield; cursor: default; position: relative; background: linear-gradient(180deg, #999 0%, #bbb 3%, #d8d8d8 7%, #eee 14%, #f6f6f6 22%, #fafafa 35%, #fff 50%, #fafafa 65%, #f6f6f6 78%, #eee 86%, #d8d8d8 93%, #bbb 97%, #999 100%); color: #0a0a0a; text-shadow: 0 0.5px 0 rgba(255,255,255,0.5); border-radius: 2px; border-left: 0.5px solid rgba(0,0,0,0.10); border-right: 0.5px solid rgba(0,0,0,0.10); box-shadow: inset 0 3px 5px rgba(0,0,0,0.20), inset 0 -3px 5px rgba(0,0,0,0.15), inset 1px 0 2px rgba(0,0,0,0.10), inset -1px 0 2px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.12); }
         .vm-digit.vm-digit-red { background: linear-gradient(180deg, #7f1d1d 0%, #991b1b 4%, #b91c1c 8%, #d42a2a 15%, #e53935 25%, #ef4444 38%, #f44840 50%, #ef4444 62%, #e53935 75%, #d42a2a 85%, #b91c1c 92%, #991b1b 96%, #7f1d1d 100%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.45); box-shadow: inset 0 3px 5px rgba(0,0,0,0.30), inset 0 -3px 5px rgba(0,0,0,0.20), inset 1px 0 2px rgba(0,0,0,0.15), inset -1px 0 2px rgba(0,0,0,0.15), 0 0 0 0.5px rgba(100,0,0,0.20); }
+        .vm-digit:disabled { background: linear-gradient(180deg, #8a8a8a 0%, #a0a0a0 5%, #bbb 12%, #d0d0d0 25%, #ddd 50%, #d0d0d0 75%, #bbb 88%, #a0a0a0 95%, #8a8a8a 100%); color: #666; cursor: not-allowed; }
+        .vm-digit.vm-digit-red:disabled { background: linear-gradient(180deg, #5c1515 0%, #701a1a 5%, #881e1e 12%, #9e2222 25%, #a82828 50%, #9e2222 75%, #881e1e 88%, #701a1a 95%, #5c1515 100%); color: #e8a0a0; }
         .vm-old-reading { text-align: center; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-family: 'Courier New', monospace; }
         .vm-old-reading span { letter-spacing: 2px; }
         .vm-meter-info { text-align: center; margin-top: 0.45rem; font-size: 0.75rem; }
@@ -626,15 +630,15 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
 
         @media (max-width: 480px) {
             .vm-grid { grid-template-columns: 1fr 1fr; padding: 0.5rem; gap: 0.5rem; }
-            .vm-water-body { max-width: 210px; }
-            .vm-dial-water { width: 120px; height: 120px; }
+            .vm-water-body { max-width: 230px; }
+            .vm-dial-water { width: 155px; height: 155px; }
             .vm-dial-face { top: 7px; left: 7px; right: 7px; bottom: 7px; }
-            .vm-elec-frame { width: 115px; min-height: 135px; }
-            .vm-pipe-left, .vm-pipe-right { width: 28px; height: 34px; }
+            .vm-elec-frame { width: 130px; min-height: 150px; }
+            .vm-pipe-left, .vm-pipe-right { width: 32px; height: 38px; }
             .vm-digit { width: 15px; height: 20px; font-size: 0.72rem; }
-            .vm-sub-dial { width: 16px; height: 16px; bottom: 11%; right: 14%; }
-            .vm-pipe-flange { width: 10px; }
-            .vm-pipe-bolt { width: 9px; height: 9px; }
+            .vm-sub-dial { width: 18px; height: 18px; bottom: 12%; right: 14%; }
+            .vm-pipe-flange { width: 11px; }
+            .vm-pipe-bolt { width: 10px; height: 10px; }
         }
     </style>
 </head>

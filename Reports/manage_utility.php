@@ -409,7 +409,7 @@ $readings = [];
 $isPastMonth = sprintf('%04d-%02d', $year, $month) < date('Y-m');
 foreach ($rooms as $room) {
     if (!$room['ctr_id']) {
-        $readings[$room['room_id']] = ['water_old' => 0, 'elec_old' => 0, 'water_new' => '', 'elec_new' => '', 'saved' => false, 'workflow_step' => 1, 'meter_blocked' => false];
+        $readings[$room['room_id']] = ['water_old' => 0, 'elec_old' => 0, 'water_new' => '', 'elec_new' => '', 'saved' => false, 'workflow_step' => 1, 'meter_blocked' => false, 'isFirstReading' => false];
         continue;
     }
     
@@ -1210,7 +1210,9 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         }
         .vm-card.vm-saved .vm-dial-deco { color: #4ade80; opacity: 0.9; }
 
-        .vm-card.vm-empty { opacity: 0.35; pointer-events: none; }
+        .vm-card.vm-empty { opacity: 0.45; }
+        .vm-card.vm-empty .vm-digit { cursor: default; }
+        .vm-card.vm-empty .vm-card-header::after { content: 'ห้องว่าง'; font-size: 0.65rem; color: #94a3b8; font-weight: 500; background: #f1f5f9; padding: 2px 8px; border-radius: 8px; }
         .vm-card.vm-blocked { border: 2px solid #fbbf24; border-left: 4px solid #f59e0b; background: #fffbeb; }
         .vm-card-header {
             display: flex;
@@ -1371,8 +1373,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
 
         /* ── Meter Housing — cast blue body ── */
         .vm-dial-water {
-            width: 168px;
-            height: 168px;
+            width: 190px;
+            height: 190px;
             border-radius: 50%;
             flex-shrink: 0;
             position: relative;
@@ -1424,7 +1426,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         /* ── Aged Brass / Gold Bezel Ring ── */
         .vm-dial-face {
             position: absolute;
-            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            top: 9px; left: 9px; right: 9px; bottom: 9px;
             border-radius: 50%;
             /* Cream-white aged dial face */
             background:
@@ -1442,6 +1444,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             flex-direction: column;
             align-items: center;
             justify-content: center;
+            gap: 1px;
             overflow: hidden;
             /* Multi-ring brass bezel with depth */
             box-shadow:
@@ -1519,9 +1522,9 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
 
         /* ── Rotating star deco ── */
         .vm-dial-deco {
-            font-size: 1.3rem;
+            font-size: 1rem;
             color: #555;
-            margin: 3px 0;
+            margin: 1px 0;
             line-height: 1;
             opacity: 0.45;
             animation: waterMeterSpin 2.5s linear infinite;
@@ -1535,20 +1538,21 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
 
         /* ── Spec line ── */
         .vm-dial-specs {
-            font-size: 0.38rem;
+            font-size: 0.36rem;
             color: #888;
             letter-spacing: 0.3px;
             margin: 0;
+            white-space: nowrap;
             position: relative;
             z-index: 2;
         }
 
         /* ── WATER METER label ── */
         .vm-dial-label {
-            font-size: 0.48rem;
+            font-size: 0.42rem;
             font-weight: 800;
             color: #555;
-            letter-spacing: 2px;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
             position: relative;
             z-index: 2;
@@ -1784,11 +1788,11 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         }
 
         .vm-digit {
-            width: 20px;
-            height: 26px;
+            width: 18px;
+            height: 24px;
             text-align: center;
             font-family: 'Courier New', 'Lucida Console', monospace;
-            font-size: 0.92rem;
+            font-size: 0.85rem;
             font-weight: 900;
             border: none;
             padding: 0;
@@ -1900,10 +1904,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             .vm-grid { grid-template-columns: 1fr; padding: 0.5rem; gap: 0.75rem; }
             .vm-meters { flex-direction: column; }
             .vm-water-body { max-width: 230px; }
-            .vm-dial-water { width: 140px; height: 140px; }
-            .vm-dial-face { top: 8px; left: 8px; right: 8px; bottom: 8px; }
+            .vm-dial-water { width: 155px; height: 155px; }
+            .vm-dial-face { top: 7px; left: 7px; right: 7px; bottom: 7px; }
             .vm-elec-frame { width: 130px; min-height: 150px; }
-            .vm-digit { width: 16px; height: 22px; font-size: 0.78rem; }
+            .vm-digit { width: 15px; height: 20px; font-size: 0.72rem; }
             .vm-pipe-left, .vm-pipe-right { width: 32px; height: 38px; }
             .vm-sub-dial { width: 18px; height: 18px; bottom: 12%; right: 14%; }
             .vm-pipe-flange { width: 11px; }
@@ -2193,7 +2197,6 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                             <span class="vm-saved-badge">✓ บันทึกแล้ว</span>
                                         <?php endif; ?>
                                     </div>
-                                    <?php if ($hasCtr): ?>
                                     <div class="vm-meters">
                                         <div class="vm-meter-section">
                                             <div class="vm-old-reading">เดิม: <span><?php echo str_pad((string)$wOld, 7, '0', STR_PAD_LEFT); ?></span></div>
@@ -2223,11 +2226,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                             </div>
                                             <div class="vm-meter-info">
                                                 <div class="vm-usage water" data-vm-usage="water" data-vm-room="<?php echo $room['room_id']; ?>"><?php echo $wUsedVm; ?> หน่วย</div>
-                                                <div class="vm-cost" data-vm-cost="water" data-vm-room="<?php echo $room['room_id']; ?>"><?php echo $r['isFirstReading'] ? 0 : calculateWaterCost($wUsedVm); ?> ฿</div>
+                                                <div class="vm-cost" data-vm-cost="water" data-vm-room="<?php echo $room['room_id']; ?>"><?php echo ($r['isFirstReading'] ?? false) ? 0 : calculateWaterCost($wUsedVm); ?> ฿</div>
                                             </div>
                                         </div>
                                     </div>
-                                    <?php endif; ?>
                                 </div>
                                 <?php endforeach; ?>
                             </div>
@@ -2261,7 +2263,6 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                             <span class="vm-saved-badge">✓ บันทึกแล้ว</span>
                                         <?php endif; ?>
                                     </div>
-                                    <?php if ($hasCtr): ?>
                                     <div class="vm-meters">
                                         <div class="vm-meter-section">
                                             <div class="vm-old-reading">เดิม: <span><?php echo str_pad((string)$eOld, 5, '0', STR_PAD_LEFT); ?></span></div>
@@ -2293,11 +2294,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                             </div>
                                             <div class="vm-meter-info">
                                                 <div class="vm-usage electric" data-vm-usage="electric" data-vm-room="<?php echo $room['room_id']; ?>"><?php echo $eUsedVm; ?> หน่วย</div>
-                                                <div class="vm-cost" data-vm-cost="electric" data-vm-room="<?php echo $room['room_id']; ?>"><?php echo $r['isFirstReading'] ? 0 : ($eUsedVm * $electricRate); ?> ฿</div>
+                                                <div class="vm-cost" data-vm-cost="electric" data-vm-room="<?php echo $room['room_id']; ?>"><?php echo ($r['isFirstReading'] ?? false) ? 0 : ($eUsedVm * $electricRate); ?> ฿</div>
                                             </div>
                                         </div>
                                     </div>
-                                    <?php endif; ?>
                                 </div>
                                 <?php endforeach; ?>
                             </div>
