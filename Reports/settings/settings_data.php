@@ -56,9 +56,12 @@ $ownerSignature = '';
 // System language (th or en)
 $systemLanguage = 'th';
 
+// Session timeout (in minutes) - ระยะเวลา session หมดอายุระหว่างล็อกอินอยู่
+$sessionTimeoutMinutes = '30';
+
 // ดึงค่าตั้งค่าระบบจาก database
 try {
-    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'default_view_mode', 'fps_threshold', 'google_client_id', 'google_client_secret', 'google_redirect_uri', 'owner_signature', 'admin_quick_actions', 'payment_due_day', 'system_language')");
+    $settingsStmt = $pdo->query("SELECT * FROM system_settings WHERE setting_key IN ('site_name', 'theme_color', 'font_size', 'logo_filename', 'bg_filename', 'contact_phone', 'contact_email', 'public_theme', 'use_bg_image', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'default_view_mode', 'fps_threshold', 'google_client_id', 'google_client_secret', 'google_redirect_uri', 'owner_signature', 'admin_quick_actions', 'payment_due_day', 'system_language', 'session_timeout_minutes')");
     $rawSettings = $settingsStmt->fetchAll(PDO::FETCH_ASSOC);
     $settings = [];
     foreach ($rawSettings as $setting) {
@@ -83,6 +86,9 @@ try {
     
     // System language
     $systemLanguage = $settings['system_language'] ?? $systemLanguage;
+
+    // Session timeout (minutes)
+    $sessionTimeoutMinutes = $settings['session_timeout_minutes'] ?? $sessionTimeoutMinutes;
 
     // ข้อมูลบัญชีธนาคาร
     $bankName = $settings['bank_name'] ?? $bankName;

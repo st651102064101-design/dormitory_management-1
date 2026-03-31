@@ -22,6 +22,17 @@
       <span class="apple-row-chevron">›</span>
     </div>
 
+    <!-- Session Timeout -->
+    <div class="apple-settings-row" data-sheet="sheet-session-timeout">
+      <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">ระยะเวลา Session หมดอายุ</p>
+        <p class="apple-row-sublabel">ล็อกอินออกอัตโนมัติหลังจากไม่มีความเคลื่อนไหว</p>
+      </div>
+      <span class="apple-row-value" data-display="session-timeout-display"><?php echo htmlspecialchars($sessionTimeoutMinutes, ENT_QUOTES, 'UTF-8'); ?> นาที</span>
+      <span class="apple-row-chevron">›</span>
+    </div>
+
     <div class="apple-settings-row" data-sheet="sheet-quick-actions">
       <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/><path d="M18 4l2 2-2 2"/><path d="M18 16l2 2-2 2"/></svg></div>
       <div class="apple-row-content">
@@ -201,6 +212,28 @@
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:4px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>ควรสำรองข้อมูลอย่างน้อยสัปดาห์ละครั้ง และก่อนทำการเปลี่ยนแปลงข้อมูลสำคัญ
         </p>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Session Timeout -->
+<div class="apple-sheet-overlay" id="sheet-session-timeout">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-session-timeout">ยกเลิก</button>
+      <h3 class="apple-sheet-title">ระยะเวลา Session หมดอายุ</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <form id="sessionTimeoutForm">
+        <div class="apple-input-group">
+          <label class="apple-input-label">ระยะเวลา (นาที)</label>
+          <input type="number" id="sessionTimeoutInput" class="apple-input" min="1" max="999" value="<?php echo htmlspecialchars($sessionTimeoutMinutes, ENT_QUOTES, 'UTF-8'); ?>">
+        </div>
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 12px 0 16px;">ผู้ใช้จะถูกล็อกอินออกโดยอัตโนมัติหลังจากไม่มีความเคลื่อนไหวในจำนวนนาทีที่กำหนด</p>
+        <button type="submit" class="apple-button primary">บันทึกการตั้งค่า</button>
+      </form>
     </div>
   </div>
 </div>

@@ -265,6 +265,15 @@ class AppleSettings {
         this.saveQuickActions();
       });
     }
+
+    // Session Timeout Form
+    const sessionTimeoutForm = document.getElementById('sessionTimeoutForm');
+    if (sessionTimeoutForm) {
+      sessionTimeoutForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.saveSessionTimeout();
+      });
+    }
   }
 
   async saveSiteName() {
@@ -388,6 +397,36 @@ class AppleSettings {
         if (displayEl) displayEl.textContent = `${enabledCount} ปุ่ม`;
         this.showToast('บันทึกปุ่มลัดสำเร็จ', 'success');
         this.closeSheet('sheet-quick-actions');
+      } else {
+        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      }
+    } catch (error) {
+      this.showToast(error.message, 'error');
+    }
+  }
+
+  // ===== Session Timeout =====
+  async saveSessionTimeout() {
+    const timeout = document.getElementById('sessionTimeoutInput')?.value.trim();
+
+    if (!timeout || timeout < 1 || timeout > 999) {
+      this.showToast('กรุณากรอกระยะเวลาระหว่าง 1-999 นาที', 'error');
+      return;
+    }
+
+    try {
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: `session_timeout_minutes=${encodeURIComponent(timeout)}`
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        const displayEl = document.querySelector('[data-display="session-timeout-display"]');
+        if (displayEl) displayEl.textContent = `${timeout} นาที`;
+        this.showToast('บันทึกการตั้งค่า Session สำเร็จ', 'success');
+        this.closeSheet('sheet-session-timeout');
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
       }
