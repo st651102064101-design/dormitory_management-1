@@ -474,6 +474,7 @@ try {
         $_SESSION['admin_username'] = $admin['admin_username'];
         $_SESSION['admin_name'] = $admin['admin_name'] ?? '';
         $_SESSION['admin_picture'] = $admin['oauth_picture'] ?? $picture;
+        $_SESSION['last_activity'] = time();
         
         error_log("✓ Admin logged in: " . $admin['admin_id']);
         

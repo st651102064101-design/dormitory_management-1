@@ -4565,4 +4565,71 @@ document.addEventListener('keydown', function(e) {
     }, 500);
   });
 })();
+
+<?php
+// ── Client-side session timeout countdown ──────────────────────────────────
+if (!empty($_SESSION['admin_username']) && isset($_SESSION['last_activity'], $_SESSION['_timeout_min'])):
+    $jsTimeoutMin  = (int)$_SESSION['_timeout_min'];
+    $jsLastAct     = (int)$_SESSION['last_activity'];
+    $jsExpiresInMs = max(5000, ($jsLastAct + $jsTimeoutMin * 60 - time()) * 1000);
+    $jsWarnMs      = max(0, $jsExpiresInMs - 60000); // warn 60 s before expire
+    // Build login redirect path relative to the current page's depth
+    $jsSN          = str_replace('\\', '/', $_SERVER['SCRIPT_NAME'] ?? '/');
+    $jsDepth       = count(array_filter(explode('/', dirname($jsSN)))) - 1;
+    $jsLoginUrl    = str_repeat('../', max(0, $jsDepth)) . 'Login.php?reason=timeout';
+?>
+<script>
+(function () {
+  'use strict';
+  var expiresInMs  = <?= (int)$jsExpiresInMs ?>;
+  var warnMs       = <?= (int)$jsWarnMs ?>;
+  var loginUrl     = <?= json_encode($jsLoginUrl) ?>;
+  var warned       = false;
+
+  // ── Warning toast 60 s before expiry ──────────────────────────────────────
+  if (warnMs > 0) {
+    setTimeout(function () {
+      if (warned) return;
+      warned = true;
+      var msg = 'เซสชันจะหมดอายุใน 1 นาที กรุณาบันทึกงานของคุณ';
+      if (typeof AppleAlert !== 'undefined' && AppleAlert.show) {
+        AppleAlert.show({ type: 'warning', title: '⏰ เซสชันใกล้หมดอายุ', message: msg, duration: 10000 });
+      } else if (window.showAppleAlert) {
+        showAppleAlert('warning', '⏰ เซสชันใกล้หมดอายุ', msg);
+      } else {
+        console.warn('[Session]', msg);
+      }
+    }, warnMs);
+  }
+
+  // ── Auto-redirect when expired ─────────────────────────────────────────────
+  setTimeout(function () {
+    window.location.href = loginUrl;
+  }, expiresInMs);
+
+  // ── Refresh last-activity on user interaction (debounced, max once/min) ────
+  var lastPing = Date.now();
+  function pingServer() {
+    var now = Date.now();
+    if (now - lastPing < 55000) return; // throttle to once per 55 s
+    lastPing = now;
+    fetch('<?= htmlspecialchars(str_repeat('../', max(0, $jsDepth)) . 'Manage/ping_session.php', ENT_QUOTES, 'UTF-8') ?>', {
+      method: 'POST', credentials: 'same-origin'
+    }).then(function (r) {
+      return r.ok ? r.json() : null;
+    }).then(function (data) {
+      if (data && data.remaining_ms > 0) {
+        // Reset countdown with fresh expiry from server
+        expiresInMs = data.remaining_ms;
+        warned = false;
+      } else if (data && data.expired) {
+        window.location.href = loginUrl;
+      }
+    }).catch(function () {/* ignore */});
+  }
+  ['click', 'keydown', 'mousemove', 'touchstart'].forEach(function (evt) {
+    document.addEventListener(evt, pingServer, { passive: true });
+  });
+})();
 </script>
+<?php endif; ?>

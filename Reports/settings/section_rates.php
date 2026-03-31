@@ -273,6 +273,70 @@
 </div>
 
 <!-- Sheet: Payment Due Day -->
+<!-- Sheet: Billing Generate Day -->
+<div class="apple-sheet-overlay" id="sheet-billing-generate">
+  <div class="apple-sheet-container">
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-billing-generate">เสร็จ</button>
+      <h3 class="apple-sheet-title">รอบออกบิลรายเดือน</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <div style="text-align: center; margin-bottom: 20px;">
+        <div style="font-size: 48px; color: #6366f1; margin-bottom: 8px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/>
+            <line x1="16" y1="17" x2="8" y2="17"/>
+            <polyline points="10 9 9 9 8 9"/>
+          </svg>
+        </div>
+        <p style="font-size: 14px; color: var(--apple-text-secondary); margin: 0;">
+          กำหนดวันที่ระบบจะ<strong style="color:var(--apple-text);">สร้างบิลรายเดือน</strong>ให้ผู้เช่าโดยอัตโนมัติ<br>
+          บิลจะไม่ถูกสร้างก่อนถึงวันที่กำหนดในแต่ละเดือน
+        </p>
+      </div>
+
+      <div class="apple-input-group" style="margin-bottom: 16px;">
+        <label class="apple-input-label">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>วันที่ออกบิลของเดือน (1-28)
+        </label>
+        <input type="number" id="billingGenerateDay" class="apple-input" value="<?php echo (int)$billingGenerateDay; ?>" min="1" max="28" step="1">
+        <p style="font-size: 12px; color: var(--apple-text-secondary); margin-top: 6px;">
+          เช่น ตั้งเป็น 25 หมายความว่า บิลเดือนนี้จะถูกสร้างในวันที่ 25 เป็นต้นไป
+        </p>
+      </div>
+
+      <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 14px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" width="20" height="20" style="flex-shrink:0; margin-top: 2px;">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <div style="font-size: 13px; color: var(--apple-text-secondary); line-height: 1.6;">
+            <strong style="color: var(--apple-text);">ตัวอย่าง:</strong> ถ้าตั้งวันออกบิลเป็นวันที่ <strong id="genDayExample"><?php echo (int)$billingGenerateDay; ?></strong><br>
+            → บิล เม.ย. 2569 จะถูกสร้างในวันที่ <strong id="genDateExample"><?php echo (int)$billingGenerateDay; ?> เม.ย. 2569</strong><br>
+            → ก่อนวันที่ <strong id="genDayBefore"><?php echo (int)$billingGenerateDay; ?></strong> ของเดือน ระบบจะ<span style="color:#ef4444;font-weight:600;">ยังไม่สร้างบิล</span>เดือนปัจจุบัน
+          </div>
+        </div>
+      </div>
+
+      <button type="button" class="apple-button primary" onclick="saveBillingGenerateDay()" style="width: 100%; background: linear-gradient(135deg,#6366f1,#8b5cf6);">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;">
+          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/>
+          <polyline points="7 3 7 8 15 8"/>
+        </svg>บันทึก
+      </button>
+    </div>
+  </div>
+</div>
+
 <div class="apple-sheet-overlay" id="sheet-payment-due">
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
@@ -334,6 +398,45 @@
     </div>
   </div>
 </div>
+
+<script>
+// Billing Generate Day
+document.getElementById('billingGenerateDay')?.addEventListener('input', function() {
+  const val = Math.max(1, Math.min(28, parseInt(this.value) || 1));
+  const exEl = document.getElementById('genDayExample');
+  const dateEl = document.getElementById('genDateExample');
+  const beforeEl = document.getElementById('genDayBefore');
+  if (exEl) exEl.textContent = val;
+  if (dateEl) dateEl.textContent = val + ' เม.ย. 2569';
+  if (beforeEl) beforeEl.textContent = val;
+});
+
+function saveBillingGenerateDay() {
+  const val = Math.max(1, Math.min(28, parseInt(document.getElementById('billingGenerateDay').value) || 1));
+  const formData = new FormData();
+  formData.append('billing_generate_day', val);
+
+  fetch('../Manage/save_system_settings.php', {
+    method: 'POST',
+    body: formData
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      const sublabel = document.getElementById('billingGenerateDaySublabel');
+      if (sublabel) sublabel.textContent = 'ออกบิลทุกวันที่ ' + val + ' ของเดือน';
+      if (typeof appleToast === 'function') {
+        appleToast('บันทึกรอบออกบิลสำเร็จ', 'success');
+      } else {
+        alert('บันทึกสำเร็จ');
+      }
+    } else {
+      alert(data.error || 'เกิดข้อผิดพลาด');
+    }
+  })
+  .catch(() => alert('เกิดข้อผิดพลาดในการเชื่อมต่อ'));
+}
+</script>
 
 <script>
 // Payment Due Day

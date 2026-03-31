@@ -662,6 +662,17 @@ try {
         exit;
     }
 
+    // บันทึกวันออกบิลรายเดือน
+    if (isset($_POST['billing_generate_day'])) {
+        $billingGenerateDay = max(1, min(28, (int)$_POST['billing_generate_day']));
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['billing_generate_day', (string)$billingGenerateDay, (string)$billingGenerateDay]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกรอบออกบิลสำเร็จ']);
+        exit;
+    }
+
     // บันทึกระยะเวลา Session หมดอายุ
     if (isset($_POST['session_timeout_minutes'])) {
         $timeout = (int)$_POST['session_timeout_minutes'];

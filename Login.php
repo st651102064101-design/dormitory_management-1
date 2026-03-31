@@ -64,6 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['admin_id'] = $row['admin_id'];
         $_SESSION['admin_username'] = $row['admin_username'];
         $_SESSION['admin_name'] = $row['admin_name'] ?? '';
+        $_SESSION['last_activity'] = time();
         $login_success = true;
       } else {
         $login_error = 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง';

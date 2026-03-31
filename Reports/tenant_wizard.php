@@ -2904,7 +2904,18 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     btn.style.display = 'none';
                     document.getElementById('moWaterInput').disabled = true;
                     document.getElementById('moElecInput').disabled  = true;
-                    setTimeout(() => { closeMeterOnlyModal(); window.location.reload(); }, 700);
+                    setTimeout(() => {
+                        closeMeterOnlyModal();
+                        // อัปเดต step 5 circle ในหน้าหลักโดยไม่รีโหลด
+                        var step5Circles = document.querySelectorAll('[data-ctr-id="' + _moCtrId + '"]');
+                        step5Circles.forEach(function(circle) {
+                            circle.classList.remove('meter-pending', 'wait', 'pending', 'current');
+                            circle.classList.add('completed');
+                            circle.setAttribute('data-tooltip', '5. จดมิเตอร์แล้ว');
+                            circle.innerHTML = '✓';
+                        });
+                        showSuccessToast('บันทึกมิเตอร์เรียบร้อยแล้ว');
+                    }, 700);
                 } else {
                     msg.style.color = '#fca5a5';
                     msg.textContent = d.error || 'เกิดข้อผิดพลาด';
@@ -3090,9 +3101,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                             new bootstrap.Tooltip(circle, { title: '5. จดมิเตอร์แล้ว' });
                         }
                     });
-                    // รีโหลด page หลังจดมิเตอร์สำเร็จ 1 วินาที
-                    setTimeout(() => { window.location.reload(); }, 1000);
+                    // อัปเดต UI โดยไม่รีโหลดหน้า
                     refreshBillingPayments(_meterCtrId);
+                    showSuccessToast('อัปเดตมิเตอร์เรียบร้อยแล้ว');
                 } else {
                     msg.style.color = '#fca5a5';
                     msg.textContent = d.error || 'เกิดข้อผิดพลาด';

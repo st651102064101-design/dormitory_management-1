@@ -21,6 +21,14 @@ $pdo = connectDB();
 // --- อัตโนมัติสร้างรายการค่าใช้จ่ายใหม่เมื่อถึงเดือนใหม่ ---
 $today = new DateTime();
 $currentMonth = $today->format('Y-m');
+$todayDay = (int)$today->format('j'); // วันที่ปัจจุบัน (1-31)
+
+// ดึงวันที่ออกบิลจาก settings (default = 1 = ทุกวันที่ 1 เหมือนเดิม)
+$billingGenerateDaySetting = (int)($pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'billing_generate_day' LIMIT 1")->fetchColumn() ?: 1);
+// ถ้าวันนี้ยังไม่ถึงวันที่กำหนดออกบิล → ไม่สร้างบิลเดือนปัจจุบัน ใช้เดือนก่อนหน้าแทน
+$effectiveCurrentMonth = ($todayDay >= $billingGenerateDaySetting)
+    ? $currentMonth
+    : (new DateTime($currentMonth . '-01'))->modify('-1 month')->format('Y-m');
 // ดึงเฉพาะสัญญาที่ยังไม่หมดอายุและผ่าน Wizard ถึง Step 5 แล้ว
 $contractsStmt = $pdo->query("\n  SELECT DISTINCT c.ctr_id, c.ctr_start, c.ctr_end\n  FROM contract c\n  INNER JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n  WHERE c.ctr_status = '0'\n    AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n");
 $contracts = $contractsStmt ? $contractsStmt->fetchAll(PDO::FETCH_ASSOC) : [];
@@ -32,10 +40,10 @@ foreach ($contracts as $contract) {
   $ctr_end = $ctrEndDate->format('Y-m');
   // เริ่มคิดบิลรายเดือนตั้งแต่เดือนที่เริ่มสัญญา (ไม่ใช่เดือนถัดไป)
   $firstBillMonth = $ctrStartDate->format('Y-m');
-  // วนสร้างทุกเดือนตั้งแต่ firstBillMonth ถึง currentMonth
+  // วนสร้างทุกเดือนตั้งแต่ firstBillMonth ถึง effectiveCurrentMonth
   // (ใช้ firstBillMonth เสมอ ไม่ใช่ last_month+1 เพื่อป้องกันเดือนที่หายไป)
   $nextMonth = $firstBillMonth;
-  while ($nextMonth <= $currentMonth && $nextMonth <= $ctr_end) {
+  while ($nextMonth <= $effectiveCurrentMonth && $nextMonth <= $ctr_end) {
     // ตรวจสอบว่ามีรายการแล้วหรือยัง
     $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM expense WHERE ctr_id = ? AND DATE_FORMAT(exp_month, '%Y-%m') = ?");
     $checkStmt->execute([$ctr_id, $nextMonth]);
