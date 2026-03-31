@@ -226,7 +226,7 @@
       <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
-      <form id="sessionTimeoutForm">
+      <form id="sessionTimeoutForm" data-allow-submit>
         <div class="apple-input-group">
           <label class="apple-input-label">ระยะเวลา (นาที)</label>
           <input type="number" id="sessionTimeoutInput" class="apple-input" min="1" max="999" value="<?php echo htmlspecialchars($sessionTimeoutMinutes, ENT_QUOTES, 'UTF-8'); ?>">

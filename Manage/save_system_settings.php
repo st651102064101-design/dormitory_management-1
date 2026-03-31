@@ -662,6 +662,24 @@ try {
         exit;
     }
 
+    // บันทึกระยะเวลา Session หมดอายุ
+    if (isset($_POST['session_timeout_minutes'])) {
+        $timeout = (int)$_POST['session_timeout_minutes'];
+        
+        if ($timeout < 1 || $timeout > 999) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ระยะเวลา Session ต้องอยู่ระหว่าง 1-999 นาที']);
+            exit;
+        }
+
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['session_timeout_minutes', (string)$timeout, (string)$timeout]);
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกระยะเวลา Session สำเร็จ']);
+        exit;
+    }
+
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'error' => 'ไม่มีข้อมูลที่จะบันทึก']);
     exit;
