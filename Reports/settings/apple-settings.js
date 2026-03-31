@@ -16,6 +16,7 @@ class AppleSettings {
     this.initThemeSelector();
     this.initColorPicker();
     this.initViewModeSelector();
+    this.initLanguageSelector();
     this.initHeaderActions();
   }
 
@@ -1027,6 +1028,95 @@ class AppleSettings {
       }
     } catch (error) {
       this.showToast(error.message, 'error');
+    }
+  }
+
+  // ===== Language Selector =====
+  initLanguageSelector() {
+    // Use event delegation on the document to handle dynamically loaded content
+    document.addEventListener('click', (e) => {
+      const languageOption = e.target.closest('.apple-language-option');
+      if (languageOption) {
+        console.log('Language option clicked:', languageOption.dataset.language);
+        
+        // Prevent default behavior
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Remove active from all language options
+        document.querySelectorAll('.apple-language-option').forEach(opt => {
+          opt.classList.remove('active');
+        });
+        
+        // Add active to clicked element
+        languageOption.classList.add('active');
+        
+        const language = languageOption.dataset.language;
+        if (language) {
+          console.log('Saving language:', language);
+          this.saveLanguage(language);
+        }
+      }
+    }, true); // Use capture phase for better event handling
+  }
+
+  async saveLanguage(language) {
+    console.log('[Language] Starting save for:', language);
+    
+    try {
+      const body = `system_language=${encodeURIComponent(language)}`;
+      console.log('[Language] Request body:', body);
+      
+      const response = await fetch('../Manage/save_system_settings.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body
+      });
+
+      console.log('[Language] Response status:', response.status);
+      console.log('[Language] Response headers:', response.headers);
+      
+      const result = await response.json();
+      console.log('[Language] Response JSON:', result);
+      
+      if (result.success) {
+        console.log('[Language] Success! Language saved:', result.language);
+        
+        // Update display value
+        const displayEl = document.querySelector('[data-sheet="sheet-language"] .apple-row-value');
+        const langNames = { 'th': '🇹🇭 ไทย', 'en': '🇺🇸 English' };
+        if (displayEl) {
+          displayEl.textContent = langNames[language] || language;
+          console.log('[Language] Updated display element');
+        }
+        
+        // Store in localStorage for immediate effect
+        localStorage.setItem('systemLanguage', language);
+        console.log('[Language] Stored in localStorage');
+        
+        // Set cookie for server-side
+        document.cookie = `system_language=${language}; path=/; max-age=${365*24*60*60}; SameSite=Lax`;
+        console.log('[Language] Set cookie');
+        
+        const message = language === 'th' 
+          ? 'บันทึกภาษาสำเร็จ กำลังโหลดหน้าใหม่...' 
+          : 'Language saved. Reloading page...';
+        this.showToast(message, 'success');
+        
+        // Reload page to apply language change (with cache bypass)
+        console.log('[Language] Reloading page in 1500ms with cache bypass...');
+        setTimeout(() => {
+          console.log('[Language] Hard reload initiated');
+          window.location.href = window.location.href;
+        }, 1500);
+      } else {
+        const errorMsg = result.error || 'Unknown error';
+        console.error('[Language] Save failed:', errorMsg);
+        throw new Error(errorMsg);
+      }
+    } catch (error) {
+      console.error('[Language] Catch block error:', error);
+      this.showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
     }
   }
 

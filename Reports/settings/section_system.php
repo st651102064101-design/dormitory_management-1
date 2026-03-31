@@ -1,13 +1,13 @@
 <!-- Section: System Info & Backup -->
 <div class="apple-section-group">
-  <h2 class="apple-section-title">ระบบ</h2>
+  <h2 class="apple-section-title"><?php echo __('settings_system'); ?></h2>
   <div class="apple-section-card">
     <!-- System Info -->
     <div class="apple-settings-row" data-sheet="sheet-system-info">
       <div class="apple-row-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">ข้อมูลระบบ</p>
-        <p class="apple-row-sublabel">PHP, Database, สถานะ</p>
+        <p class="apple-row-label"><?php echo __('system_info_label'); ?></p>
+        <p class="apple-row-sublabel"><?php echo __('system_info_desc'); ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -16,8 +16,8 @@
     <div class="apple-settings-row" data-sheet="sheet-backup">
       <div class="apple-row-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">สำรองข้อมูล</p>
-        <p class="apple-row-sublabel">Backup ฐานข้อมูล</p>
+        <p class="apple-row-label"><?php echo __('backup_label'); ?></p>
+        <p class="apple-row-sublabel"><?php echo __('backup_desc'); ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -25,10 +25,13 @@
     <div class="apple-settings-row" data-sheet="sheet-quick-actions">
       <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M4 12h16"/><path d="M4 6h16"/><path d="M4 18h16"/><path d="M18 4l2 2-2 2"/><path d="M18 16l2 2-2 2"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">ปุ่มลัดเมนูด้านบน</p>
-        <p class="apple-row-sublabel">แก้ชื่อ ลิงก์ และคีย์ลัดของ quick actions</p>
+        <p class="apple-row-label"><?php echo __('quick_actions_label'); ?></p>
+        <p class="apple-row-sublabel"><?php echo __('quick_actions_desc'); ?></p>
       </div>
-      <span class="apple-row-value" data-display="quickactions-count"><?php echo count(array_filter($adminQuickActions, static fn($action) => !empty($action['enabled']))); ?> ปุ่ม</span>
+      <span class="apple-row-value" data-display="quickactions-count"><?php 
+        $enabledCount = count(array_filter($adminQuickActions, static fn($action) => !empty($action['enabled'])));
+        echo __('buttons_count', ['count' => $enabledCount]);
+      ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
   </div>

@@ -910,11 +910,13 @@ body.apple-settings-page .manage-panel {
   transition: all 0.4s cubic-bezier(0.32, 0.72, 0, 1);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  pointer-events: none;
 }
 
 .apple-sheet-overlay.active {
   opacity: 1;
   visibility: visible;
+  pointer-events: auto;
 }
 
 .apple-sheet {
@@ -931,6 +933,7 @@ body.apple-settings-page .manage-panel {
   z-index: 10000;
   padding-bottom: env(safe-area-inset-bottom, 20px);
   box-shadow: 0 -10px 60px rgba(0,0,0,0.3);
+  pointer-events: auto;
 }
 
 .apple-sheet-overlay.active .apple-sheet {
@@ -2826,3 +2829,82 @@ body.apple-settings-page .sidebar-overlay.active {
   animation: fadeInUp 0.4s ease forwards;
 }
 
+/* ===== Language Option ===== */
+.apple-language-option {
+  text-align: center;
+  cursor: pointer;
+  padding: 20px 14px;
+  border-radius: 16px;
+  border: 2px solid transparent;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  background: var(--apple-card);
+  position: relative;
+  overflow: hidden;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
+  z-index: 1;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.apple-language-option:active,
+.apple-language-option:focus {
+  outline: none;
+}
+
+.apple-language-option::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--apple-blue), var(--apple-teal));
+  transform: scaleX(0);
+  transition: transform 0.3s;
+}
+
+.apple-language-option:hover {
+  background: rgba(128, 128, 128, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+}
+
+.apple-language-option:hover::before {
+  transform: scaleX(1);
+}
+
+.apple-language-option.active {
+  border-color: var(--apple-blue);
+  background: rgba(0, 122, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 122, 255, 0.2);
+}
+
+.apple-language-option.active::before {
+  transform: scaleX(1);
+}
+
+.apple-language-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 80px;
+  margin-bottom: 12px;
+  transition: transform 0.3s;
+}
+
+.apple-language-option:hover .apple-language-preview {
+  transform: scale(1.1);
+}
+
+.apple-language-option.active .apple-theme-name {
+  color: var(--apple-blue);
+  font-weight: 700;
+}

@@ -1,13 +1,13 @@
 <!-- Section: Appearance Settings -->
 <div class="apple-section-group">
-  <h2 class="apple-section-title">การแสดงผล</h2>
+  <h2 class="apple-section-title"><?php echo __('settings_appearance'); ?></h2>
   <div class="apple-section-card">
     <!-- Default View Mode -->
     <div class="apple-settings-row" data-sheet="sheet-default-view">
       <div class="apple-row-icon cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">รูปแบบการแสดงผลเริ่มต้น</p>
-        <p class="apple-row-sublabel">ใช้กับทุกหน้าแอดมิน</p>
+        <p class="apple-row-label"><?php echo __('default_view_mode'); ?></p>
+        <p class="apple-row-sublabel"><?php echo __('default_view_mode_desc'); ?></p>
       </div>
       <span class="apple-row-value"><?php 
         $viewModeNames = ['grid' => 'Grid', 'list' => 'List'];
@@ -20,12 +20,12 @@
     <div class="apple-settings-row" data-sheet="sheet-public-theme">
       <div class="apple-row-icon indigo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">ธีมหน้าสาธารณะ</p>
-        <p class="apple-row-sublabel">ธีมสำหรับผู้เยี่ยมชม</p>
+        <p class="apple-row-label"><?php echo __('public_theme'); ?></p>
+        <p class="apple-row-sublabel"><?php echo __('public_theme_desc'); ?></p>
       </div>
       <span class="apple-row-value"><?php 
-        $themeNames = ['dark' => 'มืด', 'light' => 'สว่าง', 'auto' => 'อัตโนมัติ'];
-        echo $themeNames[$publicTheme] ?? 'มืด';
+        $themeNames = ['dark' => __('theme_dark'), 'light' => __('theme_light'), 'auto' => __('theme_auto')];
+        echo $themeNames[$publicTheme] ?? __('theme_dark');
       ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -34,8 +34,8 @@
     <div class="apple-settings-row">
       <div class="apple-row-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">ใช้ภาพพื้นหลัง</p>
-        <p class="apple-row-sublabel">แสดงภาพพื้นหลังบนหน้าแรก</p>
+        <p class="apple-row-label"><?php echo __('use_bg_image'); ?></p>
+        <p class="apple-row-sublabel"><?php echo __('use_bg_image_desc'); ?></p>
       </div>
       <div class="apple-toggle" id="bgImageToggle" data-setting="use_bg_image" data-value="<?php echo htmlspecialchars($useBgImage); ?>"></div>
     </div>
@@ -44,7 +44,7 @@
     <div class="apple-settings-row" data-sheet="sheet-theme-color">
       <div class="apple-row-icon pink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">สีพื้นหลังระบบ</p>
+        <p class="apple-row-label"><?php echo __('theme_color_label'); ?></p>
       </div>
       <div style="width: 24px; height: 24px; border-radius: 6px; background: <?php echo htmlspecialchars($themeColor); ?>; border: 2px solid rgba(0,0,0,0.1); margin-right: 8px;"></div>
       <span class="apple-row-chevron">›</span>
@@ -54,11 +54,11 @@
     <div class="apple-settings-row" data-sheet="sheet-font-size">
       <div class="apple-row-icon gray"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">ขนาดตัวอักษร</p>
+        <p class="apple-row-label"><?php echo __('font_size'); ?></p>
       </div>
       <span class="apple-row-value"><?php 
-        $fontSizeNames = ['0.9' => 'เล็ก', '1' => 'ปกติ', '1.1' => 'ใหญ่', '1.25' => 'ใหญ่มาก'];
-        echo $fontSizeNames[$fontSize] ?? 'ปกติ';
+        $fontSizeNames = ['0.9' => __('font_small'), '1' => __('font_normal'), '1.1' => __('font_large'), '1.25' => __('font_xlarge')];
+        echo $fontSizeNames[$fontSize] ?? __('font_normal');
       ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -68,9 +68,23 @@
       <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label">FPS Threshold</p>
-        <p class="apple-row-sublabel">แจ้งเตือนเมื่อ FPS ต่ำกว่า</p>
+        <p class="apple-row-sublabel"><?php echo __('fps_threshold_desc'); ?></p>
       </div>
       <span class="apple-row-value"><?php echo htmlspecialchars($fpsThreshold ?? '60'); ?> FPS</span>
+      <span class="apple-row-chevron">›</span>
+    </div>
+    
+    <!-- System Language -->
+    <div class="apple-settings-row" data-sheet="sheet-language">
+      <div class="apple-row-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">ภาษา / Language</p>
+        <p class="apple-row-sublabel">เปลี่ยนภาษาทั้งระบบ</p>
+      </div>
+      <span class="apple-row-value"><?php 
+        $langNames = ['th' => '🇹🇭 ไทย', 'en' => '🇺🇸 English'];
+        echo $langNames[$systemLanguage ?? 'th'] ?? '🇹🇭 ไทย';
+      ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
   </div>
@@ -87,20 +101,20 @@
     </div>
     <div class="apple-sheet-body">
       <p style="font-size: 13px; color: var(--apple-text-secondary); margin-bottom: 16px;">
-        เลือกธีมสำหรับหน้าแรก, หน้าจองห้อง และหน้าข่าวสาร
+        <?php echo __('public_theme_hint'); ?>
       </p>
       <div class="apple-theme-grid">
         <div class="apple-theme-option <?php echo $publicTheme === 'dark' ? 'active' : ''; ?>" data-theme="dark">
           <div class="apple-theme-preview dark"></div>
-          <span class="apple-theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>มืด</span>
+          <span class="apple-theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><?php echo __('theme_dark'); ?></span>
         </div>
         <div class="apple-theme-option <?php echo $publicTheme === 'light' ? 'active' : ''; ?>" data-theme="light">
           <div class="apple-theme-preview light"></div>
-          <span class="apple-theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>สว่าง</span>
+          <span class="apple-theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg><?php echo __('theme_light'); ?></span>
         </div>
         <div class="apple-theme-option <?php echo $publicTheme === 'auto' ? 'active' : ''; ?>" data-theme="auto">
           <div class="apple-theme-preview auto"></div>
-          <span class="apple-theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>อัตโนมัติ</span>
+          <span class="apple-theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><?php echo __('theme_auto'); ?></span>
         </div>
       </div>
     </div>
@@ -284,6 +298,46 @@
           <li>คอมพิวเตอร์เก่า: 30-45 FPS</li>
           <li>หน้าจอความถี่สูง: 90-120 FPS</li>
         </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Language Selection -->
+<div class="apple-sheet-overlay" id="sheet-language">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-language">เสร็จ / Done</button>
+      <h3 class="apple-sheet-title">ภาษา / Language</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <p style="font-size: 13px; color: var(--apple-text-secondary); margin-bottom: 16px;">
+        เลือกภาษาที่ใช้แสดงในระบบ<br>
+        <span style="font-size: 12px;">Select display language for the system</span>
+      </p>
+      <div class="apple-theme-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="apple-language-option <?php echo ($systemLanguage ?? 'th') === 'th' ? 'active' : ''; ?>" data-language="th">
+          <div class="apple-language-preview">
+            <span style="font-size: 48px;">🇹🇭</span>
+          </div>
+          <span class="apple-theme-name">ไทย (Thai)</span>
+        </div>
+        <div class="apple-language-option <?php echo ($systemLanguage ?? 'th') === 'en' ? 'active' : ''; ?>" data-language="en">
+          <div class="apple-language-preview">
+            <span style="font-size: 48px;">🇺🇸</span>
+          </div>
+          <span class="apple-theme-name">English</span>
+        </div>
+      </div>
+      
+      <div style="margin-top: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0; display: flex; align-items: center; gap: 6px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+          การเปลี่ยนภาษาจะมีผลกับทุกหน้าในระบบ<br>
+          <span style="font-size: 11px;">Language change will affect all pages in the system</span>
+        </p>
       </div>
     </div>
   </div>

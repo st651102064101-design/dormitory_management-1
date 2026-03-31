@@ -16,6 +16,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// CSRF validation
+if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'CSRF token ไม่ถูกต้อง']);
+    exit;
+}
+
 $ctrId     = isset($_POST['ctr_id'])     ? (int)$_POST['ctr_id']     : 0;
 $waterNew  = isset($_POST['water_new'])  && $_POST['water_new'] !== '' ? (int)$_POST['water_new']  : null;
 $elecNew   = isset($_POST['elec_new'])   && $_POST['elec_new']  !== '' ? (int)$_POST['elec_new']   : null;

@@ -1,13 +1,13 @@
 <!-- Section: Utility Rates -->
 <div class="apple-section-group">
-  <h2 class="apple-section-title">ค่าใช้จ่าย</h2>
+  <h2 class="apple-section-title"><?php echo __('expenses_section'); ?></h2>
   <div class="apple-section-card">
     <!-- Payment Due Day Setting -->
     <div class="apple-settings-row" data-sheet="sheet-payment-due">
       <div class="apple-row-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">กำหนดชำระค่าห้อง</p>
-        <p class="apple-row-sublabel">ทุกวันที่ <?php echo (int)$paymentDueDay; ?> ของเดือน</p>
+        <p class="apple-row-label"><?php echo __('payment_due_label'); ?></p>
+        <p class="apple-row-sublabel"><?php echo __('payment_due_desc', ['day' => (int)$paymentDueDay]); ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -68,8 +68,8 @@
     <div class="apple-settings-row" data-sheet="sheet-rates">
       <div class="apple-row-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">จัดการอัตราค่าน้ำค่าไฟ</p>
-        <p class="apple-row-sublabel" id="currentRateDateLabel">เริ่มใช้: <?php echo date('d/m/Y', strtotime($currentRateDate)); ?></p>
+        <p class="apple-row-label"><?php echo __('manage_rates_label'); ?></p>
+        <p class="apple-row-sublabel" id="currentRateDateLabel"><?php echo __('effective_from'); ?> <?php echo date('d/m/Y', strtotime($currentRateDate)); ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>

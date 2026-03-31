@@ -13,6 +13,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     die(json_encode(['success' => false, 'error' => 'Method not allowed']));
 }
 
+// CSRF validation
+if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
+    http_response_code(403);
+    die(json_encode(['success' => false, 'error' => 'CSRF token ไม่ถูกต้อง']));
+}
+
 require_once __DIR__ . '/../ConnectDB.php';
 
 $pdo = null;

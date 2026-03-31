@@ -12,6 +12,12 @@ require_once __DIR__ . '/../ConnectDB.php';
 // Initialize database connection
 $conn = connectDB();
 
+// CSRF token generation
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
+
 // ดึง theme color จากการตั้งค่าระบบ
 $settingsStmt = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
 $themeColor = '#0f172a'; // ค่า default (dark mode)
@@ -105,8 +111,6 @@ try {
             bp.bp_status AS booking_payment_status,
             bp.bp_receipt_no,
             bp.bp_id,
-            bp.bp_amount,
-            bp.bp_proof,
             bp.bp_amount,
             bp.bp_proof,
             cr.checkin_id,
@@ -265,6 +269,27 @@ try {
             $utilStmt->execute($allCtrIds);
             foreach ($utilStmt->fetchAll(PDO::FETCH_ASSOC) as $uRow) {
                 $utilMonthsRecorded[(int)$uRow['ctr_id']][$uRow['ym']] = true;
+            }
+        }
+    } catch (Exception $e) { /* non-critical */ }
+
+    // Batch-fetch latest checkin records per contract (for meter-start fallback)
+    $checkinRecords = [];
+    try {
+        if (!empty($allCtrIds)) {
+            $placeholders = implode(',', array_fill(0, count($allCtrIds), '?'));
+            $checkinStmt = $conn->prepare(
+                "SELECT cr1.ctr_id, cr1.water_meter_start, cr1.elec_meter_start
+                 FROM checkin_record cr1
+                 INNER JOIN (
+                     SELECT ctr_id, MAX(checkin_id) AS max_id
+                     FROM checkin_record WHERE ctr_id IN ($placeholders)
+                     GROUP BY ctr_id
+                 ) cr2 ON cr1.checkin_id = cr2.max_id"
+            );
+            $checkinStmt->execute($allCtrIds);
+            foreach ($checkinStmt->fetchAll(PDO::FETCH_ASSOC) as $cRow) {
+                $checkinRecords[(int)$cRow['ctr_id']] = $cRow;
             }
         }
     } catch (Exception $e) { /* non-critical */ }
@@ -1132,62 +1157,39 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     ? date('Y-m', strtotime($billYearMonth . '-01 -1 month'))
                                     : null;
                                 
-                                // ตรวจสอบว่าจดมิเตอร์เดือนบิลแล้วหรือไม่ โดย query database โดยตรง
+                                // ตรวจสอบว่าจดมิเตอร์เดือนบิลแล้วหรือไม่ (ใช้ batch data)
                                 $meterBillDone = false;
                                 if (($step4 == 1 || $step5 == 1) && $billYearMonth !== null) {
-                                    $billCheckStmt = $conn->prepare("
-                                        SELECT COUNT(*) as cnt FROM utility 
-                                        WHERE ctr_id = ? AND DATE_FORMAT(utl_date, '%Y-%m') = ?
-                                    ");
-                                    $billCheckStmt->execute([$ctrIdInt, $billYearMonth]);
-                                    $billCheckResult = $billCheckStmt->fetch(PDO::FETCH_ASSOC);
-                                    $meterBillDone = ($billCheckResult['cnt'] ?? 0) > 0;
+                                    $meterBillDone = !empty($utilMonthsRecorded[$ctrIdInt][$billYearMonth]);
                                 }
                                 // เมื่อบิลเดือนแรก = เดือนเริ่มสัญญา: checkin คือการจดมิเตอร์ครั้งแรก
-                                // ไม่ต้องมี utility record แยกต่างหาก — ถือว่าจดมิเตอร์แล้วเมื่อมี checkin record พร้อมข้อมูลมิเตอร์
                                 if (!$meterBillDone && $step5 == 1 && $billYearMonth !== null && $ctrStartYm !== null && $billYearMonth === $ctrStartYm) {
-                                    // ตรวจสอบว่า checkin record มี meter data
-                                    $checkinCheckStmt = $conn->prepare("
-                                        SELECT water_meter_start, elec_meter_start 
-                                        FROM checkin_record 
-                                        WHERE ctr_id = ? 
-                                        ORDER BY checkin_id DESC 
-                                        LIMIT 1
-                                    ");
-                                    $checkinCheckStmt->execute([$ctrIdInt]);
-                                    $checkinData = $checkinCheckStmt->fetch(PDO::FETCH_ASSOC);
-                                    // ถ้า checkin มีข้อมูลมิเตอร์ ถือว่าจดมิเตอร์แล้ว
+                                    $checkinData = $checkinRecords[$ctrIdInt] ?? null;
                                     if ($checkinData && $checkinData['water_meter_start'] !== null && $checkinData['elec_meter_start'] !== null) {
                                         $meterBillDone = true;
                                     }
                                 }
                                 
-                                // ตรวจสอบว่าจดมิเตอร์เดือนก่อนหน้าแล้วหรือไม่
-                                $meterPrevDone = $prevYearMonth === null;  // if no prev month, consider it done
+                                // ตรวจสอบว่าจดมิเตอร์เดือนก่อนหน้าแล้วหรือไม่ (ใช้ batch data)
+                                $meterPrevDone = $prevYearMonth === null;
                                 if (!$meterPrevDone && $prevYearMonth !== null) {
-                                    $prevCheckStmt = $conn->prepare("
-                                        SELECT COUNT(*) as cnt FROM utility 
-                                        WHERE ctr_id = ? AND DATE_FORMAT(utl_date, '%Y-%m') = ?
-                                    ");
-                                    $prevCheckStmt->execute([$ctrIdInt, $prevYearMonth]);
-                                    $prevCheckResult = $prevCheckStmt->fetch(PDO::FETCH_ASSOC);
-                                    $meterPrevDone = ($prevCheckResult['cnt'] ?? 0) > 0;
+                                    $meterPrevDone = !empty($utilMonthsRecorded[$ctrIdInt][$prevYearMonth]);
                                 }
 
                                 // HTML สถานะมิเตอร์ (แสดงใต้สถานะบิล สำหรับแถว ⏳ เท่านั้น)
-                                $openBillingJs = "openBillingModal({$tenant['ctr_id']}, '"
-                                    . htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8') . "', '"
-                                    . htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8') . "', '"
-                                    . htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8') . "', '"
-                                    . htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8') . "', "
+                                $openBillingJs = "openBillingModal(" . (int)$tenant['ctr_id'] . ", "
+                                    . json_encode($tenant['tnt_id']) . ", "
+                                    . json_encode($tenant['tnt_name']) . ", "
+                                    . json_encode($tenant['room_number']) . ", "
+                                    . json_encode($tenant['type_name']) . ", "
                                     . (int)$tenant['type_price'] . ")";
                                 // JS สำหรับปุ่มจดมิเตอร์
                                 $openMeterJs = fn(string $ym) =>
                                     "openMeterOnlyModal("
-                                    . (int)$tenant['ctr_id'] . ", '"
-                                    . htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8') . "', '"
-                                    . htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8') . "', '"
-                                    . htmlspecialchars($ym, ENT_QUOTES, 'UTF-8') . "')";
+                                    . (int)$tenant['ctr_id'] . ", "
+                                    . json_encode($tenant['tnt_name']) . ", "
+                                    . json_encode($tenant['room_number']) . ", "
+                                    . json_encode($ym) . ")";
                                 if ($meterBillDone) {
                                     // Check if it's first meter and bill status
                                     $isFirstMeter = $prevYearMonth === null;
@@ -1296,87 +1298,87 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 }
                                 ?>
                                 <tr<?php if ($isCancelPending): ?> style="background:rgba(239,68,68,0.05)!important;border-left:3px solid rgba(239,68,68,0.45);"<?php endif; ?>>
-                                    <td>
+                                    <td data-label="ผู้เช่า">
                                         <div class="tenant-info">
                                             <span class="tenant-name"><?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?></span>
                                             <span class="tenant-phone"><?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?></span>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="ห้อง">
                                         <strong><?php echo htmlspecialchars($tenant['room_number'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></strong>
                                         <br>
                                         <span style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">
                                             <?php echo htmlspecialchars($tenant['type_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
                                         </span>
                                     </td>
-                                    <td>
+                                    <td data-label="สถานะ">
                                         <div class="step-indicator">
-                                            <div class="step-circle <?php echo $step1 ? 'completed' : ($currentStep == 1 ? 'current' : 'pending'); ?>" data-tooltip="1. ยืนยันจอง" <?php if ($step1): ?>onclick="openBookingModal(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>, '<?php echo date('d/m/Y', strtotime($tenant['bkg_date'])); ?>', true)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step1 ? 'completed' : ($currentStep == 1 ? 'current' : 'pending'); ?>" data-tooltip="1. ยืนยันจอง" <?php if ($step1): ?>onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['bkg_date']))), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step1 ? '✓' : '1'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step2 ? 'completed' : ($currentStep == 2 ? 'current' : 'pending'); ?>" data-tooltip="2. ยืนยันชำระเงินจอง" <?php if ($step2): ?>onclick="openPaymentModal(<?php echo $tenant['bp_id']; ?>, <?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['bp_amount'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['bp_proof'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', true)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step2 ? 'completed' : ($currentStep == 2 ? 'current' : 'pending'); ?>" data-tooltip="2. ยืนยันชำระเงินจอง" <?php if ($step2): ?>onclick="openPaymentModal(<?php echo (int)$tenant['bp_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bp_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step2 ? '✓' : '2'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step3 ? 'completed' : ($currentStep == 3 ? 'current' : 'pending'); ?>" data-tooltip="3. สร้างสัญญา" <?php if ($step3): ?>onclick="openContractModal('<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, <?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['bkg_checkin_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['ctr_start'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['ctr_end'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['bp_amount'] ?? 0; ?>, true)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step3 ? 'completed' : ($currentStep == 3 ? 'current' : 'pending'); ?>" data-tooltip="3. สร้างสัญญา" <?php if ($step3): ?>onclick="openContractModal(<?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['type_price'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bkg_checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_end'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step3 ? '✓' : '3'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step4 ? 'completed' : ($currentStep == 4 ? 'current' : 'pending'); ?>" data-tooltip="4. เช็คอิน" <?php if ($step4): ?>onclick="openCheckinModal(<?php echo $tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now')); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now')); ?>', '<?php echo htmlspecialchars((string)($tenant['checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars((string)($tenant['water_meter_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars((string)($tenant['elec_meter_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', true)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step4 ? 'completed' : ($currentStep == 4 ? 'current' : 'pending'); ?>" data-tooltip="4. เช็คอิน" <?php if ($step4): ?>onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step4 ? '✓' : '4'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step5CircleClass; ?>" data-ctr-id="<?php echo $tenant['ctr_id']; ?>" data-tooltip="<?php echo htmlspecialchars($step5Tooltip, ENT_QUOTES, 'UTF-8'); ?>" <?php if ($step5): ?>onclick="openBillingModal(<?php echo $tenant['ctr_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step5CircleClass; ?>" data-ctr-id="<?php echo (int)$tenant['ctr_id']; ?>" data-tooltip="<?php echo htmlspecialchars($step5Tooltip, ENT_QUOTES, 'UTF-8'); ?>" <?php if ($step5): ?>onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step5CircleLabel; ?>
                                             </div>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td data-label="ขั้นตอนถัดไป">
                                         <?php if ($isCancelPending): ?>
                                             <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0.4rem;">
                                                 <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.7rem;border-radius:20px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);color:#f87171;font-size:0.82rem;font-weight:700;">
                                                     ⚠ ผู้เช่าแจ้งยกเลิกสัญญา
                                                 </div>
-                                                <a href="http://project.3bbddns.com:36140/dormitory_management/Reports/manage_contracts.php?ctr_id=<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>" style="font-size:0.78rem;color:#60a5fa;text-decoration:none;font-weight:600;">จัดการสัญญา →</a>
+                                                <a href="manage_contracts.php?ctr_id=<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>" style="font-size:0.78rem;color:#60a5fa;text-decoration:none;font-weight:600;">จัดการสัญญา →</a>
                                             </div>
                                         <?php elseif ($tenant['workflow_id'] === null): ?>
-                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>, '<?php echo date('d/m/Y', strtotime($tenant['bkg_date'])); ?>')">ยืนยันการชำระการจอง</button>
-                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
+                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['bkg_date']))), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันการชำระการจอง</button>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 1): ?>
-                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['room_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '', ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['type_price']; ?>, '<?php echo date('d/m/Y', strtotime($tenant['bkg_date'])); ?>')">ยืนยันการชำระการจอง</button>
-                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
+                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['bkg_date']))), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันการชำระการจอง</button>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 2): ?>
-                                            <button type="button" class="action-btn btn-primary" onclick="openPaymentModal(<?php echo $tenant['bp_id']; ?>, <?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo $tenant['bp_amount'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['bp_proof'] ?? '', ENT_QUOTES, 'UTF-8'); ?>')">ยืนยันชำระเงินจอง</button>
-                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
+                                            <button type="button" class="action-btn btn-primary" onclick="openPaymentModal(<?php echo (int)$tenant['bp_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bp_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันชำระเงินจอง</button>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 3): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openContractModal(
-                                                '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>',
-                                                <?php echo $tenant['room_id']; ?>,
-                                                <?php echo $tenant['bkg_id']; ?>,
-                                                '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>',
-                                                '<?php echo htmlspecialchars($tenant['room_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
-                                                '<?php echo htmlspecialchars($tenant['type_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
-                                                <?php echo $tenant['type_price'] ?? 0; ?>,
-                                                '<?php echo htmlspecialchars($tenant['bkg_checkin_date'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
-                                                '<?php echo htmlspecialchars($tenant['ctr_start'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
-                                                '<?php echo htmlspecialchars($tenant['ctr_end'] ?? '', ENT_QUOTES, 'UTF-8'); ?>',
-                                                <?php echo $tenant['bp_amount'] ?? 0; ?>
+                                                <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>,
+                                                <?php echo (int)$tenant['room_id']; ?>,
+                                                <?php echo (int)$tenant['bkg_id']; ?>,
+                                                <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>,
+                                                <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>,
+                                                <?php echo htmlspecialchars(json_encode($tenant['type_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>,
+                                                <?php echo (int)($tenant['type_price'] ?? 0); ?>,
+                                                <?php echo htmlspecialchars(json_encode($tenant['bkg_checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>,
+                                                <?php echo htmlspecialchars(json_encode($tenant['ctr_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>,
+                                                <?php echo htmlspecialchars(json_encode($tenant['ctr_end'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>,
+                                                <?php echo (int)($tenant['bp_amount'] ?? 0); ?>
                                             )">สร้างสัญญา</button>
-                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 4): ?>
-                                            <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo $tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now')); ?>', '<?php echo date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now')); ?>', '<?php echo htmlspecialchars((string)($tenant['checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars((string)($tenant['water_meter_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars((string)($tenant['elec_meter_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>')">เช็คอิน</button>
-                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo $tenant['bkg_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>')">ยกเลิก</button>
-                                        <?php elseif ($currentStep == 5): ?>
+                                            <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">เช็คอิน</button>
+                                            <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
+                                        <?php elseif ($currentStep == 5 || $currentStep >= 6 || (int)($tenant['completed'] ?? 0) === 1): ?>
                                             <?php if ($step5 && $firstBillPaid): ?>
                                                 <span style="color: #16a34a; font-weight: 600;">✓ บิลเดือนแรกชำระแล้ว (<?php echo htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>
                                             <?php elseif ($step5 && $firstBillWaiting): ?>
                                                 <button type="button"
-                                                    onclick="openBillingModal(<?php echo $tenant['ctr_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$tenant['type_price']; ?>)"
+                                                    onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)"
                                                     style="background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.4);color:#60a5fa;font-weight:600;font-size:0.82rem;padding:0.3rem 0.75rem;border-radius:20px;cursor:pointer;transition:background 0.2s;"
                                                     onmouseover="this.style.background='rgba(96,165,250,0.28)'" onmouseout="this.style.background='rgba(96,165,250,0.15)'"
                                                 >🔍 <?php echo $firstBillMonthDisplay !== '-' ? '(' . htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8') . ')' : ''; ?> รอตรวจสอบ</button>
-                                        <?php elseif ($step5): ?>
+                                            <?php elseif ($step5): ?>
                                                 <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0;">
                                                     <?php if ($meterBillDone): ?>
                                                     <span style="display:inline-flex;align-items:center;gap:0.35rem;color:#d97706;font-weight:600;">
@@ -1386,29 +1388,11 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                     <?php endif; ?>
                                                     <?php echo $meterStatusHtml; ?>
                                                 </div>
+                                            <?php elseif ((int)($tenant['completed'] ?? 0) === 1): ?>
+                                                <span style="color: #16a34a; font-weight: 600;">ดำเนินการครบทุกขั้นตอนแล้ว</span>
                                             <?php else: ?>
                                                 <span style="color: #16a34a; font-weight: 600;">ระบบเริ่มบิลให้อัตโนมัติ</span>
                                             <?php endif; ?>
-                                        <?php elseif ($step5 && !$firstBillPaid && $firstBillWaiting): ?>
-                                            <button type="button"
-                                                onclick="openBillingModal(<?php echo $tenant['ctr_id']; ?>, '<?php echo htmlspecialchars($tenant['tnt_id'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['room_number'], ENT_QUOTES, 'UTF-8'); ?>', '<?php echo htmlspecialchars($tenant['type_name'], ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$tenant['type_price']; ?>)"
-                                                style="background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.4);color:#60a5fa;font-weight:600;font-size:0.82rem;padding:0.3rem 0.75rem;border-radius:20px;cursor:pointer;transition:background 0.2s;"
-                                                onmouseover="this.style.background='rgba(96,165,250,0.28)'" onmouseout="this.style.background='rgba(96,165,250,0.15)'"
-                                            >🔍 <?php echo $firstBillMonthDisplay !== '-' ? '(' . htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8') . ')' : ''; ?> รอตรวจสอบ</button>
-                                        <?php elseif ($step5 && !$firstBillPaid): ?>
-                                            <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0;">
-                                                <?php if ($meterBillDone): ?>
-                                                <span style="display:inline-flex;align-items:center;gap:0.35rem;color:#d97706;font-weight:600;">
-                                                    <svg style="flex-shrink:0;" width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round" style="transform-origin:center;animation:waitSpin 1s linear infinite;"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="transform-origin:center;animation:waitSpin 1s linear infinite reverse;"/></svg>
-                                                    <?php echo $firstBillMonthDisplay !== '-' ? '(' . htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8') . ')' : ''; ?> <?php echo $firstBillDueReached ? 'รอชำระ' : 'ยังไม่ถึงกำหนด'; ?>
-                                                </span>
-                                                <?php endif; ?>
-                                                <?php echo $meterStatusHtml; ?>
-                                            </div>
-                                        <?php elseif ($step5 && $firstBillPaid): ?>
-                                            <span style="color: #16a34a; font-weight: 600;">✓ บิลเดือนแรกชำระแล้ว (<?php echo htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>
-                                        <?php elseif ((int)($tenant['completed'] ?? 0) === 1 || $currentStep >= 6): ?>
-                                            <span style="color: #16a34a; font-weight: 600;">ดำเนินการครบทุกขั้นตอนแล้ว</span>
                                         <?php endif; ?>
                                     </td>
                                 </tr>
@@ -1457,6 +1441,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 </div>
 
                 <form id="bookingForm" method="POST" action="../Manage/process_wizard_step1.php">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="bkg_id" id="modal_bkg_id">
                     <input type="hidden" name="tnt_id" id="modal_booking_tnt_id">
                     <input type="hidden" name="room_id" id="modal_room_id">
@@ -1486,6 +1471,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 <div class="info-box-modal" id="contractInfo"></div>
 
                 <form id="contractForm" method="POST" action="../Manage/process_wizard_step3.php">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="tnt_id" id="modal_contract_tnt_id">
                     <input type="hidden" name="room_id" id="modal_contract_room_id">
                     <input type="hidden" name="bkg_id" id="modal_contract_bkg_id">
@@ -1544,6 +1530,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 <div id="tenantInfo" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(99, 102, 241, 0.1)); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;"></div>
 
                 <form id="checkinForm" method="POST" action="../Manage/process_wizard_step4.php">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="ctr_id" id="modal_ctr_id">
                     <input type="hidden" name="tnt_id" id="modal_tnt_id">
 
@@ -1629,6 +1616,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
 
                 <!-- Hidden fields -->
                 <form id="billingForm" method="POST" action="../Manage/process_wizard_step5.php">
+                    <input type="hidden" name="csrf_token" value="<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                     <input type="hidden" name="ctr_id" id="modal_billing_ctr_id">
                     <input type="hidden" name="tnt_id" id="modal_billing_tnt_id">
                     <input type="hidden" name="room_price" id="modal_billing_room_price">
@@ -2354,6 +2342,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
 
         const ctrId = document.getElementById('modal_billing_ctr_id').value;
         const formData = new URLSearchParams();
+        formData.append('csrf_token', '<?php echo $csrfToken; ?>');
         formData.append('pay_id', String(payId));
         formData.append('exp_id', String(expId));
         formData.append('pay_status', String(nextStatus));
@@ -2663,6 +2652,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         msg.textContent = '';
 
         const fd = new FormData();
+        fd.append('csrf_token', '<?php echo $csrfToken; ?>');
         fd.append('ctr_id',      _meterCtrId);
         fd.append('water_new',   waterVal);
         fd.append('elec_new',    elecVal);
@@ -2878,6 +2868,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
     async function doCancelBooking(bkgId, tntId) {
         try {
             const formData = new FormData();
+            formData.append('csrf_token', '<?php echo $csrfToken; ?>');
             formData.append('bkg_id', bkgId);
             formData.append('tnt_id', tntId);
 

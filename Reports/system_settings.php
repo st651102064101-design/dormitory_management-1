@@ -20,10 +20,16 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// Load language helper for page content translation
+require_once __DIR__ . '/../includes/lang.php';
+
 // Include settings data
 include __DIR__ . '/settings/settings_data.php';
 
-$pageTitle = 'ตั้งค่า';
+// Get current language from language helper system
+$systemLanguage = getLang();
+
+$pageTitle = __('settings');
 ?>
 <!doctype html>
 <html lang="th" class="apple-settings-html">
@@ -303,8 +309,8 @@ $pageTitle = 'ตั้งค่า';
 
         <!-- Header -->
         <div class="apple-settings-header">
-          <h1>ตั้งค่า</h1>
-          <p>จัดการระบบหอพัก</p>
+          <h1><?php echo htmlspecialchars(__('settings'), ENT_QUOTES, 'UTF-8'); ?></h1>
+          <p><?php echo htmlspecialchars(__('settings_subtitle'), ENT_QUOTES, 'UTF-8'); ?></p>
         </div>
         
         <!-- Profile Card -->
@@ -312,7 +318,7 @@ $pageTitle = 'ตั้งค่า';
           <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="apple-profile-avatar">
           <div class="apple-profile-info">
             <h2 class="apple-profile-name"><?php echo htmlspecialchars($siteName); ?></h2>
-            <p class="apple-profile-detail">ผู้ดูแลระบบ: <?php echo htmlspecialchars($_SESSION['admin_username']); ?></p>
+            <p class="apple-profile-detail"><?php echo htmlspecialchars(__('admin'), ENT_QUOTES, 'UTF-8'); ?>: <?php echo htmlspecialchars($_SESSION['admin_username']); ?></p>
           </div>
           <span class="apple-profile-chevron">›</span>
         </div>
@@ -325,7 +331,7 @@ $pageTitle = 'ตั้งค่า';
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-animated"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
             </div>
             <div class="apple-stat-value"><?php echo number_format($totalRooms); ?></div>
-            <div class="apple-stat-label">ห้องพัก</div>
+            <div class="apple-stat-label"><?php echo __('rooms'); ?></div>
           </div>
           <div class="apple-stat-card particle-wrapper">
             <div class="particle-container" data-particles="3"></div>
@@ -333,7 +339,7 @@ $pageTitle = 'ตั้งค่า';
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-animated"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
             </div>
             <div class="apple-stat-value"><?php echo number_format($totalTenants); ?></div>
-            <div class="apple-stat-label">ผู้เช่า</div>
+            <div class="apple-stat-label"><?php echo __('tenants'); ?></div>
           </div>
           <div class="apple-stat-card particle-wrapper">
             <div class="particle-container" data-particles="3"></div>
@@ -341,7 +347,7 @@ $pageTitle = 'ตั้งค่า';
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-animated"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg>
             </div>
             <div class="apple-stat-value"><?php echo number_format($totalBookings); ?></div>
-            <div class="apple-stat-label">รอจอง</div>
+            <div class="apple-stat-label"><?php echo __('stat_pending'); ?></div>
           </div>
         </div>
         

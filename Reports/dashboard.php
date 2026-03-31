@@ -1,10 +1,5 @@
 <?php
 session_start();
-// Enable error display for debugging (temporary)
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
-echo "<!-- DEBUG: start of dashboard.php -->\n";
 require_once __DIR__ . '/../ConnectDB.php';
 
 // ตรวจสอบการ login

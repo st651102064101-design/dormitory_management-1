@@ -2,6 +2,9 @@
 // Expect session already started and $adminName set in including script
 $adminName = $_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? 'Admin';
 
+// Load language helper
+require_once __DIR__ . '/lang.php';
+
 // ดึงชื่อระบบและการตั้งค่าจาก database
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
@@ -191,7 +194,7 @@ try {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
     
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'font_size', 'default_view_mode')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'theme_color', 'font_size', 'default_view_mode', 'system_language')");
     $sidebarSettings = [];
     foreach ($settingsStmt->fetchAll(PDO::FETCH_ASSOC) as $setting) {
         $sidebarSettings[$setting['setting_key']] = $setting['setting_value'];
@@ -202,6 +205,12 @@ try {
     $themeColor = $sidebarSettings['theme_color'] ?? $themeColor;
     $fontSize = $sidebarSettings['font_size'] ?? $fontSize;
     $defaultViewMode = isset($sidebarSettings['default_view_mode']) && strtolower($sidebarSettings['default_view_mode']) === 'list' ? 'list' : 'grid';
+    
+    // Set system language to session if available from database
+    if (!empty($sidebarSettings['system_language'])) {
+        $_SESSION['system_language'] = $sidebarSettings['system_language'];
+        setLanguage($sidebarSettings['system_language']);
+    }
     
     // ตรวจสอบว่า admin เชื่อม Google หรือยัง
     if (!empty($_SESSION['admin_id'])) {
@@ -3654,21 +3663,21 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
         <summary>
           <a href="dashboard.php" class="summary-link">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
-            <span class="summary-label">แดชบอร์ด</span>
+            <span class="summary-label"><?php echo __('menu_dashboard'); ?></span>
           </a>
           <span class="chev" style="font-size: 1.5rem;">›</span>
         </summary>
-        <a class="" href="report_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label">รายงานผู้เช่า</span></a>
-        <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><span class="app-nav-label">รายงานการจอง</span></a>
-        <a class="" href="manage_stay.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="app-nav-label">รายงานการเข้าพัก</span></a>
-        <a class="" href="report_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label" style="font-size: 0.8rem;">รายงานสาธารณูปโภค</span></a>
-        <a class="" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="app-nav-label">รายงานรายรับ</span></a>
-        <a class="" href="report_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span class="app-nav-label">รายงานห้องพัก</span></a>
-        <a class="" href="report_payments.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="app-nav-label">รายงานชำระเงิน</span></a>
-        <a class="" href="report_invoice.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span class="app-nav-label">รายงานใบแจ้ง</span></a>
-        <a class="" href="report_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">รายงานแจ้งซ่อม</span></a>
-        <a class="" href="report_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label">รายงานข่าวสาร</span></a>
-        <a class="" href="print_contract.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span><span class="app-nav-label">พิมพ์สัญญา</span></a>
+        <a class="" href="report_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label"><?php echo __('report_tenant_list'); ?></span></a>
+        <a class="" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><span class="app-nav-label"><?php echo __('report_booking_list'); ?></span></a>
+        <a class="" href="manage_stay.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="app-nav-label"><?php echo __('report_stay'); ?></span></a>
+        <a class="" href="report_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label" style="font-size: 0.8rem;"><?php echo __('report_utility_list'); ?></span></a>
+        <a class="" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="app-nav-label"><?php echo __('report_revenue'); ?></span></a>
+        <a class="" href="report_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span><span class="app-nav-label"><?php echo __('report_room_list'); ?></span></a>
+        <a class="" href="report_payments.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span><span class="app-nav-label"><?php echo __('report_payment_list'); ?></span></a>
+        <a class="" href="report_invoice.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span><span class="app-nav-label"><?php echo __('report_invoice_list'); ?></span></a>
+        <a class="" href="report_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label"><?php echo __('report_repair_list'); ?></span></a>
+        <a class="" href="report_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label"><?php echo __('report_news_list'); ?></span></a>
+        <a class="" href="print_contract.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg></span><span class="app-nav-label"><?php echo __('print_contract'); ?></span></a>
         <!-- Removed link to Public/booking_status.php per request -->
       </details>
     </div>
@@ -3680,41 +3689,41 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
         <summary>
           <a href="http://project.3bbddns.com:36140/dormitory_management/Reports/todo_tasks.php#wizard" class="summary-link">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-            <span class="summary-label">งานที่ต้องทำ</span>
+            <span class="summary-label"><?php echo __('menu_todo'); ?></span>
           </a>
-          <?php if ($todoBadgeTotal > 0): ?><span class="todo-total-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="งานรอดำเนินการ <?php echo $todoBadgeTotal; ?> รายการ" style="background:#f59e0b;color:white;border-radius:999px;min-width:20px;height:20px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;pointer-events:auto;"><?php echo $todoBadgeTotal > 99 ? '99+' : $todoBadgeTotal; ?></span><?php endif; ?>
+          <?php if ($todoBadgeTotal > 0): ?><span class="todo-total-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('pending_tasks'); ?> <?php echo $todoBadgeTotal; ?> <?php echo __('items'); ?>" style="background:#f59e0b;color:white;border-radius:999px;min-width:20px;height:20px;padding:0 5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;pointer-events:auto;"><?php echo $todoBadgeTotal > 99 ? '99+' : $todoBadgeTotal; ?></span><?php endif; ?>
           <span class="chev chev-toggle" data-target="nav-todo" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
         <a class="wizard-nav-item" href="tenant_wizard.php" style="position: relative; padding-right: 2.5rem; border-left: 4px solid #3b82f6; margin: 0; border-radius: 8px; overflow: visible;">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/><circle cx="12" cy="12" r="10" opacity="0.3"/><path d="M12 5l-2 2M14 5l2 2M12 19l-2-2M14 19l2-2"/></svg></span>
-            <span class="app-nav-label" style="font-weight: 600; color: #60a5fa;">ตัวช่วยผู้เช่า</span>
+            <span class="app-nav-label" style="font-weight: 600; color: #60a5fa;"><?php echo __('menu_wizard'); ?></span>
             <?php if ($wizardIncompleteCount > 0): ?>
-            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="มีรายการค้างในตัวช่วยผู้เช่า <?php echo $wizardIncompleteCount; ?> รายการ" style="position: absolute; top: 6px; right: 6px; transform: none; background: #f59e0b; color: white; border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; font-weight: bold; pointer-events: auto; cursor: help; z-index: 2;">
+            <span data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('wizard_pending_items'); ?> <?php echo $wizardIncompleteCount; ?> <?php echo __('items'); ?>" style="position: absolute; top: 6px; right: 6px; transform: none; background: #f59e0b; color: white; border-radius: 999px; min-width: 22px; height: 22px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; line-height: 1; font-weight: bold; pointer-events: auto; cursor: help; z-index: 2;">
               <?php echo $wizardIncompleteCount > 99 ? '99+' : $wizardIncompleteCount; ?>
             </span>
             <?php endif; ?>
         </a>
-        <a class="booking-nav-item" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label">การจองห้อง</span><?php if ($bookingActionBadgeTotal > 0): ?><span class="booking-status-badges" aria-label="สถานะการจองค้าง"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: รอเข้าพัก/รอยืนยัน"><?php echo $bookingActionBadgeTotal > 99 ? '99+' : $bookingActionBadgeTotal; ?></span></span><?php endif; ?></a>
-        <a class="utility-nav-item" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label">จดมิเตอร์น้ำไฟ</span><?php if ($utilityActionBadgeTotal > 0): ?><span class="utility-status-badges" aria-label="สถานะจดมิเตอร์น้ำไฟค้าง"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: ห้องที่ยังไม่จดมิเตอร์"><?php echo $utilityActionBadgeTotal > 99 ? '99+' : $utilityActionBadgeTotal; ?></span></span><?php endif; ?></a>
+        <a class="booking-nav-item" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label"><?php echo __('menu_bookings'); ?></span><?php if ($bookingActionBadgeTotal > 0): ?><span class="booking-status-badges" aria-label="<?php echo __('booking_status_pending'); ?>"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('booking_needs_action'); ?>"><?php echo $bookingActionBadgeTotal > 99 ? '99+' : $bookingActionBadgeTotal; ?></span></span><?php endif; ?></a>
+        <a class="utility-nav-item" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label"><?php echo __('record_meters'); ?></span><?php if ($utilityActionBadgeTotal > 0): ?><span class="utility-status-badges" aria-label="<?php echo __('utility_status_pending'); ?>"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('utility_needs_action'); ?>"><?php echo $utilityActionBadgeTotal > 99 ? '99+' : $utilityActionBadgeTotal; ?></span></span><?php endif; ?></a>
                 <a class="expense-nav-item" href="manage_expenses.php">
           <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
-          <span class="app-nav-label">ค่าใช้จ่าย</span>
+          <span class="app-nav-label"><?php echo __('menu_expenses'); ?></span>
           <?php if ($expenseActionBadgeTotal > 0): ?>
-          <span class="expense-status-badges" aria-label="สถานะค่าใช้จ่าย">
-            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: รอชำระ/รอตรวจสอบ/ชำระไม่ครบ"><?php echo $expenseActionBadgeTotal > 99 ? '99+' : $expenseActionBadgeTotal; ?></span>
+          <span class="expense-status-badges" aria-label="<?php echo __('expense_status_label'); ?>">
+            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('expense_needs_action'); ?>"><?php echo $expenseActionBadgeTotal > 99 ? '99+' : $expenseActionBadgeTotal; ?></span>
           </span>
           <?php endif; ?>
         </a>
         <a class="payment-nav-item" href="manage_payments.php">
           <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span>
-          <span class="app-nav-label">การชำระเงิน</span>
+          <span class="app-nav-label"><?php echo __('menu_payments'); ?></span>
           <?php if ($paymentActionBadgeTotal > 0): ?>
-          <span class="payment-status-badges" aria-label="สถานะการชำระเงิน">
-            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: รอชำระ/รอตรวจสอบ"><?php echo $paymentActionBadgeTotal > 99 ? '99+' : $paymentActionBadgeTotal; ?></span>
+          <span class="payment-status-badges" aria-label="<?php echo __('payment_status_label'); ?>">
+            <span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('payment_needs_action'); ?>"><?php echo $paymentActionBadgeTotal > 99 ? '99+' : $paymentActionBadgeTotal; ?></span>
           </span>
           <?php endif; ?>
         </a>
-        <a class="repair-nav-item" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label">แจ้งซ่อม</span><?php if ($repairActionBadgeTotal > 0): ?><span class="repair-status-badges" aria-label="สถานะแจ้งซ่อมค้าง"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="ต้องจัดการ: รอซ่อม/กำลังซ่อม"><?php echo $repairActionBadgeTotal > 99 ? '99+' : $repairActionBadgeTotal; ?></span></span><?php endif; ?></a>
+        <a class="repair-nav-item" href="manage_repairs.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span><span class="app-nav-label"><?php echo __('menu_repairs'); ?></span><?php if ($repairActionBadgeTotal > 0): ?><span class="repair-status-badges" aria-label="<?php echo __('repair_status_pending'); ?>"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('repair_needs_action'); ?>"><?php echo $repairActionBadgeTotal > 99 ? '99+' : $repairActionBadgeTotal; ?></span></span><?php endif; ?></a>
       </details>
     </div>
   </nav>
@@ -3726,12 +3735,12 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
         <summary>
           <a href="manage_tenants.php" class="summary-link">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
-            <span class="summary-label">ข้อมูลผู้เช่า</span>
+            <span class="summary-label"><?php echo __('menu_tenants'); ?></span>
           </a>
           <span class="chev chev-toggle" data-target="nav-tenants" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
-        <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label">จัดการสัญญา</span></a>
-        <a class="" href="qr_codes.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg></span><span class="app-nav-label">QR Code ผู้เช่า</span></a>
+        <a class="" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label"><?php echo __('manage_contracts'); ?></span></a>
+        <a class="" href="qr_codes.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg></span><span class="app-nav-label"><?php echo __('qr_codes'); ?></span></a>
       </details>
     </div>
   </nav>
@@ -3743,12 +3752,12 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
         <summary>
           <a href="system_settings.php" class="summary-link">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span>
-            <span class="summary-label">ตั้งค่า</span>
+            <span class="summary-label"><?php echo __('menu_settings'); ?></span>
           </a>
           <span class="chev chev-toggle" data-target="nav-settings" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
-        <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span><span class="app-nav-label">ห้องพัก</span></a>
-        <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label">ข่าวประชาสัมพันธ์</span></a>
+        <a class="" href="manage_rooms.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4v16"/><path d="M2 8h18a2 2 0 0 1 2 2v10"/><path d="M2 17h20"/><path d="M6 8v9"/></svg></span><span class="app-nav-label"><?php echo __('menu_rooms'); ?></span></a>
+        <a class="" href="manage_news.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/></svg></span><span class="app-nav-label"><?php echo __('news_announcements'); ?></span></a>
       </details>
     </div>
   </nav>
@@ -3763,7 +3772,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
       <div class="sidebar-account-flash error"><?php echo htmlspecialchars($sidebarAccountFlashError, ENT_QUOTES, 'UTF-8'); ?></div>
     <?php endif; ?>
 
-    <div class="user-row user-row-clickable" id="sidebarAccountTrigger" role="button" tabindex="0" aria-label="จัดการบัญชีผู้ใช้" aria-haspopup="dialog" aria-controls="sidebarAccountModal" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="คลิกเพื่อเปลี่ยนชื่อผู้ใช้/รหัสผ่าน">
+    <div class="user-row user-row-clickable" id="sidebarAccountTrigger" role="button" tabindex="0" aria-label="<?php echo __('manage_login_account'); ?>" aria-haspopup="dialog" aria-controls="sidebarAccountModal" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('edit_hint_short'); ?>">
       <div class="avatar">
         <?php if (!empty($_SESSION['admin_picture'])): ?>
           <!-- Google avatar -->
@@ -3786,14 +3795,14 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
       <div class="user-meta">
         <div class="name"><?php echo htmlspecialchars($adminName, ENT_QUOTES, 'UTF-8'); ?></div>
         <div class="email"><?php echo htmlspecialchars($_SESSION['admin_username'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
-        <div class="edit-hint">คลิกเพื่อจัดการชื่อผู้ใช้ รหัสผ่าน และอีเมลกู้คืน</div>
+        <div class="edit-hint"><?php echo __('edit_hint'); ?></div>
       </div>
     </div>
 
     <div class="sidebar-account-modal-backdrop" id="sidebarAccountModal" <?php echo $sidebarAccountAutoOpen ? '' : 'hidden'; ?> data-auto-open="<?php echo $sidebarAccountAutoOpen ? '1' : '0'; ?>">
       <div class="sidebar-account-modal" role="dialog" aria-modal="true" aria-labelledby="sidebarAccountModalTitle">
         <div class="sidebar-account-modal-header">
-          <h3 id="sidebarAccountModalTitle">จัดการบัญชีเข้าสู่ระบบ</h3>
+          <h3 id="sidebarAccountModalTitle"><?php echo __('manage_login_account'); ?></h3>
           <button type="button" class="sidebar-account-modal-close" data-close-account-modal aria-label="ปิด">
             <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <path d="M6 6L18 18"></path>
@@ -3805,24 +3814,24 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
           <form method="post" action="">
             <input type="hidden" name="sidebar_account_update" value="1">
 
-            <label for="sidebarNewAdminUsername">ชื่อผู้ใช้ (Username)</label>
+            <label for="sidebarNewAdminUsername"><?php echo __('username_label'); ?></label>
             <input id="sidebarNewAdminUsername" name="new_admin_username" type="text" value="<?php echo htmlspecialchars($sidebarAccountModalUsername, ENT_QUOTES, 'UTF-8'); ?>" required>
 
-            <label for="sidebarCurrentAdminPassword">รหัสผ่านปัจจุบัน (ต้องกรอกทุกครั้ง)</label>
+            <label for="sidebarCurrentAdminPassword"><?php echo __('current_password_required'); ?></label>
             <input id="sidebarCurrentAdminPassword" name="current_admin_password" type="password" autocomplete="current-password" required>
 
-            <label for="sidebarRecoveryEmail">อีเมลสำหรับกู้คืนรหัสผ่าน</label>
+            <label for="sidebarRecoveryEmail"><?php echo __('recovery_email_label'); ?></label>
             <input id="sidebarRecoveryEmail" name="recovery_email" type="email" autocomplete="email" placeholder="example@email.com" value="<?php echo htmlspecialchars($sidebarAccountModalRecoveryEmail, ENT_QUOTES, 'UTF-8'); ?>">
 
-            <label for="sidebarNewAdminPassword">รหัสผ่านใหม่ (ไม่บังคับ)</label>
-            <input id="sidebarNewAdminPassword" name="new_admin_password" type="password" autocomplete="new-password" placeholder="อย่างน้อย 6 ตัวอักษร">
+            <label for="sidebarNewAdminPassword"><?php echo __('new_password_optional'); ?></label>
+            <input id="sidebarNewAdminPassword" name="new_admin_password" type="password" autocomplete="new-password" placeholder="<?php echo __('at_least_6_chars'); ?>">
 
-            <label for="sidebarConfirmAdminPassword">ยืนยันรหัสผ่านใหม่</label>
-            <input id="sidebarConfirmAdminPassword" name="confirm_admin_password" type="password" autocomplete="new-password" placeholder="กรอกอีกครั้งให้ตรงกัน">
+            <label for="sidebarConfirmAdminPassword"><?php echo __('confirm_new_password'); ?></label>
+            <input id="sidebarConfirmAdminPassword" name="confirm_admin_password" type="password" autocomplete="new-password" placeholder="<?php echo __('enter_again_to_match'); ?>">
 
             <div class="sidebar-account-actions">
-              <button type="button" class="cancel-btn" data-close-account-modal>ยกเลิก</button>
-              <button type="submit" class="save-btn">บันทึกข้อมูล</button>
+              <button type="button" class="cancel-btn" data-close-account-modal><?php echo __('cancel'); ?></button>
+              <button type="submit" class="save-btn"><?php echo __('save_data'); ?></button>
             </div>
           </form>
         </div>
@@ -3840,7 +3849,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
           <span class="google-email" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?>"><?php echo htmlspecialchars($adminGoogleEmail, ENT_QUOTES, 'UTF-8'); ?></span>
-          <button type="button" class="google-unlink-btn" title="ถอนการเชื่อมต่อบัญชี Google" onclick="handleGoogleUnlink(event)" style="background: none; border: none; padding: 4px; cursor: pointer;">
+          <button type="button" class="google-unlink-btn" title="<?php echo __('unlink_google_account'); ?>" onclick="handleGoogleUnlink(event)" style="background: none; border: none; padding: 4px; cursor: pointer;">
             <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
               <polyline points="3 6 5 6 21 6"></polyline>
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -3857,7 +3866,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
             <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
-          <span class="app-nav-label">เชื่อมบัญชี Google</span>
+          <span class="app-nav-label"><?php echo __('link_google_account'); ?></span>
         </a>
       <?php endif; ?>
     </div>
@@ -3866,7 +3875,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
       <form action="../logout.php" method="post" data-allow-submit>
         <button type="submit" class="logout-btn" aria-label="Log out">
           <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
-          <span class="app-nav-label">ออกจากระบบ</span>
+          <span class="app-nav-label"><?php echo __('logout'); ?></span>
         </button>
       </form>
     </div>
@@ -4008,11 +4017,11 @@ async function handleGoogleUnlink(e) {
         googleLinkWrap.innerHTML = `
           <a href="/dormitory_management/link_google.php?action=link" class="google-link-btn">
             <svg class="google-icon" viewBox="0 0 24 24" width="16" height="16"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-            <span class="app-nav-label">เชื่อมบัญชี Google</span>
+            <span class="app-nav-label"><?php echo __('link_google_account'); ?></span>
           </a>
         `;
         if (window.AnimateUI && typeof window.AnimateUI.showNotification === 'function') {
-          window.AnimateUI.showNotification('ถอนการเชื่อมต่อบัญชี Google สำเร็จ', 'success');
+          window.AnimateUI.showNotification('<?php echo __('unlink_google_account'); ?>', 'success');
         }
       }
     } else {

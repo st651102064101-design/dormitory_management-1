@@ -12,6 +12,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+// CSRF validation
+if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
+    $_SESSION['wizard_error'] = 'CSRF token ไม่ถูกต้อง กรุณาลองใหม่';
+    header('Location: ../Reports/tenant_wizard.php');
+    exit;
+}
+
 require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/wizard_helper.php';
 

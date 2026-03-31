@@ -14,6 +14,13 @@ $pdo = connectDB();
 
 header('Content-Type: application/json');
 
+// CSRF validation
+if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'error' => 'CSRF token ไม่ถูกต้อง']);
+    exit;
+}
+
 // รับข้อมูลจาก POST
 $payId = $_POST['pay_id'] ?? '';
 $payStatus = $_POST['pay_status'] ?? '';

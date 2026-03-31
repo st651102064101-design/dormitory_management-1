@@ -12,11 +12,11 @@
         </svg>
       </div>
       <div class="apple-row-content">
-        <p class="apple-row-label">สถานะ Google Login</p>
-        <p class="apple-row-sublabel"><?php echo !empty($googleClientId) ? 'เปิดใช้งานแล้ว' : 'ยังไม่ได้ตั้งค่า'; ?></p>
+        <p class="apple-row-label"><?php echo __('google_login_status'); ?></p>
+        <p class="apple-row-sublabel"><?php echo !empty($googleClientId) ? __('enabled') : __('not_configured'); ?></p>
       </div>
       <span class="apple-row-badge <?php echo !empty($googleClientId) ? 'success' : 'warning'; ?>">
-        <?php echo !empty($googleClientId) ? 'เปิดใช้' : 'ปิด'; ?>
+        <?php echo !empty($googleClientId) ? __('enabled') : __('disabled'); ?>
       </span>
     </div>
     

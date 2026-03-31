@@ -306,6 +306,58 @@ try {
         exit;
     }
 
+    // จัดการ System Language (th/en)
+    if (!empty($_POST['system_language'])) {
+        $language = trim($_POST['system_language']);
+        $allowedLanguages = ['th', 'en'];
+        
+        if (!in_array($language, $allowedLanguages)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ภาษาไม่ถูกต้อง / Invalid language']);
+            exit;
+        }
+
+        try {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $result = $stmt->execute(['system_language', $language, $language]);
+            
+            if (!$result) {
+                throw new Exception('Database update failed');
+            }
+            
+            // Verify the language was saved
+            $verifyStmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'system_language' LIMIT 1");
+            $verifyStmt->execute();
+            $savedLanguage = $verifyStmt->fetchColumn();
+            
+            if ($savedLanguage !== $language) {
+                throw new Exception('Language verification failed: saved ' . $savedLanguage . ' expected ' . $language);
+            }
+            
+            // Update session
+            $_SESSION['system_language'] = $language;
+            
+            // Clear any cached language data
+            if (function_exists('opcache_reset')) {
+                @opcache_reset();
+            }
+
+            header('Content-Type: application/json');
+            $message = $language === 'th' ? 'บันทึกภาษาสำเร็จ' : 'Language saved successfully';
+            echo json_encode([
+                'success' => true, 
+                'message' => $message,
+                'language' => $language,
+                'timestamp' => time()
+            ]);
+            exit;
+        } catch (Exception $e) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'บันทึกภาษาล้มเหลว: ' . $e->getMessage()]);
+            exit;
+        }
+    }
+
     // จัดการ Background Filename (เลือกจาก dropdown)
     if (!empty($_POST['bg_filename'])) {
         $bgFilename = trim($_POST['bg_filename']);
