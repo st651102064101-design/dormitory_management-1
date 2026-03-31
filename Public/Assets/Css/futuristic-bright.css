@@ -1,0 +1,1229 @@
+/* ============================================================
+   ✨ FUTURISTIC BRIGHT UI — Shared Modern Theme
+   Based on tenant_wizard.php design language
+   ============================================================ */
+
+/* === CSS Custom Property for animated conic-gradient border === */
+@property --fu-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+
+:root {
+    --fu-primary: #6366f1;
+    --fu-violet: #8b5cf6;
+    --fu-purple: #a855f7;
+    --fu-indigo-light: #e0e7ff;
+    --fu-violet-light: #ede9fe;
+    --fu-text: #1e293b;
+    --fu-text-light: #64748b;
+    --fu-bg: #f0f2f8;
+    --fu-card: rgba(255, 255, 255, 0.88);
+    --fu-border: rgba(99, 102, 241, 0.18);
+    --fu-glow: rgba(99, 102, 241, 0.25);
+    --fu-success: #22c55e;
+    --fu-danger: #ef4444;
+    --fu-warning: #f59e0b;
+    --fu-info: #06b6d4;
+}
+
+/* === Force Light Background + Gradient Mesh === */
+html, body, .app-shell, .app-main, body.reports-page {
+    background: var(--fu-bg) !important;
+    color: var(--fu-text) !important;
+}
+
+body.reports-page .app-main,
+.app-main {
+    background:
+        radial-gradient(ellipse 80% 60% at 15% 20%, rgba(99,102,241,0.10) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 50% at 85% 75%, rgba(168,85,247,0.08) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 50% 0%, rgba(139,92,246,0.06) 0%, transparent 50%),
+        var(--fu-bg) !important;
+    background-size: 200% 200%, 200% 200%, 100% 100%, 100% 100% !important;
+    animation: fuGradientShift 18s ease-in-out infinite !important;
+}
+
+/* === Floating Particles Layer === */
+body.reports-page .app-main::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+        radial-gradient(1.5px 1.5px at 10% 15%, rgba(99,102,241,0.22) 50%, transparent 50%),
+        radial-gradient(1px 1px at 30% 45%, rgba(139,92,246,0.18) 50%, transparent 50%),
+        radial-gradient(2px 2px at 55% 20%, rgba(168,85,247,0.15) 50%, transparent 50%),
+        radial-gradient(1px 1px at 75% 60%, rgba(99,102,241,0.20) 50%, transparent 50%),
+        radial-gradient(1.5px 1.5px at 90% 30%, rgba(139,92,246,0.16) 50%, transparent 50%),
+        radial-gradient(1px 1px at 20% 80%, rgba(168,85,247,0.14) 50%, transparent 50%),
+        radial-gradient(2px 2px at 65% 85%, rgba(99,102,241,0.12) 50%, transparent 50%),
+        radial-gradient(1px 1px at 45% 10%, rgba(139,92,246,0.18) 50%, transparent 50%);
+    animation: fuParticle 22s linear infinite;
+}
+
+/* === Page Header Bar Override === */
+.page-header-bar {
+    background: rgba(255,255,255,0.85) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border-bottom: 1px solid var(--fu-border) !important;
+    box-shadow: 0 4px 20px rgba(99,102,241,0.06) !important;
+    position: relative;
+    z-index: 5;
+}
+.page-header-bar::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #ec4899, #6366f1);
+    background-size: 300% 100%;
+    animation: fuShimmerLine 4s linear infinite;
+}
+.page-header-bar h2,
+.page-header-bar .page-title {
+    color: var(--fu-text) !important;
+    background: linear-gradient(135deg, #4338ca, #7c3aed) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+
+/* === Glassmorphism Panel (manage-panel, todo-card, meter-card) === */
+.manage-panel,
+.todo-card,
+.meter-card,
+.expense-stat-card,
+.stat-card,
+.payment-stat-card {
+    background: var(--fu-card) !important;
+    backdrop-filter: blur(20px) !important;
+    -webkit-backdrop-filter: blur(20px) !important;
+    border: 1px solid var(--fu-border) !important;
+    border-radius: 16px !important;
+    box-shadow:
+        0 8px 32px rgba(99,102,241,0.08),
+        0 2px 8px rgba(139,92,246,0.04),
+        inset 0 1px 0 rgba(255,255,255,0.7) !important;
+    position: relative;
+    z-index: 1;
+    animation: fuFadeSlideUp 0.6s ease-out both;
+    overflow: visible;
+    color: var(--fu-text) !important;
+}
+
+/* Rainbow border effect on key panels */
+.manage-panel::before,
+.meter-card::before {
+    content: '';
+    position: absolute;
+    inset: -1px;
+    border-radius: 18px;
+    background: conic-gradient(from var(--fu-angle), #6366f1, #8b5cf6, #a855f7, #ec4899, #f43f5e, #f97316, #eab308, #22c55e, #06b6d4, #6366f1);
+    z-index: -1;
+    animation: fuSpinBorder 6s linear infinite;
+    opacity: 0.3;
+}
+.manage-panel::after,
+.meter-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    background: var(--fu-card);
+    z-index: -1;
+}
+
+/* === Todo Card Header === */
+.todo-card-header {
+    border-bottom: 1px solid var(--fu-border) !important;
+    background: rgba(255,255,255,0.6) !important;
+    backdrop-filter: blur(10px) !important;
+}
+.todo-card-header h3 {
+    color: var(--fu-text) !important;
+    background: linear-gradient(135deg, #4338ca, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* === Tab Overrides (todo_tasks) === */
+.todo-tabs .todo-tab {
+    background: rgba(255,255,255,0.7) !important;
+    border: 2px solid var(--fu-border) !important;
+    color: var(--fu-text-light) !important;
+    border-radius: 14px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(8px);
+}
+.todo-tabs .todo-tab::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: left 0.5s;
+}
+.todo-tabs .todo-tab:hover::after {
+    left: 150%;
+}
+.todo-tabs .todo-tab:hover {
+    transform: translateY(-2px) !important;
+    background: rgba(255,255,255,0.9) !important;
+    color: var(--fu-text) !important;
+    box-shadow: 0 6px 20px rgba(99,102,241,0.12) !important;
+}
+.todo-tabs .todo-tab svg {
+    color: var(--fu-text-light) !important;
+    stroke: var(--fu-text-light) !important;
+}
+
+/* Active tab styles - override EVERYTHING */
+.app-main .todo-tabs .todo-tab.active,
+.app-main .todo-tabs .todo-tab.is-active,
+body.reports-page .todo-tabs .todo-tab.active,
+body.reports-page .todo-tabs .todo-tab.active[data-tab] {
+    color: #ffffff !important;
+    border-color: transparent !important;
+}
+body.reports-page .todo-tabs .todo-tab.active[data-tab="booking"] {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    box-shadow: 0 8px 24px rgba(217,119,6,0.35) !important;
+}
+body.reports-page .todo-tabs .todo-tab.active[data-tab="utility"] {
+    background: linear-gradient(135deg, #06b6d4, #0891b2) !important;
+    box-shadow: 0 8px 24px rgba(8,145,178,0.35) !important;
+}
+body.reports-page .todo-tabs .todo-tab.active[data-tab="expense"] {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed) !important;
+    box-shadow: 0 8px 24px rgba(124,58,237,0.35) !important;
+}
+body.reports-page .todo-tabs .todo-tab.active[data-tab="payment"] {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    box-shadow: 0 8px 24px rgba(220,38,38,0.35) !important;
+}
+body.reports-page .todo-tabs .todo-tab.active[data-tab="repair"] {
+    background: linear-gradient(135deg, #14b8a6, #0f766e) !important;
+    box-shadow: 0 8px 24px rgba(15,118,110,0.35) !important;
+}
+body.reports-page .todo-tabs .todo-tab.active[data-tab="wizard"] {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.35) !important;
+}
+.todo-tabs .todo-tab.active svg,
+.todo-tabs .todo-tab.active svg *,
+.todo-tabs .todo-tab.is-active svg,
+.todo-tabs .todo-tab.is-active svg * {
+    color: #ffffff !important;
+    stroke: #ffffff !important;
+}
+
+/* === Table Overrides === */
+.todo-table,
+.report-table table,
+.meter-table {
+    border-collapse: separate !important;
+    border-spacing: 0 0.4rem !important;
+}
+
+.todo-table thead th,
+.report-table thead th {
+    background: linear-gradient(135deg, #6366f1, #7c3aed, #8b5cf6) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    border: none !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    padding: 1rem 1.25rem !important;
+}
+.todo-table thead th:first-child,
+.report-table thead th:first-child {
+    border-radius: 12px 0 0 12px !important;
+}
+.todo-table thead th:last-child,
+.report-table thead th:last-child {
+    border-radius: 0 12px 12px 0 !important;
+}
+
+.todo-table tbody td,
+.report-table tbody td {
+    background: rgba(255,255,255,0.7) !important;
+    backdrop-filter: blur(8px) !important;
+    color: var(--fu-text) !important;
+    border: none !important;
+    transition: all 0.3s ease !important;
+    padding: 0.9rem 1.25rem !important;
+}
+.todo-table tbody td:first-child,
+.report-table tbody td:first-child {
+    border-radius: 12px 0 0 12px !important;
+}
+.todo-table tbody td:last-child,
+.report-table tbody td:last-child {
+    border-radius: 0 12px 12px 0 !important;
+}
+
+.todo-table tbody tr,
+.report-table tbody tr {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    animation: fuFadeSlideUp 0.5s ease-out both;
+}
+.todo-table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.todo-table tbody tr:nth-child(2) { animation-delay: 0.10s; }
+.todo-table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.todo-table tbody tr:nth-child(4) { animation-delay: 0.20s; }
+.todo-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+.todo-table tbody tr:nth-child(n+6) { animation-delay: 0.30s; }
+
+.todo-table tbody tr:hover,
+.report-table tbody tr:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 25px rgba(99,102,241,0.12), 0 2px 8px rgba(139,92,246,0.08) !important;
+}
+.todo-table tbody tr:hover td,
+.report-table tbody tr:hover td {
+    background: rgba(255,255,255,0.92) !important;
+}
+
+/* Bold cells */
+.todo-table td strong,
+.report-table td strong {
+    background: linear-gradient(135deg, #4338ca, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* === Status Chips === */
+.status-chip,
+.status-badge {
+    border-radius: 12px !important;
+    font-weight: 700 !important;
+    padding: 0.3rem 0.75rem !important;
+    font-size: 0.82rem !important;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    border: 1px solid transparent;
+}
+.status-chip.reserved, .status-chip.pending {
+    background: rgba(245,158,11,0.12) !important;
+    color: #b45309 !important;
+    border-color: rgba(245,158,11,0.3) !important;
+}
+.status-chip.checkedin, .status-chip.paid {
+    background: rgba(34,197,94,0.12) !important;
+    color: #15803d !important;
+    border-color: rgba(34,197,94,0.3) !important;
+}
+.status-chip.unpaid, .status-chip.not-done {
+    background: rgba(239,68,68,0.12) !important;
+    color: #dc2626 !important;
+    border-color: rgba(239,68,68,0.3) !important;
+}
+.status-chip.partial {
+    background: rgba(139,92,246,0.12) !important;
+    color: #7c3aed !important;
+    border-color: rgba(139,92,246,0.3) !important;
+}
+.status-chip.done-water {
+    background: rgba(6,182,212,0.12) !important;
+    color: #0e7490 !important;
+    border-color: rgba(6,182,212,0.3) !important;
+}
+.status-chip.done-elec {
+    background: rgba(234,179,8,0.12) !important;
+    color: #a16207 !important;
+    border-color: rgba(234,179,8,0.3) !important;
+}
+.status-chip.repair-pending {
+    background: rgba(249,115,22,0.12) !important;
+    color: #c2410c !important;
+    border-color: rgba(249,115,22,0.3) !important;
+}
+.status-chip.repair-progress {
+    background: rgba(96,165,250,0.12) !important;
+    color: #1d4ed8 !important;
+    border-color: rgba(96,165,250,0.3) !important;
+}
+
+/* === Action Buttons === */
+.btn-action {
+    border-radius: 25px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative;
+    overflow: hidden;
+}
+.btn-action::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+    transition: left 0.5s;
+}
+.btn-action:hover::after {
+    left: 150%;
+}
+.btn-action.primary {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    color: #ffffff !important;
+    box-shadow: 0 3px 12px rgba(99,102,241,0.25) !important;
+}
+.btn-action.primary:hover {
+    transform: translateY(-2px) scale(1.03) !important;
+    box-shadow: 0 6px 20px rgba(99,102,241,0.35) !important;
+}
+.btn-action.success {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    color: #ffffff !important;
+}
+.btn-danger,
+.todo-cancel-booking {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 25px !important;
+}
+
+/* === Empty State === */
+.empty-state {
+    color: var(--fu-text-light) !important;
+    animation: fuFloat 3s ease-in-out infinite;
+}
+.empty-state svg {
+    filter: drop-shadow(0 4px 8px rgba(99,102,241,0.15)) !important;
+}
+.empty-state p {
+    background: linear-gradient(135deg, #6366f1, #a855f7) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+    font-weight: 600 !important;
+}
+
+/* === Stat Cards Override === */
+.expense-stat-card,
+.payment-stat-card,
+.stat-card {
+    background: var(--fu-card) !important;
+    color: var(--fu-text) !important;
+    border: 1px solid var(--fu-border) !important;
+}
+.expense-stat-card h3,
+.payment-stat-card h3,
+.stat-card h3 {
+    color: var(--fu-text) !important;
+}
+.expense-stat-card .stat-kpi-label {
+    color: var(--fu-text-light) !important;
+}
+.expense-stat-card.is-unpaid .stat-value,
+.expense-stat-card.is-unpaid .stat-money {
+    color: #dc2626 !important;
+}
+.expense-stat-card.is-paid .stat-value,
+.expense-stat-card.is-paid .stat-money {
+    color: #16a34a !important;
+}
+.expense-stat-card.is-total .stat-value,
+.expense-stat-card.is-total .stat-money {
+    color: #4338ca !important;
+}
+.expense-stat-card.is-overdue .stat-value,
+.expense-stat-card.is-overdue .stat-money {
+    color: #b91c1c !important;
+}
+
+/* === Form Inputs === */
+.manage-panel input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="hidden"]):not([type="file"]),
+.manage-panel textarea,
+.manage-panel select,
+.filter-select,
+.form-group input,
+.form-group textarea,
+.form-group select {
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    background: rgba(255,255,255,0.8) !important;
+    color: #0f172a !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.manage-panel input:focus,
+.manage-panel textarea:focus,
+.manage-panel select:focus,
+.filter-select:focus,
+.form-group input:focus,
+.form-group textarea:focus,
+.form-group select:focus {
+    outline: none !important;
+    border-color: #8b5cf6 !important;
+    background: #ffffff !important;
+    box-shadow: 0 0 0 4px rgba(139,92,246,0.12), 0 4px 12px rgba(99,102,241,0.08) !important;
+}
+
+/* === Section Headers === */
+.section-header,
+.panel-title,
+.section-title {
+    color: var(--fu-text) !important;
+}
+.section-header h1, .section-header h2, .section-header h3,
+.panel-title h1, .panel-title h2, .panel-title h3,
+.section-title h1, .section-title h2, .section-title h3 {
+    color: var(--fu-text) !important;
+}
+.section-header p, .panel-title p, .section-title p {
+    color: var(--fu-text-light) !important;
+}
+
+/* === Labels === */
+label {
+    color: var(--fu-text) !important;
+}
+
+/* === Submit Button Overrides === */
+button[type="submit"],
+.submit-btn-animated,
+.save-btn {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 12px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 18px rgba(99,102,241,0.3) !important;
+}
+button[type="submit"]::after,
+.submit-btn-animated::after,
+.save-btn::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+button[type="submit"]:hover::after,
+.submit-btn-animated:hover::after,
+.save-btn:hover::after {
+    left: 150%;
+}
+button[type="submit"]:hover,
+.submit-btn-animated:hover,
+.save-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 24px rgba(99,102,241,0.4) !important;
+}
+button[type="submit"] *,
+.submit-btn-animated *,
+.save-btn * {
+    color: #ffffff !important;
+}
+button[type="submit"] svg,
+.submit-btn-animated svg,
+.save-btn svg {
+    stroke: #ffffff !important;
+}
+
+/* === Toast Override === */
+.toast-msg {
+    border-radius: 14px !important;
+    backdrop-filter: blur(12px) !important;
+    -webkit-backdrop-filter: blur(12px) !important;
+    box-shadow: 0 12px 32px rgba(0,0,0,0.15) !important;
+    animation: fuSlideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+.toast-msg.success {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+}
+.toast-msg.error {
+    background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+}
+
+/* === Meter Card Overrides === */
+.meter-card {
+    background: var(--fu-card) !important;
+}
+.meter-card-title {
+    background: linear-gradient(135deg, #4338ca, #7c3aed) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+.meter-tab {
+    color: var(--fu-text-light) !important;
+    background: transparent !important;
+    transition: all 0.3s ease !important;
+}
+.meter-tab:hover {
+    background: rgba(99,102,241,0.06) !important;
+    color: var(--fu-text) !important;
+}
+.meter-tab.water-tab.active {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+    color: #ffffff !important;
+}
+.meter-tab.elec-tab.active {
+    background: linear-gradient(135deg, #f97316, #ea580c) !important;
+    color: #ffffff !important;
+}
+.floor-header {
+    background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.03)) !important;
+    color: var(--fu-text) !important;
+    border-color: var(--fu-border) !important;
+    font-weight: 700 !important;
+}
+.meter-table thead th {
+    text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+}
+.meter-table tbody tr {
+    transition: all 0.3s ease !important;
+}
+.meter-table tbody tr:hover {
+    background: rgba(99,102,241,0.04) !important;
+    transform: translateX(4px);
+}
+.meter-table tbody td {
+    color: var(--fu-text) !important;
+}
+.room-num-cell {
+    color: var(--fu-text) !important;
+}
+.usage-cell {
+    color: #4338ca !important;
+}
+.meter-input-field {
+    border-radius: 10px !important;
+    transition: all 0.3s !important;
+}
+.meter-input-field:focus {
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.15), 0 4px 12px rgba(99,102,241,0.08) !important;
+}
+.save-bar {
+    background: rgba(255,255,255,0.92) !important;
+    backdrop-filter: blur(16px) !important;
+    border-top: 1px solid var(--fu-border) !important;
+    box-shadow: 0 -4px 20px rgba(99,102,241,0.08) !important;
+}
+.save-bar .pill {
+    border-radius: 20px !important;
+    border: 1px solid var(--fu-border);
+}
+
+/* stat badges */
+.stat-badge {
+    border-radius: 20px !important;
+    font-weight: 700 !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+}
+
+/* === Mode Links Override === */
+.mode-link {
+    transition: all 0.3s !important;
+    border-radius: 10px !important;
+    color: var(--fu-text-light) !important;
+    border-color: var(--fu-border) !important;
+}
+.mode-link:hover {
+    background: rgba(99,102,241,0.08) !important;
+    color: var(--fu-text) !important;
+}
+.mode-link.active {
+    background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+    color: #ffffff !important;
+    border-color: transparent !important;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.25) !important;
+}
+
+/* === Month Selector === */
+.month-selector select {
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    color: var(--fu-text) !important;
+    background: rgba(255,255,255,0.9) !important;
+    transition: all 0.3s !important;
+}
+.month-selector select:focus {
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 0 4px rgba(139,92,246,0.12) !important;
+}
+.rate-info {
+    color: var(--fu-text-light) !important;
+}
+
+/* === Confirmation Modals === */
+.modal-overlay {
+    background: rgba(99,102,241,0.08) !important;
+    backdrop-filter: blur(12px) !important;
+}
+.modal-container,
+#bookingModal .modal-container {
+    background: rgba(255,255,255,0.92) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid var(--fu-border) !important;
+    border-radius: 20px !important;
+    box-shadow: 0 24px 64px rgba(99,102,241,0.15), 0 8px 24px rgba(139,92,246,0.08) !important;
+    animation: fuModalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+    color: var(--fu-text) !important;
+}
+.modal-header {
+    background: rgba(255,255,255,0.9) !important;
+    position: relative;
+}
+.modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #ec4899);
+    border-radius: 20px 20px 0 0;
+}
+.modal-header h2 {
+    background: linear-gradient(135deg, #4338ca, #7c3aed) !important;
+    -webkit-background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+    background-clip: text !important;
+}
+.modal-footer {
+    background: rgba(255,255,255,0.85) !important;
+    border-top: 1px solid var(--fu-border) !important;
+}
+
+/* === Sidebar Override === */
+.sidebar {
+    background: rgba(255,255,255,0.92) !important;
+    backdrop-filter: blur(20px) !important;
+    border-right: 1px solid var(--fu-border) !important;
+}
+
+/* === Room Cards (manage_booking) === */
+.room-card {
+    background: var(--fu-card) !important;
+    border: 1px solid var(--fu-border) !important;
+    border-radius: 16px !important;
+    color: var(--fu-text) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    animation: fuFadeSlideUp 0.5s ease-out both;
+}
+.room-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 32px rgba(99,102,241,0.12) !important;
+    border-color: rgba(99,102,241,0.35) !important;
+}
+
+/* === Payment Form Section === */
+.payment-form-section,
+#addPaymentSection {
+    background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.03)) !important;
+    border: 1px solid var(--fu-border) !important;
+    border-radius: 16px !important;
+}
+
+/* === Filter Bar === */
+.filter-bar {
+    background: rgba(255,255,255,0.6) !important;
+    border: 1px solid var(--fu-border) !important;
+    border-radius: 14px !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+/* === Overview/Banner fix === */
+.meter-alert-banner {
+    border-radius: 14px !important;
+    backdrop-filter: blur(8px) !important;
+}
+.expense-stats-note {
+    background: rgba(99,102,241,0.08) !important;
+    border-color: rgba(99,102,241,0.25) !important;
+    color: #4338ca !important;
+}
+
+/* === Text Color Overrides for dark inline styles === */
+.manage-panel [style*="color: rgba(255,255,255"],
+.manage-panel [style*="color:rgba(255,255,255"],
+.manage-panel [style*="color: #f5f8ff"],
+.manage-panel [style*="color: #e2e8f0"],
+.manage-panel [style*="color: #f1f5f9"],
+.manage-panel [style*="color: #f8fafc"],
+.todo-card [style*="color:rgba(255,255,255"],
+.todo-card [style*="color: rgba(255,255,255"] {
+    color: var(--fu-text) !important;
+}
+
+/* Small text / secondary text */
+small[style*="color:rgba(255,255,255"],
+small[style*="color: rgba(255,255,255"] {
+    color: var(--fu-text-light) !important;
+}
+
+/* Fix "เหลือทำ" color */
+td[style*="color: #fbbf24"],
+td[style*="color:#fbbf24"] {
+    color: #b45309 !important;
+}
+
+/* Fix FPS alert to keep dark theme */
+#fps-alert-overlay .fps-alert-container {
+    background: linear-gradient(145deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98)) !important;
+    color: #f5f8ff !important;
+}
+#fps-alert-overlay .fps-alert-title { color: #f5f8ff !important; }
+#fps-alert-overlay .fps-alert-message { color: #94a3b8 !important; }
+
+/* === Mobile Responsive Table Override === */
+@media (max-width: 768px) {
+    .todo-table tbody tr {
+        border-radius: 16px !important;
+        background: rgba(255,255,255,0.85) !important;
+        backdrop-filter: blur(10px) !important;
+        border: 1px solid var(--fu-border) !important;
+        overflow: hidden;
+        position: relative;
+    }
+    .todo-table tbody tr::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 3px;
+        background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+    }
+    .todo-table tbody td {
+        border-radius: 0 !important;
+        background: transparent !important;
+    }
+    .todo-table tbody td::before {
+        color: #6366f1 !important;
+        font-weight: 700 !important;
+    }
+}
+
+/* === Scrollbar Styling === */
+.todo-card-body::-webkit-scrollbar { width: 6px; }
+.todo-card-body::-webkit-scrollbar-track { background: transparent; }
+.todo-card-body::-webkit-scrollbar-thumb {
+    background: rgba(99,102,241,0.2);
+    border-radius: 4px;
+}
+.todo-card-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(99,102,241,0.4);
+}
+
+/* ============================================================
+   🎬 ANIMATIONS
+   ============================================================ */
+
+@keyframes fuGradientShift {
+    0%, 100% { background-position: 0% 0%, 100% 100%, 50% 0%, 0% 0%; }
+    25% { background-position: 25% 50%, 75% 25%, 50% 50%, 0% 0%; }
+    50% { background-position: 100% 100%, 0% 50%, 50% 100%, 0% 0%; }
+    75% { background-position: 75% 25%, 25% 75%, 50% 50%, 0% 0%; }
+}
+
+@keyframes fuParticle {
+    0% { transform: translateY(0); }
+    100% { transform: translateY(-30px); }
+}
+
+@keyframes fuSpinBorder {
+    0% { --fu-angle: 0deg; }
+    100% { --fu-angle: 360deg; }
+}
+
+@keyframes fuFadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fuShimmerLine {
+    0% { background-position: -300% 0; }
+    100% { background-position: 300% 0; }
+}
+
+@keyframes fuFloat {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+}
+
+@keyframes fuSlideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes fuModalIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes fuPulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(99,102,241,0.4); }
+    50% { box-shadow: 0 0 0 12px rgba(99,102,241,0); }
+}
+
+@keyframes fuBounceIn {
+    0% { transform: scale(0.3); opacity: 0; }
+    50% { transform: scale(1.05); }
+    70% { transform: scale(0.95); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Shimmer on special elements */
+.fu-shimmer {
+    position: relative;
+    overflow: hidden;
+}
+.fu-shimmer::after {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    animation: fuShimmerSweep 3.5s ease-in-out infinite;
+}
+@keyframes fuShimmerSweep {
+    0% { left: -100%; }
+    50% { left: 150%; }
+    100% { left: 150%; }
+}
+
+/* === Utility classes === */
+.fu-stagger-1 { animation-delay: 0.1s !important; }
+.fu-stagger-2 { animation-delay: 0.2s !important; }
+.fu-stagger-3 { animation-delay: 0.3s !important; }
+.fu-stagger-4 { animation-delay: 0.4s !important; }
+.fu-stagger-5 { animation-delay: 0.5s !important; }
+
+/* === DataTable Override === */
+.datatable-wrapper {
+    color: var(--fu-text) !important;
+}
+.datatable-wrapper .datatable-top,
+.datatable-wrapper .datatable-bottom {
+    color: var(--fu-text-light) !important;
+}
+.datatable-wrapper .datatable-selector {
+    background: rgba(255,255,255,0.8) !important;
+    color: var(--fu-text) !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+}
+.datatable-wrapper .datatable-input {
+    background: rgba(255,255,255,0.8) !important;
+    color: var(--fu-text) !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+}
+.datatable-wrapper .datatable-input:focus {
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 0 4px rgba(139,92,246,0.12) !important;
+}
+
+/* === Visual Meter View Cards === */
+.vm-card {
+    background: var(--fu-card) !important;
+    border: 1px solid var(--fu-border) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.vm-card:hover {
+    box-shadow: 0 8px 24px rgba(99,102,241,0.12) !important;
+    border-color: rgba(99,102,241,0.3) !important;
+}
+.vm-room-num {
+    color: var(--fu-text) !important;
+}
+.vm-old-reading {
+    color: var(--fu-text-light) !important;
+}
+
+/* === Fix inline dark color styles === */
+.manage-panel span[style*="color:rgba(255,255,255,0.3)"],
+.manage-panel span[style*="color: rgba(255,255,255,0.3)"],
+.todo-card span[style*="color:rgba(255,255,255,0.3)"],
+.todo-card span[style*="color: rgba(255,255,255,0.3)"] {
+    color: var(--fu-text-light) !important;
+}
+
+/* Keep specific button colors */
+.utility-water-btn {
+    background: linear-gradient(135deg, #0ea5e9, #0284c7) !important;
+    color: #ffffff !important;
+}
+.utility-electric-btn {
+    background: linear-gradient(135deg, #fb923c, #ea580c) !important;
+    color: #ffffff !important;
+}
+
+/* === Force all inline dark text to bright === */
+p[style*="color:#94a3b8"],
+p[style*="color: #94a3b8"],
+div[style*="color:#94a3b8"],
+div[style*="color: #94a3b8"],
+span[style*="color:#94a3b8"],
+span[style*="color: #94a3b8"] {
+    color: var(--fu-text-light) !important;
+}
+div[style*="color:#cbd5e1"],
+div[style*="color: #cbd5e1"],
+span[style*="color:#cbd5e1"],
+span[style*="color: #cbd5e1"] {
+    color: var(--fu-text-light) !important;
+}
+
+/* Force dark inline backgrounds to bright glassmorphism */
+select[style*="background: rgba(12"],
+select[style*="background:rgba(12"],
+input[style*="background: rgba(12"],
+input[style*="background:rgba(12"] {
+    background: rgba(255,255,255,0.85) !important;
+    color: var(--fu-text) !important;
+    border-color: #e2e8f0 !important;
+}
+select[style*="color: #f5f5f5"],
+select[style*="color:#f5f5f5"] {
+    color: var(--fu-text) !important;
+}
+
+/* Toggle button overrides (manage_booking) */
+#toggleRoomsBtn {
+    background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(139,92,246,0.05)) !important;
+    border: 1.5px solid var(--fu-border) !important;
+    color: var(--fu-text) !important;
+    border-radius: 12px !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+#toggleRoomsBtn:hover {
+    background: linear-gradient(135deg, rgba(99,102,241,0.15), rgba(139,92,246,0.10)) !important;
+    border-color: rgba(99,102,241,0.4) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(99,102,241,0.12) !important;
+}
+
+/* === Booking Modal Override === */
+.booking-modal-content,
+.booking-modal-body,
+#bookingModal .booking-modal-content {
+    background: rgba(255,255,255,0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    color: var(--fu-text) !important;
+    border-radius: 20px !important;
+}
+.booking-modal-content h2,
+.booking-modal-content h3,
+.booking-modal-content label {
+    color: var(--fu-text) !important;
+}
+.booking-modal-content input,
+.booking-modal-content select,
+.booking-modal-content textarea {
+    background: rgba(255,255,255,0.9) !important;
+    color: var(--fu-text) !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+}
+.booking-modal-content input:focus,
+.booking-modal-content select:focus,
+.booking-modal-content textarea:focus {
+    border-color: #8b5cf6 !important;
+    box-shadow: 0 0 0 4px rgba(139,92,246,0.12) !important;
+}
+
+/* Booking modal overlay */
+#bookingModal,
+.booking-modal-overlay {
+    background: rgba(99,102,241,0.08) !important;
+    backdrop-filter: blur(12px) !important;
+}
+
+/* Room card stat overrides */
+.room-stat-bar,
+.booking-stat-card {
+    background: var(--fu-card) !important;
+    border: 1px solid var(--fu-border) !important;
+    color: var(--fu-text) !important;
+    border-radius: 14px !important;
+}
+.booking-stat-card h3,
+.booking-stat-card .stat-value {
+    color: var(--fu-text) !important;
+}
+
+/* === Expense info chip === */
+.expense-info-chip {
+    background: rgba(99,102,241,0.08) !important;
+    color: #4338ca !important;
+    border: 1px solid rgba(99,102,241,0.2) !important;
+    border-radius: 12px !important;
+}
+.expense-info-chip svg {
+    color: #6366f1 !important;
+    stroke: #6366f1 !important;
+}
+
+/* === Payment Modal Values for dark content === */
+.payment-modal-value[style*="color:#94a3b8"] {
+    color: var(--fu-text-light) !important;
+}
+
+/* === Booking alert modals === */
+.booking-alert-modal {
+    background: rgba(99,102,241,0.08) !important;
+    backdrop-filter: blur(12px) !important;
+}
+.booking-alert-dialog {
+    background: rgba(255,255,255,0.95) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid var(--fu-border) !important;
+    border-radius: 16px !important;
+    color: var(--fu-text) !important;
+    box-shadow: 0 24px 64px rgba(99,102,241,0.12) !important;
+}
+.booking-alert-message {
+    color: var(--fu-text) !important;
+}
+
+/* === Filter selects/controls === */
+.filter-controls select,
+.filter-controls input {
+    background: rgba(255,255,255,0.85) !important;
+    border: 1.5px solid #e2e8f0 !important;
+    color: var(--fu-text) !important;
+    border-radius: 10px !important;
+}
+
+/* Room status colors - bright versions */
+.room-card.status-vacant,
+.room-card[data-status="vacant"] {
+    border-left: 4px solid #22c55e !important;
+}
+.room-card.status-occupied,
+.room-card[data-status="occupied"] {
+    border-left: 4px solid #3b82f6 !important;
+}
+.room-card.status-reserved,
+.room-card[data-status="reserved"] {
+    border-left: 4px solid #f59e0b !important;
+}
+
+/* === Extra fix: manage_booking light-theme compatibility === */
+.manage-panel p[style*="color:#94a3b8"],
+.manage-panel p[style*="color: #94a3b8"],
+.section-header p[style*="color:#94a3b8"],
+.section-header p[style*="color: #94a3b8"] {
+    color: var(--fu-text-light) !important;
+}
+
+/* Fix inline deposit text */
+div[style*="color:#cbd5e1"][style*="font-size:0.9rem"],
+div[style*="color: #cbd5e1"][style*="font-size:0.9rem"] {
+    color: var(--fu-text-light) !important;
+}
+
+/* === Payment list section overrides === */
+.payment-list-item,
+.payment-card {
+    background: var(--fu-card) !important;
+    border: 1px solid var(--fu-border) !important;
+    border-radius: 14px !important;
+    color: var(--fu-text) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+.payment-list-item:hover,
+.payment-card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 8px 24px rgba(99,102,241,0.10) !important;
+}
+
+/* Fix: payment form section - override the dark look */ 
+.payment-form-section {
+    background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.03)) !important;
+    border: 1px solid var(--fu-border) !important;
+    border-radius: 16px !important;
+    color: var(--fu-text) !important;
+}
+.payment-form-section *,
+.payment-form-section label,
+.payment-form-section span,
+.payment-form-section h3 {
+    color: var(--fu-text) !important;
+}
+.payment-form-section svg {
+    stroke: var(--fu-text) !important;
+}
+.payment-form-section input:not([type="submit"]):not([type="button"]),
+.payment-form-section select {
+    background: rgba(255,255,255,0.9) !important;
+    color: var(--fu-text) !important;
+    border: 1.5px solid #e2e8f0 !important;
+}
+.payment-form-section button[type="submit"],
+#submitPaymentBtn {
+    background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+    color: #ffffff !important;
+}
+.payment-form-section button[type="submit"] *,
+#submitPaymentBtn * {
+    color: #ffffff !important;
+}
+.payment-form-section button[type="submit"] svg,
+#submitPaymentBtn svg {
+    stroke: #ffffff !important;
+}
+
+/* === Tenant select in booking modal === */
+.tenant-select {
+    background: rgba(255,255,255,0.9) !important;
+    color: var(--fu-text) !important;
+    border: 1.5px solid #e2e8f0 !important;
+}
+.tenant-select option {
+    background: #ffffff !important;
+    color: var(--fu-text) !important;
+}
+
+/* === Staggered animation for stat cards === */
+.expense-stats > :nth-child(1) { animation: fuFadeSlideUp 0.5s ease-out 0.1s both; }
+.expense-stats > :nth-child(2) { animation: fuFadeSlideUp 0.5s ease-out 0.2s both; }
+.expense-stats > :nth-child(3) { animation: fuFadeSlideUp 0.5s ease-out 0.3s both; }
+.expense-stats > :nth-child(4) { animation: fuFadeSlideUp 0.5s ease-out 0.4s both; }
+.expense-stats > :nth-child(5) { animation: fuFadeSlideUp 0.5s ease-out 0.5s both; }
+
+/* Stagger room cards */
+.room-grid > :nth-child(1) { animation: fuFadeSlideUp 0.4s ease-out 0.05s both; }
+.room-grid > :nth-child(2) { animation: fuFadeSlideUp 0.4s ease-out 0.10s both; }
+.room-grid > :nth-child(3) { animation: fuFadeSlideUp 0.4s ease-out 0.15s both; }
+.room-grid > :nth-child(4) { animation: fuFadeSlideUp 0.4s ease-out 0.20s both; }
+.room-grid > :nth-child(5) { animation: fuFadeSlideUp 0.4s ease-out 0.25s both; }
+.room-grid > :nth-child(6) { animation: fuFadeSlideUp 0.4s ease-out 0.30s both; }
+.room-grid > :nth-child(n+7) { animation: fuFadeSlideUp 0.4s ease-out 0.35s both; }
+
+/* === Pulse glow for stat dots === */
+.status-dot {
+    animation: fuPulse 2s ease-in-out infinite !important;
+}
+
+/* === Section dividers === */
+.section-divider,
+.manage-panel hr {
+    border-color: var(--fu-border) !important;
+    opacity: 0.5;
+}

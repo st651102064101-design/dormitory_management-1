@@ -1,4 +1,5 @@
 <?php
+ob_start();  // ✅ ต้องเป็นบรรทัดแรกสุด — ป้องกัน "headers already sent" จาก warning/notice ใดๆ
 /**
  * Google OAuth Callback
  * รับ callback จาก Google หลังจากผู้ใช้ยืนยันการเข้าสู่ระบบ
@@ -7,7 +8,7 @@
 
 // Set error handling
 $debugMode = isset($_GET['debug']) && $_GET['debug'] === '1';
-ini_set('display_errors', '1');  // ✅ Always show errors during callback
+ini_set('display_errors', '1');
 ini_set('log_errors', '1');
 error_reporting(E_ALL);
 

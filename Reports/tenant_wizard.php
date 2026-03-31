@@ -365,33 +365,112 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <style>
+        /* ============================================================
+           🎨 FUTURISTIC WIZARD UI — Bright Indigo-Purple Theme
+           ============================================================ */
+
+        /* === CSS Custom Property for animated conic-gradient border === */
+        @property --wiz-angle {
+            syntax: '<angle>';
+            initial-value: 0deg;
+            inherits: false;
+        }
+
         :root {
             --theme-bg-color: <?php echo $themeColor; ?>;
+            --wiz-primary: #6366f1;
+            --wiz-violet: #8b5cf6;
+            --wiz-purple: #a855f7;
+            --wiz-indigo-light: #e0e7ff;
+            --wiz-violet-light: #ede9fe;
+            --wiz-text: #1e293b;
+            --wiz-text-light: #64748b;
+            --wiz-bg: #f0f2f8;
+            --wiz-card: rgba(255,255,255,0.88);
+            --wiz-border: rgba(99,102,241,0.18);
+            --wiz-glow: rgba(99,102,241,0.25);
         }
 
-        body,
+        /* === Background with animated gradient mesh === */
+        body, body main {
+            background: var(--wiz-bg) !important;
+            color: var(--wiz-text) !important;
+        }
         body main {
-            background: #ffffff !important;
-            color: #0f172a !important;
+            background:
+                radial-gradient(ellipse 80% 60% at 15% 20%, rgba(99,102,241,0.10) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 50% at 85% 75%, rgba(168,85,247,0.08) 0%, transparent 55%),
+                radial-gradient(ellipse 50% 40% at 50% 0%, rgba(139,92,246,0.06) 0%, transparent 50%),
+                var(--wiz-bg) !important;
+            background-size: 200% 200%, 200% 200%, 100% 100%, 100% 100% !important;
+            animation: wizGradientShift 18s ease-in-out infinite !important;
         }
 
+        /* === Floating particles layer === */
+        body main::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            background-image:
+                radial-gradient(1.5px 1.5px at 10% 15%, rgba(99,102,241,0.22) 50%, transparent 50%),
+                radial-gradient(1px 1px at 30% 45%, rgba(139,92,246,0.18) 50%, transparent 50%),
+                radial-gradient(2px 2px at 55% 20%, rgba(168,85,247,0.15) 50%, transparent 50%),
+                radial-gradient(1px 1px at 75% 60%, rgba(99,102,241,0.20) 50%, transparent 50%),
+                radial-gradient(1.5px 1.5px at 90% 30%, rgba(139,92,246,0.16) 50%, transparent 50%),
+                radial-gradient(1px 1px at 20% 80%, rgba(168,85,247,0.14) 50%, transparent 50%),
+                radial-gradient(2px 2px at 65% 85%, rgba(99,102,241,0.12) 50%, transparent 50%),
+                radial-gradient(1px 1px at 45% 10%, rgba(139,92,246,0.18) 50%, transparent 50%);
+            animation: wizParticle 22s linear infinite;
+        }
+
+        /* === Wizard Panel — Glassmorphism + Rainbow Border === */
         .wizard-panel {
             margin: 1.5rem;
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 8px;
-            box-shadow: 0 8px 20px rgba(15,23,42,0.08);
-            overflow: hidden;
+            background: var(--wiz-card);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid transparent;
+            border-radius: 16px;
+            box-shadow:
+                0 8px 32px rgba(99,102,241,0.10),
+                0 2px 8px rgba(139,92,246,0.06),
+                inset 0 1px 0 rgba(255,255,255,0.7);
+            overflow: visible;
+            position: relative;
+            z-index: 1;
+            animation: wizFadeSlideUp 0.6s ease-out both;
+        }
+        /* Rainbow spinning border */
+        .wizard-panel::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 18px;
+            background: conic-gradient(from var(--wiz-angle), #6366f1, #8b5cf6, #a855f7, #ec4899, #f43f5e, #f97316, #eab308, #22c55e, #06b6d4, #6366f1);
+            z-index: -1;
+            animation: wizSpinBorder 6s linear infinite;
+            opacity: 0.45;
+        }
+        .wizard-panel::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 16px;
+            background: var(--wiz-card);
+            z-index: -1;
         }
 
         .wizard-panel > .page-header-bar {
             margin: 0 0 1rem !important;
             border-radius: 0;
             border: 0;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--wiz-border);
             box-shadow: none;
+            background: rgba(255,255,255,0.55) !important;
+            backdrop-filter: blur(10px);
         }
-
         .wizard-panel > .page-header-spacer {
             display: none !important;
         }
@@ -401,129 +480,276 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             padding-top: 1rem;
         }
 
+        /* === Intro Box — Gradient + Shimmer === */
         .wizard-intro {
-            padding: 1.5rem;
-            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
-            border: 1px solid rgba(59, 130, 246, 0.3);
-            border-radius: 8px;
+            padding: 1.5rem 1.5rem 1.5rem 1.75rem;
+            background: linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.05) 50%, rgba(168,85,247,0.03) 100%);
+            border: 1px solid var(--wiz-border);
+            border-left: 4px solid;
+            border-image: linear-gradient(180deg, #6366f1, #a855f7) 1;
+            border-radius: 12px;
             margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            animation: wizFadeSlideUp 0.7s ease-out 0.1s both;
         }
-
+        .wizard-intro::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+            animation: wizShimmer 3.5s ease-in-out infinite;
+        }
         .wizard-intro h3 {
             margin: 0 0 0.5rem 0;
-            color: #3b82f6;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 1.15rem;
+        }
+        .wizard-intro p {
+            color: #475569 !important;
+            line-height: 1.7;
+        }
+        .wizard-intro strong {
+            color: #6366f1;
+            -webkit-text-fill-color: #6366f1;
         }
 
+        /* === Filter Buttons === */
+        .wiz-filter-bar {
+            display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+            animation: wizFadeSlideUp 0.7s ease-out 0.2s both;
+        }
+        .wiz-filter-btn {
+            padding: 0.7rem 1.5rem;
+            border-radius: 12px;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+            position: relative;
+            overflow: hidden;
+        }
+        .wiz-filter-btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent);
+            transition: left 0.5s;
+        }
+        .wiz-filter-btn:hover::after { left: 150%; }
+        .wiz-filter-btn:hover { transform: translateY(-2px); }
+
+        .wiz-filter-btn.pending-filter {
+            background: rgba(99,102,241,0.12);
+            color: #4338ca;
+            border-color: rgba(99,102,241,0.35);
+        }
+        .wiz-filter-btn.pending-filter.active {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: #fff !important;
+            border-color: transparent;
+            box-shadow: 0 4px 18px rgba(99,102,241,0.35);
+        }
+        .wiz-filter-btn.complete-filter {
+            background: rgba(34,197,94,0.12);
+            color: #15803d;
+            border-color: rgba(34,197,94,0.35);
+        }
+        .wiz-filter-btn.complete-filter.active {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: #fff !important;
+            border-color: transparent;
+            box-shadow: 0 4px 18px rgba(34,197,94,0.35);
+        }
+        .wiz-filter-badge {
+            display: inline-flex; align-items: center; gap: 0.5rem;
+            padding: 0.7rem 1rem;
+            background: rgba(99,102,241,0.08);
+            border: 1px solid rgba(99,102,241,0.25);
+            border-radius: 12px;
+            color: #4338ca; font-weight: 600;
+        }
+        .wiz-filter-clear {
+            padding: 0.7rem 1.25rem;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid #cbd5e1;
+            border-radius: 12px;
+            text-decoration: none;
+            color: #334155; font-weight: 600;
+            transition: all 0.2s;
+        }
+        .wiz-filter-clear:hover { background: #f1f5f9; }
+
+        /* === Wizard Table === */
         .wizard-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0 0.5rem;
             margin-top: 1.5rem;
+            animation: wizFadeSlideUp 0.7s ease-out 0.3s both;
         }
-
         .wizard-table thead {
-            background: #f8fafc;
+            background: linear-gradient(135deg, #6366f1, #7c3aed, #8b5cf6);
+            position: relative;
         }
-
-        .wizard-table th,
-        .wizard-table td {
-            padding: 1rem;
+        .wizard-table thead::after {
+            content: '';
+            position: absolute;
+            bottom: 0; left: 10%; right: 10%; height: 3px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+            border-radius: 2px;
+        }
+        .wizard-table th {
+            padding: 1rem 1.25rem;
             text-align: left;
-            color: #1e293b;
-            border-bottom: 1px solid #e2e8f0;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.9rem;
+            letter-spacing: 0.03em;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.15);
+            border: none;
         }
+        .wizard-table th:first-child { border-radius: 12px 0 0 12px; }
+        .wizard-table th:last-child  { border-radius: 0 12px 12px 0; }
+
+        .wizard-table td {
+            padding: 1rem 1.25rem;
+            text-align: left;
+            color: var(--wiz-text);
+            border: none;
+            background: rgba(255,255,255,0.7);
+            backdrop-filter: blur(8px);
+            transition: all 0.3s ease;
+        }
+        .wizard-table td:first-child { border-radius: 12px 0 0 12px; }
+        .wizard-table td:last-child  { border-radius: 0 12px 12px 0; }
+
+        .wizard-table tbody tr {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            animation: wizFadeSlideUp 0.5s ease-out both;
+        }
+        .wizard-table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+        .wizard-table tbody tr:nth-child(2) { animation-delay: 0.10s; }
+        .wizard-table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+        .wizard-table tbody tr:nth-child(4) { animation-delay: 0.20s; }
+        .wizard-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+        .wizard-table tbody tr:nth-child(n+6) { animation-delay: 0.30s; }
 
         .wizard-table tbody tr:hover {
-            background: #f8fafc;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(99,102,241,0.12), 0 2px 8px rgba(139,92,246,0.08);
         }
-            /* Responsive table for wizard-table */
-            @media (max-width: 900px) {
-                .wizard-table, .wizard-table thead, .wizard-table tbody, .wizard-table th, .wizard-table td, .wizard-table tr {
-                    display: block;
-                }
-                .wizard-table thead {
-                    display: none;
-                }
-                .wizard-table tr {
-                    margin-bottom: 1.2rem;
-                    border-radius: 12px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-                    background: #fff;
-                    border: none;
-                }
-                .wizard-table td {
-                    padding: 0.8rem 1rem;
-                    border: none;
-                    position: relative;
-                    font-size: 1rem;
-                }
-                .wizard-table td:before {
-                    content: attr(data-label);
-                    font-weight: 600;
-                    color: #64748b;
-                    display: block;
-                    margin-bottom: 0.3rem;
-                    font-size: 0.95rem;
-                }
-            }
+        .wizard-table tbody tr:hover td {
+            background: rgba(255,255,255,0.92);
+        }
 
+        /* Responsive table */
+        @media (max-width: 900px) {
+            .wizard-table, .wizard-table thead, .wizard-table tbody, .wizard-table th, .wizard-table td, .wizard-table tr {
+                display: block;
+            }
+            .wizard-table { border-spacing: 0; }
+            .wizard-table thead { display: none; }
+            .wizard-table tr {
+                margin-bottom: 1rem;
+                border-radius: 16px;
+                box-shadow: 0 4px 16px rgba(99,102,241,0.08);
+                background: rgba(255,255,255,0.85);
+                backdrop-filter: blur(10px);
+                border: 1px solid var(--wiz-border);
+                overflow: hidden;
+                position: relative;
+            }
+            .wizard-table tr::before {
+                content: '';
+                position: absolute;
+                top: 0; left: 0; right: 0; height: 3px;
+                background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+            }
+            .wizard-table td {
+                padding: 0.8rem 1rem;
+                border-radius: 0 !important;
+                background: transparent;
+            }
+            .wizard-table td:before {
+                content: attr(data-label);
+                font-weight: 700;
+                color: #6366f1;
+                display: block;
+                margin-bottom: 0.3rem;
+                font-size: 0.85rem;
+                text-transform: uppercase;
+                letter-spacing: 0.05em;
+            }
+        }
+
+        /* === Step Indicator === */
         .step-indicator {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
         }
 
         .step-circle {
-            width: 32px;
-            height: 32px;
+            width: 36px;
+            height: 36px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 0.85rem;
-            font-weight: 600;
+            font-weight: 700;
             position: relative;
             cursor: help;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        
-        /* Tooltip Styles */
+        .step-circle:hover {
+            transform: scale(1.15);
+            z-index: 5;
+        }
+
+        /* Tooltip */
         .step-circle::before {
             content: attr(data-tooltip);
             position: absolute;
-            bottom: 125%;
+            bottom: 130%;
             left: 50%;
             transform: translateX(-50%) translateY(5px);
-            padding: 6px 10px;
-            background: #f8fafc;
-            color: #334155;
+            padding: 8px 14px;
+            background: rgba(255,255,255,0.95);
+            backdrop-filter: blur(12px);
+            color: #1e293b;
             font-size: 0.75rem;
-            font-weight: 400;
-            border-radius: 6px;
+            font-weight: 500;
+            border-radius: 10px;
             white-space: nowrap;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-            z-index: 10;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 1px solid var(--wiz-border);
+            box-shadow: 0 8px 24px rgba(99,102,241,0.15);
+            z-index: 20;
             pointer-events: none;
         }
-        
         .step-circle::after {
             content: '';
             position: absolute;
-            bottom: 115%;
+            bottom: 120%;
             left: 50%;
             transform: translateX(-50%) translateY(5px);
-            border-width: 5px;
+            border-width: 6px;
             border-style: solid;
-            border-color: #f8fafc transparent transparent transparent;
+            border-color: rgba(255,255,255,0.95) transparent transparent transparent;
             opacity: 0;
             visibility: hidden;
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-            z-index: 10;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 20;
             pointer-events: none;
         }
-
         .step-circle:hover::before,
         .step-circle:hover::after {
             opacity: 1;
@@ -531,51 +757,48 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             transform: translateX(-50%) translateY(0);
         }
 
+        /* Step states */
         .step-circle.completed {
-            background: #22c55e;
+            background: linear-gradient(135deg, #22c55e, #16a34a);
             color: white;
+            box-shadow: 0 3px 12px rgba(34,197,94,0.35);
         }
-
         .step-circle.current {
-            background: #3b82f6;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
             color: #ffffff !important;
-            animation: pulse 2s infinite;
+            animation: wizPulseGlow 2.2s ease-in-out infinite;
+            box-shadow: 0 0 0 4px rgba(99,102,241,0.2), 0 4px 15px rgba(99,102,241,0.3);
         }
-
-
         .step-circle.pending {
-            background: #f1f5f9;
+            background: rgba(241,245,249,0.8);
             color: #94a3b8;
+            border: 1.5px solid #e2e8f0;
         }
-
         .step-circle.wait {
-            background: #fef3c7;
-            color: #b45309;
-            border: 1px solid #f59e0b;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            color: #92400e;
+            border: 1.5px solid #f59e0b;
+            box-shadow: 0 3px 10px rgba(245,158,11,0.2);
         }
         .step-circle.meter-pending {
-            background: #ecfdf5;
+            background: linear-gradient(135deg, #ecfdf5, #d1fae5);
             color: #065f46;
-            border: 1px solid #34d399;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            border: 1.5px solid #34d399;
+            box-shadow: 0 3px 10px rgba(52,211,153,0.2);
         }
         .step-circle.overdue {
-            background: rgba(239,68,68,0.15);
-            color: #f87171;
-            border: 1px solid rgba(239,68,68,0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
+            background: linear-gradient(135deg, rgba(239,68,68,0.12), rgba(239,68,68,0.20));
+            color: #dc2626;
+            border: 1.5px solid rgba(239,68,68,0.5);
+            font-weight: 800;
+            box-shadow: 0 3px 10px rgba(239,68,68,0.15);
         }
+        .step-circle.overdue:hover {
+            animation: wizShake 0.4s ease-in-out;
+        }
+
         .wait-spinner {
-            width: 20px;
-            height: 20px;
+            width: 20px; height: 20px;
             animation: waitSpin 1.6s linear infinite;
             display: block;
         }
@@ -584,10 +807,606 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             transform-origin: center;
         }
         .meter-spinner {
-            width: 20px;
-            height: 20px;
+            width: 20px; height: 20px;
             display: block;
             animation: meterPulse 1.8s ease-in-out infinite;
+        }
+
+        /* Step connecting line */
+        .step-arrow {
+            color: transparent;
+            font-size: 0;
+            width: 20px;
+            height: 3px;
+            background: linear-gradient(90deg, var(--wiz-border), rgba(139,92,246,0.3), var(--wiz-border));
+            border-radius: 2px;
+            display: inline-block;
+            vertical-align: middle;
+            position: relative;
+        }
+        .step-arrow::after {
+            content: '';
+            position: absolute;
+            right: -3px; top: 50%;
+            transform: translateY(-50%);
+            border-left: 5px solid rgba(139,92,246,0.4);
+            border-top: 4px solid transparent;
+            border-bottom: 4px solid transparent;
+        }
+
+        /* === Action Buttons === */
+        .action-btn {
+            padding: 0.55rem 1.3rem;
+            border-radius: 25px;
+            border: none;
+            cursor: pointer;
+            font-size: 0.88rem;
+            font-weight: 600;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+        .action-btn::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.4s;
+        }
+        .action-btn:hover::after { left: 150%; }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            box-shadow: 0 3px 12px rgba(99,102,241,0.25);
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px) scale(1.03);
+            box-shadow: 0 6px 20px rgba(99,102,241,0.35);
+        }
+        .btn-success {
+            background: linear-gradient(135deg, #22c55e, #16a34a);
+            color: white;
+            box-shadow: 0 3px 12px rgba(34,197,94,0.25);
+        }
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(34,197,94,0.35);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            box-shadow: 0 3px 12px rgba(239,68,68,0.25);
+        }
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239,68,68,0.35);
+        }
+
+        .wizard-table .action-btn.btn-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+            border: none !important;
+            color: #ffffff !important;
+        }
+        .wizard-table .action-btn.btn-primary:hover {
+            background: linear-gradient(135deg, #4f46e5, #7c3aed) !important;
+        }
+        .wizard-table .action-btn.btn-danger {
+            background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+            border: none !important;
+            color: #ffffff !important;
+        }
+        .wizard-table .action-btn.btn-danger:hover {
+            background: linear-gradient(135deg, #dc2626, #b91c1c) !important;
+        }
+
+        .btn-disabled {
+            background: #f1f5f9;
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        /* === Tenant Info === */
+        .tenant-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .tenant-name {
+            font-weight: 700;
+            font-size: 1rem;
+            background: linear-gradient(135deg, #4338ca, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .tenant-phone {
+            font-size: 0.82rem;
+            color: #64748b;
+            background: rgba(99,102,241,0.06);
+            padding: 0.15rem 0.5rem;
+            border-radius: 12px;
+            display: inline-block;
+            width: fit-content;
+        }
+
+        /* === Empty State === */
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            animation: wizFloat 3s ease-in-out infinite;
+        }
+        .empty-state svg {
+            width: 80px; height: 80px;
+            margin-bottom: 1rem;
+            opacity: 0.4;
+            filter: drop-shadow(0 4px 8px rgba(99,102,241,0.15));
+        }
+        .empty-state p {
+            background: linear-gradient(135deg, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        /* === Modal Styles === */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(99,102,241,0.08);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 9998;
+            animation: fadeIn 0.3s;
+        }
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        body.modal-open .page-header-bar,
+        body.modal-open .page-header-spacer { display: none !important; }
+        body.modal-open { overflow: hidden; }
+
+        .modal-container {
+            background: rgba(255,255,255,0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 2px solid transparent;
+            border-radius: 20px;
+            max-width: 800px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            box-shadow: 0 24px 64px rgba(99,102,241,0.15), 0 8px 24px rgba(139,92,246,0.08);
+            animation: wizModalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+            position: relative;
+        }
+        .modal-container::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: 22px;
+            background: conic-gradient(from var(--wiz-angle), #6366f1, #8b5cf6, #a855f7, #ec4899, #22c55e, #06b6d4, #6366f1);
+            z-index: -1;
+            animation: wizSpinBorder 6s linear infinite;
+            opacity: 0.3;
+        }
+        .modal-container::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.92);
+            z-index: -1;
+        }
+
+        /* Gradient accent bar at top of modal */
+        .modal-header {
+            padding: 1.75rem 2rem;
+            border-bottom: 1px solid var(--wiz-border);
+            position: sticky;
+            top: 0;
+            background: rgba(255,255,255,0.9);
+            backdrop-filter: blur(12px);
+            z-index: 10;
+            position: relative;
+        }
+        .modal-header::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 4px;
+            background: linear-gradient(90deg, #6366f1, #8b5cf6, #a855f7, #ec4899);
+            border-radius: 20px 20px 0 0;
+        }
+        .modal-header h2 {
+            color: #1e293b !important;
+            background: linear-gradient(135deg, #4338ca, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .modal-header p { color: #64748b !important; }
+
+        .modal-close {
+            position: absolute;
+            top: 1rem; right: 1rem;
+            background: rgba(99,102,241,0.08);
+            border: 1px solid var(--wiz-border);
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            color: #6366f1;
+            font-size: 1.4rem;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .modal-close:hover {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+            color: white;
+            border-color: transparent;
+            transform: rotate(90deg) scale(1.1);
+            box-shadow: 0 4px 12px rgba(239,68,68,0.3);
+        }
+
+        .modal-body { padding: 2rem; }
+
+        .modal-footer {
+            padding: 1.25rem 2rem;
+            border-top: 1px solid var(--wiz-border);
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            bottom: 0;
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* Modal step number circle — gradient (48px and 56px variants) */
+        .modal-header div[style*="border-radius: 50%"][style*="width: 48px"],
+        .modal-header div[style*="border-radius: 50%"][style*="width: 56px"] {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6) !important;
+            box-shadow: 0 4px 15px rgba(99,102,241,0.35) !important;
+        }
+
+        /* === Form Controls === */
+        .form-group { margin-bottom: 1.5rem; }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #334155;
+        }
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.8);
+            color: #0f172a;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #8b5cf6;
+            background: #ffffff;
+            box-shadow: 0 0 0 4px rgba(139,92,246,0.12), 0 4px 12px rgba(99,102,241,0.08);
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .info-box-modal {
+            padding: 1.25rem;
+            background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(139,92,246,0.03));
+            border: 1px solid var(--wiz-border);
+            border-left: 4px solid #6366f1;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+        }
+        .info-box-modal p { margin: 0.5rem 0; color: #1e293b; }
+
+        .alert-box-modal {
+            padding: 1.25rem;
+            background: linear-gradient(135deg, rgba(245,158,11,0.06), rgba(251,191,36,0.03));
+            border: 2px solid rgba(245,158,11,0.25);
+            border-left: 4px solid #f59e0b;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+        }
+        .alert-box-modal h4 { margin-top: 0; color: #b45309; }
+        .alert-box-modal h4[style*="color: #22c55e"],
+        .alert-box-modal h4[style*="color:#22c55e"] { color: #16a34a !important; }
+        .alert-box-modal h4[style*="color: #c4b5fd"],
+        .alert-box-modal h4[style*="color:#c4b5fd"] { color: #7c3aed !important; }
+        .alert-box-modal ul[style*="color: #e2e8f0"],
+        .alert-box-modal ul[style*="color:#e2e8f0"] { color: #475569 !important; }
+        .alert-box-modal li { color: inherit; }
+
+        /* === Modal Buttons === */
+        .btn-modal {
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-modal::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%; width: 50%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+        .btn-modal:hover::after { left: 150%; }
+
+        .btn-modal-primary {
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            color: white;
+            box-shadow: 0 4px 18px rgba(99,102,241,0.3);
+        }
+        .btn-modal-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 24px rgba(99,102,241,0.4);
+        }
+        .btn-modal-secondary {
+            background: rgba(255,255,255,0.8);
+            color: #334155;
+            border: 1.5px solid #e2e8f0;
+        }
+        .btn-modal-secondary:hover {
+            background: #f1f5f9;
+            border-color: #cbd5e1;
+        }
+
+        /* === Fix dark-theme inline color remnants === */
+        .wizard-panel p[style],
+        .wizard-panel span[style],
+        .wizard-panel div[style] { color: inherit; }
+
+        .wizard-table span[style*="rgba(255,255,255"],
+        .wizard-table span[style*="#e2e8f0"],
+        .wizard-table span[style*="#f1f5f9"] {
+            color: #64748b !important;
+        }
+        /* With-space variants */
+        .modal-container [style*="color: #f8fafc"],
+        .modal-container [style*="color: #f1f5f9"],
+        .modal-container [style*="color: #e2e8f0"],
+        .modal-container [style*="color: #fff"],
+        .modal-container [style*="color: rgba(255,255,255"],
+        .modal-container [style*="color: rgba(241,245,249"],
+        .modal-container [style*="color: rgba(226,232,240"],
+        .modal-container [style*="color: white"],
+        /* No-space variants (billing/meter-only minified styles) */
+        .modal-container [style*="color:#f8fafc"],
+        .modal-container [style*="color:#f1f5f9"],
+        .modal-container [style*="color:#e2e8f0"],
+        .modal-container [style*="color:#fff"],
+        .modal-container [style*="color:rgba(255,255,255"],
+        .modal-container [style*="color:rgba(241,245,249"],
+        .modal-container [style*="color:rgba(226,232,240"],
+        .modal-container [style*="color:white"] {
+            color: #334155 !important;
+        }
+        /* Secondary-text inline colors */
+        .modal-container [style*="color: rgba(148,163,184"],
+        .modal-container [style*="color:rgba(148,163,184"],
+        .modal-container [style*="color: #94a3b8"],
+        .modal-container [style*="color:#94a3b8"],
+        .modal-container [style*="color: #cbd5e1"],
+        .modal-container [style*="color:#cbd5e1"] {
+            color: #64748b !important;
+        }
+        /* Protect accent colors from being overridden */
+        .modal-container [style*="color: #4ade80"],
+        .modal-container [style*="color:#4ade80"] { color: #16a34a !important; }
+        .modal-container [style*="color: #60a5fa"],
+        .modal-container [style*="color:#60a5fa"] { color: #3b82f6 !important; }
+        .modal-container [style*="color: #fbbf24"],
+        .modal-container [style*="color:#fbbf24"] { color: #d97706 !important; }
+        .modal-container [style*="color: #93c5fd"],
+        .modal-container [style*="color:#93c5fd"] { color: #3b82f6 !important; }
+        .modal-container [style*="color: #f87171"],
+        .modal-container [style*="color:#f87171"] { color: #ef4444 !important; }
+        .modal-container [style*="color: #fca5a5"],
+        .modal-container [style*="color:#fca5a5"] { color: #ef4444 !important; }
+        .modal-container [style*="color: #d97706"],
+        .modal-container [style*="color:#d97706"] { color: #b45309 !important; }
+        .modal-container input,
+        .modal-container textarea,
+        .modal-container select {
+            background: rgba(255,255,255,0.9) !important;
+            border: 1.5px solid #e2e8f0 !important;
+            color: #0f172a !important;
+        }
+        .modal-container input:focus,
+        .modal-container textarea:focus,
+        .modal-container select:focus {
+            border-color: #8b5cf6 !important;
+            box-shadow: 0 0 0 4px rgba(139,92,246,0.12) !important;
+        }
+        .modal-container input::placeholder,
+        .modal-container textarea::placeholder { color: #94a3b8 !important; }
+        .modal-container .close-btn {
+            background: rgba(99,102,241,0.08) !important;
+            color: #6366f1 !important;
+            border: 1px solid var(--wiz-border) !important;
+        }
+        /* Dark transparent backgrounds → light */
+        .modal-container [style*="background: rgba(255,255,255,0.05)"],
+        .modal-container [style*="background: rgba(255,255,255,0.08)"],
+        .modal-container [style*="background: rgba(255,255,255,0.1)"],
+        .modal-container [style*="background:rgba(255,255,255,0.04)"],
+        .modal-container [style*="background:rgba(255,255,255,0.05)"],
+        .modal-container [style*="background:rgba(255,255,255,0.08)"] {
+            background: rgba(99,102,241,0.04) !important;
+            border-color: var(--wiz-border) !important;
+        }
+        /* Dark solid backgrounds on meter body / preview */
+        .modal-container [style*="background:rgba(15,23,42"],
+        .modal-container [style*="background: rgba(15,23,42"] {
+            background: rgba(99,102,241,0.03) !important;
+            border-color: var(--wiz-border) !important;
+        }
+        /* Dark border lines in modals → theme border */
+        .modal-container [style*="border-bottom:1px solid rgba(255,255,255"],
+        .modal-container [style*="border-top:1px solid rgba(255,255,255"],
+        .modal-container [style*="border:1px solid rgba(255,255,255"],
+        .modal-container [style*="border-bottom: 1px solid rgba(255,255,255"],
+        .modal-container [style*="border-top: 1px solid rgba(255,255,255"],
+        .modal-container [style*="border: 1px solid rgba(255,255,255"] {
+            border-color: var(--wiz-border) !important;
+        }
+        .modal-container img { border-color: var(--wiz-border) !important; }
+
+        /* Standalone close buttons (billing/meter) */
+        .modal-container button[onclick*="close"][style*="background:rgba(255,255,255,0.08)"],
+        .modal-container button[onclick*="close"][style*="background: rgba(255,255,255,0.08)"] {
+            background: rgba(99,102,241,0.08) !important;
+            color: #6366f1 !important;
+            border: 1px solid var(--wiz-border) !important;
+        }
+        /* Billing modal footer close button (transparent bg) */
+        .modal-container button[onclick*="close"][style*="background:transparent"],
+        .modal-container button[onclick*="close"][style*="background: transparent"] {
+            background: rgba(255,255,255,0.8) !important;
+            color: #334155 !important;
+            border: 1.5px solid #e2e8f0 !important;
+        }
+
+        /* Fix billing modal header gradient */
+        #billingModal .modal-container > div:first-child {
+            background: linear-gradient(135deg, rgba(34,197,94,0.08), rgba(59,130,246,0.06)) !important;
+            border-bottom: 1px solid rgba(34,197,94,0.15) !important;
+        }
+        #billingModal .modal-container > div:first-child div[style*="background:#22c55e"] {
+            background: linear-gradient(135deg, #22c55e, #16a34a) !important;
+            box-shadow: 0 4px 12px rgba(34,197,94,0.3);
+        }
+
+        /* Fix meter-only modal header gradient */
+        #meterOnlyModal .modal-container > div:first-child {
+            background: linear-gradient(135deg, rgba(5,150,105,0.08), rgba(16,185,129,0.04)) !important;
+            border-bottom: 1px solid rgba(5,150,105,0.15) !important;
+        }
+        #meterOnlyModal .modal-container > div:first-child div[style*="background:#059669"] {
+            background: linear-gradient(135deg, #059669, #10b981) !important;
+            box-shadow: 0 4px 12px rgba(5,150,105,0.3);
+        }
+        #meterOnlyModal .modal-container div[style*="font-weight:700"][style*="color:#f8fafc"] {
+            color: #065f46 !important;
+        }
+        #meterOnlyModal .modal-container div[style*="color:rgba(226,232,240"] {
+            color: #64748b !important;
+        }
+
+        /* Billing/meter save buttons — keep amber/green buttons visible on light theme */
+        .modal-container button[onclick*="saveMeter"],
+        .modal-container button[id="moSaveBtn"] {
+            box-shadow: 0 2px 8px rgba(217,119,6,0.25);
+        }
+        #meterOnlyModal button[id="moSaveBtn"] {
+            box-shadow: 0 2px 8px rgba(5,150,105,0.25);
+        }
+
+        /* Checkin modal validation error + summary boxes on light theme */
+        #checkinModal #validationError {
+            background: rgba(239,68,68,0.06) !important;
+            border-color: rgba(239,68,68,0.2) !important;
+            color: #dc2626 !important;
+        }
+
+        /* Billing modal footer */
+        #billingModal .modal-container > div:last-child {
+            border-top: 1px solid var(--wiz-border) !important;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(8px);
+            border-radius: 0 0 20px 20px;
+        }
+
+        /* === Billing SVG Icons === */
+        .billing-inline-icon { display: inline-flex; align-items: center; gap: 0.32rem; }
+        .billing-svg-icon { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; vertical-align: -2px; flex-shrink: 0; }
+        .billing-svg-water  { animation: billingFloat 2.2s ease-in-out infinite; }
+        .billing-svg-elec   { animation: billingFlicker 1.7s ease-in-out infinite; }
+        .billing-svg-cal    { animation: billingTick 2.4s ease-in-out infinite; }
+        .billing-svg-meter  { animation: billingMeterPulse 2.1s ease-in-out infinite; }
+        .billing-svg-warning { width: 15px; height: 15px; animation: billingWarningPulse 1.9s ease-in-out infinite; }
+
+        /* ============================================================
+           🎬 KEYFRAMES
+           ============================================================ */
+        @keyframes wizGradientShift {
+            0%, 100% { background-position: 0% 0%, 100% 100%, 0% 0%, 0% 0%; }
+            50%      { background-position: 100% 100%, 0% 0%, 0% 0%, 0% 0%; }
+        }
+        @keyframes wizShimmer {
+            0%, 100% { left: -100%; }
+            50%      { left: 150%; }
+        }
+        @keyframes wizFloat {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-6px); }
+        }
+        @keyframes wizPulseGlow {
+            0%, 100% { transform: scale(1);    box-shadow: 0 0 0 4px rgba(99,102,241,0.2), 0 4px 15px rgba(99,102,241,0.3); }
+            50%      { transform: scale(1.08); box-shadow: 0 0 0 8px rgba(99,102,241,0.1), 0 6px 24px rgba(99,102,241,0.4); }
+        }
+        @keyframes wizFadeSlideUp {
+            from { opacity: 0; transform: translateY(18px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes wizSpinBorder {
+            from { --wiz-angle: 0deg; }
+            to   { --wiz-angle: 360deg; }
+        }
+        @keyframes wizParticle {
+            0%   { transform: translateY(0); }
+            100% { transform: translateY(-50px); }
+        }
+        @keyframes wizModalIn {
+            from { opacity: 0; transform: scale(0.92) translateY(20px); filter: blur(4px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+        }
+        @keyframes wizShake {
+            0%, 100% { transform: translateX(0) scale(1.15); }
+            20%      { transform: translateX(-3px) scale(1.15); }
+            40%      { transform: translateX(3px) scale(1.15); }
+            60%      { transform: translateX(-2px) scale(1.15); }
+            80%      { transform: translateX(2px) scale(1.15); }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to   { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(50px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.1); }
         }
         @keyframes waitSpin {
             from { transform: rotate(0deg); }
@@ -601,444 +1420,27 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             0%, 100% { opacity: 1;   transform: scale(1); }
             50%       { opacity: 0.4; transform: scale(0.82); }
         }
-
-        .step-arrow {
-            color: #94a3b8;
-            font-size: 1rem;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.1); }
-        }
-
-        .action-btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 6px;
-            border: none;
-            cursor: pointer;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.2s;
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .btn-primary {
-            background: #2563eb;
-            color: white;
-        }
-
-        .btn-primary:hover {
-            background: #1d4ed8;
-            transform: translateY(-1px);
-        }
-
-        .btn-success {
-            background: #22c55e;
-            color: white;
-        }
-
-        .btn-success:hover {
-            background: #16a34a;
-        }
-
-        .btn-danger {
-            background: #dc2626;
-            color: white;
-        }
-
-        .btn-danger:hover {
-            background: #b91c1c;
-            transform: translateY(-1px);
-        }
-
-        .wizard-table .action-btn.btn-primary {
-            background: #2563eb !important;
-            border: 1px solid #1d4ed8 !important;
-            color: #ffffff !important;
-        }
-
-        .wizard-table .action-btn.btn-primary:hover {
-            background: #1d4ed8 !important;
-            border-color: #1e40af !important;
-        }
-
-        .wizard-table .action-btn.btn-danger {
-            background: #dc2626 !important;
-            border: 1px solid #b91c1c !important;
-            color: #ffffff !important;
-        }
-
-        .wizard-table .action-btn.btn-danger:hover {
-            background: #b91c1c !important;
-            border-color: #991b1b !important;
-        }
-
-        .btn-disabled {
-            background: #f1f5f9;
-            color: #94a3b8;
-            cursor: not-allowed;
-        }
-
-        .tenant-info {
-            display: flex;
-            flex-direction: column;
-            gap: 0.25rem;
-        }
-
-        .tenant-name {
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .tenant-phone {
-            font-size: 0.85rem;
-            color: #64748b;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #64748b;
-        }
-
-        .empty-state svg {
-            width: 64px;
-            height: 64px;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        /* Modal Styles */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(15, 23, 42, 0.45);
-            backdrop-filter: blur(8px);
-            z-index: 9998;
-            animation: fadeIn 0.3s;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        /* ซ่อน header เมื่อ modal เปิด */
-        body.modal-open .page-header-bar,
-        body.modal-open .page-header-spacer {
-            display: none !important;
-        }
-
-        body.modal-open {
-            overflow: hidden;
-        }
-
-        .modal-container {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            max-width: 800px;
-            width: 90%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 20px 60px rgba(15, 23, 42, 0.2);
-            animation: slideUp 0.3s;
-            position: relative;
-        }
-
-        .modal-header {
-            padding: 2rem;
-            border-bottom: 1px solid #e2e8f0;
-            position: sticky;
-            top: 0;
-            background: #ffffff;
-            backdrop-filter: blur(10px);
-            z-index: 10;
-        }
-
-        .modal-header h2,
-        .modal-header p {
-            color: #0f172a !important;
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 1rem;
-            right: 1rem;
-            background: #f8fafc;
-            border: none;
-            width: 36px;
-            height: 36px;
-            border-radius: 50%;
-            cursor: pointer;
-            color: #334155;
-            font-size: 1.5rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s;
-        }
-
-        .modal-close:hover {
-            background: #fee2e2;
-            transform: rotate(90deg);
-        }
-
-        .modal-body {
-            padding: 2rem;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
-
-        @keyframes slideUp {
-            from { 
-                opacity: 0;
-                transform: translateY(50px);
-            }
-            to { 
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            font-weight: 500;
-            color: #334155;
-        }
-
-        .form-group input,
-        .form-group textarea,
-        .form-group select {
-            width: 100%;
-            padding: 0.75rem;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            background: #ffffff;
-            color: #0f172a;
-            transition: all 0.2s;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus,
-        .form-group select:focus {
-            outline: none;
-            border-color: #60a5fa;
-            background: #ffffff;
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2);
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1rem;
-        }
-
-        .info-box-modal {
-            padding: 1rem;
-            background: #eff6ff;
-            border: 1px solid #bfdbfe;
-            border-radius: 8px;
-            margin-bottom: 1.5rem;
-        }
-
-        .info-box-modal p {
-            margin: 0.5rem 0;
-            color: #1e293b;
-        }
-
-        .alert-box-modal {
-            padding: 1rem;
-            background: #fffbeb;
-            border: 2px solid #fde68a;
-            border-radius: 8px;
-            margin: 1.5rem 0;
-        }
-
-        .alert-box-modal h4 {
-            margin-top: 0;
-            color: #b45309;
-        }
-
-        .modal-footer {
-            padding: 1.5rem 2rem;
-            border-top: 1px solid #e2e8f0;
-            display: flex;
-            gap: 1rem;
-            justify-content: flex-end;
-            background: #ffffff;
-            position: sticky;
-            bottom: 0;
-        }
-
-        .btn-modal {
-            padding: 0.75rem 2rem;
-            border-radius: 8px;
-            border: none;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-modal-primary {
-            background: linear-gradient(135deg, #f59e0b, #d97706);
-            color: white;
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
-        }
-
-        .btn-modal-primary:hover {
-            background: linear-gradient(135deg, #d97706, #b45309);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(245, 158, 11, 0.4);
-        }
-
-        .btn-modal-secondary {
-            background: #f8fafc;
-            color: #334155;
-            border: 1px solid #cbd5e1;
-        }
-
-        .btn-modal-secondary:hover {
-            background: #f1f5f9;
-        }
-
-        .wizard-panel p[style],
-        .wizard-panel span[style],
-        .wizard-panel div[style] {
-            color: inherit;
-        }
-
-        .wizard-table span[style*="rgba(255,255,255"],
-        .wizard-table span[style*="#e2e8f0"],
-        .wizard-table span[style*="#f1f5f9"] {
-            color: #64748b !important;
-        }
-
-        .modal-container [style*="color: #f8fafc"],
-        .modal-container [style*="color: #f1f5f9"],
-        .modal-container [style*="color: #e2e8f0"],
-        .modal-container [style*="color: #fff"],
-        .modal-container [style*="color: rgba(255,255,255"],
-        .modal-container [style*="color: white"] {
-            color: #334155 !important;
-        }
-
-        .modal-container input,
-        .modal-container textarea,
-        .modal-container select {
-            background: #ffffff !important;
-            border: 1px solid #cbd5e1 !important;
-            color: #0f172a !important;
-        }
-
-        .modal-container input::placeholder,
-        .modal-container textarea::placeholder {
-            color: #64748b !important;
-        }
-
-        .modal-container .close-btn {
-            background: #f8fafc !important;
-            color: #334155 !important;
-            border: 1px solid #cbd5e1 !important;
-        }
-
-        .modal-container [style*="background: rgba(255,255,255,0.05)"],
-        .modal-container [style*="background: rgba(255,255,255,0.08)"],
-        .modal-container [style*="background: rgba(255,255,255,0.1)"] {
-            background: #f8fafc !important;
-            border-color: #e2e8f0 !important;
-        }
-
-        .modal-container img {
-            border-color: #cbd5e1 !important;
-        }
-
-        .billing-inline-icon {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.32rem;
-        }
-
-        .billing-svg-icon {
-            width: 14px;
-            height: 14px;
-            stroke: currentColor;
-            fill: none;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            vertical-align: -2px;
-            flex-shrink: 0;
-        }
-
-        .billing-svg-water {
-            animation: billingFloat 2.2s ease-in-out infinite;
-        }
-
-        .billing-svg-elec {
-            animation: billingFlicker 1.7s ease-in-out infinite;
-        }
-
-        .billing-svg-cal {
-            animation: billingTick 2.4s ease-in-out infinite;
-        }
-
-        .billing-svg-meter {
-            animation: billingMeterPulse 2.1s ease-in-out infinite;
-        }
-
-        .billing-svg-warning {
-            width: 15px;
-            height: 15px;
-            animation: billingWarningPulse 1.9s ease-in-out infinite;
-        }
-
         @keyframes billingFloat {
-            0%,
-            100% { transform: translateY(0); }
-            50% { transform: translateY(-1.5px); }
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(-1.5px); }
         }
-
         @keyframes billingFlicker {
-            0%,
-            100% { opacity: 1; }
-            45% { opacity: 0.65; }
-            55% { opacity: 1; }
+            0%, 100% { opacity: 1; }
+            45%      { opacity: 0.65; }
+            55%      { opacity: 1; }
         }
-
         @keyframes billingTick {
-            0%,
-            100% { transform: rotate(0deg); }
-            40% { transform: rotate(-3deg); }
-            65% { transform: rotate(2deg); }
+            0%, 100% { transform: rotate(0deg); }
+            40%      { transform: rotate(-3deg); }
+            65%      { transform: rotate(2deg); }
         }
-
         @keyframes billingMeterPulse {
-            0%,
-            100% { transform: scale(1); }
-            50% { transform: scale(1.06); }
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.06); }
         }
-
         @keyframes billingWarningPulse {
-            0%,
-            100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.75; transform: scale(1.06); }
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50%      { opacity: 0.75; transform: scale(1.06); }
         }
     </style>
 </head>
@@ -1064,21 +1466,21 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
 
                 <div class="wizard-intro">
                     <h3>🎯 ระบบจัดการผู้เช่า 5 ขั้นตอน</h3>
-                    <p style="margin: 0; color: rgba(255,255,255,0.8); line-height: 1.6;">
+                    <p style="margin: 0; line-height: 1.7;">
                         ระบบนี้ช่วยให้คุณจัดการผู้เช่าได้อย่างเป็นระบบ ตั้งแต่การจองห้องจนถึงการออกบิลรายเดือน<br>
                         <strong>ขั้นตอน:</strong> ① ยืนยันจอง → ② ยืนยันชำระเงินจอง → ③ สร้างสัญญา → ④ เช็คอิน → ⑤ เริ่มบิลรายเดือน
                     </p>
                 </div>
 
                 <!-- Completion Status Filter Buttons -->
-                <div style="display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-                    <a href="<?php echo htmlspecialchars($completedZeroHref, ENT_QUOTES, 'UTF-8'); ?>" style="padding: 0.75rem 1.5rem; background: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>; color: <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white !important' : '#111827 !important'; ?>; border: 2px solid #3b82f6; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#3b82f6'; this.style.setProperty('color','white','important');" onmouseout="this.style.background='<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? '#3b82f6' : 'rgba(59, 130, 246, 0.2)'; ?>'; this.style.setProperty('color','<?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'white' : '#111827'; ?>','important');">⏳ ยังไม่ครบ 5 ขั้นตอน</a>
+                <div class="wiz-filter-bar">
+                    <a href="<?php echo htmlspecialchars($completedZeroHref, ENT_QUOTES, 'UTF-8'); ?>" class="wiz-filter-btn pending-filter <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'active' : ''; ?>">⏳ ยังไม่ครบ 5 ขั้นตอน</a>
                     <?php if ($hasCompletedTenants): ?>
-                    <a href="<?php echo htmlspecialchars($completedOneHref, ENT_QUOTES, 'UTF-8'); ?>" style="padding: 0.75rem 1.5rem; background: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>; color: <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>; border: 2px solid #22c55e; border-radius: 8px; text-decoration: none; font-weight: 600; cursor: pointer; transition: all 0.2s;" onmouseover="this.style.background='#22c55e'; this.style.color='white';" onmouseout="this.style.background='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? '#22c55e' : 'rgba(34, 197, 94, 0.2)'; ?>'; this.style.color='<?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'white' : '#22c55e'; ?>';">✅ ครบ 5 ขั้นตอนแล้ว</a>
+                    <a href="<?php echo htmlspecialchars($completedOneHref, ENT_QUOTES, 'UTF-8'); ?>" class="wiz-filter-btn complete-filter <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'active' : ''; ?>">✅ ครบ 5 ขั้นตอนแล้ว</a>
                     <?php endif; ?>
                     <?php if ($selectedBkgId > 0): ?>
-                    <span style="padding: 0.75rem 1rem; background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; border-radius: 8px; font-weight: 600;">กำลังแสดงเฉพาะรายการ #<?php echo (int)$selectedBkgId; ?></span>
-                    <a href="<?php echo htmlspecialchars($clearSelectionHref, ENT_QUOTES, 'UTF-8'); ?>" style="padding: 0.75rem 1.25rem; background: #f8fafc; color: #334155; border: 1px solid #cbd5e1; border-radius: 8px; text-decoration: none; font-weight: 600;">ล้างตัวกรอง</a>
+                    <span class="wiz-filter-badge">กำลังแสดงเฉพาะรายการ #<?php echo (int)$selectedBkgId; ?></span>
+                    <a href="<?php echo htmlspecialchars($clearSelectionHref, ENT_QUOTES, 'UTF-8'); ?>" class="wiz-filter-clear">ล้างตัวกรอง</a>
                     <?php endif; ?>
                 </div>
 
@@ -1307,7 +1709,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     <td data-label="ห้อง">
                                         <strong><?php echo htmlspecialchars($tenant['room_number'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></strong>
                                         <br>
-                                        <span style="font-size: 0.85rem; color: rgba(255,255,255,0.7);">
+                                        <span style="font-size: 0.85rem; color: #64748b;">
                                             <?php echo htmlspecialchars($tenant['type_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?>
                                         </span>
                                     </td>
@@ -2900,3 +3302,6 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
     }
 </script>
 <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
+<script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>
+</body>
+</html>

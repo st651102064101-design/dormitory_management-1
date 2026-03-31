@@ -251,7 +251,7 @@ try {
 
 // นับจำนวนตาม tab
 $bookingCount = count($bookings);
-$utilityPendingCount = $pendingWater + $pendingElec;
+$utilityPendingCount = count($utilities); // นับจำนวนห้องที่ยังไม่จด ตรงกับแถวในตาราง
 $expenseCount = count($expenses);
 $paymentCount = count($pendingPayments);
 $repairCount = count($pendingRepairs);
@@ -656,6 +656,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
             opacity: 1 !important;
         }
     </style>
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/futuristic-bright.css">
 </head>
 <body class="reports-page">
     <script>
@@ -1235,5 +1236,6 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
             });
         });
     </script>
+<script src="/dormitory_management/Public/Assets/Js/futuristic-bright.js"></script>
 </body>
 </html>

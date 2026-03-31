@@ -208,7 +208,6 @@ button:focus-visible {
 
 /* generic responsive table wrapper */
 .table-responsive {
-    overflow-x: auto;
     -webkit-overflow-scrolling: touch;
 }
 .table-responsive .datatable-table {

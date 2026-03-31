@@ -3528,6 +3528,7 @@ try {
         }
       }
     </style>
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/futuristic-bright.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -3631,7 +3632,7 @@ try {
           <!-- Toggle button for available rooms (only show when not filtering by specific booking) -->
           <?php if ($bookingIdFilter === 0): ?>
           <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleRoomsBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleAvailableRooms()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+            <button type="button" id="toggleRoomsBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;border-radius:8px;transition:all 0.2s;" onclick="toggleAvailableRooms()">
               <span id="toggleRoomsIcon">▼</span> <span id="toggleRoomsText">ซ่อนห้องพักที่ว่าง</span>
             </button>
           </div>
@@ -4017,8 +4018,8 @@ try {
           </div>
 
           <div class="booking-form-group">
-            <label>ผู้เช่า: <span style="color: red;">*</span> <small style="color: #94a3b8; font-weight: normal;">(ทั้งหมด <?php echo count($selectableTenants); ?> คน)</small></label>
-            <select name="tnt_id" id="modal_tenant_id" class="tenant-select" size="8" required style="width: 100%; padding: 0.8rem 0.9rem; border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; font-size: 1rem; background: rgba(12, 17, 29, 0.85); color: #f5f5f5; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
+            <label>ผู้เช่า: <span style="color: red;">*</span> <small style="font-weight: normal;">(ทั้งหมด <?php echo count($selectableTenants); ?> คน)</small></label>
+            <select name="tnt_id" id="modal_tenant_id" class="tenant-select" size="8" required style="width: 100%; padding: 0.8rem 0.9rem; border-radius: 10px; font-size: 1rem; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
               <option value="">-- เลือกผู้เช่า --</option>
               <?php foreach($selectableTenants as $tenant): ?>
                 <option value="<?php echo $tenant['tnt_id']; ?>">
@@ -4040,13 +4041,13 @@ try {
 
           <div class="booking-form-group" style="margin-top:-0.5rem;">
             <label>ค่ามัดจำ (ชำระล่วงหน้า/หักคืนบิลแรก)</label>
-            <div style="padding:0.8rem 0.95rem; border-radius:10px; border:1px dashed rgba(255,255,255,0.25); background: rgba(255,255,255,0.03); color:#f5f5f5; font-weight:700;">
+            <div style="padding:0.8rem 0.95rem; border-radius:10px; border:1px dashed rgba(99,102,241,0.3); background: rgba(99,102,241,0.04); font-weight:700;">
               ฿2,000
             </div>
-            <div style="margin-top:0.35rem; color:#cbd5e1; font-size:0.9rem;">จะหักออกจากยอดบิลวันเข้าพักอัตโนมัติ</div>
+            <div style="margin-top:0.35rem; font-size:0.9rem;">จะหักออกจากยอดบิลวันเข้าพักอัตโนมัติ</div>
           </div>
 
-          <div style="margin: -0.25rem 0 0.75rem 0; color:#f8fafc; font-weight:600; font-size:0.95rem; background: rgba(34,197,94,0.15); border:1px solid rgba(34,197,94,0.35); padding:0.65rem 0.8rem; border-radius:10px;">
+          <div style="margin: -0.25rem 0 0.75rem 0; font-weight:600; font-size:0.95rem; background: rgba(34,197,94,0.10); border:1px solid rgba(34,197,94,0.35); padding:0.65rem 0.8rem; border-radius:10px; color:#15803d;">
             กรุณาชำระค่ามัดจำ 2,000 บาท ก่อนยืนยันการจอง
           </div>
           
@@ -4691,5 +4692,6 @@ try {
     </script>
     <script src="/dormitory_management/Public/Assets/Javascript/confirm-modal.js"></script>
     <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
+    <script src="/dormitory_management/Public/Assets/Js/futuristic-bright.js"></script>
   </body>
 </html>

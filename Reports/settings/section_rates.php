@@ -137,6 +137,21 @@
         
         <button type="button" class="apple-button primary" onclick="saveUtilityRates()">บันทึกอัตราใหม่</button>
       </div>
+
+      <!-- Update All Bills to Current Rate -->
+      <div style="background: rgba(52, 199, 89, 0.08); border: 1px solid rgba(52, 199, 89, 0.2); padding: 16px; border-radius: 14px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#34c759" stroke-width="2" style="width:20px;height:20px;flex-shrink:0;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          <div>
+            <h4 style="font-size: 15px; font-weight: 600; color: #34c759; margin: 0;">อัปเดตบิลทั้งหมดให้ใช้อัตราปัจจุบัน</h4>
+            <p style="font-size: 12px; color: var(--apple-text-secondary); margin: 4px 0 0;">เปลี่ยนอัตราค่าน้ำค่าไฟในบิลทุกใบให้เป็นอัตราล่าสุด (฿<?php echo number_format($waterRate); ?> เหมาจ่าย, ≤<?php echo $waterBaseUnits; ?> หน่วย, เกิน ฿<?php echo $waterExcessRate; ?>/หน่วย, ไฟ ฿<?php echo number_format($electricRate); ?>/หน่วย)</p>
+          </div>
+        </div>
+        <button type="button" class="apple-button" onclick="updateAllBillsRate()" style="width: 100%; background: #34c759; color: #fff; border: none;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:6px;"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+          อัปเดตทุกบิลให้ใช้อัตราปัจจุบัน
+        </button>
+      </div>
       
       <!-- Rate History -->
       <h4 style="font-size: 13px; font-weight: 600; color: var(--apple-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><rect x="9" y="2" width="6" height="4" rx="1"/><rect x="4" y="4" width="16" height="18" rx="2"/><line x1="9" y1="11" x2="15" y2="11"/><line x1="9" y1="15" x2="15" y2="15"/></svg>ประวัติอัตรา</h4>
@@ -204,10 +219,17 @@
               <td data-label="สถานะ" style="text-align: center;">
                 <?php if ($isActive): ?>
                 <span class="apple-badge green rate-active-badge" style="font-size: 10px;">✓ ใช้งานอยู่</span>
+                <?php if ($isUsed): ?>
+                <div class="rate-usage-info" onclick="showRateUsage('<?php echo htmlspecialchars(json_encode($usage)); ?>')" style="cursor: pointer; margin-top: 4px;">
+                  <span class="apple-badge blue" style="font-size: 10px;" title="ใช้ใน <?php echo (int)$usage['room_count']; ?> ห้อง (<?php echo (int)$usage['expense_count']; ?> บิล)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;vertical-align:-1px;margin-right:2px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><?php echo (int)$usage['room_count']; ?> ห้อง
+                  </span>
+                </div>
+                <?php endif; ?>
                 <?php elseif ($isUsed): ?>
                 <div class="rate-usage-info" onclick="showRateUsage('<?php echo htmlspecialchars(json_encode($usage)); ?>')" style="cursor: pointer;">
-                  <span class="apple-badge blue" style="font-size: 10px;" title="ใช้ใน <?php echo (int)$usage['expense_count']; ?> บิล, <?php echo (int)$usage['room_count']; ?> ห้อง">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;vertical-align:-1px;margin-right:2px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><?php echo (int)$usage['expense_count']; ?> บิล
+                  <span class="apple-badge blue" style="font-size: 10px;" title="ใช้ใน <?php echo (int)$usage['room_count']; ?> ห้อง (<?php echo (int)$usage['expense_count']; ?> บิล)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:10px;height:10px;vertical-align:-1px;margin-right:2px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg><?php echo (int)$usage['room_count']; ?> ห้อง
                   </span>
                 </div>
                 <?php else: ?>

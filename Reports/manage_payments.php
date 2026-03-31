@@ -2487,6 +2487,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
       html.light-theme .payment-toolbar-clear { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
       html.light-theme .payment-toolbar-clear:hover { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.9); }
     </style>
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/futuristic-bright.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -3553,5 +3554,6 @@ $filterRoomOptions = array_values($filterRoomOptions);
         }
       });
     </script>
+    <script src="/dormitory_management/Public/Assets/Js/futuristic-bright.js"></script>
   </body>
 </html>

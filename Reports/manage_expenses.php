@@ -1714,6 +1714,7 @@ try {
         }
       }
     </style>
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/futuristic-bright.css" />
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -3122,5 +3123,6 @@ try {
 
     })();
     </script>
+    <script src="/dormitory_management/Public/Assets/Js/futuristic-bright.js"></script>
   </body>
 </html>

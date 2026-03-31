@@ -1542,6 +1542,7 @@ class AppleSettings {
         <td data-label="ค่าไฟ" style="text-align: center; color: var(--apple-orange); font-weight: 600;">฿${Number(elecRate).toLocaleString()}</td>
         <td data-label="สถานะ" style="text-align: center;">
           <span class="apple-badge green rate-active-badge" style="font-size: 10px;">✓ ใช้งานอยู่</span>
+          <div style="margin-top:4px;font-size:11px;color:var(--apple-text-secondary);">0 บิล</div>
         </td>
         <td style="text-align: right; white-space: nowrap;"></td>
       `;
@@ -1870,6 +1871,32 @@ function showRateUsage(usageData) {
 
 function closeRateUsageModal() {
   appleSettings.closeRateUsageModal();
+}
+
+async function updateAllBillsRate() {
+  const confirmed = await appleSettings.showConfirm(
+    'ต้องการอัปเดตบิลทั้งหมดให้ใช้อัตราค่าน้ำค่าไฟปัจจุบันหรือไม่?\n\nระบบจะคำนวณค่าน้ำค่าไฟและยอดรวมใหม่ทุกบิล',
+    'อัปเดตทุกบิล'
+  );
+  if (!confirmed) return;
+
+  try {
+    const response = await fetch('../Manage/update_all_expense_rates.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      appleSettings.showToast(result.message, 'success');
+      // Reload page after short delay to refresh rate usage counts
+      setTimeout(() => location.reload(), 1500);
+    } else {
+      throw new Error(result.message || 'เกิดข้อผิดพลาด');
+    }
+  } catch (error) {
+    appleSettings.showToast(error.message, 'error');
+  }
 }
 
 function backupDatabase() {
