@@ -522,18 +522,77 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         .vm-room-num { font-size: 1.1rem; font-weight: 800; color: #1e293b; }
         .vm-tenant-name { font-size: 0.7rem; color: #94a3b8; margin-top: 1px; }
 
-        /* Water Meter */
-        .vm-water-body { display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 220px; position: relative; }
-        .vm-pipe-left, .vm-pipe-right { width: 28px; height: 34px; background: linear-gradient(180deg, #2a99a8 0%, #1a7a8a 25%, #145f6c 60%, #0f4d58 100%); flex-shrink: 0; z-index: 2; border: 1.5px solid #0d4a55; }
-        .vm-pipe-left { border-radius: 5px 0 0 5px; border-right: none; margin-right: -4px; }
-        .vm-pipe-right { border-radius: 0 5px 5px 0; border-left: none; margin-left: -4px; }
-        .vm-pipe-bolt { position: absolute; width: 9px; height: 9px; background: radial-gradient(circle at 35% 35%, #5bc0cd, #1a7a8a 60%, #0f5562); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 1px 2px rgba(255,255,255,0.35), 0 1px 2px rgba(0,0,0,0.4); }
-        .vm-dial-water { width: 140px; height: 140px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #ffffff 0%, #faf8f2 40%, #f0ece0 70%, #e5dfd0 100%); border: 6px solid #c5960d; box-shadow: 0 0 0 2px #9a7508, 0 0 0 4px #d4a812, 0 0 0 5px rgba(0,0,0,0.15), inset 0 2px 10px rgba(0,0,0,0.1), 0 5px 16px rgba(0,0,0,0.2); position: relative; z-index: 1; flex-shrink: 0; }
-        .vm-dial-face { width: 100%; height: 100%; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-        .vm-dial-unit-top { font-size: 0.6rem; font-weight: 800; color: #333; letter-spacing: 0.5px; margin-bottom: 2px; }
-        .vm-dial-deco { font-size: 1.1rem; color: #bbb; margin: 1px 0; line-height: 1; opacity: 0.45; animation: waterMeterSpin 2.5s linear infinite; }
+        /* ===============================================================
+           HYPER-REALISTIC SKEUOMORPHIC WATER METER — ASAHI STYLE
+           =============================================================== */
+        .vm-water-body { display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 260px; position: relative; filter: drop-shadow(0 5px 10px rgba(0,0,0,0.35)); }
+
+        /* ── Industrial Blue Pipes ── */
+        .vm-pipe-left, .vm-pipe-right {
+            width: 38px; height: 44px; flex-shrink: 0; position: relative; z-index: 2;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 8%, transparent 92%, rgba(0,0,0,0.10) 100%),
+                linear-gradient(180deg, #52c8da 0%, #3cb8cc 5%, #2ea0b6 12%, #2290a8 22%, #1a7d96 35%, #146d84 50%, #0f5c72 65%, #0b4e62 78%, #084454 90%, #063a4a 100%);
+            border-top: 1px solid rgba(100,210,230,0.35); border-bottom: 1.5px solid #042830;
+        }
+        .vm-pipe-left { border-radius: 8px 0 0 8px; border-right: none; margin-right: -3px; border-left: 1.5px solid #073e4c; box-shadow: inset 0 4px 8px rgba(255,255,255,0.15), inset 0 -4px 8px rgba(0,0,0,0.25), inset -3px 0 6px rgba(0,0,0,0.10), -2px 0 4px rgba(0,0,0,0.12); }
+        .vm-pipe-right { border-radius: 0 8px 8px 0; border-left: none; margin-left: -3px; border-right: 1.5px solid #073e4c; box-shadow: inset 0 4px 8px rgba(255,255,255,0.15), inset 0 -4px 8px rgba(0,0,0,0.25), inset 3px 0 6px rgba(0,0,0,0.10), 2px 0 4px rgba(0,0,0,0.12); }
+
+        /* ── Coupling nut / Flange ── */
+        .vm-pipe-flange {
+            position: absolute; width: 12px; height: 110%; top: -5%; z-index: 3; border-radius: 2px;
+            background: linear-gradient(180deg, #6ad0e0 0%, #48bcd0 8%, #30a4ba 20%, #228c9e 38%, #187888 55%, #106878 70%, #0c5868 85%, #084a5a 100%);
+            border-top: 1px solid rgba(120,220,240,0.4); border-bottom: 1.5px solid #042830;
+            box-shadow: inset 0 3px 5px rgba(255,255,255,0.20), inset 0 -3px 5px rgba(0,0,0,0.20);
+        }
+        .vm-pipe-left .vm-pipe-flange { right: -2px; border-right: 2px solid #0a3540; border-left: 1px solid #0a3540; box-shadow: 3px 0 6px rgba(0,0,0,0.25), inset 0 3px 5px rgba(255,255,255,0.20), inset 0 -3px 5px rgba(0,0,0,0.20); }
+        .vm-pipe-right .vm-pipe-flange { left: -2px; border-left: 2px solid #0a3540; border-right: 1px solid #0a3540; box-shadow: -3px 0 6px rgba(0,0,0,0.25), inset 0 3px 5px rgba(255,255,255,0.20), inset 0 -3px 5px rgba(0,0,0,0.20); }
+
+        /* ── Hex bolt ── */
+        .vm-pipe-bolt { position: absolute; width: 11px; height: 11px; background: radial-gradient(circle at 38% 30%, #a0e4ef 0%, #60c8d8 20%, #38a8bc 40%, #1e8ca0 60%, #0f6a7c 80%, #084a5a 100%); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 2px 3px rgba(255,255,255,0.50), inset 0 -2px 3px rgba(0,0,0,0.35), 0 1.5px 4px rgba(0,0,0,0.45); border: 0.5px solid #063a4a; }
+        .vm-pipe-bolt::after { content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 6px; font-weight: 900; color: rgba(0,0,0,0.22); line-height: 1; text-shadow: 0 0.5px 0 rgba(255,255,255,0.2); }
+
+        /* ── Meter Housing — cast blue body ── */
+        .vm-dial-water {
+            width: 148px; height: 148px; border-radius: 50%; flex-shrink: 0; position: relative; z-index: 1;
+            background:
+                radial-gradient(ellipse at 38% 25%, rgba(80,200,220,0.20) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, #1e8fa2 0%, #1a8496 12%, #157688 25%, #10687a 38%, #0c5a6c 52%, #094e60 65%, #074456 78%, #053a4c 90%, #043242 100%);
+            border: 4px solid #053545;
+            box-shadow: 0 0 0 1px rgba(60,180,210,0.25), inset 0 4px 10px rgba(80,200,230,0.12), inset 0 -6px 14px rgba(0,0,0,0.30), inset 4px 0 8px rgba(0,0,0,0.10), inset -4px 0 8px rgba(0,0,0,0.10), 0 8px 24px rgba(0,0,0,0.30), 0 3px 8px rgba(0,0,0,0.18);
+        }
+        .vm-dial-water::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 40%; border-radius: 50%; background: radial-gradient(ellipse at 50% 0%, rgba(100,210,230,0.15) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+
+        /* ── Aged Brass Bezel Ring ── */
+        .vm-dial-face {
+            position: absolute; top: 9px; left: 9px; right: 9px; bottom: 9px; border-radius: 50%;
+            background: radial-gradient(ellipse at 45% 35%, #ffffff 0%, #fefcf6 15%, #faf6ec 30%, #f4efe2 48%, #eee8d8 65%, #e6dfce 80%, #ddd6c4 100%);
+            border: 5px solid transparent; background-clip: padding-box;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden;
+            box-shadow: inset 0 3px 10px rgba(0,0,0,0.12), inset 0 -2px 6px rgba(0,0,0,0.06), inset 2px 0 4px rgba(0,0,0,0.04), inset -2px 0 4px rgba(0,0,0,0.04), 0 0 0 1px #6b5504, 0 0 0 2.5px #8c6d08, 0 0 0 4px #b8920e, 0 0 0 5px #d4aa18, 0 0 0 6px #e4bc28, 0 0 0 7px #d4aa18, 0 0 0 8px #b08010, 0 0 0 8.5px #8c6d08, 0 0 0 9px #6b5504;
+        }
+        /* Brass metallic gradient overlay */
+        .vm-dial-face::before { content: ''; position: absolute; top: -9px; left: -9px; right: -9px; bottom: -9px; border-radius: 50%; border: 8px solid transparent; background: linear-gradient(145deg, rgba(255,240,160,0.80) 0%, rgba(230,200,80,0.50) 15%, rgba(200,160,30,0.70) 30%, rgba(160,120,10,0.80) 45%, rgba(140,105,8,0.60) 55%, rgba(180,140,20,0.70) 65%, rgba(220,180,50,0.50) 78%, rgba(255,230,120,0.75) 88%, rgba(200,160,30,0.60) 100%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 5; }
+        /* Glass dome reflection */
+        .vm-dial-face::after { content: ''; position: absolute; top: 2%; left: 6%; width: 65%; height: 40%; background: radial-gradient(ellipse at 40% 30%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.30) 25%, rgba(255,255,255,0.10) 50%, transparent 70%); border-radius: 50%; pointer-events: none; z-index: 10; transform: rotate(-8deg); }
+
+        .vm-dial-unit-top { font-size: 0.58rem; font-weight: 900; color: #1a1a1a; letter-spacing: 0.5px; margin-bottom: 1px; position: relative; z-index: 2; text-shadow: 0 0.5px 0 rgba(255,255,255,0.6); }
+        .vm-dial-deco { font-size: 1.1rem; color: #555; margin: 2px 0; line-height: 1; opacity: 0.45; animation: waterMeterSpin 2.5s linear infinite; position: relative; z-index: 2; }
         @keyframes waterMeterSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        .vm-dial-label { font-size: 0.44rem; font-weight: 700; color: #777; letter-spacing: 1.5px; text-transform: uppercase; }
+        .vm-dial-specs { font-size: 0.32rem; color: #888; position: relative; z-index: 2; }
+        .vm-dial-label { font-size: 0.42rem; font-weight: 800; color: #555; letter-spacing: 2px; text-transform: uppercase; position: relative; z-index: 2; }
+
+        /* ── Red Sub-Dial with Tick Marks ── */
+        .vm-sub-dial {
+            position: absolute; bottom: 13%; right: 16%; width: 21px; height: 21px; border-radius: 50%; z-index: 3;
+            background:
+                conic-gradient(from 0deg, #ccc 0deg, #ccc 1deg, transparent 1deg, transparent 36deg, #ccc 36deg, #ccc 37deg, transparent 37deg, transparent 72deg, #ccc 72deg, #ccc 73deg, transparent 73deg, transparent 108deg, #ccc 108deg, #ccc 109deg, transparent 109deg, transparent 144deg, #ccc 144deg, #ccc 145deg, transparent 145deg, transparent 180deg, #ccc 180deg, #ccc 181deg, transparent 181deg, transparent 216deg, #ccc 216deg, #ccc 217deg, transparent 217deg, transparent 252deg, #ccc 252deg, #ccc 253deg, transparent 253deg, transparent 288deg, #ccc 288deg, #ccc 289deg, transparent 289deg, transparent 324deg, #ccc 324deg, #ccc 325deg, transparent 325deg, transparent 360deg),
+                radial-gradient(circle at 45% 38%, #fff 0%, #fcf8f8 40%, #f5eaea 65%, #eedede 100%);
+            border: 2px solid #c62828; box-shadow: inset 0 1.5px 4px rgba(0,0,0,0.15), inset 0 -1px 2px rgba(0,0,0,0.05), 0 1.5px 4px rgba(0,0,0,0.18);
+        }
+        .vm-sub-dial::before { content: ''; position: absolute; top: 50%; left: 50%; width: 7px; height: 1.2px; background: linear-gradient(90deg, #c62828 0%, #e53935 100%); transform-origin: 0 50%; transform: translate(0, -50%) rotate(-30deg); border-radius: 1px; animation: subDialSpin 8s linear infinite; box-shadow: 0 0.5px 1px rgba(0,0,0,0.3); }
+        .vm-sub-dial::after { content: ''; position: absolute; top: 50%; left: 50%; width: 3.5px; height: 3.5px; background: radial-gradient(circle at 40% 35%, #f44336, #b71c1c); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 0.5px 1px rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.3); }
+        @keyframes subDialSpin { from { transform: translate(0, -50%) rotate(-30deg); } to { transform: translate(0, -50%) rotate(330deg); } }
 
         /* Electric Meter */
         .vm-elec-body { display: flex; flex-direction: column; align-items: center; margin: 0 auto; max-width: 160px; }
@@ -552,10 +611,12 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
         .vm-elec-specs { font-size: 0.4rem; color: #999; letter-spacing: 0.5px; }
         .vm-elec-base { width: 105px; height: 18px; background: linear-gradient(180deg, #c8c8c8 0%, #adadad 30%, #999 70%, #888 100%); border-radius: 0 0 10px 10px; border: 1.5px solid #888; border-top: 1px solid #bbb; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
 
-        /* Digit Display (read-only) */
-        .vm-digits { display: flex; gap: 1px; background: #111; padding: 2px 3px; border-radius: 3px; box-shadow: inset 0 1px 4px rgba(0,0,0,0.7); }
-        .vm-digit { width: 17px; height: 22px; text-align: center; font-family: 'Courier New', monospace; font-size: 0.82rem; font-weight: 900; border: none; border-radius: 2px; background: linear-gradient(180deg, #ddd 0%, #f5f5f5 15%, #ffffff 50%, #f5f5f5 85%, #ddd 100%); color: #111; padding: 0; -moz-appearance: textfield; appearance: textfield; cursor: default; }
-        .vm-digit.vm-digit-red { background: linear-gradient(180deg, #b71c1c 0%, #d32f2f 15%, #e53935 50%, #d32f2f 85%, #b71c1c 100%); color: #fff; text-shadow: 0 1px 1px rgba(0,0,0,0.3); }
+        /* ===============================================================
+           MECHANICAL ODOMETER — Rotating Number Drums
+           =============================================================== */
+        .vm-digits { display: flex; gap: 0px; background: linear-gradient(180deg, #050505 0%, #111 8%, #1a1a1a 15%, #222 50%, #1a1a1a 85%, #111 92%, #050505 100%); padding: 3px 4px; border-radius: 4px; border: 1.5px solid #333; box-shadow: inset 0 3px 8px rgba(0,0,0,0.85), inset 0 -2px 6px rgba(0,0,0,0.60), inset 2px 0 4px rgba(0,0,0,0.40), inset -2px 0 4px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.2); position: relative; z-index: 2; }
+        .vm-digit { width: 18px; height: 24px; text-align: center; font-family: 'Courier New', 'Lucida Console', monospace; font-size: 0.85rem; font-weight: 900; border: none; padding: 0; -moz-appearance: textfield; appearance: textfield; cursor: default; position: relative; background: linear-gradient(180deg, #999 0%, #bbb 3%, #d8d8d8 7%, #eee 14%, #f6f6f6 22%, #fafafa 35%, #fff 50%, #fafafa 65%, #f6f6f6 78%, #eee 86%, #d8d8d8 93%, #bbb 97%, #999 100%); color: #0a0a0a; text-shadow: 0 0.5px 0 rgba(255,255,255,0.5); border-radius: 2px; border-left: 0.5px solid rgba(0,0,0,0.10); border-right: 0.5px solid rgba(0,0,0,0.10); box-shadow: inset 0 3px 5px rgba(0,0,0,0.20), inset 0 -3px 5px rgba(0,0,0,0.15), inset 1px 0 2px rgba(0,0,0,0.10), inset -1px 0 2px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.12); }
+        .vm-digit.vm-digit-red { background: linear-gradient(180deg, #7f1d1d 0%, #991b1b 4%, #b91c1c 8%, #d42a2a 15%, #e53935 25%, #ef4444 38%, #f44840 50%, #ef4444 62%, #e53935 75%, #d42a2a 85%, #b91c1c 92%, #991b1b 96%, #7f1d1d 100%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.45); box-shadow: inset 0 3px 5px rgba(0,0,0,0.30), inset 0 -3px 5px rgba(0,0,0,0.20), inset 1px 0 2px rgba(0,0,0,0.15), inset -1px 0 2px rgba(0,0,0,0.15), 0 0 0 0.5px rgba(100,0,0,0.20); }
         .vm-old-reading { text-align: center; font-size: 0.68rem; color: #94a3b8; margin-bottom: 4px; font-family: 'Courier New', monospace; }
         .vm-old-reading span { letter-spacing: 2px; }
         .vm-meter-info { text-align: center; margin-top: 0.45rem; font-size: 0.75rem; }
@@ -565,10 +626,15 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
 
         @media (max-width: 480px) {
             .vm-grid { grid-template-columns: 1fr 1fr; padding: 0.5rem; gap: 0.5rem; }
-            .vm-dial-water { width: 115px; height: 115px; }
+            .vm-water-body { max-width: 210px; }
+            .vm-dial-water { width: 120px; height: 120px; }
+            .vm-dial-face { top: 7px; left: 7px; right: 7px; bottom: 7px; }
             .vm-elec-frame { width: 115px; min-height: 135px; }
-            .vm-water-body { max-width: 185px; }
-            .vm-digit { width: 14px; height: 19px; font-size: 0.72rem; }
+            .vm-pipe-left, .vm-pipe-right { width: 28px; height: 34px; }
+            .vm-digit { width: 15px; height: 20px; font-size: 0.72rem; }
+            .vm-sub-dial { width: 16px; height: 16px; bottom: 11%; right: 14%; }
+            .vm-pipe-flange { width: 10px; }
+            .vm-pipe-bolt { width: 9px; height: 9px; }
         }
     </style>
 </head>
@@ -746,7 +812,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                     </div>
                                     <div class="vm-old-reading">เดิม: <span><?php echo str_pad((string)$wOld, 7, '0', STR_PAD_LEFT); ?></span></div>
                                     <div class="vm-water-body">
-                                        <div class="vm-pipe-left"><div class="vm-pipe-bolt"></div></div>
+                                        <div class="vm-pipe-left"><div class="vm-pipe-flange"></div><div class="vm-pipe-bolt"></div></div>
                                         <div class="vm-dial-water">
                                             <div class="vm-dial-face">
                                                 <div class="vm-dial-unit-top">m³</div>
@@ -757,11 +823,13 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                                     <input type="text" class="<?php echo $dClass; ?>" value="<?php echo $wStr[$d]; ?>" disabled readonly tabindex="-1">
                                                     <?php endfor; ?>
                                                 </div>
+                                                <div class="vm-dial-specs">20 mm · Qn 2.5 m³/hB</div>
                                                 <div class="vm-dial-deco">✻</div>
                                                 <div class="vm-dial-label">WATER METER</div>
+                                                <div class="vm-sub-dial"></div>
                                             </div>
                                         </div>
-                                        <div class="vm-pipe-right"><div class="vm-pipe-bolt"></div></div>
+                                        <div class="vm-pipe-right"><div class="vm-pipe-flange"></div><div class="vm-pipe-bolt"></div></div>
                                     </div>
                                     <div class="vm-meter-info">
                                         <div class="vm-usage water"><?php echo number_format($wUsed); ?> หน่วย</div>
@@ -869,7 +937,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
             tableView.style.display = 'none';
             meterView.style.display = '';
             btn.classList.add('active');
-            btn.innerHTML = '<div class="vtb-shimmer"></div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10h18M3 14h18M3 6h18M3 18h18"/></svg><span class="vtb-label">มุมมองตาราง</span>';
+            btn.innerHTML = '<div class="vtb-shimmer"></div><svg viewBox="0 0 24 24" fill="none" stroke="#374151" stroke-width="2"><path d="M3 10h18M3 14h18M3 6h18M3 18h18"/></svg><span class="vtb-label">มุมมองตาราง</span>';
             localStorage.setItem('reportUtilityViewMode', 'meter');
         }
     }

@@ -2,21 +2,12 @@
 <div class="apple-section-group">
   <h2 class="apple-section-title"><?php echo __('expenses_section'); ?></h2>
   <div class="apple-section-card">
-    <!-- Billing Generate Day Setting -->
-    <div class="apple-settings-row" data-sheet="sheet-billing-generate">
-      <div class="apple-row-icon" style="background:rgba(99,102,241,0.12);color:#6366f1;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+    <!-- Billing Schedule Setting (combined: generate day + payment due day) -->
+    <div class="apple-settings-row" data-sheet="sheet-billing-schedule">
+      <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">รอบออกบิลรายเดือน</p>
-        <p class="apple-row-sublabel" id="billingGenerateDaySublabel">ออกบิลทุกวันที่ <?php echo (int)$billingGenerateDay; ?> ของเดือน</p>
-      </div>
-      <span class="apple-row-chevron">›</span>
-    </div>
-    <!-- Payment Due Day Setting -->
-    <div class="apple-settings-row" data-sheet="sheet-payment-due">
-      <div class="apple-row-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
-      <div class="apple-row-content">
-        <p class="apple-row-label"><?php echo __('payment_due_label'); ?></p>
-        <p class="apple-row-sublabel"><?php echo __('payment_due_desc', ['day' => (int)$paymentDueDay]); ?></p>
+        <p class="apple-row-label">รอบบิลและกำหนดชำระ</p>
+        <p class="apple-row-sublabel" id="billingScheduleSublabel">ออกบิลวันที่ <?php echo (int)$billingGenerateDay; ?> · ชำระภายในวันที่ <?php echo (int)$paymentDueDay; ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -281,124 +272,116 @@
   </div>
 </div>
 
-<!-- Sheet: Payment Due Day -->
-<!-- Sheet: Billing Generate Day -->
-<div class="apple-sheet-overlay" id="sheet-billing-generate">
+<!-- Sheet: Billing Schedule (combined: generate day + payment due day) -->
+<div class="apple-sheet-overlay" id="sheet-billing-schedule">
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-billing-generate">เสร็จ</button>
-      <h3 class="apple-sheet-title">รอบออกบิลรายเดือน</h3>
+      <button class="apple-sheet-action" data-close-sheet="sheet-billing-schedule">เสร็จ</button>
+      <h3 class="apple-sheet-title">รอบบิลและกำหนดชำระ</h3>
       <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 48px; color: #6366f1; margin-bottom: 8px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-            <line x1="16" y1="13" x2="8" y2="13"/>
-            <line x1="16" y1="17" x2="8" y2="17"/>
-            <polyline points="10 9 9 9 8 9"/>
-          </svg>
+
+      <!-- Section 1: Billing Generate Day -->
+      <div style="margin-bottom: 28px;">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="font-size: 48px; color: #6366f1; margin-bottom: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+              <line x1="16" y1="13" x2="8" y2="13"/>
+              <line x1="16" y1="17" x2="8" y2="17"/>
+              <polyline points="10 9 9 9 8 9"/>
+            </svg>
+          </div>
+          <p style="font-size: 14px; color: var(--apple-text-secondary); margin: 0;">
+            กำหนดวันที่ระบบจะ<strong style="color:var(--apple-text);">สร้างบิลรายเดือน</strong>ให้ผู้เช่าโดยอัตโนมัติ<br>
+            บิลจะไม่ถูกสร้างก่อนถึงวันที่กำหนดในแต่ละเดือน
+          </p>
         </div>
-        <p style="font-size: 14px; color: var(--apple-text-secondary); margin: 0;">
-          กำหนดวันที่ระบบจะ<strong style="color:var(--apple-text);">สร้างบิลรายเดือน</strong>ให้ผู้เช่าโดยอัตโนมัติ<br>
-          บิลจะไม่ถูกสร้างก่อนถึงวันที่กำหนดในแต่ละเดือน
-        </p>
-      </div>
 
-      <div class="apple-input-group" style="margin-bottom: 16px;">
-        <label class="apple-input-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;">
-            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
-            <polyline points="14 2 14 8 20 8"/>
-          </svg>วันที่ออกบิลของเดือน (1-28)
-        </label>
-        <input type="number" id="billingGenerateDay" class="apple-input" value="<?php echo (int)$billingGenerateDay; ?>" min="1" max="28" step="1">
-        <p style="font-size: 12px; color: var(--apple-text-secondary); margin-top: 6px;">
-          เช่น ตั้งเป็น 25 หมายความว่า บิลเดือนนี้จะถูกสร้างในวันที่ 25 เป็นต้นไป
-        </p>
-      </div>
+        <div class="apple-input-group" style="margin-bottom: 16px;">
+          <label class="apple-input-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+              <polyline points="14 2 14 8 20 8"/>
+            </svg>วันที่ออกบิลของเดือน (1-28)
+          </label>
+          <input type="number" id="billingGenerateDay" class="apple-input" value="<?php echo (int)$billingGenerateDay; ?>" min="1" max="28" step="1">
+          <p style="font-size: 12px; color: var(--apple-text-secondary); margin-top: 6px;">
+            เช่น ตั้งเป็น 25 หมายความว่า บิลเดือนนี้จะถูกสร้างในวันที่ 25 เป็นต้นไป
+          </p>
+        </div>
 
-      <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 14px; margin-bottom: 20px;">
-        <div style="display: flex; align-items: flex-start; gap: 10px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" width="20" height="20" style="flex-shrink:0; margin-top: 2px;">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <div style="font-size: 13px; color: var(--apple-text-secondary); line-height: 1.6;">
-            <strong style="color: var(--apple-text);">ตัวอย่าง:</strong> ถ้าตั้งวันออกบิลเป็นวันที่ <strong id="genDayExample"><?php echo (int)$billingGenerateDay; ?></strong><br>
-            → บิล เม.ย. 2569 จะถูกสร้างในวันที่ <strong id="genDateExample"><?php echo (int)$billingGenerateDay; ?> เม.ย. 2569</strong><br>
-            → ก่อนวันที่ <strong id="genDayBefore"><?php echo (int)$billingGenerateDay; ?></strong> ของเดือน ระบบจะ<span style="color:#ef4444;font-weight:600;">ยังไม่สร้างบิล</span>เดือนปัจจุบัน
+        <div style="background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.25); border-radius: 12px; padding: 14px;">
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2" width="20" height="20" style="flex-shrink:0; margin-top: 2px;">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div style="font-size: 13px; color: var(--apple-text-secondary); line-height: 1.6;">
+              <strong style="color: var(--apple-text);">ตัวอย่าง:</strong> ถ้าตั้งวันออกบิลเป็นวันที่ <strong id="genDayExample"><?php echo (int)$billingGenerateDay; ?></strong><br>
+              → บิล เม.ย. 2569 จะถูกสร้างในวันที่ <strong id="genDateExample"><?php echo (int)$billingGenerateDay; ?> เม.ย. 2569</strong><br>
+              → ก่อนวันที่ <strong id="genDayBefore"><?php echo (int)$billingGenerateDay; ?></strong> ของเดือน ระบบจะ<span style="color:#ef4444;font-weight:600;">ยังไม่สร้างบิล</span>เดือนปัจจุบัน
+            </div>
           </div>
         </div>
       </div>
 
-      <button type="button" class="apple-button primary" onclick="saveBillingGenerateDay()" style="width: 100%; background: linear-gradient(135deg,#6366f1,#8b5cf6);">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;">
-          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
-          <polyline points="17 21 17 13 7 13 7 21"/>
-          <polyline points="7 3 7 8 15 8"/>
-        </svg>บันทึก
-      </button>
-    </div>
-  </div>
-</div>
+      <!-- Divider -->
+      <div style="height: 1px; background: var(--apple-separator, rgba(0,0,0,0.1)); margin: 0 -20px 28px;"></div>
 
-<div class="apple-sheet-overlay" id="sheet-payment-due">
-  <div class="apple-sheet">
-    <div class="apple-sheet-handle"></div>
-    <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-payment-due">เสร็จ</button>
-      <h3 class="apple-sheet-title">กำหนดชำระค่าห้อง</h3>
-      <div style="width: 50px;"></div>
-    </div>
-    <div class="apple-sheet-body">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <div style="font-size: 48px; color: #ef4444; margin-bottom: 8px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>
+      <!-- Section 2: Payment Due Day -->
+      <div style="margin-bottom: 24px;">
+        <div style="text-align: center; margin-bottom: 16px;">
+          <div style="font-size: 48px; color: #ef4444; margin-bottom: 8px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="56" height="56">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </div>
+          <p style="font-size: 14px; color: var(--apple-text-secondary); margin: 0;">
+            กำหนดวันที่ต้องชำระค่าห้องทุกเดือน<br>
+            หากเลยกำหนดสถานะจะเปลี่ยนเป็น "<strong style="color:#ef4444;">ค้างชำระ</strong>" อัตโนมัติ
+          </p>
         </div>
-        <p style="font-size: 14px; color: var(--apple-text-secondary); margin: 0;">กำหนดวันที่ต้องชำระค่าห้องทุกเดือน<br>หากเลยกำหนดสถานะจะเปลี่ยนเป็น "<strong style="color:#ef4444;">ค้างชำระ</strong>" อัตโนมัติ</p>
-      </div>
 
-      <div class="apple-input-group" style="margin-bottom: 16px;">
-        <label class="apple-input-label">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;">
-            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
-            <line x1="16" y1="2" x2="16" y2="6"/>
-            <line x1="8" y1="2" x2="8" y2="6"/>
-            <line x1="3" y1="10" x2="21" y2="10"/>
-          </svg>วันที่ครบกำหนดชำระ (1-28)
-        </label>
-        <input type="number" id="paymentDueDay" class="apple-input" value="<?php echo (int)$paymentDueDay; ?>" min="1" max="28" step="1">
-        <p style="font-size: 12px; color: var(--apple-text-secondary); margin-top: 6px;">
-          เช่น ตั้งเป็น 5 หมายความว่า ต้องชำระภายในวันที่ 5 ของทุกเดือน
-        </p>
-      </div>
+        <div class="apple-input-group" style="margin-bottom: 16px;">
+          <label class="apple-input-label">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>วันที่ครบกำหนดชำระ (1-28)
+          </label>
+          <input type="number" id="paymentDueDay" class="apple-input" value="<?php echo (int)$paymentDueDay; ?>" min="1" max="28" step="1">
+          <p style="font-size: 12px; color: var(--apple-text-secondary); margin-top: 6px;">
+            เช่น ตั้งเป็น 5 หมายความว่า ต้องชำระภายในวันที่ 5 ของทุกเดือน
+          </p>
+        </div>
 
-      <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 14px; margin-bottom: 20px;">
-        <div style="display: flex; align-items: flex-start; gap: 10px;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" width="20" height="20" style="flex-shrink:0; margin-top: 2px;">
-            <circle cx="12" cy="12" r="10"/>
-            <line x1="12" y1="8" x2="12" y2="12"/>
-            <line x1="12" y1="16" x2="12.01" y2="16"/>
-          </svg>
-          <div style="font-size: 13px; color: var(--apple-text-secondary); line-height: 1.5;">
-            <strong style="color: var(--apple-text);">ตัวอย่าง:</strong> ถ้าตั้งเป็นวันที่ <strong id="dueDayExample"><?php echo (int)$paymentDueDay; ?></strong><br>
-            บิลเดือน มี.ค. 2569 → ต้องชำระภายใน <strong id="dueDateExample"><?php echo (int)$paymentDueDay; ?> มี.ค. 2569</strong><br>
-            หากยังไม่ชำระภายในกำหนด → สถานะจะเป็น <span style="color:#ef4444; font-weight:600;">ค้างชำระ</span>
+        <div style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 12px; padding: 14px;">
+          <div style="display: flex; align-items: flex-start; gap: 10px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" width="20" height="20" style="flex-shrink:0; margin-top: 2px;">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <div style="font-size: 13px; color: var(--apple-text-secondary); line-height: 1.5;">
+              <strong style="color: var(--apple-text);">ตัวอย่าง:</strong> ถ้าตั้งเป็นวันที่ <strong id="dueDayExample"><?php echo (int)$paymentDueDay; ?></strong><br>
+              บิลเดือน มี.ค. 2569 → ต้องชำระภายใน <strong id="dueDateExample"><?php echo (int)$paymentDueDay; ?> มี.ค. 2569</strong><br>
+              หากยังไม่ชำระภายในกำหนด → สถานะจะเป็น <span style="color:#ef4444; font-weight:600;">ค้างชำระ</span>
+            </div>
           </div>
         </div>
       </div>
 
-      <button type="button" class="apple-button primary" onclick="savePaymentDueDay()" style="width: 100%;">
+      <button type="button" class="apple-button primary" onclick="saveBillingSchedule()" style="width: 100%; background: linear-gradient(135deg,#6366f1,#8b5cf6);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:-3px;margin-right:4px;">
           <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
           <polyline points="17 21 17 13 7 13 7 21"/>
@@ -410,7 +393,7 @@
 </div>
 
 <script>
-// Billing Generate Day
+// Billing Generate Day - live preview
 document.getElementById('billingGenerateDay')?.addEventListener('input', function() {
   const val = Math.max(1, Math.min(28, parseInt(this.value) || 1));
   const exEl = document.getElementById('genDayExample');
@@ -421,35 +404,7 @@ document.getElementById('billingGenerateDay')?.addEventListener('input', functio
   if (beforeEl) beforeEl.textContent = val;
 });
 
-function saveBillingGenerateDay() {
-  const val = Math.max(1, Math.min(28, parseInt(document.getElementById('billingGenerateDay').value) || 1));
-  const formData = new FormData();
-  formData.append('billing_generate_day', val);
-
-  fetch('../Manage/save_system_settings.php', {
-    method: 'POST',
-    body: formData
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) {
-      const sublabel = document.getElementById('billingGenerateDaySublabel');
-      if (sublabel) sublabel.textContent = 'ออกบิลทุกวันที่ ' + val + ' ของเดือน';
-      if (typeof appleToast === 'function') {
-        appleToast('บันทึกรอบออกบิลสำเร็จ', 'success');
-      } else {
-        alert('บันทึกสำเร็จ');
-      }
-    } else {
-      alert(data.error || 'เกิดข้อผิดพลาด');
-    }
-  })
-  .catch(() => alert('เกิดข้อผิดพลาดในการเชื่อมต่อ'));
-}
-</script>
-
-<script>
-// Payment Due Day
+// Payment Due Day - live preview
 document.getElementById('paymentDueDay')?.addEventListener('input', function() {
   const val = Math.max(1, Math.min(28, parseInt(this.value) || 5));
   const exEl = document.getElementById('dueDayExample');
@@ -458,29 +413,36 @@ document.getElementById('paymentDueDay')?.addEventListener('input', function() {
   if (dateEl) dateEl.textContent = val + ' มี.ค. 2569';
 });
 
-function savePaymentDueDay() {
-  const val = Math.max(1, Math.min(28, parseInt(document.getElementById('paymentDueDay').value) || 5));
-  const formData = new FormData();
-  formData.append('payment_due_day', val);
-  
-  fetch('../Manage/save_system_settings.php', {
-    method: 'POST',
-    body: formData
-  })
-  .then(r => r.json())
-  .then(data => {
-    if (data.success) {
-      // Update the label on main settings page
-      const sublabel = document.querySelector('[data-sheet="sheet-payment-due"] .apple-row-sublabel');
-      if (sublabel) sublabel.textContent = 'ทุกวันที่ ' + val + ' ของเดือน';
-      
+// Save both settings at once
+function saveBillingSchedule() {
+  const genDay = Math.max(1, Math.min(28, parseInt(document.getElementById('billingGenerateDay').value) || 1));
+  const dueDay = Math.max(1, Math.min(28, parseInt(document.getElementById('paymentDueDay').value) || 5));
+
+  // Save billing_generate_day
+  const fd1 = new FormData();
+  fd1.append('billing_generate_day', genDay);
+
+  // Save payment_due_day
+  const fd2 = new FormData();
+  fd2.append('payment_due_day', dueDay);
+
+  Promise.all([
+    fetch('../Manage/save_system_settings.php', { method: 'POST', body: fd1 }).then(r => r.json()),
+    fetch('../Manage/save_system_settings.php', { method: 'POST', body: fd2 }).then(r => r.json())
+  ])
+  .then(([res1, res2]) => {
+    if (res1.success && res2.success) {
+      // Update sublabel on main settings page
+      const sublabel = document.getElementById('billingScheduleSublabel');
+      if (sublabel) sublabel.textContent = 'ออกบิลวันที่ ' + genDay + ' · ชำระภายในวันที่ ' + dueDay;
+
       if (typeof appleToast === 'function') {
-        appleToast('บันทึกวันครบกำหนดชำระสำเร็จ', 'success');
+        appleToast('บันทึกรอบบิลและกำหนดชำระสำเร็จ', 'success');
       } else {
         alert('บันทึกสำเร็จ');
       }
     } else {
-      alert(data.error || 'เกิดข้อผิดพลาด');
+      alert(res1.error || res2.error || 'เกิดข้อผิดพลาด');
     }
   })
   .catch(() => alert('เกิดข้อผิดพลาดในการเชื่อมต่อ'));

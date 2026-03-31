@@ -129,6 +129,11 @@ try {
   $availableMonths = $monthStmt->fetchAll(PDO::FETCH_COLUMN);
 } catch (PDOException $e) {}
 
+// Always include the actual calendar month so admin can view/select it even before billing day
+if (!in_array($currentMonth, $availableMonths, true)) {
+  array_unshift($availableMonths, $currentMonth);
+}
+
 $selectedMonth = isset($_GET['filter_month']) ? trim((string)$_GET['filter_month']) : '';
 if ($selectedMonth === '' && !empty($availableMonths)) {
   $selectedMonth = (string)$availableMonths[0];
@@ -2035,7 +2040,7 @@ try {
 
             <div id="expensesRowView" class="expenses-row-view">
               <?php if (empty($expenses)): ?>
-                <div class="expense-row-card" style="text-align:center;color:#64748b;">ยังไม่มีข้อมูลค่าใช้จ่าย</div>
+                <div class="expense-row-card" style="text-align:center;color:#64748b;grid-column:1/-1;width:100%;">ยังไม่มีข้อมูลค่าใช้จ่าย</div>
               <?php else: ?>
                 <?php foreach ($expenses as $exp): ?>
                   <?php

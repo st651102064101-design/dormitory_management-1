@@ -93,6 +93,23 @@ if ($filterYear === '') {
   $filterYear = $currentYearString;
 }
 
+// ดึงวันที่ออกบิลจาก settings (เหมือน manage_expenses.php)
+$billingGenerateDaySetting = 1;
+try {
+  $bgdStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'billing_generate_day' LIMIT 1");
+  $bgdVal = $bgdStmt ? $bgdStmt->fetchColumn() : false;
+  if ($bgdVal !== false && (int)$bgdVal > 0) {
+    $billingGenerateDaySetting = (int)$bgdVal;
+  }
+} catch (PDOException $e) {}
+
+$todayDay = (int)date('j');
+$currentMonth = date('Y-m');
+// ถ้ายังไม่ถึงวันออกบิล → ใช้เดือนก่อนหน้าเป็นเดือนล่าสุดที่แสดงได้
+$effectiveCurrentMonth = ($todayDay >= $billingGenerateDaySetting)
+    ? $currentMonth
+    : (new DateTime($currentMonth . '-01'))->modify('-1 month')->format('Y-m');
+
 $latestMonthKey = '';
 try {
   $latestMonthStmt = $pdo->query("
@@ -117,7 +134,7 @@ try {
       WHERE c.ctr_status = '0'
         AND e.exp_month IS NOT NULL
         AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
-        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= '{$effectiveCurrentMonth}'
     ) latest_months
     WHERE month_key IS NOT NULL AND month_key <> ''
     ORDER BY month_key DESC
@@ -245,7 +262,7 @@ try {
       WHERE c.ctr_status = '0'
         AND p.exp_id IS NULL
         AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
-        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= '{$effectiveCurrentMonth}'
       ORDER BY e.exp_month DESC, CAST(r.room_number AS UNSIGNED) ASC
     ")->fetchAll(PDO::FETCH_ASSOC);
 
@@ -383,7 +400,7 @@ $availableMonths = $pdo->query("
       WHERE c.ctr_status = '0'
         AND e.exp_month IS NOT NULL
         AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
-        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= '{$effectiveCurrentMonth}'
     ) m
     ORDER BY month_key DESC
 ")->fetchAll(PDO::FETCH_COLUMN);
