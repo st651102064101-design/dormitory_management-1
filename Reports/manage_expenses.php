@@ -29,6 +29,22 @@ $billingGenerateDaySetting = (int)($pdo->query("SELECT setting_value FROM system
 $effectiveCurrentMonth = ($todayDay >= $billingGenerateDaySetting)
     ? $currentMonth
     : (new DateTime($currentMonth . '-01'))->modify('-1 month')->format('Y-m');
+
+// Auto-cleanup: ลบบิลที่ถูกสร้างก่อนกำหนด (ยังไม่ถึงวันออกบิล)
+// กฎ: ลบเฉพาะบิลที่ (1) เดือน > effectiveCurrentMonth
+//         (2) ไม่มีรายการชำระเงินใดๆ (NOT EXISTS)
+//         (3) ยังไม่ชำระ/ไม่ชำระบางส่วน (ไม่ใช่ status 1=ชำระแล้ว, 3=ชำระยังไม่ครบ)
+// ป้องกัน: บิลที่ผู้เช่าชำระแล้ว (status=1 หรือ 3) จะไม่ถูกลบไม่ว่ากรณีใด
+if ($todayDay < $billingGenerateDaySetting) {
+    $pdo->exec("
+        DELETE e FROM expense e
+        WHERE DATE_FORMAT(e.exp_month,'%Y-%m') > '{$effectiveCurrentMonth}'
+          AND e.exp_status NOT IN ('1', '3')
+          AND NOT EXISTS (
+              SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id
+          )
+    ");
+}
 // ดึงเฉพาะสัญญาที่ยังไม่หมดอายุและผ่าน Wizard ถึง Step 5 แล้ว
 $contractsStmt = $pdo->query("\n  SELECT DISTINCT c.ctr_id, c.ctr_start, c.ctr_end\n  FROM contract c\n  INNER JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n  WHERE c.ctr_status = '0'\n    AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n");
 $contracts = $contractsStmt ? $contractsStmt->fetchAll(PDO::FETCH_ASSOC) : [];

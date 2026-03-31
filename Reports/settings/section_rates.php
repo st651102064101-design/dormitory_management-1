@@ -2,6 +2,15 @@
 <div class="apple-section-group">
   <h2 class="apple-section-title"><?php echo __('expenses_section'); ?></h2>
   <div class="apple-section-card">
+    <!-- Billing Generate Day Setting -->
+    <div class="apple-settings-row" data-sheet="sheet-billing-generate">
+      <div class="apple-row-icon" style="background:rgba(99,102,241,0.12);color:#6366f1;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">รอบออกบิลรายเดือน</p>
+        <p class="apple-row-sublabel" id="billingGenerateDaySublabel">ออกบิลทุกวันที่ <?php echo (int)$billingGenerateDay; ?> ของเดือน</p>
+      </div>
+      <span class="apple-row-chevron">›</span>
+    </div>
     <!-- Payment Due Day Setting -->
     <div class="apple-settings-row" data-sheet="sheet-payment-due">
       <div class="apple-row-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
@@ -275,7 +284,8 @@
 <!-- Sheet: Payment Due Day -->
 <!-- Sheet: Billing Generate Day -->
 <div class="apple-sheet-overlay" id="sheet-billing-generate">
-  <div class="apple-sheet-container">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
       <button class="apple-sheet-action" data-close-sheet="sheet-billing-generate">เสร็จ</button>
       <h3 class="apple-sheet-title">รอบออกบิลรายเดือน</h3>
