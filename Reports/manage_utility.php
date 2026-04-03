@@ -221,6 +221,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             $prevStmt->execute([$ctrId]);
             $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
 
+            // Fallback: ถ้าไม่มี utility ของสัญญานี้ → ดึงค่ามิเตอร์ล่าสุดของห้องเดียวกันจากทุกสัญญา
+            if (!$prev) {
+                $roomPrevPostStmt = $pdo->prepare(
+                    "SELECT u.utl_water_end, u.utl_elec_end
+                     FROM utility u
+                     INNER JOIN contract c ON u.ctr_id = c.ctr_id
+                     WHERE c.room_id = ? AND u.utl_water_end IS NOT NULL AND u.utl_elec_end IS NOT NULL
+                     ORDER BY u.utl_date DESC, u.utl_id DESC
+                     LIMIT 1"
+                );
+                $roomPrevPostStmt->execute([(int)$roomId]);
+                $roomPrevPost = $roomPrevPostStmt->fetch(PDO::FETCH_ASSOC);
+                if ($roomPrevPost) {
+                    $prev = $roomPrevPost;
+                }
+            }
+
             $checkStmt = $pdo->prepare("SELECT utl_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
             $checkStmt->execute([$ctrId, $month, $year]);
             $existing = $checkStmt->fetch();

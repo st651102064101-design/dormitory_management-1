@@ -258,6 +258,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>งานที่ต้องทำ - ระบบจัดการหอพัก</title>
+    <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/Logo.jpg">
     <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

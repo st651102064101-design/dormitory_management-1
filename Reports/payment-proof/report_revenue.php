@@ -18,6 +18,7 @@ $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>รายงานรายรับ</title>
+    <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/Logo.jpg">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
   </head>
   <body class="reports-page">
