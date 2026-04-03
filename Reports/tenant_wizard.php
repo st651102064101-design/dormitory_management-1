@@ -1805,7 +1805,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                             <?php elseif ((int)($tenant['completed'] ?? 0) === 1): ?>
                                                 <span style="color: #16a34a; font-weight: 600;">ดำเนินการครบทุกขั้นตอนแล้ว</span>
                                             <?php else: ?>
-                                                <span style="color: #16a34a; font-weight: 600;">ระบบเริ่มบิลให้อัตโนมัติ</span>
+                                                <?php echo $meterStatusHtml; ?>
                                             <?php endif; ?>
                                         <?php endif; ?>
                                     </td>
