@@ -5,7 +5,7 @@ AddType text/javascript .js
 	<FilesMatch "\\.js$">
 		Header set Content-Type "text/javascript; charset=utf-8"
 	</FilesMatch>
-	<FilesMatch "\\.(html|php)$">
+<FilesMatch "\\.(html)$">
 		Header set Content-Type "text/html; charset=utf-8"
 	</FilesMatch>
 

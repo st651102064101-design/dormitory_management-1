@@ -2913,7 +2913,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         document.body.style.overflow = 'hidden';
 
         fetch('../Manage/get_utility_reading.php?ctr_id=' + encodeURIComponent(ctrId) + '&target_month=' + _moMonth + '&target_year=' + _moYear)
-            .then(r => r.json())
+            .then(r => r.text().then(txt => { try { return JSON.parse(txt); } catch(e) { return {error:'Invalid response'}; } }))
             .then(d => {
                 if (d.error) return;
                 _moPrevWater = d.prev_water || 0;
@@ -2994,7 +2994,16 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         fd.append('meter_month', _moMonth);
         fd.append('meter_year',  _moYear);
         fetch('../Manage/save_utility_ajax.php', { method: 'POST', body: fd })
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) {
+                    return r.text().then(txt => {
+                        try { return JSON.parse(txt); } catch(e) { return {success:false, error:'เซิร์ฟเวอร์ตอบกลับ HTTP ' + r.status}; }
+                    });
+                }
+                return r.text().then(txt => {
+                    try { return JSON.parse(txt); } catch(e) { return {success:false, error:'เซิร์ฟเวอร์ตอบกลับข้อมูลไม่ถูกต้อง'}; }
+                });
+            })
             .then(d => {
                 if (d.success) {
                     msg.style.color = '#4ade80';
@@ -3004,7 +3013,6 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     document.getElementById('moElecInput').disabled  = true;
                     setTimeout(() => {
                         closeMeterOnlyModal();
-                        // อัปเดต step 5 circle ในหน้าหลักโดยไม่รีโหลด
                         var step5Circles = document.querySelectorAll('[data-ctr-id="' + _moCtrId + '"]');
                         step5Circles.forEach(function(circle) {
                             circle.classList.remove('meter-pending', 'wait', 'pending', 'current');
@@ -3018,14 +3026,14 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     msg.style.color = '#fca5a5';
                     msg.textContent = d.error || 'เกิดข้อผิดพลาด';
                     btn.disabled = false;
-                    btn.textContent = 'อัปเดตมิเตอร์';
+                    btn.textContent = 'บันทึกมิเตอร์';
                 }
             })
-            .catch(() => {
+            .catch(err => {
                 msg.style.color = '#fca5a5';
-                msg.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+                msg.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: ' + err.message;
                 btn.disabled = false;
-                btn.textContent = 'อัปเดตมิเตอร์';
+                btn.textContent = 'บันทึกมิเตอร์';
             });
     }
 
@@ -3065,7 +3073,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         document.getElementById('prevElecDisplay').textContent  = '...';
 
         fetch(`../Manage/get_utility_reading.php?ctr_id=${encodeURIComponent(ctrId)}`)
-            .then(r => r.json())
+            .then(r => r.text().then(txt => { try { return JSON.parse(txt); } catch(e) { return {error:'Invalid response'}; } }))
             .then(d => {
                 if (d.error) return;
                 _meterPrevWater  = d.prev_water  || 0;
@@ -3171,35 +3179,34 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         fd.append('meter_year',  _meterYear);
 
         fetch('../Manage/save_utility_ajax.php', { method: 'POST', body: fd })
-            .then(r => r.json())
+            .then(r => {
+                return r.text().then(txt => {
+                    try { return JSON.parse(txt); } catch(e) { return {success:false, error:'เซิร์ฟเวอร์ตอบกลับข้อมูลไม่ถูกต้อง (HTTP ' + r.status + ')'}; }
+                });
+            })
             .then(d => {
                 if (d.success) {
                     msg.style.color = '#4ade80';
                     msg.textContent = '✓ บันทึกสำเร็จ';
-                    // Keep button to allow update/edit if needed
                     btn.style.display = 'inline-block';
                     btn.textContent = 'อัปเดตมิเตอร์';
                     document.getElementById('meterSavedBadge').style.display = 'inline-block';
                     document.getElementById('meterWaterInput').disabled = false;
                     document.getElementById('meterElecInput').disabled  = false;
-                    // รีโหลดยอดบิลใหม่หลังจดมิเตอร์ และแสดง bill sections
                     document.getElementById('billSectionsWrapper').style.display = '';
                     document.getElementById('meterNoticeBlock').style.display = 'none';
-                    // อัพเดท step 5 circle — เปลี่ยนจาก meter-pending เป็น completed
                     var step5Circles = document.querySelectorAll('[data-ctr-id="' + _meterCtrId + '"]');
                     step5Circles.forEach(function(circle) {
                         circle.classList.remove('meter-pending', 'wait', 'pending', 'current');
                         circle.classList.add('completed');
                         circle.setAttribute('data-tooltip', '5. จดมิเตอร์แล้ว');
                         circle.innerHTML = '✓';
-                        // Reinitialize bootstrap tooltip
                         if (typeof bootstrap !== 'undefined' && typeof circle.getAttribute('data-bs-toggle') === 'string') {
                             var tooltipEl = circle._bsTooltip;
                             if (tooltipEl) tooltipEl.dispose();
                             new bootstrap.Tooltip(circle, { title: '5. จดมิเตอร์แล้ว' });
                         }
                     });
-                    // อัปเดต UI โดยไม่รีโหลดหน้า
                     refreshBillingPayments(_meterCtrId);
                     showSuccessToast('อัปเดตมิเตอร์เรียบร้อยแล้ว');
                 } else {
@@ -3209,9 +3216,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     btn.textContent = 'บันทึกมิเตอร์';
                 }
             })
-            .catch(() => {
+            .catch(err => {
                 msg.style.color = '#fca5a5';
-                msg.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้';
+                msg.textContent = 'ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: ' + err.message;
                 btn.disabled = false;
                 btn.textContent = 'บันทึกมิเตอร์';
             });
