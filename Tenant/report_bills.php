@@ -27,9 +27,9 @@ $expenses = [];
 try {
     $stmt = $pdo->prepare("
         SELECT e.*, 
-               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1') as paid_amount,
-               (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id) as payment_count,
-               (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as paid_amount,
+               (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as payment_count,
+               (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status
         FROM expense e
         JOIN (
             SELECT MAX(exp_id) AS exp_id
@@ -392,7 +392,7 @@ foreach ($expenses as $exp) {
                 </div>
                 <?php endif; ?>
             </div>
-            <?php if (in_array($exp['exp_status'], ['0', '3', '4'], true)): ?>
+            <?php if (in_array($statusKey, ['0', '3', '4'], true)): ?>
             <a href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo $exp['exp_id']; ?>" class="btn-pay"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ชำระเงิน</a>
             <?php endif; ?>
         </div>

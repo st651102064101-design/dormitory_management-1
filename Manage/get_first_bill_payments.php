@@ -19,7 +19,7 @@ function buildExpensePayload(PDO $pdo, array $expense): array
 {
     $expenseId = (int)($expense['exp_id'] ?? 0);
     $expenseTotal = (float)($expense['exp_total'] ?? 0);
-    $expenseStatus = (string)($expense['exp_status'] ?? '0');
+    $storedExpenseStatus = (string)($expense['exp_status'] ?? '0');
 
     $statusTextMap = [
         '0' => 'รอชำระ',
@@ -69,13 +69,26 @@ function buildExpensePayload(PDO $pdo, array $expense): array
         ];
     }
 
+    // Derive display status from actual payment totals to avoid stale exp_status values.
+    if ($expenseTotal > 0 && $approvedAmount >= ($expenseTotal - 0.00001)) {
+        $effectiveExpenseStatus = '1';
+    } elseif ($approvedAmount > 0) {
+        $effectiveExpenseStatus = '3';
+    } elseif ($pendingAmount > 0) {
+        $effectiveExpenseStatus = '2';
+    } elseif ($storedExpenseStatus === '4') {
+        $effectiveExpenseStatus = '4';
+    } else {
+        $effectiveExpenseStatus = '0';
+    }
+
     return [
         'has_expense' => true,
         'expense_id' => $expenseId,
         'bill_month' => (string)($expense['exp_month'] ?? ''),
         'expense_total' => $expenseTotal,
-        'expense_status' => $expenseStatus,
-        'expense_status_text' => $statusTextMap[$expenseStatus] ?? 'ไม่ทราบสถานะ',
+        'expense_status' => $effectiveExpenseStatus,
+        'expense_status_text' => $statusTextMap[$effectiveExpenseStatus] ?? 'ไม่ทราบสถานะ',
         'approved_amount' => $approvedAmount,
         'pending_amount' => $pendingAmount,
         'payments' => $payments,

@@ -79,7 +79,8 @@ try {
         "SELECT utl_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end
          FROM utility
          WHERE ctr_id = ? AND utl_date >= ? AND utl_date < ?
-         AND utl_water_end IS NOT NULL AND utl_elec_end IS NOT NULL
+         AND utl_water_end IS NOT NULL AND utl_water_end > 0
+         AND utl_elec_end IS NOT NULL AND utl_elec_end > 0
          ORDER BY utl_date DESC, utl_id DESC
          LIMIT 1"
     );
@@ -94,7 +95,7 @@ try {
         $chkStmt = $pdo->prepare("SELECT water_meter_start, elec_meter_start FROM checkin_record WHERE ctr_id = ? LIMIT 1");
         $chkStmt->execute([$ctrId]);
         $chkRow = $chkStmt->fetch(PDO::FETCH_ASSOC);
-        if ($chkRow && $chkRow['water_meter_start'] !== null) {
+        if ($chkRow && (int)$chkRow['water_meter_start'] > 0 && (int)$chkRow['elec_meter_start'] > 0) {
             $prevWater = (int)$chkRow['water_meter_start'];
             $prevElec  = (int)$chkRow['elec_meter_start'];
         }

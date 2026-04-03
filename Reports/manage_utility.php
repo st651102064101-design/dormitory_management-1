@@ -176,14 +176,27 @@ $success = '';
 $error = '';
 $firstBillRooms = []; // Track rooms with first meter reading
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
+    // แท็บที่กำลังบันทึก: บันทึกเฉพาะมิเตอร์ประเภทนั้น ไม่ปนกัน
+    $postTab = (isset($_POST['tab']) && $_POST['tab'] === 'electric') ? 'electric' : 'water';
+
     try {
         $saved = 0;
         $lockedRooms = 0;
         foreach ($_POST['meter'] as $roomId => $data) {
         if (empty($data['ctr_id'])) continue;
 
+        // ห้ามบันทึกมิเตอร์สำหรับห้องที่ยังไม่ผ่าน workflow ถึงขั้นตอนเช็คอิน (step >= 4)
+        if ((int)($data['workflow_step'] ?? 0) < 4) continue;
+
         $waterInput = (isset($data['water']) && $data['water'] !== '') ? (int)$data['water'] : null;
         $elecInput = (isset($data['electric']) && $data['electric'] !== '') ? (int)$data['electric'] : null;
+
+        // บันทึกเฉพาะมิเตอร์ของแท็บที่กด — ไม่บันทึกอีกฝั่งพร้อมกัน
+        if ($postTab === 'water') {
+            $elecInput = null;
+        } else {
+            $waterInput = null;
+        }
 
         if ($waterInput === null && $elecInput === null) continue;
 
@@ -194,7 +207,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         // ป้องกันการแก้ไขเดือนที่ผ่านมาแล้ว เฉพาะกรณีบันทึกแล้ว (server-side)
         $postYm = sprintf('%04d-%02d', $year, $month);
         if ($postYm < date('Y-m')) {
-            // ตรวจสอบว่ามีบันทึกอยู่แล้วหรือไม่
             $existChk = $pdo->prepare("SELECT COUNT(*) FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
             $existChk->execute([(int)$data['ctr_id'], $month, $year]);
             if ($existChk->fetchColumn() > 0) continue; // ห้ามแก้ไข
@@ -204,7 +216,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         $meterDate = $year . '-' . str_pad((string)$month, 2, '0', STR_PAD_LEFT) . '-' . date('d');
         
         try {
-            $prevStmt = $pdo->prepare("SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? ORDER BY utl_date DESC LIMIT 1");
+            // prev: ดึงจาก record สมบูรณ์ล่าสุด (ทั้งน้ำและไฟ IS NOT NULL)
+            $prevStmt = $pdo->prepare("SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? AND utl_water_end IS NOT NULL AND utl_elec_end IS NOT NULL ORDER BY utl_date DESC, utl_id DESC LIMIT 1");
             $prevStmt->execute([$ctrId]);
             $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -212,7 +225,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             $checkStmt->execute([$ctrId, $month, $year]);
             $existing = $checkStmt->fetch();
 
-            // ตรวจสอบว่าเป็นการจดมิเตอร์ครั้งแรกจาก ctr_start (ต้องทำก่อน $existing check)
+            // ตรวจสอบว่าเป็นการจดมิเตอร์ครั้งแรกจาก ctr_start
             $ctrStartStmt = $pdo->prepare('SELECT ctr_start FROM contract WHERE ctr_id = ? LIMIT 1');
             $ctrStartStmt->execute([$ctrId]);
             $ctrStartRow = $ctrStartStmt->fetch(PDO::FETCH_ASSOC);
@@ -220,19 +233,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             $currentYmPost = sprintf('%04d-%02d', $year, $month);
             $isFirstReading = $ctrStartYmPost !== null && $currentYmPost === $ctrStartYmPost;
 
+            $doInsert = !$existing;
+
             if ($existing) {
                 if ($isFirstReading) {
-                    // แก้ไขบิลครั้งแรกที่บันทึกผิด: ตั้ง start=end (หน่วยใช้=0) และยอดเงิน=ค่าห้องอย่างเดียว
+                    // แก้ไขบิลครั้งแรกที่บันทึกผิด
                     $fixUtilStmt = $pdo->prepare("UPDATE utility SET utl_water_start = utl_water_end, utl_elec_start = utl_elec_end WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
                     $fixUtilStmt->execute([$ctrId, $month, $year]);
                     $fixExpStmt = $pdo->prepare("UPDATE expense SET exp_water = 0, exp_elec_chg = 0, exp_elec_unit = 0, exp_water_unit = 0, exp_total = room_price WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?");
                     $fixExpStmt->execute([$ctrId, $month, $year]);
                     $firstBillRooms[] = $ctrId;
                     $saved++;
-                } else {
-                    $lockedRooms++;
+                    continue;
                 }
-                continue;
+
+                // ตรวจว่าฝั่งที่กำลังบันทึกถูกบันทึกแล้วหรือยัง
+                $thisTabAlreadySaved = ($postTab === 'water')
+                    ? ($existing['utl_water_end'] !== null)
+                    : ($existing['utl_elec_end']  !== null);
+
+                if ($thisTabAlreadySaved) {
+                    $lockedRooms++;
+                    continue;
+                }
+                // Record มีอยู่แล้วแต่ฝั่งนี้ยังไม่ได้บันทึก (อีกฝั่งบันทึกก่อน) → partial UPDATE
+                $doInsert = false;
             }
 
             // fallback: เมื่อไม่มี prev utility และไม่ใช่เดือนแรก ให้ใช้ checkin_record
@@ -249,48 +274,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             }
 
             $waterOld = isset($data['water_old']) ? (int)$data['water_old'] : $prevWaterEnd;
-            $elecOld  = isset($data['elec_old'])   ? (int)$data['elec_old']   : $prevElecEnd;
+            $elecOld  = isset($data['elec_old'])  ? (int)$data['elec_old']  : $prevElecEnd;
 
-            $waterNew = $waterInput ?? $waterOld;
-            $elecNew  = $elecInput  ?? $elecOld;
-
-            // ครั้งแรก: ตั้ง prev = current เพื่อให้หน่วยใช้ = 0 ในตาราง utility และ expense
-            if ($isFirstReading) {
-                $waterOld = $waterNew;
-                $elecOld  = $elecNew;
-            }
-
-            $insertStmt = $pdo->prepare("INSERT INTO utility (ctr_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end, utl_date) VALUES (?, ?, ?, ?, ?, ?)");
-            $insertStmt->execute([$ctrId, $waterOld, $waterNew, $elecOld, $elecNew, $meterDate]);
-            
-            $waterUsed = $waterNew - $waterOld;
-            $elecUsed  = $elecNew  - $elecOld;
-            
-            // คำนวณค่าน้ำแบบเหมาจ่าย - ครั้งแรกไม่เสียตัง (waterUsed/elecUsed = 0 อยู่แล้ว)
-            if ($isFirstReading) {
-                $waterCost = 0;
-                $elecCost = 0;
+            if ($postTab === 'water') {
+                $waterNew = $waterInput;
+                if ($isFirstReading) {
+                    if ($waterNew <= 0) continue; // ห้ามบันทึก 0 สำหรับมิเตอร์ครั้งแรก
+                    $waterOld = $waterNew;
+                }
+                $waterUsed = $waterNew - $waterOld;
+                $waterCost = $isFirstReading ? 0 : calculateWaterCost($waterUsed);
             } else {
-                $waterCost = calculateWaterCost($waterUsed);
-                $elecCost = $elecUsed * $electricRate;
+                $elecNew = $elecInput;
+                if ($isFirstReading) {
+                    if ($elecNew <= 0) continue; // ห้ามบันทึก 0 สำหรับมิเตอร์ครั้งแรก
+                    $elecOld = $elecNew;
+                }
+                $elecUsed = $elecNew - $elecOld;
+                $elecCost = $isFirstReading ? 0 : ($elecUsed * $electricRate);
             }
-            
-            $updateExpStmt = $pdo->prepare("
-                UPDATE expense SET 
-                    exp_elec_unit = ?, exp_water_unit = ?,
-                    rate_elec = ?, rate_water = ?,
-                    exp_elec_chg = ?, exp_water = ?,
-                    exp_total = room_price + ? + ?
-                WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?
-            ");
-            $updateExpStmt->execute([
-                $elecUsed, $waterUsed, $electricRate, $waterRate,
-                $elecCost, $waterCost,
-                $elecCost, $waterCost,
-                $ctrId, $month, $year
-            ]);
-            
-            // Track first meter readings for display
+
+            if ($doInsert) {
+                // INSERT: บันทึกเฉพาะฝั่งที่ active, อีกฝั่ง = NULL
+                $insertStmt = $pdo->prepare("INSERT INTO utility (ctr_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end, utl_date) VALUES (?, ?, ?, ?, ?, ?)");
+                if ($postTab === 'water') {
+                    $insertStmt->execute([$ctrId, $waterOld, $waterNew, null, null, $meterDate]);
+                } else {
+                    $insertStmt->execute([$ctrId, null, null, $elecOld, $elecNew, $meterDate]);
+                }
+            } else {
+                // Partial UPDATE: อัปเดตเฉพาะคอลัมน์ฝั่งที่กำลังบันทึก
+                if ($postTab === 'water') {
+                    $pdo->prepare("UPDATE utility SET utl_water_start = ?, utl_water_end = ? WHERE utl_id = ?")
+                        ->execute([$waterOld, $waterNew, $existing['utl_id']]);
+                } else {
+                    $pdo->prepare("UPDATE utility SET utl_elec_start = ?, utl_elec_end = ? WHERE utl_id = ?")
+                        ->execute([$elecOld, $elecNew, $existing['utl_id']]);
+                }
+            }
+
+            // UPDATE expense: อัปเดตเฉพาะฝั่งที่บันทึก, คงค่าอีกฝั่งไว้ด้วย COALESCE
+            if ($postTab === 'water') {
+                $pdo->prepare("
+                    UPDATE expense SET
+                        exp_water_unit = ?, rate_water = ?, exp_water = ?,
+                        exp_total = room_price + ? + COALESCE(exp_elec_chg, 0)
+                    WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?
+                ")->execute([$waterUsed, $waterRate, $waterCost, $waterCost, $ctrId, $month, $year]);
+            } else {
+                $pdo->prepare("
+                    UPDATE expense SET
+                        exp_elec_unit = ?, rate_elec = ?, exp_elec_chg = ?,
+                        exp_total = room_price + COALESCE(exp_water, 0) + ?
+                    WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?
+                ")->execute([$elecUsed, $electricRate, $elecCost, $elecCost, $ctrId, $month, $year]);
+            }
+
             if ($isFirstReading) {
                 $firstBillRooms[] = $ctrId;
             }
@@ -363,6 +402,8 @@ if ($showMode === 'occupied') {
         LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
         WHERE c.ctr_start <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
         AND c.ctr_end >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
+        AND EXISTS (SELECT 1 FROM checkin_record cr WHERE cr.ctr_id = c.ctr_id
+            AND cr.water_meter_start IS NOT NULL AND cr.elec_meter_start IS NOT NULL)
     ";
 
     $occupiedParams = [$year, $month, $year];
@@ -385,6 +426,8 @@ if ($showMode === 'occupied') {
             WHERE ctr_status = '0'
             AND ctr_start <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
             AND ctr_end >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
+            AND EXISTS (SELECT 1 FROM checkin_record cr WHERE cr.ctr_id = contract.ctr_id
+            AND cr.water_meter_start IS NOT NULL AND cr.elec_meter_start IS NOT NULL)
             GROUP BY room_id
         ) lc ON r.room_id = lc.room_id
         LEFT JOIN contract c ON c.ctr_id = lc.ctr_id
@@ -409,7 +452,7 @@ $readings = [];
 $isPastMonth = sprintf('%04d-%02d', $year, $month) < date('Y-m');
 foreach ($rooms as $room) {
     if (!$room['ctr_id']) {
-        $readings[$room['room_id']] = ['water_old' => 0, 'elec_old' => 0, 'water_new' => '', 'elec_new' => '', 'saved' => false, 'workflow_step' => 1, 'meter_blocked' => false, 'isFirstReading' => false];
+        $readings[$room['room_id']] = ['water_old' => 0, 'elec_old' => 0, 'water_new' => '', 'elec_new' => '', 'saved' => false, 'water_saved' => false, 'elec_saved' => false, 'workflow_step' => 1, 'meter_blocked' => false, 'isFirstReading' => false];
         continue;
     }
     
@@ -449,10 +492,12 @@ foreach ($rooms as $room) {
         ((int)$current['utl_elec_end'] !== (int)$current['utl_elec_start'])
     );
     
-    // แสดงค่า input จาก utility record (รวมถึง first reading ที่ start == end)
-    $water_new = $hasRecord ? (int)$current['utl_water_end'] : '';
-    $elec_new = $hasRecord ? (int)$current['utl_elec_end'] : '';
-    $saved = $hasRecord;
+    // แสดงค่า input จาก utility record — ตรวจ NULL แยกต่างหากเพื่อรองรับ partial save
+    $water_new = ($hasRecord && $current['utl_water_end'] !== null) ? (int)$current['utl_water_end'] : '';
+    $elec_new  = ($hasRecord && $current['utl_elec_end']  !== null) ? (int)$current['utl_elec_end']  : '';
+    $water_saved = $hasRecord && $current['utl_water_end'] !== null;
+    $elec_saved  = $hasRecord && $current['utl_elec_end']  !== null;
+    $saved = $water_saved && $elec_saved;  // ทั้งสองฝั่งบันทึกแล้ว
     // ล็อคเดือนที่ผ่านมาทั้งหมดที่มี utility record แล้ว ถ้ายังไม่มีให้กรอกได้
     $meterBlocked = $isPastMonth && $hasRecord;
     
@@ -503,8 +548,10 @@ foreach ($rooms as $room) {
         $chkFirst = $pdo->prepare('SELECT water_meter_start, elec_meter_start FROM checkin_record WHERE ctr_id = ? ORDER BY checkin_id DESC LIMIT 1');
         $chkFirst->execute([$room['ctr_id']]);
         $chkFirstRow = $chkFirst->fetch(PDO::FETCH_ASSOC);
-        if ($chkFirstRow && $chkFirstRow['water_meter_start'] !== null && $chkFirstRow['elec_meter_start'] !== null) {
+        if ($chkFirstRow && (int)$chkFirstRow['water_meter_start'] > 0 && (int)$chkFirstRow['elec_meter_start'] > 0) {
             $saved = true;
+            $water_saved = true;
+            $elec_saved  = true;
             $water_new = (int)$chkFirstRow['water_meter_start'];
             $elec_new  = (int)$chkFirstRow['elec_meter_start'];
             $meterBlocked = $isPastMonth; // ปิดกั้นถ้าเป็นเดือนที่ผ่านแล้ว
@@ -531,6 +578,8 @@ foreach ($rooms as $room) {
         'water_new' => $water_new,
         'elec_new' => $elec_new,
         'saved' => $saved,
+        'water_saved' => $water_saved ?? $saved,
+        'elec_saved'  => $elec_saved  ?? $saved,
         'workflow_step' => $workflowStep,
         'meter_blocked' => $meterBlocked,
         'isFirstReading' => $isFirstReading,
@@ -2060,8 +2109,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $hasCtr = !empty($room['ctr_id']);
                                     $wUsed = ($r['water_new']!==''&&$r['water_new']!==null) ? ((int)$r['water_new']-$r['water_old']) : 0;
                                 ?>
-                                <?php $needsWater = $hasCtr && !$r['saved'] && ($r['water_new'] === '' || $r['water_new'] === null); ?>
-                                <tr class="<?php echo $r['saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsWater ? 'needs-meter needs-water' : ''; ?>">
+                                <?php $needsWater = $hasCtr && !$r['water_saved'] && ($r['water_new'] === '' || $r['water_new'] === null); ?>
+                                <tr class="<?php echo $r['water_saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsWater ? 'needs-meter needs-water' : ''; ?>">
                                     <td class="room-num-cell">
                                         <?php echo htmlspecialchars($room['room_number']); ?>
                                         <?php if ($needsWater): ?>
@@ -2075,7 +2124,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     <td><?php if($hasCtr): ?>
                                         <?php 
                                             $tooltipMsg = '';
-                                            if ($r['saved']) {
+                                            if ($r['water_saved']) {
                                                 $tooltipMsg = 'บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้';
                                             } elseif ($r['meter_blocked']) {
                                                 if ($isPastMonth) {
@@ -2087,13 +2136,13 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                                 }
                                             }
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)" <?php echo ($r['saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['water_saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)" <?php echo ($r['water_saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][is_first_reading]" value="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>">
                                     <?php else: ?>-<?php endif; ?></td>
-                                    <td class="usage-cell" data-room="<?php echo $room['room_id']; ?>" data-usage="water"><?php echo $hasCtr ? $wUsed : '-'; ?></td>
+                                    <td class="usage-cell" data-room="<?php echo $room['room_id']; ?>" data-usage="water"><?php echo $hasCtr ? ($r['isFirstReading'] ? 0 : $wUsed) : '-'; ?></td>
                                     <td class="amount-to-pay" data-room="<?php echo $room['room_id']; ?>" data-amount="water">
                                         <?php if ($hasCtr): ?>
                                             <?php echo $r['isFirstReading'] ? '0' : calculateWaterCost($wUsed); ?>
@@ -2122,8 +2171,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $hasCtr = !empty($room['ctr_id']);
                                     $eUsed = ($r['elec_new']!==''&&$r['elec_new']!==null) ? ((int)$r['elec_new']-$r['elec_old']) : 0;
                                 ?>
-                                <?php $needsElec = $hasCtr && !$r['saved'] && ($r['elec_new'] === '' || $r['elec_new'] === null); ?>
-                                <tr class="<?php echo $r['saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsElec ? 'needs-meter needs-electric' : ''; ?>">
+                                <?php $needsElec = $hasCtr && !$r['elec_saved'] && ($r['elec_new'] === '' || $r['elec_new'] === null); ?>
+                                <tr class="<?php echo $r['elec_saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsElec ? 'needs-meter needs-electric' : ''; ?>">
                                     <td class="room-num-cell">
                                         <?php echo htmlspecialchars($room['room_number']); ?>
                                         <?php if ($needsElec): ?>
@@ -2137,7 +2186,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     <td><?php if($hasCtr): ?>
                                         <?php 
                                             $tooltipMsg = '';
-                                            if ($r['saved']) {
+                                            if ($r['elec_saved']) {
                                                 $tooltipMsg = 'บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้';
                                             } elseif ($r['meter_blocked']) {
                                                 if ($isPastMonth) {
@@ -2149,12 +2198,12 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                                 }
                                             }
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)" <?php echo ($r['saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['elec_saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)" <?php echo ($r['elec_saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
                                     <?php else: ?>-<?php endif; ?></td>
-                                    <td class="usage-cell elec-usage" data-room="<?php echo $room['room_id']; ?>" data-usage="electric"><?php echo $hasCtr ? $eUsed : '-'; ?></td>
+                                    <td class="usage-cell elec-usage" data-room="<?php echo $room['room_id']; ?>" data-usage="electric"><?php echo $hasCtr ? ($r['isFirstReading'] ? 0 : $eUsed) : '-'; ?></td>
                                     <td class="amount-to-pay" data-room="<?php echo $room['room_id']; ?>" data-amount="electric">
                                         <?php if ($hasCtr): ?>
                                             <?php echo $r['isFirstReading'] ? '0' : ($eUsed * $electricRate); ?>
@@ -2184,17 +2233,17 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $wUsedVm = $wNew !== null ? max(0, $wNew - $wOld) : 0;
                                     $cardClass = 'vm-card';
                                     if (!$hasCtr) $cardClass .= ' vm-empty';
-                                    elseif ($r['saved']) $cardClass .= ' vm-saved';
+                                    elseif ($r['water_saved']) $cardClass .= ' vm-saved';
                                     elseif ($r['meter_blocked']) $cardClass .= ' vm-blocked';
                                     else $cardClass .= ' vm-pending';
-                                    $isVmDisabled = !$hasCtr || $r['saved'] || $r['meter_blocked'];
+                                    $isVmDisabled = !$hasCtr || $r['water_saved'] || $r['meter_blocked'];
                                 ?>
                                 <div class="<?php echo $cardClass; ?>">
                                     <div class="vm-card-header">
                                         <span class="vm-room-num">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></span>
                                         <?php if ($r['isFirstReading']): ?>
                                             <span class="vm-first-badge">ครั้งแรก</span>
-                                        <?php elseif ($r['saved']): ?>
+                                        <?php elseif ($r['water_saved']): ?>
                                             <span class="vm-saved-badge">✓ บันทึกแล้ว</span>
                                         <?php endif; ?>
                                     </div>
@@ -2250,17 +2299,17 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $eUsedVm = $eNew !== null ? max(0, $eNew - $eOld) : 0;
                                     $cardClass = 'vm-card';
                                     if (!$hasCtr) $cardClass .= ' vm-empty';
-                                    elseif ($r['saved']) $cardClass .= ' vm-saved';
+                                    elseif ($r['elec_saved']) $cardClass .= ' vm-saved';
                                     elseif ($r['meter_blocked']) $cardClass .= ' vm-blocked';
                                     else $cardClass .= ' vm-pending';
-                                    $isVmDisabled = !$hasCtr || $r['saved'] || $r['meter_blocked'];
+                                    $isVmDisabled = !$hasCtr || $r['elec_saved'] || $r['meter_blocked'];
                                 ?>
                                 <div class="<?php echo $cardClass; ?>">
                                     <div class="vm-card-header">
                                         <span class="vm-room-num">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></span>
                                         <?php if ($r['isFirstReading']): ?>
                                             <span class="vm-first-badge">ครั้งแรก</span>
-                                        <?php elseif ($r['saved']): ?>
+                                        <?php elseif ($r['elec_saved']): ?>
                                             <span class="vm-saved-badge">✓ บันทึกแล้ว</span>
                                         <?php endif; ?>
                                     </div>
@@ -2406,13 +2455,13 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             if (!rd[rid]) rd[rid] = {water:0,electric:0,wu:0,eu:0,hw:false,he:false,firstReading:isFirstReading};
             if (t==='water' && i.value) { 
                 var u=Math.max(0,newV-oldV); 
-                rd[rid].wu=u; 
+                rd[rid].wu=isFirstReading ? 0 : u; 
                 rd[rid].water=isFirstReading ? 0 : calculateWaterCost(u);  // ครั้งแรก = 0 บาท
                 rd[rid].hw=true; 
             }
             if (t==='electric' && i.value) { 
                 var u=Math.max(0,newV-oldV); 
-                rd[rid].eu=u; 
+                rd[rid].eu=isFirstReading ? 0 : u; 
                 rd[rid].electric=isFirstReading ? 0 : (u*electricRate);  // ครั้งแรก = 0 บาท
                 rd[rid].he=true; 
             }

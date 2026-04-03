@@ -46,8 +46,18 @@ try {
             SELECT MAX(exp_id) AS exp_id
             FROM expense
             WHERE ctr_id = ?
-              AND exp_status IN ('0', '3', '4')
-              AND (\n                  DATE_FORMAT(expense.exp_month, '%Y-%m') = ?\n                  OR EXISTS (\n                      SELECT 1\n                      FROM utility u\n                      WHERE u.ctr_id = expense.ctr_id\n                          AND YEAR(u.utl_date) = YEAR(expense.exp_month)\n                          AND MONTH(u.utl_date) = MONTH(expense.exp_month)\n                          AND u.utl_water_end IS NOT NULL\n                          AND u.utl_elec_end IS NOT NULL\n                  )\n              )
+              AND (
+                  DATE_FORMAT(expense.exp_month, '%Y-%m') = ?
+                  OR EXISTS (
+                      SELECT 1
+                      FROM utility u
+                      WHERE u.ctr_id = expense.ctr_id
+                          AND YEAR(u.utl_date) = YEAR(expense.exp_month)
+                          AND MONTH(u.utl_date) = MONTH(expense.exp_month)
+                          AND u.utl_water_end IS NOT NULL
+                          AND u.utl_elec_end IS NOT NULL
+                  )
+              )
               AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
               AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
             GROUP BY exp_month
@@ -56,6 +66,7 @@ try {
             SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
             FROM payment
             WHERE pay_status IN ('0', '1')
+              AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
             GROUP BY exp_id
         ) ps ON ps.exp_id = e.exp_id
         JOIN contract c ON e.ctr_id = c.ctr_id
@@ -160,7 +171,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') FOR UPDATE");
+            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' FOR UPDATE");
             $sumRowsStmt->execute([$exp_id]);
             $submittedAmount = 0;
             foreach ($sumRowsStmt->fetchAll(PDO::FETCH_ASSOC) as $payRow) {
@@ -203,19 +214,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT MAX(exp_id) AS exp_id
                     FROM expense
                     WHERE ctr_id = ?
-                                                AND exp_status IN ('0', '3', '4')
-                                                AND (
-                                                        DATE_FORMAT(exp_month, '%Y-%m') = ?
-                                                        OR EXISTS (
-                                                            SELECT 1
-                                                            FROM utility u
-                                                            WHERE u.ctr_id = expense.ctr_id
-                                                                AND YEAR(u.utl_date) = YEAR(expense.exp_month)
-                                                                AND MONTH(u.utl_date) = MONTH(expense.exp_month)
-                                                                AND u.utl_water_end IS NOT NULL
-                                                                AND u.utl_elec_end IS NOT NULL
-                                                        )
-                                                )
+                      AND (
+                          DATE_FORMAT(exp_month, '%Y-%m') = ?
+                          OR EXISTS (
+                              SELECT 1
+                              FROM utility u
+                              WHERE u.ctr_id = expense.ctr_id
+                                  AND YEAR(u.utl_date) = YEAR(expense.exp_month)
+                                  AND MONTH(u.utl_date) = MONTH(expense.exp_month)
+                                  AND u.utl_water_end IS NOT NULL
+                                  AND u.utl_elec_end IS NOT NULL
+                          )
+                      )
                       AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
                       AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
                     GROUP BY exp_month
@@ -224,6 +234,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
                     FROM payment
                     WHERE pay_status IN ('0', '1')
+                      AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
                     GROUP BY exp_id
                 ) ps ON ps.exp_id = e.exp_id
                 JOIN contract c ON e.ctr_id = c.ctr_id
@@ -271,6 +282,7 @@ try {
         FROM payment p
         JOIN expense e ON p.exp_id = e.exp_id
         WHERE e.ctr_id = ?
+          AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
         ORDER BY p.pay_date DESC
     ");
     $stmt->execute([$contract['ctr_id']]);
@@ -1199,58 +1211,24 @@ $paymentStatusMap = [
                     }
                 });
 
-                const result = await response.json();
+                const rawText = await response.text();
+                let result;
+                try {
+                    // Strip any PHP notices/warnings before the JSON
+                    const jsonStart = rawText.indexOf('{');
+                    result = JSON.parse(jsonStart >= 0 ? rawText.slice(jsonStart) : rawText);
+                } catch (parseErr) {
+                    throw new Error('ตอบกลับไม่ถูกต้อง: ' + rawText.slice(0, 200));
+                }
                 if (result && result.success) {
                     showFormAlert(result.message || 'แจ้งชำระเงินเรียบร้อยแล้ว', 'success');
-                    prependPaymentHistoryItem(result);
-
-                    const expSelect = document.getElementById('exp_id');
-                    const selectedOption = expSelect ? expSelect.options[expSelect.selectedIndex] : null;
-                    const preview = document.getElementById('preview-container');
-                    if (preview) preview.style.display = 'none';
-
-                    if (selectedOption && selectedOption.value && result.remaining_amount !== null) {
-                        const newRemaining = Number(result.remaining_amount) || 0;
-                        const newSubmitted = Number(result.submitted_amount) || 0;
-                        selectedOption.dataset.paid = String(newSubmitted);
-                        selectedOption.dataset.remaining = String(newRemaining);
-
-                        const total = Number(selectedOption.dataset.total || 0);
-                        const monthText = selectedOption.textContent.split('-')[0].trim();
-                        if (newRemaining > 0) {
-                            selectedOption.textContent = `${monthText} - ยอดรวม ${total.toLocaleString()} บาท (ส่งแล้ว ${newSubmitted.toLocaleString()} / คงเหลือ ${newRemaining.toLocaleString()})`;
-                            updatePaymentAmount();
-                        } else {
-                            selectedOption.remove();
-                            if (expSelect && expSelect.options.length > 1) {
-                                expSelect.selectedIndex = 1;
-                                updatePaymentAmount();
-                            } else {
-                                expSelect.value = '';
-                                updatePaymentAmount();
-                                const summary = document.getElementById('payment-summary');
-                                const payAmountGroup = document.getElementById('pay-amount-group');
-                                const payProofGroup = document.getElementById('pay-proof-group');
-                                if (summary) summary.style.display = 'none';
-                                if (payAmountGroup) payAmountGroup.style.display = 'none';
-                                if (payProofGroup) payProofGroup.style.display = 'none';
-                                showFormAlert('บิลนี้ถูกส่งชำระครบแล้ว เลือกบิลเดือนอื่นได้', 'success');
-                            }
-                        }
-                    } else {
-                        form.reset();
-                        updatePaymentAmount();
-                    }
-
-                    const payProofInput = document.getElementById('pay_proof');
-                    if (payProofInput) payProofInput.value = '';
-                    updateSubmitState();
-                } else {
+                    setTimeout(() => location.reload(), 1500);
                     showFormAlert((result && result.message) ? result.message : 'ไม่สามารถบันทึกข้อมูลได้', 'error');
                     updateSubmitState();
                 }
             } catch (err) {
-                showFormAlert('ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่', 'error');
+                console.error('Payment submit error:', err);
+                showFormAlert(err.message || 'ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่', 'error');
                 updateSubmitState();
             } finally {
                 submitBtn.innerHTML = originalText;

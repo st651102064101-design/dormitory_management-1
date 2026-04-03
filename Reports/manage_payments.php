@@ -8,6 +8,12 @@ if (empty($_SESSION['admin_username'])) {
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
 
+// CSRF token
+if (empty($_SESSION['csrf_token'])) {
+    $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = $_SESSION['csrf_token'];
+
 // Auto-heal: ถ้า Wizard ยืนยัน Step 2 แล้ว แต่ booking_payment ยังไม่ถูกอัปเดตสถานะ ให้ปรับเป็นยืนยันอัตโนมัติ
 try {
   $pdo->exec("\n    UPDATE booking_payment bp\n    INNER JOIN tenant_workflow tw ON tw.bkg_id = bp.bkg_id\n    SET bp.bp_status = '1',\n        bp.bp_payment_date = COALESCE(bp.bp_payment_date, NOW())\n    WHERE COALESCE(tw.step_2_confirmed, 0) = 1\n      AND COALESCE(bp.bp_status, '0') <> '1'\n  ");
@@ -75,8 +81,8 @@ try {
   }
 } catch (PDOException $e) {}
 
-// รับค่า filter จาก query parameter — default filter to status='0' (awaiting verification)
-$filterStatus = isset($_GET['status']) ? $_GET['status'] : '0';
+// รับค่า filter จาก query parameter — default to '' (ทั้งหมด = unverified)
+$filterStatus = isset($_GET['status']) ? $_GET['status'] : '';
 $filterMonth = isset($_GET['filter_month']) ? $_GET['filter_month'] : '';
 $filterYear = isset($_GET['filter_year']) ? $_GET['filter_year'] : '';
 $filterRoom = isset($_GET['room']) ? $_GET['room'] : '';
@@ -176,6 +182,14 @@ $payments = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // Merge verified booking deposits (ค่ามัดจำ) จาก booking_payment เพื่อให้แสดงในหน้า manage_payments
 try {
+  // รวบรวม room_number ที่มี payment.pay_remark = 'มัดจำ' อยู่แล้ว เพื่อกัน duplicate
+  $existingDepositRooms = [];
+  foreach ($payments as $p) {
+    if (!empty($p['room_number']) && strpos((string)($p['pay_remark'] ?? ''), 'มัดจำ') !== false) {
+      $existingDepositRooms[$p['room_number']] = true;
+    }
+  }
+
   $depositRows = $pdo->query("
       SELECT
         bp.bp_id,
@@ -200,6 +214,12 @@ try {
     ")->fetchAll(PDO::FETCH_ASSOC);
 
   foreach ($depositRows as $dep) {
+    // ข้าม BP entry ถ้า room นั้นมี payment.pay_remark = 'มัดจำ' อยู่แล้ว (ป้องกัน duplicate)
+    $depRoomNumber = (string)($dep['room_number'] ?? '');
+    if ($depRoomNumber !== '' && !empty($existingDepositRooms[$depRoomNumber])) {
+      continue;
+    }
+
     $depDate = !empty($dep['ctr_start']) ? (string)$dep['ctr_start'] : (string)($dep['bkg_date'] ?? '');
     if ($depDate === '') {
       $depDate = date('Y-m-d H:i:s');
@@ -349,18 +369,35 @@ foreach ($payments as $pay) {
     }
 }
 
-// ตัวเลขแยกตามสถานะ
+// Helper: ดึงเดือน/ปีของ payment (ใช้ exp_month ก่อน ถ้าไม่มีใช้ pay_date)
+$getPayMonthYear = static function(array $pay): array {
+    $src = !empty($pay['exp_month']) ? (string)$pay['exp_month'] : (string)($pay['pay_date'] ?? '');
+    $ts  = $src !== '' ? strtotime($src) : false;
+    return $ts !== false
+        ? [(string)((int)date('n', $ts)), date('Y', $ts)]
+        : ['', ''];
+};
+
+// ตัวเลขแยกตามสถานะ — กรองเดือน/ปีด้วยถ้ามี filter ใช้งานอยู่
 $pendingOnlyCount = 0;
-$unpaidOnlyCount = 0;
+$unpaidOnlyCount  = 0;
 $pendingOnlyTotal = 0;
-$unpaidOnlyTotal = 0;
+$unpaidOnlyTotal  = 0;
+$verifiedFilteredCount = 0;
 foreach ($payments as $pay) {
+    [$payM, $payY] = $getPayMonthYear($pay);
+    $monthMatch = ($filterMonth === '' || $payM === $filterMonth);
+    $yearMatch  = ($filterYear  === '' || $payY === $filterYear);
+    if (!$monthMatch || !$yearMatch) continue;
+
     if (($pay['pay_status'] ?? '') === '0') {
         $pendingOnlyCount++;
         $pendingOnlyTotal += (int)($pay['pay_amount'] ?? 0);
     } elseif (($pay['pay_status'] ?? '') === 'unpaid') {
         $unpaidOnlyCount++;
         $unpaidOnlyTotal += (int)($pay['pay_amount'] ?? 0);
+    } elseif (($pay['pay_status'] ?? '') === '1') {
+        $verifiedFilteredCount++;
     }
 }
 $totalPaymentCount = count($payments);
@@ -2639,15 +2676,9 @@ $filterRoomOptions = array_values($filterRoomOptions);
             <!-- Status Filter Tabs -->
             <div class="payment-filter-tabs" id="paymentFilterTabs">
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="">ทั้งหมด <span class="tab-count"><?php echo $pendingOnlyCount + $unpaidOnlyCount; ?></span></button>
-              <?php if ($pendingOnlyCount > 0): ?>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
-              <?php endif; ?>
-              <?php if ($unpaidOnlyCount > 0): ?>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
-              <?php endif; ?>
-              <?php if ($stats['verified'] > 0): ?>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1">ตรวจสอบแล้ว <span class="tab-count"><?php echo $stats['verified']; ?></span></button>
-              <?php endif; ?>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1">ตรวจสอบแล้ว <span class="tab-count"><?php echo $verifiedFilteredCount; ?></span></button>
             </div>
             <!-- Hidden status input for filter state -->
             <input type="hidden" id="filterStatus" value="<?php echo htmlspecialchars($filterStatus, ENT_QUOTES, 'UTF-8'); ?>">
@@ -2953,13 +2984,13 @@ $filterRoomOptions = array_values($filterRoomOptions);
           return false;
         }
 
-        if (filters.status) {
-          // debug: log status comparison
+        if (filters.status === '') {
+          // 'ทั้งหมด' tab: show only unverified rows (pending + unpaid), exclude verified
+          if ((element.dataset.status || '') === '1') return false;
+        } else {
+          // specific status filter
           const rowStatus = element.dataset.status || '';
-          if (rowStatus !== filters.status) {
-            console.debug('filter mismatch status', filters.status, 'row', rowStatus, element);
-            return false;
-          }
+          if (rowStatus !== filters.status) return false;
         }
 
         if (filters.month && (element.dataset.month || '') !== filters.month) {
@@ -3275,6 +3306,14 @@ $filterRoomOptions = array_values($filterRoomOptions);
       }
 
       async function doUpdatePaymentStatus(payId, newStatus, expId) {
+        // Find the verify button to show loading state
+        const btnEl = document.querySelector(`[data-pay-id="${payId}"] .btn-verify`);
+        const origText = btnEl ? btnEl.innerHTML : '';
+        if (btnEl) {
+          btnEl.disabled = true;
+          btnEl.innerHTML = '⏳ กำลังดำเนินการ...';
+        }
+
         // capture current status from DOM for count adjustment
         const rowElement = document.querySelector(`[data-pay-id="${payId}"]`);
         const oldStatus = rowElement ? (rowElement.dataset.status || '') : '';
@@ -3284,35 +3323,38 @@ $filterRoomOptions = array_values($filterRoomOptions);
           formData.append('pay_id', payId);
           formData.append('pay_status', newStatus);
           formData.append('exp_id', expId);
+          formData.append('csrf_token', '<?php echo $csrfToken; ?>');
 
           const response = await fetch('../Manage/update_payment_status.php', {
             method: 'POST',
             body: formData
           });
 
-          const data = await response.json();
-
-          if (data.success) {
-            if (typeof showSuccessToast === 'function') {
-              showSuccessToast(data.message || 'อัปเดตสถานะเรียบร้อย');
-            }
-
-            // update DOM row(s) and counts without reloading
-            updatePaymentRowStatus(payId, newStatus, oldStatus);
-          } else {
-            if (typeof showErrorToast === 'function') {
-              showErrorToast(data.error || 'เกิดข้อผิดพลาด');
-            } else {
-              alert(data.error || 'เกิดข้อผิดพลาด');
-            }
+          const responseText = await response.text();
+          let data;
+          try {
+            data = JSON.parse(responseText);
+          } catch (parseErr) {
+            throw new Error('Server error (HTTP ' + response.status + '): ' + responseText.substring(0, 200));
           }
+
+          if (!response.ok || !data.success) {
+            throw new Error(data.error || 'HTTP ' + response.status);
+          }
+
+          // Success — reload page to guarantee fresh state
+          if (typeof showSuccessToast === 'function') {
+            showSuccessToast(data.message || 'อัปเดตสถานะเรียบร้อย');
+          }
+          setTimeout(() => window.location.reload(), 800);
+
         } catch (err) {
-          console.error(err);
-          if (typeof showErrorToast === 'function') {
-            showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
-          } else {
-            alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+          console.error('doUpdatePaymentStatus error:', err);
+          if (btnEl) {
+            btnEl.disabled = false;
+            btnEl.innerHTML = origText;
           }
+          alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถเชื่อมต่อได้'));
         }
       }
 
