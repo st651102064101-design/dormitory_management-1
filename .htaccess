@@ -8,4 +8,12 @@ AddType text/javascript .js
 	<FilesMatch "\\.(html|php)$">
 		Header set Content-Type "text/html; charset=utf-8"
 	</FilesMatch>
+
+	# Disable Cloudflare and browser caching for all dynamic content
+	Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+	Header set Pragma "no-cache"
+	Header set Expires "0"
+	Header unset ETag
 </IfModule>
+
+FileETag None
