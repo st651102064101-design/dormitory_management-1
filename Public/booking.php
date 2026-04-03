@@ -2401,6 +2401,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ?>
                         </select>
                     </div>
+
+                    <div class="form-group">
+                        <label class="form-label">วันที่เริ่มเข้าพัก</label>
+                        <input type="number" id="mobileStartDay" class="form-input" min="1" max="31" value="<?php echo date('j'); ?>" placeholder="วันที่ เช่น 5">
+                    </div>
                     
                     <label class="duration-label">ระยะเวลาสัญญา</label>
                     <div class="duration-pills">
@@ -3252,22 +3257,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             });
         });
         
-        // Mobile start month change
+        // Mobile start month/day change
         document.getElementById('mobileStartMonth')?.addEventListener('change', updateMobileContractDates);
+        document.getElementById('mobileStartDay')?.addEventListener('input', updateMobileContractDates);
         
         function updateMobileContractDates() {
             const startSelect = document.getElementById('mobileStartMonth');
             if (!startSelect) return;
             
-            const startValue = startSelect.value;
-            const startDate = new Date(startValue);
+            const startMonthValue = startSelect.value;
+            const startDate = new Date(startMonthValue);
+            const maxDay = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+            
+            // คำนวณ minDay: ถ้าเป็นเดือนปัจจุบัน ห้ามก่อนวันนี้
+            const today = new Date();
+            const isCurrentMonth = startDate.getFullYear() === today.getFullYear() && startDate.getMonth() === today.getMonth();
+            const minDay = isCurrentMonth ? today.getDate() : 1;
+            
+            const startDayInput = document.getElementById('mobileStartDay');
+            if (startDayInput) {
+                startDayInput.min = minDay;
+                startDayInput.max = maxDay;
+            }
+            
+            let startDay = parseInt(startDayInput?.value) || minDay;
+            if (startDay < minDay) startDay = minDay;
+            if (startDay > maxDay) startDay = maxDay;
+            if (startDayInput) startDayInput.value = startDay;
+            startDate.setDate(startDay);
+            
             const endDate = new Date(startDate);
             endDate.setMonth(endDate.getMonth() + mobileDuration);
             endDate.setDate(endDate.getDate() - 1);
             
             const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
             
-            const startDisplay = `1 ${thaiMonths[startDate.getMonth()]} ${startDate.getFullYear() + 543}`;
+            const startDisplay = `${startDay} ${thaiMonths[startDate.getMonth()]} ${startDate.getFullYear() + 543}`;
             const endDisplay = `${endDate.getDate()} ${thaiMonths[endDate.getMonth()]} ${endDate.getFullYear() + 543}`;
             
             document.getElementById('mobileSummaryStart').textContent = startDisplay;
@@ -3372,12 +3397,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.querySelector(`input[name="room_id"][value="${selectedRoomData.id}"]`).checked = true;
             
             // Set start date
-            const startValue = document.getElementById('mobileStartMonth').value;
+            const startMonthValue = document.getElementById('mobileStartMonth').value;
+            const startDate = new Date(startMonthValue);
+            const maxDay = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0).getDate();
+            let startDay = parseInt(document.getElementById('mobileStartDay')?.value) || 1;
+            if (startDay < 1) startDay = 1;
+            if (startDay > maxDay) startDay = maxDay;
+            startDate.setDate(startDay);
+            const startValue = startDate.toISOString().split('T')[0];
             document.getElementById('ctrStart').value = startValue;
-            document.getElementById('ctrStartMonth').value = startValue;
+            document.getElementById('ctrStartMonth').value = startMonthValue;
             
             // Calculate end date
-            const startDate = new Date(startValue);
             const endDate = new Date(startDate);
             endDate.setMonth(endDate.getMonth() + mobileDuration);
             endDate.setDate(endDate.getDate() - 1);
