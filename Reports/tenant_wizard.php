@@ -2729,27 +2729,24 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             .then(data => {
                 const firstBill  = data?.first_bill  || {};
                 const latestBill = data?.latest_bill || {};
+                const allBills   = data?.all_bills   || [];
                 const firstBillMonth = firstBill?.bill_month || '';
                 if (firstBillMonth) {
                     document.getElementById('nextMonthDisplay').textContent = formatMonthDisplay(firstBillMonth);
                 }
 
-                // ถ้า first bill และ latest bill เป็นเดือนเดียวกัน (expense เดียวกัน) → แสดงแค่ตารางเดียว
-                const isSameExpense = firstBill?.has_expense && latestBill?.has_expense
-                    && Number(firstBill.expense_id) === Number(latestBill.expense_id);
-
-                // Check if first bill (or latest if same) is fully paid
-                const billToCheck = isSameExpense ? latestBill : firstBill;
+                // Check if latest bill is fully paid (for meter disable logic)
+                const lastBillIdx = allBills.length - 1;
+                const billToCheck = allBills.length > 0 ? allBills[lastBillIdx] : firstBill;
                 const billTotal = Number(billToCheck?.expense_total || 0);
                 const billApproved = Number(billToCheck?.approved_amount || 0);
                 const isFirstBillFullyPaid = billTotal > 0 && billApproved >= billTotal;
 
-                // Disable update meter button if first bill is fully paid
+                // Disable update meter button if latest bill is fully paid
                 const moSaveBtn = document.getElementById('moSaveBtn');
                 if (moSaveBtn && isFirstBillFullyPaid) {
                     moSaveBtn.style.display = 'none';
                     moSaveBtn.disabled = true;
-                    // Show payment complete message
                     const meterNoticeBlock = document.getElementById('meterNoticeBlock');
                     if (meterNoticeBlock) {
                         meterNoticeBlock.innerHTML = '<span class="billing-inline-icon" style="color:#4ade80;"><svg class="billing-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M1 4.5L8.5 12 15 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><span>ชำระค่าเสร็จแล้ว - ไม่สามารถอัปเดตมิเตอร์วดได้</span></span>';
@@ -2760,22 +2757,40 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     }
                 }
 
-                if (isSameExpense) {
-                    firstBillPaymentsSection.style.display = 'none';
-                    firstBillPaymentsSection.innerHTML = '';
-                    renderBillSection('latestBillPaymentsSection', 'รายการชำระเดือนแรก (บิลปัจจุบัน)', latestBill, {
-                        allowReviewAction: true,
-                        emptyHint: 'ยังไม่มีรายการชำระ',
-                    });
+                // แสดงบิลทุกเดือนจาก all_bills
+                firstBillPaymentsSection.style.display = 'none';
+                firstBillPaymentsSection.innerHTML = '';
+                latestBillPaymentsSection.innerHTML = '';
+
+                if (allBills.length === 0) {
+                    latestBillPaymentsSection.innerHTML = '<div style="color:rgba(148,163,184,0.7);font-size:0.88rem;padding:0.5rem 0;">ยังไม่มีบิลในระบบ</div>';
                 } else {
-                    firstBillPaymentsSection.style.display = '';
-                    renderBillSection('firstBillPaymentsSection', 'รายการชำระเดือนแรก', firstBill, {
-                        allowReviewAction: false,
-                        emptyHint: 'ยังไม่มีบิลเดือนแรกในระบบ',
-                    });
-                    renderBillSection('latestBillPaymentsSection', 'บิลล่าสุดที่ต้องจัดการ', latestBill, {
-                        allowReviewAction: true,
-                        emptyHint: 'ยังไม่มีบิลที่ออกแล้วสำหรับจัดการ',
+                    // สร้าง container สำหรับทุกบิลใน latestBillPaymentsSection
+                    allBills.forEach((bill, idx) => {
+                        const isLast = idx === allBills.length - 1;
+                        const isFirst = idx === 0;
+                        let title = '';
+                        if (allBills.length === 1) {
+                            title = 'รายการชำระเดือนแรก (บิลปัจจุบัน)';
+                        } else if (isFirst) {
+                            title = 'รายการชำระเดือนแรก';
+                        } else if (isLast) {
+                            title = 'บิลล่าสุดที่ต้องจัดการ';
+                        } else {
+                            // เดือนกลาง
+                            const bm = bill.bill_month || '';
+                            title = 'บิล ' + (bm ? formatMonthDisplay(bm) : '');
+                        }
+                        // สร้าง div container ชั่วคราวใน latestBillPaymentsSection
+                        const divId = 'billSection_' + idx;
+                        const divEl = document.createElement('div');
+                        divEl.id = divId;
+                        if (idx > 0) divEl.style.marginTop = '0.85rem';
+                        latestBillPaymentsSection.appendChild(divEl);
+                        renderBillSection(divId, title, bill, {
+                            allowReviewAction: isLast,
+                            emptyHint: 'ยังไม่มีรายการชำระ',
+                        });
                     });
                 }
 
@@ -2972,6 +2987,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         btn.textContent = 'กำลังบันทึก...';
         msg.textContent = '';
         const fd = new FormData();
+        fd.append('csrf_token',  '<?php echo $csrfToken; ?>');
         fd.append('ctr_id',      _moCtrId);
         fd.append('water_new',   wv);
         fd.append('elec_new',    ev);

@@ -158,7 +158,11 @@ try {
     ]);
 
     // ถ้าไม่มี expense record อยู่แล้ว ให้ INSERT ใหม่ (ไม่ใช่ครั้งแรก = มีค่าใช้จ่าย)
-    if ($updateExpStmt->rowCount() === 0 && !$isFirstReading) {
+    // ตรวจสอบด้วย SELECT จริงๆ แทน rowCount() เพราะ MySQL คืน 0 แม้ record มีอยู่แต่ค่าไม่เปลี่ยน
+    $chkExpStmt = $pdo->prepare("SELECT exp_id FROM expense WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ? LIMIT 1");
+    $chkExpStmt->execute([$ctrId, $meterMonth, $meterYear]);
+    $expExists = $chkExpStmt->fetch();
+    if (!$expExists && !$isFirstReading) {
         $roomStmt = $pdo->prepare("
             SELECT rt.type_price
             FROM contract c
@@ -176,6 +180,14 @@ try {
                 (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water,
                  room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '2', ?)
+            ON DUPLICATE KEY UPDATE
+                exp_elec_unit = VALUES(exp_elec_unit),
+                exp_water_unit = VALUES(exp_water_unit),
+                rate_elec = VALUES(rate_elec),
+                rate_water = VALUES(rate_water),
+                exp_elec_chg = VALUES(exp_elec_chg),
+                exp_water = VALUES(exp_water),
+                exp_total = VALUES(exp_total)
         ");
         $insertExpStmt->execute([
             $expMonth, $elecUsed, $waterUsed, $rateElec, $rateWater,

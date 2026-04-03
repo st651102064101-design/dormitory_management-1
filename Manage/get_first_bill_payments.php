@@ -206,6 +206,26 @@ try {
         $response['latest_bill'] = buildExpensePayload($pdo, $latestExpense);
     }
 
+    // ดึงบิลทั้งหมด (ทุกเดือน) เพื่อแสดงในหน้า wizard
+    $allExpSql = "
+        SELECT e.exp_id, e.exp_month, e.exp_total, e.exp_status
+        FROM expense e
+        WHERE e.ctr_id = :ctr_id
+    ";
+    if ($ctrStart) {
+        $allExpSql .= " AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(:ctr_start, '%Y-%m')";
+    }
+    $allExpSql .= " ORDER BY e.exp_month ASC, e.exp_id ASC";
+    $allExpStmt = $pdo->prepare($allExpSql);
+    $allExpStmt->bindValue(':ctr_id', $ctrId, PDO::PARAM_INT);
+    if ($ctrStart) {
+        $allExpStmt->bindValue(':ctr_start', (string)$ctrStart, PDO::PARAM_STR);
+    }
+    $allExpStmt->execute();
+    $allExpenses = $allExpStmt->fetchAll(PDO::FETCH_ASSOC);
+
+    $response['all_bills'] = array_map(fn($exp) => buildExpensePayload($pdo, $exp), $allExpenses);
+
     echo json_encode($response);
 } catch (Throwable $e) {
     http_response_code(500);
