@@ -65,12 +65,35 @@ try {
     $prevWater = $prev ? (int)$prev['utl_water_end'] : 0;
     $prevElec  = $prev ? (int)$prev['utl_elec_end']  : 0;
 
-    // การจดมิเตอร์ครั้งแรก = เดือนเป้าหมาย ตรงกับเดือนเริ่มสัญญา (ctr_start) เท่านั้น
-    // ไม่ใช่ "ไม่มี utility เดือนก่อน" เพราะเดือนแรกสุดไม่มี utility อยู่แล้ว
-    $ctrRow = $pdo->prepare("SELECT ctr_start FROM contract WHERE ctr_id = ? LIMIT 1");
+    // ดึง room_id ของสัญญานี้
+    $ctrRow = $pdo->prepare("SELECT ctr_start, room_id FROM contract WHERE ctr_id = ? LIMIT 1");
     $ctrRow->execute([$ctrId]);
     $ctrData = $ctrRow->fetch(PDO::FETCH_ASSOC);
     $ctrStartYm = $ctrData ? date('Y-m', strtotime((string)$ctrData['ctr_start'])) : null;
+    $ctrRoomId = $ctrData ? (int)$ctrData['room_id'] : 0;
+
+    // Fallback: ถ้าไม่มี utility เดือนก่อนของสัญญานี้ → ดึงค่ามิเตอร์ล่าสุดของห้องเดียวกันจากทุกสัญญา
+    // รองรับกรณีผู้เช่าเก่าคืนห้อง แล้วผู้เช่าใหม่เข้า — ค่ามิเตอร์ต้องต่อเนื่อง
+    if (!$prev && $ctrRoomId > 0) {
+        $roomPrevStmt = $pdo->prepare(
+            "SELECT u.utl_water_end, u.utl_elec_end
+             FROM utility u
+             INNER JOIN contract c ON u.ctr_id = c.ctr_id
+             WHERE c.room_id = ? AND u.utl_date < ?
+             ORDER BY u.utl_date DESC, u.utl_id DESC
+             LIMIT 1"
+        );
+        $roomPrevStmt->execute([$ctrRoomId, $targetMonthStart]);
+        $roomPrev = $roomPrevStmt->fetch(PDO::FETCH_ASSOC);
+        if ($roomPrev) {
+            $prev = $roomPrev; // ใช้ค่าห้องเดิมจากสัญญาก่อนหน้า
+            $prevWater = (int)$roomPrev['utl_water_end'];
+            $prevElec  = (int)$roomPrev['utl_elec_end'];
+        }
+    }
+
+    // การจดมิเตอร์ครั้งแรก = เดือนเป้าหมาย ตรงกับเดือนเริ่มสัญญา (ctr_start) เท่านั้น
+    // ไม่ใช่ "ไม่มี utility เดือนก่อน" เพราะเดือนแรกสุดไม่มี utility อยู่แล้ว
     $isFirstReading = $ctrStartYm !== null
         && date('Y-m', strtotime($targetMonthStart)) === $ctrStartYm;
 

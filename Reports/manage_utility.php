@@ -479,6 +479,24 @@ foreach ($rooms as $room) {
     $prevStmt = $pdo->prepare("SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ? ORDER BY utl_date DESC LIMIT 1");
     $prevStmt->execute([$room['ctr_id'], $prevMonth, $prevYear]);
     $prev = $prevStmt->fetch(PDO::FETCH_ASSOC);
+
+    // Fallback: ถ้าไม่มี utility เดือนก่อนของสัญญานี้ → ดึงค่ามิเตอร์ล่าสุดของห้องเดียวกันจากทุกสัญญา
+    // รองรับกรณีผู้เช่าเก่าคืนห้อง แล้วผู้เช่าใหม่เข้า — ค่ามิเตอร์ต้องต่อเนื่อง
+    if (!$prev) {
+        $roomPrevStmt = $pdo->prepare(
+            "SELECT u.utl_water_end, u.utl_elec_end
+             FROM utility u
+             INNER JOIN contract c ON u.ctr_id = c.ctr_id
+             WHERE c.room_id = ? AND u.utl_date < ?
+             ORDER BY u.utl_date DESC, u.utl_id DESC
+             LIMIT 1"
+        );
+        $roomPrevStmt->execute([$room['room_id'], $targetMonthStart]);
+        $roomPrev = $roomPrevStmt->fetch(PDO::FETCH_ASSOC);
+        if ($roomPrev) {
+            $prev = $roomPrev;
+        }
+    }
     
     $currentStmt = $pdo->prepare("SELECT utl_water_start, utl_water_end, utl_elec_start, utl_elec_end FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
     $currentStmt->execute([$room['ctr_id'], $month, $year]);

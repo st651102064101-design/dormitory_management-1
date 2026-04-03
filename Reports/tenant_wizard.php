@@ -2245,7 +2245,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
 
     <!-- Modal จดมิเตอร์ (Standalone) -->
     <div id="meterOnlyModal" class="modal-overlay">
-        <div class="modal-container" style="max-width:420px;">
+        <div class="modal-container" style="max-width:420px;overflow:hidden;">
             <div style="display:flex;align-items:center;justify-content:space-between;padding:1.1rem 1.4rem;border-bottom:1px solid rgba(255,255,255,0.1);background:linear-gradient(135deg,rgba(5,150,105,0.2),rgba(16,185,129,0.08));">
                 <div style="display:flex;align-items:center;gap:0.65rem;">
                     <div style="width:38px;height:38px;border-radius:50%;background:#059669;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
@@ -2971,6 +2971,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
 
         document.getElementById('meterOnlyModal').classList.add('active');
         document.body.style.overflow = 'hidden';
+        document.documentElement.style.overflow = 'hidden';
 
         fetch('../Manage/get_utility_reading.php?ctr_id=' + encodeURIComponent(ctrId) + '&target_month=' + _moMonth + '&target_year=' + _moYear)
             .then(r => r.text().then(txt => { try { return JSON.parse(txt); } catch(e) { return {error:'Invalid response'}; } }))
@@ -3005,6 +3006,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
     function closeMeterOnlyModal() {
         document.getElementById('meterOnlyModal').classList.remove('active');
         document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
     }
 
     function updateMoPreview() {

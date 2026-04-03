@@ -70,6 +70,32 @@ try {
     $prevWater = $prev ? (int)$prev['utl_water_end'] : 0;
     $prevElec  = $prev ? (int)$prev['utl_elec_end']  : 0;
 
+    // Fallback: ถ้าไม่มี utility เดือนก่อนของสัญญานี้ → ดึงค่ามิเตอร์ล่าสุดของห้องเดียวกันจากทุกสัญญา
+    // รองรับกรณีผู้เช่าเก่าคืนห้อง แล้วผู้เช่าใหม่เข้า — ค่ามิเตอร์ต้องต่อเนื่อง
+    if (!$prev) {
+        $roomStmtPrev = $pdo->prepare("SELECT room_id FROM contract WHERE ctr_id = ? LIMIT 1");
+        $roomStmtPrev->execute([$ctrId]);
+        $roomForPrev = $roomStmtPrev->fetch(PDO::FETCH_ASSOC);
+        $roomIdForPrev = $roomForPrev ? (int)$roomForPrev['room_id'] : 0;
+        if ($roomIdForPrev > 0) {
+            $roomPrevStmt = $pdo->prepare(
+                "SELECT u.utl_water_end, u.utl_elec_end
+                 FROM utility u
+                 INNER JOIN contract c ON u.ctr_id = c.ctr_id
+                 WHERE c.room_id = ? AND u.utl_date < ?
+                 ORDER BY u.utl_date DESC, u.utl_id DESC
+                 LIMIT 1"
+            );
+            $roomPrevStmt->execute([$roomIdForPrev, $targetMonthStart]);
+            $roomPrev = $roomPrevStmt->fetch(PDO::FETCH_ASSOC);
+            if ($roomPrev) {
+                $prev = $roomPrev;
+                $prevWater = (int)$roomPrev['utl_water_end'];
+                $prevElec  = (int)$roomPrev['utl_elec_end'];
+            }
+        }
+    }
+
     // ตรวจซ้ำ - ถ้ามีแล้วจะเป็นการแก้ไข (UPDATE) ไม่ใช่ข้อผิดพลาด
     $checkStmt = $pdo->prepare(
         "SELECT utl_id
