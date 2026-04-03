@@ -11,7 +11,7 @@
 // ตัวอย่าง: 'project.3bbddns.com:36140/' หรือ 'yourdomain.com'
 // ถ้าเว้นว่าง '' จะใช้ค่าอัตโนมัติ
 
-define('SITE_HOST', 'project.3bbddns.com:36140/');
+define('SITE_HOST', '');
 
 // ===========================================
 // ตั้งค่า Protocol (http หรือ https)

@@ -1492,14 +1492,7 @@ function nameWithoutNickname($fullName) {
             }, true); // capture phase
         }
 
-        // Auto-print when page loads for single contract view only
-        if (!toggleBtn && !<?php echo $isTenantAccess ? 'true' : 'false'; ?>) {
-            window.addEventListener('load', function() {
-                setTimeout(function() {
-                    window.print();
-                }, 500);
-            });
-        }
+        // Auto-print disabled
     </script>
     
     <!-- Include Signature Modal -->

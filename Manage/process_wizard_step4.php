@@ -183,12 +183,9 @@ try {
         ]);
     }
 
-    // Step 5 อัตโนมัติ: เมื่อเช็คอินครบถ้วนและมีบิลเดือนแรกแล้ว ให้ปิด workflow ทันที
-    updateWorkflowStep($pdo, $tnt_id, 5, $_SESSION['admin_username'], $ctr_id);
-
     $pdo->commit();
 
-    $_SESSION['success'] = "บันทึกเช็คอินและเริ่มบิลรายเดือนอัตโนมัติเรียบร้อยแล้ว";
+    $_SESSION['success'] = "บันทึกเช็คอินเรียบร้อยแล้ว กรุณาดำเนินการขั้นตอนที่ 5 เพื่อจดมิเตอร์และออกบิล";
     header('Location: ../Reports/tenant_wizard.php');
     exit;
 

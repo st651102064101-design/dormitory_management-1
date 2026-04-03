@@ -2142,7 +2142,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 }
                                 ?>
                             </select>
-                            <input type="hidden" name="ctr_start" id="ctrStart" value="<?php echo date('Y-m-01'); ?>">
+                            <input type="hidden" name="ctr_start" id="ctrStart" value="<?php echo date('Y-m-d'); ?>">
+                        </div>
+
+                        <!-- Start Day -->
+                        <div class="form-group">
+                            <label class="form-label">วันที่เริ่มเข้าพัก</label>
+                            <input type="number" id="ctrStartDay" class="form-input" min="<?php echo date('j'); ?>" max="<?php echo date('t'); ?>" value="<?php echo date('j'); ?>" placeholder="วันที่ เช่น 5">
                         </div>
                         
                         <!-- Duration Pills -->
@@ -2480,32 +2486,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Start Month Change
         document.getElementById('ctrStartMonth').addEventListener('change', function() {
-            document.getElementById('ctrStart').value = this.value;
+            updateContractDates();
+        });
+
+        document.getElementById('ctrStartDay').addEventListener('input', function() {
             updateContractDates();
         });
         
         // Update Contract Dates
         function updateContractDates() {
-            const startValue = document.getElementById('ctrStartMonth').value;
+            const startMonthValue = document.getElementById('ctrStartMonth').value;
             const duration = parseInt(document.getElementById('ctrDuration').value);
-            
-            const startDate = new Date(startValue);
+            const dayInput = document.getElementById('ctrStartDay');
+
+            const [year, month] = startMonthValue.split('-').map(Number);
+            const today = new Date();
+            const isCurrentMonth = (year === today.getFullYear() && month === today.getMonth() + 1);
+            const daysInMonth = new Date(year, month, 0).getDate();
+            const minDay = isCurrentMonth ? today.getDate() : 1;
+
+            dayInput.min = minDay;
+            dayInput.max = daysInMonth;
+            if (parseInt(dayInput.value) < minDay) dayInput.value = minDay;
+            if (parseInt(dayInput.value) > daysInMonth) dayInput.value = daysInMonth;
+
+            const day = parseInt(dayInput.value) || minDay;
+            const startDate = new Date(year, month - 1, day);
             const endDate = new Date(startDate);
             endDate.setMonth(endDate.getMonth() + duration);
-            endDate.setDate(endDate.getDate() - 1);
             
-            // Format for hidden input
-            const endValue = endDate.toISOString().split('T')[0];
-            document.getElementById('ctrEnd').value = endValue;
+            // Update hidden inputs
+            const pad = n => String(n).padStart(2, '0');
+            document.getElementById('ctrStart').value = `${year}-${pad(month)}-${pad(day)}`;
+            document.getElementById('ctrEnd').value = `${endDate.getFullYear()}-${pad(endDate.getMonth()+1)}-${pad(endDate.getDate())}`;
             
             // Format for display
             const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
-            
-            const startDisplay = `1 ${thaiMonths[startDate.getMonth()]} ${startDate.getFullYear() + 543}`;
-            const endDisplay = `${endDate.getDate()} ${thaiMonths[endDate.getMonth()]} ${endDate.getFullYear() + 543}`;
-            
-            document.getElementById('summaryStart').textContent = startDisplay;
-            document.getElementById('summaryEnd').textContent = endDisplay;
+            document.getElementById('summaryStart').textContent = `${day} ${thaiMonths[startDate.getMonth()]} พ.ศ. ${startDate.getFullYear() + 543}`;
+            document.getElementById('summaryEnd').textContent = `${endDate.getDate()} ${thaiMonths[endDate.getMonth()]} พ.ศ. ${endDate.getFullYear() + 543}`;
         }
         
         // Toggle Optional Fields
@@ -3288,12 +3306,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             const endDate = new Date(startDate);
             endDate.setMonth(endDate.getMonth() + mobileDuration);
-            endDate.setDate(endDate.getDate() - 1);
             
             const thaiMonths = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
             
-            const startDisplay = `${startDay} ${thaiMonths[startDate.getMonth()]} ${startDate.getFullYear() + 543}`;
-            const endDisplay = `${endDate.getDate()} ${thaiMonths[endDate.getMonth()]} ${endDate.getFullYear() + 543}`;
+            const startDisplay = `${startDay} ${thaiMonths[startDate.getMonth()]} พ.ศ. ${startDate.getFullYear() + 543}`;
+            const endDisplay = `${endDate.getDate()} ${thaiMonths[endDate.getMonth()]} พ.ศ. ${endDate.getFullYear() + 543}`;
             
             document.getElementById('mobileSummaryStart').textContent = startDisplay;
             document.getElementById('mobileSummaryEnd').textContent = endDisplay;

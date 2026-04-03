@@ -239,7 +239,76 @@ if ($settingsStmt) {
 
                     <div class="form-group">
                         <label>วันที่เช็คอิน *</label>
-                        <input type="date" name="checkin_date" value="<?php echo date('Y-m-d'); ?>" required>
+                        <input type="hidden" name="checkin_date" id="checkin_date_hidden_s4" value="<?php echo date('Y-m-d'); ?>">
+                        <div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr; gap: 0.5rem;">
+                            <?php
+                                $cd_day4 = (int)date('d');
+                                $cd_month4 = (int)date('m');
+                                $cd_year4 = (int)date('Y');
+                            ?>
+                            <select id="s4_day" onchange="updateS4Date()" class="form-control">
+                                <?php for($d=1;$d<=31;$d++): ?>
+                                    <option value="<?php echo $d; ?>" <?php echo $d==$cd_day4?'selected':''; ?>><?php echo $d; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <select id="s4_month" onchange="updateS4Date()" class="form-control">
+                                <?php
+                                $thaiMonths4 = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+                                foreach($thaiMonths4 as $i=>$m): $mNum=$i+1;
+                                    if($mNum < $cd_month4) continue; ?>
+                                    <option value="<?php echo $mNum; ?>" <?php echo $mNum==$cd_month4?'selected':''; ?>><?php echo $m; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <select id="s4_year" onchange="updateS4Date()" class="form-control">
+                                <?php for($y=$cd_year4;$y<=$cd_year4+5;$y++): ?>
+                                    <option value="<?php echo $y; ?>" <?php echo $y==$cd_year4?'selected':''; ?>>พ.ศ. <?php echo $y+543; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
+                        <script>
+                        var thaiMonthsS4 = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+                        function updateS4Date() {
+                            var dayEl = document.getElementById('s4_day');
+                            var monthEl = document.getElementById('s4_month');
+                            var yearEl = document.getElementById('s4_year');
+                            var selYear = parseInt(yearEl.value);
+                            var today = new Date();
+                            var todayYear = today.getFullYear();
+                            var todayMonth = today.getMonth() + 1;
+                            var todayDay = today.getDate();
+                            // อัพเดตเดือนตามปีที่เลือก
+                            var currentSelMonth = parseInt(monthEl.value);
+                            var minMonth = (selYear === todayYear) ? todayMonth : 1;
+                            monthEl.innerHTML = '';
+                            for (var mi = 1; mi <= 12; mi++) {
+                                if (mi < minMonth) continue;
+                                var mopt = document.createElement('option');
+                                mopt.value = mi;
+                                mopt.textContent = thaiMonthsS4[mi-1];
+                                if (mi === currentSelMonth) mopt.selected = true;
+                                monthEl.appendChild(mopt);
+                            }
+                            if (currentSelMonth < minMonth) monthEl.value = minMonth;
+                            var selMonth = parseInt(monthEl.value);
+                            // อัพเดตวันตามเดือนและปีที่เลือก
+                            var daysInMonth = new Date(selYear, selMonth, 0).getDate();
+                            var minDay = (selYear === todayYear && selMonth === todayMonth) ? todayDay : 1;
+                            var currentDay = parseInt(dayEl.value);
+                            dayEl.innerHTML = '';
+                            for (var d = minDay; d <= daysInMonth; d++) {
+                                var opt = document.createElement('option');
+                                opt.value = d;
+                                opt.textContent = d;
+                                if (d === currentDay) opt.selected = true;
+                                dayEl.appendChild(opt);
+                            }
+                            if (currentDay < minDay || currentDay > daysInMonth) dayEl.value = minDay;
+                            var dd = String(dayEl.value).padStart(2,'0');
+                            var mm = String(selMonth).padStart(2,'0');
+                            document.getElementById('checkin_date_hidden_s4').value = selYear+'-'+mm+'-'+dd;
+                        }
+                        document.addEventListener('DOMContentLoaded', updateS4Date);
+                        </script>
                     </div>
 
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">

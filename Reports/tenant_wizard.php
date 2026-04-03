@@ -57,6 +57,15 @@ try {
                 )
         ";
 
+    $meterRecordedCondition = "
+        EXISTS (
+            SELECT 1
+            FROM utility u_meter
+            WHERE u_meter.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+              AND u_meter.utl_water_end IS NOT NULL
+        )
+    ";
+
     $completionCondition = '';
     if ($completedFilter === 1) {
         $completionCondition = "
@@ -64,6 +73,7 @@ try {
             AND cr.checkin_date IS NOT NULL
             AND cr.checkin_date <> '0000-00-00'
             AND $firstBillPaidCondition
+            AND $meterRecordedCondition
         ";
     } else {
         $completionCondition = "
@@ -72,6 +82,7 @@ try {
                 OR cr.checkin_date IS NULL
                 OR cr.checkin_date = '0000-00-00'
                 OR NOT ($firstBillPaidCondition)
+                OR NOT ($meterRecordedCondition)
             )
         ";
     }
@@ -261,14 +272,20 @@ try {
         ))));
         if (!empty($allCtrIds)) {
             $placeholders = implode(',', array_fill(0, count($allCtrIds), '?'));
+            // เช็คว่า contract นี้มี meter reading ที่บันทึกแล้ว (utl_water_end IS NOT NULL)
+            // ไม่ match เดือนตรงๆ เพราะ admin อาจบันทึกมิเตอร์เดือนถัดไปจาก billMonth ได้
             $utilStmt = $conn->prepare(
                 "SELECT ctr_id, DATE_FORMAT(utl_date, '%Y-%m') AS ym
                  FROM utility WHERE ctr_id IN ($placeholders)
+                 AND utl_water_end IS NOT NULL AND utl_elec_end IS NOT NULL
                  GROUP BY ctr_id, DATE_FORMAT(utl_date, '%Y-%m')"
             );
             $utilStmt->execute($allCtrIds);
             foreach ($utilStmt->fetchAll(PDO::FETCH_ASSOC) as $uRow) {
-                $utilMonthsRecorded[(int)$uRow['ctr_id']][$uRow['ym']] = true;
+                $ctrIdKey = (int)$uRow['ctr_id'];
+                $utilMonthsRecorded[$ctrIdKey][$uRow['ym']] = true;
+                // ทำ flag รวม: ถ้ามี record ใดๆ ก็ถือว่าจดมิเตอร์แล้ว
+                $utilMonthsRecorded[$ctrIdKey]['__any__'] = true;
             }
         }
     } catch (Exception $e) { /* non-critical */ }
@@ -1559,17 +1576,11 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     ? date('Y-m', strtotime($billYearMonth . '-01 -1 month'))
                                     : null;
                                 
-                                // ตรวจสอบว่าจดมิเตอร์เดือนบิลแล้วหรือไม่ (ใช้ batch data)
+                                // ตรวจสอบว่าจดมิเตอร์แล้วหรือไม่ (ใช้ batch data)
+                                // ใช้ __any__ flag เพราะ admin อาจบันทึกมิเตอร์เดือนถัดจาก billMonth ได้
                                 $meterBillDone = false;
-                                if (($step4 == 1 || $step5 == 1) && $billYearMonth !== null) {
-                                    $meterBillDone = !empty($utilMonthsRecorded[$ctrIdInt][$billYearMonth]);
-                                }
-                                // เมื่อบิลเดือนแรก = เดือนเริ่มสัญญา: checkin คือการจดมิเตอร์ครั้งแรก
-                                if (!$meterBillDone && $step5 == 1 && $billYearMonth !== null && $ctrStartYm !== null && $billYearMonth === $ctrStartYm) {
-                                    $checkinData = $checkinRecords[$ctrIdInt] ?? null;
-                                    if ($checkinData && $checkinData['water_meter_start'] !== null && $checkinData['elec_meter_start'] !== null) {
-                                        $meterBillDone = true;
-                                    }
+                                if ($step4 == 1 || $step5 == 1) {
+                                    $meterBillDone = !empty($utilMonthsRecorded[$ctrIdInt]['__any__']);
                                 }
                                 
                                 // ตรวจสอบว่าจดมิเตอร์เดือนก่อนหน้าแล้วหรือไม่ (ใช้ batch data)
@@ -1639,19 +1650,8 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 $step5Tooltip = '5. เริ่มบิลรายเดือน';
 
                                 if ($step5) {
-                                    if ($firstBillPaid) {
-                                        $step5CircleClass = 'completed';
-                                        $step5CircleLabel = '✓';
-                                        $step5Tooltip = '5. บิลเดือนแรกชำระแล้ว (' . $firstBillMonthDisplay . ')';
-                                    } elseif ($firstBillWaiting) {
-                                        $step5CircleClass = 'wait';
-                                        $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
-                                        $step5Tooltip = '5. บิลเดือนแรก (' . $firstBillMonthDisplay . ') รอตรวจสอบหลักฐาน';
-                                    } elseif ($firstBillOverdue && $meterBillDone) {
-                                        $step5CircleClass = 'overdue';
-                                        $step5CircleLabel = '!';
-                                        $step5Tooltip = '5. บิลค้างชำระ (' . $firstBillMonthDisplay . ')';
-                                    } elseif (!$meterBillDone) {
+                                    if (!$meterBillDone) {
+                                        // ยังไม่จดมิเตอร์จริงๆ — ต้องจดก่อนเสมอ ไม่ว่าบิลจะชำระแล้วหรือไม่
                                         if ($meterPrevDone && !$firstBillDueReached && $prevYearMonth !== null) {
                                             // จดมิเตอร์ต้นแล้ว (เดือนก่อน) แต่ยังไม่ถึงเดือนบิล — รอ
                                             $step5CircleClass = 'wait';
@@ -1671,6 +1671,18 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 : '5. ยังไม่จดมิเตอร์';
                                             $step5Tooltip = $tooltipPrefix . ($firstBillMonthDisplay !== '-' ? ' (' . $firstBillMonthDisplay . ')' : '');
                                         }
+                                    } elseif ($firstBillPaid) {
+                                        $step5CircleClass = 'completed';
+                                        $step5CircleLabel = '✓';
+                                        $step5Tooltip = '5. บิลเดือนแรกชำระแล้ว (' . $firstBillMonthDisplay . ')';
+                                    } elseif ($firstBillWaiting) {
+                                        $step5CircleClass = 'wait';
+                                        $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
+                                        $step5Tooltip = '5. บิลเดือนแรก (' . $firstBillMonthDisplay . ') รอตรวจสอบหลักฐาน';
+                                    } elseif ($firstBillOverdue) {
+                                        $step5CircleClass = 'overdue';
+                                        $step5CircleLabel = '!';
+                                        $step5Tooltip = '5. บิลค้างชำระ (' . $firstBillMonthDisplay . ')';
                                     } else {
                                         $step5CircleClass = 'wait';
                                         $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
@@ -1694,8 +1706,8 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 // But if step 4 is not complete and we have a contract, show step 4 as current
                                 if ($step4) {
                                     $currentStep = max($currentStep, 5); // Jump to 5 since check-in is done
-                                } else if (!empty($tenant['ctr_id'])) {
-                                    // If there's a contract but step 4 not done, show step 4 as current/pending
+                                } else if ($step3 && !empty($tenant['ctr_id'])) {
+                                    // Only go to step 4 if step 3 (contract) is actually completed
                                     $currentStep = max($currentStep, 4);
                                 }
                                 ?>
@@ -1772,9 +1784,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                             <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">เช็คอิน</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 5 || $currentStep >= 6 || (int)($tenant['completed'] ?? 0) === 1): ?>
-                                            <?php if ($step5 && $firstBillPaid): ?>
+                                            <?php if ($step5 && $meterBillDone && $firstBillPaid): ?>
                                                 <span style="color: #16a34a; font-weight: 600;">✓ บิลเดือนแรกชำระแล้ว (<?php echo htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>
-                                            <?php elseif ($step5 && $firstBillWaiting): ?>
+                                            <?php elseif ($step5 && $meterBillDone && $firstBillWaiting): ?>
                                                 <button type="button"
                                                     onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)"
                                                     style="background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.4);color:#60a5fa;font-weight:600;font-size:0.82rem;padding:0.3rem 0.75rem;border-radius:20px;cursor:pointer;transition:background 0.2s;"
@@ -1948,7 +1960,77 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                             <span style="background: #3b82f6; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">1</span>
                             <span style="font-weight: 600; color: #f1f5f9;">วันที่เช็คอิน</span>
                         </div>
-                        <input type="date" name="checkin_date" value="<?php echo date('Y-m-d'); ?>" required style="width: 100%; padding: 0.875rem 1rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;">
+                        <input type="hidden" name="checkin_date" id="checkin_date_hidden" value="<?php echo date('Y-m-d'); ?>">
+                        <div style="display: grid; grid-template-columns: 1fr 2fr 1.5fr; gap: 0.5rem;">
+                            <?php
+                                $cd = date('Y-m-d');
+                                $cd_day = (int)date('d');
+                                $cd_month = (int)date('m');
+                                $cd_year = (int)date('Y');
+                            ?>
+                            <select id="checkin_day" onchange="updateCheckinDate()" style="padding: 0.875rem 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem; width: 100%;">
+                                <?php for($d=1;$d<=31;$d++): ?>
+                                    <option value="<?php echo $d; ?>" <?php echo $d==$cd_day?'selected':''; ?>><?php echo $d; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                            <select id="checkin_month" onchange="updateCheckinDate()" style="padding: 0.875rem 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem; width: 100%;">
+                                <?php
+                                $thaiMonths = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+                                foreach($thaiMonths as $i=>$m): $mNum=$i+1;
+                                    if($mNum < $cd_month) continue; ?>
+                                    <option value="<?php echo $mNum; ?>" <?php echo $mNum==$cd_month?'selected':''; ?>><?php echo $m; ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                            <select id="checkin_year" onchange="updateCheckinDate()" style="padding: 0.875rem 0.5rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem; width: 100%;">
+                                <?php for($y=$cd_year;$y<=$cd_year+5;$y++): ?>
+                                    <option value="<?php echo $y; ?>" <?php echo $y==$cd_year?'selected':''; ?>>พ.ศ. <?php echo $y+543; ?></option>
+                                <?php endfor; ?>
+                            </select>
+                        </div>
+                        <script>
+                        var thaiMonthsCI = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+                        function updateCheckinDate() {
+                            var dayEl = document.getElementById('checkin_day');
+                            var monthEl = document.getElementById('checkin_month');
+                            var yearEl = document.getElementById('checkin_year');
+                            var selYear = parseInt(yearEl.value);
+                            var today = new Date();
+                            var todayYear = today.getFullYear();
+                            var todayMonth = today.getMonth() + 1;
+                            var todayDay = today.getDate();
+                            // อัพเดตเดือนตามปีที่เลือก
+                            var currentSelMonth = parseInt(monthEl.value);
+                            var minMonth = (selYear === todayYear) ? todayMonth : 1;
+                            monthEl.innerHTML = '';
+                            for (var mi = 1; mi <= 12; mi++) {
+                                if (mi < minMonth) continue;
+                                var mopt = document.createElement('option');
+                                mopt.value = mi;
+                                mopt.textContent = thaiMonthsCI[mi-1];
+                                if (mi === currentSelMonth) mopt.selected = true;
+                                monthEl.appendChild(mopt);
+                            }
+                            if (currentSelMonth < minMonth) monthEl.value = minMonth;
+                            var selMonth = parseInt(monthEl.value);
+                            // อัพเดตวันตามเดือนและปีที่เลือก
+                            var daysInMonth = new Date(selYear, selMonth, 0).getDate();
+                            var minDay = (selYear === todayYear && selMonth === todayMonth) ? todayDay : 1;
+                            var currentDay = parseInt(dayEl.value);
+                            dayEl.innerHTML = '';
+                            for (var d = minDay; d <= daysInMonth; d++) {
+                                var opt = document.createElement('option');
+                                opt.value = d;
+                                opt.textContent = d;
+                                if (d === currentDay) opt.selected = true;
+                                dayEl.appendChild(opt);
+                            }
+                            if (currentDay < minDay || currentDay > daysInMonth) dayEl.value = minDay;
+                            var dd = String(dayEl.value).padStart(2,'0');
+                            var mm = String(selMonth).padStart(2,'0');
+                            document.getElementById('checkin_date_hidden').value = selYear+'-'+mm+'-'+dd;
+                        }
+                        document.addEventListener('DOMContentLoaded', updateCheckinDate);
+                        </script>
                     </div>
 
                     <!-- Summary Box -->
@@ -2829,8 +2911,8 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                 document.getElementById('moPrevWater').textContent = String(_moPrevWater).padStart(7, '0');
                 document.getElementById('moPrevElec').textContent  = String(_moPrevElec).padStart(5, '0');
                 if (d.saved && d.meter_month == _moMonth && d.meter_year == _moYear && !_moIsFuture && d.curr_water !== null && d.curr_elec !== null) {
-                    document.getElementById('moWaterInput').value    = String(d.curr_water || '').padStart(7, '0');
-                    document.getElementById('moElecInput').value     = String(d.curr_elec  || '').padStart(5, '0');
+                    document.getElementById('moWaterInput').value    = d.curr_water != null ? String(d.curr_water).padStart(7, '0') : '';
+                    document.getElementById('moElecInput').value     = d.curr_elec  != null ? String(d.curr_elec).padStart(5, '0')  : '';
                     // Allow editing even after saved - just show the current values
                     btn.style.display = 'inline-block';
                     btn.textContent = 'อัปเดตมิเตอร์';
@@ -2989,8 +3071,8 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     badge.style.display = 'inline-block';
                     btn.style.display   = 'inline-block';
                     btn.textContent     = 'อัปเดตมิเตอร์';
-                    document.getElementById('meterWaterInput').value    = String(d.curr_water || '').padStart(7, '0');
-                    document.getElementById('meterElecInput').value     = String(d.curr_elec  || '').padStart(5, '0');
+                    document.getElementById('meterWaterInput').value    = d.curr_water != null ? String(d.curr_water).padStart(7, '0') : '';
+                    document.getElementById('meterElecInput').value     = d.curr_elec  != null ? String(d.curr_elec).padStart(5, '0')  : '';
                     document.getElementById('meterWaterInput').disabled = false;
                     document.getElementById('meterElecInput').disabled  = false;
                     updateMeterPreview();
