@@ -3345,6 +3345,8 @@ try {
                     const m = document.getElementById('moMsg');
                     m.style.color = '#4ade80'; m.textContent = '✓ บันทึกแล้ว (สามารถแก้ไขได้)';
                     updateMoPreview();
+                    // มิเตอร์บันทึกแล้ว (อาจจะจากเซสชันก่อน) → อัปเดตตารางในพื้นหลัง
+                    refreshWizardTable();
                 } else if (!d.saved && d.meter_month == _moMonth && d.meter_year == _moYear && (d.water_saved || d.elec_saved)) {
                     // Partial save: one meter recorded, the other not
                     if (d.water_saved && d.curr_water !== null) {
@@ -3890,10 +3892,10 @@ try {
     function refreshWizardTable() {
         const wrapper = document.getElementById('wizardTableWrapper');
         if (!wrapper) { location.reload(); return; }
-        
-        fetch(location.href, {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
+        // Add cache-busting timestamp to prevent stale browser cache
+        const sep = location.href.includes('?') ? '&' : '?';
+        const freshUrl = location.href + sep + '_t=' + Date.now();
+        fetch(freshUrl, { credentials: 'same-origin' })
         .then(r => r.text())
         .then(html => {
             const parser = new DOMParser();
