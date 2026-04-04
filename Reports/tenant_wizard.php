@@ -74,6 +74,28 @@ try {
         )
     ";
 
+    // เช็คว่าบิลล่าสุดชำระแล้ว — ต้องผ่านทั้ง firstBill และ latestBill จึงจะ "ครบ 5 ขั้นตอน"
+    $latestBillPaidCondition = "
+        EXISTS (
+            SELECT 1
+            FROM expense e_latest
+            WHERE e_latest.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                AND e_latest.exp_month = (
+                    SELECT MAX(e_max.exp_month)
+                    FROM expense e_max
+                    WHERE e_max.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                )
+                AND e_latest.exp_total > 0
+                AND COALESCE((
+                    SELECT SUM(p.pay_amount)
+                    FROM payment p
+                    WHERE p.exp_id = e_latest.exp_id
+                      AND p.pay_status = '1'
+                      AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                ), 0) >= e_latest.exp_total - 0.00001
+        )
+    ";
+
     $completionCondition = '';
     if ($completedFilter === 1) {
         $completionCondition = "
@@ -81,6 +103,7 @@ try {
             AND cr.checkin_date IS NOT NULL
             AND cr.checkin_date <> '0000-00-00'
             AND $firstBillPaidCondition
+            AND $latestBillPaidCondition
             AND $meterRecordedCondition
         ";
     } else {
@@ -90,6 +113,7 @@ try {
                 OR cr.checkin_date IS NULL
                 OR cr.checkin_date = '0000-00-00'
                 OR NOT ($firstBillPaidCondition)
+                OR NOT ($latestBillPaidCondition)
                 OR NOT ($meterRecordedCondition)
             )
         ";
@@ -434,6 +458,7 @@ try {
           AND cr.checkin_date IS NOT NULL
           AND cr.checkin_date <> '0000-00-00'
           AND $firstBillPaidCondition
+          AND $latestBillPaidCondition
     ");
     $completedCountResult = $completedCountStmt->fetch(PDO::FETCH_ASSOC);
     $hasCompletedTenants = (int)($completedCountResult['completed_count'] ?? 0) > 0;
@@ -1719,9 +1744,21 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 . ' style="display:inline-block;margin-top:0.25rem;background:rgba(20,184,166,0.12);border:1px solid rgba(20,184,166,0.35);color:#2dd4bf;font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:12px;cursor:pointer;"'
                                                 . '>📋 จดมิเตอร์ (' . htmlspecialchars($currentDisp, ENT_QUOTES, 'UTF-8') . ')</button>';
                                         }
-                                    } elseif ($latestBillPaid) {
-                                        // Latest bill already paid
+                                    } elseif ($firstBillWaiting) {
+                                        // First bill pending review — ต้องแสดง "รอตรวจสอบ" จนกว่าจะอนุมัติ
+                                        $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">⏳ รอตรวจสอบ (' . htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8') . ')</span>';
+                                    } elseif ($firstBillOverdue) {
+                                        // First bill overdue
+                                        $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f87171;font-weight:600;">⚠ ค้างชำระ (' . htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8') . ')</span>';
+                                    } elseif ($latestBillWaiting) {
+                                        // Latest bill pending review
+                                        $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">⏳ รอตรวจสอบ (' . htmlspecialchars($latestMonthDisplay, ENT_QUOTES, 'UTF-8') . ')</span>';
+                                    } elseif ($latestBillPaid && $firstBillPaid) {
+                                        // ชำระครบทุกบิลแล้ว — ✓ ชำระแล้ว แสดงเมื่อ step 5 ครบหมดเท่านั้น
                                         $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#4ade80;">✓ ชำระแล้ว</span>';
+                                    } elseif ($latestBillPaid) {
+                                        // Latest bill paid but first bill not yet
+                                        $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">รอชำระ (' . htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8') . ')</span>';
                                     } else {
                                         // Default: meter recorded (subsequent months)
                                         $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#4ade80;">✓ จดมิเตอร์แล้ว</span>';
@@ -1778,28 +1815,52 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 : '5. ยังไม่จดมิเตอร์';
                                             $step5Tooltip = $tooltipPrefix . ($firstBillMonthDisplay !== '-' ? ' (' . $firstBillMonthDisplay . ')' : '');
                                         }
-                                    } elseif ($firstBillPaid) {
+                                    } elseif ($firstBillPaid && $latestBillPaid) {
+                                        // ชำระครบทุกบิลแล้ว — ✓ เฉพาะเมื่อบิลล่าสุดชำระแล้วด้วย
                                         $step5CircleClass = 'completed';
                                         $step5CircleLabel = '✓';
-                                        $step5Tooltip = '5. บิลเดือนแรกชำระแล้ว (' . $firstBillMonthDisplay . ')';
-                                    } elseif ($firstBillWaiting) {
-                                        $step5CircleClass = 'wait';
-                                        $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
-                                        $step5Tooltip = '5. บิลเดือนแรก (' . $firstBillMonthDisplay . ') รอตรวจสอบหลักฐาน';
-                                    } elseif ($firstBillOverdue) {
+                                        $step5Tooltip = '5. ชำระแล้ว (' . $latestMonthDisplay . ')';
+                                    } elseif ($latestBillOverdue || $firstBillOverdue) {
                                         $step5CircleClass = 'overdue';
                                         $step5CircleLabel = '!';
-                                        $step5Tooltip = '5. บิลค้างชำระ (' . $firstBillMonthDisplay . ')';
-                                    } else {
+                                        $step5Tooltip = '5. บิลค้างชำระ';
+                                    } elseif ($latestBillWaiting || $firstBillWaiting) {
                                         $step5CircleClass = 'wait';
                                         $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
-                                        if ($firstBillMonthDisplay !== '-') {
+                                        $waitMonthDisp = $latestBillWaiting ? $latestMonthDisplay : $firstBillMonthDisplay;
+                                        $step5Tooltip = '5. รอตรวจสอบหลักฐาน (' . $waitMonthDisp . ')';
+                                    } else {
+                                        // บิลยังไม่ชำระ (รอชำระ)
+                                        $step5CircleClass = 'wait';
+                                        $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
+                                        $unpaidMonthDisp = $latestMonthDisplay !== '-' ? $latestMonthDisplay : $firstBillMonthDisplay;
+                                        if ($unpaidMonthDisp !== '-') {
+                                            $step5Tooltip = '5. รอชำระ (' . $unpaidMonthDisp . ')';
+                                        } elseif ($firstBillMonthDisplay !== '-') {
                                             $step5Tooltip = $firstBillDueReached
                                                 ? '5. บิลเดือนแรก (' . $firstBillMonthDisplay . ') รอชำระ'
                                                 : '5. บิลเดือนแรก (' . $firstBillMonthDisplay . ') ยังไม่ถึงกำหนด';
                                         } else {
                                             $step5Tooltip = '5. รอสร้างบิลเดือนแรก';
                                         }
+                                    }
+                                } else {
+                                    // step5 = 0 (ยังไม่ confirm) แต่ขึ้นถึง step 5 แล้ว
+                                    // ถ้ามีบิลและจดมิเตอร์แล้ว — แสดง loading แทน "5" เพื่อสื่อว่ากำลังรอชำระ
+                                    if ($meterBillDone && ($latestBillUnpaid || $latestBillWaiting || $firstBillUnpaid || $firstBillWaiting)) {
+                                        $step5CircleClass = 'wait';
+                                        $step5CircleLabel = '<svg class="wait-spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="animation-direction:reverse"/></svg>';
+                                        if ($latestBillWaiting || $firstBillWaiting) {
+                                            $waitDisp = $latestBillWaiting ? $latestMonthDisplay : $firstBillMonthDisplay;
+                                            $step5Tooltip = '5. รอตรวจสอบหลักฐาน (' . $waitDisp . ')';
+                                        } else {
+                                            $unpaidDisp = $latestMonthDisplay !== '-' ? $latestMonthDisplay : $firstBillMonthDisplay;
+                                            $step5Tooltip = '5. รอชำระ' . ($unpaidDisp !== '-' ? ' (' . $unpaidDisp . ')' : '');
+                                        }
+                                    } elseif ($latestBillOverdue || $firstBillOverdue) {
+                                        $step5CircleClass = 'overdue';
+                                        $step5CircleLabel = '!';
+                                        $step5Tooltip = '5. บิลค้างชำระ';
                                     }
                                 }
 
@@ -2837,10 +2898,10 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                         <div style="font-weight:700;font-size:0.9rem;color:${c.clr};">฿${c.val.toLocaleString()}</div>
                     </div>`).join('')}
                 </div>
-                <!-- progress bar -->
-                <div style="height:5px;background:rgba(255,255,255,0.08);border-radius:99px;margin-bottom:0.9rem;overflow:hidden;">
+                <!-- progress bar — แสดงเฉพาะเมื่อมีการชำระบางส่วนแล้ว -->
+                ${pct > 0 ? `<div style="height:5px;background:rgba(255,255,255,0.08);border-radius:99px;margin-bottom:0.9rem;overflow:hidden;">
                     <div style="height:100%;width:${pct.toFixed(1)}%;background:${barColor};border-radius:99px;transition:width 0.4s;"></div>
-                </div>
+                </div>` : ''}
                 <!-- payments -->
                 ${paymentRows}
             </div>`;
