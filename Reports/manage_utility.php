@@ -275,10 +275,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                     : ($existing['utl_elec_end']  !== null && (int)$existing['utl_elec_end']  > 0);
 
                 if ($thisTabAlreadySaved) {
-                    $lockedRooms++;
-                    continue;
+                    // อนุญาตแก้ไขถ้าเป็นเดือนปัจจุบัน + บิลยังไม่ได้ชำระ
+                    $postYmEdit = sprintf('%04d-%02d', $year, $month);
+                    $isCurrentMonthEdit = ($postYmEdit === date('Y-m'));
+                    $editBillPaid = false;
+                    if ($isCurrentMonthEdit) {
+                        $editBillChk = $pdo->prepare("
+                            SELECT e.exp_total,
+                                   COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) AS approved_paid
+                            FROM expense e
+                            WHERE e.ctr_id = ? AND MONTH(e.exp_month) = ? AND YEAR(e.exp_month) = ?
+                            LIMIT 1
+                        ");
+                        $editBillChk->execute([$ctrId, $month, $year]);
+                        $editBillRow = $editBillChk->fetch(PDO::FETCH_ASSOC);
+                        if ($editBillRow && (float)$editBillRow['approved_paid'] >= (float)$editBillRow['exp_total'] && (float)$editBillRow['exp_total'] > 0) {
+                            $editBillPaid = true;
+                        }
+                    }
+                    if (!$isCurrentMonthEdit || $editBillPaid) {
+                        $lockedRooms++;
+                        continue;
+                    }
+                    // เดือนปัจจุบัน + บิลยังไม่ชำระ → อนุญาตแก้ไข (partial UPDATE)
                 }
-                // Record มีอยู่แล้วแต่ฝั่งนี้ยังไม่ได้บันทึก (อีกฝั่งบันทึกก่อน) → partial UPDATE
+                // Record มีอยู่แล้วแต่ฝั่งนี้ยังไม่ได้บันทึก (อีกฝั่งบันทึกก่อน) หรือแก้ไขมิเตอร์เดือนปัจจุบัน → partial UPDATE
                 $doInsert = false;
             }
 
@@ -624,6 +645,26 @@ foreach ($rooms as $room) {
         }
     }
 
+    // ตรวจสอบว่าบิลเดือนนี้ชำระแล้วหรือยัง (approved non-deposit payments >= exp_total)
+    $billPaid = false;
+    if ($room['ctr_id']) {
+        $billPaidStmt = $pdo->prepare("
+            SELECT e.exp_total,
+                   COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) AS approved_paid
+            FROM expense e
+            WHERE e.ctr_id = ? AND MONTH(e.exp_month) = ? AND YEAR(e.exp_month) = ?
+            LIMIT 1
+        ");
+        $billPaidStmt->execute([$room['ctr_id'], $month, $year]);
+        $billPaidRow = $billPaidStmt->fetch(PDO::FETCH_ASSOC);
+        if ($billPaidRow && (float)$billPaidRow['approved_paid'] >= (float)$billPaidRow['exp_total'] && (float)$billPaidRow['exp_total'] > 0) {
+            $billPaid = true;
+        }
+    }
+
+    // อนุญาตแก้ไขมิเตอร์: เดือนปัจจุบัน + บิลยังไม่ได้ชำระ → ปลดล็อค
+    $canEditSaved = !$isPastMonth && !$billPaid;
+
     $readings[$room['room_id']] = [
         'water_old' => $water_old_value,
         'elec_old' => $elec_old_value,
@@ -635,6 +676,8 @@ foreach ($rooms as $room) {
         'workflow_step' => $workflowStep,
         'meter_blocked' => $meterBlocked,
         'isFirstReading' => $isFirstReading,
+        'bill_paid' => $billPaid,
+        'can_edit_saved' => $canEditSaved,
     ];
 
     // เมื่อบันทึกแล้ว ใช้ water_start/elec_start จาก utility record ปัจจุบัน
@@ -933,6 +976,12 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             border-color: #f59e0b !important;
             color: #92400e !important;
             cursor: not-allowed;
+        }
+        .meter-input-field.editable-saved {
+            background: #fffbeb !important;
+            border-color: #f59e0b !important;
+            color: #1e293b !important;
+            cursor: text;
         }
         .meter-input-field.blocked-by-step::placeholder {
             color: #d97706 !important;
@@ -2176,8 +2225,11 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     <td><?php if($hasCtr): ?>
                                         <?php 
                                             $tooltipMsg = '';
-                                            if ($r['water_saved']) {
-                                                $tooltipMsg = 'บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้';
+                                            $waterLocked = $r['water_saved'] && !$r['can_edit_saved'];
+                                            if ($r['water_saved'] && !$r['can_edit_saved']) {
+                                                $tooltipMsg = $r['bill_paid']
+                                                    ? 'ชำระบิลแล้ว ไม่สามารถแก้ไขได้'
+                                                    : 'บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้';
                                             } elseif ($r['meter_blocked']) {
                                                 if ($isPastMonth) {
                                                     $tooltipMsg = 'ไม่สามารถแก้ไขเดือนที่ผ่านมาแล้วได้';
@@ -2187,8 +2239,9 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                                     $tooltipMsg = "ยังไม่ได้เช็คอิน";
                                                 }
                                             }
+                                            $waterDisabled = $waterLocked || $r['meter_blocked'];
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $r['water_saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)" <?php echo ($r['water_saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $waterLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['water_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)" <?php echo $waterDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
@@ -2238,8 +2291,11 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     <td><?php if($hasCtr): ?>
                                         <?php 
                                             $tooltipMsg = '';
-                                            if ($r['elec_saved']) {
-                                                $tooltipMsg = 'บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้';
+                                            $elecLocked = $r['elec_saved'] && !$r['can_edit_saved'];
+                                            if ($r['elec_saved'] && !$r['can_edit_saved']) {
+                                                $tooltipMsg = $r['bill_paid']
+                                                    ? 'ชำระบิลแล้ว ไม่สามารถแก้ไขได้'
+                                                    : 'บันทึกเดือนนี้แล้ว ไม่สามารถแก้ไขได้';
                                             } elseif ($r['meter_blocked']) {
                                                 if ($isPastMonth) {
                                                     $tooltipMsg = 'ไม่สามารถแก้ไขเดือนที่ผ่านมาแล้วได้';
@@ -2249,8 +2305,9 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                                     $tooltipMsg = "ยังไม่ได้เช็คอิน";
                                                 }
                                             }
+                                            $elecDisabled = $elecLocked || $r['meter_blocked'];
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $r['elec_saved'] ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)" <?php echo ($r['elec_saved'] || $r['meter_blocked']) ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $elecLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['elec_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)" <?php echo $elecDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
@@ -2288,14 +2345,14 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     elseif ($r['water_saved']) $cardClass .= ' vm-saved';
                                     elseif ($r['meter_blocked']) $cardClass .= ' vm-blocked';
                                     else $cardClass .= ' vm-pending';
-                                    $isVmDisabled = !$hasCtr || $r['water_saved'] || $r['meter_blocked'];
+                                    $isVmDisabled = !$hasCtr || ($r['water_saved'] && !$r['can_edit_saved']) || $r['meter_blocked'];
                                 ?>
                                 <div class="<?php echo $cardClass; ?>">
                                     <div class="vm-card-header">
                                         <span class="vm-room-num">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></span>
                                         <?php if ($r['isFirstReading']): ?>
                                             <span class="vm-first-badge">ครั้งแรก</span>
-                                        <?php elseif ($r['water_saved']): ?>
+                                        <?php elseif ($r['water_saved'] && !$r['can_edit_saved']): ?>
                                             <span class="vm-saved-badge">✓ บันทึกแล้ว</span>
                                         <?php endif; ?>
                                     </div>
@@ -2354,14 +2411,14 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     elseif ($r['elec_saved']) $cardClass .= ' vm-saved';
                                     elseif ($r['meter_blocked']) $cardClass .= ' vm-blocked';
                                     else $cardClass .= ' vm-pending';
-                                    $isVmDisabled = !$hasCtr || $r['elec_saved'] || $r['meter_blocked'];
+                                    $isVmDisabled = !$hasCtr || ($r['elec_saved'] && !$r['can_edit_saved']) || $r['meter_blocked'];
                                 ?>
                                 <div class="<?php echo $cardClass; ?>">
                                     <div class="vm-card-header">
                                         <span class="vm-room-num">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></span>
                                         <?php if ($r['isFirstReading']): ?>
                                             <span class="vm-first-badge">ครั้งแรก</span>
-                                        <?php elseif ($r['elec_saved']): ?>
+                                        <?php elseif ($r['elec_saved'] && !$r['can_edit_saved']): ?>
                                             <span class="vm-saved-badge">✓ บันทึกแล้ว</span>
                                         <?php endif; ?>
                                     </div>
