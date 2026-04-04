@@ -12,8 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
 // CSRF validation
 if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'CSRF token ไม่ถูกต้อง กรุณาลองใหม่'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     $_SESSION['wizard_error'] = 'CSRF token ไม่ถูกต้อง กรุณาลองใหม่';
     header('Location: ../Reports/tenant_wizard.php');
     exit;
@@ -83,7 +90,13 @@ try {
 
     $pdo->commit();
 
-    $_SESSION['success'] = "สร้างสัญญาเรียบร้อย! รหัสสัญญา: {$ctr_id} | ขั้นตอนถัดไป: เช็คอิน";
+    $successMsg = "สร้างสัญญาเรียบร้อย! รหัสสัญญา: {$ctr_id} | ขั้นตอนถัดไป: เช็คอิน";
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => true, 'message' => $successMsg], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $_SESSION['success'] = $successMsg;
     header('Location: ../Reports/tenant_wizard.php');
     exit;
 
@@ -114,6 +127,11 @@ try {
         $errorMsg = '❌ สัญญาซ้ำ - ไม่สามารถสร้างสัญญาซ้ำสำหรับห้องหรือผู้เช่าเดียวกันได้';
     }
     
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => $errorMsg], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     $_SESSION['error'] = $errorMsg;
     header('Location: ../Reports/tenant_wizard.php');
     exit;

@@ -12,8 +12,15 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
 // CSRF validation
 if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => 'CSRF token ไม่ถูกต้อง กรุณาลองใหม่'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
     $_SESSION['wizard_error'] = 'CSRF token ไม่ถูกต้อง กรุณาลองใหม่';
     header('Location: ../Reports/tenant_wizard.php');
     exit;
@@ -188,7 +195,13 @@ try {
 
     $pdo->commit();
 
-    $_SESSION['success'] = "บันทึกเช็คอินเรียบร้อยแล้ว กรุณาดำเนินการขั้นตอนที่ 5 เพื่อจดมิเตอร์และออกบิล";
+    $successMsg = "บันทึกเช็คอินเรียบร้อยแล้ว กรุณาดำเนินการขั้นตอนที่ 5 เพื่อจดมิเตอร์และออกบิล";
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => true, 'message' => $successMsg], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $_SESSION['success'] = $successMsg;
     header('Location: ../Reports/tenant_wizard.php');
     exit;
 
@@ -197,7 +210,13 @@ try {
         $pdo->rollBack();
     }
     error_log("Process Wizard Step 4 Error: " . $e->getMessage());
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    $errorMsg = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => $errorMsg], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $_SESSION['error'] = $errorMsg;
     header('Location: ../Reports/tenant_wizard.php');
     exit;
 }

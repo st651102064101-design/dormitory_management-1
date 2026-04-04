@@ -15,6 +15,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/wizard_helper.php';
 
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
 $pdo = connectDB();
 
 try {
@@ -78,7 +80,13 @@ try {
 
     $pdo->commit();
 
-    $_SESSION['success'] = "ยืนยันการชำระเงินเรียบร้อย! เลขที่ใบเสร็จ: {$receiptNo} | ขั้นตอนถัดไป: สร้างสัญญา";
+    $successMsg = "ยืนยันการชำระเงินเรียบร้อย! เลขที่ใบเสร็จ: {$receiptNo} | ขั้นตอนถัดไป: สร้างสัญญา";
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => true, 'message' => $successMsg], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $_SESSION['success'] = $successMsg;
     header('Location: ../Reports/tenant_wizard.php');
     exit;
 
@@ -87,7 +95,13 @@ try {
         $pdo->rollBack();
     }
     error_log("Process Wizard Step 2 Error: " . $e->getMessage());
-    $_SESSION['error'] = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    $errorMsg = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        echo json_encode(['success' => false, 'error' => $errorMsg], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+    $_SESSION['error'] = $errorMsg;
     header('Location: ../Reports/tenant_wizard.php');
     exit;
 }

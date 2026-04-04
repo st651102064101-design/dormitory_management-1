@@ -1772,6 +1772,7 @@ try {
                 </div>
 
                 <?php if (count($wizardTenants) > 0): ?>
+                    <div id="wizardTableWrapper">
                     <table class="wizard-table">
                         <thead>
                             <tr>
@@ -2196,6 +2197,7 @@ try {
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    </div>
                 <?php else: ?>
                     <div class="empty-state">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2247,7 +2249,7 @@ try {
 
             <div class="modal-footer">
                 <button type="button" id="bookingCloseBtn" class="btn-modal btn-modal-secondary" onclick="closeBookingModal()">ยกเลิก</button>
-                <button type="button" id="bookingSubmitBtn" class="btn-modal btn-modal-primary" style="background: #3b82f6;" onclick="document.getElementById('bookingForm').submit()">✓ ยืนยันการจอง</button>
+                <button type="button" id="bookingSubmitBtn" class="btn-modal btn-modal-primary" style="background: #3b82f6;" onclick="submitWizardStep('bookingForm', closeBookingModal)">✓ ยืนยันการจอง</button>
             </div>
         </div>
     </div>
@@ -2309,7 +2311,7 @@ try {
 
             <div class="modal-footer">
                 <button type="button" id="contractCloseBtn" class="btn-modal btn-modal-secondary" onclick="closeContractModal()">ยกเลิก</button>
-                <button type="button" id="contractSubmitBtn" class="btn-modal btn-modal-primary" style="background: #8b5cf6;" onclick="document.getElementById('contractForm').submit()">✓ สร้างสัญญา</button>
+                <button type="button" id="contractSubmitBtn" class="btn-modal btn-modal-primary" style="background: #8b5cf6;" onclick="submitWizardStep('contractForm', closeContractModal)">✓ สร้างสัญญา</button>
             </div>
         </div>
     </div>
@@ -2433,7 +2435,7 @@ try {
 
             <div class="modal-footer" style="display: flex; gap: 1rem; justify-content: flex-end; padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
                 <button type="button" id="checkinCloseBtn" class="btn-modal btn-modal-secondary" onclick="closeCheckinModal()" style="padding: 0.875rem 1.5rem;">ยกเลิก</button>
-                <button type="button" id="checkinSubmitBtn" class="btn-modal btn-modal-primary" onclick="validateAndSubmitCheckin()" style="padding: 0.875rem 2rem; background: linear-gradient(135deg, #f59e0b, #d97706); font-weight: 600;">🏠 บันทึกเช็คอิน</button>
+                <button type="button" id="checkinSubmitBtn" class="btn-modal btn-modal-primary" onclick="validateAndSubmitCheckinAjax()" style="padding: 0.875rem 2rem; background: linear-gradient(135deg, #f59e0b, #d97706); font-weight: 600;">🏠 บันทึกเช็คอิน</button>
             </div>
         </div>
     </div>
@@ -2665,7 +2667,7 @@ try {
 
             <div class="modal-footer">
                 <button type="button" id="paymentCloseBtn" class="btn-modal btn-modal-secondary" onclick="closePaymentModal()">ยกเลิก</button>
-                <button type="button" id="paymentSubmitBtn" class="btn-modal btn-modal-primary" style="background: #22c55e;" onclick="document.getElementById('paymentForm').submit()">✓ ยืนยันการชำระเงิน</button>
+                <button type="button" id="paymentSubmitBtn" class="btn-modal btn-modal-primary" style="background: #22c55e;" onclick="submitWizardStep('paymentForm', closePaymentModal)">✓ ยืนยันการชำระเงิน</button>
             </div>
         </div>
     </div>
@@ -3259,8 +3261,13 @@ try {
                 if (!result?.success) {
                     throw new Error(result?.error || 'ไม่สามารถอัปเดตสถานะรายการชำระได้');
                 }
-                // รีโหลดหน้าเพื่ออัปเดตตารางผู้เช่าและสถานะ Step
-                window.location.reload();
+                // Refresh billing payments in-place + soft refresh table
+                const ctrId = document.getElementById('modal_billing_ctr_id').value;
+                refreshBillingPayments(ctrId);
+                refreshWizardTable();
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast('อัปเดตสถานะการชำระเรียบร้อย');
+                }
             })
             .catch((error) => {
                 if (btnEl) { btnEl.disabled = false; btnEl.style.opacity = '1'; btnEl.dataset.confirming = 'false'; }
@@ -3435,14 +3442,8 @@ try {
                     document.getElementById('moElecInput').disabled  = true;
                     setTimeout(() => {
                         closeMeterOnlyModal();
-                        var step5Circles = document.querySelectorAll('[data-ctr-id="' + _moCtrId + '"]');
-                        step5Circles.forEach(function(circle) {
-                            circle.classList.remove('meter-pending', 'wait', 'pending', 'current');
-                            circle.classList.add('completed');
-                            circle.setAttribute('data-tooltip', '5. จดมิเตอร์แล้ว');
-                            circle.innerHTML = '✓';
-                        });
                         showSuccessToast('บันทึกมิเตอร์เรียบร้อยแล้ว');
+                        refreshWizardTable();
                     }, 700);
                 } else {
                     msg.style.color = '#fca5a5';
@@ -3617,19 +3618,8 @@ try {
                     document.getElementById('meterElecInput').disabled  = false;
                     document.getElementById('billSectionsWrapper').style.display = '';
                     document.getElementById('meterNoticeBlock').style.display = 'none';
-                    var step5Circles = document.querySelectorAll('[data-ctr-id="' + _meterCtrId + '"]');
-                    step5Circles.forEach(function(circle) {
-                        circle.classList.remove('meter-pending', 'wait', 'pending', 'current');
-                        circle.classList.add('completed');
-                        circle.setAttribute('data-tooltip', '5. จดมิเตอร์แล้ว');
-                        circle.innerHTML = '✓';
-                        if (typeof bootstrap !== 'undefined' && typeof circle.getAttribute('data-bs-toggle') === 'string') {
-                            var tooltipEl = circle._bsTooltip;
-                            if (tooltipEl) tooltipEl.dispose();
-                            new bootstrap.Tooltip(circle, { title: '5. จดมิเตอร์แล้ว' });
-                        }
-                    });
                     refreshBillingPayments(_meterCtrId);
+                    refreshWizardTable();
                     showSuccessToast('อัปเดตมิเตอร์เรียบร้อยแล้ว');
                 } else {
                     msg.style.color = '#fca5a5';
@@ -3820,8 +3810,10 @@ try {
             const data = await response.json();
 
             if (data.success) {
-                alert(data.message || 'ยกเลิกการจองเรียบร้อยแล้ว');
-                setTimeout(() => location.reload(), 1500);
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast(data.message || 'ยกเลิกการจองเรียบร้อยแล้ว');
+                }
+                refreshWizardTable();
             } else {
                 if (typeof showErrorToast === 'function') {
                     showErrorToast(data.error || 'เกิดข้อผิดพลาด');
@@ -3836,6 +3828,111 @@ try {
             } else {
                 alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
             }
+        }
+    }
+
+    // === AJAX Wizard Step Submission ===
+    function submitWizardStep(formId, closeModalFn) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const formData = new FormData(form);
+        const actionUrl = form.getAttribute('action');
+        
+        // Find and disable the submit button
+        const modal = form.closest('.modal-overlay') || form.closest('.modal-container');
+        let submitBtn = null;
+        if (modal) {
+            submitBtn = modal.querySelector('.btn-modal-primary') || modal.querySelector('[id$="SubmitBtn"]');
+        }
+        let origBtnText = '';
+        if (submitBtn) {
+            origBtnText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'กำลังบันทึก...';
+        }
+
+        fetch(actionUrl, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        })
+        .then(r => r.text().then(txt => {
+            try { return JSON.parse(txt); }
+            catch(e) { return { success: false, error: 'เซิร์ฟเวอร์ตอบกลับข้อมูลไม่ถูกต้อง' }; }
+        }))
+        .then(data => {
+            if (data.success) {
+                if (typeof closeModalFn === 'function') closeModalFn();
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast(data.message || 'บันทึกเรียบร้อย');
+                }
+                refreshWizardTable();
+            } else {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origBtnText; }
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast(data.error || 'เกิดข้อผิดพลาด');
+                } else {
+                    alert(data.error || 'เกิดข้อผิดพลาด');
+                }
+            }
+        })
+        .catch(err => {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origBtnText; }
+            if (typeof showErrorToast === 'function') {
+                showErrorToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            } else {
+                alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: ' + err.message);
+            }
+        });
+    }
+
+    // Soft-refresh: fetch page and replace table content without full reload
+    function refreshWizardTable() {
+        const wrapper = document.getElementById('wizardTableWrapper');
+        if (!wrapper) { location.reload(); return; }
+        
+        fetch(location.href, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(r => r.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newWrapper = doc.getElementById('wizardTableWrapper');
+            if (newWrapper) {
+                wrapper.innerHTML = newWrapper.innerHTML;
+            } else {
+                // Table might have been replaced by empty state
+                const newPanelBody = doc.querySelector('.wizard-panel-body');
+                if (newPanelBody) {
+                    const panelBody = document.querySelector('.wizard-panel-body');
+                    if (panelBody) panelBody.innerHTML = newPanelBody.innerHTML;
+                }
+            }
+        })
+        .catch(() => {
+            // Fallback: full reload if soft refresh fails
+            location.reload();
+        });
+    }
+
+    // Submit checkin form via AJAX (with validation)
+    function validateAndSubmitCheckinAjax() {
+        const form = document.getElementById('checkinForm');
+        const errors = [];
+        const checkinDate = document.getElementById('checkin_date_hidden').value;
+        if (!checkinDate) errors.push('กรุณาเลือกวันที่เช็คอิน');
+        
+        const errorContainer = document.getElementById('validationError');
+        const errorList = document.getElementById('errorList');
+        
+        if (errors.length > 0) {
+            errorList.innerHTML = errors.map(err => '<li>' + err + '</li>').join('');
+            errorContainer.style.display = 'block';
+            errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+            errorContainer.style.display = 'none';
+            submitWizardStep('checkinForm', closeCheckinModal);
         }
     }
 </script>
