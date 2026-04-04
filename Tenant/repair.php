@@ -677,7 +677,7 @@ $repairStatusMap = [
             LEFT JOIN payment p ON p.exp_id = e.exp_id
             WHERE c.tnt_id = ?
             AND p.exp_id IS NULL
-            AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
+            AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
             AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
         ");
         $billStmt->execute([$contract['tnt_id']]);

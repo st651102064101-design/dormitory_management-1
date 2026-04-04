@@ -472,6 +472,30 @@ try {
 $completedZeroHref = 'tenant_wizard.php?completed=0' . ($selectedBkgId > 0 ? '&bkg_id=' . $selectedBkgId : '');
 $completedOneHref = 'tenant_wizard.php?completed=1' . ($selectedBkgId > 0 ? '&bkg_id=' . $selectedBkgId : '');
 $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
+
+// นับจำนวนห้องที่ผ่านขั้นตอนที่ 5 แล้ว แต่ยังไม่ได้จดมิเตอร์เดือนนี้ครบทั้งน้ำและไฟ
+$meterPendingBadgeCount = 0;
+try {
+    $meterBadgeStmt = $conn->prepare("
+        SELECT COUNT(DISTINCT c.ctr_id) AS cnt
+        FROM contract c
+        INNER JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id
+        WHERE c.ctr_status = '0'
+          AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
+          AND NOT EXISTS (
+              SELECT 1 FROM utility u
+              WHERE u.ctr_id = c.ctr_id
+                AND MONTH(u.utl_date) = MONTH(CURDATE())
+                AND YEAR(u.utl_date) = YEAR(CURDATE())
+                AND u.utl_water_end IS NOT NULL AND u.utl_water_end > 0
+                AND u.utl_elec_end IS NOT NULL AND u.utl_elec_end > 0
+          )
+    ");
+    $meterBadgeStmt->execute();
+    $meterPendingBadgeCount = (int)($meterBadgeStmt->fetchColumn() ?? 0);
+} catch (Exception $e) {
+    $meterPendingBadgeCount = 0;
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -690,6 +714,28 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             border: 1px solid rgba(99,102,241,0.25);
             border-radius: 12px;
             color: #4338ca; font-weight: 600;
+        }
+        .wiz-meter-alert {
+            display: inline-flex; align-items: center; gap: 0.45rem;
+            padding: 0.5rem 0.9rem;
+            background: rgba(239,68,68,0.10);
+            border: 1px solid rgba(239,68,68,0.35);
+            border-radius: 10px;
+            color: #dc2626; font-size: 0.85rem; font-weight: 700;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .wiz-meter-alert:hover {
+            background: rgba(239,68,68,0.18);
+            box-shadow: 0 2px 10px rgba(239,68,68,0.2);
+        }
+        .wiz-meter-alert svg { flex-shrink: 0; }
+        .wiz-meter-count {
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 20px; height: 20px; padding: 0 5px;
+            background: #dc2626; color: #fff;
+            border-radius: 999px; font-size: 11px; font-weight: 800;
         }
         .wiz-filter-clear {
             padding: 0.7rem 1.25rem;
@@ -1710,6 +1756,14 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     <a href="<?php echo htmlspecialchars($completedZeroHref, ENT_QUOTES, 'UTF-8'); ?>" class="wiz-filter-btn pending-filter <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'active' : ''; ?>">⏳ ยังไม่ครบ 5 ขั้นตอน</a>
                     <?php if ($hasCompletedTenants): ?>
                     <a href="<?php echo htmlspecialchars($completedOneHref, ENT_QUOTES, 'UTF-8'); ?>" class="wiz-filter-btn complete-filter <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'active' : ''; ?>">✅ ครบ 5 ขั้นตอนแล้ว</a>
+                    <?php endif; ?>
+                    <?php if ($meterPendingBadgeCount > 0): ?>
+                    <a href="manage_utility.php" class="wiz-meter-alert" title="ไปจดมิเตอร์">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
+                        ยังไม่จดมิเตอร์เดือนนี้
+                        <span class="wiz-meter-count"><?php echo $meterPendingBadgeCount > 99 ? '99+' : $meterPendingBadgeCount; ?></span>
+                        ห้อง
+                    </a>
                     <?php endif; ?>
                     <?php if ($selectedBkgId > 0): ?>
                     <span class="wiz-filter-badge">กำลังแสดงเฉพาะรายการ #<?php echo (int)$selectedBkgId; ?></span>

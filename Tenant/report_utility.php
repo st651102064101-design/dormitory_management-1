@@ -387,7 +387,7 @@ if (empty($utilities)) {
     } catch (Exception $e) {}
     $billCount = 0;
     try {
-        $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN contract c ON e.ctr_id = c.ctr_id LEFT JOIN payment p ON p.exp_id = e.exp_id WHERE c.tnt_id = ? AND p.exp_id IS NULL AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')");
+        $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN contract c ON e.ctr_id = c.ctr_id LEFT JOIN payment p ON p.exp_id = e.exp_id WHERE c.tnt_id = ? AND p.exp_id IS NULL AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')");
         $billStmt->execute([$contract['tnt_id']]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
     } catch (Exception $e) {}

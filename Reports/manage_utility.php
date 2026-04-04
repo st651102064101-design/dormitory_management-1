@@ -254,20 +254,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 
             if ($existing) {
                 if ($isFirstReading) {
-                    // แก้ไขบิลครั้งแรกที่บันทึกผิด
-                    $fixUtilStmt = $pdo->prepare("UPDATE utility SET utl_water_start = utl_water_end, utl_elec_start = utl_elec_end WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
-                    $fixUtilStmt->execute([$ctrId, $month, $year]);
-                    $fixExpStmt = $pdo->prepare("UPDATE expense SET exp_water = 0, exp_elec_chg = 0, exp_elec_unit = 0, exp_water_unit = 0, exp_total = room_price WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?");
-                    $fixExpStmt->execute([$ctrId, $month, $year]);
-                    $firstBillRooms[] = $ctrId;
-                    $saved++;
-                    continue;
+                    // แก้ไขบิลครั้งแรก เฉพาะเมื่อ record มีค่าจริงอยู่แล้ว (ไม่ใช่ record 0-0 ที่ auto-generate จากตอน checkin)
+                    $existingHasNonZero = (int)($existing['utl_water_end'] ?? 0) > 0
+                                      || (int)($existing['utl_elec_end']  ?? 0) > 0;
+                    if ($existingHasNonZero) {
+                        $fixUtilStmt = $pdo->prepare("UPDATE utility SET utl_water_start = utl_water_end, utl_elec_start = utl_elec_end WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
+                        $fixUtilStmt->execute([$ctrId, $month, $year]);
+                        $fixExpStmt = $pdo->prepare("UPDATE expense SET exp_water = 0, exp_elec_chg = 0, exp_elec_unit = 0, exp_water_unit = 0, exp_total = room_price WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?");
+                        $fixExpStmt->execute([$ctrId, $month, $year]);
+                        $firstBillRooms[] = $ctrId;
+                        $saved++;
+                        continue;
+                    }
+                    // record เป็น 0-0 (ยังไม่ได้จดจริง) → fall through เพื่อบันทึกค่าที่ user กรอก
                 }
 
-                // ตรวจว่าฝั่งที่กำลังบันทึกถูกบันทึกแล้วหรือยัง
+                // ตรวจว่าฝั่งที่กำลังบันทึกถูกบันทึกแล้วหรือยัง (ค่า > 0 ถือว่าบันทึกแล้ว)
                 $thisTabAlreadySaved = ($postTab === 'water')
-                    ? ($existing['utl_water_end'] !== null)
-                    : ($existing['utl_elec_end']  !== null);
+                    ? ($existing['utl_water_end'] !== null && (int)$existing['utl_water_end'] > 0)
+                    : ($existing['utl_elec_end']  !== null && (int)$existing['utl_elec_end']  > 0);
 
                 if ($thisTabAlreadySaved) {
                     $lockedRooms++;
@@ -527,6 +532,10 @@ foreach ($rooms as $room) {
         ((int)$current['utl_elec_end'] !== (int)$current['utl_elec_start'])
     );
     
+    // การจดมิเตอร์ครั้งแรก = เดือนปัจจุบันตรงกับเดือนเริ่มสัญญาเท่านั้น (ต้องกำหนดก่อน isAllZeroFirstRecord)
+    $ctrStartYm = !empty($room['ctr_start']) ? date('Y-m', strtotime((string)$room['ctr_start'])) : null;
+    $currentYm = sprintf('%04d-%02d', $year, $month);
+    $isFirstReading = $ctrStartYm !== null && $currentYm === $ctrStartYm;
     // แสดงค่า input จาก utility record — ตรวจ NULL แยกต่างหากเพื่อรองรับ partial save
     $water_new = ($hasRecord && $current['utl_water_end'] !== null) ? (int)$current['utl_water_end'] : '';
     $elec_new  = ($hasRecord && $current['utl_elec_end']  !== null) ? (int)$current['utl_elec_end']  : '';
@@ -562,11 +571,6 @@ foreach ($rooms as $room) {
         }
     }
     
-    // การจดมิเตอร์ครั้งแรก = เดือนปัจจุบันตรงกับเดือนเริ่มสัญญาเท่านั้น
-    $ctrStartYm = !empty($room['ctr_start']) ? date('Y-m', strtotime((string)$room['ctr_start'])) : null;
-    $currentYm = sprintf('%04d-%02d', $year, $month);
-    $isFirstReading = $ctrStartYm !== null && $currentYm === $ctrStartYm;
-
     // Auto-fix: บิลครั้งแรกที่บันทึกโดยคิดค่าน้ำ/ค่าไฟผิด — แก้ไขอัตโนมัติเมื่อโหลดหน้า
     if ($isFirstReading && $hasRecord && $current) {
         $needsFix = ((int)$current['utl_water_start'] !== (int)$current['utl_water_end']) ||
