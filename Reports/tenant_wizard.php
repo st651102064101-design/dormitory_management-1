@@ -929,6 +929,65 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             display: block;
             animation: meterPulse 1.8s ease-in-out infinite;
         }
+        .checkin-anim {
+            width: 20px; height: 20px;
+            display: block;
+        }
+        .checkin-anim .c-arrow {
+            animation: checkinEnter 1.5s ease-in-out infinite;
+            transform-box: fill-box;
+            transform-origin: left center;
+        }
+        .confirm-anim {
+            width: 20px; height: 20px;
+            display: block;
+        }
+        .confirm-anim .c-tick {
+            stroke-dasharray: 14;
+            stroke-dashoffset: 14;
+            animation: confirmDraw 1.6s ease-in-out infinite;
+        }
+        .confirm-anim .c-ring {
+            animation: confirmPop 1.6s ease-in-out infinite;
+            transform-box: fill-box;
+            transform-origin: center;
+        }
+        .payment-anim {
+            width: 20px; height: 20px;
+            display: block;
+        }
+        .payment-anim .p-coin {
+            animation: paymentBounce 1.5s ease-in-out infinite;
+            transform-box: fill-box;
+            transform-origin: center top;
+        }
+        .payment-anim .p-slot {
+            animation: paymentFade 1.5s ease-in-out infinite;
+        }
+        .bill-anim {
+            width: 20px; height: 20px;
+            display: block;
+        }
+        .bill-anim .b-doc {
+            animation: billPop 1.8s ease-in-out infinite;
+            transform-box: fill-box;
+            transform-origin: center;
+        }
+        .bill-anim .b-line1 { animation: billLine 1.8s ease-in-out infinite 0.2s; }
+        .bill-anim .b-line2 { animation: billLine 1.8s ease-in-out infinite 0.5s; }
+        .bill-anim .b-line3 { animation: billLine 1.8s ease-in-out infinite 0.8s; }
+        .contract-anim {
+            width: 20px; height: 20px;
+            display: block;
+        }
+        .contract-anim .ct-pen {
+            animation: contractWrite 1.8s ease-in-out infinite;
+            transform-box: fill-box;
+            transform-origin: bottom left;
+        }
+        .contract-anim .ct-line1 { animation: contractReveal 1.8s ease-in-out infinite 0s; }
+        .contract-anim .ct-line2 { animation: contractReveal 1.8s ease-in-out infinite 0.35s; }
+        .contract-anim .ct-line3 { animation: contractReveal 1.8s ease-in-out infinite 0.65s; }
 
         /* Step connecting line */
         .step-arrow {
@@ -1538,6 +1597,62 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
             0%, 100% { opacity: 1;   transform: scale(1); }
             50%       { opacity: 0.4; transform: scale(0.82); }
         }
+        @keyframes checkinEnter {
+            0%   { transform: translateX(-4px); opacity: 0; }
+            35%  { transform: translateX(0);    opacity: 1; }
+            65%  { transform: translateX(0);    opacity: 1; }
+            100% { transform: translateX(-4px); opacity: 0; }
+        }
+        @keyframes confirmDraw {
+            0%   { stroke-dashoffset: 14; opacity: 0; }
+            30%  { stroke-dashoffset: 0;  opacity: 1; }
+            70%  { stroke-dashoffset: 0;  opacity: 1; }
+            100% { stroke-dashoffset: 14; opacity: 0; }
+        }
+        @keyframes confirmPop {
+            0%   { transform: scale(0.7); opacity: 0; }
+            30%  { transform: scale(1);   opacity: 1; }
+            70%  { transform: scale(1);   opacity: 1; }
+            100% { transform: scale(0.7); opacity: 0; }
+        }
+        @keyframes paymentBounce {
+            0%   { transform: translateY(-5px); opacity: 0; }
+            30%  { transform: translateY(0);    opacity: 1; }
+            60%  { transform: translateY(0);    opacity: 1; }
+            80%  { transform: translateY(2px);  opacity: 0.6; }
+            100% { transform: translateY(-5px); opacity: 0; }
+        }
+        @keyframes paymentFade {
+            0%   { opacity: 0.3; }
+            40%  { opacity: 1; }
+            70%  { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+        @keyframes billPop {
+            0%   { transform: scale(0.8); opacity: 0.4; }
+            40%  { transform: scale(1);   opacity: 1; }
+            70%  { transform: scale(1);   opacity: 1; }
+            100% { transform: scale(0.8); opacity: 0.4; }
+        }
+        @keyframes billLine {
+            0%   { stroke-dashoffset: 8; opacity: 0; }
+            40%  { stroke-dashoffset: 0; opacity: 1; }
+            70%  { stroke-dashoffset: 0; opacity: 1; }
+            100% { stroke-dashoffset: 8; opacity: 0; }
+        }
+        @keyframes contractWrite {
+            0%   { transform: translate(0,0)   rotate(-20deg); opacity: 0.4; }
+            30%  { transform: translate(3px,-2px) rotate(-20deg); opacity: 1; }
+            60%  { transform: translate(6px,-4px) rotate(-20deg); opacity: 1; }
+            90%  { transform: translate(3px,-2px) rotate(-20deg); opacity: 0.4; }
+            100% { transform: translate(0,0)   rotate(-20deg); opacity: 0.4; }
+        }
+        @keyframes contractReveal {
+            0%   { stroke-dashoffset: 10; opacity: 0; }
+            35%  { stroke-dashoffset: 0;  opacity: 1; }
+            70%  { stroke-dashoffset: 0;  opacity: 1; }
+            100% { stroke-dashoffset: 10; opacity: 0; }
+        }
         @keyframes billingFloat {
             0%, 100% { transform: translateY(0); }
             50%      { transform: translateY(-1.5px); }
@@ -1615,10 +1730,10 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                         <tbody>
                             <?php foreach ($wizardTenants as $tenant): ?>
                                 <?php
-                                // If no workflow exists, default to step 2 (since booking already means step 1 is done)
-                                $currentStep = ($tenant['workflow_id'] === null) ? 2 : (int)$tenant['current_step'];
-                                // If no workflow, step 1 is implicitly completed (booking exists)
-                                $step1 = ($tenant['workflow_id'] === null) ? 1 : $tenant['step_1_confirmed'];
+                                // ถ้ายังไม่มี workflow row → step 1 ยังไม่ได้ยืนยันผ่าน wizard (แสดงวงกลม "1" current ไม่ใช่ ✓)
+                                $currentStep = ($tenant['workflow_id'] === null) ? 1 : (int)$tenant['current_step'];
+                                // workflow_id = NULL → step1 ยังไม่สมบูรณ์ ต้องกด "ยืนยันการจอง" ก่อน
+                                $step1 = ($tenant['workflow_id'] === null) ? 0 : (int)$tenant['step_1_confirmed'];
                                 $step2 = $tenant['step_2_confirmed'];
                                 $step3 = $tenant['step_3_confirmed'];
 
@@ -1790,7 +1905,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 $isCancelPending = ((string)($tenant['ctr_status'] ?? '') === '2');
 
                                 $step5CircleClass = $step5 ? 'completed' : (($currentStep == 5) ? 'current' : 'pending');
-                                $step5CircleLabel = $step5 ? '✓' : '5';
+                                $step5CircleLabel = $step5 ? '✓' : (($currentStep == 5) ? '<svg class="bill-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect class="b-doc" x="5" y="2" width="14" height="18" rx="2" stroke="rgba(255,255,255,0.85)" stroke-width="1.8" fill="rgba(255,255,255,0.1)"/><line class="b-line1" x1="8" y1="7" x2="16" y2="7" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="8" stroke-dashoffset="8"/><line class="b-line2" x1="8" y1="11" x2="16" y2="11" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="8" stroke-dashoffset="8"/><line class="b-line3" x1="8" y1="15" x2="13" y2="15" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="8" stroke-dashoffset="8"/></svg>' : '5');
                                 $step5Tooltip = '5. เริ่มบิลรายเดือน';
 
                                 if ($step5) {
@@ -1896,19 +2011,19 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     <td data-label="สถานะ">
                                         <div class="step-indicator">
                                             <div class="step-circle <?php echo $step1 ? 'completed' : ($currentStep == 1 ? 'current' : 'pending'); ?>" data-tooltip="1. ยืนยันจอง" <?php if ($step1): ?>onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['bkg_date'])), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
-                                                <?php echo $step1 ? '✓' : '1'; ?>
+                                                <?php echo $step1 ? '✓' : ($currentStep == 1 ? '<svg class="confirm-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle class="c-ring" cx="12" cy="12" r="8" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" fill="rgba(255,255,255,0.1)"/><polyline class="c-tick" points="8,12.5 11,15.5 16.5,9" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg>' : '1'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
                                             <div class="step-circle <?php echo $step2 ? 'completed' : ($currentStep == 2 ? 'current' : 'pending'); ?>" data-tooltip="2. ยืนยันชำระเงินจอง" <?php if ($step2): ?>onclick="openPaymentModal(<?php echo (int)$tenant['bp_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bp_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
-                                                <?php echo $step2 ? '✓' : '2'; ?>
+                                                <?php echo $step2 ? '✓' : ($currentStep == 2 ? '<svg class="payment-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect class="p-slot" x="4" y="12" width="16" height="8" rx="2" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" fill="rgba(255,255,255,0.1)"/><line class="p-slot" x1="7" y1="16" x2="11" y2="16" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/><circle class="p-coin" cx="12" cy="7" r="3.5" stroke="#fff" stroke-width="1.8" fill="rgba(255,255,255,0.15)"/><line class="p-coin" x1="12" y1="5.5" x2="12" y2="8.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>' : '2'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
                                             <div class="step-circle <?php echo $step3 ? 'completed' : ($currentStep == 3 ? 'current' : 'pending'); ?>" data-tooltip="3. สร้างสัญญา" <?php if ($step3): ?>onclick="openContractModal(<?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['type_price'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bkg_checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_end'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
-                                                <?php echo $step3 ? '✓' : '3'; ?>
+                                                <?php echo $step3 ? '✓' : ($currentStep == 3 ? '<svg class="contract-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="12" height="16" rx="1.5" stroke="rgba(255,255,255,0.75)" stroke-width="1.6" fill="rgba(255,255,255,0.08)"/><line class="ct-line1" x1="7" y1="7" x2="13" y2="7" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="10" stroke-dashoffset="10"/><line class="ct-line2" x1="7" y1="10" x2="13" y2="10" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="10" stroke-dashoffset="10"/><line class="ct-line3" x1="7" y1="13" x2="10" y2="13" stroke="rgba(255,255,255,0.6)" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="10" stroke-dashoffset="10"/><g class="ct-pen"><line x1="14" y1="15" x2="20" y2="9" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><polyline points="14,18 14,15 17,15" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g></svg>' : '3'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
                                             <div class="step-circle <?php echo $step4 ? 'completed' : ($currentStep == 4 ? 'current' : 'pending'); ?>" data-tooltip="4. เช็คอิน" <?php if ($step4): ?>onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
-                                                <?php echo $step4 ? '✓' : '4'; ?>
+                                                <?php echo $step4 ? '✓' : ($currentStep == 4 ? '<svg class="checkin-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="2" width="10" height="20" rx="1.5" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" fill="rgba(255,255,255,0.08)"/><circle cx="16.5" cy="12" r="1.2" fill="rgba(255,255,255,0.8)"/><g class="c-arrow"><line x1="2" y1="12" x2="9" y2="12" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><polyline points="6,9 9.5,12 6,15" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>' : '4'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
                                             <div class="step-circle <?php echo $step5CircleClass; ?>" data-ctr-id="<?php echo (int)$tenant['ctr_id']; ?>" data-tooltip="<?php echo htmlspecialchars($step5Tooltip, ENT_QUOTES, 'UTF-8'); ?>" <?php if ($step5): ?>onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)" style="cursor: pointer;"<?php endif; ?>>
@@ -1981,18 +2096,42 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 // ใช้ $meterBillDone (__any__ flag) เพื่อรองรับกรณีที่จดมิเตอร์เดือนปัจจุบัน
                                                 // แต่เดือนบิลแรกมีค่า 0 (เช็คอินด้วยค่า 0)
                                                 ?>
-                                                <?php if ($meterBillDone && !$latestBillPaid && $billingModalMeterOk): ?>
+                                                <?php if ($meterBillDone && $billingModalMeterOk): ?>
                                                     <?php
-                                                        // แสดงเดือนที่รอชำระ — first bill ก่อน ถ้ายังค้างอยู่
-                                                        $unpaidDisp = $firstBillUnpaid && $firstBillMonthDisplay !== '-'
-                                                            ? $firstBillMonthDisplay
-                                                            : ($latestMonthDisplay !== '-' ? $latestMonthDisplay : '');
-                                                        $unpaidLabel = $firstBillDueReached ? 'รอชำระเงิน' : 'ยังไม่ถึงกำหนด';
+                                                        // เตรียม onclick สำหรับ billing modal
+                                                        $openBillingArgs = (int)$tenant['ctr_id'] . ', '
+                                                            . htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8') . ', '
+                                                            . htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8') . ', '
+                                                            . htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8') . ', '
+                                                            . htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8') . ', '
+                                                            . (int)$tenant['type_price'];
                                                     ?>
-                                                    <button type="button" onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)" style="display:inline-flex;align-items:center;gap:0.3rem;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#f59e0b;font-size:0.75rem;font-weight:600;padding:0.25rem 0.65rem;border-radius:12px;cursor:pointer;">
-                                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/></svg>
-                                                        <?php echo $unpaidLabel; ?><?php echo $unpaidDisp !== '' ? ' (' . htmlspecialchars($unpaidDisp, ENT_QUOTES, 'UTF-8') . ')' : ''; ?>
-                                                    </button>
+                                                    <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0.35rem;">
+                                                        <?php if ($firstBillWaiting || $latestBillWaiting): ?>
+                                                            <?php $wDisp = $firstBillWaiting ? $firstBillMonthDisplay : $latestMonthDisplay; ?>
+                                                            <button type="button" onclick="openBillingModal(<?php echo $openBillingArgs; ?>)"
+                                                                style="display:inline-flex;align-items:center;gap:0.3rem;background:rgba(96,165,250,0.12);border:1px solid rgba(96,165,250,0.35);color:#60a5fa;font-size:0.75rem;font-weight:600;padding:0.25rem 0.65rem;border-radius:12px;cursor:pointer;">
+                                                                🔍 รอตรวจสอบ<?php echo $wDisp !== '-' ? ' (' . htmlspecialchars($wDisp, ENT_QUOTES, 'UTF-8') . ')' : ''; ?>
+                                                            </button>
+                                                        <?php endif; ?>
+                                                        <?php if (!$latestBillPaid || !$firstBillPaid): ?>
+                                                            <?php
+                                                                $unpaidDisp = $firstBillUnpaid && !$firstBillWaiting && $firstBillMonthDisplay !== '-'
+                                                                    ? $firstBillMonthDisplay
+                                                                    : ($latestMonthDisplay !== '-' && !$latestBillWaiting ? $latestMonthDisplay : '');
+                                                                $unpaidLabel = $firstBillDueReached ? 'รอชำระเงิน' : 'ยังไม่ถึงกำหนด';
+                                                                // ถ้าบิลรอตรวจสอบทั้งหมดอยู่แล้ว ไม่ต้องแสดงซ้ำ
+                                                                $hasUnpaidNonWaiting = ($firstBillUnpaid && !$firstBillWaiting) || ($latestBillUnpaid && !$latestBillWaiting);
+                                                            ?>
+                                                            <?php if ($hasUnpaidNonWaiting): ?>
+                                                                <button type="button" onclick="openBillingModal(<?php echo $openBillingArgs; ?>)"
+                                                                    style="display:inline-flex;align-items:center;gap:0.3rem;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#f59e0b;font-size:0.75rem;font-weight:600;padding:0.25rem 0.65rem;border-radius:12px;cursor:pointer;">
+                                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/></svg>
+                                                                    <?php echo $unpaidLabel; ?><?php echo $unpaidDisp !== '' ? ' (' . htmlspecialchars($unpaidDisp, ENT_QUOTES, 'UTF-8') . ')' : ''; ?>
+                                                                </button>
+                                                            <?php endif; ?>
+                                                        <?php endif; ?>
+                                                    </div>
                                                 <?php else: ?>
                                                     <?php echo $meterStatusHtml; ?>
                                                 <?php endif; ?>

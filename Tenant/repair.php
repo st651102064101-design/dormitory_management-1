@@ -4,6 +4,7 @@
  */
 declare(strict_types=1);
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 
 $auth = checkTenantAuth();
 $pdo = $auth['pdo'];
@@ -579,9 +580,7 @@ $repairStatusMap = [
                 // Format date for display
                 $formattedDate = '';
                 if ($scheduledDate) {
-                    $dt = new DateTime($scheduledDate);
-                    $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
-                    $formattedDate = (int)$dt->format('j') . ' ' . $thaiMonths[(int)$dt->format('n')] . ' ' . ((int)$dt->format('Y') + 543);
+                    $formattedDate = thaiDate($scheduledDate);
                 }
                 
                 // Format time range

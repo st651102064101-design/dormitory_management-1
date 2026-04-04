@@ -4,6 +4,7 @@
  */
 declare(strict_types=1);
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 
 $auth = checkTenantAuth();
 $pdo = $auth['pdo'];
@@ -188,8 +189,25 @@ $totalMonths = $startDate->diff($endDate)->m + ($startDate->diff($endDate)->y * 
             padding: 0.5rem 1rem;
             font-size: 0.7rem;
             transition: color 0.2s;
+            position: relative;
         }
         .nav-item.active, .nav-item:hover { color: #3b82f6; }
+        .nav-badge {
+            position: absolute;
+            top: -2px;
+            right: -6px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 12px;
+            min-width: 20px;
+            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
         .nav-icon { font-size: 1.3rem; margin-bottom: 0.25rem; }
         .nav-icon svg {
             width: 22px;
@@ -252,11 +270,11 @@ $totalMonths = $startDate->diff($endDate)->m + ($startDate->diff($endDate)->y * 
             <div class="info-card-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> ระยะเวลาสัญญา</div>
             <div class="info-row">
                 <span class="info-label">วันที่เริ่มต้น</span>
-                <span class="info-value"><?php echo $contract['ctr_start'] ?? '-'; ?></span>
+                <span class="info-value"><?php echo !empty($contract['ctr_start']) ? thaiDate($contract['ctr_start'], 'long') : '-'; ?></span>
             </div>
             <div class="info-row">
                 <span class="info-label">วันที่สิ้นสุด</span>
-                <span class="info-value"><?php echo $contract['ctr_end'] ?? '-'; ?></span>
+                <span class="info-value"><?php echo !empty($contract['ctr_end']) ? thaiDate($contract['ctr_end'], 'long') : '-'; ?></span>
             </div>
             <div class="info-row">
                 <span class="info-label">ระยะเวลา</span>
@@ -297,6 +315,20 @@ $totalMonths = $startDate->diff($endDate)->m + ($startDate->diff($endDate)->y * 
         <?php endif; ?>
     </div>
     
+    <?php
+    $repairCount = 0;
+    try {
+        $repairStmt = $pdo->prepare("SELECT COUNT(*) FROM repair WHERE ctr_id IN (SELECT ctr_id FROM contract WHERE tnt_id = ?) AND repair_status = '0'");
+        $repairStmt->execute([$contract['tnt_id']]);
+        $repairCount = (int)($repairStmt->fetchColumn() ?? 0);
+    } catch (Exception $e) {}
+    $billCount = 0;
+    try {
+        $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN contract c ON e.ctr_id = c.ctr_id LEFT JOIN payment p ON p.exp_id = e.exp_id WHERE c.tnt_id = ? AND p.exp_id IS NULL AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')");
+        $billStmt->execute([$contract['tnt_id']]);
+        $billCount = (int)($billStmt->fetchColumn() ?? 0);
+    } catch (Exception $e) {}
+    ?>
     <nav class="bottom-nav">
         <div class="bottom-nav-content">
             <a href="index.php?token=<?php echo urlencode($token); ?>" class="nav-item">
@@ -305,12 +337,11 @@ $totalMonths = $startDate->diff($endDate)->m + ($startDate->diff($endDate)->y * 
             </a>
             <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="nav-item">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
-                บิล
+                บิล<?php if ($billCount > 0): ?><span class="nav-badge"><?php echo $billCount > 99 ? '99+' : $billCount; ?></span><?php endif; ?>
             </a>
             <a href="repair.php?token=<?php echo urlencode($token); ?>" class="nav-item">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></div>
-                แจ้งซ่อม
-            </a>
+                แจ้งซ่อม<?php if ($repairCount > 0): ?><span class="nav-badge"><?php echo $repairCount > 99 ? '99+' : $repairCount; ?></span><?php endif; ?></a>
             <a href="profile.php?token=<?php echo urlencode($token); ?>" class="nav-item">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div>
                 โปรไฟล์

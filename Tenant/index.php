@@ -7,6 +7,7 @@ declare(strict_types=1);
 session_start();
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 $pdo = connectDB();
 
 // รับ token จาก URL
@@ -687,7 +688,7 @@ $contractStatusMap = [
             </div>
             <div class="info-row">
                 <span class="info-label">วันที่แจ้ง</span>
-                <span class="info-value"><?php echo $latestRepair['repair_date'] ?? '-'; ?></span>
+                <span class="info-value"><?php echo !empty($latestRepair['repair_date']) ? thaiDate($latestRepair['repair_date']) : '-'; ?></span>
             </div>
         </div>
         <?php endif; ?>
@@ -697,7 +698,7 @@ $contractStatusMap = [
         <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="18" y2="14"/></svg></span> ข่าวล่าสุด</div>
         <?php foreach ($latestNews as $news): ?>
         <div class="news-item">
-            <div class="news-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <?php echo $news['news_date'] ?? '-'; ?></div>
+            <div class="news-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> <?php echo !empty($news['news_date']) ? thaiDate($news['news_date']) : '-'; ?></div>
             <div class="news-title"><?php echo htmlspecialchars($news['news_title'] ?? '-'); ?></div>
         </div>
         <?php endforeach; ?>

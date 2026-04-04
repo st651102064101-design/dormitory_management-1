@@ -322,8 +322,8 @@ try {
   $bookingStatusBadgeTotal = array_sum($bookingStatusBadgeCounts);
   $bookingActionBadgeTotal = (int)$bookingStatusBadgeCounts['reserved'];
   $utilityActionBadgeTotal = (int)$utilityStatusBadgeCounts['water'] + (int)$utilityStatusBadgeCounts['electric'];
-  $expenseActionBadgeTotal = (int)$expenseStatusBadgeCounts['unpaid'] + (int)$expenseStatusBadgeCounts['pending'] + (int)$expenseStatusBadgeCounts['partial'];
-  $paymentActionBadgeTotal = (int)$paymentStatusBadgeCounts['unpaid'] + (int)$paymentStatusBadgeCounts['pending'];
+  $expenseActionBadgeTotal = (int)$expenseStatusBadgeCounts['pending'];
+  $paymentActionBadgeTotal = (int)$paymentStatusBadgeCounts['pending'];
   $repairActionBadgeTotal = (int)$repairStatusBadgeCounts['pending'] + (int)$repairStatusBadgeCounts['inprogress'];
   $todoBadgeTotal = $wizardIncompleteCount + $bookingActionBadgeTotal + $utilityActionBadgeTotal + $expenseActionBadgeTotal + $paymentActionBadgeTotal + $repairActionBadgeTotal;
 
@@ -3723,7 +3723,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
         </a>
         <a class="booking-nav-item <?php echo $currentPage === 'manage_booking.php' ? 'active' : ''; ?>" href="manage_booking.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><path d="M8 14h.01"/><path d="M12 14h.01"/><path d="M16 14h.01"/></svg></span><span class="app-nav-label"><?php echo __('menu_bookings'); ?></span><?php if ($bookingActionBadgeTotal > 0): ?><span class="booking-status-badges" aria-label="<?php echo __('booking_status_pending'); ?>"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('booking_needs_action'); ?>"><?php echo $bookingActionBadgeTotal > 99 ? '99+' : $bookingActionBadgeTotal; ?></span></span><?php endif; ?></a>
         <a class="utility-nav-item <?php echo $currentPage === 'manage_utility.php' ? 'active' : ''; ?>" href="manage_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label"><?php echo __('record_meters'); ?></span><?php if ($utilityActionBadgeTotal > 0): ?><span class="utility-status-badges" aria-label="<?php echo __('utility_status_pending'); ?>"><span class="todo-action-badge" data-bs-toggle="tooltip" data-bs-placement="top" data-bs-title="<?php echo __('utility_needs_action'); ?>"><?php echo $utilityActionBadgeTotal > 99 ? '99+' : $utilityActionBadgeTotal; ?></span></span><?php endif; ?></a>
-                <a class="expense-nav-item <?php echo $currentPage === 'manage_expenses.php' ? 'active' : ''; ?>" href="manage_expenses.php<?php echo $expenseActionBadgeTotal > 0 ? '?filter=0' : ''; ?>">
+                <a class="expense-nav-item <?php echo $currentPage === 'manage_expenses.php' ? 'active' : ''; ?>" href="manage_expenses.php<?php echo $expenseActionBadgeTotal > 0 ? '?filter=2' : ''; ?>">
           <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
           <span class="app-nav-label"><?php echo __('menu_expenses'); ?></span>
           <?php if ($expenseActionBadgeTotal > 0): ?>
