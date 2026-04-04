@@ -101,6 +101,8 @@ try {
     $targetMonth = $effectiveDt->format('Y-m');
     $targetMonthDate = $targetMonth . '-01';
 
+    // ไม่สร้าง utility record ถ้าค่ามิเตอร์ทั้งสองเป็น 0 (ยังไม่ได้จดจริง)
+    if ($water_meter_start > 0 || $elec_meter_start > 0) {
     $checkUtilityStmt = $pdo->prepare("SELECT utl_id, utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? AND DATE_FORMAT(utl_date, '%Y-%m') = ? ORDER BY utl_id DESC LIMIT 1");
     $checkUtilityStmt->execute([$ctr_id, $targetMonth]);
     $existingUtility = $checkUtilityStmt->fetch(PDO::FETCH_ASSOC);
@@ -126,6 +128,7 @@ try {
             $targetMonthDate
         ]);
     }
+    } // end: only if meter values > 0
 
     // อัปเดต Workflow Step 4 เมื่อข้อมูลครบถ้วนแล้ว
     updateWorkflowStep($pdo, $tnt_id, 4, $_SESSION['admin_username']);

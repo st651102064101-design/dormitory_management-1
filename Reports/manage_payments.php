@@ -2522,8 +2522,10 @@ $filterRoomOptions = array_values($filterRoomOptions);
       html.light-theme .pcp-bar-track { background: rgba(0,0,0,0.08); }
       html.light-theme .pcp-legend { color: rgba(0,0,0,0.5); }
 
+      /* ===== Payment Controls Row ===== */
+      .payment-controls-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
       /* ===== Payment Filter Tabs ===== */
-      .payment-filter-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+      .payment-filter-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; flex: 1; margin-bottom: 0; }
       .payment-filter-tab { padding: 0.45rem 1rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.6); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.4rem; }
       .payment-filter-tab:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.9); }
       .payment-filter-tab.active { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); color: #a5b4fc; }
@@ -2534,7 +2536,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
       html.light-theme .payment-filter-tab.active { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.35); color: #4f46e5; }
 
       /* ===== Payment Toolbar ===== */
-      .payment-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; }
+      .payment-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; flex-shrink: 0; }
       .payment-toolbar select { padding: 0.45rem 0.75rem; border-radius: 8px; border: 1px solid rgba(148,163,184,0.25); background: rgba(15,23,42,0.9); color: #e2e8f0; font-size: 0.88rem; cursor: pointer; }
       .payment-toolbar-clear { padding: 0.45rem 0.9rem; border-radius: 8px; border: 1px solid rgba(148,163,184,0.25); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; transition: all 0.2s ease; }
       .payment-toolbar-clear:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); }
@@ -2674,15 +2676,14 @@ $filterRoomOptions = array_values($filterRoomOptions);
 
           <!-- Filter Section -->
           <section class="manage-panel">
-            <!-- Status Filter Tabs -->
+            <!-- Controls Row: filter tabs + toolbar -->
+            <div class="payment-controls-row">
             <div class="payment-filter-tabs" id="paymentFilterTabs">
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="">ทั้งหมด <span class="tab-count"><?php echo $pendingOnlyCount + $unpaidOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1">ตรวจสอบแล้ว <span class="tab-count"><?php echo $verifiedFilteredCount; ?></span></button>
             </div>
-            <!-- Hidden status input for filter state -->
-            <input type="hidden" id="filterStatus" value="<?php echo htmlspecialchars($filterStatus, ENT_QUOTES, 'UTF-8'); ?>">
             <!-- Compact Toolbar -->
             <div class="payment-toolbar">
               <?php $thaiMonths = ['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']; ?>
@@ -2708,6 +2709,9 @@ $filterRoomOptions = array_values($filterRoomOptions);
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:13px;height:13px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg>ล้างตัวกรอง
               </button>
             </div>
+            </div><!-- /.payment-controls-row -->
+            <!-- Hidden status input for filter state -->
+            <input type="hidden" id="filterStatus" value="<?php echo htmlspecialchars($filterStatus, ENT_QUOTES, 'UTF-8'); ?>">
             <div id="paymentsRoomFilterNotice" style="margin-top:0.75rem;padding:0.75rem 1rem;background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.3);border-radius:8px;color:#60a5fa;display:<?php echo $filterRoom !== '' ? 'flex' : 'none'; ?>;align-items:center;gap:0.5rem;">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
               กำลังแสดงเฉพาะห้อง <strong id="paymentsRoomFilterValue"><?php echo htmlspecialchars($filterRoom, ENT_QUOTES, 'UTF-8'); ?></strong>

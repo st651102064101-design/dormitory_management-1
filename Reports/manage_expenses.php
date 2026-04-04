@@ -448,21 +448,22 @@ $stats = [
   'total_overdue' => 0,
 ];
 foreach ($expenses as $exp) {
-    $expStatus = (string)($exp['exp_status'] ?? '0');
+    $rs = $buildExpenseStatus($exp);
+    $status = $rs['status'];
     $expTotal = (int)($exp['exp_total'] ?? 0);
-    if ($expStatus === '0') {
+    if ($status === '0') {
         $stats['unpaid']++;
         $stats['total_unpaid'] += $expTotal;
-    } elseif ($expStatus === '1') {
+    } elseif ($status === '1') {
         $stats['paid']++;
         $stats['total_paid'] += $expTotal;
-    } elseif ($expStatus === '2') {
+    } elseif ($status === '2') {
         $stats['pending']++;
         $stats['total_pending'] += $expTotal;
-    } elseif ($expStatus === '3') {
+    } elseif ($status === '3') {
         $stats['partial']++;
         $stats['total_partial'] += $expTotal;
-    } elseif ($expStatus === '4') {
+    } elseif ($status === '4') {
         $stats['overdue']++;
         $stats['total_overdue'] += $expTotal;
     }
@@ -1522,12 +1523,21 @@ try {
       }
 
       /* === WORLD-CLASS UX: Status Filter Tabs === */
+      .expense-controls-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        margin: 0 0 1rem;
+      }
       .expense-filter-tabs {
         display: flex;
         gap: 0.4rem;
         padding: 0;
-        margin: 0 0 1rem;
+        margin: 0;
         flex-wrap: wrap;
+        flex: 1;
       }
       .expense-filter-tab {
         display: inline-flex;
@@ -1586,7 +1596,8 @@ try {
         align-items: center;
         gap: 0.65rem;
         flex-wrap: wrap;
-        margin-bottom: 1rem;
+        margin-bottom: 0;
+        flex-shrink: 0;
       }
       .expense-toolbar-search {
         position: relative;
@@ -1722,6 +1733,10 @@ try {
 
       /* Responsive: filter tabs */
       @media (max-width: 768px) {
+        .expense-controls-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
         .expense-filter-tabs {
           gap: 0.3rem;
         }
@@ -1883,7 +1898,8 @@ try {
               </div>
             </div>
 
-            <!-- Status Filter Tabs -->
+            <!-- Controls Row: filter tabs + toolbar -->
+            <div class="expense-controls-row">
             <div class="expense-filter-tabs" id="expenseFilterTabs">
               <button type="button" class="expense-filter-tab active" data-status="all">
                 ทั้งหมด <span class="tab-count"><?php echo $totalExpenseCount; ?></span>
@@ -1943,6 +1959,7 @@ try {
                 <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>ห้อง</option>
               </select>
             </div>
+            </div><!-- /.expense-controls-row -->
             <div id="expensesTableWrap" class="report-table is-hidden">
               <table class="table--compact" id="table-expenses">
                 <thead>

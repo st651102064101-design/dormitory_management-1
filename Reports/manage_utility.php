@@ -530,11 +530,20 @@ foreach ($rooms as $room) {
     // แสดงค่า input จาก utility record — ตรวจ NULL แยกต่างหากเพื่อรองรับ partial save
     $water_new = ($hasRecord && $current['utl_water_end'] !== null) ? (int)$current['utl_water_end'] : '';
     $elec_new  = ($hasRecord && $current['utl_elec_end']  !== null) ? (int)$current['utl_elec_end']  : '';
-    $water_saved = $hasRecord && $current['utl_water_end'] !== null;
-    $elec_saved  = $hasRecord && $current['utl_elec_end']  !== null;
+    // สำหรับเดือนแรก: ถ้าค่า end ทั้งน้ำและไฟเป็น 0 ทั้งคู่ → ถือว่ายังไม่ได้จดจริง (อาจถูกสร้างอัตโนมัติตอน checkin ด้วยค่า 0)
+    $isAllZeroFirstRecord = $isFirstReading && $hasRecord
+        && (int)($current['utl_water_end'] ?? 0) === 0
+        && (int)($current['utl_elec_end']  ?? 0) === 0;
+    // ถ้าเป็น all-zero first record → แสดง input ว่าง เพื่อให้กรอกค่าจริงได้
+    if ($isAllZeroFirstRecord) {
+        $water_new = '';
+        $elec_new  = '';
+    }
+    $water_saved = $hasRecord && $current['utl_water_end'] !== null && !$isAllZeroFirstRecord;
+    $elec_saved  = $hasRecord && $current['utl_elec_end']  !== null && !$isAllZeroFirstRecord;
     $saved = $water_saved && $elec_saved;  // ทั้งสองฝั่งบันทึกแล้ว
     // ล็อคเดือนที่ผ่านมาทั้งหมดที่มี utility record แล้ว ถ้ายังไม่มีให้กรอกได้
-    $meterBlocked = $isPastMonth && $hasRecord;
+    $meterBlocked = $isPastMonth && $hasRecord && !$isAllZeroFirstRecord;
     
     // Fallback: ถ้าเดือนปัจจุบันยังไม่บันทึก แต่เดือนถัดไปบันทึกแล้ว → ใช้ค่าจากเดือนถัดไป
     if (!$hasRecord && $water_new === '') {

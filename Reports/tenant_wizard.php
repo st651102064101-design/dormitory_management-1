@@ -155,7 +155,7 @@ try {
                                             THEN '1'
                                         WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
                                             THEN '3'
-                                        WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '2' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                        WHEN COALESCE((SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND p.pay_proof IS NOT NULL AND p.pay_proof <> '' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
                                             THEN '2'
                                         WHEN e.exp_status = '4' THEN '4'
                                         ELSE '0'
@@ -177,7 +177,7 @@ try {
                                             THEN '1'
                                         WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
                                             THEN '3'
-                                        WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '2' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                        WHEN COALESCE((SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND p.pay_proof IS NOT NULL AND p.pay_proof <> '' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
                                             THEN '2'
                                         WHEN e.exp_status = '4' THEN '4'
                                         ELSE '0'
@@ -187,7 +187,40 @@ try {
                                     AND DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
                                 ORDER BY e.exp_id DESC
                                 LIMIT 1
-                        ) AS current_exp_status
+                        ) AS current_exp_status,
+                        (
+                                SELECT e.exp_month
+                                FROM expense e
+                                WHERE e.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                                    AND (
+                                        c.ctr_start IS NULL
+                                        OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                    )
+                                ORDER BY e.exp_month DESC, e.exp_id DESC
+                                LIMIT 1
+                        ) AS latest_exp_month,
+                        (
+                                SELECT
+                                    CASE
+                                        WHEN e.exp_total > 0
+                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= e.exp_total - 0.00001
+                                            THEN '1'
+                                        WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                            THEN '3'
+                                        WHEN COALESCE((SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND p.pay_proof IS NOT NULL AND p.pay_proof <> '' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                            THEN '2'
+                                        WHEN e.exp_status = '4' THEN '4'
+                                        ELSE '0'
+                                    END
+                                FROM expense e
+                                WHERE e.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                                    AND (
+                                        c.ctr_start IS NULL
+                                        OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                    )
+                                ORDER BY e.exp_month DESC, e.exp_id DESC
+                                LIMIT 1
+                        ) AS latest_exp_status
         FROM booking b
         INNER JOIN tenant t ON b.tnt_id = t.tnt_id
         LEFT JOIN (
@@ -1585,6 +1618,16 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 $firstBillOverdue = in_array($firstExpStatus, ['3', '4']);
                                 $firstBillUnpaid  = in_array($firstExpStatus, ['0', '3', '4']);
 
+                                // ใช้ latest exp เป็นหลักสำหรับแสดงสถานะล่าสุด
+                                $latestExpMonthRaw = (string)($tenant['latest_exp_month'] ?? '');
+                                $latestExpStatus   = (string)($tenant['latest_exp_status'] ?? '');
+                                $latestMonthDisplay = ($latestExpMonthRaw !== '' && strtotime($latestExpMonthRaw) !== false)
+                                    ? thaiMonthYear($latestExpMonthRaw) : $firstBillMonthDisplay;
+                                $latestBillPaid    = ($latestExpStatus === '1');
+                                $latestBillWaiting = ($latestExpStatus === '2');
+                                $latestBillOverdue = in_array($latestExpStatus, ['3', '4']);
+                                $latestBillUnpaid  = in_array($latestExpStatus, ['0', '3', '4']);
+
                                 // Check if current month is also paid
                                 $currentExpStatus = (string)($tenant['current_exp_status'] ?? '');
                                 $currentBillPaid  = ($currentExpStatus === '1');
@@ -1646,10 +1689,10 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     // Check if it's first meter and bill status
                                     $isFirstMeter = $prevYearMonth === null;
                                     
-                                    if ($isFirstMeter && $firstBillOverdue) {
-                                        // First bill is overdue (status 3/4)
+                                    if ($isFirstMeter && $latestBillOverdue) {
+                                        // Latest bill is overdue (status 3/4)
                                         $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f87171;font-weight:600;">⚠ ค้างชำระ</span>';
-                                    } elseif ($isFirstMeter && $firstBillUnpaid) {
+                                    } elseif ($isFirstMeter && $latestBillUnpaid) {
                                         if ($billingModalMeterOk) {
                                             // billing modal จะพร้อมแสดงข้อมูลได้
                                             $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">รอชำระเงิน</span>';
@@ -1660,8 +1703,8 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 . ' style="display:inline-block;margin-top:0.25rem;background:rgba(20,184,166,0.12);border:1px solid rgba(20,184,166,0.35);color:#2dd4bf;font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:12px;cursor:pointer;"'
                                                 . '>📋 จดมิเตอร์ (' . htmlspecialchars($currentDisp, ENT_QUOTES, 'UTF-8') . ')</button>';
                                         }
-                                    } elseif ($firstBillPaid) {
-                                        // Bill already paid
+                                    } elseif ($latestBillPaid) {
+                                        // Latest bill already paid
                                         $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#4ade80;">✓ ชำระแล้ว</span>';
                                     } else {
                                         // Default: meter recorded (subsequent months)
@@ -1831,20 +1874,20 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                             <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">เช็คอิน</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 5 || $currentStep >= 6 || (int)($tenant['completed'] ?? 0) === 1): ?>
-                                            <?php if ($step5 && $meterBillDone && $firstBillPaid): ?>
-                                                <span style="color: #16a34a; font-weight: 600;">✓ บิลเดือนแรกชำระแล้ว (<?php echo htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>
-                                            <?php elseif ($step5 && $meterBillDone && $firstBillWaiting): ?>
+                                            <?php if ($step5 && $meterBillDone && $latestBillPaid): ?>
+                                                <span style="color: #16a34a; font-weight: 600;">✓ ชำระแล้ว (<?php echo htmlspecialchars($latestMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>
+                                            <?php elseif ($step5 && $meterBillDone && $latestBillWaiting): ?>
                                                 <button type="button"
                                                     onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)"
                                                     style="background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.4);color:#60a5fa;font-weight:600;font-size:0.82rem;padding:0.3rem 0.75rem;border-radius:20px;cursor:pointer;transition:background 0.2s;"
                                                     onmouseover="this.style.background='rgba(96,165,250,0.28)'" onmouseout="this.style.background='rgba(96,165,250,0.15)'"
-                                                >🔍 <?php echo $firstBillMonthDisplay !== '-' ? '(' . htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8') . ')' : ''; ?> รอตรวจสอบ</button>
+                                                >🔍 <?php echo $latestMonthDisplay !== '-' ? '(' . htmlspecialchars($latestMonthDisplay, ENT_QUOTES, 'UTF-8') . ')' : ''; ?> รอตรวจสอบ</button>
                                             <?php elseif ($step5): ?>
                                                 <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0;">
                                                     <?php if ($meterBillDone): ?>
                                                     <span style="display:inline-flex;align-items:center;gap:0.35rem;color:#d97706;font-weight:600;">
                                                         <svg style="flex-shrink:0;" width="15" height="15" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round" style="transform-origin:center;animation:waitSpin 1s linear infinite;"/><circle cx="12" cy="12" r="5" stroke="#b45309" stroke-width="2" stroke-dasharray="12 32" stroke-linecap="round" style="transform-origin:center;animation:waitSpin 1s linear infinite reverse;"/></svg>
-                                                        <?php echo $firstBillMonthDisplay !== '-' ? '(' . htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8') . ')' : ''; ?> <?php echo $firstBillDueReached ? 'รอชำระ' : 'ยังไม่ถึงกำหนด'; ?>
+                                                        <?php echo $latestMonthDisplay !== '-' ? '(' . htmlspecialchars($latestMonthDisplay, ENT_QUOTES, 'UTF-8') . ')' : ''; ?> <?php echo $firstBillDueReached ? 'รอชำระ' : 'ยังไม่ถึงกำหนด'; ?>
                                                     </span>
                                                     <?php endif; ?>
                                                     <?php echo $meterStatusHtml; ?>
@@ -1858,7 +1901,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                     ? !empty($utilMonthsRecorded[$ctrIdInt][$billYearMonth])
                                                     : !empty($utilMonthsRecorded[$ctrIdInt]['__any__']);
                                                 ?>
-                                                <?php if ($meterDoneForBill && !$firstBillPaid && $billingModalMeterOk): ?>
+                                                <?php if ($meterDoneForBill && !$latestBillPaid && $billingModalMeterOk): ?>
                                                     <button type="button" onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)" style="display:inline-flex;align-items:center;gap:0.3rem;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#f59e0b;font-size:0.75rem;font-weight:600;padding:0.25rem 0.65rem;border-radius:12px;cursor:pointer;">
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/></svg>
                                                         <?php echo $firstBillDueReached ? 'รอชำระเงิน' : 'ยังไม่ถึงกำหนด'; ?>
