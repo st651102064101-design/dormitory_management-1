@@ -182,6 +182,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     try {
         $saved = 0;
         $lockedRooms = 0;
+        $savedRoomsData = [];
         foreach ($_POST['meter'] as $roomId => $data) {
         if (empty($data['ctr_id'])) continue;
 
@@ -412,6 +413,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                 }
             }
             
+            // เก็บข้อมูลห้องที่บันทึกสำเร็จ
+            $savedRoomsData[$roomId] = [
+                'room_id' => (int)$roomId,
+                'tab' => $postTab,
+                'old' => $postTab === 'water' ? $waterOld : $elecOld,
+                'new' => $postTab === 'water' ? $waterNew : $elecNew,
+                'usage' => $postTab === 'water' ? ($isFirstReading ? 0 : $waterUsed) : ($isFirstReading ? 0 : $elecUsed),
+                'cost' => $postTab === 'water' ? ($isFirstReading ? 0 : $waterCost) : ($isFirstReading ? 0 : $elecCost),
+                'is_first_reading' => $isFirstReading,
+            ];
+
             $saved++;
         } catch (PDOException $e) {
             $error = $e->getMessage();
@@ -421,35 +433,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
     error_log('[manage_utility][POST] ' . $e->getMessage());
     $error = 'เกิดข้อผิดพลาดในการบันทึกมิเตอร์: ' . $e->getMessage();
 }
-    if ($saved > 0) {
-        // Retrieve first bill details for display
-        $firstBills = [];
-        if (!empty($firstBillRooms)) {
-            $placeholders = implode(',', array_fill(0, count($firstBillRooms), '?'));
-            $billStmt = $pdo->prepare("
-                SELECT e.exp_id, e.exp_total, e.room_price, e.exp_elec_chg, e.exp_water,
-                       r.room_number, t.tnt_name
-                FROM expense e
-                INNER JOIN contract c ON e.ctr_id = c.ctr_id
-                LEFT JOIN room r ON c.room_id = r.room_id
-                LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-                WHERE e.ctr_id IN ($placeholders)
-                  AND MONTH(e.exp_month) = ? 
-                  AND YEAR(e.exp_month) = ?
-            ");
-            $billParams = array_merge($firstBillRooms, [$month, $year]);
-            $billStmt->execute($billParams);
-            $firstBills = $billStmt->fetchAll(PDO::FETCH_ASSOC);
+    // AJAX request → ส่ง JSON กลับโดยไม่ redirect
+    $isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+    if ($isAjax) {
+        header('Content-Type: application/json; charset=utf-8');
+        $msg = '';
+        if ($saved > 0) {
+            $msg = "บันทึกสำเร็จ {$saved} ห้อง";
+            if ($lockedRooms > 0) {
+                $msg .= " (ข้าม {$lockedRooms} ห้องที่บิลชำระแล้ว)";
+            }
+        } elseif ($lockedRooms > 0) {
+            $msg = "ไม่สามารถแก้ไขได้: {$lockedRooms} ห้องที่บิลชำระแล้ว";
+        } elseif ($error) {
+            $msg = $error;
+        } else {
+            $msg = 'ไม่มีข้อมูลที่บันทึก';
         }
-        
+        echo json_encode([
+            'success' => $saved > 0,
+            'message' => $msg,
+            'saved' => $saved,
+            'lockedRooms' => $lockedRooms,
+            'tab' => $postTab,
+            'rooms' => $savedRoomsData,
+            'error' => $error ?: null,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    // Non-AJAX fallback → redirect ตามเดิม
+    if ($saved > 0) {
         $_SESSION['success'] = "บันทึกสำเร็จ {$saved} ห้อง";
         if ($lockedRooms > 0) {
             $_SESSION['success'] .= " (ข้าม {$lockedRooms} ห้องที่บันทึกเดือนนี้แล้ว)";
-        }
-        
-        // Store first bills in session for display
-        if (!empty($firstBills)) {
-            $_SESSION['first_bills'] = $firstBills;
         }
         
         $redirectQuery = "month=$month&year=$year&show=$showMode";
@@ -1170,6 +1187,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         .toast-msg.success { background: #43a047; }
         .toast-msg.error { background: #e53935; }
         @keyframes toastIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
 
         /* Responsive */
         @media (max-width: 768px) {
@@ -2598,6 +2616,166 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             }
         });
     });
+
+    // ===== AJAX Save =====
+    function showToast(msg, type) {
+        var existing = document.getElementById('toast');
+        if (existing) existing.remove();
+        var toast = document.createElement('div');
+        toast.className = 'toast-msg ' + (type || 'success');
+        toast.id = 'toast';
+        toast.textContent = msg;
+        document.body.appendChild(toast);
+        setTimeout(function(){ if (toast.parentNode) toast.remove(); }, 5000);
+    }
+
+    function updateStats() {
+        var waterInputs = document.querySelectorAll('#waterPanel .meter-input[data-type="water"]');
+        var roomData = {};
+        waterInputs.forEach(function(input) {
+            roomData[input.dataset.room] = { hasWater: !!input.value, hasElec: false };
+        });
+        var elecInputs = document.querySelectorAll('#electricPanel .meter-input[data-type="electric"]');
+        elecInputs.forEach(function(input) {
+            var rid = input.dataset.room;
+            if (roomData[rid]) roomData[rid].hasElec = !!input.value;
+        });
+        // Total rooms = all <tr> in waterPanel (unique per room)
+        var totalRows = document.querySelectorAll('#waterPanel .meter-table tbody tr');
+        var totalRooms = totalRows.length;
+        var totalRecorded = 0;
+        Object.keys(roomData).forEach(function(rid) {
+            if (roomData[rid].hasWater && roomData[rid].hasElec) totalRecorded++;
+        });
+        var totalPending = Math.max(0, totalRooms - totalRecorded);
+        document.querySelectorAll('.stat-badge').forEach(function(b) {
+            if (b.classList.contains('rooms')) b.textContent = totalRooms + ' ห้อง';
+            else if (b.classList.contains('done')) b.textContent = totalRecorded + ' บันทึกแล้ว';
+            else if (b.classList.contains('pending')) b.textContent = totalPending + ' รอ';
+        });
+    }
+
+    function updateSavedRows(tab, rooms) {
+        var usageType = tab;
+        var padLen = usageType === 'water' ? 7 : 5;
+        var panelId = usageType === 'water' ? 'waterPanel' : 'electricPanel';
+        var meterPanelId = usageType === 'water' ? 'waterMeterPanel' : 'electricMeterPanel';
+
+        Object.keys(rooms).forEach(function(roomId) {
+            var room = rooms[roomId];
+
+            // === Table view ===
+            var input = document.querySelector('#' + panelId + ' .meter-input[data-room="' + roomId + '"]');
+            if (!input) return;
+            var row = input.closest('tr');
+            if (!row) return;
+
+            // Update row classes
+            row.classList.add('saved-row');
+            row.classList.remove('needs-meter', 'needs-water', 'needs-electric');
+            var badge = row.querySelector('.needs-meter-badge');
+            if (badge) badge.remove();
+
+            // Update input: show new value, mark as editable-saved
+            input.value = String(room['new']).padStart(padLen, '0');
+            input.classList.remove('blocked-by-step');
+            input.classList.add('editable-saved');
+            input.disabled = false;
+
+            // For first reading: update data-old and the "old value" cell
+            if (room.is_first_reading) {
+                input.dataset.old = room['new'];
+                input.setAttribute('min', room['new']);
+                input.placeholder = String(room['new']).padStart(padLen, '0');
+                var cells = row.querySelectorAll('td');
+                if (cells.length >= 3) {
+                    cells[2].textContent = String(room.old).padStart(padLen, '0');
+                }
+                // Update hidden water_old/elec_old
+                var oldHidden = row.querySelector('input[name*="' + (usageType === 'water' ? 'water_old' : 'elec_old') + '"]');
+                if (oldHidden) oldHidden.value = room['new'];
+            }
+
+            // Update usage cell
+            var usageCells = document.querySelectorAll('[data-room="' + roomId + '"][data-usage="' + usageType + '"]');
+            usageCells.forEach(function(el) { el.textContent = room.usage; });
+
+            // Update cost cell
+            var costCells = document.querySelectorAll('[data-room="' + roomId + '"][data-amount="' + usageType + '"]');
+            costCells.forEach(function(el) { el.textContent = room.cost; });
+
+            // === Visual meter view ===
+            var vmCard = document.querySelector('#' + meterPanelId + ' .vm-digit-input[data-room-id="' + roomId + '"]');
+            if (vmCard) {
+                var card = vmCard.closest('.vm-card');
+                if (card) {
+                    card.classList.remove('vm-pending');
+                    card.classList.add('vm-saved');
+                }
+                // Update digit values
+                var newStr = String(room['new']).padStart(usageType === 'water' ? 7 : 5, '0');
+                var digits = document.querySelectorAll('#' + meterPanelId + ' .vm-digit-input[data-room-id="' + roomId + '"]');
+                digits.forEach(function(d, i) { d.value = newStr[i] || ''; });
+                // Update vm usage/cost
+                var vmUsage = document.querySelector('[data-vm-usage="' + usageType + '"][data-vm-room="' + roomId + '"]');
+                var vmCost = document.querySelector('[data-vm-cost="' + usageType + '"][data-vm-room="' + roomId + '"]');
+                if (vmUsage) vmUsage.textContent = room.usage + ' หน่วย';
+                if (vmCost) vmCost.textContent = room.cost + ' ฿';
+            }
+        });
+    }
+
+    function saveMeterAjax(form) {
+        // Sync visual meter → table before saving
+        if (document.getElementById('meterView') && document.getElementById('meterView').style.display !== 'none') {
+            syncMeterToTable();
+        }
+
+        var formData = new FormData(form);
+        var saveBtn = form.querySelector('.save-btn');
+        var saveBtnOriginal = saveBtn ? saveBtn.innerHTML : '';
+
+        if (saveBtn) {
+            saveBtn.disabled = true;
+            saveBtn.innerHTML = '<span style="display:inline-flex;align-items:center;gap:6px;"><svg width="16" height="16" viewBox="0 0 24 24" style="animation:spin 1s linear infinite"><circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" stroke-width="3" stroke-dasharray="32" stroke-linecap="round"/></svg>กำลังบันทึก...</span>';
+        }
+
+        fetch(window.location.pathname + window.location.search, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = saveBtnOriginal;
+            }
+            showToast(data.message, data.success ? 'success' : 'error');
+            if (data.success && data.rooms) {
+                updateSavedRows(data.tab, data.rooms);
+            }
+            updateTotals();
+            updateStats();
+        })
+        .catch(function(err) {
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.innerHTML = saveBtnOriginal;
+            }
+            showToast('เกิดข้อผิดพลาดในการบันทึก: ' + err.message, 'error');
+        });
+    }
+
+    // Intercept form submit
+    var meterForm = document.getElementById('meterForm');
+    if (meterForm) {
+        meterForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            saveMeterAjax(this);
+        });
+    }
+
     switchTab(initialTab, false);
     updateTotals();
 
