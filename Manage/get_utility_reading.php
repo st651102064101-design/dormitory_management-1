@@ -97,22 +97,35 @@ try {
     $isFirstReading = $ctrStartYm !== null
         && date('Y-m', strtotime($targetMonthStart)) === $ctrStartYm;
 
-    // ตรวจสอบว่าบันทึกเดือนนี้แล้วหรือยัง
+    // ตรวจสอบว่าบันทึกเดือนนี้แล้วหรือยัง (รองรับ partial save: น้ำจดแล้ว/ไฟยังไม่จด หรือกลับกัน)
     $currStmt = $pdo->prepare(
         "SELECT utl_id, utl_water_start, utl_water_end, utl_elec_start, utl_elec_end
          FROM utility
          WHERE ctr_id = ? AND utl_date >= ? AND utl_date < ?
-         AND utl_water_end IS NOT NULL AND utl_water_end > 0
-         AND utl_elec_end IS NOT NULL AND utl_elec_end > 0
          ORDER BY utl_date DESC, utl_id DESC
          LIMIT 1"
     );
     $currStmt->execute([$ctrId, $targetMonthStart, $targetMonthEnd]);
     $curr = $currStmt->fetch(PDO::FETCH_ASSOC);
 
-    if ($curr) {
-        $prevWater = (int)$curr['utl_water_start'];
-        $prevElec = (int)$curr['utl_elec_start'];
+    // ตรวจสอบแยกแต่ละมิเตอร์
+    $waterSaved = $curr && (int)($curr['utl_water_end'] ?? 0) > 0;
+    $elecSaved  = $curr && (int)($curr['utl_elec_end']  ?? 0) > 0;
+    $allSaved   = $waterSaved && $elecSaved;
+
+    // ถ้าเป็น all-zero first record → ถือว่ายังไม่ได้จดจริง
+    $isAllZeroFirst = $isFirstReading && $curr
+        && (int)($curr['utl_water_end'] ?? 0) === 0
+        && (int)($curr['utl_elec_end']  ?? 0) === 0;
+    if ($isAllZeroFirst) {
+        $waterSaved = false;
+        $elecSaved  = false;
+        $allSaved   = false;
+    }
+
+    if ($curr && ($waterSaved || $elecSaved)) {
+        if ($waterSaved) $prevWater = (int)$curr['utl_water_start'];
+        if ($elecSaved)  $prevElec  = (int)$curr['utl_elec_start'];
     } elseif (!$prev) {
         // ไม่มีทั้ง utility เดือนนี้และเดือนก่อน — ใช้ค่า checkin_record เป็นค่าเริ่มต้น
         $chkStmt = $pdo->prepare("SELECT water_meter_start, elec_meter_start FROM checkin_record WHERE ctr_id = ? LIMIT 1");
@@ -127,9 +140,11 @@ try {
     echo json_encode([
         'prev_water'  => $prevWater,
         'prev_elec'   => $prevElec,
-        'saved'       => $curr ? true : false,
-        'curr_water'  => $curr ? (int)$curr['utl_water_end'] : null,
-        'curr_elec'   => $curr ? (int)$curr['utl_elec_end']  : null,
+        'saved'       => $allSaved,
+        'water_saved' => $waterSaved,
+        'elec_saved'  => $elecSaved,
+        'curr_water'  => $waterSaved ? (int)$curr['utl_water_end'] : null,
+        'curr_elec'   => $elecSaved  ? (int)$curr['utl_elec_end']  : null,
         'is_first_reading' => $isFirstReading,
         'meter_month' => $meterMonth,
         'meter_year'  => $meterYear,

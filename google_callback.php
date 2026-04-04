@@ -50,11 +50,19 @@ function buildGoogleRedirectUri(string $redirectUri): string {
     return $protocol . '://' . $serverName . $portPart . $redirectUri;
 }
 
+// ฟังก์ชันสำหรับ redirect พร้อม ob_clean
+function safeRedirect($url) {
+    if (ob_get_level()) ob_clean();
+    header('Location: ' . $url);
+    exit;
+}
+
 // ฟังก์ชันสำหรับ redirect พร้อม error
 function redirectWithError($error) {
     error_log("Redirecting with error: " . $error);
+    if (ob_get_level()) ob_clean();
     
-    // ✅ ส่งข้อมูลข้อผิดพลาดไปยังหน้าหลัก
+    // ✅ ส่งข้อมูลข้อผิดพลาดไปยังหน้าหลัก (รองรับทั้ง popup และ redirect)
     echo '<!DOCTYPE html>
 <html>
 <head>
@@ -63,15 +71,18 @@ function redirectWithError($error) {
 </head>
 <body>
     <script>
-        window.opener.postMessage({
-            type: "google_link_error",
-            message: "' . addslashes($error) . '"
-        }, "*");
-        setTimeout(() => {
-            window.close();
-        }, 1000);
+        if (window.opener) {
+            window.opener.postMessage({
+                type: "google_link_error",
+                message: "' . addslashes($error) . '"
+            }, "*");
+            setTimeout(() => { window.close(); }, 1000);
+        } else {
+            setTimeout(() => { window.location.href = "/dormitory_management/index.php"; }, 3000);
+        }
     </script>
     <p style="color: red; font-family: Arial;">เกิดข้อผิดพลาด: ' . htmlspecialchars($error) . '</p>
+    <p style="font-family: Arial; font-size: 13px; color: #666;">กำลังกลับหน้าหลัก...</p>
 </body>
 </html>';
     exit;
@@ -130,8 +141,7 @@ try {
     </div>
 </body>
 </html>';
-    flush();
-    ob_flush();
+    // ไม่ flush เพราะต้องรอ header redirect — buffer จะถูก clean ก่อน redirect
     
     error_log("=== Google Callback Started ===");
     
@@ -248,8 +258,6 @@ try {
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  // ✅ Add 5 second connection timeout
     
     error_log("Exchanging code for access token...");
-    flush();
-    ob_flush();
     
     $response = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -290,8 +298,6 @@ try {
     curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 5);  // ✅ Add connection timeout
     
     error_log("Fetching user info from Google...");
-    flush();
-    ob_flush();
     
     $userResponse = curl_exec($ch);
     $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
@@ -349,31 +355,27 @@ try {
         $checkStmt->execute([$email, $adminId]);
         
         if ($checkStmt->fetch()) {
-            header('Location: /dormitory_management/Reports/dashboard.php?google_error=' . urlencode('อีเมล Google นี้ถูกเชื่อมกับบัญชีผู้ดูแลระบบอื่นแล้ว'));
-            exit;
+            safeRedirect('/dormitory_management/Reports/dashboard.php?google_error=' . urlencode('อีเมล Google นี้ถูกเชื่อมกับบัญชีผู้ดูแลระบบอื่นแล้ว'));
         }
         
         // ✓ เช็คว่า Gmail นี้ถูกใช้โดย tenant แล้วหรือไม่
         $checkTenantStmt = $pdo->prepare('SELECT tnt_id FROM tenant_oauth WHERE provider = "google" AND provider_email = ?');
         $checkTenantStmt->execute([$email]);
         if ($checkTenantStmt->fetch()) {
-            header('Location: /dormitory_management/Reports/dashboard.php?google_error=' . urlencode('อีเมล Google นี้ถูกเชื่อมกับบัญชีผู้เช่าอยู่แล้ว ไม่สามารถใช้กับบัญชีผู้ดูแลระบบได้'));
-            exit;
+            safeRedirect('/dormitory_management/Reports/dashboard.php?google_error=' . urlencode('อีเมล Google นี้ถูกเชื่อมกับบัญชีผู้เช่าอยู่แล้ว ไม่สามารถใช้กับบัญชีผู้ดูแลระบบได้'));
         }
         
         // ✓ เช็คว่า Google ID นี้ถูกใช้โดย user อื่นแล้วหรือไม่ (admin หรือ tenant)
         $checkGoogleIdAdmin = $pdo->prepare('SELECT admin_id FROM admin_oauth WHERE provider = "google" AND provider_id = ? AND admin_id != ?');
         $checkGoogleIdAdmin->execute([$googleId, $adminId]);
         if ($checkGoogleIdAdmin->fetch()) {
-            header('Location: /dormitory_management/Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้ดูแลระบบอื่นแล้ว'));
-            exit;
+            safeRedirect('/dormitory_management/Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้ดูแลระบบอื่นแล้ว'));
         }
         
         $checkGoogleIdTenant = $pdo->prepare('SELECT tnt_id FROM tenant_oauth WHERE provider = "google" AND provider_id = ?');
         $checkGoogleIdTenant->execute([$googleId]);
         if ($checkGoogleIdTenant->fetch()) {
-            header('Location: /dormitory_management/Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้เช่าอยู่แล้ว ไม่สามารถใช้กับบัญชีผู้ดูแลระบบได้'));
-            exit;
+            safeRedirect('/dormitory_management/Reports/dashboard.php?google_error=' . urlencode('บัญชี Google นี้ถูกเชื่อมกับบัญชีผู้เช่าอยู่แล้ว ไม่สามารถใช้กับบัญชีผู้ดูแลระบบได้'));
         }
         
         if ($action === 'relink') {
@@ -419,16 +421,16 @@ try {
 <body>
     <script>
         // ส่งข้อมูลสำเร็จไปยังหน้าหลัก
-        window.opener.postMessage({
-            type: "google_link_success",
-            email: "' . addslashes($email) . '",
-            message: "' . addslashes($message) . '"
-        }, "*");
-        
-        // ปิด popup โดยอัตโนมัติหลังจาก 100ms
-        setTimeout(() => {
-            window.close();
-        }, 100);
+        if (window.opener) {
+            window.opener.postMessage({
+                type: "google_link_success",
+                email: "' . addslashes($email) . '",
+                message: "' . addslashes($message) . '"
+            }, "*");
+            setTimeout(() => { window.close(); }, 100);
+        } else {
+            window.location.href = "/dormitory_management/Reports/dashboard.php";
+        }
     </script>
 </body>
 </html>';
@@ -478,8 +480,7 @@ try {
         
         error_log("✓ Admin logged in: " . $admin['admin_id']);
         
-        header('Location: /dormitory_management/Reports/dashboard.php');
-        exit;
+        safeRedirect('/dormitory_management/Reports/dashboard.php');
     }
     
     // 2. ถ้าไม่ใช่ Admin, ตรวจสอบว่าเป็น Tenant หรือไม่
@@ -642,8 +643,7 @@ try {
         session_write_close();
         
         // หลังล็อกอิน Google ให้กลับหน้า index
-        header('Location: /dormitory_management/index.php');
-        exit;
+        safeRedirect('/dormitory_management/index.php');
     }
     
     // 3. ไม่พบทั้ง Admin และ Tenant - redirect ไปหน้าลงทะเบียน (สำหรับ Tenant ใหม่)
@@ -655,8 +655,7 @@ try {
         'picture' => $picture,
         'phone' => $phone
     ];
-    header('Location: /dormitory_management/google_register.php');
-    exit;
+    safeRedirect('/dormitory_management/google_register.php');
     
 } catch (PDOException $e) {
     error_log("PDOException in google_callback.php: " . $e->getMessage());
@@ -668,6 +667,7 @@ try {
     
     // ✅ แสดงข้อผิดพลาดและปิด popup
     $errorMsg = $e->getMessage();
+    if (ob_get_level()) ob_clean();
     echo '<!DOCTYPE html>
 <html>
 <head>
@@ -676,15 +676,18 @@ try {
 </head>
 <body>
     <script>
-        window.opener.postMessage({
-            type: "google_link_error",
-            message: "' . addslashes($errorMsg) . '"
-        }, "*");
-        setTimeout(() => {
-            window.close();
-        }, 1000);
+        if (window.opener) {
+            window.opener.postMessage({
+                type: "google_link_error",
+                message: "' . addslashes($errorMsg) . '"
+            }, "*");
+            setTimeout(() => { window.close(); }, 1000);
+        } else {
+            setTimeout(() => { window.location.href = "/dormitory_management/index.php"; }, 3000);
+        }
     </script>
     <p style="color: red; font-family: Arial;">เกิดข้อผิดพลาด: ' . htmlspecialchars($errorMsg) . '</p>
+    <p style="font-family: Arial; font-size: 13px; color: #666;">กำลังกลับหน้าหลัก...</p>
 </body>
 </html>';
     exit;

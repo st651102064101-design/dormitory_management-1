@@ -335,21 +335,32 @@ try {
         ))));
         if (!empty($allCtrIds)) {
             $placeholders = implode(',', array_fill(0, count($allCtrIds), '?'));
-            // เช็คว่า contract นี้มี meter reading ที่บันทึกแล้ว (utl_water_end > 0 AND utl_elec_end > 0)
-            // ไม่ match เดือนตรงๆ เพราะ admin อาจบันทึกมิเตอร์เดือนถัดไปจาก billMonth ได้
+            // เช็คว่า contract นี้มี meter reading ที่บันทึกแล้ว (utl_water_end > 0 OR utl_elec_end > 0)
+            // รองรับ partial save: น้ำจดแล้ว/ไฟยังไม่ หรือกลับกัน
             $utilStmt = $conn->prepare(
-                "SELECT ctr_id, DATE_FORMAT(utl_date, '%Y-%m') AS ym
+                "SELECT ctr_id, DATE_FORMAT(utl_date, '%Y-%m') AS ym,
+                        MAX(CASE WHEN utl_water_end IS NOT NULL AND utl_water_end > 0 THEN 1 ELSE 0 END) AS has_water,
+                        MAX(CASE WHEN utl_elec_end IS NOT NULL AND utl_elec_end > 0 THEN 1 ELSE 0 END) AS has_elec
                  FROM utility WHERE ctr_id IN ($placeholders)
-                 AND utl_water_end IS NOT NULL AND utl_water_end > 0
-                 AND utl_elec_end IS NOT NULL AND utl_elec_end > 0
+                 AND (
+                    (utl_water_end IS NOT NULL AND utl_water_end > 0)
+                    OR (utl_elec_end IS NOT NULL AND utl_elec_end > 0)
+                 )
                  GROUP BY ctr_id, DATE_FORMAT(utl_date, '%Y-%m')"
             );
             $utilStmt->execute($allCtrIds);
             foreach ($utilStmt->fetchAll(PDO::FETCH_ASSOC) as $uRow) {
                 $ctrIdKey = (int)$uRow['ctr_id'];
-                $utilMonthsRecorded[$ctrIdKey][$uRow['ym']] = true;
-                // ทำ flag รวม: ถ้ามี record ใดๆ ก็ถือว่าจดมิเตอร์แล้ว
-                $utilMonthsRecorded[$ctrIdKey]['__any__'] = true;
+                $isFull = ((int)$uRow['has_water'] === 1 && (int)$uRow['has_elec'] === 1);
+                $utilMonthsRecorded[$ctrIdKey][$uRow['ym']] = $isFull ? 'full' : 'partial';
+                // __any__: ครบทั้งน้ำและไฟ อย่างน้อย 1 เดือน
+                if ($isFull) {
+                    $utilMonthsRecorded[$ctrIdKey]['__any__'] = true;
+                }
+                // __partial__: มีอย่างน้อย 1 เดือนที่จดบางส่วน
+                if (!$isFull) {
+                    $utilMonthsRecorded[$ctrIdKey]['__partial__'] = true;
+                }
             }
         }
     } catch (Exception $e) { /* non-critical */ }
@@ -1652,23 +1663,28 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     : null;
                                 
                                 // ตรวจสอบว่าจดมิเตอร์แล้วหรือไม่ (ใช้ batch data)
-                                // ใช้ __any__ flag เพราะ admin อาจบันทึกมิเตอร์เดือนถัดจาก billMonth ได้
+                                // __any__ = ครบทั้งน้ำและไฟอย่างน้อย 1 เดือน
                                 $meterBillDone = false;
+                                $meterPartialDone = false;
                                 if ($step4 == 1 || $step5 == 1) {
                                     $meterBillDone = !empty($utilMonthsRecorded[$ctrIdInt]['__any__']);
+                                    $meterPartialDone = !empty($utilMonthsRecorded[$ctrIdInt]['__partial__']);
                                 }
                                 
                                 // ตรวจสอบว่าจดมิเตอร์เดือนก่อนหน้าแล้วหรือไม่ (ใช้ batch data)
+                                // 'full' = ครบทั้ง 2 มิเตอร์, 'partial' = จดบางส่วน
                                 $meterPrevDone = $prevYearMonth === null;
                                 if (!$meterPrevDone && $prevYearMonth !== null) {
-                                    $meterPrevDone = !empty($utilMonthsRecorded[$ctrIdInt][$prevYearMonth]);
+                                    $meterPrevDone = ($utilMonthsRecorded[$ctrIdInt][$prevYearMonth] ?? '') === 'full';
                                 }
+                                $meterPrevPartial = $prevYearMonth !== null
+                                    && ($utilMonthsRecorded[$ctrIdInt][$prevYearMonth] ?? '') === 'partial';
 
                                 // ตรวจสอบว่า billing modal จะแสดงสถานะมิเตอร์ถูกต้องหรือไม่
                                 // billing modal โหลดเดือนปัจจุบันเสมอ
                                 // จะไม่แสดง "ยังไม่ได้จดมิเตอร์" เมื่อ: จดมิเตอร์เดือนนี้แล้ว หรือ สัญญาเริ่มเดือนนี้ (first reading)
                                 $currentYm = date('Y-m');
-                                $currentMonthMeterDone = !empty($utilMonthsRecorded[$ctrIdInt][$currentYm]);
+                                $currentMonthMeterDone = ($utilMonthsRecorded[$ctrIdInt][$currentYm] ?? '') === 'full';
                                 $billingModalMeterOk = ($ctrStartYm === $currentYm) || $currentMonthMeterDone;
 
                                 // HTML สถานะมิเตอร์ (แสดงใต้สถานะบิล สำหรับแถว ⏳ เท่านั้น)
@@ -1712,9 +1728,10 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     }
                                 } elseif (!$meterPrevDone && $prevYearMonth !== null) {
                                     $prevDisp = thaiMonthYear($prevYearMonth . '-01');
+                                    $partialLabel = $meterPrevPartial ? ' ⚠ บางส่วน' : '';
                                     $meterStatusHtml = '<button type="button" onclick="' . htmlspecialchars($openMeterJs($prevYearMonth), ENT_QUOTES, 'UTF-8') . '"'
                                         . ' style="display:inline-block;margin-top:0.25rem;background:rgba(20,184,166,0.12);border:1px solid rgba(20,184,166,0.35);color:#2dd4bf;font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:12px;cursor:pointer;"'
-                                        . '>📋 จดมิเตอร์ (' . htmlspecialchars($prevDisp, ENT_QUOTES, 'UTF-8') . ')</button>';
+                                        . '>📋 จดมิเตอร์ (' . htmlspecialchars($prevDisp, ENT_QUOTES, 'UTF-8') . ')' . $partialLabel . '</button>';
                                 } else {
                                     $billDisp   = $firstBillMonthDisplay !== '-' ? $firstBillMonthDisplay : '';
                                     $openMeterYm = $billYearMonth ?? '';
@@ -3055,6 +3072,23 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     btn.textContent = 'อัปเดตมิเตอร์';
                     const m = document.getElementById('moMsg');
                     m.style.color = '#4ade80'; m.textContent = '✓ บันทึกแล้ว (สามารถแก้ไขได้)';
+                    updateMoPreview();
+                } else if (!d.saved && d.meter_month == _moMonth && d.meter_year == _moYear && (d.water_saved || d.elec_saved)) {
+                    // Partial save: one meter recorded, the other not
+                    if (d.water_saved && d.curr_water !== null) {
+                        document.getElementById('moWaterInput').value = String(d.curr_water).padStart(7, '0');
+                        document.getElementById('moWaterInput').disabled = true;
+                        document.getElementById('moWaterInput').style.opacity = '0.6';
+                    }
+                    if (d.elec_saved && d.curr_elec !== null) {
+                        document.getElementById('moElecInput').value = String(d.curr_elec).padStart(5, '0');
+                        document.getElementById('moElecInput').disabled = true;
+                        document.getElementById('moElecInput').style.opacity = '0.6';
+                    }
+                    btn.style.display = 'inline-block';
+                    btn.textContent = '✓ บันทึกมิเตอร์';
+                    const m = document.getElementById('moMsg');
+                    m.style.color = '#fbbf24'; m.textContent = '⚠ บันทึกบางส่วนแล้ว';
                     updateMoPreview();
                 }
             })
