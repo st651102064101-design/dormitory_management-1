@@ -257,8 +257,8 @@ if ($selectedMonth !== '' && !empty($expenses)) {
       "SELECT DISTINCT ctr_id FROM utility
        WHERE ctr_id IN ($ph)
          AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?
-         AND utl_water_end IS NOT NULL
-         AND utl_elec_end IS NOT NULL"
+         AND COALESCE(utl_water_end, 0) > 0
+         AND COALESCE(utl_elec_end, 0) > 0"
     );
     $utilChkStmt->execute([...$ctrIds, $filterMonInt, $filterYearInt]);
 

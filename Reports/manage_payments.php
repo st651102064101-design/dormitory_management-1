@@ -280,10 +280,19 @@ try {
       LEFT JOIN room r ON c.room_id = r.room_id
       LEFT JOIN roomtype rt ON r.type_id = rt.type_id
       LEFT JOIN payment p ON p.exp_id = e.exp_id
+                          AND TRIM(COALESCE(p.pay_remark, '')) NOT LIKE '%มัดจำ%'
+                          AND p.pay_status IN ('0', '1')
       WHERE c.ctr_status = '0'
         AND p.exp_id IS NULL
-        AND DATE_FORMAT(e.exp_month, '%Y-%m') > DATE_FORMAT(c.ctr_start, '%Y-%m')
         AND DATE_FORMAT(e.exp_month, '%Y-%m') <= '{$effectiveCurrentMonth}'
+        AND EXISTS (
+          SELECT 1 FROM utility u
+          WHERE u.ctr_id = e.ctr_id
+            AND MONTH(u.utl_date) = MONTH(e.exp_month)
+            AND YEAR(u.utl_date) = YEAR(e.exp_month)
+            AND COALESCE(u.utl_water_end, 0) > 0
+            AND COALESCE(u.utl_elec_end, 0) > 0
+        )
       ORDER BY e.exp_month DESC, CAST(r.room_number AS UNSIGNED) ASC
     ")->fetchAll(PDO::FETCH_ASSOC);
 

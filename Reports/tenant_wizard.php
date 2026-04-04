@@ -1896,12 +1896,10 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 <span style="color: #16a34a; font-weight: 600;">ดำเนินการครบทุกขั้นตอนแล้ว</span>
                                             <?php else: ?>
                                                 <?php
-                                                // ตรวจสอบว่าจดมิเตอร์เดือนบิลจริงๆ แล้วหรือยัง (ไม่ใช่แค่ __any__)
-                                                $meterDoneForBill = ($billYearMonth !== null)
-                                                    ? !empty($utilMonthsRecorded[$ctrIdInt][$billYearMonth])
-                                                    : !empty($utilMonthsRecorded[$ctrIdInt]['__any__']);
+                                                // ใช้ $meterBillDone (__any__ flag) เพื่อรองรับกรณีที่จดมิเตอร์เดือนปัจจุบัน
+                                                // แต่เดือนบิลแรกมีค่า 0 (เช็คอินด้วยค่า 0)
                                                 ?>
-                                                <?php if ($meterDoneForBill && !$latestBillPaid && $billingModalMeterOk): ?>
+                                                <?php if ($meterBillDone && !$latestBillPaid && $billingModalMeterOk): ?>
                                                     <button type="button" onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)" style="display:inline-flex;align-items:center;gap:0.3rem;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#f59e0b;font-size:0.75rem;font-weight:600;padding:0.25rem 0.65rem;border-radius:12px;cursor:pointer;">
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/></svg>
                                                         <?php echo $firstBillDueReached ? 'รอชำระเงิน' : 'ยังไม่ถึงกำหนด'; ?>
