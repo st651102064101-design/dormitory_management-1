@@ -539,11 +539,15 @@ foreach ($rooms as $room) {
         $water_new = '';
         $elec_new  = '';
     }
-    $water_saved = $hasRecord && $current['utl_water_end'] !== null && !$isAllZeroFirstRecord;
-    $elec_saved  = $hasRecord && $current['utl_elec_end']  !== null && !$isAllZeroFirstRecord;
+    // saved ต้องมีค่า > 0 — ค่า 0 ถือว่ายังไม่ได้จดมิเตอร์จริง (ยกเว้น first reading ที่ start=end=0 ซึ่งถือว่า valid ถ้าทั้งคู่ 0)
+    $water_saved = $hasRecord && (int)($current['utl_water_end'] ?? 0) > 0 && !$isAllZeroFirstRecord;
+    $elec_saved  = $hasRecord && (int)($current['utl_elec_end']  ?? 0) > 0 && !$isAllZeroFirstRecord;
+    // ถ้า input ที่แสดงเป็น 0 แต่ค่า start ก็ 0 ด้วย (first reading, ไม่ได้ใช้จริง) → ซ่อน input 0 ออก
+    if (!$water_saved && $water_new === 0) $water_new = '';
+    if (!$elec_saved  && $elec_new  === 0) $elec_new  = '';
     $saved = $water_saved && $elec_saved;  // ทั้งสองฝั่งบันทึกแล้ว
-    // ล็อคเดือนที่ผ่านมาทั้งหมดที่มี utility record แล้ว ถ้ายังไม่มีให้กรอกได้
-    $meterBlocked = $isPastMonth && $hasRecord && !$isAllZeroFirstRecord;
+    // ล็อคเดือนที่ผ่านมาเฉพาะเมื่อ saved ครบทั้งคู่
+    $meterBlocked = $isPastMonth && $saved;
     
     // Fallback: ถ้าเดือนปัจจุบันยังไม่บันทึก แต่เดือนถัดไปบันทึกแล้ว → ใช้ค่าจากเดือนถัดไป
     if (!$hasRecord && $water_new === '') {
