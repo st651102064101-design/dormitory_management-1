@@ -496,6 +496,9 @@ try {
 } catch (Exception $e) {
     $meterPendingBadgeCount = 0;
 }
+
+// Format current month for display
+$currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -658,6 +661,21 @@ try {
             color: #6366f1;
             -webkit-text-fill-color: #6366f1;
         }
+        .wizard-intro-close {
+            position: absolute;
+            top: 0.6rem; right: 0.7rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: rgba(100,116,139,0.6);
+            font-size: 1.1rem;
+            line-height: 1;
+            padding: 0.2rem 0.35rem;
+            border-radius: 6px;
+            transition: background 0.15s, color 0.15s;
+            z-index: 2;
+        }
+        .wizard-intro-close:hover { background: rgba(99,102,241,0.1); color: #6366f1; }
 
         /* === Filter Buttons === */
         .wiz-filter-bar {
@@ -1209,10 +1227,13 @@ try {
             max-height: 90vh;
             overflow-y: auto;
             overflow-x: hidden;
+            scrollbar-width: none;
+            -ms-overflow-style: none;
             box-shadow: 0 24px 64px rgba(99,102,241,0.15), 0 8px 24px rgba(139,92,246,0.08);
             animation: wizModalIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
             position: relative;
         }
+        .modal-container::-webkit-scrollbar { display: none; }
         .modal-container::before {
             content: '';
             position: absolute;
@@ -1743,13 +1764,22 @@ try {
                     </div>
                 <?php endif; ?>
 
-                <div class="wizard-intro">
+                <div class="wizard-intro" id="wizardIntroBox">
+                    <button class="wizard-intro-close" onclick="closeWizardIntro()" title="ซ่อน">✕</button>
                     <h3>🎯 ระบบจัดการผู้เช่า 5 ขั้นตอน</h3>
                     <p style="margin: 0; line-height: 1.7;">
                         ระบบนี้ช่วยให้คุณจัดการผู้เช่าได้อย่างเป็นระบบ ตั้งแต่การจองห้องจนถึงการออกบิลรายเดือน<br>
                         <strong>ขั้นตอน:</strong> ① ยืนยันจอง → ② ยืนยันชำระเงินจอง → ③ สร้างสัญญา → ④ เช็คอิน → ⑤ เริ่มบิลรายเดือน
                     </p>
                 </div>
+                <script>
+                    (function(){
+                        if (localStorage.getItem('wizardIntroHidden') === '1') {
+                            var el = document.getElementById('wizardIntroBox');
+                            if (el) el.style.display = 'none';
+                        }
+                    })();
+                </script>
 
                 <!-- Completion Status Filter Buttons -->
                 <div class="wiz-filter-bar">
@@ -1760,7 +1790,7 @@ try {
                     <?php if ($meterPendingBadgeCount > 0): ?>
                     <a href="manage_utility.php" class="wiz-meter-alert" title="ไปจดมิเตอร์">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
-                        ยังไม่จดมิเตอร์เดือนนี้
+                        ยังไม่จดมิเตอร์เดือนนี้ (<?php echo htmlspecialchars($currentMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)
                         <span class="wiz-meter-count"><?php echo $meterPendingBadgeCount > 99 ? '99+' : $meterPendingBadgeCount; ?></span>
                         ห้อง
                     </a>
@@ -2561,7 +2591,7 @@ try {
                         <span>กรุณาจดมิเตอร์ก่อน เพื่อดูรายการบิล</span>
                     </span>
                 </div>
-                <div id="billSectionsWrapper" style="display:none;">
+                <div id="billSectionsWrapper" style="display:none; max-height:300px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,0.35) transparent;">
                     <div id="firstBillPaymentsSection" style="margin-bottom:0.85rem; color:#e2e8f0;"></div>
                     <div id="latestBillPaymentsSection" style="color:#e2e8f0;"></div>
                 </div>
@@ -3170,12 +3200,13 @@ try {
                 if (allBills.length === 0) {
                     latestBillPaymentsSection.innerHTML = '<div style="color:rgba(148,163,184,0.7);font-size:0.88rem;padding:0.5rem 0;">ยังไม่มีบิลในระบบ</div>';
                 } else {
-                    // สร้าง container สำหรับทุกบิลใน latestBillPaymentsSection
-                    allBills.forEach((bill, idx) => {
-                        const isLast = idx === allBills.length - 1;
-                        const isFirst = idx === 0;
+                    // สร้าง container สำหรับทุกบิลใน latestBillPaymentsSection (เดือนล่าสุดขึ้นก่อน)
+                    const billsReversed = [...allBills].reverse();
+                    billsReversed.forEach((bill, idx) => {
+                        const isLast = idx === 0; // isLast = bill ล่าสุด (ซึ่งอยู่ index 0 หลัง reverse)
+                        const isFirst = idx === billsReversed.length - 1;
                         let title = '';
-                        if (allBills.length === 1) {
+                        if (billsReversed.length === 1) {
                             title = 'รายการชำระเดือนแรก (บิลปัจจุบัน)';
                         } else if (isFirst) {
                             title = 'รายการชำระเดือนแรก';
@@ -3705,6 +3736,14 @@ try {
         document.body.style.overflow = '';
         document.body.classList.remove('modal-open');
         document.getElementById('billingForm').reset();
+    }
+
+    function closeWizardIntro() {
+        const introBox = document.getElementById('wizardIntroBox');
+        if (introBox) {
+            introBox.style.display = 'none';
+            localStorage.setItem('wizardIntroHidden', '1');
+        }
     }
 
     // Functions สำหรับ Payment Modal (Step 2)
