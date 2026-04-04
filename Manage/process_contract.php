@@ -12,6 +12,14 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
+$_isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
+function _jsonError(string $msg): void {
+    header('Content-Type: application/json');
+    echo json_encode(['success' => false, 'error' => $msg]);
+    exit;
+}
+
 require_once __DIR__ . '/../ConnectDB.php';
 
 try {
@@ -33,12 +41,14 @@ try {
     }
 
     if ($tnt_id === '' || $room_id <= 0 || $ctr_start === '' || $ctr_end === '') {
+        if ($_isAjax) _jsonError('กรุณากรอกข้อมูลให้ครบถ้วน');
         $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
         header('Location: ../Reports/manage_contracts.php');
         exit;
     }
 
     if ($ctr_end < $ctr_start) {
+        if ($_isAjax) _jsonError('วันที่สิ้นสุดต้องไม่น้อยกว่าวันที่เริ่มสัญญา');
         $_SESSION['error'] = 'วันที่สิ้นสุดต้องไม่น้อยกว่าวันที่เริ่มสัญญา';
         header('Location: ../Reports/manage_contracts.php');
         exit;
@@ -51,6 +61,7 @@ try {
     $roomStmt->execute([$room_id]);
     $room = $roomStmt->fetch(PDO::FETCH_ASSOC);
     if (!$room) {
+        if ($_isAjax) _jsonError('ไม่พบข้อมูลห้องพัก');
         $_SESSION['error'] = 'ไม่พบข้อมูลห้องพัก';
         header('Location: ../Reports/manage_contracts.php');
         exit;
@@ -91,6 +102,7 @@ try {
         );
         $otherContractsStmt->execute([$room_id, $tnt_id, $ctrId ?? 0]);
         if ((int)$otherContractsStmt->fetchColumn() > 0) {
+            if ($_isAjax) _jsonError('ห้องนี้มีสัญญาอื่นอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้');
             $_SESSION['error'] = 'ห้องนี้มีสัญญาห้องอื่นอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
             header('Location: ../Reports/manage_contracts.php');
             exit;
@@ -103,6 +115,7 @@ try {
         );
         $otherTenantStmt->execute([$tnt_id, $room_id, $ctrId ?? 0]);
         if ((int)$otherTenantStmt->fetchColumn() > 0) {
+            if ($_isAjax) _jsonError('ผู้เช่าคนนี้มีสัญญาอื่นอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้');
             $_SESSION['error'] = 'ผู้เช่าคนนี้มีสัญญาอื่นอยู่แล้ว - ไม่สามารถสร้างสัญญาซ้ำได้';
             header('Location: ../Reports/manage_contracts.php');
             exit;

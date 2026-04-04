@@ -29,6 +29,10 @@ if ($settingsStmt) {
 }
 
 // Get contracts (optionally filter by ctr_id passed via querystring)
+$filterStatus = isset($_GET['status']) ? $_GET['status'] : 'all';
+$validStatuses = ['all', 'active', 'waiting', 'notifying', 'cancelled', 'expiring'];
+if (!in_array($filterStatus, $validStatuses, true)) $filterStatus = 'all';
+
 try {
     $filterCtrId = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
     if ($filterCtrId > 0) {
@@ -56,13 +60,47 @@ try {
           ORDER BY c.ctr_start DESC");
         $stmt->execute();
     }
-    $contracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    error_log("DEBUG: Contracts found: " . count($contracts));
-    if(count($contracts) > 0) {
-        error_log("DEBUG: First contract: " . json_encode($contracts[0]));
+    $allContracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // Compute per-status counts from full dataset
+    $filterCounts = ['all' => count($allContracts), 'active' => 0, 'waiting' => 0, 'notifying' => 0, 'cancelled' => 0, 'expiring' => 0];
+    foreach ($allContracts as $_c) {
+        $_s   = (string)($_c['ctr_status'] ?? '0');
+        $_tnt = (string)($_c['tnt_status'] ?? '');
+        $_end = $_c['ctr_end'] ?? '';
+        if ($_s === '0' && $_tnt !== '2') $filterCounts['active']++;
+        if ($_s !== '1' && $_tnt === '2') $filterCounts['waiting']++;
+        if ($_s === '2') $filterCounts['notifying']++;
+        if ($_s === '1') $filterCounts['cancelled']++;
+        if ($_s === '0' && !empty($_end) && $_end !== '0000-00-00') {
+            $_days = (strtotime($_end) - time()) / 86400;
+            if ($_days >= 0 && $_days <= 30) $filterCounts['expiring']++;
+        }
     }
+
+    // Apply filter
+    if ($filterStatus !== 'all') {
+        $allContracts = array_values(array_filter($allContracts, function($c) use ($filterStatus) {
+            $s   = (string)($c['ctr_status'] ?? '0');
+            $tnt = (string)($c['tnt_status'] ?? '');
+            $end = $c['ctr_end'] ?? '';
+            switch ($filterStatus) {
+                case 'active':    return $s === '0' && $tnt !== '2';
+                case 'waiting':   return $s !== '1' && $tnt === '2';
+                case 'notifying': return $s === '2';
+                case 'cancelled': return $s === '1';
+                case 'expiring':
+                    if ($s !== '0' || empty($end) || $end === '0000-00-00') return false;
+                    $_d = (strtotime($end) - time()) / 86400;
+                    return $_d >= 0 && $_d <= 30;
+                default: return true;
+            }
+        }));
+    }
+    $contracts = $allContracts;
 } catch(Exception $e) {
     $contracts = [];
+    $filterCounts = ['all'=>0,'active'=>0,'waiting'=>0,'notifying'=>0,'cancelled'=>0,'expiring'=>0];
     $error = "ข้อผิดพลาดในการดึงข้อมูล: " . $e->getMessage();
     error_log("ERROR: Contract query error: " . $e->getMessage());
 }
@@ -454,6 +492,76 @@ foreach ($contracts as $contract) {
         white-space: nowrap;
       }
 
+      /* --- Status filter bar --- */
+      .ctr-filter-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
+        align-items: center;
+      }
+      .ctr-filter-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.38rem 0.9rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 500;
+        cursor: pointer;
+        text-decoration: none;
+        border: 1.5px solid transparent;
+        transition: background 0.15s, border-color 0.15s, transform 0.1s;
+        white-space: nowrap;
+        background: rgba(255,255,255,0.06);
+        color: rgba(226,232,240,0.75);
+        border-color: rgba(255,255,255,0.1);
+      }
+      .ctr-filter-pill:hover {
+        background: rgba(255,255,255,0.12);
+        color: #f1f5f9;
+      }
+      .ctr-filter-pill.active {
+        font-weight: 600;
+        color: #fff;
+        transform: translateY(-1px);
+      }
+      .ctr-filter-pill.pill-all.active       { background:#334155; border-color:#64748b; }
+      .ctr-filter-pill.pill-active.active    { background:rgba(34,197,94,0.18); border-color:#22c55e; color:#4ade80; }
+      .ctr-filter-pill.pill-waiting.active   { background:rgba(245,158,11,0.18); border-color:#f59e0b; color:#fbbf24; }
+      .ctr-filter-pill.pill-notifying.active { background:rgba(251,146,60,0.18); border-color:#fb923c; color:#fdba74; }
+      .ctr-filter-pill.pill-cancelled.active { background:rgba(239,68,68,0.18);  border-color:#ef4444; color:#fca5a5; }
+      .ctr-filter-pill.pill-expiring.active  { background:rgba(234,179,8,0.18);  border-color:#eab308; color:#fde047; }
+      .ctr-filter-pill .pill-count {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 5px;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        background: rgba(255,255,255,0.12);
+      }
+      .ctr-filter-pill.active .pill-count { background: rgba(255,255,255,0.2); }
+      html.light-theme .ctr-filter-pill {
+        background: rgba(0,0,0,0.04);
+        color: #475569;
+        border-color: rgba(0,0,0,0.1);
+      }
+      html.light-theme .ctr-filter-pill:hover { background: rgba(0,0,0,0.08); color: #0f172a; }
+      html.light-theme .ctr-filter-pill.pill-all.active       { background:#e2e8f0; border-color:#94a3b8; color:#0f172a; }
+      html.light-theme .ctr-filter-pill.pill-active.active    { background:#dcfce7; border-color:#16a34a; color:#15803d; }
+      html.light-theme .ctr-filter-pill.pill-waiting.active   { background:#fef3c7; border-color:#d97706; color:#92400e; }
+      html.light-theme .ctr-filter-pill.pill-notifying.active { background:#ffedd5; border-color:#ea580c; color:#9a3412; }
+      html.light-theme .ctr-filter-pill.pill-cancelled.active { background:#fee2e2; border-color:#dc2626; color:#991b1b; }
+      html.light-theme .ctr-filter-pill.pill-expiring.active  { background:#fefce8; border-color:#ca8a04; color:#713f12; }
+      @media (max-width: 768px) {
+        .ctr-filter-bar { gap: 0.35rem; }
+        .ctr-filter-pill { font-size: 0.78rem; padding: 0.3rem 0.7rem; }
+      }
+
       /* --- Cancel button --- */
       .cancel-contract-btn {
         background: #f59e0b !important;
@@ -709,13 +817,24 @@ foreach ($contracts as $contract) {
       #cdrDrawer * { box-sizing: border-box; }
       .cdr-tab {
         flex: 1; padding: 0.75rem 0.5rem;
-        background: none; border: none; border-bottom: 2px solid transparent;
+        background: none; border: none; border-bottom: 3px solid transparent;
         color: var(--cdr-text-muted); cursor: pointer; font-size: 0.9rem;
-        transition: color .18s, border-color .18s;
+        transition: color .18s, border-color .18s, background .18s;
       }
-      .cdr-tab.active { color: #0ea5e9; border-bottom-color: #0ea5e9; font-weight: 600; }
-      html.light-theme .cdr-tab.active { color: #0284c7; border-bottom-color: #0284c7; }
-      .cdr-tab:hover:not(.active) { color: var(--cdr-text-body); }
+      .cdr-tab:hover:not(.active) { color: var(--cdr-text-body); background: rgba(255,255,255,0.04); }
+      /* Per-tab active colors */
+      .cdr-tab[data-tab="overview"].active  { color: #38bdf8; border-bottom-color: #38bdf8; font-weight: 600; background: rgba(56,189,248,0.06); }
+      .cdr-tab[data-tab="billing"].active   { color: #4ade80; border-bottom-color: #4ade80; font-weight: 600; background: rgba(74,222,128,0.06); }
+      .cdr-tab[data-tab="meter"].active     { color: #fbbf24; border-bottom-color: #fbbf24; font-weight: 600; background: rgba(251,191,36,0.06); }
+      /* Hover hints per tab */
+      .cdr-tab[data-tab="overview"]:not(.active):hover { color: #7dd3fc; }
+      .cdr-tab[data-tab="billing"]:not(.active):hover  { color: #86efac; }
+      .cdr-tab[data-tab="meter"]:not(.active):hover    { color: #fde68a; }
+      /* Light theme */
+      html.light-theme .cdr-tab[data-tab="overview"].active { color: #0284c7; border-bottom-color: #0284c7; background: rgba(2,132,199,0.06); }
+      html.light-theme .cdr-tab[data-tab="billing"].active  { color: #16a34a; border-bottom-color: #16a34a; background: rgba(22,163,74,0.06); }
+      html.light-theme .cdr-tab[data-tab="meter"].active    { color: #d97706; border-bottom-color: #d97706; background: rgba(217,119,6,0.06); }
+      html.light-theme .cdr-tab:hover:not(.active) { background: rgba(0,0,0,0.03); }
       .cdr-section { margin-bottom: 1.5rem; }
       .cdr-section-title {
         font-size: 0.72rem; font-weight: 700; letter-spacing: .06em;
@@ -1044,10 +1163,35 @@ foreach ($contracts as $contract) {
                     </div>
                 </form>
 
-                <div style="width: 100%; box-sizing: border-box;">
+                <div id="contractsTableArea" style="width: 100%; box-sizing: border-box;">
                     <h3>รายชื่อสัญญา</h3>
+
+                    <!-- Status filter pills -->
+                    <?php
+                        $baseHref = 'manage_contracts.php' . ($filterCtrId > 0 ? '?ctr_id=' . $filterCtrId . '&status=' : '?status=');
+                        $pills = [
+                            ['key'=>'all',        'label'=>'ทั้งหมด',      'class'=>'pill-all',        'icon'=>'📋'],
+                            ['key'=>'active',     'label'=>'ทำสัญญาอยู่', 'class'=>'pill-active',     'icon'=>'✅'],
+                            ['key'=>'waiting',    'label'=>'รอเข้าพัก',   'class'=>'pill-waiting',    'icon'=>'⏳'],
+                            ['key'=>'notifying',  'label'=>'แจ้งยกเลิก',  'class'=>'pill-notifying',  'icon'=>'📢'],
+                            ['key'=>'cancelled',  'label'=>'ยกเลิกแล้ว',  'class'=>'pill-cancelled',  'icon'=>'❌'],
+                            ['key'=>'expiring',   'label'=>'ใกล้หมดสัญญา','class'=>'pill-expiring',   'icon'=>'⏰'],
+                        ];
+                    ?>
+                    <div class="ctr-filter-bar">
+                        <?php foreach ($pills as $pill): ?>
+                            <a href="<?php echo htmlspecialchars($baseHref . $pill['key'], ENT_QUOTES, 'UTF-8'); ?>" data-filter="<?php echo htmlspecialchars($pill['key'], ENT_QUOTES, 'UTF-8'); ?>" class="ctr-filter-pill <?php echo $pill['class']; ?><?php echo $filterStatus === $pill['key'] ? ' active' : ''; ?>" onclick="filterContracts(event, this)">
+                                <?php echo $pill['icon']; ?> <?php echo $pill['label']; ?>
+                                <span class="pill-count"><?php echo $filterCounts[$pill['key']] ?? 0; ?></span>
+                            </a>
+                        <?php endforeach; ?>
+                    </div>
+
                     <div class="info-bar" style="margin:0.25rem 0 0.75rem; padding:0.5rem 0.75rem; background: rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:6px; color:rgba(255,255,255,0.9); word-break: break-word;">
-                      สัญญาทั้งหมดที่แสดง: <strong><?php echo $ctrCount; ?></strong> รายการ (ทุกสถานะ)
+                      แสดง: <strong><?php echo count($contracts); ?></strong> รายการ
+                      <?php if ($filterStatus !== 'all'): ?>
+                        <span style="opacity:0.6;">· จากทั้งหมด <?php echo $filterCounts['all']; ?> รายการ</span>
+                      <?php endif; ?>
                     </div>
                     <div class="table-responsive-wrap">
                     <table id="table-contracts" class="report-table" style="margin-bottom: 2rem; width: 100%; border-collapse: collapse;">
@@ -1130,6 +1274,129 @@ foreach ($contracts as $contract) {
 
     <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
     <script src="/dormitory_management/Public/Assets/Javascript/main.js" defer></script>
+
+    <!-- Toast container -->
+    <div id="ctrToast" style="position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;display:flex;flex-direction:column;gap:0.5rem;pointer-events:none;"></div>
+
+    <script>
+    /* =====================================================
+       AJAX UTILITIES
+       ===================================================== */
+    let _ctrCurrentFilter = '<?php echo htmlspecialchars($filterStatus, ENT_QUOTES, 'UTF-8'); ?>';
+
+    function showCtrToast(msg, type = 'success') {
+      const colors = { success: '#22c55e', error: '#ef4444', info: '#38bdf8' };
+      const el = document.createElement('div');
+      el.style.cssText = `padding:0.65rem 1.1rem;border-radius:8px;font-size:0.9rem;font-weight:500;
+        background:${colors[type] || colors.success};color:#fff;box-shadow:0 4px 16px rgba(0,0,0,0.25);
+        opacity:0;transition:opacity 0.25s;max-width:320px;word-break:break-word;pointer-events:auto;`;
+      el.textContent = msg;
+      document.getElementById('ctrToast').appendChild(el);
+      requestAnimationFrame(() => { el.style.opacity = '1'; });
+      setTimeout(() => {
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 300);
+      }, 3500);
+    }
+
+    function refreshContractsTable(filterKey) {
+      if (filterKey !== undefined) _ctrCurrentFilter = filterKey;
+      const area = document.getElementById('contractsTableArea');
+      if (!area) { location.reload(); return; }
+      const sep = location.href.includes('?') ? '&' : '?';
+      // Build URL preserving ctr_id if present, replace/add status
+      let baseUrl = location.href.split('?')[0];
+      const params = new URLSearchParams(location.search);
+      params.set('status', _ctrCurrentFilter);
+      params.set('_t', Date.now());
+      const freshUrl = baseUrl + '?' + params.toString();
+
+      // Update URL bar without reload
+      const cleanParams = new URLSearchParams();
+      cleanParams.set('status', _ctrCurrentFilter);
+      if (params.get('ctr_id')) cleanParams.set('ctr_id', params.get('ctr_id'));
+      history.replaceState(null, '', location.pathname + '?' + cleanParams.toString());
+
+      fetch(freshUrl, { credentials: 'same-origin' })
+        .then(r => r.text())
+        .then(html => {
+          const parser = new DOMParser();
+          const doc = parser.parseFromString(html, 'text/html');
+          const newArea = doc.getElementById('contractsTableArea');
+          if (newArea) {
+            area.innerHTML = newArea.innerHTML;
+            // Re-bind filter pill clicks on new markup
+            area.querySelectorAll('.ctr-filter-pill[data-filter]').forEach(pill => {
+              pill.addEventListener('click', function(e) { filterContracts(e, this); });
+            });
+            // Re-init DataTable
+            initContractsDataTable();
+            setTimeout(handleContractsTableResponsive, 150);
+          }
+          // Also refresh stat cards
+          const newStats = doc.querySelector('.contract-stats');
+          const curStats = document.querySelector('.contract-stats');
+          if (newStats && curStats) curStats.outerHTML = newStats.outerHTML;
+          // Refresh info bar outside table area
+          const newInfoBar = doc.querySelector('.info-bar');
+          const curInfoBar = document.querySelector('.info-bar');
+          if (newInfoBar && curInfoBar) curInfoBar.outerHTML = newInfoBar.outerHTML;
+        })
+        .catch(() => location.reload());
+    }
+
+    /* Filter pills — AJAX instead of navigation */
+    function filterContracts(e, pill) {
+      e.preventDefault();
+      const key = pill.getAttribute('data-filter');
+      if (!key) return;
+      refreshContractsTable(key);
+    }
+
+    /* Add-contract form — AJAX submit */
+    document.addEventListener('submit', function(e) {
+      const form = e.target.closest('#contractForm');
+      if (!form) return;
+      e.preventDefault();
+
+      if (!validateForm()) return;
+      calculateDates();
+      const depositInput = document.getElementById('ctr_deposit');
+      if (depositInput && !depositInput.value) depositInput.value = '2000';
+
+      const submitBtn = form.querySelector('.btn-submit');
+      if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'กำลังบันทึก...'; }
+
+      const fd = new FormData(form);
+      fetch(form.action, {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        body: fd,
+      })
+        .then(r => r.json())
+        .then(data => {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'บันทึกสัญญา'; }
+          if (data.success) {
+            showCtrToast('✅ ' + (data.message || 'บันทึกสัญญาเรียบร้อยแล้ว'), 'success');
+            form.reset();
+            calculateDates();
+            // collapse form
+            if (window.__toggleContractForm) {
+              const formEl = document.getElementById('contractForm');
+              if (formEl && !formEl.classList.contains('hide')) window.__toggleContractForm();
+            }
+            refreshContractsTable();
+          } else {
+            showCtrToast('❌ ' + (data.error || 'ไม่สามารถบันทึกสัญญาได้'), 'error');
+          }
+        })
+        .catch(() => {
+          if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'บันทึกสัญญา'; }
+          showCtrToast('❌ ข้อผิดพลาดเครือข่าย', 'error');
+        });
+    }, true);
+    </script>
+
     <script>
       // Handle immediate cancel action from "แจ้งยกเลิก"
       async function sendCancelContract(ctrId) {
@@ -1160,29 +1427,19 @@ foreach ($contracts as $contract) {
         if (!btn) return;
         e.preventDefault();
         const ctrId = btn.getAttribute('data-ctrid');
-        if (!ctrId) return alert('ไม่พบรหัสสัญญา');
+        if (!ctrId) return showCtrToast('ไม่พบรหัสสัญญา', 'error');
 
-        // Immediate cancel without confirmation (ยกเลิกทันที)
         btn.disabled = true;
         btn.textContent = 'กำลังยกเลิก...';
 
         sendCancelContract(ctrId).then(function(resp) {
           if (resp && resp.success) {
-            const row = findRowFromBtn(btn);
-            if (row) {
-              const badge = row.querySelector('.status-badge');
-              if (badge) {
-                badge.textContent = 'ยกเลิกแล้ว';
-                badge.style.backgroundColor = '#f44336';
-              }
-              // optionally mark tenant/room status visually
-            }
-            btn.remove();
-            alert(resp.message || 'ยกเลิกสัญญาเรียบร้อยแล้ว');
+            showCtrToast('✅ ' + (resp.message || 'ยกเลิกสัญญาเรียบร้อยแล้ว'), 'success');
+            refreshContractsTable();
           } else {
             btn.disabled = false;
-            btn.textContent = 'ยกเลิกสัญญา';
-            alert((resp && resp.error) ? resp.error : 'ไม่สามารถยกเลิกสัญญาได้');
+            btn.textContent = 'ยกเลิกทันที';
+            showCtrToast('❌ ' + ((resp && resp.error) ? resp.error : 'ไม่สามารถยกเลิกสัญญาได้'), 'error');
           }
         });
       });
@@ -1211,30 +1468,21 @@ foreach ($contracts as $contract) {
         if (!btn) return;
         e.preventDefault();
         const ctrId = btn.getAttribute('data-ctrid');
-        if (!ctrId) return alert('ไม่พบรหัสสัญญา');
+        if (!ctrId) return showCtrToast('ไม่พบรหัสสัญญา', 'error');
 
-        // Confirm before delete
-        if (!confirm('คุณแน่ใจหรือว่าต้องการลบสัญญานี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) {
-          return;
-        }
+        if (!confirm('คุณแน่ใจหรือว่าต้องการลบสัญญานี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) return;
 
         btn.disabled = true;
         btn.textContent = 'กำลังลบ...';
 
         deleteContract(ctrId).then(function(resp) {
           if (resp && resp.success) {
-            const row = findRowFromBtn(btn);
-            if (row) {
-              row.style.opacity = '0.5';
-              row.style.textDecoration = 'line-through';
-            }
-            btn.remove();
-            alert(resp.message || 'ลบสัญญาเรียบร้อยแล้ว');
-            setTimeout(() => window.location.reload(), 500);
+            showCtrToast('✅ ' + (resp.message || 'ลบสัญญาเรียบร้อยแล้ว'), 'success');
+            refreshContractsTable();
           } else {
             btn.disabled = false;
             btn.textContent = 'ลบ';
-            alert((resp && resp.error) ? resp.error : 'ไม่สามารถลบสัญญาได้');
+            showCtrToast('❌ ' + ((resp && resp.error) ? resp.error : 'ไม่สามารถลบสัญญาได้'), 'error');
           }
         });
       });
@@ -1328,30 +1576,7 @@ foreach ($contracts as $contract) {
         const durationSelect = document.getElementById('contract_duration');
         durationSelect.addEventListener('change', calculateDates);
 
-        // Guard form submission: ensure dates/deposit set and prevent double submit
-        const submitBtn = document.querySelector('#contractForm .btn-submit');
-        document.getElementById('contractForm').addEventListener('submit', function(e) {
-          if (!validateForm()) {
-            e.preventDefault();
-            if (submitBtn) {
-              submitBtn.disabled = false;
-              submitBtn.textContent = 'บันทึกสัญญา';
-            }
-            return;
-          }
-
-          calculateDates();
-          const depositInput = document.getElementById('ctr_deposit');
-          if (depositInput && !depositInput.value) {
-            depositInput.value = '2000';
-          }
-          if (submitBtn) {
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'กำลังบันทึก...';
-          }
-        });
-        
-        // Form validation
+        // Form validation (used by AJAX submit handler above)
         function validateForm() {
             const tntId = document.getElementById('tnt_id').value;
             const roomId = document.getElementById('room_id').value;
@@ -1488,10 +1713,17 @@ foreach ($contracts as $contract) {
         }
       }
       
-      document.addEventListener('DOMContentLoaded', function() {
+      let _dtInstance = null;
+
+      function initContractsDataTable() {
+        // Destroy previous instance if any
+        if (_dtInstance) {
+          try { _dtInstance.destroy(); } catch(e) {}
+          _dtInstance = null;
+        }
         const contractsTable = document.getElementById('table-contracts');
         if (contractsTable && typeof simpleDatatables !== 'undefined') {
-          new simpleDatatables.DataTable(contractsTable, {
+          _dtInstance = new simpleDatatables.DataTable(contractsTable, {
             searchable: true,
             fixedHeight: false,
             perPage: 10,
@@ -1504,6 +1736,10 @@ foreach ($contracts as $contract) {
             }
           });
         }
+      }
+
+      document.addEventListener('DOMContentLoaded', function() {
+        initContractsDataTable();
         // Apply responsive styles after DataTable finishes rendering
         setTimeout(handleContractsTableResponsive, 150);
         setTimeout(handleContractsTableResponsive, 400);
