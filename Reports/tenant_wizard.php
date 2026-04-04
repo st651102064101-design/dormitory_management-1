@@ -1952,14 +1952,18 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                             <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">เช็คอิน</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 5 || $currentStep >= 6 || (int)($tenant['completed'] ?? 0) === 1): ?>
-                                            <?php if ($step5 && $meterBillDone && $latestBillPaid): ?>
+                                            <?php if ($step5 && $meterBillDone && $latestBillPaid && $firstBillPaid): ?>
                                                 <span style="color: #16a34a; font-weight: 600;">✓ ชำระแล้ว (<?php echo htmlspecialchars($latestMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>
-                                            <?php elseif ($step5 && $meterBillDone && $latestBillWaiting): ?>
+                                            <?php elseif ($step5 && $meterBillDone && ($firstBillWaiting || $latestBillWaiting)): ?>
+                                                <?php
+                                                    // แสดงเดือนที่รอตรวจสอบ — first bill ก่อนเสมอ ถ้ายังค้างอยู่
+                                                    $waitingMonthDisp = $firstBillWaiting ? $firstBillMonthDisplay : $latestMonthDisplay;
+                                                ?>
                                                 <button type="button"
                                                     onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)"
                                                     style="background:rgba(96,165,250,0.15);border:1px solid rgba(96,165,250,0.4);color:#60a5fa;font-weight:600;font-size:0.82rem;padding:0.3rem 0.75rem;border-radius:20px;cursor:pointer;transition:background 0.2s;"
                                                     onmouseover="this.style.background='rgba(96,165,250,0.28)'" onmouseout="this.style.background='rgba(96,165,250,0.15)'"
-                                                >🔍 <?php echo $latestMonthDisplay !== '-' ? '(' . htmlspecialchars($latestMonthDisplay, ENT_QUOTES, 'UTF-8') . ')' : ''; ?> รอตรวจสอบ</button>
+                                                >🔍 <?php echo $waitingMonthDisp !== '-' ? '(' . htmlspecialchars($waitingMonthDisp, ENT_QUOTES, 'UTF-8') . ')' : ''; ?> รอตรวจสอบ</button>
                                             <?php elseif ($step5): ?>
                                                 <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0;">
                                                     <?php if ($meterBillDone): ?>
@@ -1978,9 +1982,16 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 // แต่เดือนบิลแรกมีค่า 0 (เช็คอินด้วยค่า 0)
                                                 ?>
                                                 <?php if ($meterBillDone && !$latestBillPaid && $billingModalMeterOk): ?>
+                                                    <?php
+                                                        // แสดงเดือนที่รอชำระ — first bill ก่อน ถ้ายังค้างอยู่
+                                                        $unpaidDisp = $firstBillUnpaid && $firstBillMonthDisplay !== '-'
+                                                            ? $firstBillMonthDisplay
+                                                            : ($latestMonthDisplay !== '-' ? $latestMonthDisplay : '');
+                                                        $unpaidLabel = $firstBillDueReached ? 'รอชำระเงิน' : 'ยังไม่ถึงกำหนด';
+                                                    ?>
                                                     <button type="button" onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)" style="display:inline-flex;align-items:center;gap:0.3rem;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#f59e0b;font-size:0.75rem;font-weight:600;padding:0.25rem 0.65rem;border-radius:12px;cursor:pointer;">
                                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/></svg>
-                                                        <?php echo $firstBillDueReached ? 'รอชำระเงิน' : 'ยังไม่ถึงกำหนด'; ?>
+                                                        <?php echo $unpaidLabel; ?><?php echo $unpaidDisp !== '' ? ' (' . htmlspecialchars($unpaidDisp, ENT_QUOTES, 'UTF-8') . ')' : ''; ?>
                                                     </button>
                                                 <?php else: ?>
                                                     <?php echo $meterStatusHtml; ?>
