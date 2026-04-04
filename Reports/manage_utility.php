@@ -272,22 +272,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             $doInsert = !$existing;
 
             if ($existing) {
-                if ($isFirstReading) {
-                    // แก้ไขบิลครั้งแรก เฉพาะเมื่อ record มีค่าจริงอยู่แล้ว (ไม่ใช่ record 0-0 ที่ auto-generate จากตอน checkin)
-                    $existingHasNonZero = (int)($existing['utl_water_end'] ?? 0) > 0
-                                      || (int)($existing['utl_elec_end']  ?? 0) > 0;
-                    if ($existingHasNonZero) {
-                        $fixUtilStmt = $pdo->prepare("UPDATE utility SET utl_water_start = utl_water_end, utl_elec_start = utl_elec_end WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
-                        $fixUtilStmt->execute([$ctrId, $month, $year]);
-                        $fixExpStmt = $pdo->prepare("UPDATE expense SET exp_water = 0, exp_elec_chg = 0, exp_elec_unit = 0, exp_water_unit = 0, exp_total = room_price WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?");
-                        $fixExpStmt->execute([$ctrId, $month, $year]);
-                        $firstBillRooms[] = $ctrId;
-                        $saved++;
-                        continue;
-                    }
-                    // record เป็น 0-0 (ยังไม่ได้จดจริง) → fall through เพื่อบันทึกค่าที่ user กรอก
-                }
-
                 // ตรวจว่าฝั่งที่กำลังบันทึกถูกบันทึกแล้วหรือยัง (ค่า > 0 ถือว่าบันทึกแล้ว)
                 $thisTabAlreadySaved = ($postTab === 'water')
                     ? ($existing['utl_water_end'] !== null && (int)$existing['utl_water_end'] > 0)
@@ -2133,48 +2117,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                 <div class="toast-msg error"><?php echo htmlspecialchars($error); ?></div>
                 <?php endif; ?>
 
-                <!-- First Bills Display Modal -->
-                <?php if (isset($_SESSION['first_bills']) && !empty($_SESSION['first_bills'])): ?>
-                <?php $firstBills = $_SESSION['first_bills']; unset($_SESSION['first_bills']); ?>
-                <div class="first-bills-modal" id="firstBillsModal" style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:10000;">
-                    <div class="first-bills-card" style="background:white;border-radius:16px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 20px 40px rgba(0,0,0,0.3);color:#000;">
-                        <div style="padding:24px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;">
-                            <h2 style="margin:0;font-size:18px;font-weight:600;display:flex;align-items:center;gap:8px;">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><line x1="22" y1="4" x2="12" y2="14.01"/></svg>
-                                บิลเดือนแรกที่สร้างขึ้นแล้ว
-                            </h2>
-                            <button onclick="document.getElementById('firstBillsModal').remove()" style="background:none;border:none;font-size:24px;cursor:pointer;color:#999;">×</button>
-                        </div>
-                        <div style="padding:20px;">
-                            <?php foreach ($firstBills as $bill): ?>
-                            <div style="margin-bottom:16px;padding:16px;background:#f9fafb;border-radius:8px;border-left:4px solid #10b981;">
-                                <div style="font-size:14px;color:#666;margin-bottom:8px;">ห้อง <strong><?php echo htmlspecialchars($bill['room_number']); ?></strong> - <?php echo htmlspecialchars($bill['tnt_name']); ?></div>
-                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;font-size:13px;">
-                                    <div style="background:white;padding:8px;border-radius:4px;">
-                                        <div style="color:#666;font-size:12px;margin-bottom:2px;">ค่าห้อง</div>
-                                        <div style="font-weight:600;color:#1f2937;font-size:14px;"><?php echo number_format((int)$bill['room_price'], 0); ?> ฿</div>
-                                    </div>
-                                    <div style="background:white;padding:8px;border-radius:4px;">
-                                        <div style="color:#666;font-size:12px;margin-bottom:2px;">ค่าสาธารณูปโภค</div>
-                                        <div style="font-weight:600;color:#1f2937;font-size:14px;"><?php echo number_format((int)($bill['exp_elec_chg']) + (int)($bill['exp_water']), 0); ?> ฿</div>
-                                    </div>
-                                </div>
-                                <div style="padding:8px;background:white;border-radius:4px;border-top:2px solid #e5e7eb;">
-                                    <div style="color:#666;font-size:12px;margin-bottom:4px;">ยอดรวมทั้งสิ้น</div>
-                                    <div style="font-weight:700;color:#059669;font-size:16px;"><?php echo number_format((int)$bill['exp_total'], 0); ?> ฿</div>
-                                </div>
-                            </div>
-                            <?php endforeach; ?>
-                            <div style="margin-top:20px;padding:12px;background:#eff6ff;border-radius:8px;border-left:4px solid #3b82f6;font-size:13px;color:#1e40af;">
-                                ✓ ใบบิลเดือนแรกได้ถูกสร้างเรียบร้อยแล้ว ผู้เช่าสามารถดูรายงานค่าใช้จ่ายได้
-                            </div>
-                        </div>
-                        <div style="padding:16px;text-align:right;border-top:1px solid #e5e7eb;">
-                            <button onclick="document.getElementById('firstBillsModal').remove()" style="background:#3b82f6;color:white;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;font-weight:600;">เสร็จสิ้น</button>
-                        </div>
-                    </div>
-                </div>
-                <?php endif; ?>
+                <?php if (isset($_SESSION['first_bills'])) unset($_SESSION['first_bills']); ?>
 
                 <div class="meter-card">
                     <div class="meter-card-title">จดมิเตอร์</div>
