@@ -2182,10 +2182,13 @@ try {
         applyExpensesView(nextMode);
       }
 
+      // Current filter state (managed via AJAX, no page reloads)
+      let _ajaxSort = '<?php echo htmlspecialchars($sortBy, ENT_QUOTES, "UTF-8"); ?>';
+      let _ajaxMonth = '<?php echo htmlspecialchars($selectedMonth, ENT_QUOTES, "UTF-8"); ?>';
+
       function changeSortBy(sortValue) {
-        const url = new URL(window.location);
-        url.searchParams.set('sort', sortValue);
-        window.location.href = url.toString();
+        _ajaxSort = sortValue;
+        reloadExpensesAjax();
       }
 
       // AJAX delete expense
@@ -2324,48 +2327,334 @@ try {
         }
       }
 
-      // Load expense list and stats
+      // Load expense list and stats via JSON API (no page reload)
       function loadExpenseList() {
-        fetch(window.location.href)
-          .then(response => response.text())
-          .then(html => {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            
-            // Update table
-            const newTable = doc.querySelector('#table-expenses tbody');
-            const currentTable = document.querySelector('#table-expenses tbody');
-            if (newTable && currentTable) {
-              currentTable.innerHTML = newTable.innerHTML;
-              // Re-setup status buttons after updating table
-              setupStatusButtons();
-            }
-            
-            // Update stats cards
-            const statsCards = doc.querySelectorAll('.expense-stat-card .stat-value');
-            const currentStats = document.querySelectorAll('.expense-stat-card .stat-value');
-            if (statsCards.length === currentStats.length) {
-              statsCards.forEach((stat, i) => {
-                if (currentStats[i]) {
-                  currentStats[i].innerHTML = stat.innerHTML;
-                }
-              });
-            }
-            
-            // Update stat money values
-            const statsMoney = doc.querySelectorAll('.expense-stat-card .stat-money');
-            const currentMoney = document.querySelectorAll('.expense-stat-card .stat-money');
-            if (statsMoney.length === currentMoney.length) {
-              statsMoney.forEach((money, i) => {
-                if (currentMoney[i]) {
-                  currentMoney[i].textContent = money.textContent;
-                }
-              });
-            }
+        reloadExpensesAjax();
+      }
+
+      function reloadExpensesAjax() {
+        const params = new URLSearchParams();
+        if (_ajaxMonth) params.set('filter_month', _ajaxMonth);
+        if (_ajaxSort) params.set('sort', _ajaxSort);
+
+        fetch('/dormitory_management/Reports/get_expenses_ajax.php?' + params.toString(), {
+          credentials: 'include'
+        })
+          .then(r => r.json())
+          .then(data => {
+            if (!data.success) throw new Error(data.error || 'AJAX error');
+            rebuildExpensePage(data);
           })
           .catch(error => {
             console.error('Error loading expense list:', error);
+            if (typeof showErrorToast === 'function') showErrorToast('โหลดข้อมูลล้มเหลว: ' + error.message);
           });
+      }
+
+      function fmtBaht(n) { return '฿' + Number(n || 0).toLocaleString('th-TH'); }
+      function padId(id) { return '#' + String(id).padStart(4, '0'); }
+
+      function rebuildExpensePage(data) {
+        // Update month filter options
+        rebuildMonthOptions(data.monthOptions);
+        // Update stats cards
+        rebuildStats(data);
+        // Update collection bar
+        rebuildCollectionBar(data);
+        // Update meter alert
+        rebuildMeterAlert(data.meterMissingRooms);
+        // Update filter tabs
+        rebuildFilterTabs(data);
+        // Update table
+        rebuildTable(data.expenses);
+        // Update card view
+        rebuildCards(data.expenses);
+        // Re-bind triggers
+        bindPaymentPreviewTriggers();
+        // Re-apply current filter tab + search
+        reapplyActiveFilter();
+        // Reinit DataTable if needed
+        reinitDataTable();
+      }
+
+      function rebuildMonthOptions(monthOptions) {
+        const sel = document.getElementById('monthFilter');
+        if (!sel || !monthOptions) return;
+        sel.innerHTML = '';
+        if (monthOptions.length === 0) {
+          sel.innerHTML = '<option value="">ไม่มีข้อมูลเดือน</option>';
+          return;
+        }
+        monthOptions.forEach(function(opt) {
+          const o = document.createElement('option');
+          o.value = opt.value;
+          o.textContent = opt.label;
+          if (opt.selected) o.selected = true;
+          sel.appendChild(o);
+        });
+      }
+
+      function rebuildStats(data) {
+        const s = data.stats;
+        const statsWrap = document.querySelector('.expense-stats');
+        if (!statsWrap) return;
+
+        let html = '';
+        // unpaid - always show
+        html += buildStatCard('is-unpaid', 'รอชำระ', s.unpaid, s.total_unpaid);
+        // overdue
+        if (s.overdue > 0) {
+          html += buildStatCard('is-overdue', 'ค้างชำระ', s.overdue, s.total_overdue);
+        }
+        // pending+partial
+        if (data.pendingPartialCount > 0) {
+          html += buildStatCard('is-pending', 'รอดำเนินการ', data.pendingPartialCount, data.pendingPartialTotal);
+        }
+        // paid
+        html += buildStatCard('is-paid', 'ชำระแล้ว', s.paid, s.total_paid);
+        // total
+        html += buildStatCard('is-total', 'รวมทั้งหมด', data.totalExpenseCount, data.totalAll);
+
+        statsWrap.innerHTML = html;
+      }
+
+      function buildStatCard(cls, label, count, total) {
+        return '<div class="expense-stat-card ' + cls + '">' +
+          '<div class="stat-head"><span class="status-dot" aria-hidden="true"></span><h3>' + label + '</h3></div>' +
+          '<div class="stat-value">' + Number(count).toLocaleString() + ' <span style="font-size:0.85rem;font-weight:500;opacity:0.7;">รายการ</span></div>' +
+          '<div class="stat-money">' + fmtBaht(total) + '</div></div>';
+      }
+
+      function rebuildCollectionBar(data) {
+        const wrap = document.querySelector('.collection-progress');
+        if (!wrap) return;
+        const pct = data.collectionPct;
+        const s = data.stats;
+        let fillClass = pct < 30 ? ' low' : (pct < 70 ? ' mid' : '');
+        let segmentsHtml = '<div class="collection-segment"><span class="collection-segment-dot" style="background:#22c55e;"></span> ชำระแล้ว ' + fmtBaht(s.total_paid) + '</div>';
+        if (data.pendingPartialTotal > 0) {
+          segmentsHtml += '<div class="collection-segment"><span class="collection-segment-dot" style="background:#f59e0b;"></span> รอดำเนินการ ' + fmtBaht(data.pendingPartialTotal) + '</div>';
+        }
+        segmentsHtml += '<div class="collection-segment"><span class="collection-segment-dot" style="background:#ef4444;"></span> รอชำระ ' + fmtBaht(s.total_unpaid) + '</div>';
+        if (s.total_overdue > 0) {
+          segmentsHtml += '<div class="collection-segment"><span class="collection-segment-dot" style="background:#dc2626;"></span> ค้างชำระ ' + fmtBaht(s.total_overdue) + '</div>';
+        }
+        wrap.innerHTML =
+          '<div class="collection-progress-header"><span class="collection-progress-label">อัตราการเก็บเงินได้</span><span class="collection-progress-pct">' + pct + '%</span></div>' +
+          '<div class="collection-bar"><div class="collection-bar-fill' + fillClass + '" style="width:' + pct + '%;"></div></div>' +
+          '<div class="collection-segments">' + segmentsHtml + '</div>';
+      }
+
+      function rebuildMeterAlert(rooms) {
+        let banner = document.querySelector('.meter-alert-banner');
+        if (!rooms || rooms.length === 0) {
+          if (banner) banner.remove();
+          return;
+        }
+        let html = '<div class="meter-alert-title">' +
+          '<svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="#dc2626" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+          ' ⚠ ยังไม่ได้จดมิเตอร์ ' + rooms.length + ' ห้อง — ยอดค่าน้ำ/ไฟยังเป็น 0 กรุณาจดมิเตอร์ในผู้เช่าที่จัดการ ก่อนบิลจะคำนวณถูกต้อง</div>';
+        html += '<ul class="meter-alert-list">';
+        rooms.forEach(function(mr) {
+          html += '<li>💧⚡ ห้อง ' + escHtml(mr.room_number) + ' • ' + escHtml(mr.tnt_name) + ' (' + escHtml(mr.month) + ')</li>';
+        });
+        html += '</ul>';
+        if (!banner) {
+          banner = document.createElement('div');
+          banner.className = 'meter-alert-banner';
+          const statsEl = document.querySelector('.expense-stats');
+          if (statsEl) statsEl.parentNode.insertBefore(banner, statsEl);
+          else document.querySelector('.manage-panel')?.prepend(banner);
+        }
+        banner.innerHTML = html;
+      }
+
+      function rebuildFilterTabs(data) {
+        const tabsWrap = document.getElementById('expenseFilterTabs');
+        if (!tabsWrap) return;
+        const s = data.stats;
+        // Remember current active status
+        const activeTab = tabsWrap.querySelector('.expense-filter-tab.active');
+        const currentFilter = activeTab ? activeTab.dataset.status : 'all';
+        let html = '<button type="button" class="expense-filter-tab' + (currentFilter === 'all' ? ' active' : '') + '" data-status="all">ทั้งหมด <span class="tab-count">' + data.totalExpenseCount + '</span></button>';
+        if (s.unpaid > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '0' ? ' active' : '') + '" data-status="0">รอชำระ <span class="tab-count">' + s.unpaid + '</span></button>';
+        if (s.pending > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '2' ? ' active' : '') + '" data-status="2">รอตรวจสอบ <span class="tab-count">' + s.pending + '</span></button>';
+        if (s.partial > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '3' ? ' active' : '') + '" data-status="3">ชำระยังไม่ครบ <span class="tab-count">' + s.partial + '</span></button>';
+        if (s.overdue > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '4' ? ' active' : '') + '" data-status="4">ค้างชำระ <span class="tab-count">' + s.overdue + '</span></button>';
+        if (s.paid > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '1' ? ' active' : '') + '" data-status="1">ชำระแล้ว <span class="tab-count">' + s.paid + '</span></button>';
+        tabsWrap.innerHTML = html;
+        // Re-bind click handlers
+        tabsWrap.querySelectorAll('.expense-filter-tab').forEach(function(tab) {
+          tab.addEventListener('click', function() {
+            tabsWrap.querySelectorAll('.expense-filter-tab').forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            _activeFilterStatus = this.dataset.status;
+            reapplyActiveFilter();
+          });
+        });
+        // If active filter tab no longer exists, fall back to 'all'
+        if (!tabsWrap.querySelector('.expense-filter-tab.active')) {
+          const allTab = tabsWrap.querySelector('[data-status="all"]');
+          if (allTab) { allTab.classList.add('active'); _activeFilterStatus = 'all'; }
+        }
+      }
+
+      var _activeFilterStatus = 'all';
+
+      function reapplyActiveFilter() {
+        const tableBody = document.querySelector('#table-expenses tbody');
+        const rowView = document.getElementById('expensesRowView');
+
+        if (tableBody) {
+          tableBody.querySelectorAll('tr.payment-preview-trigger').forEach(function(tr) {
+            const show = _activeFilterStatus === 'all' || tr.dataset.status === _activeFilterStatus;
+            tr.style.display = show ? '' : 'none';
+          });
+        }
+        if (rowView) {
+          rowView.querySelectorAll('.expense-row-card.payment-preview-trigger').forEach(function(card) {
+            const show = _activeFilterStatus === 'all' || card.dataset.status === _activeFilterStatus;
+            card.style.display = show ? '' : 'none';
+          });
+          // empty state
+          let emptyEl = rowView.querySelector('.expense-empty-state');
+          const visible = rowView.querySelectorAll('.expense-row-card.payment-preview-trigger:not([style*="display: none"])').length;
+          if (visible === 0 && !rowView.classList.contains('is-hidden')) {
+            if (!emptyEl) {
+              emptyEl = document.createElement('div');
+              emptyEl.className = 'expense-empty-state';
+              emptyEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>ไม่พบรายการที่ตรงกัน</p><small>ลองเปลี่ยนตัวกรองหรือคำค้นหา</small>';
+              rowView.appendChild(emptyEl);
+            }
+            emptyEl.style.display = '';
+          } else if (emptyEl) {
+            emptyEl.style.display = 'none';
+          }
+        }
+      }
+
+      function escHtml(s) {
+        const d = document.createElement('div');
+        d.textContent = s;
+        return d.innerHTML;
+      }
+
+      function rebuildTable(expenses) {
+        const tbody = document.querySelector('#table-expenses tbody');
+        if (!tbody) return;
+        if (!expenses || expenses.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;padding:2rem;color:#64748b;">ยังไม่มีข้อมูลค่าใช้จ่าย</td></tr>';
+          return;
+        }
+        let html = '';
+        expenses.forEach(function(e) {
+          html += '<tr class="payment-preview-trigger" role="button" tabindex="0"' +
+            ' aria-label="เปิดรายละเอียดการชำระเงินรายการ ' + padId(e.exp_id) + ' ห้อง ' + escHtml(e.room_number) + '"' +
+            ' data-expense-id="' + e.exp_id + '"' +
+            ' data-status="' + escHtml(e.status) + '"' +
+            ' data-room="' + escHtml(e.room_number) + '"' +
+            ' data-tenant="' + escHtml(e.tnt_name) + '"' +
+            ' data-tenant-name="' + escHtml(e.tnt_name) + '"' +
+            ' data-status-text="' + escHtml(e.statusText) + '"' +
+            ' data-charges-paid="' + e.chargesPaid + '"' +
+            ' data-charges-remain="' + e.chargesRemain + '">';
+          html += '<td>' + padId(e.exp_id) + '</td>';
+          html += '<td><div class="expense-table-room"><span>ห้อง ' + escHtml(e.room_number) + '</span><span class="expense-meta">' + escHtml(e.tnt_name) + '</span>';
+          if (e.meterMissing) html += '<span class="meter-missing-badge">⚠ ยังไม่จดมิเตอร์</span>';
+          html += '</div></td>';
+          html += '<td>' + escHtml(e.exp_month_display) + '</td>';
+          html += '<td style="text-align:right;">' +
+            '<div style="color:#111827;font-weight:700;">ห้อง ' + fmtBaht(e.room_price) + '</div>' +
+            '<div class="expense-meta">น้ำ ' + fmtBaht(e.exp_water) + ' • ไฟ ' + fmtBaht(e.exp_elec_chg) + '</div>' +
+            '<div class="expense-meta">' + Number(e.exp_water_unit).toLocaleString() + ' หน่วยน้ำ • ' + Number(e.exp_elec_unit).toLocaleString() + ' หน่วยไฟ</div></td>';
+          html += '<td style="text-align:right;"><strong style="color:' + e.totalColor + ';">' + fmtBaht(e.exp_total) + '</strong></td>';
+          html += '<td><span class="status-badge" style="background: ' + e.statusColor + ';">' + escHtml(e.statusText) + '</span></td>';
+          html += '<td class="crud-column"><div class="payment-cell-wrap"><div class="payment-compact">';
+          if (e.chargesPaid > 0) {
+            html += '<div class="payment-compact-row"><span class="payment-compact-label">ชำระแล้ว</span><span class="payment-compact-value">' + fmtBaht(e.chargesPaid) + '</span></div>';
+          }
+          if (e.chargesRemain > 0) {
+            html += '<div class="payment-compact-row"><span class="payment-compact-label">ค้างชำระ</span><span class="payment-compact-value' + (e.chargesRemain > 0 ? ' warn' : '') + '">' + fmtBaht(e.chargesRemain) + '</span></div>';
+          }
+          html += '</div></div></td></tr>';
+        });
+        tbody.innerHTML = html;
+      }
+
+      function rebuildCards(expenses) {
+        const rowView = document.getElementById('expensesRowView');
+        if (!rowView) return;
+        // Remove old cards and empty state
+        rowView.querySelectorAll('.expense-row-card, .expense-empty-state').forEach(function(el) { el.remove(); });
+        if (!expenses || expenses.length === 0) {
+          rowView.innerHTML = '<div class="expense-row-card" style="text-align:center;color:#64748b;grid-column:1/-1;width:100%;">ยังไม่มีข้อมูลค่าใช้จ่าย</div>';
+          return;
+        }
+        expenses.forEach(function(e) {
+          const pct = e.chargesTotal > 0 ? Math.min(100, Math.round((e.chargesPaid / e.chargesTotal) * 100)) : 0;
+          const fillClass = pct >= 100 ? 'full' : (pct > 0 ? 'partial' : 'none');
+          const card = document.createElement('div');
+          card.className = 'expense-row-card payment-preview-trigger';
+          card.setAttribute('role', 'button');
+          card.setAttribute('tabindex', '0');
+          card.setAttribute('aria-label', 'ดูรายละเอียดค่าใช้จ่าย ' + padId(e.exp_id) + ' ห้อง ' + e.room_number);
+          card.dataset.month = e.exp_month_key;
+          card.dataset.expenseId = e.exp_id;
+          card.dataset.status = e.status;
+          card.dataset.room = e.room_number;
+          card.dataset.tenant = e.tnt_name;
+          card.dataset.tenantName = e.tnt_name;
+          card.dataset.statusText = e.statusText;
+          card.dataset.chargesPaid = e.chargesPaid;
+          card.dataset.chargesRemain = e.chargesRemain;
+
+          card.innerHTML =
+            '<div class="expense-row-top"><div class="expense-row-main">' +
+              '<strong class="expense-row-id">' + padId(e.exp_id) + '</strong>' +
+              '<span class="expense-row-sub">ห้อง ' + escHtml(e.room_number) + ' • ' + escHtml(e.tnt_name) + '</span>' +
+              (e.meterMissing ? '<span class="meter-missing-badge">⚠ ยังไม่จดมิเตอร์</span>' : '') +
+            '</div><span class="status-badge" style="background: ' + e.statusColor + ';">' + escHtml(e.statusText) + '</span></div>' +
+            '<div class="expense-row-meta">' +
+              '<div class="expense-row-meta-item"><span class="expense-row-meta-label">เดือน/ปี</span><span class="expense-row-meta-value">' + escHtml(e.exp_month_short) + '</span></div>' +
+              '<div class="expense-row-meta-item"><span class="expense-row-meta-label">ค่าห้อง</span><span class="expense-row-meta-value">' + fmtBaht(e.room_price) + '</span></div>' +
+              '<div class="expense-row-meta-item"><span class="expense-row-meta-label">ค่าไฟ</span><span class="expense-row-meta-value">' + fmtBaht(e.exp_elec_chg) + '</span></div>' +
+              '<div class="expense-row-meta-item"><span class="expense-row-meta-label">ค่าน้ำ</span><span class="expense-row-meta-value">' + fmtBaht(e.exp_water) + '</span></div>' +
+              '<div class="expense-row-meta-item"><span class="expense-row-meta-label">ยอดรวม</span><span class="expense-row-meta-value total" style="color:' + e.totalColor + ';">' + fmtBaht(e.exp_total) + '</span></div>' +
+            '</div>' +
+            '<div class="expense-card-progress">' +
+              '<div class="expense-card-progress-bar"><div class="expense-card-progress-fill ' + fillClass + '" style="width:' + pct + '%;"></div></div>' +
+              '<div class="expense-card-progress-text"><span>ชำระ ' + fmtBaht(e.chargesPaid) + '</span><span>คงเหลือ ' + fmtBaht(Math.max(0, e.chargesTotal - e.chargesPaid)) + '</span></div>' +
+            '</div>';
+          rowView.appendChild(card);
+        });
+      }
+
+      function reinitDataTable() {
+        // Destroy old DataTable instance if it exists
+        if (window.__expenseDataTable) {
+          try { window.__expenseDataTable.destroy(); } catch (e) {}
+          window.__expenseDataTable = null;
+        }
+        const expenseTableEl = document.querySelector('#table-expenses');
+        if (expenseTableEl && window.simpleDatatables) {
+          try {
+            window.__expenseDataTable = new simpleDatatables.DataTable(expenseTableEl, {
+              searchable: true,
+              fixedHeight: false,
+              perPage: 6,
+              perPageSelect: [6, 10, 25, 50, 100],
+              labels: {
+                placeholder: 'ค้นหา...',
+                perPage: '{select} แถวต่อหน้า',
+                noRows: 'ไม่มีข้อมูล',
+                info: 'แสดง {start}–{end} จาก {rows} รายการ'
+              },
+              columns: [{ select: [5, 6], sortable: false }]
+            });
+          } catch (err) {
+            console.error('Failed to reinit expense table', err);
+          }
+        }
       }
 
       // Setup event listeners for update status buttons
@@ -3085,86 +3374,34 @@ try {
       });
     </script>
 
-    <!-- Month Filter Script -->
+    <!-- Month Filter Script (AJAX, no reload) -->
     <script>
       (function() {
         const monthFilter = document.getElementById('monthFilter');
         if (!monthFilter) return;
 
         monthFilter.addEventListener('change', function() {
-          const url = new URL(window.location.href);
-          const selectedMonth = this.value || '';
-          if (selectedMonth) {
-            url.searchParams.set('filter_month', selectedMonth);
-          } else {
-            url.searchParams.delete('filter_month');
-          }
-          window.location.href = url.toString();
+          _ajaxMonth = this.value || '';
+          reloadExpensesAjax();
         });
       })();
     </script>
 
-    <!-- Status Filter Tabs + Search -->
+    <!-- Status Filter Tabs + Search (client-side, AJAX-compatible) -->
     <script>
     (function() {
       const urlFilter = new URLSearchParams(window.location.search).get('filter');
-      let activeStatus = (urlFilter !== null) ? urlFilter : 'all';
+      _activeFilterStatus = (urlFilter !== null) ? urlFilter : 'all';
 
       const filterTabs = document.querySelectorAll('#expenseFilterTabs .expense-filter-tab');
-      const tableBody = document.querySelector('#table-expenses tbody');
-      const rowView = document.getElementById('expensesRowView');
 
-      function getTableRows() {
-        return tableBody ? Array.from(tableBody.querySelectorAll('tr.payment-preview-trigger')) : [];
-      }
-
-      function getCards() {
-        return rowView ? Array.from(rowView.querySelectorAll('.expense-row-card.payment-preview-trigger')) : [];
-      }
-
-      function matchesFilter(el) {
-        const status = el.dataset.status || '';
-        return activeStatus === 'all' || status === activeStatus;
-      }
-
-      function applyFilters() {
-        let visibleCount = 0;
-
-        getTableRows().forEach(tr => {
-          const show = matchesFilter(tr);
-          tr.style.display = show ? '' : 'none';
-          if (show) visibleCount++;
-        });
-
-        getCards().forEach(card => {
-          const show = matchesFilter(card);
-          card.style.display = show ? '' : 'none';
-          if (show) visibleCount++;
-        });
-
-        // Show empty state if no results in card view
-        let emptyEl = rowView ? rowView.querySelector('.expense-empty-state') : null;
-        const cardsVisible = getCards().filter(c => c.style.display !== 'none').length;
-        if (cardsVisible === 0 && rowView && !rowView.classList.contains('is-hidden')) {
-          if (!emptyEl) {
-            emptyEl = document.createElement('div');
-            emptyEl.className = 'expense-empty-state';
-            emptyEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>ไม่พบรายการที่ตรงกัน</p><small>ลองเปลี่ยนตัวกรองหรือคำค้นหา</small>';
-            rowView.appendChild(emptyEl);
-          }
-          emptyEl.style.display = '';
-        } else if (emptyEl) {
-          emptyEl.style.display = 'none';
-        }
-      }
-
-      // Tab click handlers
+      // Tab click handlers (initial page load only; rebuilt tabs get handlers via rebuildFilterTabs)
       filterTabs.forEach(tab => {
         tab.addEventListener('click', function() {
-          filterTabs.forEach(t => t.classList.remove('active'));
+          document.querySelectorAll('#expenseFilterTabs .expense-filter-tab').forEach(t => t.classList.remove('active'));
           this.classList.add('active');
-          activeStatus = this.dataset.status;
-          applyFilters();
+          _activeFilterStatus = this.dataset.status;
+          reapplyActiveFilter();
         });
       });
 
@@ -3175,10 +3412,8 @@ try {
           filterTabs.forEach(t => t.classList.remove('active'));
           targetTab.classList.add('active');
         }
-        applyFilters();
+        reapplyActiveFilter();
       }
-
-
     })();
     </script>
     <script src="/dormitory_management/Public/Assets/Js/futuristic-bright.js"></script>
