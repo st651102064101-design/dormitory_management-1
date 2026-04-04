@@ -41,6 +41,11 @@ if (!defined('THAI_DATE_HELPER_LOADED')) {
         return ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
     }
 
+    // ชื่อวันภาษาไทย (ย่อ)
+    function _thaiDayNamesShort(): array {
+        return ['อา.', 'จ.', 'อ.', 'พ.', 'พฤ.', 'ศ.', 'ส.'];
+    }
+
     /**
      * แปลงวันที่เป็นรูปแบบไทย
      * 
@@ -75,6 +80,14 @@ if (!defined('THAI_DATE_HELPER_LOADED')) {
                 return "{$day} {$monthsShort[$month]} {$year} {$time}";
             case 'long_time':
                 return "{$day} {$monthsFull[$month]} {$year} {$time}";
+            case 'chart_day':
+                $dayNamesShort = _thaiDayNamesShort();
+                $dayName = $dayNamesShort[(int)date('w', $ts)];
+                return "{$dayName} {$day}";
+            case 'chart_day_month':
+                $dayNamesShort = _thaiDayNamesShort();
+                $dayName = $dayNamesShort[(int)date('w', $ts)];
+                return "{$dayName} {$day} {$monthsShort[$month]}";
             default:
                 return "{$day} {$monthsShort[$month]} {$year}";
         }

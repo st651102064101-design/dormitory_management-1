@@ -6,6 +6,7 @@ if (empty($_SESSION['admin_username'])) {
     exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 $pdo = connectDB();
 
 // ดึงค่า default_view_mode จาก database
@@ -476,7 +477,7 @@ try {
                   <div>
                     <div style="display:flex;flex-direction:column;gap:0.5rem;">
                       <div style="background:#a7f3d0;color:#065f46;padding:0.5rem 1rem;border-radius:20px;font-weight:600;font-size:0.9rem;text-align:center;white-space:nowrap;"><?php echo getRelativeTime($r['repair_date'] ?? null); ?></div>
-                      <div style="font-size:0.75rem;color:#94a3b8;text-align:center;"><?php if ($repairDate = $r['repair_date'] ?? '') { $date = new DateTime($repairDate); echo $date->format('Y-m-d H:i:s'); } ?></div>
+                      <div style="font-size:0.75rem;color:#94a3b8;text-align:center;"><?php if ($repairDate = $r['repair_date'] ?? '') { $date = new DateTime($repairDate); echo thaiDate($date->format('Y-m-d H:i:s'), 'short_time'); } ?></div>
                     </div>
                   </div>
                   <span class="repair-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span>
@@ -508,7 +509,7 @@ try {
 <?php foreach($rows as $r): ?>
                   <?php $statusKey = (string)($r['repair_status'] ?? ''); $statusLabel = $statusLabels[$statusKey] ?? 'ยังไม่ระบุสถานะ'; $statusClass = $statusKey === '2' ? 'status-completed' : ($statusKey === '1' ? 'status-progress' : 'status-pending'); ?>
                   <tr>
-                    <td data-label="วันที่"><div style="display:flex;flex-direction:column;gap:0.3rem;"><div style="background:#a7f3d0;color:#065f46;padding:0.4rem 0.8rem;border-radius:16px;font-weight:600;font-size:0.85rem;text-align:center;white-space:nowrap;display:inline-block;width:fit-content;"><?php echo getRelativeTime($r['repair_date'] ?? null); ?></div><div style="font-size:0.75rem;color:#94a3b8;"><?php if ($repairDate = $r['repair_date'] ?? '') { $date = new DateTime($repairDate); echo $date->format('Y-m-d'); } ?></div></div></td>
+                    <td data-label="วันที่"><div style="display:flex;flex-direction:column;gap:0.3rem;"><div style="background:#a7f3d0;color:#065f46;padding:0.4rem 0.8rem;border-radius:16px;font-weight:600;font-size:0.85rem;text-align:center;white-space:nowrap;display:inline-block;width:fit-content;"><?php echo getRelativeTime($r['repair_date'] ?? null); ?></div><div style="font-size:0.75rem;color:#94a3b8;"><?php if ($repairDate = $r['repair_date'] ?? '') { $date = new DateTime($repairDate); echo thaiDate($date->format('Y-m-d')); } ?></div></div></td>
                     <td data-label="สัญญา">#<?php echo renderField((string)($r['ctr_id'] ?? ''), '-'); ?></td>
                     <td data-label="ผู้แจ้ง"><?php echo renderField($r['tnt_name'], '-'); ?></td>
                     <td data-label="ห้อง"><strong><?php echo renderField($r['room_number'], '-'); ?></strong></td>

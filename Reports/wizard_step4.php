@@ -8,6 +8,7 @@ if (empty($_SESSION['admin_username'])) {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/../includes/wizard_helper.php';
 
 $conn = connectDB();
@@ -231,7 +232,7 @@ if ($settingsStmt) {
                 <div class="info-box">
                     <p><strong>ผู้เช่า:</strong> <?php echo htmlspecialchars($contract['tnt_name'], ENT_QUOTES, 'UTF-8'); ?></p>
                     <p><strong>ห้อง:</strong> <?php echo htmlspecialchars($contract['room_number'], ENT_QUOTES, 'UTF-8'); ?></p>
-                    <p><strong>สัญญา:</strong> <?php echo date('d/m/Y', strtotime($contract['ctr_start'])); ?> - <?php echo date('d/m/Y', strtotime($contract['ctr_end'])); ?></p>
+                    <p><strong>สัญญา:</strong> <?php echo thaiDate($contract['ctr_start']); ?> - <?php echo thaiDate($contract['ctr_end']); ?></p>
                 </div>
 
                 <form method="POST" action="../Manage/process_wizard_step4.php" enctype="multipart/form-data">

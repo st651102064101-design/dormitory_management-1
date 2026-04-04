@@ -6,6 +6,7 @@ if (empty($_SESSION['admin_username'])) {
     exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 $pdo = connectDB();
 
 // ดึงค่า default_view_mode จาก database
@@ -664,7 +665,7 @@ try {
                           $expMonth = $r['exp_month'] ?? '';
                           if ($expMonth) {
                             $date = new DateTime($expMonth);
-                            echo $date->format('Y-m-d H:i:s');
+                            echo thaiDate($date->format('Y-m-d H:i:s'), 'short_time');
                           }
                         ?>
                       </div>
@@ -762,7 +763,7 @@ try {
                             $expMonth = $r['exp_month'] ?? '';
                             if ($expMonth) {
                               $date = new DateTime($expMonth);
-                              echo $date->format('Y-m-d');
+                              echo thaiDate($date->format('Y-m-d'));
                             }
                           ?>
                         </div>

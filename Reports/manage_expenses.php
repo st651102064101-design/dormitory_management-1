@@ -15,6 +15,7 @@ if (empty($_SESSION['admin_username'])) {
   exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/../includes/water_calc.php';
 $pdo = connectDB();
 
@@ -1987,7 +1988,7 @@ try {
                             <?php endif; ?>
                           </div>
                         </td>
-                        <td><?php echo $exp['exp_month'] ? date('m/Y', strtotime($exp['exp_month'])) : '-'; ?></td>
+                        <td><?php echo $exp['exp_month'] ? thaiMonthYear($exp['exp_month']) : '-'; ?></td>
                         <td style="text-align:right;">
                           <?php
                             $roomPrice = (int)($exp['room_price'] ?? 0);
@@ -2329,7 +2330,7 @@ try {
             if (statsCards.length === currentStats.length) {
               statsCards.forEach((stat, i) => {
                 if (currentStats[i]) {
-                  currentStats[i].textContent = stat.textContent;
+                  currentStats[i].innerHTML = stat.innerHTML;
                 }
               });
             }
@@ -3089,7 +3090,8 @@ try {
     <!-- Status Filter Tabs + Search -->
     <script>
     (function() {
-      let activeStatus = 'all';
+      const urlFilter = new URLSearchParams(window.location.search).get('filter');
+      let activeStatus = (urlFilter !== null) ? urlFilter : 'all';
 
       const filterTabs = document.querySelectorAll('#expenseFilterTabs .expense-filter-tab');
       const tableBody = document.querySelector('#table-expenses tbody');
@@ -3148,6 +3150,16 @@ try {
           applyFilters();
         });
       });
+
+      // Auto-activate tab from URL ?filter= param
+      if (urlFilter !== null) {
+        const targetTab = Array.from(filterTabs).find(t => t.dataset.status === urlFilter);
+        if (targetTab) {
+          filterTabs.forEach(t => t.classList.remove('active'));
+          targetTab.classList.add('active');
+        }
+        applyFilters();
+      }
 
 
     })();

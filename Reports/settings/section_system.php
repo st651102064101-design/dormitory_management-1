@@ -113,7 +113,7 @@
         </div>
         <div class="apple-info-row">
           <span class="apple-info-label">อัพเดทล่าสุด</span>
-          <span class="apple-info-value"><?php echo date('d/m/Y H:i'); ?></span>
+          <span class="apple-info-value"><?php echo thaiDate(date('Y-m-d H:i:s'), 'short_time'); ?></span>
         </div>
       </div>
       
@@ -190,7 +190,7 @@
             foreach ($backupFiles as $file):
               $fname = basename($file);
               $fsize = filesize($file);
-              $fdate = date('d/m/Y H:i', filemtime($file));
+              $fdate = thaiDate(date('Y-m-d H:i:s', filemtime($file)), 'short_time');
               $sizeStr = $fsize > 1048576 ? round($fsize/1048576, 2) . ' MB' : round($fsize/1024, 2) . ' KB';
           ?>
             <div class="apple-settings-row" style="cursor: pointer;" onclick="downloadBackup('<?php echo htmlspecialchars($fname); ?>')">

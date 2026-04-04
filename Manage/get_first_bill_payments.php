@@ -11,6 +11,7 @@ if (empty($_SESSION['admin_username'])) {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 
 /**
  * Build one expense + payment summary payload.
@@ -55,7 +56,7 @@ function buildExpensePayload(PDO $pdo, array $expense): array
         $payDate = (string)($pay['pay_date'] ?? '');
         $payDateDisplay = '-';
         if ($payDate !== '' && strtotime($payDate) !== false) {
-            $payDateDisplay = date('d/m/Y', strtotime($payDate));
+            $payDateDisplay = thaiDate($payDate);
         }
 
         $payments[] = [

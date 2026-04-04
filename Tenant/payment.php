@@ -3,6 +3,7 @@
  * Tenant Payment - แจ้งชำระเงิน
  */
 declare(strict_types=1);
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/auth.php';
 
 $auth = checkTenantAuth();
@@ -859,7 +860,7 @@ $paymentStatusMap = [
                                 data-paid="<?php echo $paidAmount; ?>"
                                 data-remaining="<?php echo $remaining; ?>"
                                 <?php echo ($selectedExpId == $expense['exp_id']) ? 'selected' : ''; ?>>
-                            <?php echo date('m/Y', strtotime($expense['exp_month'])); ?> - 
+                            <?php echo thaiMonthYear($expense['exp_month']); ?> - 
                             ยอดรวม <?php echo number_format($expTotal); ?> บาท
                             <?php if ($paidAmount > 0): ?>
                                 (ส่งแล้ว <?php echo number_format($paidAmount); ?> / คงเหลือ <?php echo number_format($remaining); ?>)
@@ -918,7 +919,7 @@ $paymentStatusMap = [
                 <?php foreach ($unpaidReportItems as $item): ?>
                     <div class="unpaid-report-card">
                         <div class="unpaid-report-top">
-                            <div class="unpaid-report-month"><?php echo $item['exp_month'] ? date('m/Y', strtotime($item['exp_month'])) : '-'; ?></div>
+                            <div class="unpaid-report-month"><?php echo $item['exp_month'] ? thaiMonthYear($item['exp_month']) : '-'; ?></div>
                             <div class="unpaid-report-status"><?php echo htmlspecialchars($item['status']); ?></div>
                         </div>
                         <div class="unpaid-report-row"><span>ยอดบิล</span><span><?php echo number_format($item['total']); ?> บาท</span></div>

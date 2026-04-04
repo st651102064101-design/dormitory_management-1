@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 
 // ตรวจสอบการ login
 if (empty($_SESSION['admin_username'])) {
@@ -1770,8 +1771,7 @@ try {
                 labels: [
                     <?php 
                     foreach ($monthly_revenue as $data) {
-                        $date = new DateTime($data['month']);
-                        echo "'" . $date->format('M Y') . "',";
+                        echo "'" . thaiMonthYear($data['month']) . "',";
                     }
                     ?>
                 ],
@@ -1825,7 +1825,7 @@ try {
                     <?php 
                     for ($i = 6; $i >= 0; $i--) {
                         $date = new DateTime("-$i days");
-                        echo "'" . $date->format('D d M') . "',";
+                        echo "'" . thaiDate($date->format('Y-m-d'), 'chart_day_month') . "',";
                     }
                     ?>
                 ],
@@ -1903,7 +1903,7 @@ try {
                     <?php 
                     for ($i = 6; $i >= 0; $i--) {
                         $date = new DateTime("-$i days");
-                        echo "'" . $date->format('D d') . "',";
+                        echo "'" . thaiDate($date->format('Y-m-d'), 'chart_day') . "',";
                     }
                     ?>
                 ],
@@ -2046,8 +2046,7 @@ try {
             data: {
                 labels: [
                     <?php foreach ($utility_trend as $data) {
-                        $date = new DateTime($data['month']);
-                        echo "'" . $date->format('M Y') . "',";
+                        echo "'" . thaiMonthYear($data['month']) . "',";
                     } ?>
                 ],
                 datasets: [
@@ -2113,7 +2112,7 @@ try {
                     <?php 
                     for ($i = 6; $i >= 0; $i--) {
                         $date = new DateTime("-$i days");
-                        echo "'" . $date->format('D d') . "',";
+                        echo "'" . thaiDate($date->format('Y-m-d'), 'chart_day') . "',";
                     }
                     ?>
                 ],
@@ -2322,8 +2321,7 @@ try {
             const revenueLabels = [<?php 
                 if (!empty($monthly_revenue)) {
                     foreach ($monthly_revenue as $data) {
-                        $date = new DateTime($data['month']);
-                        echo "'" . $date->format('M Y') . "',";
+                        echo "'" . thaiMonthYear($data['month']) . "',";
                     }
                 } else {
                     echo "'ไม่มีข้อมูล'";

@@ -9,6 +9,7 @@ if (empty($_SESSION['admin_username'])) {
 $error = '';
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/../Manage/auto_cancel_expired_contracts.php';
 
 // Initialize database connection
@@ -867,7 +868,7 @@ foreach ($contracts as $contract) {
                           <li>สัญญาเลขที่ <strong><?php echo htmlspecialchars((string)$contract['ctr_id'], ENT_QUOTES, 'UTF-8'); ?></strong> -
                           ผู้เช่า: <?php echo htmlspecialchars($contract['tnt_name'], ENT_QUOTES, 'UTF-8'); ?>,
                           ห้อง: <?php echo htmlspecialchars($contract['room_number'], ENT_QUOTES, 'UTF-8'); ?>
-                          (หมดอายุวันที่: <?php echo date('d/m/Y', strtotime($contract['ctr_end'])); ?>)</li>
+                          (หมดอายุวันที่: <?php echo thaiDate($contract['ctr_end']); ?>)</li>
                         <?php endforeach; ?>
                       </ul>
                     </div>
@@ -1030,7 +1031,7 @@ foreach ($contracts as $contract) {
                                 <strong style="color: #3b82f6;">หมายเหตุ:</strong>
                             </div>
                             <ul style="margin: 0; padding-left: 1.5rem; color: rgba(255,255,255,0.8);">
-                                <li>วันเริ่มสัญญา: <strong style="color: #3b82f6;">วันนี้ (<?php echo date('d/m/Y'); ?>)</strong></li>
+                                <li>วันเริ่มสัญญา: <strong style="color: #3b82f6;">วันนี้ (<?php echo thaiDate(date('Y-m-d')); ?>)</strong></li>
                                 <li>วันสิ้นสุดสัญญา: <strong style="color: #3b82f6;" id="end_date_display">6 เดือนจากวันนี้</strong></li>
                                 <li>เงินประกัน: <strong style="color: #3b82f6;">2,000 บาท</strong></li>
                                 <li><strong style="color: #f59e0b;">⚠️ ระบบจะยกเลิกสัญญาอัตโนมัติเมื่อครบกำหนด</strong></li>
@@ -1069,8 +1070,8 @@ foreach ($contracts as $contract) {
                                 $ctr_id = isset($contract['ctr_id']) ? htmlspecialchars((string)$contract['ctr_id'], ENT_QUOTES, 'UTF-8') : 'N/A';
                                 $tnt_name = isset($contract['tnt_name']) ? htmlspecialchars((string)$contract['tnt_name'], ENT_QUOTES, 'UTF-8') : 'N/A';
                                 $room_number = isset($contract['room_number']) ? htmlspecialchars((string)$contract['room_number'], ENT_QUOTES, 'UTF-8') : 'N/A';
-                                $ctr_start = (isset($contract['ctr_start']) && !empty($contract['ctr_start'])) ? date('d/m/Y', strtotime($contract['ctr_start'])) : '-';
-                                $ctr_end = (isset($contract['ctr_end']) && !empty($contract['ctr_end'])) ? date('d/m/Y', strtotime($contract['ctr_end'])) : '-';
+                                $ctr_start = (isset($contract['ctr_start']) && !empty($contract['ctr_start'])) ? thaiDate($contract['ctr_start']) : '-';
+                                $ctr_end = (isset($contract['ctr_end']) && !empty($contract['ctr_end'])) ? thaiDate($contract['ctr_end']) : '-';
                                 $s = isset($contract['ctr_status']) ? (string)$contract['ctr_status'] : '0';
                                 $lbl = isset($statusLabels[$s]) ? $statusLabels[$s] : 'N/A';
                                 $col = isset($statusColors[$s]) ? $statusColors[$s] : '#999';
@@ -1084,7 +1085,7 @@ foreach ($contracts as $contract) {
                                 // Prepare cancellation date display for notify-cancel (status '2')
                                 $cancelDateDisplay = '-';
                                 if ($s === '2' && !empty($contract['ctr_end']) && $contract['ctr_end'] !== '0000-00-00') {
-                                  $cancelDateDisplay = date('d/m/Y', strtotime($contract['ctr_end']));
+                                  $cancelDateDisplay = thaiDate($contract['ctr_end']);
                                 }
                           ?>
                             <tr class="cdr-clickable" style="border-bottom: 1px solid rgba(255,255,255,0.1);" onclick="openContractDetail(<?php echo $ctr_id; ?>)">

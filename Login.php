@@ -80,14 +80,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     echo json_encode([
       'success' => $login_success,
       'error' => $login_error,
-      'redirect' => $login_success ? 'Reports/dashboard.php' : ''
+      'redirect' => $login_success ? 'Reports/todo_tasks.php#wizard' : ''
     ]);
     exit;
   }
   
   // If login success and not AJAX, redirect
   if ($login_success) {
-    header('Location: Reports/dashboard.php');
+    header('Location: Reports/todo_tasks.php#wizard');
     exit;
   }
   // If not AJAX and login failed, show error without reload (page stays as is)
@@ -451,6 +451,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         align-items: center;
         gap: 10px;
         animation: shake 0.5s ease;
+      }
+
+      .error-message.session-expired-notice {
+        background: rgba(245, 158, 11, 0.15);
+        border-color: rgba(245, 158, 11, 0.35);
+        color: #fcd34d;
+        animation: none;
+      }
+      .error-message.session-expired-notice .error-icon {
+        stroke: #fcd34d;
+        animation: none;
+        stroke-dashoffset: 0;
       }
 
       .error-message .error-icon {
@@ -2944,6 +2956,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       
       // Get or create error message element
       let errorMessageEl = document.querySelector('.error-message');
+
+      // ── Show session-expired notice if redirected with ?reason=timeout ──
+      (function() {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('reason') === 'timeout') {
+          let el = errorMessageEl;
+          if (!el) {
+            el = document.createElement('div');
+            el.className = 'error-message';
+            el.innerHTML = `
+              <svg class="animated-icon error-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"/>
+                <line x1="12" y1="8" x2="12" y2="12"/>
+                <line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              <span class="error-text"></span>
+            `;
+            const form = document.getElementById('loginForm');
+            if (form) form.parentNode.insertBefore(el, form);
+            errorMessageEl = el;
+          }
+          el.classList.add('session-expired-notice', 'show');
+          el.style.display = 'flex';
+          const txt = el.querySelector('.error-text');
+          if (txt) txt.textContent = 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่';
+          // Clean up URL without reload
+          history.replaceState(null, '', window.location.pathname);
+        }
+      })();
       
       loginForm.addEventListener('submit', async function(e) {
         e.preventDefault();

@@ -6,6 +6,7 @@ if (empty($_SESSION['admin_username'])) {
     exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 $pdo = connectDB();
 
 // รับค่า sort จาก query parameter
@@ -4442,8 +4443,8 @@ try {
                         <td data-label="รหัส">#<?php echo htmlspecialchars((string)$bkg['bkg_id']); ?></td>
                         <td data-label="ผู้เช่า"><?php echo htmlspecialchars($bkg['tnt_name'] ?? 'ยังไม่มีผู้เช่า'); ?></td>
                         <td data-label="ห้องพัก"><?php echo !empty($bkg['room_number']) ? htmlspecialchars((string)$bkg['room_number']) : '-'; ?></td>
-                        <td data-label="วันที่จอง"><?php echo !empty($bkg['bkg_date']) ? date('Y-m-d', strtotime($bkg['bkg_date'])) : '-'; ?></td>
-                        <td data-label="วันเข้าพัก"><?php echo !empty($bkg['bkg_checkin_date']) ? date('Y-m-d', strtotime($bkg['bkg_checkin_date'])) : '-'; ?></td>
+                        <td data-label="วันที่จอง"><?php echo !empty($bkg['bkg_date']) ? thaiDate($bkg['bkg_date']) : '-'; ?></td>
+                        <td data-label="วันเข้าพัก"><?php echo !empty($bkg['bkg_checkin_date']) ? thaiDate($bkg['bkg_checkin_date']) : '-'; ?></td>
                         <td data-label="สถานะ">
                           <span style="
                             padding: 0.25rem 0.75rem;

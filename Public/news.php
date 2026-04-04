@@ -2,6 +2,7 @@
 declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 
 $pdo = connectDB();
 
@@ -1030,7 +1031,7 @@ if ($publicTheme === 'light') {
                 <div class="news-header">
                     <div class="news-date">
                         <svg class="date-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        <?php echo date('d/m/Y', strtotime($item['news_date'])); ?>
+                        <?php echo thaiDate($item['news_date']); ?>
                         <?php if (!empty($item['news_time'])): ?>
                         - <?php echo date('H:i', strtotime($item['news_time'])); ?> น.
                         <?php endif; ?>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 
 if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
@@ -230,7 +231,7 @@ try {
                         LEFT JOIN room r ON b.room_id = r.room_id
                         LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
                         WHERE b.bkg_status != '0'
-                        ORDER BY b.bkg_date DESC, b.bkg_id DESC
+                        ORDER BY CAST(r.room_number AS UNSIGNED) ASC, b.bkg_id DESC
                         LIMIT 50
                 ");
         $wizardItems = $wizardItemsStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -534,8 +535,6 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
             color: rgba(255,255,255,0.9);
         }
         .todo-card-body {
-            max-height: 600px;
-            overflow-y: auto;
         }
         .todo-card-body::-webkit-scrollbar { width: 4px; }
         .todo-card-body::-webkit-scrollbar-track { background: transparent; }
@@ -778,7 +777,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <tr>
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($w['room_number'] ?? '-'); ?></strong></td>
                                             <td data-label="ผู้เช่า"><?php echo htmlspecialchars($w['tnt_name'] ?? '-'); ?></td>
-                                            <td data-label="วันที่จอง"><?php echo !empty($w['bkg_date']) ? date('d/m/Y', strtotime((string)$w['bkg_date'])) : '-'; ?></td>
+                                            <td data-label="วันที่จอง"><?php echo thaiDate($w['bkg_date'] ?? ''); ?></td>
                                             <td data-label="ขั้นตอน"><span class="status-chip pending"><?php echo htmlspecialchars($wizardStepText); ?></span></td>
                                             <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingTasksWizard); ?></td>
                                             <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="tenant_wizard.php?bkg_id=<?php echo (int)($w['bkg_id'] ?? 0); ?>">จัดการ</a></td>
@@ -821,7 +820,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <tr>
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($b['room_number'] ?? '-'); ?></strong><br><small style="color:rgba(255,255,255,0.4)"><?php echo htmlspecialchars($b['roomtype_name'] ?? ''); ?></small></td>
                                             <td data-label="ผู้เช่า"><?php echo htmlspecialchars($b['tnt_name'] ?? '-'); ?></td>
-                                            <td data-label="วันที่จอง"><?php echo $b['bkg_date'] ? date('d/m/Y', strtotime($b['bkg_date'])) : '-'; ?></td>
+                                            <td data-label="วันที่จอง"><?php echo thaiDate($b['bkg_date'] ?? ''); ?></td>
                                             <td data-label="สถานะ">
                                                 <?php if ($b['bkg_status'] == 1): ?>
                                                     <span class="status-chip reserved">จองแล้ว</span>
@@ -1026,7 +1025,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($p['room_number'] ?? '-'); ?></strong></td>
                                             <td data-label="ผู้เช่า"><?php echo htmlspecialchars($p['tnt_name'] ?? '-'); ?></td>
                                             <td data-label="จำนวนเงิน"><?php echo number_format(floatval(($p['payment_kind'] ?? '') === 'unpaid' ? ($p['exp_total'] ?? 0) : ($p['pay_amount'] ?? 0)), 2); ?> ฿</td>
-                                            <td data-label="วันที่ชำระ"><?php echo $p['pay_date'] ? date('d/m/Y', strtotime($p['pay_date'])) : '-'; ?></td>
+                                            <td data-label="วันที่ชำระ"><?php echo thaiDate($p['pay_date'] ?? ''); ?></td>
                                             <td data-label="สลิป">
                                                 <?php if (($p['payment_kind'] ?? '') === 'unpaid'): ?>
                                                     <span class="status-chip unpaid">รอชำระ</span>
@@ -1086,7 +1085,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($rp['room_number'] ?? '-'); ?></strong></td>
                                             <td data-label="ผู้เช่า"><?php echo htmlspecialchars($rp['tnt_name'] ?? '-'); ?></td>
                                             <td data-label="รายละเอียด"><?php echo htmlspecialchars($repairDesc !== '' ? $repairDesc : '-'); ?></td>
-                                            <td data-label="วันที่แจ้ง"><?php echo !empty($rp['repair_date']) ? date('d/m/Y H:i', strtotime((string)$rp['repair_date'])) : '-'; ?></td>
+                                            <td data-label="วันที่แจ้ง"><?php echo thaiDate($rp['repair_date'] ?? '', 'short_time'); ?></td>
                                             <td data-label="สถานะ"><span class="status-chip <?php echo $repairStatusClass; ?>"><?php echo $repairStatusText; ?></span></td>
                                             <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingRepair); ?></td>
                                             <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_repairs.php">จัดการ</a></td>

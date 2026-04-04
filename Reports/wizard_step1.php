@@ -8,6 +8,7 @@ if (empty($_SESSION['admin_username'])) {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/../includes/wizard_helper.php';
 
 $conn = connectDB();
@@ -186,7 +187,7 @@ if ($settingsStmt) {
                     </div>
                     <div class="info-item">
                         <div class="info-label">วันที่จอง</div>
-                        <div class="info-value"><?php echo date('d/m/Y', strtotime($booking['bkg_date'])); ?></div>
+                        <div class="info-value"><?php echo thaiDate($booking['bkg_date']); ?></div>
                     </div>
                 </div>
 

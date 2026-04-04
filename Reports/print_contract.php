@@ -20,6 +20,7 @@ header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Pragma: no-cache');
 header('Expires: 0');
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 $pdo = connectDB();
 
 $defaultViewMode = 'grid';
@@ -970,7 +971,7 @@ function nameWithoutNickname($fullName) {
                              oncontextmenu="return false;"
                              ondragstart="return false;">
                         <div class="signature-watermark" style="font-size: 8px;">
-                            <?php echo date('d/m/Y H:i', strtotime($tenantSignedAt)); ?>
+                            <?php echo thaiDate($tenantSignedAt, 'short_time'); ?>
                         </div>
                     </div>
                     <?php else: ?>

@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 
 $debugMode = isset($_GET['debug']) && $_GET['debug'] === '1';
 ini_set('display_errors', $debugMode ? '1' : '0');
@@ -973,7 +974,7 @@ if ($currentStatus === '1') {
                             <?php foreach ($tenantBookings as $tb): ?>
                                 <option value="<?php echo htmlspecialchars($tb['bkg_id']); ?>" <?php echo ((string)$bookingRef === (string)$tb['bkg_id']) ? 'selected' : ''; ?> >
                                     <?php echo htmlspecialchars($tb['bkg_id']); ?>
-                                    <?php if (!empty($tb['bkg_checkin_date'])): ?> (เข้าพัก <?php echo htmlspecialchars(date('d/m/Y', strtotime($tb['bkg_checkin_date']))); ?>)<?php endif; ?>
+                                    <?php if (!empty($tb['bkg_checkin_date'])): ?> (เข้าพัก <?php echo htmlspecialchars(thaiDate($tb['bkg_checkin_date'])); ?>)<?php endif; ?>
                                 </option>
                             <?php endforeach; ?>
                         </select>

@@ -69,7 +69,7 @@
       <div class="apple-row-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('manage_rates_label'); ?></p>
-        <p class="apple-row-sublabel" id="currentRateDateLabel"><?php echo __('effective_from'); ?> <?php echo date('d/m/Y', strtotime($currentRateDate)); ?></p>
+        <p class="apple-row-sublabel" id="currentRateDateLabel"><?php echo __('effective_from'); ?> <?php echo thaiDate($currentRateDate); ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -101,7 +101,7 @@
       </div>
       
       <p id="sheetRateDateLabel" style="font-size: 13px; color: var(--apple-text-secondary); text-align: center; margin-bottom: 20px;">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>อัตราปัจจุบัน (ใช้ตั้งแต่ <?php echo date('d/m/Y', strtotime($currentRateDate)); ?>)
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>อัตราปัจจุบัน (ใช้ตั้งแต่ <?php echo thaiDate($currentRateDate); ?>)
       </p>
       
       <!-- Add New Rate -->
@@ -204,7 +204,7 @@
             ?>
             <tr id="rate-row-<?php echo $r['rate_id']; ?>" class="<?php echo $isActive ? 'current-rate' : ''; ?>" data-rate-id="<?php echo $r['rate_id']; ?>" data-water="<?php echo $r['rate_water']; ?>" data-elec="<?php echo $r['rate_elec']; ?>" data-base-units="<?php echo $baseUnits; ?>" data-base-price="<?php echo $basePrice; ?>" data-excess-rate="<?php echo $excessRate; ?>">
               <td data-label="วันที่">
-                <?php echo date('d/m/Y', strtotime($r['effective_date'] ?? '2025-01-01')); ?>
+                <?php echo thaiDate($r['effective_date'] ?? '2025-01-01'); ?>
               </td>
               <td data-label="เหมาจ่าย" style="text-align: center; color: var(--apple-blue); font-weight: 600;">
                 ฿<?php echo ($basePrice !== '') ? number_format($basePrice) : number_format($r['rate_water']); ?>

@@ -8,6 +8,7 @@ if (empty($_SESSION['admin_username'])) {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 
 // Initialize database connection
 $conn = connectDB();
@@ -260,7 +261,7 @@ try {
                                           AND COALESCE(c3.tnt_id, '') <> COALESCE(b.tnt_id, '')
                                     )
                                         " . $completionCondition . "
-        ORDER BY COALESCE(tw.current_step, 1) ASC, b.bkg_date DESC";
+        ORDER BY CAST(r.room_number AS UNSIGNED) ASC";
     
     $stmt = $conn->query($sql);
     $wizardTenants = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1575,7 +1576,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 $firstBillMonthDisplay = '-';
                                 $firstBillDueReached = false;
                                 if ($firstBillMonthRaw !== '' && strtotime($firstBillMonthRaw) !== false) {
-                                    $firstBillMonthDisplay = date('m/Y', strtotime($firstBillMonthRaw));
+                                    $firstBillMonthDisplay = thaiMonthYear($firstBillMonthRaw);
                                     $firstBillDueReached = strtotime(date('Y-m-d')) >= strtotime(date('Y-m-01', strtotime($firstBillMonthRaw)));
                                 }
                                 $firstExpStatus   = (string)($tenant['first_exp_status'] ?? '');
@@ -1587,7 +1588,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                 // Check if current month is also paid
                                 $currentExpStatus = (string)($tenant['current_exp_status'] ?? '');
                                 $currentBillPaid  = ($currentExpStatus === '1');
-                                $currentMonthDisplay = date('m/Y', strtotime(date('Y-m-d')));
+                                $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
                                 // --- มิเตอร์: เช็คว่าจดเดือนบิล + เดือนก่อนไว้แล้วหรือยัง ---
                                 $ctrIdInt      = (int)($tenant['ctr_id'] ?? 0);
@@ -1654,7 +1655,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                             $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">รอชำระเงิน</span>';
                                         } else {
                                             // เดือนปัจจุบันยังไม่ได้จดมิเตอร์ → แสดงปุ่มจดมิเตอร์
-                                            $currentDisp = date('m/Y', strtotime($currentYm . '-01'));
+                                            $currentDisp = thaiMonthYear($currentYm . '-01');
                                             $meterStatusHtml = '<button type="button" onclick="' . htmlspecialchars($openMeterJs($currentYm), ENT_QUOTES, 'UTF-8') . '"'
                                                 . ' style="display:inline-block;margin-top:0.25rem;background:rgba(20,184,166,0.12);border:1px solid rgba(20,184,166,0.35);color:#2dd4bf;font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:12px;cursor:pointer;"'
                                                 . '>📋 จดมิเตอร์ (' . htmlspecialchars($currentDisp, ENT_QUOTES, 'UTF-8') . ')</button>';
@@ -1667,7 +1668,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                         $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#4ade80;">✓ จดมิเตอร์แล้ว</span>';
                                     }
                                 } elseif (!$meterPrevDone && $prevYearMonth !== null) {
-                                    $prevDisp = date('m/Y', strtotime($prevYearMonth . '-01'));
+                                    $prevDisp = thaiMonthYear($prevYearMonth . '-01');
                                     $meterStatusHtml = '<button type="button" onclick="' . htmlspecialchars($openMeterJs($prevYearMonth), ENT_QUOTES, 'UTF-8') . '"'
                                         . ' style="display:inline-block;margin-top:0.25rem;background:rgba(20,184,166,0.12);border:1px solid rgba(20,184,166,0.35);color:#2dd4bf;font-size:0.75rem;font-weight:600;padding:0.15rem 0.5rem;border-radius:12px;cursor:pointer;"'
                                         . '>📋 จดมิเตอร์ (' . htmlspecialchars($prevDisp, ENT_QUOTES, 'UTF-8') . ')</button>';
@@ -1713,7 +1714,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 . '</svg>';
                                             $step5CircleLabel = $meterSvg;
                                             $tooltipPrefix = !$meterPrevDone && $prevYearMonth !== null
-                                                ? '5. จดมิเตอร์ (' . date('m/Y', strtotime($prevYearMonth . '-01')) . ')'
+                                                ? '5. จดมิเตอร์ (' . thaiMonthYear($prevYearMonth . '-01') . ')'
                                                 : '5. ยังไม่จดมิเตอร์';
                                             $step5Tooltip = $tooltipPrefix . ($firstBillMonthDisplay !== '-' ? ' (' . $firstBillMonthDisplay . ')' : '');
                                         }
@@ -1773,7 +1774,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                     </td>
                                     <td data-label="สถานะ">
                                         <div class="step-indicator">
-                                            <div class="step-circle <?php echo $step1 ? 'completed' : ($currentStep == 1 ? 'current' : 'pending'); ?>" data-tooltip="1. ยืนยันจอง" <?php if ($step1): ?>onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['bkg_date']))), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step1 ? 'completed' : ($currentStep == 1 ? 'current' : 'pending'); ?>" data-tooltip="1. ยืนยันจอง" <?php if ($step1): ?>onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['bkg_date'])), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step1 ? '✓' : '1'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
@@ -1785,7 +1786,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 <?php echo $step3 ? '✓' : '3'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step4 ? 'completed' : ($currentStep == 4 ? 'current' : 'pending'); ?>" data-tooltip="4. เช็คอิน" <?php if ($step4): ?>onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step4 ? 'completed' : ($currentStep == 4 ? 'current' : 'pending'); ?>" data-tooltip="4. เช็คอิน" <?php if ($step4): ?>onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step4 ? '✓' : '4'; ?>
                                             </div>
                                             <span class="step-arrow">→</span>
@@ -1803,10 +1804,10 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                                 <a href="manage_contracts.php?ctr_id=<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>" style="font-size:0.78rem;color:#60a5fa;text-decoration:none;font-weight:600;">จัดการสัญญา →</a>
                                             </div>
                                         <?php elseif ($tenant['workflow_id'] === null): ?>
-                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['bkg_date']))), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันการชำระการจอง</button>
+                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['bkg_date'])), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันการชำระการจอง</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 1): ?>
-                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['bkg_date']))), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันการชำระการจอง</button>
+                                            <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['bkg_date'])), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันการชำระการจอง</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 2): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openPaymentModal(<?php echo (int)$tenant['bp_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bp_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันชำระเงินจอง</button>
@@ -1827,7 +1828,7 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                                             )">สร้างสัญญา</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 4): ?>
-                                            <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_start'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(date('d/m/Y', strtotime($tenant['ctr_end'] ?? 'now'))), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">เช็คอิน</button>
+                                            <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">เช็คอิน</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 5 || $currentStep >= 6 || (int)($tenant['completed'] ?? 0) === 1): ?>
                                             <?php if ($step5 && $meterBillDone && $firstBillPaid): ?>
@@ -1952,15 +1953,19 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
                     <div class="form-grid">
                         <div class="form-group">
                             <label>วันเริ่มสัญญา *</label>
-                            <input type="date" name="ctr_start" id="modal_contract_start" required>
+                            <input type="date" name="ctr_start" id="modal_contract_start" required onchange="updateContractEndDate()">
                         </div>
                         <div class="form-group">
                             <label>ระยะเวลาสัญญา *</label>
-                            <select name="contract_duration" id="modal_contract_duration" required>
+                            <select name="contract_duration" id="modal_contract_duration" required onchange="updateContractEndDate()">
                                 <option value="3">3 เดือน</option>
                                 <option value="6" selected>6 เดือน</option>
                                 <option value="12">12 เดือน</option>
                             </select>
+                        </div>
+                        <div class="form-group">
+                            <label>วันสิ้นสุดสัญญา</label>
+                            <div id="modal_contract_end_display" style="padding:0.875rem 1rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.15);border-radius:10px;color:#c4b5fd;font-size:1rem;min-height:3rem;display:flex;align-items:center;">-</div>
                         </div>
                         <div class="form-group">
                             <label>เงินประกัน (บาท) *</label>
@@ -2628,6 +2633,20 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         document.getElementById('contractModal').classList.add('active');
         document.body.style.overflow = 'hidden';
         document.body.classList.add('modal-open');
+        updateContractEndDate();
+    }
+
+    function updateContractEndDate() {
+        const startVal = document.getElementById('modal_contract_start').value;
+        const durationVal = parseInt(document.getElementById('modal_contract_duration').value) || 0;
+        const endDisplay = document.getElementById('modal_contract_end_display');
+        if (!startVal || !durationVal) { endDisplay.textContent = '-'; return; }
+        const start = new Date(startVal + 'T00:00:00');
+        if (isNaN(start.getTime())) { endDisplay.textContent = '-'; return; }
+        const end = new Date(start);
+        end.setMonth(end.getMonth() + durationVal);
+        end.setDate(end.getDate() - 1);
+        endDisplay.textContent = end.toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'});
     }
 
     function closeContractModal() {
@@ -2656,9 +2675,9 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
         if (!dateValue) return '-';
         const date = new Date(dateValue);
         if (Number.isNaN(date.getTime())) return '-';
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                           'July', 'August', 'September', 'October', 'November', 'December'];
-        return `${monthNames[date.getMonth()]} ${date.getFullYear()}`;
+        const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+        return `${monthNames[date.getMonth()]} ${date.getFullYear() + 543}`;
     }
 
     function getBillRemarkText(rawRemark, monthText, fallbackPrefix = 'ชำระบิล') {
@@ -3304,10 +3323,10 @@ $clearSelectionHref = 'tenant_wizard.php?completed=' . $completedFilter;
 
         // แสดงเดือนปัจจุบัน (เดือนที่จดมิเตอร์)
         const now = new Date();
-        const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                           'July', 'August', 'September', 'October', 'November', 'December'];
+        const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
+                           'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         document.getElementById('nextMonthDisplay').textContent = 
-            `${monthNames[now.getMonth()]} ${now.getFullYear()}`;
+            `${monthNames[now.getMonth()]} ${now.getFullYear() + 543}`;
 
         // รีเซ็ต bill sections — ซ่อนไว้ก่อนจนกว่าจะรู้ว่าจดมิเตอร์แล้วหรือไม่
         document.getElementById('billSectionsWrapper').style.display = 'none';

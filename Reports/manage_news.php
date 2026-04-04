@@ -7,6 +7,7 @@ if (empty($_SESSION['admin_username'])) {
     exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 $pdo = connectDB();
 
 // รับค่า sort จาก query parameter
@@ -503,7 +504,7 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
                     <div class="news-card-meta">
                       <span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        <?php echo $news['news_date'] ? date('d/m/Y', strtotime($news['news_date'])) : '-'; ?>
+                        <?php echo $news['news_date'] ? thaiDate($news['news_date']) : '-'; ?>
                       </span>
                       <?php if (!empty($news['news_by'])): ?>
                         <span>

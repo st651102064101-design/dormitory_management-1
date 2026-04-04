@@ -7,6 +7,7 @@ declare(strict_types=1);
 session_start();
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 $pdo = connectDB();
 
 $token = $_GET['token'] ?? '';
@@ -485,11 +486,11 @@ $hasCheckIn = !empty($data['checkin_id']);
             <div class="date-contract">
                 <div class="date-box">
                     <div class="date-label">📅 วันเริ่มต้น</div>
-                    <div class="date-value"><?php echo date('d/m/Y', strtotime($data['ctr_start'])); ?></div>
+                    <div class="date-value"><?php echo thaiDate($data['ctr_start']); ?></div>
                 </div>
                 <div class="date-box">
                     <div class="date-label">📅 วันสิ้นสุด</div>
-                    <div class="date-value"><?php echo date('d/m/Y', strtotime($data['ctr_end'])); ?></div>
+                    <div class="date-value"><?php echo thaiDate($data['ctr_end']); ?></div>
                 </div>
             </div>
         </div>
@@ -505,7 +506,7 @@ $hasCheckIn = !empty($data['checkin_id']);
                 </div>
                 <div class="info-row">
                     <span class="info-label">📆 วันเช็คอิน</span>
-                    <span class="info-value"><?php echo date('d/m/Y', strtotime($data['checkin_date'])); ?></span>
+                    <span class="info-value"><?php echo thaiDate($data['checkin_date']); ?></span>
                 </div>
             </div>
 

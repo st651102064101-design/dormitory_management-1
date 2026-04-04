@@ -6,6 +6,7 @@ if (empty($_SESSION['admin_username'])) {
     exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 $pdo = connectDB();
 
 // CSRF token
@@ -2767,8 +2768,8 @@ $filterRoomOptions = array_values($filterRoomOptions);
                         <td><?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></td>
                         <td><?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?></td>
                         <td><?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></td>
-                        <td><?php echo $pay['exp_month'] ? date('m/Y', strtotime($pay['exp_month'])) : '-'; ?></td>
-                        <td><?php echo $pay['pay_date'] ? date('d/m/Y', strtotime($pay['pay_date'])) : '-'; ?></td>
+                        <td><?php echo $pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-'; ?></td>
+                        <td><?php echo $pay['pay_date'] ? thaiDate($pay['pay_date']) : '-'; ?></td>
                         <td style="text-align:right;font-weight:700;color:#22c55e;">฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?></td>
                         <td>
                           <?php if (!empty($pay['pay_proof'])): ?>
@@ -2843,8 +2844,8 @@ $filterRoomOptions = array_values($filterRoomOptions);
                       <span class="status-badge <?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
                     </div>
                     <div class="payment-row-meta">
-                      <div>เดือนค่าใช้จ่าย: <?php echo $pay['exp_month'] ? date('m/Y', strtotime($pay['exp_month'])) : '-'; ?></div>
-                      <div>วันที่ชำระ: <?php echo $pay['pay_date'] ? date('d/m/Y', strtotime($pay['pay_date'])) : '-'; ?></div>
+                      <div>เดือนค่าใช้จ่าย: <?php echo $pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-'; ?></div>
+                      <div>วันที่ชำระ: <?php echo $pay['pay_date'] ? thaiDate($pay['pay_date']) : '-'; ?></div>
                       <div>จำนวนเงิน: <strong style="color:#22c55e;">฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?></strong></div>
                       <div>หมายเหตุ: <?php echo !empty($pay['pay_remark']) ? htmlspecialchars($pay['pay_remark']) : 'ค่าเช่า'; ?></div>
                     </div>
