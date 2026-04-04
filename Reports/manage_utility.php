@@ -204,12 +204,31 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
         if ($waterInput !== null && ($waterInput < 0 || $waterInput > 9999999)) continue;
         if ($elecInput  !== null && ($elecInput  < 0 || $elecInput  > 99999))  continue;
 
-        // ป้องกันการแก้ไขเดือนที่ผ่านมาแล้ว เฉพาะกรณีบันทึกแล้ว (server-side)
+        // ป้องกันการแก้ไขเดือนที่ผ่านมาแล้ว เฉพาะกรณี: มี record จริง (ไม่ใช่ 0-0 placeholder) + บิลชำระแล้ว
         $postYm = sprintf('%04d-%02d', $year, $month);
         if ($postYm < date('Y-m')) {
-            $existChk = $pdo->prepare("SELECT COUNT(*) FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?");
-            $existChk->execute([(int)$data['ctr_id'], $month, $year]);
-            if ($existChk->fetchColumn() > 0) continue; // ห้ามแก้ไข
+            $ctrIdCheck = (int)$data['ctr_id'];
+            // ตรวจว่ามี utility record ที่มีค่าจริง (water_end > 0 หรือ elec_end > 0)
+            $existChk = $pdo->prepare("SELECT utl_water_end, utl_elec_end FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ? LIMIT 1");
+            $existChk->execute([$ctrIdCheck, $month, $year]);
+            $existRow = $existChk->fetch(PDO::FETCH_ASSOC);
+            if ($existRow) {
+                $hasRealMeterData = (int)($existRow['utl_water_end'] ?? 0) > 0 || (int)($existRow['utl_elec_end'] ?? 0) > 0;
+                // ตรวจว่าบิลชำระแล้วหรือยัง
+                $pastBillPaid = false;
+                $pastBillChk = $pdo->prepare("
+                    SELECT e.exp_total,
+                           COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) AS approved_paid
+                    FROM expense e WHERE e.ctr_id = ? AND MONTH(e.exp_month) = ? AND YEAR(e.exp_month) = ? LIMIT 1
+                ");
+                $pastBillChk->execute([$ctrIdCheck, $month, $year]);
+                $pastBillRow = $pastBillChk->fetch(PDO::FETCH_ASSOC);
+                if ($pastBillRow && (float)$pastBillRow['approved_paid'] >= (float)$pastBillRow['exp_total'] && (float)$pastBillRow['exp_total'] > 0) {
+                    $pastBillPaid = true;
+                }
+                // ห้ามแก้ไขถ้า: มีค่ามิเตอร์จริงอยู่แล้ว + บิลชำระแล้ว
+                if ($hasRealMeterData && $pastBillPaid) continue;
+            }
         }
         
         $ctrId = (int)$data['ctr_id'];
@@ -275,29 +294,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                     : ($existing['utl_elec_end']  !== null && (int)$existing['utl_elec_end']  > 0);
 
                 if ($thisTabAlreadySaved) {
-                    // อนุญาตแก้ไขถ้าเป็นเดือนปัจจุบัน + บิลยังไม่ได้ชำระ
-                    $postYmEdit = sprintf('%04d-%02d', $year, $month);
-                    $isCurrentMonthEdit = ($postYmEdit === date('Y-m'));
+                    // อนุญาตแก้ไขถ้าบิลยังไม่ได้ชำระ (ทั้งเดือนปัจจุบันและเดือนก่อน)
                     $editBillPaid = false;
-                    if ($isCurrentMonthEdit) {
-                        $editBillChk = $pdo->prepare("
-                            SELECT e.exp_total,
-                                   COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) AS approved_paid
-                            FROM expense e
-                            WHERE e.ctr_id = ? AND MONTH(e.exp_month) = ? AND YEAR(e.exp_month) = ?
-                            LIMIT 1
-                        ");
-                        $editBillChk->execute([$ctrId, $month, $year]);
-                        $editBillRow = $editBillChk->fetch(PDO::FETCH_ASSOC);
-                        if ($editBillRow && (float)$editBillRow['approved_paid'] >= (float)$editBillRow['exp_total'] && (float)$editBillRow['exp_total'] > 0) {
-                            $editBillPaid = true;
-                        }
+                    $editBillChk = $pdo->prepare("
+                        SELECT e.exp_total,
+                               COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) AS approved_paid
+                        FROM expense e
+                        WHERE e.ctr_id = ? AND MONTH(e.exp_month) = ? AND YEAR(e.exp_month) = ?
+                        LIMIT 1
+                    ");
+                    $editBillChk->execute([$ctrId, $month, $year]);
+                    $editBillRow = $editBillChk->fetch(PDO::FETCH_ASSOC);
+                    if ($editBillRow && (float)$editBillRow['approved_paid'] >= (float)$editBillRow['exp_total'] && (float)$editBillRow['exp_total'] > 0) {
+                        $editBillPaid = true;
                     }
-                    if (!$isCurrentMonthEdit || $editBillPaid) {
+                    if ($editBillPaid) {
                         $lockedRooms++;
                         continue;
                     }
-                    // เดือนปัจจุบัน + บิลยังไม่ชำระ → อนุญาตแก้ไข (partial UPDATE)
+                    // บิลยังไม่ชำระ → อนุญาตแก้ไข (partial UPDATE)
                 }
                 // Record มีอยู่แล้วแต่ฝั่งนี้ยังไม่ได้บันทึก (อีกฝั่งบันทึกก่อน) หรือแก้ไขมิเตอร์เดือนปัจจุบัน → partial UPDATE
                 $doInsert = false;
@@ -375,6 +390,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 
             if ($isFirstReading) {
                 $firstBillRooms[] = $ctrId;
+            }
+
+            // Cascade: อัปเดต utility ของเดือนถัดไป (start = ค่า end ที่เพิ่งบันทึก)
+            $nextMo = $month < 12 ? $month + 1 : 1;
+            $nextYr = $month < 12 ? $year : $year + 1;
+            $cascadeStmt = $pdo->prepare("SELECT utl_id FROM utility WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ? LIMIT 1");
+            $cascadeStmt->execute([$ctrId, $nextMo, $nextYr]);
+            $nextUtl = $cascadeStmt->fetch(PDO::FETCH_ASSOC);
+            if ($nextUtl) {
+                if ($postTab === 'water') {
+                    $pdo->prepare("UPDATE utility SET utl_water_start = ? WHERE utl_id = ?")
+                        ->execute([$waterNew, $nextUtl['utl_id']]);
+                    // คำนวณค่าน้ำใหม่สำหรับเดือนถัดไป
+                    $nextUtlFull = $pdo->prepare("SELECT utl_water_end FROM utility WHERE utl_id = ?");
+                    $nextUtlFull->execute([$nextUtl['utl_id']]);
+                    $nextUtlRow = $nextUtlFull->fetch(PDO::FETCH_ASSOC);
+                    if ($nextUtlRow && $nextUtlRow['utl_water_end'] !== null && (int)$nextUtlRow['utl_water_end'] > 0) {
+                        $nextWaterUsed = (int)$nextUtlRow['utl_water_end'] - $waterNew;
+                        $nextWaterCost = calculateWaterCost($nextWaterUsed);
+                        $pdo->prepare("UPDATE expense SET exp_water_unit = ?, exp_water = ?, exp_total = room_price + ? + COALESCE(exp_elec_chg, 0) WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?")
+                            ->execute([$nextWaterUsed, $nextWaterCost, $nextWaterCost, $ctrId, $nextMo, $nextYr]);
+                    }
+                } else {
+                    $pdo->prepare("UPDATE utility SET utl_elec_start = ? WHERE utl_id = ?")
+                        ->execute([$elecNew, $nextUtl['utl_id']]);
+                    // คำนวณค่าไฟใหม่สำหรับเดือนถัดไป
+                    $nextUtlFull = $pdo->prepare("SELECT utl_elec_end FROM utility WHERE utl_id = ?");
+                    $nextUtlFull->execute([$nextUtl['utl_id']]);
+                    $nextUtlRow = $nextUtlFull->fetch(PDO::FETCH_ASSOC);
+                    if ($nextUtlRow && $nextUtlRow['utl_elec_end'] !== null && (int)$nextUtlRow['utl_elec_end'] > 0) {
+                        $nextElecUsed = (int)$nextUtlRow['utl_elec_end'] - $elecNew;
+                        $nextElecCost = $nextElecUsed * $electricRate;
+                        $pdo->prepare("UPDATE expense SET exp_elec_unit = ?, exp_elec_chg = ?, exp_total = room_price + COALESCE(exp_water, 0) + ? WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ?")
+                            ->execute([$nextElecUsed, $nextElecCost, $nextElecCost, $ctrId, $nextMo, $nextYr]);
+                    }
+                }
             }
             
             $saved++;
@@ -662,8 +713,8 @@ foreach ($rooms as $room) {
         }
     }
 
-    // อนุญาตแก้ไขมิเตอร์: เดือนปัจจุบัน + บิลยังไม่ได้ชำระ → ปลดล็อค
-    $canEditSaved = !$isPastMonth && !$billPaid;
+    // อนุญาตแก้ไขมิเตอร์: บิลยังไม่ได้ชำระ → ปลดล็อค (ทั้งเดือนปัจจุบันและเดือนที่ผ่านมา)
+    $canEditSaved = !$billPaid;
 
     $readings[$room['room_id']] = [
         'water_old' => $water_old_value,
@@ -2216,7 +2267,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                         <?php echo htmlspecialchars($room['room_number']); ?>
                                         <?php if ($needsWater): ?>
                                             <span class="needs-meter-badge">⚠ ยังไม่จด</span>
-                                        <?php elseif ($r['isFirstReading']): ?>
+                                        <?php endif; ?>
+                                        <?php if ($r['isFirstReading']): ?>
                                             <span style="color:#f59e0b;font-weight:700;margin-left:0.3rem;">(ครั้งแรก)</span>
                                         <?php endif; ?>
                                     </td>
@@ -2282,7 +2334,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                         <?php echo htmlspecialchars($room['room_number']); ?>
                                         <?php if ($needsElec): ?>
                                             <span class="needs-meter-badge">⚠ ยังไม่จด</span>
-                                        <?php elseif ($r['isFirstReading']): ?>
+                                        <?php endif; ?>
+                                        <?php if ($r['isFirstReading']): ?>
                                             <span style="color:#f59e0b;font-weight:700;margin-left:0.3rem;">(ครั้งแรก)</span>
                                         <?php endif; ?>
                                     </td>
