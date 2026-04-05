@@ -79,7 +79,11 @@ try {
             -- จดมิเตอร์เดือนปัจจุบัน
             LEFT JOIN utility u_bill ON u_bill.ctr_id = c.ctr_id
                 AND DATE_FORMAT(u_bill.utl_date, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
-            WHERE (u_bill.utl_id IS NULL OR u_bill.utl_water_end IS NULL OR u_bill.utl_elec_end IS NULL)
+            WHERE (
+                u_bill.utl_id IS NULL
+                OR COALESCE(u_bill.utl_water_end, 0) = 0
+                OR COALESCE(u_bill.utl_elec_end, 0) = 0
+            )
             -- สัญญาต้องครอบคลุมเดือนปัจจุบัน
             AND c.ctr_start <= LAST_DAY(CURDATE())
             AND c.ctr_end >= DATE_FORMAT(CURDATE(), '%Y-%m-01')
@@ -93,8 +97,8 @@ try {
     $pendingWater = 0;
     $pendingElec = 0;
     foreach ($utilities as $u) {
-        if (empty($u['utl_id']) || $u['utl_water_end'] === null) $pendingWater++;
-        if (empty($u['utl_id']) || $u['utl_elec_end'] === null) $pendingElec++;
+        if (empty($u['utl_id']) || empty($u['utl_water_end'])) $pendingWater++;
+        if (empty($u['utl_id']) || empty($u['utl_elec_end'])) $pendingElec++;
     }
 
     // === Tab 3: ค่าใช้จ่าย ===
@@ -871,8 +875,8 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                     <tbody>
                                         <?php foreach ($utilities as $u): ?>
                                         <?php
-                                            $waterDone = !empty($u['utl_id']) && $u['utl_water_end'] !== null;
-                                            $elecDone = !empty($u['utl_id']) && $u['utl_elec_end'] !== null;
+                                            $waterDone = !empty($u['utl_id']) && !empty($u['utl_water_end']);
+                                            $elecDone = !empty($u['utl_id']) && !empty($u['utl_elec_end']);
                                             $utilityCtrId = (int)($u['ctr_id'] ?? 0);
                                             // Determine remaining tasks
                                             $remainingTasksUtility = '';

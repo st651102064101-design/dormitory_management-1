@@ -30,7 +30,9 @@ switch ($sortBy) {
     $orderBy = '(tnt_status = \'1\') DESC, (tnt_status = \'2\') DESC, (tnt_status = \'3\') DESC, (tnt_status = \'4\') DESC, tnt_name ASC';
 }
 
-$tenants = $pdo->query("SELECT tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status FROM tenant ORDER BY $orderBy")
+$tenants = $pdo->query("SELECT tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status,
+                   (SELECT COUNT(*) FROM contract c WHERE c.tnt_id = tenant.tnt_id AND c.ctr_status IN ('0','2')) AS has_active_contract
+                   FROM tenant ORDER BY $orderBy")
                 ->fetchAll(PDO::FETCH_ASSOC);
 
 $statusMap = [
@@ -751,7 +753,11 @@ try {
                             data-tnt-parentsphone="<?php echo htmlspecialchars($t['tnt_parentsphone'] ?? ''); ?>">
                             แก้ไข
                           </button>
+                          <?php if (empty($t['has_active_contract'])): ?>
                           <button type="button" class="animate-ui-action-btn delete btn-delete-tenant" data-tnt-id="<?php echo htmlspecialchars($t['tnt_id']); ?>">ลบ</button>
+                          <?php else: ?>
+                          <button type="button" class="animate-ui-action-btn delete btn-delete-tenant" disabled title="ไม่สามารถลบได้ เนื่องจากมีสัญญาที่ยังใช้งานอยู่" style="opacity:0.35; cursor:not-allowed;">ลบ</button>
+                          <?php endif; ?>
                         </td>
                       </tr>
                     <?php endforeach; ?>
@@ -1309,6 +1315,7 @@ try {
         document.querySelector('#table-tenants')?.addEventListener('click', async (e) => {
           const deleteBtn = e.target.closest('.btn-delete-tenant');
           if (!deleteBtn) return;
+          if (deleteBtn.disabled) return;
           
           e.preventDefault();
           e.stopPropagation();

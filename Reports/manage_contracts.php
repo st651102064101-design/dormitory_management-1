@@ -29,12 +29,13 @@ if ($settingsStmt) {
 }
 
 // Get contracts (optionally filter by ctr_id passed via querystring)
+$filterCtrIdRaw = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
 $filterStatus = isset($_GET['status']) ? $_GET['status'] : 'active';
 $validStatuses = ['all', 'active', 'waiting', 'notifying', 'cancelled', 'expiring'];
 if (!in_array($filterStatus, $validStatuses, true)) $filterStatus = 'all';
 
 try {
-    $filterCtrId = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
+    $filterCtrId = $filterCtrIdRaw;
     if ($filterCtrId > 0) {
         $stmt = $conn->prepare("SELECT c.*, 
           t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_status,
@@ -1124,9 +1125,9 @@ try {
                             <?php endif; ?>
                           </td>
                           <td style="padding:0.55rem 0.75rem; text-align:center;">
-                            <a href="?ctr_id=<?php echo (int)$rp['ctr_id']; ?>" style="background:#d97706; color:#fff; border-radius:6px; padding:0.25rem 0.65rem; font-size:0.8rem; text-decoration:none; white-space:nowrap; display:inline-block;">
+                            <button onclick="openContractDetail(<?php echo (int)$rp['ctr_id']; ?>, true)" style="background:#d97706; color:#fff; border:none; border-radius:6px; padding:0.25rem 0.65rem; font-size:0.8rem; cursor:pointer; white-space:nowrap;">
                               จัดการ →
-                            </a>
+                            </button>
                           </td>
                         </tr>
                         <?php endforeach; ?>
@@ -1319,6 +1320,13 @@ try {
                     </div>
                 </form>
 
+                <!-- Clear Filter button lives OUTSIDE contractsTableArea so it survives AJAX refresh -->
+                <div id="clearFilterBtnWrap" style="display:none; margin: 0 0 0.4rem;">
+                  <button id="clearFilterBtn" onclick="clearContractsFilter()" title="ล้าง Filter และการค้นหา" style="display:inline-flex; align-items:center; gap:0.35rem; background:rgba(239,68,68,0.12); border:1px solid #ef4444; color:#fca5a5; border-radius:20px; padding:0.3rem 0.75rem; font-size:0.82rem; cursor:pointer; white-space:nowrap; transition:background 0.18s;">
+                    ✕ ล้าง Filter
+                  </button>
+                </div>
+
                 <div id="contractsTableArea" style="width: 100%; box-sizing: border-box;">
                     <h3>รายชื่อสัญญา</h3>
 
@@ -1494,6 +1502,14 @@ try {
             // Re-init DataTable
             initContractsDataTable();
             setTimeout(handleContractsTableResponsive, 150);
+            // Re-bind search input listener and update clear button
+            setTimeout(function() {
+              var searchInput = document.querySelector('.datatable-input');
+              if (searchInput) {
+                searchInput.addEventListener('input', function() { updateClearFilterBtn(_ctrCurrentFilter); });
+              }
+              updateClearFilterBtn(_ctrCurrentFilter);
+            }, 300);
           }
           // Also refresh stat cards
           const newStats = doc.querySelector('.contract-stats');
@@ -1513,6 +1529,29 @@ try {
       const key = pill.getAttribute('data-filter');
       if (!key) return;
       refreshContractsTable(key);
+    }
+
+    function updateClearFilterBtn(filterKey) {
+      var wrap = document.getElementById('clearFilterBtnWrap');
+      if (!wrap) return;
+      var searchInput = document.querySelector('.datatable-input');
+      var hasSearch = searchInput && searchInput.value.trim() !== '';
+      var isFiltered = filterKey && filterKey !== 'active';
+      wrap.style.display = (isFiltered || hasSearch) ? 'block' : 'none';
+    }
+
+    function clearContractsFilter() {
+      // Clear DataTable search
+      var searchInput = document.querySelector('.datatable-input');
+      if (searchInput) {
+        searchInput.value = '';
+        searchInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+      if (_dtInstance && _dtInstance.search) {
+        try { _dtInstance.search(''); } catch(e) {}
+      }
+      // Reset status pill to default (hides the button via updateClearFilterBtn inside refreshContractsTable)
+      refreshContractsTable('active');
     }
 
     /* Add-contract form — AJAX submit */
@@ -1964,6 +2003,16 @@ try {
         // Apply responsive styles after DataTable finishes rendering
         setTimeout(handleContractsTableResponsive, 150);
         setTimeout(handleContractsTableResponsive, 400);
+        // Show clear button if filter is non-default on initial load; bind search listener
+        setTimeout(function() {
+          updateClearFilterBtn(_ctrCurrentFilter);
+          var searchInput = document.querySelector('.datatable-input');
+          if (searchInput) {
+            searchInput.addEventListener('input', function() {
+              updateClearFilterBtn(_ctrCurrentFilter);
+            });
+          }
+        }, 600);
       });
       
       // Re-apply on resize
