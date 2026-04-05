@@ -2159,12 +2159,14 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                             <?php if ($tenantSigned): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">เช็คอิน</button>
                                             <?php else: ?>
+                                            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
                                             <button type="button" class="action-btn btn-primary" style="opacity:0.55;cursor:not-allowed;" title="ผู้เช่ายังไม่ได้เซ็นสัญญา" onclick="showNotSignedToast()">🔒 เช็คอิน</button>
                                             <?php if (!empty($tenant['ctr_id'])): ?>
                                             <a href="print_contract.php?ctr_id=<?php echo (int)$tenant['ctr_id']; ?>" target="_blank" class="action-btn" style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);color:#c4b5fd;font-size:0.8rem;" title="เปิดสัญญาเพื่อให้ผู้เช่าเซ็น">📄 ดูสัญญา</a>
                                             <?php endif; ?>
-                                            <?php endif; ?>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
+                                            </div>
+                                            <?php endif; ?>
                                         <?php elseif ($currentStep == 5 || $currentStep >= 6 || (int)($tenant['completed'] ?? 0) === 1): ?>
                                             <?php if ($step5 && $meterBillDone && $latestBillPaid && $firstBillPaid): ?>
                                                 <span style="color: #16a34a; font-weight: 600;">✓ ชำระแล้ว (<?php echo htmlspecialchars($latestMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>

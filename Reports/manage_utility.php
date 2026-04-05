@@ -2168,6 +2168,28 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                         <span class="stat-badge done"><?php echo $totalRecorded; ?> บันทึกแล้ว</span>
                         <span class="stat-badge pending"><?php echo max(0, $totalPending); ?> รอ</span>
                     </div>
+
+                    <?php if ($selectedCtrFilterActive): ?>
+                    <?php
+                        // หาชื่อผู้เช่า/ห้องจาก $rooms (ถ้ามีข้อมูล)
+                        $filterRoomLabel = '';
+                        foreach ($rooms as $_fr) {
+                            if (!empty($_fr['room_number'])) {
+                                $filterRoomLabel = 'ห้อง ' . htmlspecialchars($_fr['room_number'], ENT_QUOTES, 'UTF-8');
+                                if (!empty($_fr['tnt_name'])) $filterRoomLabel .= ' – ' . htmlspecialchars($_fr['tnt_name'], ENT_QUOTES, 'UTF-8');
+                                break;
+                            }
+                        }
+                        $clearUrl = '?month=' . $month . '&year=' . $year . '&tab=' . htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8') . '&show=' . htmlspecialchars($showMode, ENT_QUOTES, 'UTF-8');
+                    ?>
+                    <div style="margin:0.5rem 0; display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; padding:0.5rem 0.75rem; background:rgba(245,158,11,0.10); border:1px solid rgba(245,158,11,0.35); border-radius:8px; font-size:0.85rem;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="width:15px;height:15px;flex-shrink:0;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                        <span style="color:#fbbf24; font-weight:600;">กรองเฉพาะ<?php echo $filterRoomLabel ?: 'สัญญา #' . (int)$selectedCtrId; ?></span>
+                        <a href="<?php echo $clearUrl; ?>" style="margin-left:auto; display:inline-flex; align-items:center; gap:0.3rem; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#fca5a5; border-radius:20px; padding:0.2rem 0.65rem; text-decoration:none; font-size:0.8rem; font-weight:600; white-space:nowrap;">
+                            ✕ ล้าง Filter
+                        </a>
+                    </div>
+                    <?php endif; ?>
                     
                     
                     <div class="rate-info">
