@@ -75,6 +75,11 @@ include __DIR__ . '/../Manage/auto_update_overdue.php';
 
 // รับค่า sort
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
+$filterStatus = isset($_GET['filter_status']) ? trim((string)$_GET['filter_status']) : 'all';
+$allowedStatuses = ['all', '0', '1', '2', '3', '4'];
+if (!in_array($filterStatus, $allowedStatuses, true)) {
+    $filterStatus = 'all';
+}
 $orderBy = 'e.exp_id DESC';
 switch ($sortBy) {
     case 'oldest':
@@ -374,6 +379,12 @@ foreach ($expenses as $exp) {
         'chargesTotal' => $rs['chargesTotal'],
         'chargesRemain' => $rs['chargesRemain'],
     ];
+}
+
+if ($filterStatus !== 'all') {
+    $expenseRows = array_values(array_filter($expenseRows, static function(array $row) use ($filterStatus): bool {
+        return (string)($row['status'] ?? '') === $filterStatus;
+    }));
 }
 
 $totalAll = $stats['total_unpaid'] + $stats['total_paid'] + $stats['total_pending'] + $stats['total_partial'] + $stats['total_overdue'];

@@ -479,6 +479,20 @@ $pendingPartialCount = $stats['pending'] + $stats['partial'];
 $pendingPartialTotal = $stats['total_pending'] + $stats['total_partial'];
 $totalExpenseCount = $stats['unpaid'] + $stats['paid'] + $stats['pending'] + $stats['partial'] + $stats['overdue'];
 
+$selectedStatusFilter = isset($_GET['filter_status']) ? trim((string)$_GET['filter_status']) : 'all';
+$allowedStatusFilters = ['all', '0', '1', '2', '3', '4'];
+if (!in_array($selectedStatusFilter, $allowedStatusFilters, true)) {
+  $selectedStatusFilter = 'all';
+}
+
+$displayExpenses = $expenses;
+if ($selectedStatusFilter !== 'all') {
+  $displayExpenses = array_values(array_filter($expenses, static function(array $exp) use ($buildExpenseStatus, $selectedStatusFilter): bool {
+    $statusInfo = $buildExpenseStatus($exp);
+    return (string)($statusInfo['status'] ?? '') === $selectedStatusFilter;
+  }));
+}
+
 // --- END ตรวจสอบมิเตอร์ ---
 
 $logoFilename = 'Logo.jpg';
@@ -1773,6 +1787,270 @@ try {
       }
     </style>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/futuristic-bright.css" />
+    <style>
+      /* Bright clean visual refresh for this page only */
+      body.reports-page {
+        font-family: "IBM Plex Sans Thai", "Sarabun", "Prompt", "Noto Sans Thai", sans-serif;
+        background:
+          radial-gradient(circle at 8% 12%, rgba(59, 130, 246, 0.08), transparent 34%),
+          radial-gradient(circle at 92% 4%, rgba(14, 165, 233, 0.08), transparent 28%),
+          linear-gradient(180deg, #f8fbff 0%, #f3f7ff 38%, #edf3fb 100%) !important;
+        color: #0f172a;
+      }
+
+      .reports-page .app-main {
+        padding-bottom: 2rem;
+      }
+
+      .reports-page .manage-panel {
+        border: 1px solid #dbe5f3 !important;
+        border-radius: 18px !important;
+        background: #ffffff !important;
+        box-shadow: 0 12px 30px rgba(30, 64, 175, 0.09), 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+      }
+
+      .reports-page .section-header h1,
+      .reports-page .section-header h2,
+      .reports-page .section-header h3,
+      .reports-page .section-header h4 {
+        color: #0f172a !important;
+        letter-spacing: 0.01em;
+      }
+
+      .reports-page .section-header p,
+      .reports-page .expense-meta,
+      .reports-page .datatable-info {
+        color: #5b6b83 !important;
+      }
+
+      .reports-page .expense-info-chip {
+        background: #eef6ff;
+        border: 1px solid #cfe3ff;
+        color: #0f4aa3;
+      }
+
+      .reports-page .meter-alert-banner {
+        border-color: #fecaca;
+        background: #fff5f5;
+        color: #b91c1c;
+      }
+
+      .reports-page .expense-stats {
+        gap: 0.9rem;
+      }
+
+      .reports-page .expense-stat-card {
+        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
+        border: 1px solid #d7e6ff !important;
+        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08) !important;
+        color: #0f172a !important;
+        border-radius: 16px;
+      }
+
+      .reports-page .expense-stat-card h3 {
+        color: #355074 !important;
+      }
+
+      .reports-page .expense-stat-card .stat-value,
+      .reports-page .expense-stat-card .stat-money {
+        text-shadow: none;
+      }
+
+      .reports-page .expense-stat-card.is-unpaid .stat-value,
+      .reports-page .expense-stat-card.is-unpaid .stat-money {
+        color: #dc2626 !important;
+      }
+
+      .reports-page .expense-stat-card.is-paid .stat-value,
+      .reports-page .expense-stat-card.is-paid .stat-money {
+        color: #16a34a !important;
+      }
+
+      .reports-page .expense-stat-card.is-pending .stat-value,
+      .reports-page .expense-stat-card.is-pending .stat-money {
+        color: #d97706 !important;
+      }
+
+      .reports-page .expense-stat-card.is-overdue .stat-value,
+      .reports-page .expense-stat-card.is-overdue .stat-money {
+        color: #b91c1c !important;
+      }
+
+      .reports-page .expense-stat-card.is-total .stat-value,
+      .reports-page .expense-stat-card.is-total .stat-money {
+        color: #1d4ed8 !important;
+      }
+
+      .reports-page .collection-progress {
+        border: 1px solid #d9e7fb;
+        border-radius: 16px;
+        background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+      }
+
+      .reports-page .collection-progress-label {
+        color: #334155;
+        font-weight: 700;
+      }
+
+      .reports-page .collection-progress-pct {
+        color: #1d4ed8;
+        font-weight: 800;
+      }
+
+      .reports-page .collection-bar {
+        background: #e6effb;
+      }
+
+      .reports-page .collection-bar-fill {
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.35);
+      }
+
+      .reports-page .expense-controls-row {
+        border: 1px solid #dde8f6;
+        background: linear-gradient(180deg, #f9fbff 0%, #f3f8ff 100%);
+        border-radius: 14px;
+        padding: 0.7rem;
+      }
+
+      .reports-page .expense-filter-tab {
+        background: #ffffff;
+        border: 1px solid #d4e1f1;
+        color: #334155;
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+        transition: all 0.2s ease;
+      }
+
+      .reports-page .expense-filter-tab:hover {
+        transform: translateY(-1px);
+        border-color: #93c5fd;
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
+      }
+
+      .reports-page .expense-filter-tab.active {
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        border-color: #1d4ed8;
+        color: #ffffff;
+        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35);
+      }
+
+      .reports-page .expense-toolbar select,
+      .reports-page .datatable-input,
+      .reports-page .datatable-selector {
+        border: 1px solid #c9d7ea !important;
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border-radius: 10px;
+      }
+
+      .reports-page .expense-toolbar select:focus,
+      .reports-page .datatable-input:focus,
+      .reports-page .datatable-selector:focus {
+        border-color: #60a5fa !important;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        outline: none;
+      }
+
+      .reports-page .report-table {
+        border: 1px solid #dbe5f3;
+        border-radius: 14px;
+        background: #ffffff;
+      }
+
+      .reports-page #table-expenses thead th {
+        background: #f3f8ff !important;
+        color: #1e3a8a !important;
+        border-bottom: 1px solid #d5e3f8;
+        font-weight: 700;
+      }
+
+      .reports-page #table-expenses tbody td {
+        color: #0f172a !important;
+        border-bottom: 1px solid #edf2fb;
+        padding-top: 0.85rem;
+        padding-bottom: 0.85rem;
+      }
+
+      .reports-page .report-table tbody tr.payment-preview-trigger:hover td {
+        background: #f6faff !important;
+      }
+
+      .reports-page .report-table tbody tr.payment-preview-trigger:focus-visible td {
+        background: #eef5ff !important;
+      }
+
+      .reports-page .status-badge {
+        min-width: 84px;
+        font-weight: 700;
+        letter-spacing: 0.01em;
+        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+      }
+
+      .reports-page .payment-compact-label {
+        color: #5b6b83;
+      }
+
+      .reports-page .payment-compact-value {
+        color: #0f172a;
+      }
+
+      .reports-page .expenses-row-view {
+        gap: 0.8rem;
+      }
+
+      .reports-page .expense-row-card {
+        border: 1px solid #d8e6f7;
+        background: #ffffff;
+        box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+      }
+
+      .reports-page .expense-row-card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 14px 24px rgba(30, 64, 175, 0.12);
+      }
+
+      .reports-page .expense-row-meta-value.total {
+        color: #1d4ed8 !important;
+      }
+
+      .reports-page .datatable-pagination a {
+        border-radius: 10px;
+        border: 1px solid #d2deef;
+        color: #334155;
+      }
+
+      .reports-page .datatable-pagination .datatable-active a {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        border-color: #1d4ed8;
+        color: #ffffff;
+        box-shadow: 0 8px 14px rgba(37, 99, 235, 0.25);
+      }
+
+      .reports-page .expenses-view-toggle {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
+        border-color: #1d4ed8 !important;
+        color: #ffffff !important;
+      }
+
+      @media (max-width: 900px) {
+        .reports-page .manage-panel {
+          border-radius: 14px !important;
+        }
+
+        .reports-page .expense-stat-card {
+          padding: 1rem;
+        }
+
+        .reports-page #table-expenses tbody td {
+          padding-top: 0.72rem;
+          padding-bottom: 0.72rem;
+        }
+
+        .reports-page .expense-controls-row {
+          padding: 0.55rem;
+        }
+      }
+    </style>
   </head>
   <body class="reports-page">
     <div class="app-shell">
@@ -1914,31 +2192,31 @@ try {
             <!-- Controls Row: filter tabs + toolbar -->
             <div class="expense-controls-row">
             <div class="expense-filter-tabs" id="expenseFilterTabs">
-              <button type="button" class="expense-filter-tab active" data-status="all">
+              <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === 'all' ? ' active' : ''; ?>" data-status="all">
                 ทั้งหมด <span class="tab-count"><?php echo $totalExpenseCount; ?></span>
               </button>
               <?php if ($stats['unpaid'] > 0): ?>
-              <button type="button" class="expense-filter-tab" data-status="0">
+              <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '0' ? ' active' : ''; ?>" data-status="0">
                 รอชำระ <span class="tab-count"><?php echo $stats['unpaid']; ?></span>
               </button>
               <?php endif; ?>
               <?php if ($stats['pending'] > 0): ?>
-              <button type="button" class="expense-filter-tab" data-status="2">
+              <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '2' ? ' active' : ''; ?>" data-status="2">
                 รอตรวจสอบ <span class="tab-count"><?php echo $stats['pending']; ?></span>
               </button>
               <?php endif; ?>
               <?php if ($stats['partial'] > 0): ?>
-              <button type="button" class="expense-filter-tab" data-status="3">
+              <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '3' ? ' active' : ''; ?>" data-status="3">
                 ชำระยังไม่ครบ <span class="tab-count"><?php echo $stats['partial']; ?></span>
               </button>
               <?php endif; ?>
               <?php if ($stats['overdue'] > 0): ?>
-              <button type="button" class="expense-filter-tab" data-status="4">
+              <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '4' ? ' active' : ''; ?>" data-status="4">
                 ค้างชำระ <span class="tab-count"><?php echo $stats['overdue']; ?></span>
               </button>
               <?php endif; ?>
               <?php if ($stats['paid'] > 0): ?>
-              <button type="button" class="expense-filter-tab" data-status="1">
+              <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '1' ? ' active' : ''; ?>" data-status="1">
                 ชำระแล้ว <span class="tab-count"><?php echo $stats['paid']; ?></span>
               </button>
               <?php endif; ?>
@@ -1987,12 +2265,12 @@ try {
                   </tr>
                 </thead>
                 <tbody>
-                  <?php if (empty($expenses)): ?>
+                  <?php if (empty($displayExpenses)): ?>
                     <tr>
                       <td colspan="7" style="text-align:center;padding:2rem;color:#64748b;">ยังไม่มีข้อมูลค่าใช้จ่าย</td>
                     </tr>
                   <?php else: ?>
-                    <?php foreach ($expenses as $exp): ?>
+                    <?php foreach ($displayExpenses as $exp): ?>
                       <?php $rowStatus = $buildExpenseStatus($exp); ?>
                       <tr class="payment-preview-trigger"
                         role="button"
@@ -2070,10 +2348,10 @@ try {
             </div>
 
             <div id="expensesRowView" class="expenses-row-view">
-              <?php if (empty($expenses)): ?>
+              <?php if (empty($displayExpenses)): ?>
                 <div class="expense-row-card" style="text-align:center;color:#64748b;grid-column:1/-1;width:100%;">ยังไม่มีข้อมูลค่าใช้จ่าย</div>
               <?php else: ?>
-                <?php foreach ($expenses as $exp): ?>
+                <?php foreach ($displayExpenses as $exp): ?>
                   <?php
                     $rowStatus = $buildExpenseStatus($exp);
                   ?>
@@ -2198,6 +2476,23 @@ try {
       // Current filter state (managed via AJAX, no page reloads)
       let _ajaxSort = '<?php echo htmlspecialchars($sortBy, ENT_QUOTES, "UTF-8"); ?>';
       let _ajaxMonth = '<?php echo htmlspecialchars($selectedMonth, ENT_QUOTES, "UTF-8"); ?>';
+
+      function applyStatusFilterSelection(statusValue) {
+        const normalizedStatus = String(statusValue || 'all');
+        _activeFilterStatus = normalizedStatus;
+        const nextUrl = new URL(window.location.href);
+
+        if (normalizedStatus === 'all') {
+          nextUrl.searchParams.delete('filter_status');
+        } else {
+          nextUrl.searchParams.set('filter_status', normalizedStatus);
+        }
+
+        if (_ajaxMonth) nextUrl.searchParams.set('filter_month', _ajaxMonth);
+        if (_ajaxSort) nextUrl.searchParams.set('sort', _ajaxSort);
+
+        window.location.href = nextUrl.pathname + (nextUrl.searchParams.toString() ? '?' + nextUrl.searchParams.toString() : '');
+      }
 
       function changeSortBy(sortValue) {
         _ajaxSort = sortValue;
@@ -2349,6 +2644,7 @@ try {
         const params = new URLSearchParams();
         if (_ajaxMonth) params.set('filter_month', _ajaxMonth);
         if (_ajaxSort) params.set('sort', _ajaxSort);
+        if (_activeFilterStatus && _activeFilterStatus !== 'all') params.set('filter_status', _activeFilterStatus);
 
         fetch('/dormitory_management/Reports/get_expenses_ajax.php?' + params.toString(), {
           credentials: 'include'
@@ -2368,6 +2664,7 @@ try {
       function padId(id) { return '#' + String(id).padStart(4, '0'); }
 
       function rebuildExpensePage(data) {
+        _hasLoadedAjaxExpenses = true;
         // Update month filter options
         rebuildMonthOptions(data.monthOptions);
         // Update stats cards
@@ -2378,16 +2675,9 @@ try {
         rebuildMeterAlert(data.meterMissingRooms);
         // Update filter tabs
         rebuildFilterTabs(data);
-        // Update table
-        rebuildTable(data.expenses);
-        // Update card view
-        rebuildCards(data.expenses);
-        // Re-bind triggers
-        bindPaymentPreviewTriggers();
-        // Re-apply current filter tab + search
+        // Keep source rows and render filtered rows before DataTable paginates
+        _allExpenseRows = Array.isArray(data.expenses) ? data.expenses : [];
         reapplyActiveFilter();
-        // Reinit DataTable if needed
-        reinitDataTable();
       }
 
       function rebuildMonthOptions(monthOptions) {
@@ -2502,7 +2792,7 @@ try {
             tabsWrap.querySelectorAll('.expense-filter-tab').forEach(function(t) { t.classList.remove('active'); });
             this.classList.add('active');
             _activeFilterStatus = this.dataset.status;
-            reapplyActiveFilter();
+            applyStatusFilterSelection(this.dataset.status);
           });
         });
         // If active filter tab no longer exists, fall back to 'all'
@@ -2513,37 +2803,29 @@ try {
       }
 
       var _activeFilterStatus = 'all';
+      var _allExpenseRows = [];
+      var _hasLoadedAjaxExpenses = false;
+
+      function getFilteredExpenses() {
+        if (!Array.isArray(_allExpenseRows)) return [];
+        if (_activeFilterStatus === 'all') return _allExpenseRows.slice();
+        return _allExpenseRows.filter(function(expense) {
+          return String(expense.status) === String(_activeFilterStatus);
+        });
+      }
 
       function reapplyActiveFilter() {
-        const tableBody = document.querySelector('#table-expenses tbody');
-        const rowView = document.getElementById('expensesRowView');
+        if (!_hasLoadedAjaxExpenses) {
+          // Bootstrap from API once so filtering and pagination stay in sync.
+          reloadExpensesAjax();
+          return;
+        }
 
-        if (tableBody) {
-          tableBody.querySelectorAll('tr.payment-preview-trigger').forEach(function(tr) {
-            const show = _activeFilterStatus === 'all' || tr.dataset.status === _activeFilterStatus;
-            tr.style.display = show ? '' : 'none';
-          });
-        }
-        if (rowView) {
-          rowView.querySelectorAll('.expense-row-card.payment-preview-trigger').forEach(function(card) {
-            const show = _activeFilterStatus === 'all' || card.dataset.status === _activeFilterStatus;
-            card.style.display = show ? '' : 'none';
-          });
-          // empty state
-          let emptyEl = rowView.querySelector('.expense-empty-state');
-          const visible = rowView.querySelectorAll('.expense-row-card.payment-preview-trigger:not([style*="display: none"])').length;
-          if (visible === 0 && !rowView.classList.contains('is-hidden')) {
-            if (!emptyEl) {
-              emptyEl = document.createElement('div');
-              emptyEl.className = 'expense-empty-state';
-              emptyEl.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg><p>ไม่พบรายการที่ตรงกัน</p><small>ลองเปลี่ยนตัวกรองหรือคำค้นหา</small>';
-              rowView.appendChild(emptyEl);
-            }
-            emptyEl.style.display = '';
-          } else if (emptyEl) {
-            emptyEl.style.display = 'none';
-          }
-        }
+        const filteredExpenses = getFilteredExpenses();
+        rebuildTable(filteredExpenses);
+        rebuildCards(filteredExpenses);
+        bindPaymentPreviewTriggers();
+        reinitDataTable();
       }
 
       function escHtml(s) {
@@ -3403,7 +3685,8 @@ try {
     <!-- Status Filter Tabs + Search (client-side, AJAX-compatible) -->
     <script>
     (function() {
-      const urlFilter = new URLSearchParams(window.location.search).get('filter');
+      const searchParams = new URLSearchParams(window.location.search);
+      const urlFilter = searchParams.get('filter_status') || searchParams.get('filter');
       _activeFilterStatus = (urlFilter !== null) ? urlFilter : 'all';
 
       const filterTabs = document.querySelectorAll('#expenseFilterTabs .expense-filter-tab');
@@ -3414,7 +3697,7 @@ try {
           document.querySelectorAll('#expenseFilterTabs .expense-filter-tab').forEach(t => t.classList.remove('active'));
           this.classList.add('active');
           _activeFilterStatus = this.dataset.status;
-          reapplyActiveFilter();
+          applyStatusFilterSelection(this.dataset.status);
         });
       });
 

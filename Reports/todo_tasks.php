@@ -126,14 +126,13 @@ try {
             LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id
             LEFT JOIN (
                 SELECT exp_id,
-                    SUM(CASE WHEN pay_status = '1' THEN pay_amount ELSE 0 END) AS approved_amount,
-                    SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' THEN 1 ELSE 0 END) AS pending_count
+                                        SUM(CASE WHEN pay_status = '1' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN pay_amount ELSE 0 END) AS approved_amount,
+                                        SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN 1 ELSE 0 END) AS pending_count
                 FROM payment GROUP BY exp_id
             ) pay_agg ON pay_agg.exp_id = e.exp_id
             WHERE (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
               AND YEAR(e.exp_month) = YEAR(CURDATE())
               AND MONTH(e.exp_month) = MONTH(CURDATE())
-              AND NOT (DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(c.ctr_start, '%Y-%m'))
               AND (
                 COALESCE(pay_agg.pending_count, 0) > 0
                 OR COALESCE(pay_agg.approved_amount, 0) < COALESCE(e.exp_total, 0)
