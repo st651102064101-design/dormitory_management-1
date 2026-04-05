@@ -29,7 +29,7 @@ if ($settingsStmt) {
 }
 
 // Get contracts (optionally filter by ctr_id passed via querystring)
-$filterStatus = isset($_GET['status']) ? $_GET['status'] : 'all';
+$filterStatus = isset($_GET['status']) ? $_GET['status'] : 'active';
 $validStatuses = ['all', 'active', 'waiting', 'notifying', 'cancelled', 'expiring'];
 if (!in_array($filterStatus, $validStatuses, true)) $filterStatus = 'all';
 
@@ -45,7 +45,7 @@ try {
           LEFT JOIN room r ON c.room_id = r.room_id
           LEFT JOIN roomtype rt ON r.type_id = rt.type_id
           WHERE c.ctr_id = :ctr_id
-          ORDER BY c.ctr_start DESC");
+          ORDER BY CAST(r.room_number AS UNSIGNED) ASC, r.room_number ASC");
         $stmt->bindValue(':ctr_id', $filterCtrId, PDO::PARAM_INT);
         $stmt->execute();
     } else {
@@ -57,7 +57,7 @@ try {
           LEFT JOIN tenant t ON t.tnt_id = c.tnt_id
           LEFT JOIN room r ON c.room_id = r.room_id
           LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-          ORDER BY c.ctr_start DESC");
+          ORDER BY CAST(r.room_number AS UNSIGNED) ASC, r.room_number ASC");
         $stmt->execute();
     }
     $allContracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -1232,7 +1232,7 @@ foreach ($contracts as $contract) {
                                   $cancelDateDisplay = thaiDate($contract['ctr_end']);
                                 }
                           ?>
-                            <tr class="cdr-clickable" style="border-bottom: 1px solid rgba(255,255,255,0.1);" onclick="openContractDetail(<?php echo $ctr_id; ?>)">
+                            <tr class="cdr-clickable" style="border-bottom: 1px solid rgba(255,255,255,0.1);" onclick="if(!event.target.closest('[data-ctrid]'))openContractDetail(<?php echo $ctr_id; ?>)">
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="เลขที่สัญญา"><?php echo $ctr_id; ?></td>
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="ผู้เช่า"><?php echo $tnt_name; ?></td>
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="ห้องพัก"><?php echo $room_number; ?></td>
@@ -1248,9 +1248,9 @@ foreach ($contracts as $contract) {
                               </td>
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="จัดการ" class="action-cell">
                                 <?php if ($s === '2'): ?>
-                                  <button type="button" class="action-btn btn-warning cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>" onclick="event.stopPropagation()">ยกเลิกทันที</button>
+                                  <button type="button" class="action-btn btn-warning cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ยกเลิกทันที</button>
                                 <?php elseif (in_array($s, ['0', ''])): ?>
-                                  <button type="button" class="action-btn btn-danger delete-contract-btn" data-ctrid="<?php echo $ctr_id; ?>" onclick="event.stopPropagation()">ลบ</button>
+                                  <button type="button" class="action-btn btn-danger cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ยกเลิกสัญญา</button>
                                 <?php else: ?>
                                   <span style="color:#475569;font-size:0.82rem;">คลิกเพื่อดูรายละเอียด</span>
                                 <?php endif; ?>
@@ -1422,70 +1422,122 @@ foreach ($contracts as $contract) {
         return btn.closest('tr');
       }
 
+      /* ---- Refund API calls ---- */
+      async function _saveRefund(ctrId) {
+        var dedAmt = document.getElementById('rfDeductAmt');
+        var dedReason = document.getElementById('rfDeductReason');
+        var fd = new FormData();
+        fd.append('action', 'create');
+        fd.append('ctr_id', ctrId);
+        fd.append('deduction_amount', dedAmt ? dedAmt.value : '0');
+        fd.append('deduction_reason', dedReason ? dedReason.value : '');
+        try {
+          var res = await fetch('../Manage/process_deposit_refund.php', {
+            method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd
+          });
+          var data = await res.json();
+          if (data.success) {
+            showCtrToast('✅ ' + data.message, 'success');
+            openContractDetail(ctrId);
+          } else {
+            showCtrToast('❌ ' + data.error, 'error');
+          }
+        } catch(e) { showCtrToast('❌ ข้อผิดพลาดเครือข่าย', 'error'); }
+      }
+
+      async function _uploadRefundProof(ctrId) {
+        var fileInput = document.getElementById('rfProofFile');
+        if (!fileInput || !fileInput.files.length) {
+          showCtrToast('กรุณาเลือกไฟล์', 'error'); return;
+        }
+        var fd = new FormData();
+        fd.append('action', 'upload');
+        fd.append('ctr_id', ctrId);
+        fd.append('refund_proof', fileInput.files[0]);
+        try {
+          var res = await fetch('../Manage/process_deposit_refund.php', {
+            method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd
+          });
+          var data = await res.json();
+          if (data.success) {
+            showCtrToast('✅ ' + data.message, 'success');
+            openContractDetail(ctrId);
+          } else {
+            showCtrToast('❌ ' + data.error, 'error');
+          }
+        } catch(e) { showCtrToast('❌ ข้อผิดพลาดเครือข่าย', 'error'); }
+      }
+
+      async function _confirmRefund(ctrId) {
+        var ok = await appleConfirm('ยืนยันว่าโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงินมัดจำ');
+        if (!ok) return;
+        var fd = new FormData();
+        fd.append('action', 'confirm');
+        fd.append('ctr_id', ctrId);
+        try {
+          var res = await fetch('../Manage/process_deposit_refund.php', {
+            method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd
+          });
+          var data = await res.json();
+          if (data.success) {
+            showCtrToast('✅ ' + data.message, 'success');
+            openContractDetail(ctrId);
+            refreshContractsTable();
+            try { localStorage.setItem('dataChanged', JSON.stringify({type:'refundCompleted',ctrId:ctrId,ts:Date.now()})); } catch(ex) {}
+          } else {
+            showCtrToast('❌ ' + data.error, 'error');
+          }
+        } catch(e) { showCtrToast('❌ ข้อผิดพลาดเครือข่าย', 'error'); }
+      }
+
       document.addEventListener('click', function(e) {
         const btn = e.target.closest('.cancel-contract-btn');
         if (!btn) return;
         e.preventDefault();
+        e.stopPropagation();
         const ctrId = btn.getAttribute('data-ctrid');
         if (!ctrId) return showCtrToast('ไม่พบรหัสสัญญา', 'error');
 
-        btn.disabled = true;
-        btn.textContent = 'กำลังยกเลิก...';
+        const origText = btn.textContent;
+        appleConfirm('คุณแน่ใจหรือว่าต้องการยกเลิกสัญญานี้?', 'ยืนยันการยกเลิกสัญญา').then(function(confirmed) {
+          if (!confirmed) return;
 
-        sendCancelContract(ctrId).then(function(resp) {
-          if (resp && resp.success) {
-            showCtrToast('✅ ' + (resp.message || 'ยกเลิกสัญญาเรียบร้อยแล้ว'), 'success');
-            refreshContractsTable();
-          } else {
-            btn.disabled = false;
-            btn.textContent = 'ยกเลิกทันที';
-            showCtrToast('❌ ' + ((resp && resp.error) ? resp.error : 'ไม่สามารถยกเลิกสัญญาได้'), 'error');
-          }
-        });
-      });
+          btn.disabled = true;
+          btn.textContent = 'กำลังยกเลิก...';
 
-      // Handle delete contract action
-      async function deleteContract(ctrId) {
-        try {
-          const form = new FormData();
-          form.append('ctr_id', ctrId);
-
-          const res = await fetch('../Manage/delete_contract.php', {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            body: form
+          sendCancelContract(ctrId).then(function(resp) {
+            if (resp && resp.success) {
+              showCtrToast('✅ ' + (resp.message || 'ยกเลิกสัญญาเรียบร้อยแล้ว'), 'success');
+              refreshContractsTable();
+              // แจ้งแท็บอื่นให้ refresh ด้วย
+              try { localStorage.setItem('dataChanged', JSON.stringify({type:'contractCancelled',ctrId:ctrId,ts:Date.now()})); } catch(ex) {}
+            } else {
+              btn.disabled = false;
+              btn.textContent = origText;
+              // If deposit refund is needed, open the drawer to show the refund section
+              if (resp && resp.need_refund) {
+                showCtrToast('❌ ' + resp.error, 'error');
+                setTimeout(function(){ openContractDetail(ctrId); }, 400);
+              } else {
+                showCtrToast('❌ ' + ((resp && resp.error) ? resp.error : 'ไม่สามารถยกเลิกสัญญาได้'), 'error');
+              }
+            }
           });
-          const data = await res.json();
-          return data;
-        } catch (err) {
-          console.error('Delete contract error', err);
-          return { success: false, error: 'ข้อผิดพลาดเครือข่าย' };
-        }
-      }
-
-      document.addEventListener('click', function(e) {
-        const btn = e.target.closest('.delete-contract-btn');
-        if (!btn) return;
-        e.preventDefault();
-        const ctrId = btn.getAttribute('data-ctrid');
-        if (!ctrId) return showCtrToast('ไม่พบรหัสสัญญา', 'error');
-
-        if (!confirm('คุณแน่ใจหรือว่าต้องการลบสัญญานี้? การกระทำนี้ไม่สามารถย้อนกลับได้')) return;
-
-        btn.disabled = true;
-        btn.textContent = 'กำลังลบ...';
-
-        deleteContract(ctrId).then(function(resp) {
-          if (resp && resp.success) {
-            showCtrToast('✅ ' + (resp.message || 'ลบสัญญาเรียบร้อยแล้ว'), 'success');
-            refreshContractsTable();
-          } else {
-            btn.disabled = false;
-            btn.textContent = 'ลบ';
-            showCtrToast('❌ ' + ((resp && resp.error) ? resp.error : 'ไม่สามารถลบสัญญาได้'), 'error');
-          }
         });
       });
+
+      // Delegated input handler for deposit deduction calculator (rfDeductAmt)
+      document.addEventListener('input', function(e) {
+        if (e.target && e.target.id === 'rfDeductAmt') {
+          var maxAmt = parseFloat(e.target.getAttribute('max')) || 0;
+          var ded = Math.max(0, Math.min(maxAmt, parseInt(e.target.value)||0));
+          var refund = maxAmt - ded;
+          var el = document.getElementById('rfRefundDisplay');
+          if (el) el.textContent = refund.toLocaleString('th-TH') + ' ฿';
+        }
+      });
+
+
     </script>
     <script>
         // Fallback sidebar toggle (in case animate-ui.js fails on this page)
@@ -1919,6 +1971,109 @@ foreach ($contracts as $contract) {
       return `<div class="cdr-field"><label>${label}</label><span>${val || '-'}</span></div>`;
     }
 
+    /* ---- Deposit Refund Section ---- */
+    function _renderRefundSection(data, t, c) {
+      const rf = data.refund;
+      const ctrId = c.ctr_id;
+      const depAmount = data.deposit ? Number(data.deposit.bp_amount || 0) : (Number(c.ctr_deposit) || 0);
+
+      if (rf && rf.refund_status === '1') {
+        return `
+          <div style="margin-top:1rem;padding:1rem;border-radius:10px;
+                      background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);">
+            <div style="font-weight:600;color:${t.green};margin-bottom:0.6rem;">✓ คืนเงินมัดจำแล้ว</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.85rem;">
+              <div><span style="color:${t.muted};">เงินมัดจำ:</span> <span style="color:${t.body};">${_fmtMoney(rf.deposit_amount)}</span></div>
+              <div><span style="color:${t.muted};">หักค่าเสียหาย:</span> <span style="color:${t.red};">${_fmtMoney(rf.deduction_amount)}</span></div>
+              <div><span style="color:${t.muted};">ยอดคืน:</span> <span style="color:${t.green};font-weight:700;">${_fmtMoney(rf.refund_amount)}</span></div>
+              <div><span style="color:${t.muted};">วันที่โอน:</span> <span style="color:${t.body};">${_fmtDate(rf.refund_date)}</span></div>
+            </div>
+            ${rf.deduction_reason ? '<div style="margin-top:0.4rem;font-size:0.82rem;color:'+t.muted+';">เหตุผล: '+rf.deduction_reason+'</div>' : ''}
+            ${rf.refund_proof ? '<div style="margin-top:0.4rem;"><a href="/'+rf.refund_proof+'" target="_blank" style="font-size:0.82rem;color:'+t.link+';">📎 หลักฐานการโอน</a></div>' : ''}
+          </div>`;
+      }
+
+      if (depAmount <= 0) return '';
+
+      const dedAmt = rf ? rf.deduction_amount : 0;
+      const dedReason = rf ? (rf.deduction_reason || '') : '';
+      const rfProof = rf ? (rf.refund_proof || '') : '';
+
+      // Bank account card from termination request
+      const term = data.termination;
+      const bankCard = term && term.bank_name
+        ? `<div style="margin-bottom:0.8rem;padding:0.75rem;border-radius:10px;
+                       background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);">
+             <div style="font-size:0.78rem;color:${t.muted};font-weight:600;margin-bottom:0.4rem;
+                         text-transform:uppercase;letter-spacing:0.03em;">🏦 บัญชีรับเงินของผู้เช่า</div>
+             <div style="font-size:0.88rem;color:${t.body};">${term.bank_name}</div>
+             <div style="font-size:0.85rem;color:${t.muted};">${term.bank_account_name || '-'}</div>
+             <div style="font-size:0.95rem;color:#60a5fa;font-weight:700;letter-spacing:0.06em;margin-top:0.15rem;">${term.bank_account_number || '-'}</div>
+           </div>`
+        : `<div style="margin-bottom:0.8rem;padding:0.6rem 0.75rem;border-radius:8px;
+                       background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);
+                       font-size:0.82rem;color:#fbbf24;">
+             ⚠️ ผู้เช่าไม่ได้ระบุบัญชีรับเงิน กรุณาติดต่อผู้เช่าโดยตรง
+           </div>`;
+
+      return `
+        <div id="refundSection" style="margin-top:1rem;padding:1rem;border-radius:10px;
+                    background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);">
+          <div style="font-weight:600;color:#fbbf24;margin-bottom:0.8rem;">💸 คืนเงินมัดจำ</div>
+          <div style="display:grid;gap:0.6rem;">
+            ${bankCard}
+            <div style="font-size:0.85rem;">
+              <span style="color:${t.muted};">เงินมัดจำ:</span>
+              <span style="color:${t.body};font-weight:600;">${_fmtMoney(depAmount)}</span>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">หักค่าเสียหาย (บาท)</label>
+              <input id="rfDeductAmt" type="number" min="0" max="${depAmount}" value="${dedAmt}"
+                     style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid ${t.divider};
+                            background:rgba(0,0,0,0.15);color:${t.body};font-size:0.9rem;font-family:inherit;">
+            </div>
+            <div>
+              <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">เหตุผลการหัก (ถ้ามี)</label>
+              <input id="rfDeductReason" type="text" value="${dedReason}" placeholder="เช่น ค่าซ่อมประตู, ค่าทำความสะอาด"
+                     style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid ${t.divider};
+                            background:rgba(0,0,0,0.15);color:${t.body};font-size:0.9rem;font-family:inherit;">
+            </div>
+            <div id="rfCalcDisplay" style="font-size:0.9rem;padding:0.5rem;border-radius:6px;
+                       background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);">
+              <span style="color:${t.muted};">ยอดคืน:</span>
+              <span id="rfRefundDisplay" style="color:${t.green};font-weight:700;">${_fmtMoney(depAmount - dedAmt)}</span>
+            </div>
+            <button onclick="_saveRefund(${ctrId})"
+                    style="padding:0.6rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;
+                           font-weight:600;font-size:0.88rem;color:#fff;
+                           background:linear-gradient(135deg,#3b82f6,#2563eb);">
+              💾 บันทึกข้อมูลคืนเงิน
+            </button>
+            ${rf ? '<div style="border-top:1px solid '+t.divider+';padding-top:0.6rem;margin-top:0.2rem;"><label style="display:block;font-size:0.8rem;color:'+t.muted+';margin-bottom:0.3rem;">หลักฐานการโอนคืน</label>'+(rfProof ? '<div style="margin-bottom:0.4rem;"><a href="/'+rfProof+'" target="_blank" style="font-size:0.82rem;color:'+t.link+';">📎 ดูหลักฐานปัจจุบัน</a></div>' : '')+'<input id="rfProofFile" type="file" accept="image/*,.pdf" style="font-size:0.82rem;color:'+t.muted+';"><button onclick="_uploadRefundProof('+ctrId+')" style="margin-top:0.4rem;padding:0.45rem 0.8rem;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:500;color:#fff;background:#6366f1;">📤 อัพโหลด</button></div><button onclick="_confirmRefund('+ctrId+')" style="padding:0.6rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.88rem;color:#fff;background:linear-gradient(135deg,#22c55e,#16a34a);">✅ ยืนยันโอนคืนเงินแล้ว</button>' : ''}
+          </div>
+        </div>`;
+    }
+
+    /* ---- Payment Gate: show unpaid warning ---- */
+    function _renderPaymentGate(data, t, c) {
+      // ไม่แสดงสำหรับสัญญาที่ยกเลิกแล้ว
+      if (c.ctr_status === '1') return '';
+      const ps = data.paymentSummary;
+      if (!ps || parseInt(ps.unpaid_count) === 0) return '';
+      return `
+        <div class="cdr-section" style="border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.05);border-radius:12px;padding:1rem;">
+          <div style="color:${t.red};font-weight:600;font-size:0.95rem;margin-bottom:0.4rem;">
+            ⚠️ ยังมีบิลค้างชำระ ${ps.unpaid_count} รายการ
+          </div>
+          <div style="font-size:0.85rem;color:${t.muted};">
+            ยอดค้างชำระรวม: <span style="color:${t.red};font-weight:600;">${_fmtMoney(ps.total_outstanding)}</span>
+          </div>
+          <div style="margin-top:0.5rem;font-size:0.82rem;color:${t.dim};">
+            ต้องชำระค่าห้องครบทุกเดือนก่อนจึงจะยกเลิกสัญญาได้
+          </div>
+        </div>`;
+    }
+
     /* ---- Renderer ---- */
     function _renderCdrDrawer(data) {
       const c = data.contract;
@@ -2006,7 +2161,7 @@ foreach ($contracts as $contract) {
         </div>
 
         <div class="cdr-section">
-          <div class="cdr-section-title">💰 ค่ามัดจำ & เช็คอิน</div>
+          <div class="cdr-section-title">💰 ค่ามัดจำ & คืนเงิน</div>
           <div class="cdr-grid">
             ${dep ? _field('ค่ามัดจำ', _fmtMoney(dep.bp_amount)) : _field('ค่ามัดจำ', '-')}
             ${dep ? _field('สถานะมัดจำ', dep.bp_status === '1' ? '✓ ยืนยันแล้ว' : 'รอยืนยัน') : _field('สถานะมัดจำ', '-')}
@@ -2016,10 +2171,12 @@ foreach ($contracts as $contract) {
           </div>
           ${dep && dep.bp_proof ? `
             <div style="margin-top:0.6rem;">
-              <a href="/${dep.bp_proof}" target="_blank" rel="noopener"
+              <a href="/dormitory_management/Public/Assets/Images/Payments/${dep.bp_proof}" target="_blank" rel="noopener"
                  style="font-size:0.82rem;color:${t.link};">📎 ดูหลักฐานการชำระมัดจำ</a>
             </div>` : ''}
+          ${_renderRefundSection(data, t, c)}
         </div>
+        ${_renderPaymentGate(data, t, c)}
       `;
 
       /* ===== TAB: ค่าใช้จ่าย ===== */
@@ -2082,7 +2239,7 @@ foreach ($contracts as $contract) {
                   </div>
                   <div style="display:flex;align-items:center;gap:0.5rem;">
                     <span style="color:${t.body};font-weight:600;">${_fmtMoney(p.pay_amount)}</span>
-                    ${p.pay_proof ? `<a href="/${p.pay_proof}" target="_blank" rel="noopener"
+                    ${p.pay_proof ? `<a href="/dormitory_management/Public/Assets/Images/Payments/${p.pay_proof}" target="_blank" rel="noopener"
                        title="ดูหลักฐาน" style="color:${t.link};font-size:0.85rem;text-decoration:none;">📎</a>` : ''}
                   </div>
                 </div>`).join('')}

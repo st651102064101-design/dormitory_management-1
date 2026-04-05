@@ -127,12 +127,64 @@ try {
     $utilStmt->execute([$ctrId]);
     $utility = $utilStmt->fetchAll(PDO::FETCH_ASSOC);
 
+    // 7. Deposit refund record
+    $refundStmt = $pdo->prepare("
+        SELECT refund_id, deposit_amount, deduction_amount, deduction_reason,
+               refund_amount, refund_status, refund_proof, refund_date, created_at
+        FROM deposit_refund
+        WHERE ctr_id = ?
+        ORDER BY refund_id DESC LIMIT 1
+    ");
+    $refundStmt->execute([$ctrId]);
+    $refund = $refundStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+
+    // 8. Payment completion summary
+    $unpaidStmt = $pdo->prepare("
+        SELECT COUNT(*) AS unpaid_count,
+               COALESCE(SUM(e.exp_total - COALESCE((
+                   SELECT SUM(p.pay_amount) FROM payment p
+                   WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
+                     AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+               ), 0)), 0) AS total_outstanding
+        FROM expense e
+        WHERE e.ctr_id = ?
+          AND e.exp_total > COALESCE((
+              SELECT SUM(p2.pay_amount) FROM payment p2
+              WHERE p2.exp_id = e.exp_id AND p2.pay_status = '1'
+                AND TRIM(COALESCE(p2.pay_remark, '')) <> 'มัดจำ'
+          ), 0)
+    ");
+    $unpaidStmt->execute([$ctrId]);
+    $paymentSummary = $unpaidStmt->fetch(PDO::FETCH_ASSOC) ?: ['unpaid_count' => 0, 'total_outstanding' => 0];
+
+    // 9. Termination bank account info (migrate columns if not yet created)
+    try {
+        $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_name VARCHAR(100) DEFAULT NULL AFTER term_date");
+        $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_account_name VARCHAR(100) DEFAULT NULL AFTER bank_name");
+        $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(20) DEFAULT NULL AFTER bank_account_name");
+    } catch (Throwable $ignored) {}
+
+    $terminationInfo = null;
+    try {
+        $termBankStmt = $pdo->prepare("
+            SELECT term_date, bank_name, bank_account_name, bank_account_number
+            FROM termination
+            WHERE ctr_id = ?
+            ORDER BY term_id DESC LIMIT 1
+        ");
+        $termBankStmt->execute([$ctrId]);
+        $terminationInfo = $termBankStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    } catch (Throwable $ignored) {}
+
     echo json_encode([
-        'contract' => $contract,
-        'checkin'  => $checkin,
-        'deposit'  => $deposit,
-        'expenses' => $expenses,
-        'utility'  => $utility,
+        'contract'       => $contract,
+        'checkin'        => $checkin,
+        'deposit'        => $deposit,
+        'expenses'       => $expenses,
+        'utility'        => $utility,
+        'refund'         => $refund,
+        'paymentSummary' => $paymentSummary,
+        'termination'    => $terminationInfo,
     ], JSON_UNESCAPED_UNICODE);
 
 } catch (Throwable $e) {

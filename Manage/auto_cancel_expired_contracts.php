@@ -25,9 +25,26 @@ function autoCancelExpiredContracts(PDO $pdo): array {
         $expiredContracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         if (count($expiredContracts) > 0) {
+            // ตรวจสอบสัญญาที่มีบิลค้างชำระก่อน auto-cancel
+            $unpaidCheckStmt = $pdo->prepare("
+                SELECT COUNT(*) FROM expense e
+                WHERE e.ctr_id = ?
+                  AND e.exp_total > COALESCE((
+                      SELECT SUM(p.pay_amount) FROM payment p
+                      WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
+                        AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                  ), 0)
+            ");
+
             $pdo->beginTransaction();
 
             foreach ($expiredContracts as $contract) {
+                // ข้ามสัญญาที่มีบิลค้างชำระ (ให้ admin จัดการเอง)
+                $unpaidCheckStmt->execute([$contract['ctr_id']]);
+                if ((int)$unpaidCheckStmt->fetchColumn() > 0) {
+                    continue;
+                }
+
                 // อัปเดตสถานะสัญญาเป็นยกเลิกแล้ว (1)
                 $updateCtr = $pdo->prepare('UPDATE contract SET ctr_status = ? WHERE ctr_id = ?');
                 $updateCtr->execute(['1', $contract['ctr_id']]);

@@ -142,7 +142,7 @@ if ($settingsStmt) {
                     <p><strong>จำนวนเงินจอง:</strong> ฿<?php echo number_format($payment['bp_amount'], 2); ?></p>
                     <?php if (!empty($payment['bp_proof'])): ?>
                         <p><strong>หลักฐานการชำระ:</strong>
-                            <a href="/<?php echo htmlspecialchars($payment['bp_proof'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" style="color: #3b82f6;">ดูหลักฐาน</a>
+                            <a href="/dormitory_management/Public/Assets/Images/Payments/<?php echo htmlspecialchars($payment['bp_proof'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank" style="color: #3b82f6;">ดูหลักฐาน</a>
                         </p>
                     <?php else: ?>
                         <p style="color: #f59e0b;"><strong>⚠️ หมายเหตุ:</strong> ยังไม่มีหลักฐานการชำระเงิน</p>

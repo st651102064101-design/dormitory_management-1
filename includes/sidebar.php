@@ -3590,6 +3590,33 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
         document.documentElement.style.setProperty('--font-scale', e.newValue);
         document.documentElement.style.setProperty('--admin-font-scale', e.newValue);
       }
+      // Cross-tab: refresh other pages on data change
+      if (e.key === 'dataChanged' && e.newValue) {
+        try {
+          var currentPage = location.pathname.split('/').pop().split('?')[0];
+          var autoRefreshPages = {
+            'tenant_wizard.php':   'refreshWizardTable',
+            'todo_tasks.php':      '_reload',
+            'manage_expenses.php': 'reloadExpensesAjax',
+            'manage_utility.php':  '_reload',
+            'manage_payments.php': '_reload',
+            'manage_contracts.php':'refreshContractsTable',
+            'manage_tenants.php':  '_reload',
+            'report_rooms.php':    '_reload',
+            'manage.php':          '_reload'
+          };
+          var fn = autoRefreshPages[currentPage];
+          if (fn) {
+            if (fn === '_reload') {
+              location.reload();
+            } else if (typeof window[fn] === 'function') {
+              window[fn]();
+            } else {
+              location.reload();
+            }
+          }
+        } catch(ex) {}
+      }
     });
   })();
   

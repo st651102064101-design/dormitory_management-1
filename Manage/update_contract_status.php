@@ -76,6 +76,71 @@ try {
         }
     }
 
+    // === ตรวจสอบการชำระเงินครบถ้วนก่อนยกเลิกสัญญา ===
+    if ($ctr_status === '1') {
+        $unpaidStmt = $pdo->prepare("
+            SELECT e.exp_id, e.exp_month, e.exp_total,
+                   COALESCE((
+                       SELECT SUM(p.pay_amount)
+                       FROM payment p
+                       WHERE p.exp_id = e.exp_id
+                         AND p.pay_status = '1'
+                         AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                   ), 0) AS paid_amount
+            FROM expense e
+            WHERE e.ctr_id = ?
+            HAVING paid_amount < e.exp_total
+        ");
+        $unpaidStmt->execute([$ctr_id]);
+        $unpaidBills = $unpaidStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        if (!empty($unpaidBills)) {
+            $unpaidCount = count($unpaidBills);
+            $errorMsg = 'ไม่สามารถยกเลิกสัญญาได้ เนื่องจากยังมีบิลค้างชำระ ' . $unpaidCount . ' รายการ กรุณาชำระให้ครบก่อน';
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => $errorMsg, 'unpaid_count' => $unpaidCount]);
+                exit;
+            }
+            $_SESSION['error'] = $errorMsg;
+            header('Location: ../Reports/manage_contracts.php');
+            exit;
+        }
+
+        // === ตรวจสอบการคืนเงินมัดจำก่อนยกเลิกสัญญา ===
+        $depositInfoStmt = $pdo->prepare("
+            SELECT bp.bp_amount
+            FROM booking_payment bp
+            INNER JOIN tenant_workflow tw ON tw.bkg_id = bp.bkg_id
+            WHERE tw.ctr_id = ?
+            ORDER BY bp.bp_id DESC LIMIT 1
+        ");
+        $depositInfoStmt->execute([$ctr_id]);
+        $depositInfo = $depositInfoStmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($depositInfo && floatval($depositInfo['bp_amount']) > 0) {
+            $refundConfirmedStmt = $pdo->prepare("
+                SELECT refund_id FROM deposit_refund
+                WHERE ctr_id = ? AND refund_status = '1'
+                LIMIT 1
+            ");
+            $refundConfirmedStmt->execute([$ctr_id]);
+            $refundConfirmed = $refundConfirmedStmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$refundConfirmed) {
+                $errorMsg = 'ไม่สามารถยกเลิกสัญญาได้ เนื่องจากยังไม่ได้ดำเนินการคืนเงินมัดจำ กรุณาบันทึกและยืนยันการคืนเงินมัดจำก่อน';
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => $errorMsg, 'need_refund' => true]);
+                    exit;
+                }
+                $_SESSION['error'] = $errorMsg;
+                header('Location: ../Reports/manage_contracts.php');
+                exit;
+            }
+        }
+    }
+
     $pdo->beginTransaction();
 
     $updateCtr = $pdo->prepare('UPDATE contract SET ctr_status = ? WHERE ctr_id = ?');

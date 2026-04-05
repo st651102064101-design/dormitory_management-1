@@ -26,7 +26,7 @@ if (!empty($token)) {
             JOIN tenant t ON c.tnt_id = t.tnt_id
             JOIN room r ON c.room_id = r.room_id
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-            WHERE c.access_token = ? AND c.ctr_status IN ('0', '2')
+            WHERE c.access_token = ? AND c.ctr_status IN ('0', '1', '2')
             LIMIT 1
         ");
         $stmt->execute([$token]);
@@ -48,7 +48,7 @@ if (!$contractData && !empty($_SESSION['tenant_logged_in'])) {
                 JOIN tenant t ON c.tnt_id = t.tnt_id
                 JOIN room r ON c.room_id = r.room_id
                 LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-                WHERE c.tnt_id = ? AND c.ctr_status IN ('0', '2')
+                WHERE c.tnt_id = ? AND c.ctr_status IN ('0', '1', '2')
                 ORDER BY c.ctr_id DESC
                 LIMIT 1
             ");
@@ -160,6 +160,16 @@ $contractStatusMap = [
     '1' => ['label' => 'ยกเลิกแล้ว', 'color' => '#ef4444'],
     '2' => ['label' => 'แจ้งยกเลิก', 'color' => '#f59e0b']
 ];
+
+// ดึงข้อมูลเงินมัดจำคืน (สำหรับผู้เช่าที่สัญญาสิ้นสุดแล้ว)
+$depositRefund = null;
+if (($contract['ctr_status'] ?? '0') === '1') {
+    try {
+        $drStmt = $pdo->prepare("SELECT * FROM deposit_refund WHERE ctr_id = ? ORDER BY refund_id DESC LIMIT 1");
+        $drStmt->execute([$contract['ctr_id']]);
+        $depositRefund = $drStmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {}
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -562,6 +572,89 @@ $contractStatusMap = [
             padding: 0.75rem;
             margin-top: 0.5rem;
         }
+
+        .cancelled-banner {
+            background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .cancelled-banner svg {
+            flex-shrink: 0;
+            width: 28px;
+            height: 28px;
+            stroke: #f87171;
+            stroke-width: 2;
+            fill: none;
+        }
+        .cancelled-banner-text h3 {
+            font-size: 0.95rem;
+            color: #fca5a5;
+            margin-bottom: 0.2rem;
+        }
+        .cancelled-banner-text p {
+            font-size: 0.8rem;
+            color: #fca5a5;
+            opacity: 0.8;
+        }
+
+        .refund-card {
+            border-radius: 16px;
+            padding: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        .refund-card.pending {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(180, 83, 9, 0.15) 100%);
+            border: 1px solid rgba(245, 158, 11, 0.4);
+        }
+        .refund-card.transferred {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+        }
+        .refund-card.no-record {
+            background: rgba(30, 41, 59, 0.6);
+            border: 1px solid rgba(255,255,255,0.08);
+        }
+        .refund-card-title {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .refund-card-title svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
+            fill: none;
+        }
+        .refund-card.pending .refund-card-title { color: #fcd34d; }
+        .refund-card.pending .refund-card-title svg { stroke: #fcd34d; }
+        .refund-card.transferred .refund-card-title { color: #6ee7b7; }
+        .refund-card.transferred .refund-card-title svg { stroke: #6ee7b7; }
+        .refund-card.no-record .refund-card-title { color: #94a3b8; }
+        .refund-card.no-record .refund-card-title svg { stroke: #94a3b8; }
+        .refund-view-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            margin-top: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .refund-card.pending .refund-view-link { background: rgba(245,158,11,0.2); color: #fcd34d; }
+        .refund-card.transferred .refund-view-link { background: rgba(16,185,129,0.2); color: #6ee7b7; }
+        .refund-card.no-record .refund-view-link { background: rgba(59,130,246,0.2); color: #93c5fd; }
+        .menu-icon.teal-dark { background: rgba(6,182,212,0.2); }
+        .menu-icon.teal-dark svg { stroke: #22d3ee; }
     </style>
     <?php if (($publicTheme ?? '') === 'light'): ?>
     <link rel="stylesheet" href="tenant-light-theme.css">
@@ -623,7 +716,70 @@ $contractStatusMap = [
             </div>
         </div>
         <?php endif; ?>
-        
+
+        <?php if (($contract['ctr_status'] ?? '0') === '1'): ?>
+        <!-- Cancelled contract banner -->
+        <div class="cancelled-banner">
+            <svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <div class="cancelled-banner-text">
+                <h3>สัญญาเช่าสิ้นสุดแล้ว</h3>
+                <p>ระบบจำกัดการเข้าถึงบางฟีเจอร์ กรุณาตรวจสอบสถานะคืนเงินมัดจำด้านล่าง</p>
+            </div>
+        </div>
+
+        <!-- Deposit Refund Status Card for cancelled tenants -->
+        <?php
+        $refundCardClass = 'no-record';
+        $refundTitle = 'สถานะคืนเงินมัดจำ';
+        $refundIcon = '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>';
+        if ($depositRefund) {
+            $refundCardClass = ($depositRefund['refund_status'] ?? '0') === '1' ? 'transferred' : 'pending';
+        }
+        ?>
+        <div class="section-title">
+            <span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            เงินมัดจำ
+        </div>
+        <div class="refund-card <?php echo $refundCardClass; ?>">
+            <?php if (!$depositRefund): ?>
+            <div class="refund-card-title">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                รอดำเนินการ
+            </div>
+            <div class="info-row"><span class="info-label">เงินมัดจำ</span><span class="info-value"><?php echo number_format((float)($contract['ctr_deposit'] ?? 0)); ?> บาท</span></div>
+            <div class="info-row" style="border:none"><span class="info-label">สถานะ</span><span class="info-value" style="color:#f59e0b">รอแอดมินดำเนินการคืนเงิน</span></div>
+            <?php elseif (($depositRefund['refund_status'] ?? '0') === '1'): ?>
+            <div class="refund-card-title">
+                <svg viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                โอนเงินคืนแล้ว
+            </div>
+            <div class="info-row"><span class="info-label">เงินมัดจำเดิม</span><span class="info-value"><?php echo number_format((float)($depositRefund['deposit_amount'] ?? 0)); ?> บาท</span></div>
+            <?php if ((float)($depositRefund['deduction_amount'] ?? 0) > 0): ?>
+            <div class="info-row"><span class="info-label">หักค่าเสียหาย</span><span class="info-value" style="color:#f87171">-<?php echo number_format((float)$depositRefund['deduction_amount']); ?> บาท</span></div>
+            <?php endif; ?>
+            <div class="info-row"><span class="info-label">ยอดคืนสุทธิ</span><span class="info-value" style="color:#6ee7b7;font-weight:600"><?php echo number_format((float)($depositRefund['refund_amount'] ?? 0)); ?> บาท</span></div>
+            <?php if (!empty($depositRefund['refund_date'])): ?>
+            <div class="info-row" style="border:none"><span class="info-label">วันที่โอน</span><span class="info-value"><?php echo thaiDate($depositRefund['refund_date']); ?></span></div>
+            <?php endif; ?>
+            <?php else: ?>
+            <div class="refund-card-title">
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                รอโอนเงินคืน
+            </div>
+            <div class="info-row"><span class="info-label">เงินมัดจำเดิม</span><span class="info-value"><?php echo number_format((float)($depositRefund['deposit_amount'] ?? 0)); ?> บาท</span></div>
+            <?php if ((float)($depositRefund['deduction_amount'] ?? 0) > 0): ?>
+            <div class="info-row"><span class="info-label">หักค่าเสียหาย</span><span class="info-value" style="color:#f87171">-<?php echo number_format((float)$depositRefund['deduction_amount']); ?> บาท</span></div>
+            <?php endif; ?>
+            <div class="info-row"><span class="info-label">ยอดคืนสุทธิ</span><span class="info-value"><?php echo number_format((float)($depositRefund['refund_amount'] ?? 0)); ?> บาท</span></div>
+            <div class="info-row" style="border:none"><span class="info-label">สถานะ</span><span class="info-value" style="color:#fcd34d">รอโอนเงิน</span></div>
+            <?php endif; ?>
+            <a href="termination.php?token=<?php echo urlencode($token); ?>" class="refund-view-link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                ดูรายละเอียด
+            </a>
+        </div>
+        <?php endif; ?>
+
         <!-- Menu Grid -->
         <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></span> บริการ</div>
         <div class="menu-grid">
@@ -644,8 +800,13 @@ $contractStatusMap = [
                 <div class="menu-label">แจ้งชำระเงิน</div>
             </a>
             <a href="termination.php?token=<?php echo urlencode($token); ?>" class="menu-item">
+                <?php if (($contract['ctr_status'] ?? '0') === '1'): ?>
+                <div class="menu-icon teal-dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                <div class="menu-label">สถานะคืนเงินมัดจำ</div>
+                <?php else: ?>
                 <div class="menu-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
                 <div class="menu-label">แจ้งยกเลิกสัญญา</div>
+                <?php endif; ?>
             </a>
         </div>
         

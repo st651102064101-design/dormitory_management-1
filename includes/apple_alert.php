@@ -42,6 +42,19 @@ try {
     </div>
 </div>
 
+<div id="appleConfirm" class="apple-alert-overlay" data-theme="<?php echo htmlspecialchars($appleAlertTheme, ENT_QUOTES, 'UTF-8'); ?>">
+    <div class="apple-alert-dialog">
+        <div class="apple-alert-content">
+            <div class="apple-alert-title" id="appleConfirmTitle">ยืนยัน</div>
+            <div class="apple-alert-message" id="appleConfirmMessage"></div>
+        </div>
+        <div class="apple-alert-actions apple-confirm-actions">
+            <button class="apple-alert-btn apple-confirm-cancel" id="appleConfirmCancelBtn">ยกเลิก</button>
+            <button class="apple-alert-btn apple-confirm-ok" id="appleConfirmOkBtn">ตกลง</button>
+        </div>
+    </div>
+</div>
+
 <style>
 :root {
     --alert-theme-color: <?php echo htmlspecialchars($appleAlertColor, ENT_QUOTES, 'UTF-8'); ?>;
@@ -422,6 +435,28 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
     z-index: 2;
 }
 
+.apple-confirm-actions {
+    display: flex;
+    flex-direction: row;
+}
+
+.apple-confirm-actions .apple-alert-btn {
+    flex: 1;
+    border-right: 1px solid rgba(60, 60, 67, 0.36);
+}
+
+.apple-confirm-actions .apple-alert-btn:last-child {
+    border-right: none;
+}
+
+.apple-confirm-cancel {
+    opacity: 0.6;
+}
+
+.apple-confirm-ok {
+    font-weight: 600 !important;
+}
+
 .apple-alert-btn {
     width: 100%;
     padding: 12px;
@@ -579,6 +614,64 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
         closeAppleAlert();
+        _appleConfirmReject && _appleConfirmReject(false);
+        closeAppleConfirm();
+    }
+});
+
+// Apple Confirm Dialog
+let _appleConfirmResolve = null;
+let _appleConfirmReject = null;
+
+function showAppleConfirm(message, title) {
+    title = title || 'ยืนยัน';
+    const el = document.getElementById('appleConfirm');
+    const titleEl = document.getElementById('appleConfirmTitle');
+    const msgEl = document.getElementById('appleConfirmMessage');
+    if (!el || !titleEl || !msgEl) return Promise.resolve(false);
+    titleEl.textContent = title;
+    msgEl.textContent = message;
+    el.classList.add('show');
+    document.body.style.overflow = 'hidden';
+    return new Promise(function(resolve) {
+        _appleConfirmResolve = resolve;
+        _appleConfirmReject = resolve;
+    });
+}
+
+function closeAppleConfirm() {
+    const el = document.getElementById('appleConfirm');
+    if (el) {
+        el.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+    _appleConfirmResolve = null;
+    _appleConfirmReject = null;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmEl = document.getElementById('appleConfirm');
+    if (confirmEl) {
+        confirmEl.addEventListener('click', function(e) {
+            if (e.target === this) {
+                if (_appleConfirmResolve) _appleConfirmResolve(false);
+                closeAppleConfirm();
+            }
+        });
+    }
+    const okBtn = document.getElementById('appleConfirmOkBtn');
+    if (okBtn) {
+        okBtn.addEventListener('click', function() {
+            if (_appleConfirmResolve) _appleConfirmResolve(true);
+            closeAppleConfirm();
+        });
+    }
+    const cancelBtn = document.getElementById('appleConfirmCancelBtn');
+    if (cancelBtn) {
+        cancelBtn.addEventListener('click', function() {
+            if (_appleConfirmResolve) _appleConfirmResolve(false);
+            closeAppleConfirm();
+        });
     }
 });
 </script>

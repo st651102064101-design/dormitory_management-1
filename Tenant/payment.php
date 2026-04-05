@@ -89,6 +89,28 @@ try {
     }
 } catch (PDOException $e) {}
 
+// ถ้า exp_id ถูกระบุมาแต่ไม่พบในรายการค้างชำระ ให้ตรวจสอบว่ามี pending payment อยู่หรือไม่
+$pendingExpense = null;
+if ($selectedExpId > 0 && $selectedExpense === null) {
+    try {
+        $pendStmt = $pdo->prepare("
+            SELECT e.exp_id, e.exp_month, e.exp_total, r.room_number,
+                   COALESCE(SUM(CASE WHEN p.pay_status = '0' THEN p.pay_amount ELSE 0 END), 0) AS pending_amount,
+                   MAX(CASE WHEN p.pay_status = '0' THEN p.pay_date END) AS pending_date
+            FROM expense e
+            JOIN contract c ON e.ctr_id = c.ctr_id
+            JOIN room r ON c.room_id = r.room_id
+            LEFT JOIN payment p ON p.exp_id = e.exp_id
+              AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+            WHERE e.exp_id = ? AND e.ctr_id = ?
+            GROUP BY e.exp_id, e.exp_month, e.exp_total, r.room_number
+            HAVING SUM(CASE WHEN p.pay_status = '0' THEN p.pay_amount ELSE 0 END) > 0
+        ");
+        $pendStmt->execute([$selectedExpId, $contract['ctr_id']]);
+        $pendingExpense = $pendStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+    } catch (PDOException $e) {}
+}
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $targetPath = '';
@@ -855,7 +877,17 @@ $paymentStatusMap = [
         <div class="form-section">
             <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span> แจ้งชำระเงิน</div>
             
-            <?php if (empty($unpaidExpenses)): ?>
+            <?php if ($pendingExpense): ?>
+            <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:14px;padding:1.25rem;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">⏳</div>
+                <div style="color:#fbbf24;font-weight:600;font-size:1rem;margin-bottom:0.4rem;">รออนุมัติการชำระเงิน</div>
+                <div style="color:#fcd34d;font-size:0.88rem;margin-bottom:0.75rem;">
+                    บิล<?php echo thaiMonthYear($pendingExpense['exp_month']); ?> — ยอด <?php echo number_format((float)$pendingExpense['exp_total']); ?> บาท<br>
+                    ส่งสลิปแล้ว <?php echo number_format((float)$pendingExpense['pending_amount']); ?> บาท รอผู้ดูแลตรวจสอบ
+                </div>
+                <div style="font-size:0.82rem;color:#94a3b8;">หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลหอพัก</div>
+            </div>
+            <?php elseif (empty($unpaidExpenses)): ?>
             <div class="no-unpaid">
                 <div class="no-unpaid-icon" style="margin-bottom: 0.5rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
                 <p>ไม่มีบิลค้างชำระ</p>

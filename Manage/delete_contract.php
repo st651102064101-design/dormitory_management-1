@@ -46,45 +46,34 @@ try {
         exit;
     }
     
-    // ตรวจสอบเพิ่มเติม: ห้ามมีข้อมูลอื่นเชื่อมโยง
-    // ตรวจสอบ: มีการชำระเงินขึ้นอยู่กับสัญญานี้หรือไม่
-    // booking_payment relates through: booking → tenant_workflow → contract
+    // ตรวจสอบข้อมูลเชื่อมโยง — ถ้ามีให้แนะนำใช้การยกเลิกแทน
     $paymentStmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM booking_payment bp 
         INNER JOIN booking b ON bp.bkg_id = b.bkg_id 
         INNER JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id 
         WHERE tw.ctr_id = ?");
     $paymentStmt->execute([$ctrId]);
-    $paymentCount = $paymentStmt->fetch()['cnt'] ?? 0;
-    
-    if ($paymentCount > 0) {
-        echo json_encode(['success' => false, 'error' => 'Cannot delete contract with payment records. (' . $paymentCount . ' payments found)']);
-        exit;
-    }
-    
-    // ตรวจสอบ: มีข้อมูล utility (มิเตอร์) เชื่อมโยงหรือไม่
+    $paymentCount = (int)($paymentStmt->fetch()['cnt'] ?? 0);
+
     $utilityStmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM utility WHERE ctr_id = ?");
     $utilityStmt->execute([$ctrId]);
-    $utilityCount = $utilityStmt->fetch()['cnt'] ?? 0;
-    
-    if ($utilityCount > 0) {
-        echo json_encode(['success' => false, 'error' => 'Cannot delete contract with meter records. (' . $utilityCount . ' records found)']);
-        exit;
-    }
-    
-    // ตรวจสอบ: มีข้อมูล expense เชื่อมโยงหรือไม่
+    $utilityCount = (int)($utilityStmt->fetch()['cnt'] ?? 0);
+
     $expenseStmt = $pdo->prepare("SELECT COUNT(*) as cnt FROM expense WHERE ctr_id = ?");
     $expenseStmt->execute([$ctrId]);
-    $expenseCount = $expenseStmt->fetch()['cnt'] ?? 0;
-    
-    if ($expenseCount > 0) {
-        echo json_encode(['success' => false, 'error' => 'Cannot delete contract with expense records. (' . $expenseCount . ' records found)']);
+    $expenseCount = (int)($expenseStmt->fetch()['cnt'] ?? 0);
+
+    if ($paymentCount > 0 || $utilityCount > 0 || $expenseCount > 0) {
+        echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบสัญญาที่มีข้อมูลเชื่อมโยงได้ กรุณาใช้การยกเลิกสัญญาแทน']);
         exit;
     }
-    
-    // เริ่มต้น transaction
+
+    // เริ่มต้น transaction — ลบได้เฉพาะสัญญาที่ยังไม่มีข้อมูลเชื่อมโยง
     $pdo->beginTransaction();
     
     try {
+        // ลบ tenant_workflow (ถ้ามี)
+        $pdo->prepare("DELETE FROM tenant_workflow WHERE ctr_id = ?")->execute([$ctrId]);
+
         // ลบสัญญา
         $deleteStmt = $pdo->prepare("DELETE FROM contract WHERE ctr_id = ?");
         $deleteStmt->execute([$ctrId]);

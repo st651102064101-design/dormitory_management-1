@@ -53,13 +53,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 } elseif ($_SERVER['REQUEST_METHOD'] === 'POST' && !$hasTermination) {
     try {
         $term_date = $_POST['term_date'] ?? '';
-        
+        $bank_name = trim($_POST['bank_name'] ?? '');
+        $bank_account_name = trim($_POST['bank_account_name'] ?? '');
+        $bank_account_number = preg_replace('/[^0-9]/', '', $_POST['bank_account_number'] ?? '');
+
         if (empty($term_date)) {
             $error = 'กรุณาระบุวันที่ต้องการยกเลิกสัญญา';
+        } elseif (empty($bank_name) || empty($bank_account_name) || empty($bank_account_number)) {
+            $error = 'กรุณาระบุข้อมูลบัญชีธนาคารสำหรับรับคืนเงินมัดจำให้ครบถ้วน';
         } else {
             // Insert termination request
-            $stmt = $pdo->prepare("INSERT INTO termination (ctr_id, term_date) VALUES (?, ?)");
-            $stmt->execute([$contract['ctr_id'], $term_date]);
+            $stmt = $pdo->prepare("INSERT INTO termination (ctr_id, term_date, bank_name, bank_account_name, bank_account_number) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$contract['ctr_id'], $term_date, $bank_name, $bank_account_name, $bank_account_number]);
             
             // Update contract status to "แจ้งยกเลิก" (2)
             $updateStmt = $pdo->prepare("UPDATE contract SET ctr_status = '2' WHERE ctr_id = ?");
@@ -85,8 +90,89 @@ $contractStatusMap = [
     '2' => ['label' => 'แจ้งยกเลิก', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)']
 ];
 
+// Auto-migrate: เพิ่มคอลัมน์ข้อมูลธนาคารในตาราง termination (ถ้ายังไม่มี)
+try {
+    $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_name VARCHAR(100) DEFAULT NULL AFTER term_date");
+    $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_account_name VARCHAR(100) DEFAULT NULL AFTER bank_name");
+    $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(20) DEFAULT NULL AFTER bank_account_name");
+} catch (Exception $e) {}
+
 // Calculate minimum date (7 days from now)
 $minDate = date('Y-m-d', strtotime('+7 days'));
+
+// ดึงข้อมูลคืนเงินมัดจำ
+$depositRefund = null;
+try {
+    $rfStmt = $pdo->prepare("SELECT * FROM deposit_refund WHERE ctr_id = ? ORDER BY refund_id DESC LIMIT 1");
+    $rfStmt->execute([$contract['ctr_id']]);
+    $depositRefund = $rfStmt->fetch(PDO::FETCH_ASSOC);
+} catch (Exception $e) {}
+
+// --- update_bank: ผู้เช่าอัปเดตบัญชีรับคืนเงินมัดจำ ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_bank') {
+    // อนุญาตเฉพาะเมื่อยังไม่โอนเงิน
+    $refundTransferred = isset($depositRefund['refund_status']) && $depositRefund['refund_status'] === '1';
+    if ($refundTransferred) {
+        $error = 'ไม่สามารถแก้ไขบัญชีได้ เนื่องจากโอนเงินคืนเรียบร้อยแล้ว';
+    } else {
+        $bank_name        = trim($_POST['bank_name'] ?? '');
+        $bank_account_name   = trim($_POST['bank_account_name'] ?? '');
+        $bank_account_number = preg_replace('/[^0-9]/', '', $_POST['bank_account_number'] ?? '');
+        if (empty($bank_name) || empty($bank_account_name) || empty($bank_account_number)) {
+            $error = 'กรุณาระบุข้อมูลบัญชีให้ครบถ้วน';
+        } else {
+            try {
+                if ($hasTermination) {
+                    $pdo->prepare("UPDATE termination SET bank_name=?, bank_account_name=?, bank_account_number=? WHERE ctr_id=?")
+                        ->execute([$bank_name, $bank_account_name, $bank_account_number, $contract['ctr_id']]);
+                } else {
+                    // กรณีสัญญาถูกยกเลิกโดย admin โดยไม่มี termination record — สร้าง record ใหม่
+                    $pdo->prepare("INSERT INTO termination (ctr_id, term_date, bank_name, bank_account_name, bank_account_number) VALUES (?, CURDATE(), ?, ?, ?)")
+                        ->execute([$contract['ctr_id'], $bank_name, $bank_account_name, $bank_account_number]);
+                }
+                // Refresh termination data
+                $stmt2 = $pdo->prepare("SELECT * FROM termination WHERE ctr_id = ? ORDER BY term_id DESC LIMIT 1");
+                $stmt2->execute([$contract['ctr_id']]);
+                $termination = $stmt2->fetch(PDO::FETCH_ASSOC);
+                $hasTermination = (bool)$termination;
+                $success = 'บันทึกข้อมูลบัญชีธนาคารเรียบร้อยแล้ว';
+            } catch (Exception $e) {
+                $error = 'เกิดข้อผิดพลาด: ' . $e->getMessage();
+            }
+        }
+    }
+}
+
+// ดึงจำนวนบิลค้างชำระ
+$unpaidBillCount = 0;
+try {
+    $ubStmt = $pdo->prepare("
+        SELECT COUNT(*) FROM expense e
+        WHERE e.ctr_id = ?
+          AND e.exp_total > COALESCE((
+              SELECT SUM(p.pay_amount) FROM payment p
+              WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
+                AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+          ), 0)
+    ");
+    $ubStmt->execute([$contract['ctr_id']]);
+    $unpaidBillCount = (int)$ubStmt->fetchColumn();
+} catch (Exception $e) {}
+
+function _bankFormFields(?array $term): string {
+    $banks = ['ธนาคารกสิกรไทย (KBank)','ธนาคารไทยพาณิชย์ (SCB)','ธนาคารกรุงเทพ (BBL)','ธนาคารกรุงไทย (KTB)','ธนาคารกรุงศรีอยุธยา (BAY)','ธนาคารทหารไทยธนชาต (TTB)','ธนาคารออมสิน (GSB)','ธนาคาร ธ.ก.ส.','ธนาคารอาคารสงเคราะห์ (GHB)','พร้อมเพย์ (PromptPay)'];
+    $opts = '<option value="">-- เลือกธนาคาร --</option>';
+    foreach ($banks as $b) {
+        $sel = ($b === ($term['bank_name'] ?? '')) ? ' selected' : '';
+        $opts .= '<option value="' . htmlspecialchars($b, ENT_QUOTES, 'UTF-8') . '"' . $sel . '>' . htmlspecialchars($b, ENT_QUOTES, 'UTF-8') . '</option>';
+    }
+    $acctName = htmlspecialchars($term['bank_account_name'] ?? '', ENT_QUOTES, 'UTF-8');
+    $acctNum  = htmlspecialchars($term['bank_account_number'] ?? '', ENT_QUOTES, 'UTF-8');
+    $s = 'width:100%;padding:0.6rem 0.75rem;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(15,23,42,0.7);color:#f8fafc;font-size:0.9rem;font-family:inherit;box-sizing:border-box;';
+    return "<div class='form-group'><label>ธนาคาร *</label><select name='bank_name' required style='{$s}'>{$opts}</select></div>"
+         . "<div class='form-group'><label>ชื่อบัญชี *</label><input type='text' name='bank_account_name' value='{$acctName}' placeholder='ชื่อ-นามสกุล ตามบัญชีธนาคาร' required style='{$s}'></div>"
+         . "<div class='form-group' style='margin-bottom:0'><label>เลขที่บัญชี / เบอร์พร้อมเพย์ *</label><input type='text' name='bank_account_number' value='{$acctNum}' placeholder='กรอกตัวเลขเท่านั้น' required inputmode='numeric' pattern='[0-9]{10,15}' style='{$s}'></div>";
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -444,14 +530,124 @@ $minDate = date('Y-m-d', strtotime('+7 days'));
                     <span class="info-label">เงินมัดจำ</span>
                     <span class="info-value"><?php echo number_format($contract['ctr_deposit'] ?? 0); ?> บาท</span>
                 </div>
+                <?php if ($depositRefund): ?>
+                <div class="info-row" style="flex-direction:column;gap:0.5rem;">
+                    <div style="display:flex;justify-content:space-between;width:100%;">
+                        <span class="info-label">สถานะคืนเงินมัดจำ</span>
+                        <span class="info-value">
+                            <?php if ($depositRefund['refund_status'] === '1'): ?>
+                                <span style="color:#22c55e;">✓ โอนคืนแล้ว</span>
+                            <?php else: ?>
+                                <span style="color:#fbbf24;">⏳ รอดำเนินการ</span>
+                            <?php endif; ?>
+                        </span>
+                    </div>
+                    <?php if ((int)$depositRefund['deduction_amount'] > 0): ?>
+                    <div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:0.75rem;font-size:0.85rem;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:0.3rem;">
+                            <span style="color:#94a3b8;">หักค่าเสียหาย</span>
+                            <span style="color:#f87171;font-weight:600;"><?php echo number_format($depositRefund['deduction_amount']); ?> บาท</span>
+                        </div>
+                        <?php if (!empty($depositRefund['deduction_reason'])): ?>
+                        <div style="color:#94a3b8;font-size:0.82rem;">เหตุผล: <?php echo htmlspecialchars($depositRefund['deduction_reason']); ?></div>
+                        <?php endif; ?>
+                    </div>
+                    <?php endif; ?>
+                    <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);border-radius:8px;padding:0.75rem;font-size:0.85rem;">
+                        <div style="display:flex;justify-content:space-between;">
+                            <span style="color:#94a3b8;">ยอดคืนเงิน</span>
+                            <span style="color:#22c55e;font-weight:700;font-size:1rem;"><?php echo number_format($depositRefund['refund_amount']); ?> บาท</span>
+                        </div>
+                        <?php if ($depositRefund['refund_status'] === '1' && !empty($depositRefund['refund_date'])): ?>
+                        <div style="margin-top:0.3rem;display:flex;justify-content:space-between;">
+                            <span style="color:#94a3b8;">วันที่โอนคืน</span>
+                            <span style="color:#e2e8f0;"><?php echo thaiDate($depositRefund['refund_date'], 'long'); ?></span>
+                        </div>
+                        <?php endif; ?>
+                        <?php if (!empty($depositRefund['refund_proof'])): ?>
+                        <div style="margin-top:0.4rem;">
+                            <a href="/<?php echo htmlspecialchars($depositRefund['refund_proof']); ?>" target="_blank"
+                               style="color:#38bdf8;font-size:0.82rem;text-decoration:none;">📎 ดูหลักฐานการโอนคืน</a>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
         
-        <?php if ($hasTermination): ?>
+        <?php if (($contract['ctr_status'] ?? '0') === '1'): ?>
+        <!-- Contract already cancelled — show final status only -->
+        <div class="termination-status" style="background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.3);">
+            <h3 style="color:#94a3b8;"><span class="status-icon" style="color:#94a3b8;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span> สัญญาสิ้นสุดแล้ว</h3>
+            <p style="color:#94a3b8;">สถานะคืนเงินมัดจำแสดงในส่วน "ข้อมูลสัญญา" ด้านบน</p>
+        </div>
+        <?php if (($depositRefund['refund_status'] ?? '') !== '1'): ?>
+        <!-- Allow tenant to add/edit bank account while refund pending -->
+        <div class="form-section" style="margin-top:1rem;">
+            <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/></svg></span> บัญชีธนาคารรับคืนเงินมัดจำ</div>
+            <?php if (!empty($termination['bank_name']) || !empty($termination['bank_account_number'])): ?>
+            <div style="padding:0.85rem;border-radius:10px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);margin-bottom:0.85rem;">
+                <div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.35rem;">บัญชีที่ระบุไว้</div>
+                <div style="font-size:0.9rem;color:#cbd5e1;"><?php echo htmlspecialchars($termination['bank_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                <div style="font-size:0.88rem;color:#94a3b8;"><?php echo htmlspecialchars($termination['bank_account_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                <div style="font-size:0.95rem;color:#60a5fa;font-weight:700;letter-spacing:0.05em;"><?php echo htmlspecialchars($termination['bank_account_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+            </div>
+            <?php else: ?>
+            <div style="padding:0.75rem;border-radius:10px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);margin-bottom:0.85rem;font-size:0.85rem;color:#fbbf24;">
+                ⚠️ ยังไม่ได้ระบุบัญชีธนาคาร กรุณากรอกข้อมูลเพื่อให้ผู้ดูแลโอนเงินคืนได้
+            </div>
+            <?php endif; ?>
+            <form method="POST">
+                <input type="hidden" name="action" value="update_bank">
+                <?php echo _bankFormFields($termination); ?>
+                <button type="submit" class="btn-submit" style="background:linear-gradient(135deg,#3b82f6,#2563eb);">
+                    <span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2-2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
+                    บันทึกบัญชีธนาคาร
+                </button>
+            </form>
+        </div>
+        <?php endif; ?>
+        <?php elseif ($hasTermination): ?>
         <!-- Already requested termination -->
         <div class="termination-status">
             <h3><span class="status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> รออนุมัติการยกเลิกสัญญา</h3>
             <p>วันที่ต้องการย้ายออก: <?php echo !empty($termination['term_date']) ? thaiDate($termination['term_date'], 'long') : htmlspecialchars($termination['term_date'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php $refundDoneHT = isset($depositRefund['refund_status']) && $depositRefund['refund_status'] === '1'; ?>
+            <?php if ($refundDoneHT): ?>
+            <div style="margin-top:0.75rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:0.8rem;text-align:left;">
+                <div style="font-size:0.78rem;color:#94a3b8;font-weight:600;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.03em;">🏦 บัญชีรับคืนเงินมัดจำที่ระบุไว้</div>
+                <div style="font-size:0.88rem;color:#e2e8f0;"><?php echo htmlspecialchars($termination['bank_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></div>
+                <div style="font-size:0.88rem;color:#cbd5e1;"><?php echo htmlspecialchars($termination['bank_account_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></div>
+                <div style="font-size:0.97rem;color:#60a5fa;font-weight:700;letter-spacing:0.06em;margin-top:0.2rem;"><?php echo htmlspecialchars($termination['bank_account_number'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></div>
+            </div>
+            <?php else: ?>
+            <div style="margin-top:0.75rem;">
+                <?php if (!empty($termination['bank_name']) || !empty($termination['bank_account_number'])): ?>
+                <div style="padding:0.7rem;border-radius:10px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);margin-bottom:0.7rem;">
+                    <div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.3rem;">บัญชีที่ระบุไว้</div>
+                    <div style="font-size:0.88rem;color:#cbd5e1;"><?php echo htmlspecialchars($termination['bank_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div style="font-size:0.85rem;color:#94a3b8;"><?php echo htmlspecialchars($termination['bank_account_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div style="font-size:0.95rem;color:#60a5fa;font-weight:700;letter-spacing:0.05em;margin-top:0.15rem;"><?php echo htmlspecialchars($termination['bank_account_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                </div>
+                <?php else: ?>
+                <div style="padding:0.6rem;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);margin-bottom:0.7rem;font-size:0.82rem;color:#fbbf24;">
+                    ⚠️ ยังไม่ได้ระบุบัญชีธนาคาร กรุณากรอกเพื่อให้ผู้ดูแลโอนเงินคืน
+                </div>
+                <?php endif; ?>
+                <form method="POST">
+                    <input type="hidden" name="action" value="update_bank">
+                    <div style="padding:0.85rem;border-radius:12px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);margin-bottom:0.75rem;">
+                        <div style="font-size:0.82rem;color:#60a5fa;font-weight:600;margin-bottom:0.75rem;">🏦 <?php echo empty($termination['bank_name']) ? 'ระบุบัญชีธนาคาร' : 'แก้ไขบัญชีธนาคาร'; ?></div>
+                        <?php echo _bankFormFields($termination); ?>
+                    </div>
+                    <button type="submit" class="btn-submit" style="background:linear-gradient(135deg,#3b82f6,#2563eb);margin-bottom:0.75rem;">
+                        <span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2-2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
+                        บันทึกบัญชีธนาคาร
+                    </button>
+                </form>
+            </div>
+            <?php endif; ?>
             <!-- two-step confirm เพื่อหลีก window.confirm() ที่ถูก block บน mobile -->
             <div id="cancelTermStep1" style="margin-top:1.25rem;">
                 <button type="button" class="btn-cancel-termination" onclick="document.getElementById('cancelTermStep1').style.display='none';document.getElementById('cancelTermStep2').style.display='block';">
@@ -485,14 +681,53 @@ $minDate = date('Y-m-d', strtotime('+7 days'));
                 </ul>
             </div>
             
+            <?php if ($unpaidBillCount > 0): ?>
+            <div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:1rem;margin-bottom:1rem;">
+                <div style="color:#f87171;font-weight:600;font-size:0.9rem;">⚠️ ยังมีบิลค้างชำระ <?php echo $unpaidBillCount; ?> รายการ</div>
+                <div style="color:#fca5a5;font-size:0.85rem;margin-top:0.3rem;">กรุณาชำระค่าห้องให้ครบทุกเดือนก่อนแจ้งยกเลิกสัญญา</div>
+            </div>
+            <?php else: ?>
             <form method="POST" onsubmit="return confirmTermination()">
                 <div class="form-group">
                     <label>วันที่ต้องการย้ายออก *</label>
                     <input type="date" name="term_date" min="<?php echo $minDate; ?>" required>
                 </div>
-                
+
+                <div style="margin-bottom:1rem;padding:0.85rem;border-radius:12px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);">
+                    <div style="font-size:0.82rem;color:#60a5fa;font-weight:600;margin-bottom:0.75rem;">🏦 บัญชีธนาคารสำหรับรับคืนเงินมัดจำ</div>
+                    <div class="form-group">
+                        <label>ธนาคาร *</label>
+                        <select name="bank_name" required style="width:100%;padding:0.6rem 0.75rem;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(15,23,42,0.7);color:#f8fafc;font-size:0.9rem;font-family:inherit;">
+                            <option value="">-- เลือกธนาคาร --</option>
+                            <option value="ธนาคารกสิกรไทย (KBank)">ธนาคารกสิกรไทย (KBank)</option>
+                            <option value="ธนาคารไทยพาณิชย์ (SCB)">ธนาคารไทยพาณิชย์ (SCB)</option>
+                            <option value="ธนาคารกรุงเทพ (BBL)">ธนาคารกรุงเทพ (BBL)</option>
+                            <option value="ธนาคารกรุงไทย (KTB)">ธนาคารกรุงไทย (KTB)</option>
+                            <option value="ธนาคารกรุงศรีอยุธยา (BAY)">ธนาคารกรุงศรีอยุธยา (BAY)</option>
+                            <option value="ธนาคารทหารไทยธนชาต (TTB)">ธนาคารทหารไทยธนชาต (TTB)</option>
+                            <option value="ธนาคารออมสิน (GSB)">ธนาคารออมสิน (GSB)</option>
+                            <option value="ธนาคาร ธ.ก.ส.">ธนาคาร ธ.ก.ส.</option>
+                            <option value="ธนาคารอาคารสงเคราะห์ (GHB)">ธนาคารอาคารสงเคราะห์ (GHB)</option>
+                            <option value="พร้อมเพย์ (PromptPay)">พร้อมเพย์ (PromptPay)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>ชื่อบัญชี *</label>
+                        <input type="text" name="bank_account_name" placeholder="ชื่อ-นามสกุล ตามบัญชีธนาคาร" required
+                               style="width:100%;padding:0.6rem 0.75rem;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(15,23,42,0.7);color:#f8fafc;font-size:0.9rem;font-family:inherit;box-sizing:border-box;">
+                    </div>
+                    <div class="form-group" style="margin-bottom:0;">
+                        <label>เลขที่บัญชี / เบอร์พร้อมเพย์ *</label>
+                        <input type="text" name="bank_account_number" placeholder="กรอกตัวเลขเท่านั้น" required
+                               inputmode="numeric" pattern="[0-9]{10,15}"
+                               title="กรอกเลขบัญชี 10–15 หลัก หรือเบอร์โทรศัพท์ 10 หลัก (สำหรับพร้อมเพย์)"
+                               style="width:100%;padding:0.6rem 0.75rem;border-radius:10px;border:1px solid rgba(255,255,255,0.15);background:rgba(15,23,42,0.7);color:#f8fafc;font-size:0.9rem;font-family:inherit;box-sizing:border-box;letter-spacing:0.05em;">
+                    </div>
+                </div>
+
                 <button type="submit" class="btn-submit"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span> ส่งคำร้องยกเลิกสัญญา</button>
             </form>
+            <?php endif; ?>
         </div>
         <?php endif; ?>
     </div>

@@ -31,7 +31,7 @@ function checkTenantAuth(): array {
             JOIN tenant t ON c.tnt_id = t.tnt_id
             JOIN room r ON c.room_id = r.room_id
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-            WHERE c.access_token = ? AND c.ctr_status IN ('0', '2')
+            WHERE c.access_token = ? AND c.ctr_status IN ('0', '1', '2')
             LIMIT 1
         ");
         $stmt->execute([$token]);
