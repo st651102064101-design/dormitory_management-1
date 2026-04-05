@@ -2347,6 +2347,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                         </ul>
                     </div>
                 </form>
+                <!-- Section แสดงลิงก์สัญญาและสถานะการเซ็น (เติมโดย JS) -->
+                <div id="contractSignatureSection" style="display:none;margin-top:1rem;"></div>
             </div>
 
             <div class="modal-footer">
@@ -2909,7 +2911,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
     }
 
     // Functions สำหรับ Contract Modal (Step 3)
-    function openContractModal(tntId, roomId, bkgId, tntName, roomNumber, typeName, typePrice, bkgCheckinDate, ctrStart, ctrEnd, bookingAmount, readOnly = false) {
+    function openContractModal(tntId, roomId, bkgId, tntName, roomNumber, typeName, typePrice, bkgCheckinDate, ctrStart, ctrEnd, bookingAmount, ctrId = 0, hasSigned = false, readOnly = false) {
         document.getElementById('modal_contract_tnt_id').value = tntId;
         document.getElementById('modal_contract_room_id').value = roomId;
         document.getElementById('modal_contract_bkg_id').value = bkgId;
@@ -2994,6 +2996,40 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             <p><strong style="color: #a78bfa;">ห้อง:</strong> ${roomNumber} (${typeName})</p>
             <p><strong style="color: #a78bfa;">ค่าห้อง:</strong> ฿${Number(typePrice).toLocaleString()}/เดือน</p>
         `;
+
+        // แสดงส่วน signature ถ้ามี ctrId
+        const sigSection = document.getElementById('contractSignatureSection');
+        if (ctrId > 0) {
+            const sigHtml = hasSigned
+                ? `<div style="padding:0.75rem 1rem;border-radius:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);display:flex;align-items:center;gap:0.6rem;">
+                     <span style="font-size:1.2rem;">✅</span>
+                     <div>
+                       <div style="color:#22c55e;font-weight:600;font-size:0.9rem;">ผู้เช่าเซ็นสัญญาแล้ว</div>
+                       <div style="color:#64748b;font-size:0.8rem;">สามารถดำเนินการเช็คอินได้</div>
+                     </div>
+                     <a href="print_contract.php?ctr_id=${ctrId}" target="_blank"
+                        style="margin-left:auto;font-size:0.82rem;color:#38bdf8;text-decoration:none;">📄 ดูสัญญา</a>
+                   </div>`
+                : `<div style="padding:0.8rem 1rem;border-radius:10px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);">
+                     <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.45rem;">
+                       <span style="font-size:1.1rem;">✍️</span>
+                       <span style="color:#fbbf24;font-weight:600;font-size:0.9rem;">รอผู้เช่าเซ็นสัญญา</span>
+                     </div>
+                     <div style="font-size:0.82rem;color:#94a3b8;margin-bottom:0.65rem;">
+                       ให้ผู้เช่าเปิดลิงก์ด้านล่างและเซ็นชื่อ จึงจะสามารถเช็คอินได้
+                     </div>
+                     <a href="print_contract.php?ctr_id=${ctrId}" target="_blank"
+                        style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem;border-radius:7px;
+                               background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.45);color:#c4b5fd;
+                               font-size:0.85rem;font-weight:500;text-decoration:none;">
+                       📄 เปิดสัญญาสำหรับเซ็น
+                     </a>
+                   </div>`;
+            sigSection.innerHTML = sigHtml;
+            sigSection.style.display = 'block';
+        } else {
+            sigSection.style.display = 'none';
+        }
 
         document.getElementById('contractModal').classList.add('active');
         document.body.style.overflow = 'hidden';
