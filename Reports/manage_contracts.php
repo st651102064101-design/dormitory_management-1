@@ -39,7 +39,8 @@ try {
         $stmt = $conn->prepare("SELECT c.*, 
           t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_status,
           r.room_number, r.room_status,
-          rt.type_name
+          rt.type_name,
+          (SELECT COUNT(*) FROM deposit_refund dr WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1') AS refund_confirmed
           FROM contract c
           LEFT JOIN tenant t ON t.tnt_id = c.tnt_id
           LEFT JOIN room r ON c.room_id = r.room_id
@@ -52,7 +53,8 @@ try {
         $stmt = $conn->prepare("SELECT c.*, 
           t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_status,
           r.room_number, r.room_status,
-          rt.type_name
+          rt.type_name,
+          (SELECT COUNT(*) FROM deposit_refund dr WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1') AS refund_confirmed
           FROM contract c
           LEFT JOIN tenant t ON t.tnt_id = c.tnt_id
           LEFT JOIN room r ON c.room_id = r.room_id
@@ -1248,7 +1250,13 @@ foreach ($contracts as $contract) {
                               </td>
                               <td style="padding: 0.75rem; color: #e2e8f0;" data-label="จัดการ" class="action-cell">
                                 <?php if ($s === '2'): ?>
-                                  <button type="button" class="action-btn btn-warning cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ยกเลิกทันที</button>
+                                  <?php $refundDone = !empty($contract['refund_confirmed']); ?>
+                                  <button type="button" class="action-btn btn-warning cancel-contract-btn"
+                                    data-ctrid="<?php echo $ctr_id; ?>"
+                                    data-refund-done="<?php echo $refundDone ? '1' : '0'; ?>"
+                                    <?php if (!$refundDone): ?>title="ต้องคืนเงินมัดจำก่อนยกเลิกสัญญา" style="opacity:0.55;cursor:not-allowed;"<?php endif; ?>>
+                                    <?php echo $refundDone ? 'ยกเลิกทันที' : '🔒 ยกเลิกทันที'; ?>
+                                  </button>
                                 <?php elseif (in_array($s, ['0', ''])): ?>
                                   <button type="button" class="action-btn btn-danger cancel-contract-btn" data-ctrid="<?php echo $ctr_id; ?>">ยกเลิกสัญญา</button>
                                 <?php else: ?>
@@ -1497,6 +1505,13 @@ foreach ($contracts as $contract) {
         e.stopPropagation();
         const ctrId = btn.getAttribute('data-ctrid');
         if (!ctrId) return showCtrToast('ไม่พบรหัสสัญญา', 'error');
+
+        // บล็อคถ้ายังไม่ได้คืนมัดจำ
+        if (btn.getAttribute('data-refund-done') === '0') {
+          showCtrToast('⚠️ ต้องดำเนินการคืนเงินมัดจำก่อนยกเลิกสัญญา', 'error');
+          setTimeout(function(){ openContractDetail(ctrId); }, 300);
+          return;
+        }
 
         const origText = btn.textContent;
         appleConfirm('คุณแน่ใจหรือว่าต้องการยกเลิกสัญญานี้?', 'ยืนยันการยกเลิกสัญญา').then(function(confirmed) {
