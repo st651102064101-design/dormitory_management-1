@@ -1,6 +1,6 @@
 <?php
-ob_start();
 declare(strict_types=1);
+ob_start();
 ini_set('display_errors', '1');
 error_reporting(E_ALL);
 
