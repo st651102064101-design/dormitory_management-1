@@ -1792,10 +1792,25 @@ try {
       body.reports-page {
         font-family: "IBM Plex Sans Thai", "Sarabun", "Prompt", "Noto Sans Thai", sans-serif;
         background:
-          radial-gradient(circle at 8% 12%, rgba(59, 130, 246, 0.08), transparent 34%),
-          radial-gradient(circle at 92% 4%, rgba(14, 165, 233, 0.08), transparent 28%),
-          linear-gradient(180deg, #f8fbff 0%, #f3f7ff 38%, #edf3fb 100%) !important;
+          radial-gradient(circle at 12% 10%, rgba(37, 99, 235, 0.08), transparent 38%),
+          radial-gradient(circle at 88% 0%, rgba(14, 165, 233, 0.08), transparent 30%),
+          linear-gradient(180deg, #f7f9fc 0%, #eef3f9 100%) !important;
         color: #0f172a;
+      }
+
+      .reports-page {
+        --surface: #ffffff;
+        --surface-muted: #f7f9fc;
+        --surface-alt: #f1f5f9;
+        --border: #e2e8f0;
+        --border-strong: #d2deef;
+        --text: #0f172a;
+        --text-muted: #5b6b83;
+        --accent: #1d4ed8;
+        --accent-soft: #e8efff;
+        --success: #16a34a;
+        --warning: #d97706;
+        --danger: #dc2626;
       }
 
       .reports-page .app-main {
@@ -1803,30 +1818,30 @@ try {
       }
 
       .reports-page .manage-panel {
-        border: 1px solid #dbe5f3 !important;
+        border: 1px solid var(--border) !important;
         border-radius: 18px !important;
-        background: #ffffff !important;
-        box-shadow: 0 12px 30px rgba(30, 64, 175, 0.09), 0 2px 8px rgba(15, 23, 42, 0.05) !important;
+        background: var(--surface) !important;
+        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04) !important;
       }
 
       .reports-page .section-header h1,
       .reports-page .section-header h2,
       .reports-page .section-header h3,
       .reports-page .section-header h4 {
-        color: #0f172a !important;
+        color: var(--text) !important;
         letter-spacing: 0.01em;
       }
 
       .reports-page .section-header p,
       .reports-page .expense-meta,
       .reports-page .datatable-info {
-        color: #5b6b83 !important;
+        color: var(--text-muted) !important;
       }
 
       .reports-page .expense-info-chip {
-        background: #eef6ff;
-        border: 1px solid #cfe3ff;
-        color: #0f4aa3;
+        background: var(--accent-soft);
+        border: 1px solid #c7dcff;
+        color: #17408b;
       }
 
       .reports-page .meter-alert-banner {
@@ -1840,35 +1855,41 @@ try {
       }
 
       .reports-page .expense-stat-card {
-        background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%) !important;
-        border: 1px solid #d7e6ff !important;
-        box-shadow: 0 8px 20px rgba(37, 99, 235, 0.08) !important;
-        color: #0f172a !important;
+        background: var(--surface) !important;
+        border: 1px solid var(--border) !important;
+        box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06) !important;
+        color: var(--text) !important;
         border-radius: 16px;
+        position: relative;
+        overflow: hidden;
       }
 
       .reports-page .expense-stat-card h3 {
-        color: #355074 !important;
+        color: #334155 !important;
       }
 
-      .reports-page .expense-stat-card .stat-value,
+      .reports-page .expense-stat-card .stat-value {
+        font-size: 1.85rem;
+        letter-spacing: 0.01em;
+      }
+
       .reports-page .expense-stat-card .stat-money {
-        text-shadow: none;
+        font-size: 1.15rem;
       }
 
       .reports-page .expense-stat-card.is-unpaid .stat-value,
       .reports-page .expense-stat-card.is-unpaid .stat-money {
-        color: #dc2626 !important;
+        color: var(--danger) !important;
       }
 
       .reports-page .expense-stat-card.is-paid .stat-value,
       .reports-page .expense-stat-card.is-paid .stat-money {
-        color: #16a34a !important;
+        color: var(--success) !important;
       }
 
       .reports-page .expense-stat-card.is-pending .stat-value,
       .reports-page .expense-stat-card.is-pending .stat-money {
-        color: #d97706 !important;
+        color: var(--warning) !important;
       }
 
       .reports-page .expense-stat-card.is-overdue .stat-value,
@@ -1878,14 +1899,14 @@ try {
 
       .reports-page .expense-stat-card.is-total .stat-value,
       .reports-page .expense-stat-card.is-total .stat-money {
-        color: #1d4ed8 !important;
+        color: var(--accent) !important;
       }
 
       .reports-page .collection-progress {
-        border: 1px solid #d9e7fb;
+        border: 1px solid var(--border);
         border-radius: 16px;
-        background: linear-gradient(180deg, #ffffff 0%, #f6faff 100%);
-        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        background: linear-gradient(180deg, #ffffff 0%, #f7faff 100%);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
       }
 
       .reports-page .collection-progress-label {
@@ -1894,104 +1915,108 @@ try {
       }
 
       .reports-page .collection-progress-pct {
-        color: #1d4ed8;
+        color: var(--accent);
         font-weight: 800;
       }
 
       .reports-page .collection-bar {
-        background: #e6effb;
+        background: #e8effa;
       }
 
       .reports-page .collection-bar-fill {
-        box-shadow: 0 0 10px rgba(34, 197, 94, 0.35);
+        box-shadow: 0 0 10px rgba(34, 197, 94, 0.25);
       }
 
       .reports-page .expense-controls-row {
-        border: 1px solid #dde8f6;
-        background: linear-gradient(180deg, #f9fbff 0%, #f3f8ff 100%);
+        border: 1px solid var(--border);
+        background: var(--surface-muted);
         border-radius: 14px;
         padding: 0.7rem;
       }
 
       .reports-page .expense-filter-tab {
-        background: #ffffff;
-        border: 1px solid #d4e1f1;
+        background: var(--surface);
+        border: 1px solid var(--border);
         color: #334155;
-        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05);
+        box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
         transition: all 0.2s ease;
       }
 
       .reports-page .expense-filter-tab:hover {
         transform: translateY(-1px);
-        border-color: #93c5fd;
-        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.12);
+        border-color: #bcd3ff;
+        box-shadow: 0 6px 14px rgba(37, 99, 235, 0.1);
       }
 
       .reports-page .expense-filter-tab.active {
-        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-        border-color: #1d4ed8;
-        color: #ffffff;
-        box-shadow: 0 10px 20px rgba(37, 99, 235, 0.35);
+        background: linear-gradient(135deg, #e8efff 0%, #dbeafe 100%);
+        border-color: #b6cbff;
+        color: var(--accent);
+        box-shadow: 0 8px 16px rgba(37, 99, 235, 0.15);
       }
 
       .reports-page .expense-toolbar select,
       .reports-page .datatable-input,
       .reports-page .datatable-selector {
-        border: 1px solid #c9d7ea !important;
+        border: 1px solid var(--border-strong) !important;
         background: #ffffff !important;
-        color: #0f172a !important;
+        color: var(--text) !important;
         border-radius: 10px;
       }
 
       .reports-page .expense-toolbar select:focus,
       .reports-page .datatable-input:focus,
       .reports-page .datatable-selector:focus {
-        border-color: #60a5fa !important;
+        border-color: #93c5fd !important;
         box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
         outline: none;
       }
 
       .reports-page .report-table {
-        border: 1px solid #dbe5f3;
+        border: 1px solid var(--border);
         border-radius: 14px;
-        background: #ffffff;
+        background: var(--surface);
       }
 
       .reports-page #table-expenses thead th {
-        background: #f3f8ff !important;
+        background: var(--surface-alt) !important;
         color: #1e3a8a !important;
-        border-bottom: 1px solid #d5e3f8;
+        border-bottom: 1px solid var(--border);
         font-weight: 700;
       }
 
+      .reports-page #table-expenses tbody tr:nth-child(even) td {
+        background: #f9fbff !important;
+      }
+
       .reports-page #table-expenses tbody td {
-        color: #0f172a !important;
+        color: var(--text) !important;
         border-bottom: 1px solid #edf2fb;
         padding-top: 0.85rem;
         padding-bottom: 0.85rem;
       }
 
       .reports-page .report-table tbody tr.payment-preview-trigger:hover td {
-        background: #f6faff !important;
+        background: #eef5ff !important;
       }
 
       .reports-page .report-table tbody tr.payment-preview-trigger:focus-visible td {
-        background: #eef5ff !important;
+        background: #e6f0ff !important;
       }
 
       .reports-page .status-badge {
         min-width: 84px;
         font-weight: 700;
         letter-spacing: 0.01em;
-        box-shadow: 0 4px 10px rgba(15, 23, 42, 0.15);
+        box-shadow: 0 6px 12px rgba(15, 23, 42, 0.12);
       }
 
       .reports-page .payment-compact-label {
-        color: #5b6b83;
+        color: var(--text-muted);
       }
 
       .reports-page .payment-compact-value {
-        color: #0f172a;
+        color: var(--text);
       }
 
       .reports-page .expenses-row-view {
@@ -1999,8 +2024,8 @@ try {
       }
 
       .reports-page .expense-row-card {
-        border: 1px solid #d8e6f7;
-        background: #ffffff;
+        border: 1px solid var(--border);
+        background: var(--surface);
         box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
       }
 
@@ -2010,12 +2035,12 @@ try {
       }
 
       .reports-page .expense-row-meta-value.total {
-        color: #1d4ed8 !important;
+        color: var(--accent) !important;
       }
 
       .reports-page .datatable-pagination a {
         border-radius: 10px;
-        border: 1px solid #d2deef;
+        border: 1px solid var(--border-strong);
         color: #334155;
       }
 
