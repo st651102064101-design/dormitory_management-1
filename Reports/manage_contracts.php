@@ -205,6 +205,30 @@ foreach ($contracts as $contract) {
     $tableStatusCounts['staying']++;
   }
 }
+
+// ── แจ้งเตือนห้องที่ต้องคืนเงินมัดจำ ──────────────────────────────
+$refundPendingContracts = [];
+try {
+    $refundStmt = $conn->query("
+        SELECT c.ctr_id, c.ctr_status, c.ctr_deposit,
+               t.tnt_name, r.room_number,
+               tm.term_date, tm.bank_name, tm.bank_account_name, tm.bank_account_number,
+               (SELECT dr2.refund_status FROM deposit_refund dr2 WHERE dr2.ctr_id = c.ctr_id ORDER BY dr2.refund_id DESC LIMIT 1) AS refund_status
+        FROM contract c
+        JOIN tenant t ON c.tnt_id = t.tnt_id
+        LEFT JOIN room r ON c.room_id = r.room_id
+        LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+        WHERE c.ctr_status IN ('1', '2')
+          AND COALESCE(c.ctr_deposit, 0) > 0
+          AND NOT EXISTS (
+              SELECT 1 FROM deposit_refund dr WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1'
+          )
+        ORDER BY tm.term_date ASC, c.ctr_id ASC
+    ");
+    $refundPendingContracts = $refundStmt->fetchAll(PDO::FETCH_ASSOC);
+} catch (Exception $e) {
+    error_log('[manage_contracts] refund pending query: ' . $e->getMessage());
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -1007,6 +1031,124 @@ foreach ($contracts as $contract) {
                     </div>
                   </div>
                 <?php endif; ?>
+
+                <?php if (!empty($refundPendingContracts)): ?>
+                <?php
+                  $today = new DateTime('today');
+                  $overdueCount = 0;
+                  foreach ($refundPendingContracts as $rp) {
+                      if (!empty($rp['term_date'])) {
+                          $termDt = new DateTime($rp['term_date']);
+                          if ($termDt < $today) $overdueCount++;
+                      } elseif ($rp['ctr_status'] === '1') {
+                          $overdueCount++; // cancelled with no term_date → treat as overdue
+                      }
+                  }
+                ?>
+                <div id="refund-alert-banner" style="margin: 0.5rem 0 1rem; border-radius: 10px; overflow: hidden; border: 1px solid #f59e0b; box-shadow: 0 2px 8px rgba(245,158,11,0.18);">
+                  <!-- Header -->
+                  <div style="background: linear-gradient(90deg,#b45309,#d97706); padding: 0.75rem 1rem; display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none;" onclick="toggleRefundBanner()">
+                    <div style="display:flex; align-items:center; gap:0.6rem; color:#fff; font-weight:600; font-size:1rem;">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;flex-shrink:0;">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                      </svg>
+                      <?php echo count($refundPendingContracts); ?> ห้องรอคืนเงินมัดจำ
+                      <?php if ($overdueCount > 0): ?>
+                        <span style="background:#dc2626; color:#fff; border-radius:999px; padding:0.1rem 0.55rem; font-size:0.78rem; font-weight:700;">เกินกำหนด <?php echo $overdueCount; ?></span>
+                      <?php endif; ?>
+                    </div>
+                    <svg id="refund-banner-chevron" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" style="width:18px;height:18px;flex-shrink:0;transition:transform .25s;">
+                      <polyline points="6 9 12 15 18 9"/>
+                    </svg>
+                  </div>
+                  <!-- Body -->
+                  <div id="refund-banner-body" style="background:#fffbeb;">
+                    <table style="width:100%; border-collapse:collapse; font-size:0.9rem;">
+                      <thead>
+                        <tr style="background:#fef3c7; color:#78350f; font-weight:600; font-size:0.82rem;">
+                          <th style="padding:0.5rem 0.75rem; text-align:left; white-space:nowrap;">ห้อง</th>
+                          <th style="padding:0.5rem 0.75rem; text-align:left;">ผู้เช่า</th>
+                          <th style="padding:0.5rem 0.75rem; text-align:right; white-space:nowrap;">มัดจำ</th>
+                          <th style="padding:0.5rem 0.75rem; text-align:center; white-space:nowrap;">วันครบกำหนด</th>
+                          <th style="padding:0.5rem 0.75rem; text-align:center; white-space:nowrap;">บัญชีรับเงิน</th>
+                          <th style="padding:0.5rem 0.75rem; text-align:center; white-space:nowrap;">สถานะ</th>
+                          <th style="padding:0.5rem 0.75rem; text-align:center;"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <?php foreach ($refundPendingContracts as $rp):
+                          $termDate = !empty($rp['term_date']) ? new DateTime($rp['term_date']) : null;
+                          $diffDays = $termDate ? (int)$today->diff($termDate)->days * ($termDate >= $today ? 1 : -1) : null;
+                          $isOverdue = ($diffDays !== null && $diffDays < 0) || ($termDate === null && $rp['ctr_status'] === '1');
+                          $hasBankInfo = !empty($rp['bank_account_number']);
+                          $rowBg = $isOverdue ? '#fff1f2' : '#fffbeb';
+                        ?>
+                        <tr style="background:<?php echo $rowBg; ?>; border-top:1px solid #fde68a;">
+                          <td style="padding:0.55rem 0.75rem; font-weight:700; color:#92400e;">
+                            <?php echo htmlspecialchars($rp['room_number'] ?? '-', ENT_QUOTES, 'UTF-8'); ?>
+                          </td>
+                          <td style="padding:0.55rem 0.75rem; color:#1c1917;">
+                            <?php echo htmlspecialchars($rp['tnt_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?>
+                          </td>
+                          <td style="padding:0.55rem 0.75rem; text-align:right; font-weight:600; color:#166534; white-space:nowrap;">
+                            ฿<?php echo number_format((float)($rp['ctr_deposit'] ?? 0)); ?>
+                          </td>
+                          <td style="padding:0.55rem 0.75rem; text-align:center; white-space:nowrap;">
+                            <?php if ($termDate): ?>
+                              <?php
+                                $buddhistYear = (int)$termDate->format('Y') + 543;
+                                $thaiMonths = ['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+                                echo $termDate->format('j') . ' ' . $thaiMonths[(int)$termDate->format('n')] . ' ' . $buddhistYear;
+                              ?>
+                              <?php if ($isOverdue): ?>
+                                <span style="color:#dc2626; font-size:0.78rem; font-weight:600;"> (เกิน <?php echo abs($diffDays); ?> วัน)</span>
+                              <?php elseif ($diffDays !== null && $diffDays <= 7): ?>
+                                <span style="color:#d97706; font-size:0.78rem; font-weight:600;"> (อีก <?php echo $diffDays; ?> วัน)</span>
+                              <?php endif; ?>
+                            <?php else: ?>
+                              <span style="color:#9ca3af; font-size:0.82rem;">ไม่ระบุ</span>
+                            <?php endif; ?>
+                          </td>
+                          <td style="padding:0.55rem 0.75rem; text-align:center;">
+                            <?php if ($hasBankInfo): ?>
+                              <span style="color:#166534; font-size:0.82rem;" title="<?php echo htmlspecialchars($rp['bank_name'].' '.$rp['bank_account_name'].' '.$rp['bank_account_number'], ENT_QUOTES, 'UTF-8'); ?>">✅ มีบัญชีแล้ว</span>
+                            <?php else: ?>
+                              <span style="color:#b45309; font-size:0.82rem;">⚠️ ยังไม่มีบัญชี</span>
+                            <?php endif; ?>
+                          </td>
+                          <td style="padding:0.55rem 0.75rem; text-align:center;">
+                            <?php if ($rp['refund_status'] === '0'): ?>
+                              <span style="background:#fef3c7; color:#92400e; border-radius:4px; padding:0.15rem 0.5rem; font-size:0.78rem; font-weight:600;">รอโอนเงิน</span>
+                            <?php else: ?>
+                              <span style="background:#fee2e2; color:#991b1b; border-radius:4px; padding:0.15rem 0.5rem; font-size:0.78rem; font-weight:600;">ยังไม่ดำเนินการ</span>
+                            <?php endif; ?>
+                          </td>
+                          <td style="padding:0.55rem 0.75rem; text-align:center;">
+                            <a href="?ctr_id=<?php echo (int)$rp['ctr_id']; ?>" style="background:#d97706; color:#fff; border-radius:6px; padding:0.25rem 0.65rem; font-size:0.8rem; text-decoration:none; white-space:nowrap; display:inline-block;">
+                              จัดการ →
+                            </a>
+                          </td>
+                        </tr>
+                        <?php endforeach; ?>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+                <script>
+                function toggleRefundBanner() {
+                    var body = document.getElementById('refund-banner-body');
+                    var chevron = document.getElementById('refund-banner-chevron');
+                    if (body.style.display === 'none') {
+                        body.style.display = '';
+                        chevron.style.transform = '';
+                    } else {
+                        body.style.display = 'none';
+                        chevron.style.transform = 'rotate(-90deg)';
+                    }
+                }
+                </script>
+                <?php endif; ?>
+
                 <div class="info-bar" style="margin: 0.5rem 0 1rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.95rem; word-break: break-word;">
                   สัญญาที่พบ: <strong><?php echo $ctrCount; ?></strong> รายการ |
                   ปกติ: <?php echo $ctrStatusBuckets['0']; ?> | ยกเลิกแล้ว: <?php echo $ctrStatusBuckets['1']; ?> | แจ้งยกเลิก: <?php echo $ctrStatusBuckets['2']; ?>

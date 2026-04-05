@@ -5,6 +5,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../includes/thai_date_helper.php';
+require_once __DIR__ . '/../includes/repair_spam_check.php';
 
 $auth = checkTenantAuth();
 $pdo = $auth['pdo'];
@@ -23,6 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (empty($repair_desc)) {
             $error = 'กรุณาระบุรายละเอียดการแจ้งซ่อม';
         } else {
+            // AI spam check — server-side gate
+            $aiResult = scoreRepairText($repair_desc);
+            if ($aiResult['label'] === 'spam') {
+                $error = '⚠️ ' . ($aiResult['message'] ?: 'รายละเอียดไม่สมเหตุสมผล กรุณาอธิบายปัญหาให้ชัดเจน');
+            } else {
             $repair_image = null;
             
             // Handle image upload
@@ -69,6 +75,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$repair_desc, $repair_image, $contract['ctr_id']]);
             
             $success = 'แจ้งซ่อมเรียบร้อยแล้ว';
+            } // end spam-check else
         }
         
     } catch (Exception $e) {
@@ -541,7 +548,9 @@ $repairStatusMap = [
             <form method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>รายละเอียดอุปกรณ์ที่ต้องการซ่อม *</label>
-                    <textarea name="repair_desc" placeholder="เช่น พัดลมเพดานไม่หมุน, ก๊อกน้ำรั่ว, หลอดไฟเสีย ฯลฯ" required></textarea>
+                    <textarea name="repair_desc" id="repair_desc_input" placeholder="เช่น พัดลมเพดานไม่หมุน, ก๊อกน้ำรั่ว, หลอดไฟเสีย ฯลฯ" required oninput="scheduleAiCheck()"></textarea>
+                    <!-- AI quality indicator -->
+                    <div id="ai_feedback" style="display:none;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:8px;font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;transition:all 0.3s;"></div>
                 </div>
                 <div class="form-group">
                     <label>รูปภาพประกอบ (ถ้ามี)</label>
@@ -554,7 +563,7 @@ $repairStatusMap = [
                         <img id="preview-image" src="" alt="Preview">
                     </div>
                 </div>
-                <button type="submit" class="btn-submit"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span> ส่งแจ้งซ่อม</button>
+                <button type="submit" id="repair_submit_btn" class="btn-submit"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></span> ส่งแจ้งซ่อม</button>
             </form>
         </div>
         
@@ -722,6 +731,77 @@ $repairStatusMap = [
                 container.style.display = 'block';
             };
             reader.readAsDataURL(input.files[0]);
+        }
+    }
+
+    // ── AI Repair Quality Checker ──────────────────────────────
+    let _aiTimer = null;
+    let _aiBlocked = false;
+
+    function scheduleAiCheck() {
+        clearTimeout(_aiTimer);
+        _aiTimer = setTimeout(runAiCheck, 500);
+    }
+
+    async function runAiCheck() {
+        const textarea = document.getElementById('repair_desc_input');
+        const feedback = document.getElementById('ai_feedback');
+        const submitBtn = document.getElementById('repair_submit_btn');
+        if (!textarea || !feedback) return;
+
+        const text = textarea.value.trim();
+        if (text.length === 0) {
+            feedback.style.display = 'none';
+            _aiBlocked = false;
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '';
+            return;
+        }
+
+        try {
+            const res = await fetch('../Manage/ai_check_repair.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'text=' + encodeURIComponent(text)
+            });
+            const data = await res.json();
+            showAiFeedback(feedback, submitBtn, data);
+        } catch (e) {
+            // On network error, allow submission silently
+            feedback.style.display = 'none';
+            _aiBlocked = false;
+            submitBtn.disabled = false;
+        }
+    }
+
+    function showAiFeedback(feedback, submitBtn, data) {
+        feedback.style.display = 'flex';
+
+        if (data.label === 'ok' || data.label === 'empty') {
+            feedback.style.background  = 'rgba(34,197,94,0.12)';
+            feedback.style.border      = '1px solid rgba(34,197,94,0.3)';
+            feedback.style.color       = '#4ade80';
+            feedback.innerHTML = '\u2705 \u0e23\u0e32\u0e22\u0e25\u0e30\u0e40\u0e2d\u0e35\u0e22\u0e14\u0e14\u0e39\u0e2a\u0e21\u0e40\u0e2b\u0e15\u0e38\u0e2a\u0e21\u0e1c\u0e25 \u0e2a\u0e32\u0e21\u0e32\u0e23\u0e16\u0e2a\u0e48\u0e07\u0e44\u0e14\u0e49';
+            _aiBlocked = false;
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '';
+        } else if (data.label === 'suspect') {
+            feedback.style.background  = 'rgba(251,191,36,0.12)';
+            feedback.style.border      = '1px solid rgba(251,191,36,0.35)';
+            feedback.style.color       = '#fbbf24';
+            feedback.innerHTML = '\u26a0\ufe0f ' + (data.message || '\u0e01\u0e23\u0e38\u0e13\u0e32\u0e2d\u0e18\u0e34\u0e1a\u0e32\u0e22\u0e1b\u0e31\u0e0d\u0e2b\u0e32\u0e43\u0e2b\u0e49\u0e0a\u0e31\u0e14\u0e40\u0e08\u0e19\u0e02\u0e36\u0e49\u0e19');
+            _aiBlocked = false;
+            submitBtn.disabled = false;
+            submitBtn.style.opacity = '';
+        } else {
+            // spam
+            feedback.style.background  = 'rgba(239,68,68,0.12)';
+            feedback.style.border      = '1px solid rgba(239,68,68,0.35)';
+            feedback.style.color       = '#f87171';
+            feedback.innerHTML = '\u274c ' + (data.message || '\u0e23\u0e32\u0e22\u0e25\u0e30\u0e40\u0e2d\u0e35\u0e22\u0e14\u0e44\u0e21\u0e48\u0e2a\u0e21\u0e40\u0e2b\u0e15\u0e38\u0e2a\u0e21\u0e1c\u0e25 \u0e01\u0e23\u0e38\u0e13\u0e32\u0e23\u0e30\u0e1a\u0e38\u0e1b\u0e31\u0e0d\u0e2b\u0e32\u0e43\u0e2b\u0e49\u0e0a\u0e31\u0e14\u0e40\u0e08\u0e19');
+            _aiBlocked = true;
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.45';
         }
     }
     </script>

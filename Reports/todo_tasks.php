@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/thai_date_helper.php';
+require_once __DIR__ . '/../includes/repair_spam_check.php';
 
 if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
@@ -1084,7 +1085,15 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                         <tr>
                                             <td data-label="ห้อง"><strong><?php echo htmlspecialchars($rp['room_number'] ?? '-'); ?></strong></td>
                                             <td data-label="ผู้เช่า"><?php echo htmlspecialchars($rp['tnt_name'] ?? '-'); ?></td>
-                                            <td data-label="รายละเอียด"><?php echo htmlspecialchars($repairDesc !== '' ? $repairDesc : '-'); ?></td>
+                                            <td data-label="รายละเอียด">
+                                                <?php echo htmlspecialchars($repairDesc !== '' ? $repairDesc : '-'); ?>
+                                                <?php $aiR = scoreRepairText($repairDesc);
+                                                if ($aiR['label'] === 'spam'): ?>
+                                                <span style="display:inline-flex;align-items:center;gap:0.25rem;margin-left:0.35rem;padding:0.15rem 0.45rem;border-radius:20px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);font-size:0.72rem;color:#f87171;vertical-align:middle;">🤖 ต้องสงสัย</span>
+                                                <?php elseif ($aiR['label'] === 'suspect'): ?>
+                                                <span style="display:inline-flex;align-items:center;gap:0.25rem;margin-left:0.35rem;padding:0.15rem 0.45rem;border-radius:20px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);font-size:0.72rem;color:#fbbf24;vertical-align:middle;">🤖 ไม่ชัดเจน</span>
+                                                <?php endif; ?>
+                                            </td>
                                             <td data-label="วันที่แจ้ง"><?php echo thaiDate($rp['repair_date'] ?? '', 'short_time'); ?></td>
                                             <td data-label="สถานะ"><span class="status-chip <?php echo $repairStatusClass; ?>"><?php echo $repairStatusText; ?></span></td>
                                             <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingRepair); ?></td>

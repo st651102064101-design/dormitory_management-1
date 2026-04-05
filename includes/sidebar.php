@@ -4660,6 +4660,7 @@ document.addEventListener('keydown', function(e) {
     }, 500);
   });
 })();
+</script>
 
 <?php
 // ── Client-side session timeout countdown ──────────────────────────────────

@@ -11,6 +11,7 @@ if (empty($_SESSION['admin_username'])) {
 }
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
+require_once __DIR__ . '/../includes/repair_spam_check.php';
 
 // ดึง theme color จากการตั้งค่าระบบ
 $settingsStmt = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
@@ -2571,6 +2572,17 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                           <div style="line-height:1.5; color:rgba(255,255,255,0.8);">
                             <?php echo nl2br(htmlspecialchars($r['repair_desc'] ?? '-')); ?>
                           </div>
+                          <?php
+                            $aiResult = scoreRepairText($r['repair_desc'] ?? '');
+                            if ($aiResult['label'] === 'spam'): ?>
+                          <div style="display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.4rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);font-size:0.72rem;color:#f87171;">
+                            🤖 ต้องสงสัย (สแปม)
+                          </div>
+                          <?php elseif ($aiResult['label'] === 'suspect'): ?>
+                          <div style="display:inline-flex;align-items:center;gap:0.3rem;margin-top:0.4rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(251,191,36,0.12);border:1px solid rgba(251,191,36,0.35);font-size:0.72rem;color:#fbbf24;">
+                            🤖 ไม่ชัดเจน
+                          </div>
+                          <?php endif; ?>
                         </td>
                         <!-- Schedule Column -->
                         <td data-label="นัดหมายซ่อม">
