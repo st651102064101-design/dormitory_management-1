@@ -144,6 +144,15 @@ try {
                 exit;
             }
 
+            // ต้องมีเลขบัญชีธนาคารในระบบก่อนยืนยันการคืนเงิน
+            $bankStmt = $pdo->prepare('SELECT bank_account_number FROM termination WHERE ctr_id = ? ORDER BY term_id DESC LIMIT 1');
+            $bankStmt->execute([$ctr_id]);
+            $bankRow = $bankStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$bankRow || empty(trim($bankRow['bank_account_number'] ?? ''))) {
+                echo json_encode(['success' => false, 'error' => 'ไม่สามารถยืนยันได้ เนื่องจากยังไม่พบเลขบัญชีธนาคารที่ต้องโอนเงินให้ผู้เช่า']);
+                exit;
+            }
+
             $pdo->prepare("UPDATE deposit_refund SET refund_status='1', refund_date=NOW() WHERE refund_id=?")->execute([$existing['refund_id']]);
 
             echo json_encode(['success' => true, 'message' => 'ยืนยันการคืนเงินมัดจำเรียบร้อย']);

@@ -224,7 +224,9 @@ try {
         WHERE c.ctr_status IN ('1', '2')
           AND COALESCE(c.ctr_deposit, 0) > 0
           AND NOT EXISTS (
-              SELECT 1 FROM deposit_refund dr WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1'
+              SELECT 1 FROM deposit_refund dr
+              WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1'
+              AND (tm.bank_account_number IS NOT NULL AND TRIM(tm.bank_account_number) != '')
           )
         ORDER BY tm.term_date ASC, c.ctr_id ASC
     ");
@@ -2320,6 +2322,23 @@ $pendingRefundCtrIdSet = array_flip(array_column($refundPendingContracts, 'ctr_i
       const depAmount = data.deposit ? Number(data.deposit.bp_amount || 0) : (Number(c.ctr_deposit) || 0);
 
       if (rf && rf.refund_status === '1') {
+        const termChk = data.termination;
+        const bankOk = termChk && termChk.bank_account_number && termChk.bank_account_number.trim() !== '';
+        if (!bankOk) {
+          return `
+            <div style="margin-top:1rem;padding:1rem;border-radius:10px;
+                        background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);">
+              <div style="font-weight:600;color:#f59e0b;margin-bottom:0.5rem;">⚠️ ยังไม่พบเลขบัญชีธนาคารที่ต้องโอน</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.4rem;font-size:0.85rem;margin-bottom:0.5rem;">
+                <div><span style="color:${t.muted};">เงินมัดจำ:</span> <span style="color:${t.body};">${_fmtMoney(rf.deposit_amount)}</span></div>
+                <div><span style="color:${t.muted};">หักค่าเสียหาย:</span> <span style="color:${t.red};">${_fmtMoney(rf.deduction_amount)}</span></div>
+                <div><span style="color:${t.muted};">ยอดคืน:</span> <span style="color:#f59e0b;font-weight:700;">${_fmtMoney(rf.refund_amount)}</span></div>
+                <div><span style="color:${t.muted};">บันทึกวันที่:</span> <span style="color:${t.body};">${_fmtDate(rf.refund_date)}</span></div>
+              </div>
+              <div style="font-size:0.82rem;color:#fbbf24;">กรุณาแจ้งให้ผู้เช่าระบุบัญชีธนาคารก่อนดำเนินการโอนเงิน</div>
+              ${rf.refund_proof ? '<div style="margin-top:0.4rem;"><a href="/'+rf.refund_proof+'" target="_blank" style="font-size:0.82rem;color:'+t.link+';">📎 หลักฐานการโอน</a></div>' : ''}
+            </div>`;
+        }
         return `
           <div style="margin-top:1rem;padding:1rem;border-radius:10px;
                       background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);">

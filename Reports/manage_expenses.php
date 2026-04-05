@@ -1244,6 +1244,8 @@ try {
         background: rgba(2, 6, 23, 0.55);
         z-index: 9999;
         padding: 1rem;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
       }
 
       .page-header-bar.modal-open-hidden {
