@@ -53,10 +53,18 @@ try {
         }
     }
 
+    // room_features — allow any non-empty string values
+    $room_features = 'ไฟฟ้า,น้ำประปา,WiFi,เฟอร์นิเจอร์,แอร์,ตู้เย็น';
+    if (isset($_POST['room_features']) && is_array($_POST['room_features'])) {
+        $cleaned = array_map('trim', $_POST['room_features']);
+        $cleaned = array_filter($cleaned, function($v) { return $v !== '' && mb_strlen($v) <= 50; });
+        $room_features = implode(',', array_values($cleaned));
+    }
+
     // บันทึกข้อมูลห้อง
     $roomStatus = '0'; // ห้องใหม่เริ่มต้นเป็นว่าง
-    $stmtInsert = $pdo->prepare('INSERT INTO room (room_number, type_id, room_status, room_image) VALUES (?, ?, ?, ?)');
-    $stmtInsert->execute([$roomNumber, $typeId, $roomStatus, $roomImage]);
+    $stmtInsert = $pdo->prepare('INSERT INTO room (room_number, type_id, room_status, room_image, room_features) VALUES (?, ?, ?, ?, ?)');
+    $stmtInsert->execute([$roomNumber, $typeId, $roomStatus, $roomImage, $room_features]);
     
     $roomId = $pdo->lastInsertId();
     

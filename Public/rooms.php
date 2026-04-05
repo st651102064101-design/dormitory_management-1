@@ -38,8 +38,15 @@ try {
     $roomTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $debugInfo .= "RoomTypes: " . count($roomTypes) . " | ";
     
-    // ดึงห้องทั้งหมด
-    $stmt = $pdo->query("SELECT r.*, rt.type_name, rt.type_price FROM room r LEFT JOIN roomtype rt ON r.type_id = rt.type_id ORDER BY CAST(r.room_number AS UNSIGNED) ASC");
+    // ดึงห้องทั้งหมด — room_status คำนวณจาก contract จริง เพื่อป้องกัน room.room_status ค้างค่า
+    $stmt = $pdo->query("
+        SELECT r.*, rt.type_name, rt.type_price,
+               CASE WHEN EXISTS (
+                   SELECT 1 FROM contract c WHERE c.room_id = r.room_id AND c.ctr_status = '0'
+               ) THEN '1' ELSE r.room_status END AS room_status
+        FROM room r LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+        ORDER BY CAST(r.room_number AS UNSIGNED) ASC
+    ");
     $rooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $debugInfo .= "Rooms: " . count($rooms);
 } catch (PDOException $e) { 
@@ -3053,7 +3060,11 @@ if ($publicTheme === 'light') {
                                 </div>
                                 
                                 <div class="back-features">
-                                    <?php foreach ($roomFeatures as $feature): 
+                                    <?php 
+                                    $thisRoomFeatures = !empty($room['room_features']) 
+                                        ? array_map('trim', explode(',', $room['room_features'])) 
+                                        : $roomFeatures;
+                                    foreach ($thisRoomFeatures as $feature): 
                                         $icon = $featureIcons[$feature] ?? $featureIcons['default'];
                                     ?>
                                     <span class="feature-tag"><?php echo $icon; ?> <?php echo htmlspecialchars($feature); ?></span>

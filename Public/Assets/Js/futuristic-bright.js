@@ -170,6 +170,8 @@
     document.addEventListener('click', function (e) {
       const btn = e.target.closest('button, .btn-action, .todo-tab, .submit-btn-animated');
       if (!btn) return;
+      // ข้ามปุ่ม meter-tab เพื่อไม่ให้ overflow:hidden รบกวนการคลิก
+      if (btn.classList.contains('meter-tab')) return;
 
       const ripple = document.createElement('span');
       const rect = btn.getBoundingClientRect();

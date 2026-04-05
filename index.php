@@ -2782,7 +2782,11 @@ if ($publicTheme === 'light') {
                             </div>
                             
                             <div class="back-features">
-                                <?php foreach ($defaultFeatures as $feature): 
+                                <?php 
+                                $thisRoomFeatures = !empty($room['room_features']) 
+                                    ? array_map('trim', explode(',', $room['room_features'])) 
+                                    : $defaultFeatures;
+                                foreach ($thisRoomFeatures as $feature): 
                                     $icon = $featureIcons[$feature] ?? '';
                                 ?>
                                 <span class="feature-tag"><?php echo $icon; ?> <?php echo htmlspecialchars($feature); ?></span>

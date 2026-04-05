@@ -91,8 +91,16 @@ try {
         }
     }
 
-    $update = $pdo->prepare("UPDATE room SET room_number = ?, type_id = ?, room_image = ? WHERE room_id = ?");
-    $update->execute([$room_number, $type_id, $room_image, $room_id]);
+    // room_features — allow any non-empty string values (no whitelist)
+    $room_features = null;
+    if (isset($_POST['room_features']) && is_array($_POST['room_features'])) {
+        $cleaned = array_map('trim', $_POST['room_features']);
+        $cleaned = array_filter($cleaned, function($v) { return $v !== '' && mb_strlen($v) <= 50; });
+        $room_features = implode(',', array_values($cleaned));
+    }
+
+    $update = $pdo->prepare("UPDATE room SET room_number = ?, type_id = ?, room_image = ?, room_features = ? WHERE room_id = ?");
+    $update->execute([$room_number, $type_id, $room_image, $room_features, $room_id]);
 
     // ดึงข้อมูลห้องที่อัปเดตพร้อมชื่อประเภทห้อง
     $roomQuery = $pdo->prepare("

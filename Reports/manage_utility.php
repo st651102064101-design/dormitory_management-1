@@ -181,6 +181,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 
     try {
         $saved = 0;
+        $skipped = 0;
         $lockedRooms = 0;
         $savedRoomsData = [];
         foreach ($_POST['meter'] as $roomId => $data) {
@@ -978,6 +979,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             color: #64748b !important;
             background: transparent !important;
             position: relative;
+            z-index: 2;
+            pointer-events: auto !important;
         }
         .meter-tab:hover {
             background: #eef2f7 !important;
@@ -2827,6 +2830,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             showToast('กรุณาแก้ไขค่ามิเตอร์ที่ติดลบก่อนบันทึก', 'error');
             return;
         }
+        var meterView = document.getElementById('meterView');
+        if (meterView && meterView.style.display !== 'none') {
             syncMeterToTable();
         }
 

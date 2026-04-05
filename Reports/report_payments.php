@@ -1,4 +1,5 @@
 <?php
+ob_start();
 declare(strict_types=1);
 ini_set('display_errors', '1');
 error_reporting(E_ALL);
@@ -147,17 +148,11 @@ try {
   $stmt = $pdo->query($sql);
   $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
   
-  // Debug: แสดงข้อมูลแถวแรก
   if (!empty($rows)) {
     error_log("Sample row: " . print_r($rows[0], true));
-    // Debug output
-    echo "<!-- DEBUG: Found " . count($rows) . " payment records -->";
-  } else {
-    echo "<!-- DEBUG: No payment records found -->";
   }
 } catch (PDOException $e) {
   $errorMessage = $e->getMessage();
-  echo "<!-- DEBUG ERROR: " . htmlspecialchars($errorMessage) . " -->";
 }
 
 // สรุปสถานะและยอดรวม (หากมีคอลัมน์ที่เกี่ยวข้อง)

@@ -56,7 +56,7 @@ switch ($sortBy) {
 
 // ดึงข้อมูลห้องพัก
 $stmt = $pdo->query("
-    SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.type_id, rt.type_name, rt.type_price
+    SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.type_id, r.room_features, rt.type_name, rt.type_price
     FROM room r
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id
     $orderBy
@@ -1148,6 +1148,24 @@ try {
                    </div>
                 </div>
                 <div class="room-form-group">
+                  <label>สิ่งอำนวยความสะดวก:</label>
+                  <div id="add_features_checkboxes" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.35rem;">
+                    <?php
+                    $addAllFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi', 'เฟอร์นิเจอร์', 'แอร์', 'ตู้เย็น'];
+                    foreach ($addAllFeatures as $f):
+                    ?>
+                    <label style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.75rem;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:8px;cursor:pointer;font-size:0.85rem;transition:all 0.2s;">
+                      <input type="checkbox" name="room_features[]" value="<?php echo htmlspecialchars($f); ?>" checked style="accent-color:#6366f1;">
+                      <?php echo htmlspecialchars($f); ?>
+                    </label>
+                    <?php endforeach; ?>
+                  </div>
+                  <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+                    <input type="text" id="add_custom_feature_input" placeholder="เพิ่มสิ่งอำนวยความสะดวกเพิ่มเติม..." maxlength="40" style="flex:1;padding:0.4rem 0.65rem;border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:0.85rem;outline:none;">
+                    <button type="button" onclick="addCustomFeature('add')" style="padding:0.4rem 0.9rem;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:0.85rem;cursor:pointer;white-space:nowrap;">+ เพิ่ม</button>
+                  </div>
+                </div>
+                <div class="room-form-group">
                   <label for="room_image">รูปภาพห้อง</label>
                   <input type="file" id="room_image" name="room_image" accept="image/*" />
                 </div>
@@ -1367,6 +1385,25 @@ try {
           </div>
           
           <div class="booking-form-group">
+            <label>สิ่งอำนวยความสะดวก:</label>
+            <div id="edit_features_checkboxes" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.35rem;">
+              <?php
+              $allFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi', 'เฟอร์นิเจอร์', 'แอร์', 'ตู้เย็น'];
+              foreach ($allFeatures as $f):
+              ?>
+              <label style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.75rem;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:8px;cursor:pointer;font-size:0.85rem;transition:all 0.2s;">
+                <input type="checkbox" name="room_features[]" value="<?php echo htmlspecialchars($f); ?>" class="feature-checkbox" style="accent-color:#6366f1;">
+                <?php echo htmlspecialchars($f); ?>
+              </label>
+              <?php endforeach; ?>
+            </div>
+            <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+              <input type="text" id="edit_custom_feature_input" placeholder="เพิ่มสิ่งอำนวยความสะดวกเพิ่มเติม..." maxlength="40" style="flex:1;padding:0.4rem 0.65rem;border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:0.85rem;outline:none;">
+              <button type="button" onclick="addCustomFeature('edit')" style="padding:0.4rem 0.9rem;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:0.85rem;cursor:pointer;white-space:nowrap;">+ เพิ่ม</button>
+            </div>
+          </div>
+
+          <div class="booking-form-group">
             <label>รูปภาพห้อง:</label>
             <input type="file" name="room_image" id="edit_room_image" accept="image/*">
             <input type="hidden" name="delete_image" id="delete_image" value="0">
@@ -1468,6 +1505,22 @@ try {
         document.getElementById('edit_type_id').value = room.type_id;
         document.getElementById('delete_image').value = '0';
         
+        // ตั้งค่า features checkboxes
+        var roomFeats = (room.room_features || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);
+        // ลบ custom features ที่เพิ่มเข้ามาก่อนหน้านี้ (data-custom="1") ออกก่อน
+        document.querySelectorAll('#edit_features_checkboxes label[data-custom="1"]').forEach(function(l){ l.remove(); });
+        var presetVals = [];
+        document.querySelectorAll('.feature-checkbox').forEach(function(cb){ presetVals.push(cb.value); });
+        // ตุ๊ก preset และเพิ่ม custom features
+        document.querySelectorAll('.feature-checkbox').forEach(function(cb){
+          cb.checked = roomFeats.indexOf(cb.value) !== -1;
+        });
+        roomFeats.forEach(function(f){
+          if (presetVals.indexOf(f) === -1) {
+            addCustomFeatureLabel('edit', f, true);
+          }
+        });
+        
         const preview = document.getElementById('edit_image_preview');
         const deleteBtn = document.getElementById('delete_image_btn_container');
         
@@ -1486,7 +1539,59 @@ try {
       }
       window.editRoom = editRoom;
       
-      function deleteCurrentImage() {
+      // เพิ่ม custom feature label
+      function addCustomFeatureLabel(ctx, val, checked) {
+        var containerId = ctx === 'edit' ? 'edit_features_checkboxes' : 'add_features_checkboxes';
+        var container = document.getElementById(containerId);
+        if (!container) return;
+        // ไม่เพิ่มซ้ำ
+        var exists = Array.from(container.querySelectorAll('input[type=checkbox]')).some(function(cb){ return cb.value.trim() === val.trim(); });
+        if (exists) {
+          Array.from(container.querySelectorAll('input[type=checkbox]')).forEach(function(cb){ if (cb.value.trim() === val.trim()) cb.checked = true; });
+          return;
+        }
+        var lbl = document.createElement('label');
+        lbl.setAttribute('data-custom', '1');
+        lbl.style.cssText = 'display:inline-flex;align-items:center;gap:0.3rem;padding:0.4rem 0.75rem;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);border-radius:8px;cursor:pointer;font-size:0.85rem;transition:all 0.2s;';
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.name = 'room_features[]';
+        cb.value = val;
+        cb.checked = checked !== false;
+        cb.className = 'feature-checkbox';
+        cb.style.accentColor = '#10b981';
+        var rm = document.createElement('span');
+        rm.textContent = '×';
+        rm.title = 'ลบ';
+        rm.style.cssText = 'margin-left:0.25rem;color:#ef4444;font-weight:700;cursor:pointer;';
+        rm.onclick = function(e){ e.preventDefault(); lbl.remove(); };
+        lbl.appendChild(cb);
+        lbl.appendChild(document.createTextNode(' ' + val + ' '));
+        lbl.appendChild(rm);
+        container.appendChild(lbl);
+      }
+
+      function addCustomFeature(ctx) {
+        var inputId = ctx === 'edit' ? 'edit_custom_feature_input' : 'add_custom_feature_input';
+        var input = document.getElementById(inputId);
+        if (!input) return;
+        var val = input.value.trim();
+        if (!val) return;
+        addCustomFeatureLabel(ctx, val, true);
+        input.value = '';
+        input.focus();
+      }
+
+      // Enter key on custom input
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && (e.target.id === 'edit_custom_feature_input' || e.target.id === 'add_custom_feature_input')) {
+          e.preventDefault();
+          addCustomFeature(e.target.id === 'edit_custom_feature_input' ? 'edit' : 'add');
+        }
+      });
+
+      window.addCustomFeature = addCustomFeature;
+      window.addCustomFeatureLabel = addCustomFeatureLabel;
         document.getElementById('delete_image').value = '1';
         document.getElementById('edit_image_preview').innerHTML = '<div style="color:#f87171; padding:0.75rem; background:rgba(239,68,68,0.1); border-radius:10px; border:1px dashed rgba(239,68,68,0.3);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:0.4rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> รูปภาพจะถูกลบเมื่อกดบันทึก</div>';
         document.getElementById('delete_image_btn_container').style.display = 'none';
@@ -1497,6 +1602,8 @@ try {
         document.getElementById('editModal').style.display = 'none';
         document.getElementById('editForm').reset();
         document.getElementById('delete_image').value = '0';
+        // ลบ custom features ที่เพิ่มไว้
+        document.querySelectorAll('#edit_features_checkboxes label[data-custom="1"]').forEach(function(l){ l.remove(); });
       }
       
       // Handle Edit Form Submit via AJAX
