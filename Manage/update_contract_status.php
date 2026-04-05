@@ -150,9 +150,17 @@ try {
     $tnt_id = $contract['tnt_id'] ?? '';
     if ($room_id > 0) {
         if ($ctr_status === '1') { // ยกเลิกสัญญา
-            $pdo->prepare("UPDATE room SET room_status = '0' WHERE room_id = ?")->execute([$room_id]);
+            // ห้องว่างเมื่อ term_date ถึงแล้ว ไม่ใช่ตอนอนุมัติ
+            $termDateStmt = $pdo->prepare("SELECT term_date FROM termination WHERE ctr_id = ? ORDER BY term_id DESC LIMIT 1");
+            $termDateStmt->execute([$ctr_id]);
+            $termDateRow = $termDateStmt->fetch(PDO::FETCH_ASSOC);
+            $termDate = $termDateRow['term_date'] ?? null;
+            if (!$termDate || $termDate <= date('Y-m-d')) {
+                // ถึงวันกำหนดหรือไม่มี record — ตั้งสุดว่างได้เลย
+                $pdo->prepare("UPDATE room SET room_status = '0' WHERE room_id = ?")->execute([$room_id]);
+            }
+            // else: ยังไม่ถึงวัน อยู่อาศัยต่อ, room_status ยัง = '1'
             if ($tnt_id !== '') {
-                // ผู้เช่า = ย้ายออก (0)
                 $pdo->prepare("UPDATE tenant SET tnt_status = '0' WHERE tnt_id = ?")->execute([$tnt_id]);
             }
         } elseif ($ctr_status === '0' || $ctr_status === '2') { // ปกติ หรือ แจ้งยกเลิก

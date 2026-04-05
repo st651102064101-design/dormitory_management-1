@@ -432,17 +432,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
         $billStmt = $pdo->prepare("
             SELECT COUNT(*) FROM expense e
-            INNER JOIN contract c ON e.ctr_id = c.ctr_id
-            WHERE c.tnt_id = ?
-            AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
+            INNER JOIN (
+                SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month
+            ) latest ON e.exp_id = latest.exp_id
+            WHERE e.ctr_id = ?
+            AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m')
             AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
             AND COALESCE((
                 SELECT SUM(p.pay_amount) FROM payment p
-                WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
+                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
                 AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
             ), 0) < e.exp_total
         ");
-        $billStmt->execute([$contract['tnt_id']]);
+        $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
     } catch (Exception $e) {}
     ?>

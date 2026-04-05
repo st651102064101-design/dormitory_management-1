@@ -41,6 +41,10 @@ $bookingStatusBadgeCounts = [
   'checkedin' => 0,
   'cancelled' => 0,
 ];
+$contractStatusBadgeCounts = [
+  'termination_requested' => 0,
+  'refund_pending' => 0,
+];
 $sidebarDataLoadedFromDb = false;
 $sidebarCacheTtlSeconds = 20;
 $sidebarCacheKey = '__sidebar_snapshot_v1';
@@ -186,6 +190,7 @@ if ($canUseSidebarSnapshot) {
     $utilityStatusBadgeCounts = (array)($cached['utilityStatusBadgeCounts'] ?? $utilityStatusBadgeCounts);
     $repairStatusBadgeCounts = (array)($cached['repairStatusBadgeCounts'] ?? $repairStatusBadgeCounts);
     $bookingStatusBadgeCounts = (array)($cached['bookingStatusBadgeCounts'] ?? $bookingStatusBadgeCounts);
+    $contractStatusBadgeCounts = (array)($cached['contractStatusBadgeCounts'] ?? $contractStatusBadgeCounts);
     if (empty($_SESSION['admin_picture']) && !empty($cached['adminPicture'])) {
         $_SESSION['admin_picture'] = (string)$cached['adminPicture'];
     }
@@ -307,8 +312,40 @@ try {
       'cancelled' => (int)($bookingStatusResult['cancelled_count'] ?? 0),
     ];
 
+    // ดึงจำนวนสัญญาที่ต้องการการดำเนินการ (แจ้งยกเลิก + รอคืนเงินมัดจำ)
+    $contractStatusStmt = $pdo->query("
+        SELECT
+          (SELECT COUNT(*) FROM contract WHERE ctr_status = '2') AS termination_requested,
+          (SELECT COUNT(*) FROM deposit_refund WHERE refund_status = '0') AS refund_pending
+    ");
+    $contractStatusResult = $contractStatusStmt ? $contractStatusStmt->fetch(PDO::FETCH_ASSOC) : [];
+    $contractStatusBadgeCounts = [
+      'termination_requested' => (int)($contractStatusResult['termination_requested'] ?? 0),
+      'refund_pending' => (int)($contractStatusResult['refund_pending'] ?? 0),
+    ];
+
     // คงไว้เพื่อ compatibility กับโค้ดเดิม
     $pendingPaymentReviewCount = $paymentStatusBadgeCounts['pending'];
+
+    // Auto-release: ห้องที่ term_date ผ่านแล้วให้กลับเป็นว่าง
+    try {
+        $pdo->exec("
+            UPDATE room SET room_status = '0'
+            WHERE room_status = '1'
+            AND NOT EXISTS (
+                SELECT 1 FROM contract c
+                INNER JOIN checkin_record cr ON cr.ctr_id = c.ctr_id
+                WHERE c.room_id = room.room_id
+                AND (
+                    c.ctr_status IN ('0','2')
+                    OR (c.ctr_status = '1' AND EXISTS (
+                        SELECT 1 FROM termination t WHERE t.ctr_id = c.ctr_id AND t.term_date > CURDATE()
+                    ))
+                )
+            )
+        ");
+    } catch (Exception $e) {}
+
     $sidebarDataLoadedFromDb = true;
 } catch (Exception $e) {
     // ใช้ค่า default ถ้า database error
@@ -325,6 +362,7 @@ try {
   $expenseActionBadgeTotal = (int)$expenseStatusBadgeCounts['pending'];
   $paymentActionBadgeTotal = (int)$paymentStatusBadgeCounts['pending'];
   $repairActionBadgeTotal = (int)$repairStatusBadgeCounts['pending'] + (int)$repairStatusBadgeCounts['inprogress'];
+  $contractActionBadgeTotal = (int)$contractStatusBadgeCounts['termination_requested'] + (int)$contractStatusBadgeCounts['refund_pending'];
   $todoBadgeTotal = $wizardIncompleteCount + $bookingActionBadgeTotal + $utilityActionBadgeTotal + $expenseActionBadgeTotal + $paymentActionBadgeTotal + $repairActionBadgeTotal;
 
 if ($sidebarDataLoadedFromDb) {
@@ -347,6 +385,7 @@ if ($sidebarDataLoadedFromDb) {
       'utilityStatusBadgeCounts' => $utilityStatusBadgeCounts,
       'repairStatusBadgeCounts' => $repairStatusBadgeCounts,
       'bookingStatusBadgeCounts' => $bookingStatusBadgeCounts,
+      'contractStatusBadgeCounts' => $contractStatusBadgeCounts,
     ],
   ];
 }
@@ -3784,7 +3823,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
           </a>
           <span class="chev chev-toggle" data-target="nav-tenants" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
-        <a class="<?php echo $currentPage === 'manage_contracts.php' ? 'active' : ''; ?>" href="manage_contracts.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label"><?php echo __('manage_contracts'); ?></span></a>
+        <a class="<?php echo $currentPage === 'manage_contracts.php' ? 'active' : ''; ?>" href="manage_contracts.php" style="position:relative;padding-right:<?php echo $contractActionBadgeTotal > 0 ? '2.5rem' : ''; ?>"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg></span><span class="app-nav-label"><?php echo __('manage_contracts'); ?></span><?php if ($contractActionBadgeTotal > 0): ?><span style="position:absolute;top:6px;right:6px;background:#f59e0b;color:white;border-radius:999px;min-width:22px;height:22px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;"><?php echo $contractActionBadgeTotal > 99 ? '99+' : $contractActionBadgeTotal; ?></span><?php endif; ?></a>
         <a class="<?php echo $currentPage === 'qr_codes.php' ? 'active' : ''; ?>" href="qr_codes.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="3" height="3"/><rect x="18" y="14" width="3" height="3"/><rect x="14" y="18" width="3" height="3"/><rect x="18" y="18" width="3" height="3"/></svg></span><span class="app-nav-label"><?php echo __('qr_codes'); ?></span></a>
       </details>
     </div>

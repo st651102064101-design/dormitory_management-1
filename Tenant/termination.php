@@ -59,6 +59,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         if (empty($term_date)) {
             $error = 'กรุณาระบุวันที่ต้องการยกเลิกสัญญา';
+        } elseif (!empty($contract['ctr_end']) && $term_date > $contract['ctr_end']) {
+            $error = 'วันที่ย้ายออกต้องไม่เกินวันที่สิ้นสุดสัญญา (' . thaiDate($contract['ctr_end'], 'long') . ')';
+        } elseif ($lastPaidBillDate && $term_date <= $lastPaidBillDate) {
+            $error = 'วันที่ย้ายออกต้องหลังวันที่ชำระบิลล่าสุด (' . thaiDate($lastPaidBillDate, 'long') . ')';
         } elseif (empty($bank_name) || empty($bank_account_name) || empty($bank_account_number)) {
             $error = 'กรุณาระบุข้อมูลบัญชีธนาคารสำหรับรับคืนเงินมัดจำให้ครบถ้วน';
         } else {
@@ -99,6 +103,36 @@ try {
 
 // Calculate minimum date (7 days from now)
 $minDate = date('Y-m-d', strtotime('+7 days'));
+$maxDate = !empty($contract['ctr_end']) ? $contract['ctr_end'] : '';
+
+// หาวันที่ชำระเงินล่าสุดของบิลในสัญญานี้ — term_date ต้อง > วันนั้น
+$lastPaidBillDate = '';
+try {
+    $lpStmt = $pdo->prepare("
+        SELECT MAX(p.pay_date)
+        FROM payment p
+        INNER JOIN expense e ON p.exp_id = e.exp_id
+        WHERE e.ctr_id = ?
+          AND p.pay_status = '1'
+          AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+    ");
+    $lpStmt->execute([$contract['ctr_id']]);
+    $lpRow = $lpStmt->fetchColumn();
+    if ($lpRow) { $lastPaidBillDate = $lpRow; }
+} catch (Exception $e) {}
+
+// minTermDate = max(minDate, lastPaidBillDate + 1 day)
+$minTermDate = $minDate;
+if ($lastPaidBillDate) {
+    $minFromPaid = date('Y-m-d', strtotime($lastPaidBillDate . ' +1 day'));
+    if ($minFromPaid > $minTermDate) { $minTermDate = $minFromPaid; }
+}
+
+// ดูว่า term_date ที่บันทึกไว้เกิน ctr_end หรือไม่
+$termDateExceedsCtrEnd = $hasTermination
+    && !empty($termination['term_date'])
+    && !empty($contract['ctr_end'])
+    && $termination['term_date'] > $contract['ctr_end'];
 
 // ดึงข้อมูลคืนเงินมัดจำ
 $depositRefund = null;
@@ -148,14 +182,17 @@ $unpaidBillCount = 0;
 try {
     $ubStmt = $pdo->prepare("
         SELECT COUNT(*) FROM expense e
+        INNER JOIN (
+            SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month
+        ) latest ON e.exp_id = latest.exp_id
         WHERE e.ctr_id = ?
           AND e.exp_total > COALESCE((
               SELECT SUM(p.pay_amount) FROM payment p
-              WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
+              WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
                 AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
           ), 0)
     ");
-    $ubStmt->execute([$contract['ctr_id']]);
+    $ubStmt->execute([$contract['ctr_id'], $contract['ctr_id']]);
     $unpaidBillCount = (int)$ubStmt->fetchColumn();
 } catch (Exception $e) {}
 
@@ -613,6 +650,11 @@ function _bankFormFields(?array $term): string {
         <div class="termination-status">
             <h3><span class="status-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> รออนุมัติการยกเลิกสัญญา</h3>
             <p>วันที่ต้องการย้ายออก: <?php echo !empty($termination['term_date']) ? thaiDate($termination['term_date'], 'long') : htmlspecialchars($termination['term_date'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></p>
+            <?php if ($termDateExceedsCtrEnd): ?>
+            <div style="margin-top:0.5rem;padding:0.5rem 0.75rem;border-radius:8px;background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.4);font-size:0.82rem;color:#fca5a5;text-align:left;">
+                ⚠️ วันที่ย้ายออกเกินวันสิ้นสุดสัญญา (<?php echo thaiDate($contract['ctr_end'], 'long'); ?>) กรุณาติดต่อผู้ดูแล
+            </div>
+            <?php endif; ?>
             <?php $refundDoneHT = isset($depositRefund['refund_status']) && $depositRefund['refund_status'] === '1'; ?>
             <?php if ($refundDoneHT): ?>
             <div style="margin-top:0.75rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:0.8rem;text-align:left;">
@@ -624,10 +666,10 @@ function _bankFormFields(?array $term): string {
             <?php else: ?>
             <div style="margin-top:0.75rem;">
                 <?php if (!empty($termination['bank_name']) || !empty($termination['bank_account_number'])): ?>
-                <div style="padding:0.7rem;border-radius:10px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);margin-bottom:0.7rem;">
-                    <div style="font-size:0.75rem;color:#64748b;font-weight:600;margin-bottom:0.3rem;">บัญชีที่ระบุไว้</div>
-                    <div style="font-size:0.88rem;color:#cbd5e1;"><?php echo htmlspecialchars($termination['bank_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
-                    <div style="font-size:0.85rem;color:#94a3b8;"><?php echo htmlspecialchars($termination['bank_account_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                <div style="padding:0.7rem;border-radius:10px;background:rgba(15,23,42,0.4);border:1px solid rgba(59,130,246,0.3);margin-bottom:0.7rem;">
+                    <div style="font-size:0.75rem;color:#93c5fd;font-weight:600;margin-bottom:0.3rem;">บัญชีที่ระบุไว้</div>
+                    <div style="font-size:0.88rem;color:#f1f5f9;"><?php echo htmlspecialchars($termination['bank_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div style="font-size:0.85rem;color:#cbd5e1;"><?php echo htmlspecialchars($termination['bank_account_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
                     <div style="font-size:0.95rem;color:#60a5fa;font-weight:700;letter-spacing:0.05em;margin-top:0.15rem;"><?php echo htmlspecialchars($termination['bank_account_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
                 </div>
                 <?php else: ?>
@@ -661,7 +703,7 @@ function _bankFormFields(?array $term): string {
                     <input type="hidden" name="action" value="cancel_termination">
                     <div style="display:flex;gap:0.6rem;">
                         <button type="submit" class="btn-cancel-termination" style="flex:1;justify-content:center;margin-top:0;padding:0.75rem;font-size:0.88rem;">✓ ยืนยัน</button>
-                        <button type="button" style="flex:1;padding:0.75rem;background:transparent;border:1px solid rgba(255,255,255,0.2);border-radius:10px;color:#94a3b8;font-family:inherit;font-size:0.88rem;cursor:pointer;" onclick="document.getElementById('cancelTermStep2').style.display='none';document.getElementById('cancelTermStep1').style.display='block';">ย้อนกลับ</button>
+                        <button type="button" style="flex:1;padding:0.75rem;background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.4);border-radius:10px;color:#e2e8f0;font-family:inherit;font-size:0.88rem;cursor:pointer;" onclick="document.getElementById('cancelTermStep2').style.display='none';document.getElementById('cancelTermStep1').style.display='block';">ย้อนกลับ</button>
                     </div>
                 </form>
             </div>
@@ -690,7 +732,7 @@ function _bankFormFields(?array $term): string {
             <form method="POST" onsubmit="return confirmTermination()">
                 <div class="form-group">
                     <label>วันที่ต้องการย้ายออก *</label>
-                    <input type="date" name="term_date" min="<?php echo $minDate; ?>" required>
+                    <input type="date" name="term_date" min="<?php echo $minTermDate; ?>"<?php echo $maxDate ? ' max="' . htmlspecialchars($maxDate, ENT_QUOTES, 'UTF-8') . '"' : ''; ?> required>
                 </div>
 
                 <div style="margin-bottom:1rem;padding:0.85rem;border-radius:12px;background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.2);">
@@ -741,8 +783,8 @@ function _bankFormFields(?array $term): string {
     } catch (Exception $e) {}
     $billCount = 0;
     try {
-        $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN contract c ON e.ctr_id = c.ctr_id WHERE c.tnt_id = ? AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m') AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) < e.exp_total");
-        $billStmt->execute([$contract['tnt_id']]);
+        $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN (SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month) latest ON e.exp_id = latest.exp_id WHERE e.ctr_id = ? AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m') AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1') AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) < e.exp_total");
+        $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
     } catch (Exception $e) {}
     ?>
