@@ -310,6 +310,8 @@ try {
                                             OR tw.completed = 0
                                             OR tw.completed = 1
                                         )
+                                    -- ไม่แสดงผู้เช่าที่สัญญาถูกยกเลิกแล้ว
+                                    AND (c.ctr_id IS NULL OR c.ctr_status <> '1')
                                     " . $bookingFilterCondition . "
                                     -- Exclude bookings where a different active/notify-cancel contract exists in the same room
                                     AND NOT EXISTS (
