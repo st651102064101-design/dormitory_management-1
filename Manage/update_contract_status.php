@@ -108,17 +108,29 @@ try {
         }
 
         // === ตรวจสอบการคืนเงินมัดจำก่อนยกเลิกสัญญา ===
-        $depositInfoStmt = $pdo->prepare("
-            SELECT bp.bp_amount
-            FROM booking_payment bp
-            INNER JOIN tenant_workflow tw ON tw.bkg_id = bp.bkg_id
-            WHERE tw.ctr_id = ?
-            ORDER BY bp.bp_id DESC LIMIT 1
-        ");
-        $depositInfoStmt->execute([$ctr_id]);
-        $depositInfo = $depositInfoStmt->fetch(PDO::FETCH_ASSOC);
+        // ดึงจาก ctr_deposit ก่อน (ครอบคลุมสัญญาที่ไม่ได้สร้างผ่าน booking wizard)
+        $ctrDepositStmt = $pdo->prepare("SELECT ctr_deposit FROM contract WHERE ctr_id = ?");
+        $ctrDepositStmt->execute([$ctr_id]);
+        $ctrDepositRow = $ctrDepositStmt->fetch(PDO::FETCH_ASSOC);
+        $depositAmount = floatval($ctrDepositRow['ctr_deposit'] ?? 0);
 
-        if ($depositInfo && floatval($depositInfo['bp_amount']) > 0) {
+        // ถ้าไม่มีใน ctr_deposit ให้ fallback ไปหา booking_payment
+        if ($depositAmount <= 0) {
+            $depositInfoStmt = $pdo->prepare("
+                SELECT bp.bp_amount
+                FROM booking_payment bp
+                INNER JOIN tenant_workflow tw ON tw.bkg_id = bp.bkg_id
+                WHERE tw.ctr_id = ?
+                ORDER BY bp.bp_id DESC LIMIT 1
+            ");
+            $depositInfoStmt->execute([$ctr_id]);
+            $depositInfo = $depositInfoStmt->fetch(PDO::FETCH_ASSOC);
+            if ($depositInfo) {
+                $depositAmount = floatval($depositInfo['bp_amount'] ?? 0);
+            }
+        }
+
+        if ($depositAmount > 0) {
             $refundConfirmedStmt = $pdo->prepare("
                 SELECT refund_id FROM deposit_refund
                 WHERE ctr_id = ? AND refund_status = '1'

@@ -1509,7 +1509,7 @@ foreach ($contracts as $contract) {
         // บล็อคถ้ายังไม่ได้คืนมัดจำ
         if (btn.getAttribute('data-refund-done') === '0') {
           showCtrToast('⚠️ ต้องดำเนินการคืนเงินมัดจำก่อนยกเลิกสัญญา', 'error');
-          setTimeout(function(){ openContractDetail(ctrId); }, 300);
+          setTimeout(function(){ openContractDetail(ctrId, true); }, 300);
           return;
         }
 
@@ -1902,7 +1902,7 @@ foreach ($contracts as $contract) {
       };
     }
 
-    function openContractDetail(ctrId) {
+    function openContractDetail(ctrId, scrollToRefund) {
       const drawer  = document.getElementById('cdrDrawer');
       const overlay = document.getElementById('cdrOverlay');
       const loading = document.getElementById('cdrLoading');
@@ -1925,6 +1925,21 @@ foreach ($contracts as $contract) {
           loading.style.display = 'none';
           _renderCdrDrawer(data);
           switchCdrTab('overview');
+          if (scrollToRefund) {
+            setTimeout(function() {
+              const body = document.getElementById('cdrBody');
+              const refundEl = document.getElementById('refundSection');
+              if (body && refundEl) {
+                const bodyRect = body.getBoundingClientRect();
+                const refundRect = refundEl.getBoundingClientRect();
+                body.scrollTo({ top: body.scrollTop + refundRect.top - bodyRect.top - 12, behavior: 'smooth' });
+                // Briefly highlight the refund section
+                refundEl.style.transition = 'box-shadow 0.3s';
+                refundEl.style.boxShadow = '0 0 0 3px rgba(251,191,36,0.6)';
+                setTimeout(function() { refundEl.style.boxShadow = ''; }, 1800);
+              }
+            }, 120);
+          }
         })
         .catch(() => { loading.textContent = '⚠ ไม่สามารถโหลดข้อมูลได้'; });
     }

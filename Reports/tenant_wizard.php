@@ -244,7 +244,12 @@ try {
                                     )
                                 ORDER BY e.exp_month DESC, e.exp_id DESC
                                 LIMIT 1
-                        ) AS latest_exp_status
+                        ) AS latest_exp_status,
+                        (
+                            SELECT COUNT(*) FROM signature_logs sl
+                            WHERE sl.contract_id = COALESCE(c.ctr_id, tw.ctr_id)
+                              AND sl.signer_type = 'tenant'
+                        ) AS has_tenant_signature
         FROM booking b
         INNER JOIN tenant t ON b.tnt_id = t.tnt_id
         LEFT JOIN (
@@ -2149,7 +2154,12 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                             )">สร้างสัญญา</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 4): ?>
+                                            <?php $tenantSigned = (int)($tenant['has_tenant_signature'] ?? 0) > 0; ?>
+                                            <?php if ($tenantSigned): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">เช็คอิน</button>
+                                            <?php else: ?>
+                                            <button type="button" class="action-btn btn-primary" style="opacity:0.55;cursor:not-allowed;" title="ผู้เช่ายังไม่ได้เซ็นสัญญา" onclick="showNotSignedToast()">🔒 เช็คอิน</button>
+                                            <?php endif; ?>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 5 || $currentStep >= 6 || (int)($tenant['completed'] ?? 0) === 1): ?>
                                             <?php if ($step5 && $meterBillDone && $latestBillPaid && $firstBillPaid): ?>
