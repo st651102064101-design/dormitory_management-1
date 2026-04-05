@@ -361,19 +361,22 @@ $buildHeaderAttributes = static function (array $attributes): string {
   align-items: center;
   gap: 0.45rem;
   flex-wrap: nowrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   overflow-x: auto;
   overflow-y: hidden;
+  min-width: 0;
   max-width: 100%;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: rgba(148, 163, 184, 0.45) transparent;
+  scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
+  padding-bottom: 2px;
+  cursor: grab;
 }
 .quick-actions::-webkit-scrollbar {
   height: 4px;
 }
 .quick-actions::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.45);
+  background: rgba(148, 163, 184, 0.55);
   border-radius: 999px;
 }
 .quick-actions::-webkit-scrollbar-track {
@@ -730,5 +733,71 @@ body[data-theme="light"] .sidebar-toggle-btn:hover {
     e.preventDefault();
     window.location.href = target;
   });
+})();
+
+// Drag-to-scroll for quick-actions nav
+(function() {
+  var nav = document.querySelector('.quick-actions');
+  if (!nav) return;
+  var isDown = false, startX, scrollLeft;
+  nav.addEventListener('mousedown', function(e) {
+    if (e.target.closest('a, button')) return;
+    isDown = true;
+    nav.style.cursor = 'grabbing';
+    startX = e.pageX - nav.offsetLeft;
+    scrollLeft = nav.scrollLeft;
+  });
+  document.addEventListener('mouseup', function() {
+    isDown = false;
+    if (nav) nav.style.cursor = 'grab';
+  });
+  nav.addEventListener('mousemove', function(e) {
+    if (!isDown) return;
+    e.preventDefault();
+    var x = e.pageX - nav.offsetLeft;
+    nav.scrollLeft = scrollLeft - (x - startX);
+  });
+  nav.addEventListener('mouseleave', function() {
+    isDown = false;
+    nav.style.cursor = 'grab';
+  });
+})();
+
+// Drag-to-scroll for filter bars (all pages)
+(function() {
+  function initFilterDrag(el) {
+    if (!el || el._dragInit) return;
+    el._dragInit = true;
+    var isDown = false, startX, scrollLeft;
+    el.addEventListener('mousedown', function(e) {
+      if (e.target.closest('a, button, input, select')) return;
+      isDown = true;
+      el.style.cursor = 'grabbing';
+      startX = e.pageX - el.offsetLeft;
+      scrollLeft = el.scrollLeft;
+    });
+    document.addEventListener('mouseup', function() {
+      isDown = false;
+      if (el) el.style.cursor = '';
+    });
+    el.addEventListener('mousemove', function(e) {
+      if (!isDown) return;
+      e.preventDefault();
+      var x = e.pageX - el.offsetLeft;
+      el.scrollLeft = scrollLeft - (x - startX);
+    });
+    el.addEventListener('mouseleave', function() {
+      isDown = false;
+      el.style.cursor = '';
+    });
+  }
+  function attachFilterBars() {
+    document.querySelectorAll('.ctr-filter-bar, .wiz-filter-bar, .expense-filter-tabs, .payment-filter-tabs').forEach(initFilterDrag);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachFilterBars);
+  } else {
+    attachFilterBars();
+  }
 })();
 </script>

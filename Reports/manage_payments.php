@@ -2534,7 +2534,10 @@ $filterRoomOptions = array_values($filterRoomOptions);
       /* ===== Payment Controls Row ===== */
       .payment-controls-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
       /* ===== Payment Filter Tabs ===== */
-      .payment-filter-tabs { display: flex; flex-wrap: wrap; gap: 0.4rem; flex: 1; margin-bottom: 0; }
+      .payment-filter-tabs { display: flex; flex-wrap: nowrap; gap: 0.4rem; flex: 1; min-width: 0; margin-bottom: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.4) transparent; cursor: grab; padding-bottom: 2px; }
+      .payment-filter-tabs::-webkit-scrollbar { height: 4px; }
+      .payment-filter-tabs::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.45); border-radius: 999px; }
+      .payment-filter-tabs::-webkit-scrollbar-track { background: transparent; }
       .payment-filter-tab { padding: 0.45rem 1rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.6); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.4rem; }
       .payment-filter-tab:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.9); }
       .payment-filter-tab.active { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); color: #a5b4fc; }

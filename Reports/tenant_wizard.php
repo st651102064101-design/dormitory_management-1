@@ -134,6 +134,7 @@ try {
             c.ctr_start,
             c.ctr_end,
             c.ctr_status,
+            c.ctr_deposit,
             tw.id as workflow_id,
             tw.ctr_id as workflow_ctr_id,
             tw.current_step,
@@ -246,7 +247,12 @@ try {
                             SELECT COUNT(*) FROM signature_logs sl
                             WHERE sl.contract_id = COALESCE(c.ctr_id, tw.ctr_id)
                               AND sl.signer_type = 'tenant'
-                        ) AS has_tenant_signature
+                        ) AS has_tenant_signature,
+                        tm.term_date,
+                        tm.bank_name,
+                        tm.bank_account_name,
+                        tm.bank_account_number,
+                        COALESCE(dr.refund_confirmed, 0) AS refund_confirmed
         FROM booking b
         INNER JOIN tenant t ON b.tnt_id = t.tnt_id
         LEFT JOIN (
@@ -302,6 +308,20 @@ try {
                 GROUP BY ctr_id
             ) cr2 ON cr1.checkin_id = cr2.latest_checkin_id
         ) cr ON c.ctr_id = cr.ctr_id
+        LEFT JOIN (
+            SELECT tm1.ctr_id, tm1.term_date, tm1.bank_name, tm1.bank_account_name, tm1.bank_account_number
+            FROM termination tm1
+            INNER JOIN (
+                SELECT ctr_id, MAX(term_id) AS latest_id
+                FROM termination
+                GROUP BY ctr_id
+            ) tm2 ON tm1.term_id = tm2.latest_id
+        ) tm ON c.ctr_id = tm.ctr_id
+        LEFT JOIN (
+            SELECT dr.ctr_id,
+                   MAX(CASE WHEN dr.refund_status = '1' THEN 1 ELSE 0 END) AS refund_confirmed
+            FROM deposit_refund dr GROUP BY dr.ctr_id
+        ) dr ON c.ctr_id = dr.ctr_id
                                 WHERE (
                                             tw.id IS NULL
                                             OR tw.completed = 0
@@ -321,7 +341,6 @@ try {
                                           )
                                           AND COALESCE(c3.tnt_id, '') <> COALESCE(b.tnt_id, '')
                                     )
-                                        " . $completionCondition . "
         ORDER BY CAST(r.room_number AS UNSIGNED) ASC";
     
     $stmt = $conn->query($sql);
@@ -683,15 +702,24 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
         /* === Filter Buttons === */
         .wiz-filter-bar {
-            display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap;
+            display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: nowrap;
+            overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch;
+            min-width: 0; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.4) transparent;
+            cursor: grab; padding-bottom: 2px;
             animation: wizFadeSlideUp 0.7s ease-out 0.2s both;
         }
+        .wiz-filter-bar::-webkit-scrollbar { height: 4px; }
+        .wiz-filter-bar::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.45); border-radius: 999px; }
+        .wiz-filter-bar::-webkit-scrollbar-track { background: transparent; }
         .wiz-filter-btn {
             padding: 0.7rem 1.5rem;
             border-radius: 12px;
             text-decoration: none;
             font-weight: 600;
             cursor: pointer;
+            font-family: inherit;
+            font-size: 1rem;
+            background-origin: border-box;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             border: 2px solid transparent;
             position: relative;
@@ -1811,10 +1839,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
                 <!-- Completion Status Filter Buttons -->
                 <div class="wiz-filter-bar">
-                    <a href="<?php echo htmlspecialchars($completedZeroHref, ENT_QUOTES, 'UTF-8'); ?>" class="wiz-filter-btn pending-filter <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'active' : ''; ?>">⏳ ยังไม่ครบ 5 ขั้นตอน</a>
-                    <?php if ($hasCompletedTenants): ?>
-                    <a href="<?php echo htmlspecialchars($completedOneHref, ENT_QUOTES, 'UTF-8'); ?>" class="wiz-filter-btn complete-filter <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'active' : ''; ?>">✅ ครบ 5 ขั้นตอนแล้ว</a>
-                    <?php endif; ?>
+                    <button type="button" id="wizBtn0" onclick="wizFilter(0)" class="wiz-filter-btn pending-filter <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'active' : ''; ?>">⏳ ยังไม่ครบ 5 ขั้นตอน</button>
+                    <button type="button" id="wizBtn1" onclick="wizFilter(1)" class="wiz-filter-btn complete-filter <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'active' : ''; ?>"<?php echo $hasCompletedTenants ? '' : ' style="display:none;"'; ?>>✅ ครบ 5 ขั้นตอนแล้ว</button>
                     <?php if ($meterPendingBadgeCount > 0): ?>
                     <a href="manage_utility.php" class="wiz-meter-alert" title="ไปจดมิเตอร์">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
@@ -2098,8 +2124,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                     }
                                 }
 
-                                // ถ้าผู้เช่าแจ้งยกเลิกสัญญา — override step5 เป็น animation แจ้งยกเลิก
-                                if ($isCancelPending) {
+                                // ถ้าผู้เช่าแจ้งยกเลิกสัญญา — override step5 เฉพาะตอนบิลยังไม่ครบ
+                                if ($isCancelPending && $step5CircleClass !== 'completed') {
                                     $step5CircleClass = 'cancel-pending';
                                     $step5CircleLabel = '<svg class="cancel-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
                                         . '<circle class="ca-ring" cx="12" cy="12" r="9" stroke="#f87171" stroke-width="2.5" stroke-dasharray="14 42" stroke-linecap="round"/>'
@@ -2123,8 +2149,9 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                     // Only go to step 4 if step 3 (contract) is actually completed
                                     $currentStep = max($currentStep, 4);
                                 }
+                                $isRowCompleted = !$isCancelPending && $step4 && $meterBillDone && $firstBillPaid && $latestBillPaid;
                                 ?>
-                                <tr<?php if ($isCancelPending): ?> style="background:rgba(239,68,68,0.05)!important;border-left:3px solid rgba(239,68,68,0.45);"<?php endif; ?>>
+                                <tr data-wiz-group="<?php echo $isRowCompleted ? 1 : 0; ?>"<?php if ($isCancelPending): ?> style="background:rgba(239,68,68,0.05)!important;border-left:3px solid rgba(239,68,68,0.45);"<?php endif; ?>>
                                     <td data-label="ผู้เช่า">
                                         <div class="tenant-info">
                                             <span class="tenant-name"><?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?></span>
@@ -2162,12 +2189,50 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                         </div>
                                     </td>
                                     <td data-label="ขั้นตอนถัดไป">
-                                        <?php if ($isCancelPending): ?>
+                                        <?php if ($isCancelPending):
+                                              $ctrIdCancel = (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0);
+                                              $termDateDisplay = !empty($tenant['term_date']) ? thaiDate($tenant['term_date']) : '-';
+                                              $refundDone = (int)($tenant['refund_confirmed'] ?? 0) === 1;
+                                              $bankName = $tenant['bank_name'] ?? '';
+                                              $bankAccName = $tenant['bank_account_name'] ?? '';
+                                              $bankAccNum = $tenant['bank_account_number'] ?? '';
+                                              $depositAmt = (int)($tenant['ctr_deposit'] ?? 0);
+                                              $hasBankInfo = !empty($bankName) || !empty($bankAccName) || !empty($bankAccNum);
+                                              $needsRefund = $depositAmt > 0;
+                                              $billsComplete = $firstBillPaid && $latestBillPaid;
+                                        ?>
                                             <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0.4rem;">
                                                 <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.7rem;border-radius:20px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);color:#f87171;font-size:0.82rem;font-weight:700;">
-                                                    ⚠ ผู้เช่าแจ้งยกเลิกสัญญา
+                                                    ⚠ ผู้เช่าแจ้งยกเลิกสัญญา<?php if ($termDateDisplay !== '-'): ?>&nbsp;<span style="font-weight:400;opacity:0.8;">(ย้ายออก <?php echo htmlspecialchars($termDateDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span><?php endif; ?>
                                                 </div>
-                                                <a href="manage_contracts.php?status=notifying&ctr_id=<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>" style="font-size:0.78rem;color:#60a5fa;text-decoration:none;font-weight:600;">จัดการสัญญา →</a>
+                                                <?php if (!$billsComplete): ?>
+                                                <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(220,38,38,0.6);background:rgba(220,38,38,0.1);color:#dc2626;font-size:0.78rem;font-weight:600;">
+                                                    ⚠️ ยังชำระไม่ครบ ต้องชำระให้เสร็จก่อน
+                                                </div>
+                                                <?php else: ?>
+                                                <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;">
+                                                    <?php if ($needsRefund && !$hasBankInfo): ?>
+                                                    <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(245,158,11,0.55);background:rgba(245,158,11,0.1);color:#fbbf24;font-size:0.78rem;font-weight:600;">
+                                                        ⚠️ ยังไม่มีบัญชีธนาคาร
+                                                    </div>
+                                                    <?php elseif ($needsRefund && !$refundDone): ?>
+                                                    <button type="button"
+                                                        onclick="openRefundModal(<?php echo $ctrIdCancel; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccNum), ENT_QUOTES, 'UTF-8'); ?>, <?php echo $depositAmt; ?>)"
+                                                        style="font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(251,191,36,0.5);background:rgba(251,191,36,0.1);color:#fbbf24;font-weight:600;cursor:pointer;">
+                                                        💰 คืนเงินมัดจำก่อน
+                                                    </button>
+                                                    <?php elseif ($needsRefund && $refundDone): ?>
+                                                    <span style="font-size:0.78rem;color:#4ade80;font-weight:600;">✓ คืนเงินมัดจำแล้ว</span>
+                                                    <?php endif; ?>
+                                                    <?php if (!$needsRefund || ($needsRefund && $refundDone)): ?>
+                                                    <button type="button"
+                                                        onclick="confirmCancelContract(<?php echo $ctrIdCancel; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, this)"
+                                                        style="font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:16px;border:1.5px solid #dc2626;background:#fee2e2;color:#dc2626;font-weight:600;cursor:pointer;">
+                                                        ✅ ยืนยันยกเลิกสัญญา
+                                                    </button>
+                                                    <?php endif; ?>
+                                                </div>
+                                                <?php endif; ?>
                                             </div>
                                         <?php elseif ($tenant['workflow_id'] === null): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['bkg_date'])), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันการชำระการจอง</button>
@@ -2293,6 +2358,11 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                    <div id="wizFilterEmptyState" style="display:none;" class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                        <h3 id="wizFilterEmptyTitle">ไม่มีรายการในกลุ่มนี้</h3>
+                        <p id="wizFilterEmptyMsg">ยังไม่มีผู้เช่าที่ผ่านครบ 5 ขั้นตอน</p>
+                    </div>
                     </div>
                 <?php else: ?>
                     <div class="empty-state">
@@ -4081,6 +4151,172 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         }
     }
 
+    // === ยืนยันยกเลิกสัญญา (ctr_status → 1) ===
+    async function confirmCancelContract(ctrId, tntName, btn) {
+        let confirmed = false;
+        const msg = `ยืนยันการยกเลิกสัญญาของ "${tntName}" หรือไม่?\n\nการดำเนินการนี้จะเปลี่ยนสถานะสัญญาเป็น "ยกเลิกแล้ว" และไม่สามารถย้อนกลับได้`;
+        if (typeof showConfirmDialog === 'function') {
+            confirmed = await showConfirmDialog('ยืนยันยกเลิกสัญญา', msg, 'delete');
+        } else {
+            confirmed = confirm(msg);
+        }
+        if (!confirmed) return;
+
+        if (btn) { btn.disabled = true; btn.textContent = 'กำลังดำเนินการ...'; }
+
+        try {
+            const fd = new FormData();
+            fd.append('ctr_id', ctrId);
+            fd.append('ctr_status', '1');
+
+            const res = await fetch('../Manage/update_contract_status.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: fd
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                if (typeof showSuccessToast === 'function') showSuccessToast('✅ ยกเลิกสัญญาเรียบร้อยแล้ว');
+                else alert('ยกเลิกสัญญาเรียบร้อยแล้ว');
+                refreshWizardTable();
+            } else if (data.need_refund) {
+                if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันยกเลิกสัญญา'; }
+                if (typeof showErrorToast === 'function') showErrorToast('⚠️ ' + data.error);
+                else alert(data.error);
+            } else {
+                if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันยกเลิกสัญญา'; }
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'ไม่สามารถยกเลิกสัญญาได้'));
+                else alert(data.error || 'ไม่สามารถยกเลิกสัญญาได้');
+            }
+        } catch (err) {
+            console.error(err);
+            if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันยกเลิกสัญญา'; }
+            if (typeof showErrorToast === 'function') showErrorToast('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        }
+    }
+
+    // === Modal คืนเงินมัดจำ ===
+    (function() {
+        // สร้าง modal ครั้งเดียว
+        const modalEl = document.createElement('div');
+        modalEl.id = '_refundModal';
+        modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;';
+        modalEl.innerHTML = `
+            <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:1.75rem;width:min(460px,92vw);position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+                <button onclick="closeRefundModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+                <h3 id="_rfTitle" style="margin:0 0 1rem;font-size:1.1rem;color:#0f172a;">💰 คืนเงินมัดจำ</h3>
+                <div id="_rfBankInfo" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:0.85rem 1rem;margin-bottom:1rem;">
+                    <div style="font-size:0.8rem;font-weight:700;color:#0369a1;margin-bottom:0.5rem;">🏦 บัญชีรับคืนเงินมัดจำที่ระบุไว้</div>
+                    <div id="_rfBankName" style="font-size:0.88rem;color:#0c4a6e;margin-bottom:0.2rem;"></div>
+                    <div id="_rfBankAccName" style="font-size:0.88rem;color:#0c4a6e;margin-bottom:0.2rem;"></div>
+                    <div id="_rfBankAccNum" style="font-size:1rem;font-weight:700;color:#0369a1;letter-spacing:0.04em;"></div>
+                </div>
+                <div id="_rfDepositRow" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:0.65rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;">
+                    <span style="font-size:0.85rem;color:#854d0e;font-weight:600;">💎 ยอดเงินมัดจำ</span>
+                    <span id="_rfDepositAmt" style="font-size:1.05rem;font-weight:700;color:#b45309;"></span>
+                </div>
+                <div style="margin-bottom:0.9rem;">
+                    <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">ยอดหักค่าเสียหาย (บาท)</label>
+                    <input type="number" id="_rfDeduct" min="0" value="0" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
+                </div>
+                <div style="margin-bottom:0.9rem;">
+                    <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">เหตุผลหัก (ถ้ามี)</label>
+                    <input type="text" id="_rfReason" placeholder="-" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
+                </div>
+                <div id="_rfSaveArea" style="display:flex;gap:0.6rem;margin-top:1.1rem;">
+                    <button id="_rfSaveBtn" onclick="doSaveRefund()" style="flex:1;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">บันทึกข้อมูลคืนเงิน</button>
+                    <button onclick="closeRefundModal()" style="padding:0.65rem 1rem;border-radius:12px;border:1px solid #e2e8f0;background:none;color:#64748b;cursor:pointer;">ยกเลิก</button>
+                </div>
+                <div id="_rfConfirmArea" style="display:none;margin-top:1rem;">
+                    <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว กด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อโอนเงินคืนผู้เช่าเรียบร้อย</p>
+                    <button onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">✓ ยืนยันโอนเงินแล้ว</button>
+                </div>
+            </div>`;
+        document.body.appendChild(modalEl);
+
+        modalEl.addEventListener('click', function(e) { if (e.target === modalEl) closeRefundModal(); });
+    })();
+
+    var _rfCtrId = 0;
+
+    function openRefundModal(ctrId, tntName, roomNumber, bankName, bankAccName, bankAccNum, depositAmt) {
+        _rfCtrId = ctrId;
+        document.getElementById('_rfTitle').textContent = '💰 คืนเงินมัดจำ — ห้อง ' + (roomNumber || '') + ' (' + (tntName || '') + ')';
+        document.getElementById('_rfDeduct').value = '0';
+        document.getElementById('_rfReason').value = '';
+        document.getElementById('_rfSaveArea').style.display = 'flex';
+        document.getElementById('_rfConfirmArea').style.display = 'none';
+        // Bank info — แสดงเสมอ ถ้าไม่มีข้อมูลแสดง "ไม่ระบุบัญชี"
+        const bankInfoEl = document.getElementById('_rfBankInfo');
+        document.getElementById('_rfBankName').textContent = bankName || '—';
+        document.getElementById('_rfBankAccName').textContent = bankAccName || '—';
+        document.getElementById('_rfBankAccNum').textContent = bankAccNum || '—';
+        bankInfoEl.style.display = 'block';
+        // Deposit amount
+        const depositRow = document.getElementById('_rfDepositRow');
+        if (depositAmt && depositAmt > 0) {
+            document.getElementById('_rfDepositAmt').textContent = Number(depositAmt).toLocaleString('th-TH') + ' บาท';
+            depositRow.style.display = 'flex';
+        } else {
+            depositRow.style.display = 'none';
+        }
+        const modal = document.getElementById('_refundModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeRefundModal() {
+        document.getElementById('_refundModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    async function doSaveRefund() {
+        const btn = document.getElementById('_rfSaveBtn');
+        const orig = btn.textContent;
+        btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+        const fd = new FormData();
+        fd.append('action', 'create');
+        fd.append('ctr_id', _rfCtrId);
+        fd.append('deduction_amount', document.getElementById('_rfDeduct').value || '0');
+        fd.append('deduction_reason', document.getElementById('_rfReason').value || '');
+        try {
+            const res = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd });
+            const data = await res.json();
+            if (data.success) {
+                if (typeof showSuccessToast === 'function') showSuccessToast('✅ บันทึกข้อมูลคืนเงินแล้ว');
+                document.getElementById('_rfSaveArea').style.display = 'none';
+                document.getElementById('_rfConfirmArea').style.display = 'block';
+            } else {
+                btn.disabled = false; btn.textContent = orig;
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
+                else alert(data.error || 'เกิดข้อผิดพลาด');
+            }
+        } catch(e) { btn.disabled = false; btn.textContent = orig; if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); }
+    }
+
+    async function doConfirmRefund() {
+        const ok = typeof showConfirmDialog === 'function'
+            ? await showConfirmDialog('ยืนยันการคืนเงิน', 'ยืนยันว่าโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'success')
+            : confirm('ยืนยันว่าโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
+        if (!ok) return;
+        const fd = new FormData();
+        fd.append('action', 'confirm');
+        fd.append('ctr_id', _rfCtrId);
+        try {
+            const res = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd });
+            const data = await res.json();
+            if (data.success) {
+                if (typeof showSuccessToast === 'function') showSuccessToast('✅ ยืนยันคืนเงินมัดจำเรียบร้อย');
+                closeRefundModal();
+                refreshWizardTable();
+            } else {
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
+                else alert(data.error || 'เกิดข้อผิดพลาด');
+            }
+        } catch(e) { if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); }
+    }
+
     // === AJAX Wizard Step Submission ===
     function submitWizardStep(formId, closeModalFn) {
         const form = document.getElementById(formId);
@@ -4151,6 +4387,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             const newWrapper = doc.getElementById('wizardTableWrapper');
             if (newWrapper) {
                 wrapper.innerHTML = newWrapper.innerHTML;
+                if (typeof wizFilterApply === 'function') wizFilterApply(window._wizCurrentGroup || 0);
             } else {
                 // Table might have been replaced by empty state
                 const newPanelBody = doc.querySelector('.wizard-panel-body');
@@ -4165,6 +4402,47 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             location.reload();
         });
     }
+
+    // --- Wizard group filter (no page reload) ---
+    var _wizCurrentGroup = <?php echo (isset($_GET['completed']) && (int)$_GET['completed'] === 1) ? 1 : 0; ?>;
+    window._wizCurrentGroup = _wizCurrentGroup;
+
+    function wizFilterApply(group) {
+        var rows = document.querySelectorAll('#wizardTableWrapper tr[data-wiz-group]');
+        var visible = 0;
+        rows.forEach(function(row) {
+            var match = parseInt(row.getAttribute('data-wiz-group'), 10) === group;
+            row.style.display = match ? '' : 'none';
+            if (match) visible++;
+        });
+        var emptyEl = document.getElementById('wizFilterEmptyState');
+        if (emptyEl) emptyEl.style.display = visible === 0 ? '' : 'none';
+    }
+
+    function wizFilter(group) {
+        window._wizCurrentGroup = group;
+        var btn0 = document.getElementById('wizBtn0');
+        var btn1 = document.getElementById('wizBtn1');
+        if (btn0) { btn0.classList.toggle('active', group === 0); }
+        if (btn1) {
+            var hasCompleted = document.querySelectorAll('#wizardTableWrapper tr[data-wiz-group="1"]').length > 0;
+            btn1.style.display = hasCompleted ? '' : 'none';
+            btn1.classList.toggle('active', group === 1);
+        }
+        var emptyTitle = document.getElementById('wizFilterEmptyTitle');
+        var emptyMsg   = document.getElementById('wizFilterEmptyMsg');
+        if (emptyTitle) emptyTitle.textContent = group === 1 ? 'ยังไม่มีผู้เช่าที่ครบ 5 ขั้นตอน' : 'ไม่มีรายการที่รอดำเนินการ';
+        if (emptyMsg)   emptyMsg.textContent   = group === 1 ? 'ผู้เช่าที่ผ่านครบ 5 ขั้นตอนแล้วจะแสดงที่นี่' : 'ผู้เช่าทุกคนผ่านครบ 5 ขั้นตอนแล้ว';
+        wizFilterApply(group);
+        var url = new URL(window.location.href);
+        url.searchParams.set('completed', group);
+        history.replaceState(null, '', url.toString());
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        wizFilter(_wizCurrentGroup);
+    });
+    // --- end wizard filter ---
 
     // Submit checkin form via AJAX (with validation)
     function validateAndSubmitCheckinAjax() {

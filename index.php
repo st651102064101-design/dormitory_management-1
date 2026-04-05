@@ -1563,10 +1563,25 @@ try {
         }
 
         /* ===== NEWS CARDS ===== */
+        .news-carousel-wrapper {
+            overflow: hidden;
+            position: relative;
+        }
         .news-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            display: flex;
             gap: 2rem;
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+            will-change: transform;
+        }
+        .news-grid .news-card {
+            flex: 0 0 calc((100% - 4rem) / 3);
+            min-width: 0;
+        }
+        @media (max-width: 900px) {
+            .news-grid .news-card { flex: 0 0 calc((100% - 2rem) / 2); }
+        }
+        @media (max-width: 560px) {
+            .news-grid .news-card { flex: 0 0 100%; }
         }
         
         .news-card {
@@ -2832,7 +2847,8 @@ if ($publicTheme === 'light') {
         </div>
         
         <?php if (count($news) > 0): ?>
-        <div class="news-grid">
+        <div class="news-carousel-wrapper">
+        <div class="news-grid" id="newsCarousel">
             <?php foreach ($news as $item): ?>
             <div class="news-card animate-on-scroll">
                 <div class="news-date">
@@ -2844,6 +2860,40 @@ if ($publicTheme === 'light') {
             </div>
             <?php endforeach; ?>
         </div>
+        </div>
+        <script>
+        (function(){
+            var track = document.getElementById('newsCarousel');
+            if (!track) return;
+            // clone cards for seamless loop
+            var cards = Array.from(track.children);
+            if (cards.length <= 1) return;
+            cards.forEach(function(c){ track.appendChild(c.cloneNode(true)); });
+            var current = 0;
+            function cardWidth() {
+                return track.children[0].getBoundingClientRect().width;
+            }
+            function gap() {
+                var style = getComputedStyle(track);
+                return parseFloat(style.gap) || 32;
+            }
+            function slide() {
+                current++;
+                var total = cards.length;
+                var cw = cardWidth() + gap();
+                track.style.transition = 'transform 0.6s cubic-bezier(0.4,0,0.2,1)';
+                track.style.transform = 'translateX(-' + (current * cw) + 'px)';
+                if (current >= total) {
+                    setTimeout(function(){
+                        track.style.transition = 'none';
+                        current = 0;
+                        track.style.transform = 'translateX(0)';
+                    }, 650);
+                }
+            }
+            setInterval(slide, 3000);
+        })();
+        </script>
         
         <div class="view-all-wrapper">
             <a href="Public/news.php" class="btn btn-secondary">ดูข่าวทั้งหมด →</a>

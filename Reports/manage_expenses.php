@@ -1536,9 +1536,20 @@ try {
         gap: 0.4rem;
         padding: 0;
         margin: 0;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         flex: 1;
+        min-width: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148,163,184,0.4) transparent;
+        cursor: grab;
+        padding-bottom: 2px;
       }
+      .expense-filter-tabs::-webkit-scrollbar { height: 4px; }
+      .expense-filter-tabs::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.45); border-radius: 999px; }
+      .expense-filter-tabs::-webkit-scrollbar-track { background: transparent; }
       .expense-filter-tab {
         display: inline-flex;
         align-items: center;

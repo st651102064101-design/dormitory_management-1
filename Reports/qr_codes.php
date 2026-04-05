@@ -25,7 +25,10 @@ try {
         $pdo->exec("ALTER TABLE `contract` ADD UNIQUE KEY `access_token_unique` (`access_token`)");
     }
 
-    $pdo->exec("UPDATE `contract` SET `access_token` = MD5(CONCAT(ctr_id, '-', tnt_id, '-', room_id, '-', NOW(), '-', RAND())) WHERE `access_token` IS NULL AND `ctr_status` IN ('0', '2')");
+    // ล้าง token ของสัญญาที่ยกเลิกแล้ว เพื่อป้องกันคนเช่าเก่าเข้าถึง
+    $pdo->exec("UPDATE `contract` SET `access_token` = NULL WHERE `ctr_status` = '1' AND `access_token` IS NOT NULL");
+
+    $pdo->exec("UPDATE `contract` SET `access_token` = MD5(CONCAT(ctr_id, '-', tnt_id, '-', room_id, '-', NOW(), '-', RAND())) WHERE `access_token` IS NULL AND `ctr_status` = '0'");
     
     $stmt = $pdo->query(" 
         SELECT c.*, 
@@ -36,7 +39,7 @@ try {
         JOIN tenant t ON c.tnt_id = t.tnt_id
         JOIN room r ON c.room_id = r.room_id
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-        WHERE c.ctr_status IN ('0', '2')
+        WHERE c.ctr_status = '0'
           AND NOT EXISTS (
               SELECT 1
               FROM contract newer

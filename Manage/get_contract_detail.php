@@ -25,6 +25,7 @@ try {
     $ctrStmt = $pdo->prepare("
         SELECT
             c.ctr_id, c.ctr_start, c.ctr_end, c.ctr_status,
+            COALESCE(c.ctr_deposit, 0) AS ctr_deposit,
             COALESCE(c.contract_pdf_path, '') AS contract_pdf_path,
             t.tnt_id, t.tnt_name, t.tnt_phone,
             COALESCE(t.tnt_age, '') AS tnt_age,

@@ -61,7 +61,7 @@ if ($filterType !== '') {
 }
 
 // Filter by status (0 = ว่าง, 1 = ไม่ว่าง)
-$filterStatus = $_GET['status'] ?? '';
+$filterStatus = $_GET['status'] ?? '0';
 if ($filterStatus !== '') {
     $rooms = array_filter($rooms, fn($r) => (string)$r['room_status'] === $filterStatus);
     $rooms = array_values($rooms); // reindex array

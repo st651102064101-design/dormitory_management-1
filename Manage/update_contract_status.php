@@ -134,11 +134,24 @@ try {
         }
 
         if ($depositAmount > 0) {
-            $refundConfirmedStmt = $pdo->prepare("
-                SELECT refund_id FROM deposit_refund
-                WHERE ctr_id = ? AND refund_status = '1'
-                LIMIT 1
-            ");
+            // ตรวจว่ามีข้อมูลบัญชีธนาคารใน termination
+            $bankInfoStmt = $pdo->prepare('SELECT bank_name, bank_account_name, bank_account_number FROM termination WHERE ctr_id = ? ORDER BY term_id DESC LIMIT 1');
+            $bankInfoStmt->execute([$ctr_id]);
+            $bankInfo = $bankInfoStmt->fetch(PDO::FETCH_ASSOC);
+            $hasBankInfo = $bankInfo && (!empty($bankInfo['bank_name']) || !empty($bankInfo['bank_account_name']) || !empty($bankInfo['bank_account_number']));
+            if (!$hasBankInfo) {
+                $errorMsg = 'ไม่สามารถยกเลิกสัญญาได้ เนื่องจากยังไม่มีข้อมูลบัญชีธนาคารสำหรับคืนเงินมัดจำ';
+                if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
+                    header('Content-Type: application/json');
+                    echo json_encode(['success' => false, 'error' => $errorMsg]);
+                    exit;
+                }
+                $_SESSION['error'] = $errorMsg;
+                header('Location: ../Reports/manage_contracts.php');
+                exit;
+            }
+
+            $refundConfirmedStmt = $pdo->prepare("SELECT refund_id FROM deposit_refund WHERE ctr_id = ? AND refund_status = '1' LIMIT 1");
             $refundConfirmedStmt->execute([$ctr_id]);
             $refundConfirmed = $refundConfirmedStmt->fetch(PDO::FETCH_ASSOC);
 
@@ -160,6 +173,11 @@ try {
 
     $updateCtr = $pdo->prepare('UPDATE contract SET ctr_status = ? WHERE ctr_id = ?');
     $updateCtr->execute([$ctr_status, $ctr_id]);
+
+    // ถ้ายกเลิกสัญญา → ล้าง access_token เพื่อป้องกันคนเช่าเก่าเข้าถึงผ่าน QR Code
+    if ($ctr_status === '1') {
+        $pdo->prepare('UPDATE contract SET access_token = NULL WHERE ctr_id = ?')->execute([$ctr_id]);
+    }
 
     $room_id = (int)$contract['room_id'];
     $tnt_id = $contract['tnt_id'] ?? '';

@@ -534,11 +534,22 @@ try {
       /* --- Status filter bar --- */
       .ctr-filter-bar {
         display: flex;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
         gap: 0.5rem;
         margin-bottom: 1.25rem;
         align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        min-width: 0;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(148,163,184,0.4) transparent;
+        cursor: grab;
+        padding-bottom: 2px;
       }
+      .ctr-filter-bar::-webkit-scrollbar { height: 4px; }
+      .ctr-filter-bar::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.45); border-radius: 999px; }
+      .ctr-filter-bar::-webkit-scrollbar-track { background: transparent; }
       .ctr-filter-pill {
         display: inline-flex;
         align-items: center;
@@ -1072,7 +1083,8 @@ try {
                           <th style="padding:0.5rem 0.75rem; text-align:right; white-space:nowrap;">มัดจำ</th>
                           <th style="padding:0.5rem 0.75rem; text-align:center; white-space:nowrap;">วันครบกำหนด</th>
                           <th style="padding:0.5rem 0.75rem; text-align:center; white-space:nowrap;">บัญชีรับเงิน</th>
-                          <th style="padding:0.5rem 0.75rem; text-align:center; white-space:nowrap;">สถานะ</th>
+                          <th style="padding:0.5rem 0.75rem; text-align:center; white-space:nowrap;">สถานะสัญญา</th>
+                          <th style="padding:0.5rem 0.75rem; text-align:center; white-space:nowrap;">สถานะคืนเงิน</th>
                           <th style="padding:0.5rem 0.75rem; text-align:center;"></th>
                         </tr>
                       </thead>
@@ -1116,6 +1128,9 @@ try {
                             <?php else: ?>
                               <span style="color:#b45309; font-size:0.82rem;">⚠️ ยังไม่มีบัญชี</span>
                             <?php endif; ?>
+                          </td>
+                          <td style="padding:0.55rem 0.75rem; text-align:center;">
+                            <span style="background:#fef3c7; color:#92400e; border-radius:4px; padding:0.15rem 0.5rem; font-size:0.78rem; font-weight:600;">รอคืนเงินมัดจำ</span>
                           </td>
                           <td style="padding:0.55rem 0.75rem; text-align:center;">
                             <?php if ($rp['refund_status'] === '0'): ?>
@@ -1383,6 +1398,12 @@ try {
                                 $s = isset($contract['ctr_status']) ? (string)$contract['ctr_status'] : '0';
                                 $lbl = isset($statusLabels[$s]) ? $statusLabels[$s] : 'N/A';
                                 $col = isset($statusColors[$s]) ? $statusColors[$s] : '#999';
+
+                                // ถ้ายกเลิกสัญญาแล้ว (status=1) แต่ยังไม่ได้คืนเงินมัดจำ → แสดงเป็น "รอคืนเงินมัดจำ"
+                                if ($s === '1' && floatval($contract['ctr_deposit'] ?? 0) > 0 && intval($contract['refund_confirmed'] ?? 0) === 0) {
+                                  $lbl = 'รอคืนเงินมัดจำ';
+                                  $col = '#d97706';
+                                }
 
                                 // แสดงสถานะ "รอเข้าพัก" จากฝั่งผู้เช่าในตาราง
                                 $tenantStatus = isset($contract['tnt_status']) ? (string)$contract['tnt_status'] : '';
@@ -2173,7 +2194,15 @@ try {
     function _fmtMoney(n) {
       return Number(n || 0).toLocaleString('th-TH') + ' ฿';
     }
-    function _ctrStatusInfo(s) {
+    function _ctrStatusInfo(s, data) {
+      // ถ้ายกเลิกแล้ว (1) แต่ยังมีเงินมัดจำที่ยังไม่คืน → แสดง "รอคืนเงินมัดจำ"
+      if (s === '1' && data) {
+        const dep = parseFloat((data.contract && data.contract.ctr_deposit) || 0);
+        const refunded = data.refund && data.refund.refund_status === '1';
+        if (dep > 0 && !refunded) {
+          return { label: 'รอคืนเงินมัดจำ', color: '#f59e0b' };
+        }
+      }
       const map = {
         '0': { label: 'ปกติ',       color: '#22c55e' },
         '1': { label: 'ยกเลิกแล้ว', color: '#ef4444' },
@@ -2319,7 +2348,7 @@ try {
         'สัญญา #' + c.ctr_id + '  ·  ' + (c.type_name || '-') +
         '  ·  ' + _fmtMoney(c.type_price) + '/เดือน';
 
-      const si = _ctrStatusInfo(c.ctr_status);
+      const si = _ctrStatusInfo(c.ctr_status, data);
       const badge = document.getElementById('cdrStatusBadge');
       badge.textContent = si.label;
       badge.style.background  = si.color + '22';

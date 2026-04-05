@@ -3,6 +3,7 @@ session_start();
 require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/../includes/repair_spam_check.php';
+require_once __DIR__ . '/../includes/wizard_helper.php';
 
 if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
@@ -210,43 +211,10 @@ try {
         $pendingRepairs = [];
     }
 
-    // === Wizard: ตัวช่วยผู้เช่าที่ยังค้าง ===
-    try {
-                $wizardStmt = $pdo->query(" 
-                        SELECT COUNT(*) AS incomplete_count
-                        FROM booking b
-                        LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-                        LEFT JOIN contract c ON tw.ctr_id = c.ctr_id
-                        WHERE b.bkg_status != '0'
-                            AND (tw.id IS NULL OR tw.completed = 0)
-                            AND (c.ctr_id IS NULL OR c.ctr_status != '1')
-                ");
-        $wizardPendingCount = (int)($wizardStmt->fetch(PDO::FETCH_ASSOC)['incomplete_count'] ?? 0);
-    } catch (Exception $e) {
-        $wizardPendingCount = 0;
-    }
-
-    try {
-                $wizardItemsStmt = $pdo->query(" 
-                        SELECT b.bkg_id, b.bkg_date,
-                                     COALESCE(t.tnt_name, '') AS tnt_name,
-                                     COALESCE(r.room_number, '-') AS room_number,
-                                     COALESCE(tw.current_step, 0) AS current_step,
-                                     COALESCE(tw.completed, 0) AS completed
-                        FROM booking b
-                        LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
-                        LEFT JOIN room r ON b.room_id = r.room_id
-                        LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-                        LEFT JOIN contract c ON tw.ctr_id = c.ctr_id
-                        WHERE b.bkg_status != '0'
-                            AND (c.ctr_id IS NULL OR c.ctr_status != '1')
-                        ORDER BY CAST(r.room_number AS UNSIGNED) ASC, b.bkg_id DESC
-                        LIMIT 50
-                ");
-        $wizardItems = $wizardItemsStmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-    } catch (Exception $e) {
-        $wizardItems = [];
-    }
+    // === Wizard: ตัวช่วยผู้เช่าที่ยังค้าง — ใช้ query เดียวกับ tenant_wizard.php ===
+    $wizardData = getWizardItems($pdo);
+    $wizardItems = $wizardData['items'];
+    $wizardPendingCount = $wizardData['count'];
 
 } catch (Exception $e) {
     // Keep partial data if some queries succeeded; fallback only for theme.
