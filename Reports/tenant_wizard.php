@@ -97,25 +97,22 @@ try {
     ";
 
     $completionCondition = '';
+    // ครบ 5 ขั้นตอน = checkin + meter + firstBill + latestBill ชำระแล้ว + สัญญา active (ไม่แจ้งยกเลิก)
+    $allStepsDoneCondition = "
+        c.ctr_status = '0'
+        AND cr.checkin_date IS NOT NULL
+        AND cr.checkin_date <> '0000-00-00'
+        AND $firstBillPaidCondition
+        AND $latestBillPaidCondition
+        AND $meterRecordedCondition
+    ";
     if ($completedFilter === 1) {
         $completionCondition = "
-            AND COALESCE(tw.step_5_confirmed, 0) = 1
-            AND cr.checkin_date IS NOT NULL
-            AND cr.checkin_date <> '0000-00-00'
-            AND $firstBillPaidCondition
-            AND $latestBillPaidCondition
-            AND $meterRecordedCondition
+            AND ($allStepsDoneCondition)
         ";
     } else {
         $completionCondition = "
-            AND (
-                COALESCE(tw.step_5_confirmed, 0) = 0
-                OR cr.checkin_date IS NULL
-                OR cr.checkin_date = '0000-00-00'
-                OR NOT ($firstBillPaidCondition)
-                OR NOT ($latestBillPaidCondition)
-                OR NOT ($meterRecordedCondition)
-            )
+            AND NOT ($allStepsDoneCondition)
         ";
     }
     
@@ -456,16 +453,16 @@ try {
             ) cr2 ON cr1.checkin_id = cr2.latest_checkin_id
         ) cr ON c.ctr_id = cr.ctr_id
         WHERE tw.id IS NOT NULL
-          AND tw.completed = 1
                     AND (
                             current_room_contract.ctr_id IS NULL
                             OR c.ctr_id = current_room_contract.ctr_id
                     )
-          AND COALESCE(tw.step_5_confirmed, 0) = 1
+          AND c.ctr_status = '0'
           AND cr.checkin_date IS NOT NULL
           AND cr.checkin_date <> '0000-00-00'
           AND $firstBillPaidCondition
           AND $latestBillPaidCondition
+          AND $meterRecordedCondition
     ");
     $completedCountResult = $completedCountStmt->fetch(PDO::FETCH_ASSOC);
     $hasCompletedTenants = (int)($completedCountResult['completed_count'] ?? 0) > 0;
@@ -984,6 +981,30 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         }
         .step-circle.overdue:hover {
             animation: wizShake 0.4s ease-in-out;
+        }
+        .step-circle.cancel-pending {
+            background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(239,68,68,0.28));
+            color: #f87171;
+            border: 1.5px solid rgba(239,68,68,0.65);
+            box-shadow: 0 0 0 3px rgba(239,68,68,0.15), 0 3px 10px rgba(239,68,68,0.2);
+            animation: cancelPulse 1.8s ease-in-out infinite;
+        }
+        @keyframes cancelPulse {
+            0%, 100% { box-shadow: 0 0 0 3px rgba(239,68,68,0.15), 0 3px 10px rgba(239,68,68,0.2); }
+            50% { box-shadow: 0 0 0 6px rgba(239,68,68,0.28), 0 3px 14px rgba(239,68,68,0.4); }
+        }
+        .cancel-anim {
+            width: 20px; height: 20px;
+            display: block;
+        }
+        .cancel-anim .ca-ring {
+            animation: cancelRingSpin 2s linear infinite;
+            transform-box: fill-box;
+            transform-origin: center;
+        }
+        @keyframes cancelRingSpin {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: -56; }
         }
 
         .wait-spinner {
@@ -2068,7 +2089,24 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                         $step5CircleClass = 'overdue';
                                         $step5CircleLabel = '!';
                                         $step5Tooltip = '5. บิลค้างชำระ';
+                                    } elseif ($meterBillDone && $firstBillPaid && $latestBillPaid) {
+                                        // บิลชำระครบแล้ว แม้ step_5_confirmed = 0
+                                        $step5CircleClass = 'completed';
+                                        $step5CircleLabel = '✓';
+                                        $displayMonth = $latestMonthDisplay !== '-' ? $latestMonthDisplay : $firstBillMonthDisplay;
+                                        $step5Tooltip = '5. ชำระแล้ว (' . $displayMonth . ')';
                                     }
+                                }
+
+                                // ถ้าผู้เช่าแจ้งยกเลิกสัญญา — override step5 เป็น animation แจ้งยกเลิก
+                                if ($isCancelPending) {
+                                    $step5CircleClass = 'cancel-pending';
+                                    $step5CircleLabel = '<svg class="cancel-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
+                                        . '<circle class="ca-ring" cx="12" cy="12" r="9" stroke="#f87171" stroke-width="2.5" stroke-dasharray="14 42" stroke-linecap="round"/>'
+                                        . '<line x1="8" y1="8" x2="16" y2="16" stroke="#f87171" stroke-width="2.2" stroke-linecap="round"/>'
+                                        . '<line x1="16" y1="8" x2="8" y2="16" stroke="#f87171" stroke-width="2.2" stroke-linecap="round"/>'
+                                        . '</svg>';
+                                    $step5Tooltip = '5. แจ้งยกเลิกสัญญาแล้ว';
                                 }
 
                                 // Advance currentStep based on completed steps
@@ -2129,7 +2167,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                 <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.7rem;border-radius:20px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);color:#f87171;font-size:0.82rem;font-weight:700;">
                                                     ⚠ ผู้เช่าแจ้งยกเลิกสัญญา
                                                 </div>
-                                                <a href="manage_contracts.php?ctr_id=<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>" style="font-size:0.78rem;color:#60a5fa;text-decoration:none;font-weight:600;">จัดการสัญญา →</a>
+                                                <a href="manage_contracts.php?status=notifying&ctr_id=<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>" style="font-size:0.78rem;color:#60a5fa;text-decoration:none;font-weight:600;">จัดการสัญญา →</a>
                                             </div>
                                         <?php elseif ($tenant['workflow_id'] === null): ?>
                                             <button type="button" class="action-btn btn-primary" onclick="openBookingModal(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_phone'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['bkg_date'])), ENT_QUOTES, 'UTF-8'); ?>)">ยืนยันการชำระการจอง</button>
@@ -2217,7 +2255,10 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                                 🔍 รอตรวจสอบ<?php echo $wDisp !== '-' ? ' (' . htmlspecialchars($wDisp, ENT_QUOTES, 'UTF-8') . ')' : ''; ?>
                                                             </button>
                                                         <?php endif; ?>
-                                                        <?php if (!$latestBillPaid || !$firstBillPaid): ?>
+                                                        <?php if ($latestBillPaid && $firstBillPaid): ?>
+                                                            <?php $paidMonthDisp = $latestMonthDisplay !== '-' ? $latestMonthDisplay : $firstBillMonthDisplay; ?>
+                                                            <span style="color:#16a34a;font-weight:600;font-size:0.82rem;">✓ ชำระแล้ว (<?php echo htmlspecialchars($paidMonthDisp, ENT_QUOTES, 'UTF-8'); ?>)</span>
+                                                        <?php elseif (!$latestBillPaid || !$firstBillPaid): ?>
                                                             <?php
                                                                 $unpaidDisp = $firstBillUnpaid && !$firstBillWaiting && $firstBillMonthDisplay !== '-'
                                                                     ? $firstBillMonthDisplay
@@ -2225,12 +2266,19 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                                 $unpaidLabel = $firstBillDueReached ? 'รอชำระเงิน' : 'ยังไม่ถึงกำหนด';
                                                                 // ถ้าบิลรอตรวจสอบทั้งหมดอยู่แล้ว ไม่ต้องแสดงซ้ำ
                                                                 $hasUnpaidNonWaiting = ($firstBillUnpaid && !$firstBillWaiting) || ($latestBillUnpaid && !$latestBillWaiting);
+                                                                // ยังไม่มีบิลเลย — จดมิเตอร์แล้วแต่ยังไม่ได้ออกบิล
+                                                                $noBillYet = ($firstExpStatus === '' && $latestExpStatus === '');
                                                             ?>
                                                             <?php if ($hasUnpaidNonWaiting): ?>
                                                                 <button type="button" onclick="openBillingModal(<?php echo $openBillingArgs; ?>)"
                                                                     style="display:inline-flex;align-items:center;gap:0.3rem;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);color:#f59e0b;font-size:0.75rem;font-weight:600;padding:0.25rem 0.65rem;border-radius:12px;cursor:pointer;">
                                                                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="#f59e0b" stroke-width="2.5" stroke-dasharray="28 56" stroke-linecap="round"/></svg>
                                                                     <?php echo $unpaidLabel; ?><?php echo $unpaidDisp !== '' ? ' (' . htmlspecialchars($unpaidDisp, ENT_QUOTES, 'UTF-8') . ')' : ''; ?>
+                                                                </button>
+                                                            <?php elseif ($noBillYet): ?>
+                                                                <button type="button" onclick="openBillingModal(<?php echo $openBillingArgs; ?>)"
+                                                                    style="display:inline-flex;align-items:center;gap:0.3rem;background:rgba(99,102,241,0.15);border:1px solid rgba(99,102,241,0.4);color:#a5b4fc;font-size:0.75rem;font-weight:600;padding:0.25rem 0.65rem;border-radius:12px;cursor:pointer;">
+                                                                    📋 ออกบิลเดือนแรก<?php echo $firstBillMonthDisplay !== '-' ? ' (' . htmlspecialchars($firstBillMonthDisplay, ENT_QUOTES, 'UTF-8') . ')' : ''; ?>
                                                                 </button>
                                                             <?php endif; ?>
                                                         <?php endif; ?>
@@ -2486,6 +2534,34 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             <div class="modal-footer" style="display: flex; gap: 1rem; justify-content: flex-end; padding: 1.5rem 2rem; border-top: 1px solid rgba(255,255,255,0.1);">
                 <button type="button" id="checkinCloseBtn" class="btn-modal btn-modal-secondary" onclick="closeCheckinModal()" style="padding: 0.875rem 1.5rem;">ยกเลิก</button>
                 <button type="button" id="checkinSubmitBtn" class="btn-modal btn-modal-primary" onclick="validateAndSubmitCheckinAjax()" style="padding: 0.875rem 2rem; background: linear-gradient(135deg, #f59e0b, #d97706); font-weight: 600;">🏠 บันทึกเช็คอิน</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slip Review Modal -->
+    <div id="slipReviewModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.82);align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)this.style.display='none';">
+        <div style="background:#1e293b;border-radius:16px;border:1px solid rgba(255,255,255,0.12);max-width:520px;width:100%;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;max-height:95vh;overflow-y:auto;">
+            <div style="display:flex;align-items:center;justify-content:space-between;">
+                <span style="font-weight:700;font-size:1.05rem;color:#f8fafc;">🔍 ตรวจสอบหลักฐานการชำระ</span>
+                <button type="button" onclick="document.getElementById('slipReviewModal').style.display='none'" style="background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+            </div>
+            <!-- info bar -->
+            <div style="display:flex;gap:1.5rem;padding:0.75rem 1rem;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.08);">
+                <div><div style="font-size:0.75rem;color:#94a3b8;">วันที่ชำระ</div><div id="slipReviewDate" style="font-weight:600;color:#f8fafc;font-size:0.95rem;">-</div></div>
+                <div><div style="font-size:0.75rem;color:#94a3b8;">จำนวน</div><div id="slipReviewAmount" style="font-weight:700;color:#4ade80;font-size:1rem;">฿0</div></div>
+            </div>
+            <!-- slip image -->
+            <div style="background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.1);overflow:hidden;min-height:200px;display:flex;align-items:center;justify-content:center;">
+                <img id="slipReviewImg" src="" alt="สลิป" style="display:none;max-width:100%;max-height:60vh;object-fit:contain;border-radius:10px;" onerror="this.style.display='none';document.getElementById('slipReviewEmpty').style.display='flex';">
+                <div id="slipReviewEmpty" style="display:none;flex-direction:column;align-items:center;gap:0.5rem;padding:2rem;color:rgba(148,163,184,0.6);">
+                    <span style="font-size:2.5rem;">🖼</span>
+                    <span style="font-size:0.85rem;">ไม่มีหลักฐานการชำระ</span>
+                </div>
+            </div>
+            <!-- action buttons -->
+            <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
+                <button id="slipReviewRejectBtn" type="button" style="padding:0.6rem 1.4rem;border-radius:8px;border:1px solid rgba(239,68,68,0.5);background:rgba(239,68,68,0.1);color:#f87171;font-size:0.9rem;font-weight:600;cursor:pointer;">✕ ตีกลับ</button>
+                <button id="slipReviewApproveBtn" type="button" style="padding:0.6rem 1.6rem;border-radius:8px;border:none;background:#16a34a;color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;">✓ อนุมัติการชำระ</button>
             </div>
         </div>
     </div>
@@ -2920,11 +2996,21 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
     // Functions สำหรับ Contract Modal (Step 3)
     function showNotSignedToast() {
-        if (typeof showErrorToast === 'function') {
-            showErrorToast('ผู้เช่ายังไม่ได้เซ็นสัญญา กรุณาให้ผู้เช่าเซ็นสัญญาก่อนทำการเช็คอิน');
-        } else {
-            alert('ผู้เช่ายังไม่ได้เซ็นสัญญา กรุณาให้ผู้เช่าเซ็นสัญญาก่อนทำการเช็คอิน');
-        }
+        var existing = document.getElementById('_notSignedToast');
+        if (existing) existing.remove();
+        var el = document.createElement('div');
+        el.id = '_notSignedToast';
+        el.textContent = '🔒 ผู้เช่ายังไม่ได้เซ็นสัญญา กรุณาให้ผู้เช่าเซ็นสัญญาก่อนทำการเช็คอิน';
+        el.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%);' +
+            'background:#ef4444;color:#fff;padding:0.75rem 1.25rem;border-radius:10px;font-size:0.9rem;' +
+            'font-weight:600;box-shadow:0 4px 20px rgba(0,0,0,0.3);z-index:99999;' +
+            'max-width:90vw;text-align:center;opacity:0;transition:opacity 0.25s;pointer-events:none;';
+        document.body.appendChild(el);
+        requestAnimationFrame(function() { el.style.opacity = '1'; });
+        setTimeout(function() {
+            el.style.opacity = '0';
+            setTimeout(function() { el.remove(); }, 300);
+        }, 3500);
     }
 
     function openContractModal(tntId, roomId, bkgId, tntName, roomNumber, typeName, typePrice, bkgCheckinDate, ctrStart, ctrEnd, bookingAmount, ctrId = 0, hasSigned = false, readOnly = false) {
@@ -3144,13 +3230,13 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 const payId    = Number(pay.pay_id    || 0);
                 const amount   = Number(pay.pay_amount || 0);
                 const payStatus = String(pay.pay_status || '0');
+                const canReview = allowReviewAction && payId > 0 && payStatus === '0';
                 const statusBadge = payStatus === '1'
                     ? `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(34,197,94,0.15);color:#4ade80;font-size:0.78rem;font-weight:600;">✓ อนุมัติแล้ว</span>`
-                    : `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.15);color:#fbbf24;font-size:0.78rem;font-weight:600;">⏳ รอตรวจสอบ</span>`;
+                    : canReview
+                        ? `<button type="button" onclick="openSlipReview(${payId},${expenseId},${JSON.stringify(proofFilename)},${JSON.stringify(pay.pay_date_display||'-')},${amount})" title="คลิกเพื่อดูสลิปและอนุมัติ" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.18);color:#fbbf24;font-size:0.78rem;font-weight:600;border:1px solid rgba(245,158,11,0.4);cursor:pointer;transition:background 0.15s,transform 0.1s;" onmouseover="this.style.background='rgba(245,158,11,0.32)'" onmouseout="this.style.background='rgba(245,158,11,0.18)'">🔍 ตรวจสอบ</button>`
+                        : `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.15);color:#fbbf24;font-size:0.78rem;font-weight:600;">⏳ รอตรวจสอบ</span>`;
                 const purpose  = getBillRemarkText(pay.pay_remark, monthText, `ชำระ${title}`);
-                const reviewBtn = allowReviewAction && payId > 0 && payStatus === '0'
-                    ? `<button type="button" onclick="reviewBillPayment(${payId},${expenseId},'1',this)" style="padding:0.4rem 0.9rem;border:none;border-radius:6px;background:#16a34a;color:#fff;cursor:pointer;font-size:0.82rem;font-weight:600;">✓ อนุมัติ</button>`
-                    : '';
                 const proofFilename = String(pay.pay_proof || '').trim();
                 const slipThumb = proofFilename
                     ? (() => {
@@ -3167,7 +3253,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                         <div style="font-weight:700;color:#f8fafc;font-size:0.95rem;">฿${amount.toLocaleString()}</div>
                     </div>
                     <div style="flex:2;min-width:100px;font-size:0.8rem;color:rgba(226,232,240,0.75);">${purpose}</div>
-                    <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">${statusBadge}${reviewBtn ? `<span style="margin-left:0.25rem;">${reviewBtn}</span>` : ''}</div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-shrink:0;">${statusBadge}</div>
                 </div>`;
             }).join('')
             : `<div style="padding:0.85rem;text-align:center;color:rgba(148,163,184,0.7);font-size:0.85rem;">ยังไม่มีรายการชำระ</div>`;
@@ -3284,7 +3370,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                         if (idx > 0) divEl.style.marginTop = '0.85rem';
                         latestBillPaymentsSection.appendChild(divEl);
                         renderBillSection(divId, title, bill, {
-                            allowReviewAction: isLast,
+                            allowReviewAction: true,
                             emptyHint: 'ยังไม่มีรายการชำระ',
                         });
                     });
@@ -3303,28 +3389,91 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             });
     }
 
-    function reviewBillPayment(payId, expId, nextStatus, btnEl) {
-        const actionText = nextStatus === '1' ? 'อนุมัติ' : 'ตีกลับ';
+    function openSlipReview(payId, expId, proofFilename, payDate, amount) {
+        const modal = document.getElementById('slipReviewModal');
+        const slipImg = document.getElementById('slipReviewImg');
+        const slipEmpty = document.getElementById('slipReviewEmpty');
+        const slipDate = document.getElementById('slipReviewDate');
+        const slipAmount = document.getElementById('slipReviewAmount');
+        const approveBtn = document.getElementById('slipReviewApproveBtn');
+        const rejectBtn = document.getElementById('slipReviewRejectBtn');
 
-        // ถ้ายังไม่ได้กดยืนยัน ให้เปลี่ยนปุ่มเป็นโหมดยืนยัน
-        if (btnEl && btnEl.dataset.confirming !== 'true') {
-            btnEl.dataset.confirming = 'true';
-            const origText = btnEl.textContent;
-            const origBg   = btnEl.style.background;
-            btnEl.textContent     = `ยืนยัน${actionText}?`;
-            btnEl.style.background = nextStatus === '1' ? '#15803d' : '#c2410c';
-            btnEl.style.outline   = '2px solid #fff';
+        // Set info
+        slipDate.textContent = payDate;
+        slipAmount.textContent = '฿' + Number(amount).toLocaleString();
 
-            // คืนสภาพเดิมถ้าไม่กดภายใน 3 วินาที
-            const timer = setTimeout(() => {
-                btnEl.dataset.confirming = 'false';
-                btnEl.textContent       = origText;
-                btnEl.style.background  = origBg;
-                btnEl.style.outline     = '';
-            }, 3000);
-            btnEl._reviewTimer = timer;
-            return;
+        if (proofFilename) {
+            const url = '/dormitory_management/Public/Assets/Images/Payments/' + encodeURIComponent(proofFilename);
+            slipImg.src = url;
+            slipImg.style.display = 'block';
+            slipEmpty.style.display = 'none';
+        } else {
+            slipImg.style.display = 'none';
+            slipEmpty.style.display = 'flex';
         }
+
+        // Reset buttons
+        approveBtn.disabled = false;
+        approveBtn.textContent = '✓ อนุมัติการชำระ';
+        approveBtn.style.opacity = '1';
+        rejectBtn.disabled = false;
+        rejectBtn.textContent = '✕ ตีกลับ';
+        rejectBtn.style.opacity = '1';
+
+        approveBtn.onclick = () => {
+            approveBtn.disabled = true;
+            approveBtn.textContent = 'กำลังดำเนินการ...';
+            approveBtn.style.opacity = '0.6';
+            rejectBtn.disabled = true;
+            _doReviewBillPayment(payId, expId, '1', () => {
+                document.getElementById('slipReviewModal').style.display = 'none';
+            });
+        };
+        rejectBtn.onclick = () => {
+            rejectBtn.disabled = true;
+            rejectBtn.textContent = 'กำลังดำเนินการ...';
+            rejectBtn.style.opacity = '0.6';
+            approveBtn.disabled = true;
+            _doReviewBillPayment(payId, expId, '2', () => {
+                document.getElementById('slipReviewModal').style.display = 'none';
+            });
+        };
+
+        modal.style.display = 'flex';
+    }
+
+    function _doReviewBillPayment(payId, expId, nextStatus, onDone) {
+        const ctrId = document.getElementById('modal_billing_ctr_id').value;
+        const formData = new URLSearchParams();
+        formData.append('csrf_token', '<?php echo $csrfToken; ?>');
+        formData.append('pay_id', String(payId));
+        formData.append('exp_id', String(expId));
+        formData.append('pay_status', String(nextStatus));
+
+        fetch('../Manage/update_payment_status.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData.toString(),
+        })
+            .then(r => r.json())
+            .then(result => {
+                if (!result?.success) throw new Error(result?.error || 'ไม่สามารถอัปเดตสถานะได้');
+                refreshBillingPayments(ctrId);
+                refreshWizardTable();
+                if (typeof showSuccessToast === 'function') showSuccessToast('อัปเดตสถานะการชำระเรียบร้อย');
+                if (onDone) onDone();
+            })
+            .catch(err => {
+                const approveBtn = document.getElementById('slipReviewApproveBtn');
+                const rejectBtn = document.getElementById('slipReviewRejectBtn');
+                if (approveBtn) { approveBtn.disabled = false; approveBtn.style.opacity = '1'; }
+                if (rejectBtn) { rejectBtn.disabled = false; rejectBtn.style.opacity = '1'; }
+                alert(err.message || 'เกิดข้อผิดพลาด');
+            });
+    }
+
+    function reviewBillPayment(payId, expId, nextStatus, btnEl) {
+        // Legacy direct-call path (used only if called outside openSlipReview)
 
         // กดยืนยันแล้ว — ดำเนินการ
         if (btnEl) {

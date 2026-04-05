@@ -319,11 +319,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
             $waterOld = isset($data['water_old']) ? (int)$data['water_old'] : $prevWaterEnd;
             $elecOld  = isset($data['elec_old'])  ? (int)$data['elec_old']  : $prevElecEnd;
 
+            // ป้องกัน Partial-Save Bug:
+            // กรณีที่อีกฝั่งบันทึกก่อน (เช่น น้ำบันทึกก่อน) ทำให้
+            // utl_elec_start/utl_water_start ใน record ปัจจุบันเป็น NULL
+            // ค่า hidden form field จะเป็น 0 (จาก (int)NULL) → เกิดข้อมูลผิดพลาด
+            // แก้: ถ้า submitted old = 0 แต่ prev month มีค่าจริง → ใช้ prev แทน
+            if ($postTab === 'electric' && $elecOld === 0 && $prevElecEnd > 0 && !$isFirstReading) {
+                $elecOld = $prevElecEnd;
+            }
+            if ($postTab === 'water' && $waterOld === 0 && $prevWaterEnd > 0 && !$isFirstReading) {
+                $waterOld = $prevWaterEnd;
+            }
+            // ตรวจจาก existing record: ถ้า start เป็น NULL/0 แต่ prev มีค่า → override
+            if ($existing) {
+                if ($postTab === 'electric' && (int)($existing['utl_elec_start'] ?? 0) === 0 && $prevElecEnd > 0 && !$isFirstReading) {
+                    $elecOld = $prevElecEnd;
+                }
+                if ($postTab === 'water' && (int)($existing['utl_water_start'] ?? 0) === 0 && $prevWaterEnd > 0 && !$isFirstReading) {
+                    $waterOld = $prevWaterEnd;
+                }
+            }
+
             if ($postTab === 'water') {
                 $waterNew = $waterInput;
                 if ($isFirstReading) {
                     if ($waterNew <= 0) continue; // ห้ามบันทึก 0 สำหรับมิเตอร์ครั้งแรก
                     $waterOld = $waterNew;
+                }
+                // ป้องกัน: ห้ามบันทึกค่าใหม่ต่ำกว่าค่าเดิม (ยกเว้นครั้งแรก)
+                if (!$isFirstReading && $waterNew < $waterOld) {
+                    $skipped++;
+                    continue;
                 }
                 $waterUsed = $waterNew - $waterOld;
                 $waterCost = $isFirstReading ? 0 : calculateWaterCost($waterUsed);
@@ -332,6 +358,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                 if ($isFirstReading) {
                     if ($elecNew <= 0) continue; // ห้ามบันทึก 0 สำหรับมิเตอร์ครั้งแรก
                     $elecOld = $elecNew;
+                }
+                // ป้องกัน: ห้ามบันทึกค่าใหม่ต่ำกว่าค่าเดิม (ยกเว้นครั้งแรก)
+                if (!$isFirstReading && $elecNew < $elecOld) {
+                    $skipped++;
+                    continue;
                 }
                 $elecUsed = $elecNew - $elecOld;
                 $elecCost = $isFirstReading ? 0 : ($elecUsed * $electricRate);
@@ -733,9 +764,24 @@ foreach ($rooms as $room) {
     ];
 
     // เมื่อบันทึกแล้ว ใช้ water_start/elec_start จาก utility record ปัจจุบัน
+    // ถ้า start เป็น NULL หรือ 0 แต่ค่า prev มีค่าจริง → ใช้ค่า prev แทน (ป้องกัน partial-save override)
     if ($hasRealData && !$meterBlocked) {
-        $readings[$room['room_id']]['water_old'] = (int)$current['utl_water_start'];
-        $readings[$room['room_id']]['elec_old'] = (int)$current['utl_elec_start'];
+        $curWaterStart = ($current['utl_water_start'] !== null && (int)$current['utl_water_start'] > 0)
+            ? (int)$current['utl_water_start'] : $water_old_value;
+        $curElecStart  = ($current['utl_elec_start']  !== null && (int)$current['utl_elec_start']  > 0)
+            ? (int)$current['utl_elec_start']  : $elec_old_value;
+        $readings[$room['room_id']]['water_old'] = $curWaterStart;
+        $readings[$room['room_id']]['elec_old']  = $curElecStart;
+
+        // Self-heal: แก้ DB ถ้า start ถูกบันทึกเป็น 0/NULL แต่มีค่า prev ที่ถูกต้อง
+        if ($curWaterStart > 0 && (int)($current['utl_water_start'] ?? 0) === 0) {
+            $pdo->prepare("UPDATE utility SET utl_water_start = ? WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?")
+                ->execute([$curWaterStart, $room['ctr_id'], $month, $year]);
+        }
+        if ($curElecStart > 0 && (int)($current['utl_elec_start'] ?? 0) === 0) {
+            $pdo->prepare("UPDATE utility SET utl_elec_start = ? WHERE ctr_id = ? AND MONTH(utl_date) = ? AND YEAR(utl_date) = ?")
+                ->execute([$curElecStart, $room['ctr_id'], $month, $year]);
+        }
     }
 }
 
@@ -2274,9 +2320,9 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                                     $tooltipMsg = "ยังไม่ได้เช็คอิน";
                                                 }
                                             }
-                                            $waterDisabled = $waterLocked || $r['meter_blocked'];
+                                            $waterDisabled = $waterLocked || ($r['meter_blocked'] && !$r['can_edit_saved']);
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $waterLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['water_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)" <?php echo $waterDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $waterLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['water_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); (function(el){var v=parseInt(el.value,10),old=parseInt(el.dataset.old,10),isFirst=el.dataset.firstReading==='1',errId='meter-err-'+el.dataset.room+'-water'; if(!isFirst&&!isNaN(v)&&v<old){el.style.borderColor='#ef4444';el.style.background='rgba(239,68,68,0.08)';var e=document.getElementById(errId);if(!e){e=document.createElement('div');e.id=errId;e.style.cssText='color:#ef4444;font-size:0.72rem;margin-top:2px;';e.textContent='ค่าใหม่ต้องไม่น้อยกว่าค่าเดิม ('+String(old).padStart(7,'0')+')';el.parentNode.appendChild(e);}}else{el.style.borderColor='';el.style.background='';var e2=document.getElementById(errId);if(e2)e2.remove();}})(this)" <?php echo $waterDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
@@ -2341,9 +2387,9 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                                     $tooltipMsg = "ยังไม่ได้เช็คอิน";
                                                 }
                                             }
-                                            $elecDisabled = $elecLocked || $r['meter_blocked'];
+                                            $elecDisabled = $elecLocked || ($r['meter_blocked'] && !$r['can_edit_saved']);
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $elecLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['elec_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)" <?php echo $elecDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $elecLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['elec_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); (function(el){var v=parseInt(el.value,10),old=parseInt(el.dataset.old,10),isFirst=el.dataset.firstReading==='1',errId='meter-err-'+el.dataset.room+'-electric'; if(!isFirst&&!isNaN(v)&&v<old){el.style.borderColor='#ef4444';el.style.background='rgba(239,68,68,0.08)';var e=document.getElementById(errId);if(!e){e=document.createElement('div');e.id=errId;e.style.cssText='color:#ef4444;font-size:0.72rem;margin-top:2px;';e.textContent='ค่าใหม่ต้องไม่น้อยกว่าค่าเดิม ('+String(old).padStart(5,'0')+')';el.parentNode.appendChild(e);}}else{el.style.borderColor='';el.style.background='';var e2=document.getElementById(errId);if(e2)e2.remove();}})(this)" <?php echo $elecDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
@@ -2748,8 +2794,39 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
     }
 
     function saveMeterAjax(form) {
-        // Sync visual meter → table before saving
-        if (document.getElementById('meterView') && document.getElementById('meterView').style.display !== 'none') {
+        // ตรวจสอบก่อนบันทึก: ห้ามกรอกค่าน้อยกว่าค่าเดิม
+        var hasError = false;
+        form.querySelectorAll('.meter-input[data-old]').forEach(function(inp) {
+            if (inp.disabled) return;
+            var val = inp.value.trim();
+            if (val === '') return;
+            var newVal = parseInt(val, 10);
+            var oldVal = parseInt(inp.dataset.old, 10);
+            var isFirst = inp.dataset.firstReading === '1';
+            if (!isFirst && !isNaN(newVal) && !isNaN(oldVal) && newVal < oldVal) {
+                inp.style.borderColor = '#ef4444';
+                inp.style.background = 'rgba(239,68,68,0.08)';
+                var errId = 'meter-err-' + inp.dataset.room + '-' + inp.dataset.type;
+                var existing = document.getElementById(errId);
+                if (!existing) {
+                    var msg = document.createElement('div');
+                    msg.id = errId;
+                    msg.style.cssText = 'color:#ef4444;font-size:0.72rem;margin-top:2px;';
+                    msg.textContent = 'ค่าใหม่ต้องไม่น้อยกว่าค่าเดิม (' + String(oldVal).padStart(inp.dataset.type==='water'?7:5,'0') + ')';
+                    inp.parentNode.appendChild(msg);
+                }
+                hasError = true;
+            } else {
+                inp.style.borderColor = '';
+                inp.style.background = '';
+                var e2 = document.getElementById('meter-err-' + inp.dataset.room + '-' + inp.dataset.type);
+                if (e2) e2.remove();
+            }
+        });
+        if (hasError) {
+            showToast('กรุณาแก้ไขค่ามิเตอร์ที่ติดลบก่อนบันทึก', 'error');
+            return;
+        }
             syncMeterToTable();
         }
 

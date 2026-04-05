@@ -161,6 +161,14 @@ $contractStatusMap = [
     '2' => ['label' => 'แจ้งยกเลิก', 'color' => '#f59e0b']
 ];
 
+// ตรวจสอบว่าผู้เช่าเซ็นสัญญาแล้วหรือยัง
+$tenantSigned = false;
+try {
+    $sigCheckStmt = $pdo->prepare("SELECT id FROM signature_logs WHERE contract_id = ? AND signer_type = 'tenant' LIMIT 1");
+    $sigCheckStmt->execute([$contract['ctr_id']]);
+    $tenantSigned = (bool)$sigCheckStmt->fetchColumn();
+} catch (PDOException $e) {}
+
 // ดึงข้อมูลเงินมัดจำคืน (สำหรับผู้เช่าที่สัญญาสิ้นสุดแล้ว)
 $depositRefund = null;
 if (($contract['ctr_status'] ?? '0') === '1') {
@@ -655,6 +663,75 @@ if (($contract['ctr_status'] ?? '0') === '1') {
         .refund-card.no-record .refund-view-link { background: rgba(59,130,246,0.2); color: #93c5fd; }
         .menu-icon.teal-dark { background: rgba(6,182,212,0.2); }
         .menu-icon.teal-dark svg { stroke: #22d3ee; }
+
+        /* Sign Contract Banner */
+        @keyframes signPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.45); }
+            50% { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
+        }
+        .sign-alert {
+            background: linear-gradient(135deg, #78350f 0%, #451a03 100%);
+            border: 1.5px solid rgba(250, 204, 21, 0.55);
+            border-radius: 16px;
+            padding: 1.1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            animation: signPulse 2s infinite;
+        }
+        .sign-alert-icon {
+            flex-shrink: 0;
+            width: 48px;
+            height: 48px;
+            background: rgba(250, 204, 21, 0.18);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .sign-alert-icon svg {
+            width: 26px;
+            height: 26px;
+            stroke: #fde047;
+            stroke-width: 2;
+            fill: none;
+        }
+        .sign-alert-body { flex: 1; }
+        .sign-alert-body h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fef08a;
+            margin-bottom: 0.3rem;
+        }
+        .sign-alert-body p {
+            font-size: 0.78rem;
+            color: #fde68a;
+            opacity: 0.9;
+            line-height: 1.4;
+        }
+        .sign-alert-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 0.6rem;
+            padding: 8px 16px;
+            background: linear-gradient(135deg, #eab308, #ca8a04);
+            color: #1c1917;
+            border-radius: 10px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .sign-alert-btn:hover { opacity: 0.85; }
+        .sign-alert-btn svg {
+            width: 15px;
+            height: 15px;
+            stroke: #1c1917;
+            stroke-width: 2.5;
+            fill: none;
+        }
     </style>
     <?php if (($publicTheme ?? '') === 'light'): ?>
     <link rel="stylesheet" href="tenant-light-theme.css">
@@ -703,6 +780,26 @@ if (($contract['ctr_status'] ?? '0') === '1') {
             </a>
         </div>
         
+        <!-- Sign Contract Banner -->
+        <?php if (!$tenantSigned && ($contract['ctr_status'] ?? '0') !== '1'): ?>
+        <div class="sign-alert">
+            <div class="sign-alert-icon">
+                <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"/>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                </svg>
+            </div>
+            <div class="sign-alert-body">
+                <h3>⚠️ ยังไม่ได้เซ็นสัญญาเช่า!</h3>
+                <p>กรุณาเซ็นสัญญาให้เรียบร้อยก่อนเข้าพักอาศัย เพื่อยืนยันข้อตกลงระหว่างผู้เช่าและผู้ให้เช่า</p>
+                <a class="sign-alert-btn" href="../Reports/print_contract.php?ctr_id=<?php echo (int)$contract['ctr_id']; ?>&from_tenant=1" target="_blank">
+                    <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+                    เซ็นสัญญาเลย
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
+
         <!-- Alert for unpaid bill -->
         <?php if ($firstUnpaidExpense): ?>
         <div class="alert-unpaid">

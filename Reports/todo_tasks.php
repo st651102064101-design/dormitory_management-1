@@ -216,8 +216,10 @@ try {
                         SELECT COUNT(*) AS incomplete_count
                         FROM booking b
                         LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
+                        LEFT JOIN contract c ON tw.ctr_id = c.ctr_id
                         WHERE b.bkg_status != '0'
                             AND (tw.id IS NULL OR tw.completed = 0)
+                            AND (c.ctr_id IS NULL OR c.ctr_status != '1')
                 ");
         $wizardPendingCount = (int)($wizardStmt->fetch(PDO::FETCH_ASSOC)['incomplete_count'] ?? 0);
     } catch (Exception $e) {
@@ -235,7 +237,9 @@ try {
                         LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
                         LEFT JOIN room r ON b.room_id = r.room_id
                         LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
+                        LEFT JOIN contract c ON tw.ctr_id = c.ctr_id
                         WHERE b.bkg_status != '0'
+                            AND (c.ctr_id IS NULL OR c.ctr_status != '1')
                         ORDER BY CAST(r.room_number AS UNSIGNED) ASC, b.bkg_id DESC
                         LIMIT 50
                 ");

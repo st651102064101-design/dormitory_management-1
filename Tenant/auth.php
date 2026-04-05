@@ -41,6 +41,29 @@ function checkTenantAuth(): array {
             header('Location: ../index.php');
             exit;
         }
+
+        // ถ้าสัญญาที่ตรงกับ token ไม่ใช่สัญญาที่ active อยู่ (เช่น แจ้งยกเลิก/ยกเลิกแล้ว)
+        // ให้ใช้สัญญา active ล่าสุดของผู้เช่าคนเดียวกันในห้องเดียวกันแทน
+        if ($contract['ctr_status'] !== '0') {
+            $activeStmt = $pdo->prepare("
+                SELECT c.*,
+                       t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
+                       r.room_id, r.room_number, r.room_image,
+                       rt.type_name, rt.type_price
+                FROM contract c
+                JOIN tenant t ON c.tnt_id = t.tnt_id
+                JOIN room r ON c.room_id = r.room_id
+                LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+                WHERE c.tnt_id = ? AND c.room_id = ? AND c.ctr_status = '0'
+                ORDER BY c.ctr_id DESC
+                LIMIT 1
+            ");
+            $activeStmt->execute([$contract['tnt_id'], $contract['room_id']]);
+            $activeContract = $activeStmt->fetch(PDO::FETCH_ASSOC);
+            if ($activeContract) {
+                $contract = $activeContract;
+            }
+        }
         
         // อัพเดท session
         $_SESSION['tenant_token'] = $token;

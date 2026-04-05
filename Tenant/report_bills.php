@@ -40,8 +40,8 @@ try {
               AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
               AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
                             AND (
-                                    -- บิลเดือนแรก (= เดือนเริ่มสัญญา) ไม่มี utility record — ใช้ค่ามิเตอร์จาก checkin
-                                    DATE_FORMAT(expense.exp_month, '%Y-%m') = ?
+                                    -- บิลเดือนแรก = เดือนที่มี expense น้อยสุดของสัญญานี้ (ไม่ต้องมี utility record)
+                                    expense.exp_month = (SELECT MIN(e2.exp_month) FROM expense e2 WHERE e2.ctr_id = expense.ctr_id)
                                     OR EXISTS (
                                         SELECT 1
                                         FROM utility u
@@ -56,7 +56,7 @@ try {
         ) latest ON e.exp_id = latest.exp_id
         ORDER BY e.exp_month DESC
     ");
-    $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth, $firstBillMonth]);
+    $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
     $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {}
 

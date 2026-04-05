@@ -879,13 +879,13 @@ function nameWithoutNickname($fullName) {
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
                 ซึ่งต่อไปนี้ในสัญญานี้เรียกว่า "ผู้เช่า" อีกฝ่ายหนึ่ง ทั้งสองฝ่ายตกลงทำสัญญากันดังนี้มีข้อความต่อไปนี้ คือ
             </div>
-            <div class="form-field" style="border: none; font-size: 13.5px; text-align: left; white-space: nowrap;">
+            <div class="form-field" style="border: none; font-size: 13.5px; text-align: left; white-space: normal; word-break: break-word;">
                 ข้อ 1. ผู้ให้เช่าตกลงให้เช่าและผู้เช่าตกลงเช่า ค่าห้องราคา <span class="underline underline-mid" style="min-width: 80px; padding: 0 3px 0;"><?php echo number_format((float)($contract['type_price'] ?? 0), 2); ?></span> บาท เงินประกัน 2,000 บาท (สองพันบาทถ้วน)
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
                 ค่าไฟฟ้าและค่าน้ำแยกต่างหากประกันจะคืนให้เมื่อเช่าหอพักครบตามกำหนด โดยวัตถุประสงค์เป็นที่อยู่อาศัยมีกำหนด
             </div>
-            <div class="form-field" style="border: none; font-size: 14px; text-align: left; display: flex; flex-wrap: nowrap; align-items: center; gap: 4px; white-space: nowrap;">
+            <div class="form-field" style="border: none; font-size: 14px; text-align: left; display: flex; flex-wrap: wrap; align-items: center; gap: 4px;">
                 <span>เช่าเริ่มตั้งแต่วันที่</span>
                 <span class="underline underline-short" style="padding: 0 3px 0; min-width: 36px; line-height: 1;">
                     <?php echo h($datePartsStart['day']); ?>
@@ -975,6 +975,7 @@ function nameWithoutNickname($fullName) {
                         </div>
                     </div>
                     <?php else: ?>
+                    <?php if ($isTenantAccess): ?>
                     <button type="button" class="sign-btn no-print" onclick="openSignatureModal({
                         contractId: <?php echo $ctr_id; ?>,
                         signerType: 'tenant',
@@ -987,6 +988,7 @@ function nameWithoutNickname($fullName) {
                         </svg>
                         คลิกเพื่อลงลายมือชื่อ
                     </button>
+                    <?php endif; ?>
                     <span class="signature-line print-only"></span>
                     <?php endif; ?>
                     <span class="signature-label">ผู้เช่า</span>

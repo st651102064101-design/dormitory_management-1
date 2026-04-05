@@ -57,8 +57,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $bank_account_name = trim($_POST['bank_account_name'] ?? '');
         $bank_account_number = preg_replace('/[^0-9]/', '', $_POST['bank_account_number'] ?? '');
 
+        $minAllowedDate = date('Y-m-d', strtotime('+1 month'));
         if (empty($term_date)) {
             $error = 'กรุณาระบุวันที่ต้องการยกเลิกสัญญา';
+        } elseif ($term_date < $minAllowedDate) {
+            $error = 'วันที่ย้ายออกต้องแจ้งล่วงหน้าอย่างน้อย 1 เดือน (ไม่ก่อน ' . thaiDate($minAllowedDate, 'long') . ')';
         } elseif (!empty($contract['ctr_end']) && $term_date > $contract['ctr_end']) {
             $error = 'วันที่ย้ายออกต้องไม่เกินวันที่สิ้นสุดสัญญา (' . thaiDate($contract['ctr_end'], 'long') . ')';
         } elseif ($lastPaidBillDate && $term_date <= $lastPaidBillDate) {
@@ -118,8 +121,8 @@ try {
     $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(20) DEFAULT NULL AFTER bank_account_name");
 } catch (Exception $e) {}
 
-// Calculate minimum date (7 days from now)
-$minDate = date('Y-m-d', strtotime('+7 days'));
+// Calculate minimum date (1 month from now)
+$minDate = date('Y-m-d', strtotime('+1 month'));
 $maxDate = !empty($contract['ctr_end']) ? $contract['ctr_end'] : '';
 
 // หาวันที่ชำระเงินล่าสุดของบิลในสัญญานี้ — term_date ต้อง > วันนั้น
@@ -733,7 +736,7 @@ function _bankFormFields(?array $term): string {
             <div class="warning-box">
                 <h4><span class="warning-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span> ข้อควรทราบ</h4>
                 <ul>
-                    <li>กรุณาแจ้งล่วงหน้าอย่างน้อย 7 วัน</li>
+                    <li>กรุณาแจ้งล่วงหน้าอย่างน้อย 1 เดือน</li>
                     <li>ต้องชำระค่าใช้จ่ายค้างทั้งหมดก่อนย้ายออก</li>
                     <li>เงินมัดจำจะคืนหลังตรวจสอบห้องพักเรียบร้อย</li>
                     <li>หากมีความเสียหายจะหักจากเงินมัดจำ</li>
