@@ -2292,6 +2292,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $r = $readings[$room['room_id']];
                                     $hasCtr = !empty($room['ctr_id']);
                                     $wUsed = ($r['water_new']!==''&&$r['water_new']!==null) ? ((int)$r['water_new']-$r['water_old']) : 0;
+                                    $waterOldDisplay = ($hasCtr && !$r['isFirstReading']) ? str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT) : '-';
+                                    $waterOldPlaceholder = $r['isFirstReading'] ? '' : str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT);
                                 ?>
                                 <?php $needsWater = $hasCtr && !$r['water_saved'] && ($r['water_new'] === '' || $r['water_new'] === null); ?>
                                 <tr class="<?php echo $r['water_saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsWater ? 'needs-meter needs-water' : ''; ?>">
@@ -2305,7 +2307,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                         <?php endif; ?>
                                     </td>
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
-                                    <td><?php echo $hasCtr ? str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT) : '-'; ?></td>
+                                    <td><?php echo $waterOldDisplay; ?></td>
                                     <td><?php if($hasCtr): ?>
                                         <?php 
                                             $tooltipMsg = '';
@@ -2325,7 +2327,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                             }
                                             $waterDisabled = $waterLocked || ($r['meter_blocked'] && !$r['can_edit_saved']);
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $waterLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['water_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); (function(el){var v=parseInt(el.value,10),old=parseInt(el.dataset.old,10),isFirst=el.dataset.firstReading==='1',errId='meter-err-'+el.dataset.room+'-water'; if(!isFirst&&!isNaN(v)&&v<old){el.style.borderColor='#ef4444';el.style.background='rgba(239,68,68,0.08)';var e=document.getElementById(errId);if(!e){e=document.createElement('div');e.id=errId;e.style.cssText='color:#ef4444;font-size:0.72rem;margin-top:2px;';e.textContent='ค่าใหม่ต้องไม่น้อยกว่าค่าเดิม ('+String(old).padStart(7,'0')+')';el.parentNode.appendChild(e);}}else{el.style.borderColor='';el.style.background='';var e2=document.getElementById(errId);if(e2)e2.remove();}})(this)" <?php echo $waterDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][water]" class="meter-input-field meter-input <?php echo $waterLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['water_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="water" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['water_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo $waterOldPlaceholder; ?>" value="<?php echo ($r['water_new'] !== '' && $r['water_new'] !== null) ? str_pad((string)(int)$r['water_new'], 7, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['water_old']; ?>" max="9999999" oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); (function(el){var v=parseInt(el.value,10),old=parseInt(el.dataset.old,10),isFirst=el.dataset.firstReading==='1',errId='meter-err-'+el.dataset.room+'-water'; if(!isFirst&&!isNaN(v)&&v<old){el.style.borderColor='#ef4444';el.style.background='rgba(239,68,68,0.08)';var e=document.getElementById(errId);if(!e){e=document.createElement('div');e.id=errId;e.style.cssText='color:#ef4444;font-size:0.72rem;margin-top:2px;';e.textContent='ค่าใหม่ต้องไม่น้อยกว่าค่าเดิม ('+String(old).padStart(7,'0')+')';el.parentNode.appendChild(e);}}else{el.style.borderColor='';el.style.background='';var e2=document.getElementById(errId);if(e2)e2.remove();}})(this)" <?php echo $waterDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][water_old]" value="<?php echo $r['water_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
@@ -2359,6 +2361,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $r = $readings[$room['room_id']];
                                     $hasCtr = !empty($room['ctr_id']);
                                     $eUsed = ($r['elec_new']!==''&&$r['elec_new']!==null) ? ((int)$r['elec_new']-$r['elec_old']) : 0;
+                                    $elecOldDisplay = ($hasCtr && !$r['isFirstReading']) ? str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT) : '-';
+                                    $elecOldPlaceholder = $r['isFirstReading'] ? '' : str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT);
                                 ?>
                                 <?php $needsElec = $hasCtr && !$r['elec_saved'] && ($r['elec_new'] === '' || $r['elec_new'] === null); ?>
                                 <tr class="<?php echo $r['elec_saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsElec ? 'needs-meter needs-electric' : ''; ?>">
@@ -2372,7 +2376,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                         <?php endif; ?>
                                     </td>
                                     <td class="status-icon"><?php if($hasCtr): ?><svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg><?php endif; ?></td>
-                                    <td><?php echo $hasCtr ? str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT) : '-'; ?></td>
+                                    <td><?php echo $elecOldDisplay; ?></td>
                                     <td><?php if($hasCtr): ?>
                                         <?php 
                                             $tooltipMsg = '';
@@ -2392,7 +2396,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                             }
                                             $elecDisabled = $elecLocked || ($r['meter_blocked'] && !$r['can_edit_saved']);
                                         ?>
-                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $elecLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['elec_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT); ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); (function(el){var v=parseInt(el.value,10),old=parseInt(el.dataset.old,10),isFirst=el.dataset.firstReading==='1',errId='meter-err-'+el.dataset.room+'-electric'; if(!isFirst&&!isNaN(v)&&v<old){el.style.borderColor='#ef4444';el.style.background='rgba(239,68,68,0.08)';var e=document.getElementById(errId);if(!e){e=document.createElement('div');e.id=errId;e.style.cssText='color:#ef4444;font-size:0.72rem;margin-top:2px;';e.textContent='ค่าใหม่ต้องไม่น้อยกว่าค่าเดิม ('+String(old).padStart(5,'0')+')';el.parentNode.appendChild(e);}}else{el.style.borderColor='';el.style.background='';var e2=document.getElementById(errId);if(e2)e2.remove();}})(this)" <?php echo $elecDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
+                                        <input type="number" name="meter[<?php echo $room['room_id']; ?>][electric]" class="meter-input-field elec-input meter-input <?php echo $elecLocked ? 'locked' : ''; ?> <?php echo $r['meter_blocked'] ? 'blocked-by-step' : ''; ?> <?php echo ($r['elec_saved'] && $r['can_edit_saved']) ? 'editable-saved' : ''; ?>" data-type="electric" data-room="<?php echo $room['room_id']; ?>" data-old="<?php echo $r['elec_old']; ?>" data-first-reading="<?php echo $r['isFirstReading'] ? '1' : '0'; ?>" placeholder="<?php echo $elecOldPlaceholder; ?>" value="<?php echo ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? str_pad((string)(int)$r['elec_new'], 5, '0', STR_PAD_LEFT) : ''; ?>" min="<?php echo $r['elec_old']; ?>" max="99999" oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); (function(el){var v=parseInt(el.value,10),old=parseInt(el.dataset.old,10),isFirst=el.dataset.firstReading==='1',errId='meter-err-'+el.dataset.room+'-electric'; if(!isFirst&&!isNaN(v)&&v<old){el.style.borderColor='#ef4444';el.style.background='rgba(239,68,68,0.08)';var e=document.getElementById(errId);if(!e){e=document.createElement('div');e.id=errId;e.style.cssText='color:#ef4444;font-size:0.72rem;margin-top:2px;';e.textContent='ค่าใหม่ต้องไม่น้อยกว่าค่าเดิม ('+String(old).padStart(5,'0')+')';el.parentNode.appendChild(e);}}else{el.style.borderColor='';el.style.background='';var e2=document.getElementById(errId);if(e2)e2.remove();}})(this)" <?php echo $elecDisabled ? 'disabled data-bs-toggle="tooltip" data-bs-placement="bottom" data-bs-title="' . htmlspecialchars($tooltipMsg) . '"' : ''; ?>>
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][elec_old]" value="<?php echo $r['elec_old']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][ctr_id]" value="<?php echo $room['ctr_id']; ?>">
                                         <input type="hidden" name="meter[<?php echo $room['room_id']; ?>][workflow_step]" value="<?php echo $r['workflow_step']; ?>">
@@ -2424,7 +2428,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $hasCtr = !empty($room['ctr_id']);
                                     $wOld = (int)$r['water_old'];
                                     $wNew = ($r['water_new'] !== '' && $r['water_new'] !== null) ? (int)$r['water_new'] : null;
-                                    $wUsedVm = $wNew !== null ? max(0, $wNew - $wOld) : 0;
+                                    $wOldDisplay = $r['isFirstReading'] ? '-' : str_pad((string)$wOld, 7, '0', STR_PAD_LEFT);
+                                    $wUsedVm = $r['isFirstReading'] ? 0 : ($wNew !== null ? max(0, $wNew - $wOld) : 0);
                                     $cardClass = 'vm-card';
                                     if (!$hasCtr) $cardClass .= ' vm-empty';
                                     elseif ($r['water_saved']) $cardClass .= ' vm-saved';
@@ -2443,7 +2448,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     </div>
                                     <div class="vm-meters">
                                         <div class="vm-meter-section">
-                                            <div class="vm-old-reading">เดิม: <span><?php echo str_pad((string)$wOld, 7, '0', STR_PAD_LEFT); ?></span></div>
+                                            <div class="vm-old-reading">เดิม: <span><?php echo $wOldDisplay; ?></span></div>
                                             <div class="vm-water-body">
                                                 <div class="vm-pipe-left"><div class="vm-pipe-flange"></div><div class="vm-pipe-bolt"></div></div>
                                                 <div class="vm-dial-water">
@@ -2490,7 +2495,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $hasCtr = !empty($room['ctr_id']);
                                     $eOld = (int)$r['elec_old'];
                                     $eNew = ($r['elec_new'] !== '' && $r['elec_new'] !== null) ? (int)$r['elec_new'] : null;
-                                    $eUsedVm = $eNew !== null ? max(0, $eNew - $eOld) : 0;
+                                    $eOldDisplay = $r['isFirstReading'] ? '-' : str_pad((string)$eOld, 5, '0', STR_PAD_LEFT);
+                                    $eUsedVm = $r['isFirstReading'] ? 0 : ($eNew !== null ? max(0, $eNew - $eOld) : 0);
                                     $cardClass = 'vm-card';
                                     if (!$hasCtr) $cardClass .= ' vm-empty';
                                     elseif ($r['elec_saved']) $cardClass .= ' vm-saved';
@@ -2509,7 +2515,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     </div>
                                     <div class="vm-meters">
                                         <div class="vm-meter-section">
-                                            <div class="vm-old-reading">เดิม: <span><?php echo str_pad((string)$eOld, 5, '0', STR_PAD_LEFT); ?></span></div>
+                                            <div class="vm-old-reading">เดิม: <span><?php echo $eOldDisplay; ?></span></div>
                                             <div class="vm-elec-body">
                                                 <div class="vm-elec-frame">
                                                     <div class="vm-elec-screw vm-screw-tl"></div>
@@ -2757,10 +2763,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
             if (room.is_first_reading) {
                 input.dataset.old = room['new'];
                 input.setAttribute('min', room['new']);
-                input.placeholder = String(room['new']).padStart(padLen, '0');
+                input.placeholder = '';
                 var cells = row.querySelectorAll('td');
                 if (cells.length >= 3) {
-                    cells[2].textContent = String(room.old).padStart(padLen, '0');
+                    cells[2].textContent = '-';
                 }
                 // Update hidden water_old/elec_old
                 var oldHidden = row.querySelector('input[name*="' + (usageType === 'water' ? 'water_old' : 'elec_old') + '"]');
@@ -2792,6 +2798,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                 var vmCost = document.querySelector('[data-vm-cost="' + usageType + '"][data-vm-room="' + roomId + '"]');
                 if (vmUsage) vmUsage.textContent = room.usage + ' หน่วย';
                 if (vmCost) vmCost.textContent = room.cost + ' ฿';
+                if (room.is_first_reading) {
+                    var vmOld = card ? card.querySelector('.vm-old-reading span') : null;
+                    if (vmOld) vmOld.textContent = '-';
+                }
             }
         });
     }
