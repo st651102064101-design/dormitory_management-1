@@ -99,7 +99,19 @@ try {
             }
         }));
     }
-    $contracts = $allContracts;
+
+    // Deduplicate by room_id: ถ้ามีสัญญาหลายรายการสำหรับห้องเดียวกันให้แสดงเฉพาะสัญญาล่าสุด (ctr_id สูงสุด)
+    // ยกเว้น cancelled view ที่อาจต้องการเห็น history ทั้งหมด แต่ก็ dedup เพื่อความสะอาด
+    $byRoom = [];
+    foreach ($allContracts as $c) {
+        $roomId = (int)($c['room_id'] ?? 0);
+        if (!$roomId) {
+            $byRoom['_' . $c['ctr_id']] = $c;
+        } elseif (!isset($byRoom[$roomId]) || (int)$c['ctr_id'] > (int)$byRoom[$roomId]['ctr_id']) {
+            $byRoom[$roomId] = $c;
+        }
+    }
+    $contracts = array_values($byRoom);
 } catch(Exception $e) {
     $contracts = [];
     $filterCounts = ['all'=>0,'active'=>0,'waiting'=>0,'notifying'=>0,'cancelled'=>0,'expiring'=>0];

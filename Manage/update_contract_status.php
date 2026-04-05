@@ -76,8 +76,8 @@ try {
         }
     }
 
-    // === ตรวจสอบการชำระเงินครบถ้วนก่อนยกเลิกสัญญา ===
-    if ($ctr_status === '1') {
+    // === ตรวจสอบการชำระเงินครบถ้วนก่อนแจ้งยกเลิกหรือยกเลิกสัญญา ===
+    if ($ctr_status === '1' || $ctr_status === '2') {
         $unpaidStmt = $pdo->prepare("
             SELECT e.exp_id, e.exp_month, e.exp_total,
                    COALESCE((
@@ -96,7 +96,8 @@ try {
 
         if (!empty($unpaidBills)) {
             $unpaidCount = count($unpaidBills);
-            $errorMsg = 'ไม่สามารถยกเลิกสัญญาได้ เนื่องจากยังมีบิลค้างชำระ ' . $unpaidCount . ' รายการ กรุณาชำระให้ครบก่อน';
+            $action = $ctr_status === '2' ? 'แจ้งยกเลิกสัญญา' : 'ยกเลิกสัญญา';
+            $errorMsg = "ไม่สามารถ{$action}ได้ เนื่องจากยังมีบิลค้างชำระ {$unpaidCount} รายการ กรุณาชำระให้ครบก่อน";
             if (!empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest') {
                 header('Content-Type: application/json');
                 echo json_encode(['success' => false, 'error' => $errorMsg, 'unpaid_count' => $unpaidCount]);
@@ -106,8 +107,10 @@ try {
             header('Location: ../Reports/manage_contracts.php');
             exit;
         }
+    }
 
-        // === ตรวจสอบการคืนเงินมัดจำก่อนยกเลิกสัญญา ===
+    // === ตรวจสอบการคืนเงินมัดจำก่อนยกเลิกสัญญา ===
+    if ($ctr_status === '1') {
         // ดึงจาก ctr_deposit ก่อน (ครอบคลุมสัญญาที่ไม่ได้สร้างผ่าน booking wizard)
         $ctrDepositStmt = $pdo->prepare("SELECT ctr_deposit FROM contract WHERE ctr_id = ?");
         $ctrDepositStmt->execute([$ctr_id]);

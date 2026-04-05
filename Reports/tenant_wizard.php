@@ -2108,7 +2108,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                 <?php echo $step2 ? '✓' : ($currentStep == 2 ? '<svg class="payment-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect class="p-slot" x="4" y="12" width="16" height="8" rx="2" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" fill="rgba(255,255,255,0.1)"/><line class="p-slot" x1="7" y1="16" x2="11" y2="16" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/><circle class="p-coin" cx="12" cy="7" r="3.5" stroke="#fff" stroke-width="1.8" fill="rgba(255,255,255,0.15)"/><line class="p-coin" x1="12" y1="5.5" x2="12" y2="8.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>' : '2'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step3 ? 'completed' : ($currentStep == 3 ? 'current' : 'pending'); ?>" data-tooltip="3. สร้างสัญญา" <?php if ($step3): ?>onclick="openContractModal(<?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['type_price'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bkg_checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_end'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step3 ? 'completed' : ($currentStep == 3 ? 'current' : 'pending'); ?>" data-tooltip="3. สร้างสัญญา" <?php if ($step3): ?>onclick="openContractModal(<?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['type_price'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bkg_checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_end'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, <?php echo (int)($tenant['ctr_id'] ?? 0); ?>, <?php echo ((int)($tenant['has_tenant_signature'] ?? 0) > 0) ? 'true' : 'false'; ?>, true)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step3 ? '✓' : ($currentStep == 3 ? '<svg class="contract-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="12" height="16" rx="1.5" stroke="rgba(255,255,255,0.75)" stroke-width="1.6" fill="rgba(255,255,255,0.08)"/><line class="ct-line1" x1="7" y1="7" x2="13" y2="7" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="10" stroke-dashoffset="10"/><line class="ct-line2" x1="7" y1="10" x2="13" y2="10" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="10" stroke-dashoffset="10"/><line class="ct-line3" x1="7" y1="13" x2="10" y2="13" stroke="rgba(255,255,255,0.6)" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="10" stroke-dashoffset="10"/><g class="ct-pen"><line x1="14" y1="15" x2="20" y2="9" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><polyline points="14,18 14,15 17,15" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g></svg>' : '3'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
@@ -2150,7 +2150,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                 <?php echo htmlspecialchars(json_encode($tenant['bkg_checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>,
                                                 <?php echo htmlspecialchars(json_encode($tenant['ctr_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>,
                                                 <?php echo htmlspecialchars(json_encode($tenant['ctr_end'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>,
-                                                <?php echo (int)($tenant['bp_amount'] ?? 0); ?>
+                                                <?php echo (int)($tenant['bp_amount'] ?? 0); ?>,
+                                                0, false
                                             )">สร้างสัญญา</button>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 4): ?>
@@ -2159,6 +2160,9 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                             <button type="button" class="action-btn btn-primary" onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>)">เช็คอิน</button>
                                             <?php else: ?>
                                             <button type="button" class="action-btn btn-primary" style="opacity:0.55;cursor:not-allowed;" title="ผู้เช่ายังไม่ได้เซ็นสัญญา" onclick="showNotSignedToast()">🔒 เช็คอิน</button>
+                                            <?php if (!empty($tenant['ctr_id'])): ?>
+                                            <a href="print_contract.php?ctr_id=<?php echo (int)$tenant['ctr_id']; ?>" target="_blank" class="action-btn" style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);color:#c4b5fd;font-size:0.8rem;" title="เปิดสัญญาเพื่อให้ผู้เช่าเซ็น">📄 ดูสัญญา</a>
+                                            <?php endif; ?>
                                             <?php endif; ?>
                                             <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                         <?php elseif ($currentStep == 5 || $currentStep >= 6 || (int)($tenant['completed'] ?? 0) === 1): ?>
@@ -2911,6 +2915,14 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
     }
 
     // Functions สำหรับ Contract Modal (Step 3)
+    function showNotSignedToast() {
+        if (typeof showErrorToast === 'function') {
+            showErrorToast('ผู้เช่ายังไม่ได้เซ็นสัญญา กรุณาให้ผู้เช่าเซ็นสัญญาก่อนทำการเช็คอิน');
+        } else {
+            alert('ผู้เช่ายังไม่ได้เซ็นสัญญา กรุณาให้ผู้เช่าเซ็นสัญญาก่อนทำการเช็คอิน');
+        }
+    }
+
     function openContractModal(tntId, roomId, bkgId, tntName, roomNumber, typeName, typePrice, bkgCheckinDate, ctrStart, ctrEnd, bookingAmount, ctrId = 0, hasSigned = false, readOnly = false) {
         document.getElementById('modal_contract_tnt_id').value = tntId;
         document.getElementById('modal_contract_room_id').value = roomId;
@@ -3000,31 +3012,29 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         // แสดงส่วน signature ถ้ามี ctrId
         const sigSection = document.getElementById('contractSignatureSection');
         if (ctrId > 0) {
-            const sigHtml = hasSigned
-                ? `<div style="padding:0.75rem 1rem;border-radius:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);display:flex;align-items:center;gap:0.6rem;">
-                     <span style="font-size:1.2rem;">✅</span>
-                     <div>
-                       <div style="color:#22c55e;font-weight:600;font-size:0.9rem;">ผู้เช่าเซ็นสัญญาแล้ว</div>
-                       <div style="color:#64748b;font-size:0.8rem;">สามารถดำเนินการเช็คอินได้</div>
-                     </div>
-                     <a href="print_contract.php?ctr_id=${ctrId}" target="_blank"
-                        style="margin-left:auto;font-size:0.82rem;color:#38bdf8;text-decoration:none;">📄 ดูสัญญา</a>
-                   </div>`
-                : `<div style="padding:0.8rem 1rem;border-radius:10px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);">
-                     <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.45rem;">
-                       <span style="font-size:1.1rem;">✍️</span>
-                       <span style="color:#fbbf24;font-weight:600;font-size:0.9rem;">รอผู้เช่าเซ็นสัญญา</span>
-                     </div>
-                     <div style="font-size:0.82rem;color:#94a3b8;margin-bottom:0.65rem;">
-                       ให้ผู้เช่าเปิดลิงก์ด้านล่างและเซ็นชื่อ จึงจะสามารถเช็คอินได้
-                     </div>
-                     <a href="print_contract.php?ctr_id=${ctrId}" target="_blank"
-                        style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem;border-radius:7px;
-                               background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.45);color:#c4b5fd;
-                               font-size:0.85rem;font-weight:500;text-decoration:none;">
-                       📄 เปิดสัญญาสำหรับเซ็น
-                     </a>
-                   </div>`;
+            let sigHtml;
+            if (hasSigned) {
+                sigHtml = '<div style="padding:0.75rem 1rem;border-radius:10px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);display:flex;align-items:center;gap:0.6rem;">'
+                    + '<span style="font-size:1.2rem;">\u2705</span>'
+                    + '<div>'
+                    + '<div style="color:#22c55e;font-weight:600;font-size:0.9rem;">\u0e1c\u0e39\u0e49\u0e40\u0e0a\u0e48\u0e32\u0e40\u0e0b\u0e47\u0e19\u0e2a\u0e31\u0e0d\u0e0d\u0e32\u0e41\u0e25\u0e49\u0e27</div>'
+                    + '<div style="color:#64748b;font-size:0.8rem;">\u0e2a\u0e32\u0e21\u0e32\u0e23\u0e16\u0e14\u0e33\u0e40\u0e19\u0e34\u0e19\u0e01\u0e32\u0e23\u0e40\u0e0a\u0e47\u0e04\u0e2d\u0e34\u0e19\u0e44\u0e14\u0e49</div>'
+                    + '</div>'
+                    + '<a href="print_contract.php?ctr_id=' + ctrId + '" target="_blank" style="margin-left:auto;font-size:0.82rem;color:#38bdf8;text-decoration:none;">\ud83d\udcc4 \u0e14\u0e39\u0e2a\u0e31\u0e0d\u0e0d\u0e32</a>'
+                    + '</div>';
+            } else {
+                sigHtml = '<div style="padding:0.8rem 1rem;border-radius:10px;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);">'
+                    + '<div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.45rem;">'
+                    + '<span style="font-size:1.1rem;">\u270d\ufe0f</span>'
+                    + '<span style="color:#fbbf24;font-weight:600;font-size:0.9rem;">\u0e23\u0e2d\u0e1c\u0e39\u0e49\u0e40\u0e0a\u0e48\u0e32\u0e40\u0e0b\u0e47\u0e19\u0e2a\u0e31\u0e0d\u0e0d\u0e32</span>'
+                    + '</div>'
+                    + '<div style="font-size:0.82rem;color:#94a3b8;margin-bottom:0.65rem;">'
+                    + '\u0e43\u0e2b\u0e49\u0e1c\u0e39\u0e49\u0e40\u0e0a\u0e48\u0e32\u0e40\u0e1b\u0e34\u0e14\u0e25\u0e34\u0e07\u0e01\u0e4c\u0e14\u0e49\u0e32\u0e19\u0e25\u0e48\u0e32\u0e07\u0e41\u0e25\u0e30\u0e40\u0e0b\u0e47\u0e19\u0e0a\u0e37\u0e48\u0e2d \u0e08\u0e36\u0e07\u0e08\u0e30\u0e2a\u0e32\u0e21\u0e32\u0e23\u0e16\u0e40\u0e0a\u0e47\u0e04\u0e2d\u0e34\u0e19\u0e44\u0e14\u0e49'
+                    + '</div>'
+                    + '<a href="print_contract.php?ctr_id=' + ctrId + '" target="_blank" style="display:inline-flex;align-items:center;gap:0.4rem;padding:0.45rem 1rem;border-radius:7px;background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.45);color:#c4b5fd;font-size:0.85rem;font-weight:500;text-decoration:none;">'
+                    + '\ud83d\udcc4 \u0e40\u0e1b\u0e34\u0e14\u0e2a\u0e31\u0e0d\u0e0d\u0e32\u0e2a\u0e33\u0e2b\u0e23\u0e31\u0e1a\u0e40\u0e0b\u0e47\u0e19</a>'
+                    + '</div>';
+            }
             sigSection.innerHTML = sigHtml;
             sigSection.style.display = 'block';
         } else {
