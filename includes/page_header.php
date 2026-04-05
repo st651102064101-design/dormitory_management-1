@@ -791,8 +791,10 @@ body[data-theme="light"] .sidebar-toggle-btn:hover {
       el.style.cursor = '';
     });
   }
+  // Expose globally so pages can re-attach after AJAX refresh
+  window.initFilterDrag = initFilterDrag;
   function attachFilterBars() {
-    document.querySelectorAll('.ctr-filter-bar, .wiz-filter-bar, .expense-filter-tabs, .payment-filter-tabs').forEach(initFilterDrag);
+    document.querySelectorAll('.ctr-filter-bar, .wiz-filter-bar, .expense-filter-tabs, .payment-filter-tabs, .info-bar').forEach(initFilterDrag);
   }
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', attachFilterBars);

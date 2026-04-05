@@ -41,7 +41,8 @@ try {
           t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_status,
           r.room_number, r.room_status,
           rt.type_name,
-          (SELECT COUNT(*) FROM deposit_refund dr WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1') AS refund_confirmed
+          (SELECT COUNT(*) FROM deposit_refund dr WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1') AS refund_confirmed,
+          (CASE WHEN c.ctr_status = '1' AND COALESCE(c.ctr_deposit, 0) > 0 AND NOT EXISTS (SELECT 1 FROM deposit_refund dr2 WHERE dr2.ctr_id = c.ctr_id AND dr2.refund_status = '1') THEN 1 ELSE 0 END) AS has_pending_refund
           FROM contract c
           LEFT JOIN tenant t ON t.tnt_id = c.tnt_id
           LEFT JOIN room r ON c.room_id = r.room_id
@@ -55,7 +56,8 @@ try {
           t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_status,
           r.room_number, r.room_status,
           rt.type_name,
-          (SELECT COUNT(*) FROM deposit_refund dr WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1') AS refund_confirmed
+          (SELECT COUNT(*) FROM deposit_refund dr WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1') AS refund_confirmed,
+          (CASE WHEN c.ctr_status = '1' AND COALESCE(c.ctr_deposit, 0) > 0 AND NOT EXISTS (SELECT 1 FROM deposit_refund dr2 WHERE dr2.ctr_id = c.ctr_id AND dr2.refund_status = '1') THEN 1 ELSE 0 END) AS has_pending_refund
           FROM contract c
           LEFT JOIN tenant t ON t.tnt_id = c.tnt_id
           LEFT JOIN room r ON c.room_id = r.room_id
@@ -230,6 +232,9 @@ try {
 } catch (Exception $e) {
     error_log('[manage_contracts] refund pending query: ' . $e->getMessage());
 }
+
+// Lookup set: ctr_ids ที่ยังรอคืนเงินมัดจำ (ใช้ตรวจ badge ในตาราง)
+$pendingRefundCtrIdSet = array_flip(array_column($refundPendingContracts, 'ctr_id'));
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -607,9 +612,20 @@ try {
       html.light-theme .ctr-filter-pill.pill-notifying.active { background:#ffedd5; border-color:#ea580c; color:#9a3412; }
       html.light-theme .ctr-filter-pill.pill-cancelled.active { background:#fee2e2; border-color:#dc2626; color:#991b1b; }
       html.light-theme .ctr-filter-pill.pill-expiring.active  { background:#fefce8; border-color:#ca8a04; color:#713f12; }
+
+      /* Info-bar chips: light-theme overrides */
+      html.light-theme .info-bar span[style*="rgba(255,255,255,0.1)"] { background:rgba(0,0,0,0.06) !important; border-color:rgba(0,0,0,0.15) !important; color:#0f172a !important; }
+      html.light-theme .info-bar span[style*="rgba(34,197,94"] { background:#dcfce7 !important; border-color:#16a34a !important; color:#15803d !important; }
+      html.light-theme .info-bar span[style*="rgba(245,158,11"] { background:#fef3c7 !important; border-color:#d97706 !important; color:#92400e !important; }
+      html.light-theme .info-bar span[style*="rgba(251,146,60"] { background:#ffedd5 !important; border-color:#ea580c !important; color:#9a3412 !important; }
+      html.light-theme .info-bar span[style*="rgba(251,191,36"] { background:#fefce8 !important; border-color:#ca8a04 !important; color:#713f12 !important; }
+      html.light-theme .info-bar span[style*="rgba(239,68,68"] { background:#fee2e2 !important; border-color:#dc2626 !important; color:#991b1b !important; }
+      html.light-theme .info-bar span[style*="rgba(234,179,8"] { background:#fefce8 !important; border-color:#ca8a04 !important; color:#713f12 !important; }
+      html.light-theme .info-bar span[style*="rgba(255,255,255,0.2)"] { color:#94a3b8 !important; }
       @media (max-width: 768px) {
         .ctr-filter-bar { gap: 0.35rem; }
         .ctr-filter-pill { font-size: 0.78rem; padding: 0.3rem 0.7rem; }
+        .info-bar span[style] { font-size: 0.78rem !important; padding: 0.2rem 0.6rem !important; }
       }
 
       /* --- Cancel button --- */
@@ -1165,9 +1181,50 @@ try {
                 </script>
                 <?php endif; ?>
 
-                <div class="info-bar" style="margin: 0.5rem 0 1rem; padding: 0.5rem 0.75rem; background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.8); border: 1px solid rgba(255,255,255,0.08); border-radius: 6px; font-size: 0.95rem; word-break: break-word;">
-                  สัญญาที่พบ: <strong><?php echo $ctrCount; ?></strong> รายการ |
-                  ปกติ: <?php echo $ctrStatusBuckets['0']; ?> | ยกเลิกแล้ว: <?php echo $ctrStatusBuckets['1']; ?> | แจ้งยกเลิก: <?php echo $ctrStatusBuckets['2']; ?>
+                <div class="info-bar" style="margin: 0.5rem 0 1rem; display:flex; flex-wrap:nowrap; align-items:center; gap:0.5rem; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,0.4) transparent; cursor:grab; padding-bottom:2px; min-width:0;">
+                  <span style="font-size:0.8rem; color:rgba(255,255,255,0.45); white-space:nowrap; flex-shrink:0;">สัญญาทั้งหมด</span>
+                  <!-- total -->
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#f1f5f9;">
+                    📋 <?php echo $filterCounts['all']; ?> รายการ
+                  </span>
+                  <span style="color:rgba(255,255,255,0.2);font-size:0.8rem;">|</span>
+                  <!-- active -->
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.35);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#4ade80;">
+                    ✅ ทำสัญญาอยู่ <?php echo $filterCounts['active']; ?>
+                  </span>
+                  <?php if ($filterCounts['waiting'] > 0): ?>
+                  <!-- waiting -->
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fbbf24;">
+                    ⏳ รอเข้าพัก <?php echo $filterCounts['waiting']; ?>
+                  </span>
+                  <?php endif; ?>
+                  <?php if ($filterCounts['notifying'] > 0): ?>
+                  <!-- notifying -->
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.35);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fdba74;">
+                    📢 แจ้งยกเลิก <?php echo $filterCounts['notifying']; ?>
+                  </span>
+                  <?php endif; ?>
+                  <!-- cancelled / pending-refund -->
+                  <?php
+                    $pendingRefundCount = count($refundPendingContracts);
+                    $purelyDone = $filterCounts['cancelled'] - $pendingRefundCount;
+                  ?>
+                  <?php if ($pendingRefundCount > 0): ?>
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fde68a;">
+                    💸 รอคืนเงินมัดจำ <?php echo $pendingRefundCount; ?>
+                  </span>
+                  <?php endif; ?>
+                  <?php if ($purelyDone > 0): ?>
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fca5a5;">
+                    ❌ ยกเลิกแล้ว <?php echo $purelyDone; ?>
+                  </span>
+                  <?php endif; ?>
+                  <?php if ($filterCounts['expiring'] > 0): ?>
+                  <!-- expiring -->
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.4);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fde047;">
+                    ⏰ ใกล้หมดสัญญา <?php echo $filterCounts['expiring']; ?>
+                  </span>
+                  <?php endif; ?>
                 </div>
 
                 <!-- Statistics -->
@@ -1399,8 +1456,8 @@ try {
                                 $lbl = isset($statusLabels[$s]) ? $statusLabels[$s] : 'N/A';
                                 $col = isset($statusColors[$s]) ? $statusColors[$s] : '#999';
 
-                                // ถ้ายกเลิกสัญญาแล้ว (status=1) แต่ยังไม่ได้คืนเงินมัดจำ → แสดงเป็น "รอคืนเงินมัดจำ"
-                                if ($s === '1' && floatval($contract['ctr_deposit'] ?? 0) > 0 && intval($contract['refund_confirmed'] ?? 0) === 0) {
+                                // ถ้ายกเลิกสัญญาแล้ว (status=1) แต่ยังต้องคืนเงินมัดจำ → แสดงเป็น "รอคืนเงินมัดจำ"
+                                if ($s === '1' && isset($pendingRefundCtrIdSet[$contract['ctr_id']])) {
                                   $lbl = 'รอคืนเงินมัดจำ';
                                   $col = '#d97706';
                                 }
@@ -1474,6 +1531,8 @@ try {
        AJAX UTILITIES
        ===================================================== */
     let _ctrCurrentFilter = '<?php echo htmlspecialchars($filterStatus, ENT_QUOTES, 'UTF-8'); ?>';
+    // Pending refund contract IDs (PHP-generated) — ใช้ตรวจ badge ใน drawer
+    const _pendingRefundIds = new Set(<?php echo json_encode(array_map('strval', array_column($refundPendingContracts, 'ctr_id'))); ?>);
 
     function showCtrToast(msg, type = 'success') {
       const colors = { success: '#22c55e', error: '#ef4444', info: '#38bdf8' };
@@ -1540,6 +1599,22 @@ try {
           const newInfoBar = doc.querySelector('.info-bar');
           const curInfoBar = document.querySelector('.info-bar');
           if (newInfoBar && curInfoBar) curInfoBar.outerHTML = newInfoBar.outerHTML;
+          // Re-attach drag scroll on freshly replaced info-bar
+          if (typeof initFilterDrag === 'function') {
+            var freshInfoBar = document.querySelector('.info-bar');
+            if (freshInfoBar) initFilterDrag(freshInfoBar);
+          }
+          // Refresh refund alert banner
+          var newBanner = doc.getElementById('refund-alert-banner');
+          var curBanner = document.getElementById('refund-alert-banner');
+          if (curBanner && newBanner) {
+            curBanner.outerHTML = newBanner.outerHTML;
+          } else if (curBanner && !newBanner) {
+            curBanner.remove();
+          } else if (!curBanner && newBanner) {
+            var infoBar = document.querySelector('.info-bar');
+            if (infoBar) infoBar.insertAdjacentHTML('beforebegin', newBanner.outerHTML);
+          }
         })
         .catch(() => location.reload());
     }
@@ -2195,8 +2270,13 @@ try {
       return Number(n || 0).toLocaleString('th-TH') + ' ฿';
     }
     function _ctrStatusInfo(s, data) {
-      // ถ้ายกเลิกแล้ว (1) แต่ยังมีเงินมัดจำที่ยังไม่คืน → แสดง "รอคืนเงินมัดจำ"
+      // ใช้ lookup set (PHP-generated) เพื่อตรวจสอบว่าสัญญานี้รอคืนเงินมัดจำหรือไม่
       if (s === '1' && data) {
+        const ctrId = data.contract && data.contract.ctr_id;
+        if (_pendingRefundIds.has(String(ctrId))) {
+          return { label: 'รอคืนเงินมัดจำ', color: '#f59e0b' };
+        }
+        // fallback: ถ้า ctr_deposit > 0 และยังไม่มี refund ที่ยืนยัน
         const dep = parseFloat((data.contract && data.contract.ctr_deposit) || 0);
         const refunded = data.refund && data.refund.refund_status === '1';
         if (dep > 0 && !refunded) {
