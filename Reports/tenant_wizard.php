@@ -3390,6 +3390,14 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             </div>`;
     }
 
+    function safeShowSuccessToast(message) {
+        if (typeof showSuccessToast === 'function') {
+            showSuccessToast(message);
+            return;
+        }
+        alert(message);
+    }
+
     function refreshBillingPayments(ctrId) {
         const firstBillPaymentsSection  = document.getElementById('firstBillPaymentsSection');
         const latestBillPaymentsSection = document.getElementById('latestBillPaymentsSection');
@@ -3785,7 +3793,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                     document.getElementById('moElecInput').disabled  = true;
                     setTimeout(() => {
                         closeMeterOnlyModal();
-                        showSuccessToast('บันทึกมิเตอร์เรียบร้อยแล้ว');
+                        safeShowSuccessToast('บันทึกมิเตอร์เรียบร้อยแล้ว');
                         refreshWizardTable();
                     }, 700);
                 } else {
@@ -3963,7 +3971,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                     document.getElementById('meterNoticeBlock').style.display = 'none';
                     refreshBillingPayments(_meterCtrId);
                     refreshWizardTable();
-                    showSuccessToast('อัปเดตมิเตอร์เรียบร้อยแล้ว');
+                    safeShowSuccessToast('อัปเดตมิเตอร์เรียบร้อยแล้ว');
                 } else {
                     msg.style.color = '#fca5a5';
                     msg.textContent = d.error || 'เกิดข้อผิดพลาด';
@@ -4596,6 +4604,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
     }
 </script>
 <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
+<script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
 <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>
 </body>
 </html>

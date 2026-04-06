@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-header('Content-Type: application/json');
+header('Content-Type: application/json; charset=UTF-8');
 session_start();
 
 if (empty($_SESSION['admin_username'])) {
@@ -16,7 +16,25 @@ require_once __DIR__ . '/../includes/thai_date_helper.php';
 /**
  * Build one expense + payment summary payload.
  */
-function buildExpensePayload(PDO $pdo, array $expense): array
+function hasPayRemarkColumn(PDO $pdo): bool
+{
+    static $cached = null;
+
+    if ($cached !== null) {
+        return $cached;
+    }
+
+    try {
+        $colStmt = $pdo->query("SHOW COLUMNS FROM payment LIKE 'pay_remark'");
+        $cached = (bool)$colStmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        $cached = false;
+    }
+
+    return $cached;
+}
+
+function buildExpensePayload(PDO $pdo, array $expense, bool $hasPayRemark): array
 {
     $expenseId = (int)($expense['exp_id'] ?? 0);
     $expenseTotal = (float)($expense['exp_total'] ?? 0);
@@ -30,13 +48,24 @@ function buildExpensePayload(PDO $pdo, array $expense): array
         '4' => 'ค้างชำระ',
     ];
 
-    $paymentStmt = $pdo->prepare(" 
-        SELECT pay_id, pay_date, pay_amount, pay_status, pay_remark, pay_proof
-        FROM payment
-        WHERE exp_id = :exp_id
-          AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
-        ORDER BY pay_date ASC, pay_id ASC
-    ");
+    if ($hasPayRemark) {
+        $paymentSql = "
+            SELECT pay_id, pay_date, pay_amount, pay_status, pay_remark, pay_proof
+            FROM payment
+            WHERE exp_id = :exp_id
+              AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
+            ORDER BY pay_date ASC, pay_id ASC
+        ";
+    } else {
+        $paymentSql = "
+            SELECT pay_id, pay_date, pay_amount, pay_status, '' AS pay_remark, pay_proof
+            FROM payment
+            WHERE exp_id = :exp_id
+            ORDER BY pay_date ASC, pay_id ASC
+        ";
+    }
+
+    $paymentStmt = $pdo->prepare($paymentSql);
     $paymentStmt->execute([':exp_id' => $expenseId]);
 
     $payments = [];
@@ -105,6 +134,8 @@ try {
     }
 
     $pdo = connectDB();
+
+    $hasPayRemark = hasPayRemarkColumn($pdo);
 
     $contractStmt = $pdo->prepare('SELECT ctr_start FROM contract WHERE ctr_id = ? LIMIT 1');
     $contractStmt->execute([$ctrId]);
@@ -213,11 +244,11 @@ try {
     ];
 
     if ($firstExpense) {
-        $response['first_bill'] = buildExpensePayload($pdo, $firstExpense);
+        $response['first_bill'] = buildExpensePayload($pdo, $firstExpense, $hasPayRemark);
     }
 
     if ($latestExpense) {
-        $response['latest_bill'] = buildExpensePayload($pdo, $latestExpense);
+        $response['latest_bill'] = buildExpensePayload($pdo, $latestExpense, $hasPayRemark);
     }
 
     // ดึงบิลทั้งหมด (ทุกเดือน) เพื่อแสดงในหน้า wizard
@@ -238,13 +269,13 @@ try {
     $allExpStmt->execute();
     $allExpenses = $allExpStmt->fetchAll(PDO::FETCH_ASSOC);
 
-    $response['all_bills'] = array_map(fn($exp) => buildExpensePayload($pdo, $exp), $allExpenses);
+    $response['all_bills'] = array_map(fn($exp) => buildExpensePayload($pdo, $exp, $hasPayRemark), $allExpenses);
 
-    echo json_encode($response);
+    echo json_encode($response, JSON_UNESCAPED_UNICODE);
 } catch (Throwable $e) {
     http_response_code(500);
     echo json_encode([
         'error' => 'Database error',
         'message' => $e->getMessage(),
-    ]);
+    ], JSON_UNESCAPED_UNICODE);
 }
