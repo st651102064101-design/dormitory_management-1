@@ -3,7 +3,7 @@
   <h2 id="expensesSectionTitle" class="apple-section-title"><?php echo __('expenses_section'); ?></h2>
   <div class="apple-section-card">
     <!-- Billing Schedule Setting (combined: generate day + payment due day) -->
-    <div class="apple-settings-row" id="billingScheduleRow" data-sheet="sheet-billing-schedule" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-billing-schedule" onclick="var sid=this.getAttribute('data-sheet'); if(window.appleSettings && typeof window.appleSettings.openSheet==='function'){window.appleSettings.openSheet(sid);} else {var overlay=document.getElementById(sid); if(overlay){overlay.classList.add('active'); document.body.style.overflow='hidden';}} return false;" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
+    <div class="apple-settings-row" id="billingScheduleRow" data-sheet="sheet-billing-schedule" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-billing-schedule">
       <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label" id="billingScheduleRowLabel">รอบบิลและกำหนดชำระ</p>
@@ -48,7 +48,7 @@
         }
       }
   ?>
-  <div class="apple-settings-row" id="currentRatesRow" data-sheet="sheet-rates" style="padding: 16px;" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" onclick="var sid=this.getAttribute('data-sheet'); if(window.appleSettings && typeof window.appleSettings.openSheet==='function'){window.appleSettings.openSheet(sid);} else {var overlay=document.getElementById(sid); if(overlay){overlay.classList.add('active'); document.body.style.overflow='hidden';}} return false;" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
+  <div class="apple-settings-row" id="currentRatesRow" data-sheet="sheet-rates" style="padding: 16px;" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates">
       <div style="display: flex; gap: 20px; width: 100%;">
         <div style="flex: 1; text-align: center;">
           <div style="font-size: 28px; color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="icon-animated"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
@@ -65,7 +65,7 @@
     </div>
     
     <!-- Manage Rates -->
-    <div class="apple-settings-row" id="manageRatesRow" data-sheet="sheet-rates" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" onclick="var sid=this.getAttribute('data-sheet'); if(window.appleSettings && typeof window.appleSettings.openSheet==='function'){window.appleSettings.openSheet(sid);} else {var overlay=document.getElementById(sid); if(overlay){overlay.classList.add('active'); document.body.style.overflow='hidden';}} return false;" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault(); this.click();}">
+    <div class="apple-settings-row" id="manageRatesRow" data-sheet="sheet-rates" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates">
       <div class="apple-row-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label" id="manageRatesRowLabel"><?php echo __('manage_rates_label'); ?></p>
@@ -75,84 +75,6 @@
     </div>
   </div>
 </div>
-
-<script>
-(function bindInlineRatesSheetOpen() {
-  const styleId = 'rates-row-click-fix-style';
-  if (!document.getElementById(styleId)) {
-    const styleEl = document.createElement('style');
-    styleEl.id = styleId;
-    styleEl.textContent = '#billingScheduleRow > *, #currentRatesRow > *, #manageRatesRow > * { pointer-events: none; }';
-    document.head.appendChild(styleEl);
-  }
-
-  const rows = [
-    document.getElementById('billingScheduleRow'),
-    document.getElementById('currentRatesRow'),
-    document.getElementById('manageRatesRow')
-  ].filter(Boolean);
-
-  if (!rows.length) {
-    return;
-  }
-
-  const openSheet = (sheetId) => {
-    if (!sheetId) {
-      return;
-    }
-
-    if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
-      window.appleSettings.openSheet(sheetId);
-      return;
-    }
-
-    const overlay = document.getElementById(sheetId);
-    if (!overlay) {
-      return;
-    }
-
-    overlay.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  };
-
-  const bindRow = (row) => {
-    if (!row || row.dataset.inlineRatesSheetBound === '1') {
-      return;
-    }
-
-    row.style.touchAction = 'manipulation';
-
-    const onActivate = (event) => {
-      if (event.target && event.target.closest('button, input, select, textarea, a, [data-close-sheet]')) {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      if (typeof event.stopImmediatePropagation === 'function') {
-        event.stopImmediatePropagation();
-      }
-
-      openSheet(row.getAttribute('data-sheet'));
-    };
-
-    row.addEventListener('pointerup', onActivate, true);
-    row.addEventListener('touchend', onActivate, { capture: true, passive: false });
-    row.addEventListener('click', onActivate, true);
-
-    row.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter' && event.key !== ' ') {
-        return;
-      }
-      onActivate(event);
-    }, true);
-
-    row.dataset.inlineRatesSheetBound = '1';
-  };
-
-  rows.forEach(bindRow);
-})();
-</script>
 
 <!-- Sheet: Rates -->
 <div class="apple-sheet-overlay" id="sheet-rates">

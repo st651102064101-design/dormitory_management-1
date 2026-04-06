@@ -430,29 +430,82 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
       }
       document.__settingsSheetFallbackBound = true;
 
+      const logBillingIssue = (level, message, payload) => {
+        const data = payload || {};
+        if (data.rowId !== 'billingScheduleRow') {
+          return;
+        }
+
+        if (level === 'error') {
+          console.error('[SheetDebug]', message, data);
+          return;
+        }
+        if (level === 'warn') {
+          console.warn('[SheetDebug]', message, data);
+          return;
+        }
+        console.info('[SheetDebug]', message, data);
+      };
+
       document.addEventListener('click', function(event) {
         const row = event.target.closest('.apple-settings-row[data-sheet]');
         if (!row) {
           return;
         }
 
+        const debugContext = {
+          source: 'system_settings.bindSheetOpenFallback.click',
+          rowId: row.id || '',
+          targetTag: event.target && event.target.tagName ? event.target.tagName : ''
+        };
+
+        if (event.defaultPrevented) {
+          logBillingIssue('warn', 'Event already prevented before system fallback handler', debugContext);
+          return;
+        }
+
         if (event.target.closest('button, input, select, textarea, a, .apple-toggle, [data-close-sheet]')) {
+          logBillingIssue('info', 'Ignored interactive child target', debugContext);
           return;
         }
 
         const sheetId = row.getAttribute('data-sheet');
         if (!sheetId) {
+          logBillingIssue('error', 'Row missing data-sheet attribute', debugContext);
           return;
         }
+        debugContext.sheetId = sheetId;
 
         const sheet = document.getElementById(sheetId);
         if (!sheet) {
+          logBillingIssue('error', 'Sheet overlay not found in system fallback', debugContext);
           return;
         }
 
-        event.preventDefault();
+        if (sheet.classList.contains('active')) {
+          logBillingIssue('info', 'Sheet already active; skip duplicate open', debugContext);
+          return;
+        }
+
+        if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
+          const opened = window.appleSettings.openSheet(sheetId, {
+            source: 'system_settings.bindSheetOpenFallback.click',
+            rowId: row.id || '',
+            sheetId
+          }) === true;
+
+          if (opened) {
+            event.preventDefault();
+            return;
+          }
+
+          logBillingIssue('warn', 'appleSettings.openSheet returned false, trying raw DOM fallback', debugContext);
+        }
+
         sheet.classList.add('active');
         document.body.style.overflow = 'hidden';
+        event.preventDefault();
+        logBillingIssue('info', 'Opened sheet via raw DOM fallback', debugContext);
       }, true);
     }
 

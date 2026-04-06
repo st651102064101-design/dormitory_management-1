@@ -22,12 +22,78 @@ class AppleSettings {
 
   // ===== Sheet Modal Management =====
   initSheets() {
-    // Open sheet when clicking on settings row
-    document.querySelectorAll('[data-sheet]').forEach(row => {
-      row.addEventListener('click', (e) => {
-        e.preventDefault();
-        const sheetId = row.dataset.sheet;
-        this.openSheet(sheetId);
+    // Open sheet when activating on settings row.
+    document.querySelectorAll('.apple-settings-row[data-sheet]').forEach((row) => {
+      if (row.dataset.sheetBound === '1') {
+        return;
+      }
+      row.dataset.sheetBound = '1';
+
+      const openFromRow = (event, source = 'click') => {
+        const isBillingRow = row.id === 'billingScheduleRow';
+        const logBilling = (level, message, extra = {}) => {
+          if (!isBillingRow) {
+            return;
+          }
+
+          const payload = Object.assign({
+            source,
+            rowId: row.id || '',
+            sheetId: row.dataset.sheet || ''
+          }, extra);
+
+          if (level === 'error') {
+            console.error('[SheetDebug]', message, payload);
+            return;
+          }
+          if (level === 'warn') {
+            console.warn('[SheetDebug]', message, payload);
+            return;
+          }
+          console.info('[SheetDebug]', message, payload);
+        };
+
+        if (event && event.defaultPrevented) {
+          logBilling('warn', 'Event already prevented before AppleSettings row handler');
+          return;
+        }
+
+        if (event && event.target && event.target.closest('button, input, select, textarea, a, .apple-toggle, [data-close-sheet]')) {
+          logBilling('info', 'Ignored interactive child target');
+          return;
+        }
+
+        const sheetId = (row.dataset.sheet || '').trim();
+        if (!sheetId) {
+          logBilling('error', 'Row is missing data-sheet attribute');
+          return;
+        }
+
+        const opened = this.openSheet(sheetId, {
+          source: `apple-settings.initSheets.${source}`,
+          rowId: row.id || '',
+          sheetId
+        });
+
+        if (!opened) {
+          logBilling('error', 'openSheet returned false');
+          return;
+        }
+
+        if (event) {
+          event.preventDefault();
+        }
+      };
+
+      row.addEventListener('click', (event) => {
+        openFromRow(event, 'click');
+      });
+      row.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+
+        openFromRow(event, 'keydown');
       });
     });
 
@@ -84,12 +150,27 @@ class AppleSettings {
     });
   }
 
-  openSheet(sheetId) {
-    const overlay = document.getElementById(sheetId);
-    if (overlay) {
-      overlay.classList.add('active');
-      document.body.style.overflow = 'hidden';
+  openSheet(sheetId, context = null) {
+    const debugContext = context || {};
+    if (!sheetId) {
+      console.error('[SheetDebug] Missing sheet id for openSheet()', debugContext);
+      return false;
     }
+
+    const overlay = document.getElementById(sheetId);
+    if (!overlay) {
+      console.error(`[SheetDebug] Sheet overlay not found: #${sheetId}`, debugContext);
+      return false;
+    }
+
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+
+    if (debugContext.rowId === 'billingScheduleRow') {
+      console.info('[SheetDebug] Opened sheet successfully', debugContext);
+    }
+
+    return true;
   }
 
   closeSheet(sheetId) {

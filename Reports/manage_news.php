@@ -8,7 +8,9 @@ if (empty($_SESSION['admin_username'])) {
 }
 require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/thai_date_helper.php';
+require_once __DIR__ . '/../includes/lang.php';
 $pdo = connectDB();
+$currentLang = getLang();
 
 // รับค่า sort จาก query parameter
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
@@ -70,13 +72,34 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
         $lightThemeClass = 'light-theme';
     }
 }
+
+$newsManageTitle = __('news_manage_title');
+
+if (!function_exists('formatNewsDateForManageNews')) {
+  function formatNewsDateForManageNews(?string $dateValue, string $lang): string {
+    if (empty($dateValue)) {
+      return '-';
+    }
+
+    $timestamp = strtotime($dateValue);
+    if ($timestamp === false) {
+      return $dateValue;
+    }
+
+    if ($lang === 'en') {
+      return date('j M Y', $timestamp);
+    }
+
+    return thaiDate(date('Y-m-d', $timestamp));
+  }
+}
 ?>
 <!doctype html>
-<html lang="th" class="<?php echo $lightThemeClass; ?>">
+<html lang="<?php echo htmlspecialchars($currentLang, ENT_QUOTES, 'UTF-8'); ?>" class="<?php echo $lightThemeClass; ?>">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการข่าวประชาสัมพันธ์</title>
+    <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - <?php echo htmlspecialchars($newsManageTitle, ENT_QUOTES, 'UTF-8'); ?></title>
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
@@ -386,7 +409,7 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
       <main class="app-main">
         <div>
           <?php 
-            $pageTitle = 'จัดการข่าวประชาสัมพันธ์';
+            $pageTitle = $newsManageTitle;
             include __DIR__ . '/../includes/page_header.php'; 
           ?>
 
@@ -411,12 +434,12 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
             <div class="news-stats">
               <div class="news-stat-card particle-wrapper">
                 <div class="particle-container" data-particles="3"></div>
-                <h3>ข่าวทั้งหมด</h3>
+                <h3><?php echo __('news_total_label'); ?></h3>
                 <div class="stat-value" id="totalNewsCount"><?php echo number_format($totalNews); ?></div>
               </div>
               <div class="news-stat-card particle-wrapper">
                 <div class="particle-container" data-particles="3"></div>
-                <h3>ข่าวใหม่ (30 วัน)</h3>
+                <h3><?php echo __('news_recent_30_days_label'); ?></h3>
                 <div class="stat-value" id="recentNewsCount" style="color:#22c55e;"><?php echo number_format($recentNews); ?></div>
               </div>
             </div>
@@ -425,45 +448,45 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
           <!-- Toggle button for news form -->
           <div style="margin:1.5rem 0;">
             <button type="button" id="toggleNewsFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#ffffff;border:1px solid rgba(15,23,42,0.16);color:#1e293b;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(15,23,42,0.08);" onclick="toggleNewsForm()" onmouseover="this.style.background='#f8fafc';this.style.borderColor='rgba(15,23,42,0.24)'" onmouseout="this.style.background='#ffffff';this.style.borderColor='rgba(15,23,42,0.16)'">
-              <span id="toggleNewsFormIcon">▼</span> <span id="toggleNewsFormText">ซ่อนฟอร์ม</span>
+              <span id="toggleNewsFormIcon">▼</span> <span id="toggleNewsFormText"><?php echo __('toggle_hide_form'); ?></span>
             </button>
           </div>
 
           <section class="manage-panel" style="background:#ffffff; color:#0f172a;" id="addNewsSection">
             <div class="section-header">
               <div>
-                <h1>เพิ่มข่าวประชาสัมพันธ์ใหม่</h1>
-                <p style="margin-top:0.25rem;color:#64748b;">เผยแพร่ข่าวสารและประกาศสำคัญ</p>
+                <h1><?php echo __('news_add_new_title'); ?></h1>
+                <p style="margin-top:0.25rem;color:#64748b;"><?php echo __('news_add_new_subtitle'); ?></p>
               </div>
             </div>
             <form action="../Manage/process_news.php" method="post" id="newsForm">
               <div class="news-form">
                 <div class="news-form-group">
-                  <label for="news_title">หัวข้อข่าว <span style="color:#f87171;">*</span></label>
-                  <input type="text" id="news_title" name="news_title" required maxlength="255" placeholder="ระบุหัวข้อข่าว" />
+                  <label for="news_title"><?php echo __('news_title'); ?> <span style="color:#f87171;">*</span></label>
+                  <input type="text" id="news_title" name="news_title" required maxlength="255" placeholder="<?php echo htmlspecialchars(__('news_title_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" />
                 </div>
                 <div class="news-form-group">
-                  <label for="news_details">รายละเอียด <span style="color:#f87171;">*</span></label>
-                  <textarea id="news_details" name="news_details" required placeholder="เขียนรายละเอียดข่าว..."></textarea>
+                  <label for="news_details"><?php echo __('news_content'); ?> <span style="color:#f87171;">*</span></label>
+                  <textarea id="news_details" name="news_details" required placeholder="<?php echo htmlspecialchars(__('news_content_placeholder'), ENT_QUOTES, 'UTF-8'); ?>"></textarea>
                 </div>
                 <div class="news-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                   <div>
-                    <label for="news_date">วันที่เผยแพร่ <span style="color:#f87171;">*</span></label>
+                    <label for="news_date"><?php echo __('news_date'); ?> <span style="color:#f87171;">*</span></label>
                     <input type="date" id="news_date" name="news_date" required value="<?php echo date('Y-m-d'); ?>" />
                   </div>
                   <div>
-                    <label for="news_by">ผู้เผยแพร่</label>
-                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="ชื่อผู้เผยแพร่" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" readonly style="background:#f8fafc; border-color:rgba(15,23,42,0.12); cursor:not-allowed; color:#64748b;" />
+                    <label for="news_by"><?php echo __('news_publisher'); ?></label>
+                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="<?php echo htmlspecialchars(__('news_publisher_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" readonly style="background:#f8fafc; border-color:rgba(15,23,42,0.12); cursor:not-allowed; color:#64748b;" />
                   </div>
                 </div>
                 <div class="news-form-actions">
                   <button type="submit" id="submitNewsBtn" style="flex:1; background: #34C759; color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
-                    เผยแพร่ข่าว
+                    <?php echo __('news_publish_button'); ?>
                   </button>
                   <button type="reset" style="flex:1; background: #FF3B30; color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
-                    ล้างข้อมูล
+                    <?php echo __('clear_data'); ?>
                   </button>
                 </div>
               </div>
@@ -473,21 +496,21 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
           <section class="manage-panel">
             <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
-                <h1>รายการข่าวทั้งหมด</h1>
-                <p style="color:#64748b;margin-top:0.2rem;">ข่าวประชาสัมพันธ์และประกาศต่างๆ</p>
+                <h1><?php echo __('news_list_title'); ?></h1>
+                <p style="color:#64748b;margin-top:0.2rem;"><?php echo __('news_list_subtitle'); ?></p>
               </div>
               <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(15,23,42,0.16);background:#ffffff;color:#0f172a;font-size:0.95rem;cursor:pointer;">
-                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
-                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
-                <option value="title" <?php echo ($sortBy === 'title' ? 'selected' : ''); ?>>ชื่อข่าว (ก-ฮ)</option>
+                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>><?php echo __('sort_newest'); ?></option>
+                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>><?php echo __('sort_oldest'); ?></option>
+                <option value="title" <?php echo ($sortBy === 'title' ? 'selected' : ''); ?>><?php echo __('sort_title'); ?></option>
               </select>
             </div>
             
             <?php if (empty($newsList)): ?>
               <div class="news-empty">
                 <div class="news-empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:56px;height:56px;"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2Zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6Z"/></svg></div>
-                <h3>ยังไม่มีข่าวประชาสัมพันธ์</h3>
-                <p>เริ่มต้นเพิ่มข่าวใหม่จากฟอร์มด้านบน</p>
+                <h3><?php echo __('news_empty_title'); ?></h3>
+                <p><?php echo __('news_empty_hint'); ?></p>
               </div>
             <?php else: ?>
               <div style="margin-top:1rem;" id="newsContainer">
@@ -504,7 +527,7 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
                     <div class="news-card-meta">
                       <span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                        <?php echo $news['news_date'] ? thaiDate($news['news_date']) : '-'; ?>
+                        <?php echo formatNewsDateForManageNews($news['news_date'] ?? null, $currentLang); ?>
                       </span>
                       <?php if (!empty($news['news_by'])): ?>
                         <span>
@@ -517,8 +540,8 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
                       <?php echo nl2br(htmlspecialchars($news['news_details'])); ?>
                     </div>
                     <div class="news-card-actions">
-                      <button type="button" class="animate-ui-action-btn edit" data-no-modal="true" data-animate-ui-skip="true" data-news-id="<?php echo $news['news_id']; ?>" onclick="editNews(<?php echo $news['news_id']; ?>)">แก้ไข</button>
-                      <button type="button" class="animate-ui-action-btn delete" onclick="deleteNews(<?php echo $news['news_id']; ?>, '<?php echo htmlspecialchars(addslashes($news['news_title'])); ?>')">ลบ</button>
+                      <button type="button" class="animate-ui-action-btn edit" data-no-modal="true" data-animate-ui-skip="true" data-news-id="<?php echo $news['news_id']; ?>" onclick="editNews(<?php echo $news['news_id']; ?>)"><?php echo __('edit'); ?></button>
+                      <button type="button" class="animate-ui-action-btn delete" onclick="deleteNews(<?php echo $news['news_id']; ?>, '<?php echo htmlspecialchars(addslashes($news['news_title'])); ?>')"><?php echo __('delete'); ?></button>
                     </div>
                   </div>
                 <?php endforeach; ?>
@@ -526,10 +549,10 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
               <?php if ($totalNews > $displayLimit): ?>
                 <div style="text-align:center; margin-top:1.5rem;">
                   <button type="button" id="showMoreBtn" onclick="showMoreNews()" style="background:#007AFF; color:#fff; border:none; border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.3s;">
-                    ดูเพิ่มเติม (<?php echo $totalNews - $displayLimit; ?> รายการ)
+                    <?php echo __('show_more_items', ['count' => $totalNews - $displayLimit]); ?>
                   </button>
                   <button type="button" id="showLessBtn" onclick="showLessNews()" style="display:none; background:#FF9500; color:#fff; border:none; border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.3s;">
-                    แสดงน้อยลง
+                    <?php echo __('show_less'); ?>
                   </button>
                 </div>
               <?php endif; ?>
@@ -542,34 +565,34 @@ if (preg_match('/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/', $themeColor)) {
     <!-- Edit Modal -->
     <div class="booking-modal" id="editModal" style="display:none;">
       <div class="booking-modal-content">
-        <h2>แก้ไขข่าวประชาสัมพันธ์</h2>
+        <h2><?php echo __('edit_news'); ?></h2>
         <form id="editForm" method="POST" action="../Manage/update_news.php">
           <input type="hidden" name="news_id" id="edit_news_id">
           
           <div class="booking-form-group">
-            <label>หัวข้อข่าว: <span style="color: red;">*</span></label>
+            <label><?php echo __('news_title'); ?>: <span style="color: red;">*</span></label>
             <input type="text" name="news_title" id="edit_news_title" required maxlength="255">
           </div>
           
           <div class="booking-form-group">
-            <label>รายละเอียด: <span style="color: red;">*</span></label>
+            <label><?php echo __('news_content'); ?>: <span style="color: red;">*</span></label>
             <textarea name="news_details" id="edit_news_details" required style="min-height:150px;"></textarea>
           </div>
           
           <div class="booking-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div>
-              <label>วันที่เผยแพร่: <span style="color: red;">*</span></label>
+              <label><?php echo __('news_date'); ?>: <span style="color: red;">*</span></label>
               <input type="date" name="news_date" id="edit_news_date" required>
             </div>
             <div>
-              <label>ผู้เผยแพร่:</label>
+              <label><?php echo __('news_publisher'); ?>:</label>
               <input type="text" name="news_by" id="edit_news_by" maxlength="100">
             </div>
           </div>
           
           <div class="booking-form-actions">
-            <button type="submit" class="btn-submit">บันทึกการแก้ไข</button>
-            <button type="button" class="btn-cancel" onclick="closeEditModal()">ยกเลิก</button>
+            <button type="submit" class="btn-submit"><?php echo __('save_changes'); ?></button>
+            <button type="button" class="btn-cancel" onclick="closeEditModal()"><?php echo __('cancel'); ?></button>
           </div>
         </form>
       </div>

@@ -295,11 +295,22 @@
     document.body.style.overflow = '';
   }
 
-  function openSheetById(sheetId) {
+  function openSheetById(sheetId, context) {
     var overlay = document.getElementById(sheetId);
-    if (!overlay) return;
+    if (!overlay) {
+      if (context && context.rowId === 'billingScheduleRow') {
+        console.error('[SheetDebug] Overlay not found for sheet:', sheetId, context);
+      }
+      return false;
+    }
     overlay.classList.add('active');
     document.body.style.overflow = 'hidden';
+
+    if (context && context.rowId === 'billingScheduleRow') {
+      console.info('[SheetDebug] Opened sheet via openSheetById:', sheetId, context);
+    }
+
+    return true;
   }
 
   function closeOverlay(overlay) {
@@ -356,30 +367,84 @@
         }
       });
 
+      function logBillingIssue(level, message, context) {
+        if (!context || context.rowId !== 'billingScheduleRow') {
+          return;
+        }
+
+        var payload = context || {};
+        if (level === 'error') {
+          console.error('[SheetDebug]', message, payload);
+          return;
+        }
+        if (level === 'warn') {
+          console.warn('[SheetDebug]', message, payload);
+          return;
+        }
+        console.info('[SheetDebug]', message, payload);
+      }
+
+      function tryOpenSheetFromFallback(row, sheetId, source) {
+        var context = {
+          source: source,
+          rowId: row && row.id ? row.id : '',
+          sheetId: sheetId
+        };
+
+        var opened = false;
+        if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
+          opened = window.appleSettings.openSheet(sheetId, context) === true;
+          if (!opened) {
+            logBillingIssue('warn', 'appleSettings.openSheet returned false, trying DOM fallback', context);
+          }
+        }
+
+        if (!opened) {
+          opened = openSheetById(sheetId, context) === true;
+        }
+
+        if (!opened) {
+          logBillingIssue('error', 'Unable to open sheet from row fallback', context);
+        }
+
+        return opened;
+      }
+
       document.addEventListener('click', function(event) {
         var row = event.target.closest('.apple-settings-row[data-sheet]');
         if (!row) {
           return;
         }
 
+        var contextBase = {
+          source: 'section_images.bindRowOpenFallback.click',
+          rowId: row.id || '',
+          targetTag: event.target && event.target.tagName ? event.target.tagName : ''
+        };
+
+        if (event.defaultPrevented) {
+          logBillingIssue('warn', 'Click was already prevented before fallback handler', contextBase);
+          return;
+        }
+
         if (event.target.closest('button, input, select, textarea, a, label, [data-close-sheet]')) {
+          logBillingIssue('info', 'Ignored click on interactive child element', contextBase);
           return;
         }
 
         var sheetId = (row.getAttribute('data-sheet') || '').trim();
         if (!sheetId) {
+          logBillingIssue('error', 'Row missing data-sheet attribute', contextBase);
+          return;
+        }
+
+        var opened = tryOpenSheetFromFallback(row, sheetId, 'section_images.bindRowOpenFallback.click');
+        if (!opened) {
           return;
         }
 
         event.preventDefault();
         event.stopPropagation();
-
-        if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
-          window.appleSettings.openSheet(sheetId);
-          return;
-        }
-
-        openSheetById(sheetId);
       }, true);
 
       document.addEventListener('keydown', function(event) {
@@ -392,20 +457,30 @@
           return;
         }
 
+        var contextBase = {
+          source: 'section_images.bindRowOpenFallback.keydown',
+          rowId: row.id || '',
+          key: event.key
+        };
+
+        if (event.defaultPrevented) {
+          logBillingIssue('warn', 'Keydown was already prevented before fallback handler', contextBase);
+          return;
+        }
+
         var sheetId = (row.getAttribute('data-sheet') || '').trim();
         if (!sheetId) {
+          logBillingIssue('error', 'Row missing data-sheet attribute on keydown', contextBase);
+          return;
+        }
+
+        var opened = tryOpenSheetFromFallback(row, sheetId, 'section_images.bindRowOpenFallback.keydown');
+        if (!opened) {
           return;
         }
 
         event.preventDefault();
         event.stopPropagation();
-
-        if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
-          window.appleSettings.openSheet(sheetId);
-          return;
-        }
-
-        openSheetById(sheetId);
       }, true);
     }
 
