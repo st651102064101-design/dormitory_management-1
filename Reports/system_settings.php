@@ -30,6 +30,12 @@ include __DIR__ . '/settings/settings_data.php';
 $systemLanguage = getLang();
 
 $pageTitle = __('settings');
+
+$toastScriptPath = __DIR__ . '/../Public/Assets/Javascript/toast-notification.js';
+$toastScriptVersion = is_file($toastScriptPath) ? (string)filemtime($toastScriptPath) : (string)time();
+
+$appleSettingsScriptPath = __DIR__ . '/settings/apple-settings.js';
+$appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemtime($appleSettingsScriptPath) : (string)time();
 ?>
 <!doctype html>
 <html lang="th" class="apple-settings-html">
@@ -355,8 +361,8 @@ $pageTitle = __('settings');
   </div>
   
   <!-- Scripts -->
-  <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
-  <script src="/dormitory_management/Reports/settings/apple-settings.js"></script>
+  <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js?v=<?php echo urlencode($toastScriptVersion); ?>"></script>
+  <script src="/dormitory_management/Reports/settings/apple-settings.js?v=<?php echo urlencode($appleSettingsScriptVersion); ?>"></script>
   <script>
   // Keep settings layout stable and avoid click conflicts from duplicated handlers.
   (function() {
@@ -450,15 +456,110 @@ $pageTitle = __('settings');
       }, true);
     }
 
+    function bindSiteNameSaveFallback() {
+      if (document.__siteNameSaveFallbackBound) {
+        return;
+      }
+
+      const form = document.getElementById('siteNameForm');
+      const button = document.getElementById('saveSiteNameBtn');
+      const input = document.getElementById('siteName');
+      if (!form || !button || !input) {
+        return;
+      }
+
+      document.__siteNameSaveFallbackBound = true;
+
+      const runSave = async () => {
+        const siteName = input.value.trim();
+        if (!siteName) {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast('กรุณากรอกชื่อหอพัก', 'error');
+          }
+          input.focus();
+          return;
+        }
+
+        if (button.dataset.saving === '1') {
+          return;
+        }
+
+        button.dataset.saving = '1';
+        button.disabled = true;
+
+        try {
+          const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `site_name=${encodeURIComponent(siteName)}`
+          });
+
+          let result = null;
+          try {
+            result = await response.json();
+          } catch (parseError) {
+            throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+          }
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || 'เกิดข้อผิดพลาด');
+          }
+
+          const displayEl = document.querySelector('[data-display="sitename"]');
+          if (displayEl) {
+            displayEl.textContent = siteName;
+          }
+
+          const profileNameEl = document.querySelector('.apple-profile-name');
+          if (profileNameEl) {
+            profileNameEl.textContent = siteName;
+          }
+
+          document.title = `${siteName} - จัดการระบบ`;
+
+          const sheet = document.getElementById('sheet-sitename');
+          if (sheet) {
+            sheet.classList.remove('active');
+            document.body.style.overflow = '';
+          }
+
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast('บันทึกชื่อหอพักสำเร็จ', 'success');
+          }
+        } catch (error) {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(error.message, 'error');
+          }
+        } finally {
+          button.dataset.saving = '0';
+          button.disabled = false;
+        }
+      };
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runSave();
+      }, true);
+
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runSave();
+      }, true);
+    }
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
         bindQuickActionFallback();
         bindSheetOpenFallback();
+        bindSiteNameSaveFallback();
         syncSettingsLayout();
       });
     } else {
       bindQuickActionFallback();
       bindSheetOpenFallback();
+      bindSiteNameSaveFallback();
       syncSettingsLayout();
     }
 
