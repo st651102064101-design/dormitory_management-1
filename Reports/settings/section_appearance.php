@@ -1039,29 +1039,29 @@
     </div>
     <div class="apple-sheet-body">
       <p style="font-size: 13px; color: var(--apple-text-secondary); margin-bottom: 16px;">
-        เลือกภาษาที่ใช้แสดงในระบบ<br>
-        <span style="font-size: 12px;">Select display language for the system</span>
+        <span id="languageDescMain">เลือกภาษาที่ใช้แสดงในระบบ</span><br>
+        <span id="languageDescSub" style="font-size: 12px;">Select display language for the system</span>
       </p>
       <div class="apple-theme-grid" style="grid-template-columns: repeat(2, 1fr);">
         <div class="apple-language-option <?php echo ($systemLanguage ?? 'th') === 'th' ? 'active' : ''; ?>" data-language="th">
           <div class="apple-language-preview">
             <span style="font-size: 48px;">🇹🇭</span>
           </div>
-          <span class="apple-theme-name">ไทย (Thai)</span>
+          <span class="apple-theme-name" id="languageOptionThLabel">ไทย (Thai)</span>
         </div>
         <div class="apple-language-option <?php echo ($systemLanguage ?? 'th') === 'en' ? 'active' : ''; ?>" data-language="en">
           <div class="apple-language-preview">
             <span style="font-size: 48px;">🇺🇸</span>
           </div>
-          <span class="apple-theme-name">English</span>
+          <span class="apple-theme-name" id="languageOptionEnLabel">English</span>
         </div>
       </div>
       
       <div style="margin-top: 20px; padding: 12px; background: rgba(59, 130, 246, 0.1); border-radius: 10px; border: 1px solid rgba(59, 130, 246, 0.2);">
         <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0; display: flex; align-items: center; gap: 6px;">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-          การเปลี่ยนภาษาจะมีผลกับทุกหน้าในระบบ<br>
-          <span style="font-size: 11px;">Language change will affect all pages in the system</span>
+          <span id="languageInfoMain">การเปลี่ยนภาษาจะมีผลกับทุกหน้าในระบบ</span><br>
+          <span id="languageInfoSub" style="font-size: 11px;">Language change will affect all pages in the system</span>
         </p>
       </div>
       <script>
@@ -1081,6 +1081,41 @@
           th: '🇹🇭 ไทย',
           en: '🇺🇸 English'
         };
+        const languageUiText = {
+          th: {
+            done: 'เสร็จ',
+            title: 'ภาษา',
+            descMain: 'เลือกภาษาที่ใช้แสดงในระบบ',
+            descSub: 'Select display language for the system',
+            optionTh: 'ไทย (Thai)',
+            optionEn: 'English',
+            infoMain: 'การเปลี่ยนภาษาจะมีผลกับทุกหน้าในระบบ',
+            infoSub: 'Language change will affect all pages in the system',
+            settingsTitle: 'ตั้งค่า',
+            settingsSubtitle: 'จัดการระบบหอพัก'
+          },
+          en: {
+            done: 'Done',
+            title: 'Language',
+            descMain: 'Select display language for the system',
+            descSub: 'Language change will affect all pages in the system',
+            optionTh: 'Thai',
+            optionEn: 'English',
+            infoMain: 'Language change will affect all pages in the system',
+            infoSub: 'Changes are applied immediately without page refresh',
+            settingsTitle: 'Settings',
+            settingsSubtitle: 'Manage Dormitory System'
+          }
+        };
+
+        const doneBtn = sheet.querySelector('[data-close-sheet="sheet-language"]');
+        const titleEl = sheet.querySelector('.apple-sheet-title');
+        const descMainEl = document.getElementById('languageDescMain');
+        const descSubEl = document.getElementById('languageDescSub');
+        const optionThLabelEl = document.getElementById('languageOptionThLabel');
+        const optionEnLabelEl = document.getElementById('languageOptionEnLabel');
+        const infoMainEl = document.getElementById('languageInfoMain');
+        const infoSubEl = document.getElementById('languageInfoSub');
 
         const notify = (message, type) => {
           if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
@@ -1104,12 +1139,52 @@
           }
         };
 
+        const applyLanguageUi = (language) => {
+          const ui = languageUiText[language] || languageUiText.th;
+
+          if (doneBtn) {
+            doneBtn.textContent = ui.done;
+          }
+          if (titleEl) {
+            titleEl.textContent = ui.title;
+          }
+          if (descMainEl) {
+            descMainEl.textContent = ui.descMain;
+          }
+          if (descSubEl) {
+            descSubEl.textContent = ui.descSub;
+          }
+          if (optionThLabelEl) {
+            optionThLabelEl.textContent = ui.optionTh;
+          }
+          if (optionEnLabelEl) {
+            optionEnLabelEl.textContent = ui.optionEn;
+          }
+          if (infoMainEl) {
+            infoMainEl.textContent = ui.infoMain;
+          }
+          if (infoSubEl) {
+            infoSubEl.textContent = ui.infoSub;
+          }
+
+          const settingsTitleEl = document.querySelector('.apple-settings-header h1');
+          if (settingsTitleEl) {
+            settingsTitleEl.textContent = ui.settingsTitle;
+          }
+
+          const settingsSubtitleEl = document.querySelector('.apple-settings-header p');
+          if (settingsSubtitleEl) {
+            settingsSubtitleEl.textContent = ui.settingsSubtitle;
+          }
+        };
+
         const initialActive = sheet.querySelector('.apple-language-option.active')?.dataset.language;
         let savedLanguage = allowedLanguages.includes(initialActive)
           ? initialActive
           : <?php echo json_encode((($systemLanguage ?? 'th') === 'en') ? 'en' : 'th'); ?>;
 
         setActiveLanguage(savedLanguage);
+        applyLanguageUi(savedLanguage);
 
         const saveLanguage = async (language) => {
           if (!allowedLanguages.includes(language)) {
@@ -1124,6 +1199,7 @@
           const previousLanguage = savedLanguage;
           sheet.dataset.saving = '1';
           setActiveLanguage(language);
+          applyLanguageUi(language);
 
           try {
             const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
@@ -1156,6 +1232,7 @@
             notify(result.message || (language === 'th' ? 'บันทึกภาษาสำเร็จ' : 'Language saved successfully'), 'success');
           } catch (error) {
             setActiveLanguage(previousLanguage);
+            applyLanguageUi(previousLanguage);
             notify(error.message || 'เกิดข้อผิดพลาด', 'error');
           } finally {
             sheet.dataset.saving = '0';
