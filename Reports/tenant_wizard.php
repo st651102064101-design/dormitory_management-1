@@ -2166,6 +2166,30 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                     $step5Tooltip = '5. แจ้งยกเลิกสัญญาแล้ว';
                                 }
 
+                                $openBillingModalJsRaw = 'openBillingModal('
+                                    . (int)$tenant['ctr_id'] . ', '
+                                    . json_encode($tenant['tnt_id'], JSON_UNESCAPED_UNICODE) . ', '
+                                    . json_encode($tenant['tnt_name'], JSON_UNESCAPED_UNICODE) . ', '
+                                    . json_encode($tenant['room_number'], JSON_UNESCAPED_UNICODE) . ', '
+                                    . json_encode($tenant['type_name'], JSON_UNESCAPED_UNICODE) . ', '
+                                    . (int)$tenant['type_price']
+                                    . ')';
+                                $openBillingModalJsEscaped = htmlspecialchars($openBillingModalJsRaw, ENT_QUOTES, 'UTF-8');
+                                $openBillingModalKeydownEscaped = htmlspecialchars(
+                                    "if(event.key==='Enter'||event.key===' '){event.preventDefault();" . $openBillingModalJsRaw . ';}',
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                                $canOpenStep5Circle = !$isCancelPending
+                                    && (int)$tenant['ctr_id'] > 0
+                                    && (
+                                        $step5
+                                        || $step4
+                                        || $step5CircleClass === 'completed'
+                                        || $currentStep >= 5
+                                        || (int)($tenant['completed'] ?? 0) === 1
+                                    );
+
                                 // Advance currentStep based on completed steps
                                 // Ensure we move to the next action step based on what's completed
                                 if ($step1) $currentStep = max($currentStep, 1);
@@ -2214,7 +2238,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                 <?php echo $step4 ? '✓' : ($currentStep == 4 ? '<svg class="checkin-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="2" width="10" height="20" rx="1.5" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" fill="rgba(255,255,255,0.08)"/><circle cx="16.5" cy="12" r="1.2" fill="rgba(255,255,255,0.8)"/><g class="c-arrow"><line x1="2" y1="12" x2="9" y2="12" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><polyline points="6,9 9.5,12 6,15" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>' : '4'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step5CircleClass; ?>" data-ctr-id="<?php echo (int)$tenant['ctr_id']; ?>" data-tooltip="<?php echo htmlspecialchars($step5Tooltip, ENT_QUOTES, 'UTF-8'); ?>" <?php if ($step5): ?>onclick="openBillingModal(<?php echo (int)$tenant['ctr_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['type_price']; ?>)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step5CircleClass; ?>" data-ctr-id="<?php echo (int)$tenant['ctr_id']; ?>" data-tooltip="<?php echo htmlspecialchars($step5Tooltip, ENT_QUOTES, 'UTF-8'); ?>" <?php if ($canOpenStep5Circle): ?>role="button" tabindex="0" onclick="<?php echo $openBillingModalJsEscaped; ?>" onkeydown="<?php echo $openBillingModalKeydownEscaped; ?>" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step5CircleLabel; ?>
                                             </div>
                                         </div>
@@ -4596,6 +4620,65 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         });
     }
 
+    async function softNavigateWizard(targetUrl) {
+        const panelBody = document.querySelector('.wizard-panel-body');
+        if (!panelBody || !targetUrl) {
+            return false;
+        }
+
+        const cleanUrl = new URL(targetUrl, window.location.href);
+        const fetchUrl = new URL(cleanUrl.toString());
+        fetchUrl.searchParams.set('_t', Date.now().toString());
+
+        if (window._wizSoftNavigating === true) {
+            return false;
+        }
+        window._wizSoftNavigating = true;
+
+        try {
+            const response = await fetch(fetchUrl.toString(), { credentials: 'same-origin' });
+            if (!response.ok) {
+                throw new Error('โหลดข้อมูลตัวกรองไม่สำเร็จ');
+            }
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newPanelBody = doc.querySelector('.wizard-panel-body');
+            if (!newPanelBody) {
+                throw new Error('ไม่พบข้อมูลตารางตัวช่วยผู้เช่า');
+            }
+
+            panelBody.innerHTML = newPanelBody.innerHTML;
+
+            const groupParam = parseInt(cleanUrl.searchParams.get('completed') || '0', 10);
+            const nextGroup = groupParam === 1 ? 1 : 0;
+            window._wizCurrentGroup = nextGroup;
+
+            if (typeof wizFilter === 'function') {
+                wizFilter(nextGroup);
+            } else if (typeof wizFilterApply === 'function') {
+                wizFilterApply(nextGroup);
+            }
+
+            if (typeof applyWizardButtonTooltips === 'function') {
+                applyWizardButtonTooltips(panelBody);
+            }
+
+            history.replaceState(null, '', cleanUrl.toString());
+            return true;
+        } catch (error) {
+            if (typeof showToast === 'function') {
+                showToast(error.message || 'ไม่สามารถล้างตัวกรองได้', 'error');
+            } else {
+                console.error(error);
+            }
+            return false;
+        } finally {
+            window._wizSoftNavigating = false;
+        }
+    }
+
     // --- Wizard group filter (no page reload) ---
     var _wizCurrentGroup = <?php echo (isset($_GET['completed']) && (int)$_GET['completed'] === 1) ? 1 : 0; ?>;
     window._wizCurrentGroup = _wizCurrentGroup;
@@ -4636,6 +4719,20 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         wizFilter(_wizCurrentGroup);
         applyWizardButtonTooltips(document);
         startWizardTooltipObserver();
+
+        document.addEventListener('click', function(event) {
+            const clearLink = event.target.closest('.wiz-filter-clear');
+            if (!clearLink) {
+                return;
+            }
+
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+                return;
+            }
+
+            event.preventDefault();
+            softNavigateWizard(clearLink.href);
+        });
     });
     // --- end wizard filter ---
 

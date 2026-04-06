@@ -34,10 +34,40 @@
       };
     }
 
+    if (typeof window.openManageRatesSheetFromRow !== 'function') {
+      window.openManageRatesSheetFromRow = function(event) {
+        if (event && event.type === 'keydown' && event.key && event.key !== 'Enter' && event.key !== ' ') {
+          return true;
+        }
+
+        if (typeof window.openRatesSheetFromRow === 'function') {
+          var opened = window.openRatesSheetFromRow(event || null, 'manageRatesRow') === true;
+          return opened ? false : true;
+        }
+
+        var overlay = document.getElementById('sheet-rates');
+        if (!overlay) {
+          return true;
+        }
+
+        if (event && typeof event.preventDefault === 'function') {
+          event.preventDefault();
+        }
+
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        return false;
+      };
+    }
+
     if (typeof window.handleRatesRowKeydown !== 'function') {
       window.handleRatesRowKeydown = function(event, rowId) {
         if (!event || (event.key !== 'Enter' && event.key !== ' ')) {
           return true;
+        }
+
+        if (rowId === 'manageRatesRow' && typeof window.openManageRatesSheetFromRow === 'function') {
+          return window.openManageRatesSheetFromRow(event);
         }
 
         return window.openRatesSheetFromRow(event, rowId) ? false : true;
@@ -108,13 +138,13 @@
     </div>
     
     <!-- Manage Rates -->
-    <div class="apple-settings-row" id="manageRatesRow" data-sheet="sheet-rates" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" style="cursor: pointer;" onclick="openRatesSheetFromRow(event, 'manageRatesRow')" onkeydown="return handleRatesRowKeydown(event, 'manageRatesRow')">
-      <div class="apple-row-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
-      <div class="apple-row-content">
+    <div class="apple-settings-row" id="manageRatesRow" data-sheet="sheet-rates" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" style="cursor: pointer;" onclick="return openManageRatesSheetFromRow(event)" onkeydown="return handleRatesRowKeydown(event, 'manageRatesRow')">
+      <div class="apple-row-icon yellow" style="pointer-events: none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
+      <div class="apple-row-content" style="pointer-events: none;">
         <p class="apple-row-label" id="manageRatesRowLabel"><?php echo __('manage_rates_label'); ?></p>
         <p class="apple-row-sublabel" id="currentRateDateLabel"><?php echo __('effective_from'); ?> <?php echo thaiDate($currentRateDate); ?></p>
       </div>
-      <span class="apple-row-chevron">›</span>
+      <span class="apple-row-chevron" style="pointer-events: none;">›</span>
     </div>
   </div>
 </div>
@@ -466,7 +496,7 @@ function bindSheetHandleDragClose(sheetId) {
 
   handle.dataset.dragCloseFallbackBound = '1';
   handle.style.touchAction = 'none';
-  handle.style.cursor = 'ns-resize';
+  handle.style.cursor = 'pointer';
 
   var startY = 0;
   var deltaY = 0;
@@ -474,7 +504,10 @@ function bindSheetHandleDragClose(sheetId) {
 
   function getCloseThreshold() {
     var height = sheet.getBoundingClientRect().height || sheet.offsetHeight || 0;
-    return Math.max(72, Math.round(height * 0.25));
+    if (height > 0) {
+      return Math.round(height * 0.5);
+    }
+    return 72;
   }
 
   function beginDrag(clientY) {
@@ -684,6 +717,55 @@ function openRatesSheetFromRow(event, rowId) {
   return opened;
 }
 
+function openManageRatesSheetFromRow(event) {
+  if (event && event.type === 'keydown' && event.key && event.key !== 'Enter' && event.key !== ' ') {
+    return true;
+  }
+
+  var currentOverlay = document.getElementById('sheet-rates');
+  if (currentOverlay && currentOverlay.classList.contains('active')) {
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+    return false;
+  }
+
+  if (event && typeof event.preventDefault === 'function') {
+    event.preventDefault();
+  }
+  if (event && typeof event.stopPropagation === 'function') {
+    event.stopPropagation();
+  }
+
+  var opened = false;
+  try {
+    opened = openRatesSheetFromRow(event || null, 'manageRatesRow') === true;
+  } catch (openError) {
+    opened = false;
+  }
+
+  if (!opened) {
+    var overlay = document.getElementById('sheet-rates');
+    if (!overlay) {
+      overlay = ensureRatesSheetFallback();
+    }
+
+    if (overlay) {
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      opened = true;
+    }
+  }
+
+  if (opened) {
+    refreshSheetHandleDragBindings();
+  } else {
+    console.error('[SheetDebug] Unable to open sheet-rates from manageRatesRow hard fallback');
+  }
+
+  return opened ? false : true;
+}
+
 function handleRatesRowKeydown(event, rowId) {
   if (!event || (event.key !== 'Enter' && event.key !== ' ')) {
     return true;
@@ -693,6 +775,7 @@ function handleRatesRowKeydown(event, rowId) {
 }
 
 window.openRatesSheetFromRow = openRatesSheetFromRow;
+window.openManageRatesSheetFromRow = openManageRatesSheetFromRow;
 window.handleRatesRowKeydown = handleRatesRowKeydown;
 
 (function bindRatesRowFailSafe() {
@@ -705,6 +788,11 @@ window.handleRatesRowKeydown = handleRatesRowKeydown;
     row.dataset.ratesRowFailSafeBound = '1';
 
     row.addEventListener('click', function(event) {
+      if (rowId === 'manageRatesRow') {
+        openManageRatesSheetFromRow(event);
+        return;
+      }
+
       if (event.defaultPrevented) {
         return;
       }
@@ -712,8 +800,27 @@ window.handleRatesRowKeydown = handleRatesRowKeydown;
     }, true);
 
     row.addEventListener('keydown', function(event) {
+      if (rowId === 'manageRatesRow') {
+        openManageRatesSheetFromRow(event);
+        return;
+      }
+
       handleRatesRowKeydown(event, rowId);
     }, true);
+
+    if (rowId === 'manageRatesRow') {
+      var handlePointerEnd = function(event) {
+        if (event.type === 'pointerup' && typeof event.button === 'number' && event.button !== 0) {
+          return;
+        }
+        openManageRatesSheetFromRow(event);
+      };
+
+      row.addEventListener('pointerup', handlePointerEnd, true);
+      row.addEventListener('touchend', function(event) {
+        openManageRatesSheetFromRow(event);
+      }, { capture: true, passive: false });
+    }
   }
 
   if (document.readyState === 'loading') {

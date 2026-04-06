@@ -291,6 +291,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'pay_amount' => isset($recordAmount) ? (int)$recordAmount : null,
             'pay_date' => isset($recordAmount) ? date('Y-m-d') : null,
             'exp_month' => isset($expense['exp_month']) ? (string)$expense['exp_month'] : null,
+            'pay_proof' => isset($filename) ? (string)$filename : null,
+            'pay_proof_url' => isset($filename) ? '/dormitory_management/Public/Assets/Images/Payments/' . rawurlencode((string)$filename) : null,
+            'pay_status' => isset($recordAmount) ? '0' : null,
             'pay_status_label' => 'รอตรวจสอบ',
         ], JSON_UNESCAPED_UNICODE);
         exit;
@@ -335,8 +338,11 @@ foreach ($unpaidExpenses as $exp) {
 
 $paymentStatusMap = [
     '0' => ['label' => 'รอตรวจสอบ', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
-    '1' => ['label' => 'ตรวจสอบแล้ว', 'color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.2)']
+    '1' => ['label' => 'อนุมัติแล้ว', 'color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.2)'],
+    '2' => ['label' => 'ตีกลับ', 'color' => '#ef4444', 'bg' => 'rgba(239, 68, 68, 0.2)']
 ];
+$defaultPaymentStatus = ['label' => 'ไม่ทราบสถานะ', 'color' => '#94a3b8', 'bg' => 'rgba(148, 163, 184, 0.2)'];
+$paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -546,6 +552,19 @@ $paymentStatusMap = [
             padding: 1rem;
             margin-bottom: 0.75rem;
         }
+        .payment-item.payment-item-clickable {
+            cursor: pointer;
+            transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+        }
+        .payment-item.payment-item-clickable:hover {
+            transform: translateY(-1px);
+            border-color: rgba(59, 130, 246, 0.55);
+            background: rgba(30, 41, 59, 0.95);
+        }
+        .payment-item.payment-item-clickable:focus-visible {
+            outline: 2px solid rgba(96, 165, 250, 0.85);
+            outline-offset: 2px;
+        }
         .payment-header {
             display: flex;
             justify-content: space-between;
@@ -560,6 +579,155 @@ $paymentStatusMap = [
             font-weight: 600;
         }
         .payment-amount { font-size: 1rem; font-weight: 600; color: #f8fafc; }
+        .payment-status-detail { margin-top: 0.3rem; font-size: 0.78rem; color: #94a3b8; }
+        body.sheet-open { overflow: hidden; }
+        .history-sheet-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.36);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.22s ease;
+            z-index: 1700;
+        }
+        .history-sheet-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .history-sheet {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: min(600px, 100%);
+            margin: 0 auto;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            border-bottom: none;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            transform: translateY(105%);
+            transition: transform 0.25s ease;
+            padding: 0 1rem 1.2rem;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 -22px 44px rgba(15, 23, 42, 0.22);
+        }
+        .history-sheet-overlay.active .history-sheet {
+            transform: translateY(0);
+        }
+        .history-sheet-handle {
+            width: 48px;
+            height: 5px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.55);
+            margin: 0.75rem auto 0.85rem;
+            cursor: pointer;
+            touch-action: none;
+        }
+        .history-sheet-handle:hover {
+            cursor: pointer;
+        }
+        .history-sheet-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.7rem;
+            gap: 0.75rem;
+        }
+        .history-sheet-title {
+            font-size: 1rem;
+            color: #0f172a;
+            font-weight: 600;
+        }
+        .history-sheet-close {
+            border: none;
+            background: #e2e8f0;
+            color: #334155;
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            font-size: 1.05rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .history-sheet-close:hover {
+            background: #cbd5e1;
+        }
+        .history-sheet-details {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 0.8rem 0.9rem;
+        }
+        .history-sheet-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 0.75rem;
+            font-size: 0.88rem;
+            color: #334155;
+            margin-bottom: 0.45rem;
+        }
+        .history-sheet-row:last-child {
+            margin-bottom: 0;
+        }
+        .history-sheet-label {
+            color: #64748b;
+        }
+        .history-sheet-value {
+            color: #0f172a;
+            font-weight: 600;
+            text-align: right;
+        }
+        .history-sheet-status {
+            margin: 0.75rem 0;
+        }
+        .history-sheet-proof {
+            margin-top: 0.35rem;
+            border-radius: 14px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            padding: 0.7rem;
+        }
+        .history-sheet-proof-title {
+            font-size: 0.82rem;
+            color: #64748b;
+            margin-bottom: 0.55rem;
+        }
+        .history-sheet-proof-image {
+            width: 100%;
+            border-radius: 10px;
+            max-height: 48vh;
+            object-fit: contain;
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            display: none;
+        }
+        .history-sheet-no-proof {
+            border-radius: 10px;
+            border: 1px dashed #cbd5e1;
+            text-align: center;
+            padding: 1.15rem 0.9rem;
+            color: #64748b;
+            background: #f8fafc;
+            font-size: 0.84rem;
+        }
+        .history-sheet-proof-link {
+            margin-top: 0.6rem;
+            display: none;
+            width: 100%;
+            text-align: center;
+            text-decoration: none;
+            padding: 0.62rem 0.8rem;
+            border-radius: 10px;
+            font-size: 0.86rem;
+            font-weight: 600;
+            color: #0f172a;
+            background: linear-gradient(135deg, #38bdf8, #2563eb);
+        }
         .empty-state {
             text-align: center;
             padding: 2rem;
@@ -990,15 +1158,32 @@ $paymentStatusMap = [
             </div>
             <?php else: ?>
             <?php foreach ($payments as $payment): ?>
-            <div class="payment-item">
+            <?php
+                $statusKeyRaw = trim((string)($payment['pay_status'] ?? ''));
+                $statusKey = $statusKeyRaw === '' ? '0' : $statusKeyRaw;
+                $statusInfo = $paymentStatusMap[$statusKey] ?? $defaultPaymentStatus;
+                $payProofFile = trim((string)($payment['pay_proof'] ?? ''));
+                $payProofUrl = $payProofFile !== '' ? $paymentProofBaseUrl . rawurlencode($payProofFile) : '';
+            ?>
+            <div class="payment-item payment-item-clickable"
+                 role="button"
+                 tabindex="0"
+                 aria-label="ดูรายละเอียดการแจ้งชำระ"
+                 data-pay-date="<?php echo htmlspecialchars((string)($payment['pay_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                 data-exp-month="<?php echo htmlspecialchars((string)($payment['exp_month'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>"
+                 data-pay-amount="<?php echo (int)($payment['pay_amount'] ?? 0); ?>"
+                 data-pay-status="<?php echo htmlspecialchars($statusKey, ENT_QUOTES, 'UTF-8'); ?>"
+                 data-pay-status-label="<?php echo htmlspecialchars($statusInfo['label'], ENT_QUOTES, 'UTF-8'); ?>"
+                 data-pay-proof-url="<?php echo htmlspecialchars($payProofUrl, ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="payment-header">
                     <span class="payment-date"><span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <?php echo $payment['pay_date'] ?? '-'; ?></span>
-                    <span class="payment-status" style="background: <?php echo $paymentStatusMap[$payment['pay_status'] ?? '0']['bg']; ?>; color: <?php echo $paymentStatusMap[$payment['pay_status'] ?? '0']['color']; ?>">
-                        <?php echo $paymentStatusMap[$payment['pay_status'] ?? '0']['label']; ?>
+                    <span class="payment-status" style="background: <?php echo htmlspecialchars($statusInfo['bg']); ?>; color: <?php echo htmlspecialchars($statusInfo['color']); ?>;">
+                        <?php echo htmlspecialchars($statusInfo['label']); ?>
                     </span>
                 </div>
                 <div class="payment-amount"><span class="amount-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> <?php echo number_format($payment['pay_amount'] ?? 0); ?> บาท</div>
                 <div class="bill-details">บิลเดือน <?php echo thaiMonthYearLong($payment['exp_month']); ?></div>
+                <div class="payment-status-detail">สถานะล่าสุด: <?php echo htmlspecialchars($statusInfo['label']); ?></div>
             </div>
             <?php endforeach; ?>
             <?php endif; ?>
@@ -1038,6 +1223,39 @@ $paymentStatusMap = [
             </a>
         </div>
     </nav>
+
+    <div class="history-sheet-overlay" id="paymentHistorySheetOverlay" aria-hidden="true">
+        <div class="history-sheet" role="dialog" aria-modal="true" aria-labelledby="historySheetTitle">
+            <div class="history-sheet-handle"></div>
+            <div class="history-sheet-header">
+                <div class="history-sheet-title" id="historySheetTitle">รายละเอียดการแจ้งชำระ</div>
+                <button type="button" class="history-sheet-close" id="historySheetCloseBtn" aria-label="ปิดหน้าต่างรายละเอียด">✕</button>
+            </div>
+            <div class="history-sheet-details">
+                <div class="history-sheet-row">
+                    <span class="history-sheet-label">วันที่แจ้งชำระ</span>
+                    <span class="history-sheet-value" id="historySheetPayDate">-</span>
+                </div>
+                <div class="history-sheet-row">
+                    <span class="history-sheet-label">บิลเดือน</span>
+                    <span class="history-sheet-value" id="historySheetBillMonth">-</span>
+                </div>
+                <div class="history-sheet-row">
+                    <span class="history-sheet-label">จำนวนเงิน</span>
+                    <span class="history-sheet-value" id="historySheetPayAmount">-</span>
+                </div>
+            </div>
+            <div class="history-sheet-status">
+                <span class="payment-status" id="historySheetStatusBadge">-</span>
+            </div>
+            <div class="history-sheet-proof">
+                <div class="history-sheet-proof-title">สลิปที่แนบไว้</div>
+                <img class="history-sheet-proof-image" id="historySheetProofImage" alt="สลิปการชำระเงิน">
+                <div class="history-sheet-no-proof" id="historySheetNoProof">รายการนี้ไม่มีสลิปแนบ หรือไฟล์ถูกลบออกจากระบบ</div>
+                <a class="history-sheet-proof-link" id="historySheetProofLink" href="#" target="_blank" rel="noopener">เปิดรูปสลิปแบบเต็มหน้าจอ</a>
+            </div>
+        </div>
+    </div>
     
     <script>
     function updateSubmitState() {
@@ -1104,7 +1322,8 @@ $paymentStatusMap = [
     }
     
     // เรียกใช้ทันทีถ้ามีการเลือกบิลมาแล้ว
-    if (document.getElementById('exp_id').value) {
+    const initialExpenseSelect = document.getElementById('exp_id');
+    if (initialExpenseSelect && initialExpenseSelect.value) {
         updatePaymentAmount();
     }
     
@@ -1207,6 +1426,93 @@ $paymentStatusMap = [
         return `${thaiMonths[dt.getMonth()]} ${yyyy}`;
     }
 
+    const paymentStatusMap = <?php echo json_encode($paymentStatusMap, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+    const defaultPaymentStatus = { label: 'ไม่ทราบสถานะ', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.2)' };
+
+    function inferStatusCodeFromLabel(statusLabel) {
+        const label = String(statusLabel || '').trim().toLowerCase();
+        if (!label) return '';
+        if (label.includes('ตีกลับ') || label.includes('ปฏิเสธ') || label.includes('reject')) return '2';
+        if (label.includes('อนุมัติ') || label.includes('ตรวจสอบแล้ว') || label.includes('approved')) return '1';
+        if (label.includes('รอตรวจสอบ') || label.includes('pending') || label.includes('รอ')) return '0';
+        return '';
+    }
+
+    function getPaymentStatusInfo(statusCode, fallbackLabel) {
+        const fallback = typeof fallbackLabel === 'string' ? fallbackLabel.trim() : '';
+        let key = '';
+        if (statusCode !== undefined && statusCode !== null) {
+            key = String(statusCode).trim();
+        }
+        if (!key && fallback) {
+            key = inferStatusCodeFromLabel(fallback);
+        }
+
+        const mapInfo = (key && paymentStatusMap[key]) ? paymentStatusMap[key] : defaultPaymentStatus;
+        const label = fallback || mapInfo.label;
+
+        return {
+            label: label,
+            color: mapInfo.color,
+            bg: mapInfo.bg,
+            code: key,
+        };
+    }
+
+    function extractLegacyText(element, selector) {
+        const target = element ? element.querySelector(selector) : null;
+        if (!target) return '';
+        const raw = (target.textContent || '').replace(/\s+/g, ' ').trim();
+        return raw;
+    }
+
+    function enhancePaymentHistoryItems() {
+        const section = document.getElementById('paymentHistorySection');
+        if (!section) {
+            return;
+        }
+
+        section.querySelectorAll('.payment-item').forEach(function(item) {
+            item.classList.add('payment-item-clickable');
+            if (!item.hasAttribute('role')) item.setAttribute('role', 'button');
+            if (!item.hasAttribute('tabindex')) item.setAttribute('tabindex', '0');
+            if (!item.hasAttribute('aria-label')) item.setAttribute('aria-label', 'ดูรายละเอียดการแจ้งชำระ');
+
+            if (!item.dataset.payDate) {
+                const dateText = extractLegacyText(item, '.payment-date').replace(/^📅\s*/, '').trim();
+                item.dataset.payDate = dateText;
+            }
+
+            if (!item.dataset.expMonth) {
+                const monthText = extractLegacyText(item, '.bill-details').replace(/^บิลเดือน\s*/, '').trim();
+                item.dataset.expMonth = monthText;
+            }
+
+            if (!item.dataset.payAmount) {
+                const amountText = extractLegacyText(item, '.payment-amount');
+                const amountNum = parseInt((amountText.match(/[\d,]+/) || ['0'])[0].replace(/,/g, ''), 10) || 0;
+                item.dataset.payAmount = String(amountNum);
+            }
+
+            const statusBadge = item.querySelector('.payment-status');
+            const statusLabelText = statusBadge ? (statusBadge.textContent || '').trim() : '';
+            const statusInfo = getPaymentStatusInfo(item.dataset.payStatus, item.dataset.payStatusLabel || statusLabelText);
+
+            item.dataset.payStatus = statusInfo.code || item.dataset.payStatus || '';
+            item.dataset.payStatusLabel = statusInfo.label;
+
+            if (statusBadge) {
+                statusBadge.textContent = statusInfo.label;
+                statusBadge.style.background = statusInfo.bg;
+                statusBadge.style.color = statusInfo.color;
+            }
+
+            if (!item.dataset.payProofUrl) {
+                item.dataset.payProofUrl = '';
+            }
+        });
+    }
+
     function prependPaymentHistoryItem(result) {
         const section = document.getElementById('paymentHistorySection');
         if (!section) return;
@@ -1217,20 +1523,32 @@ $paymentStatusMap = [
         }
 
         const item = document.createElement('div');
-        item.className = 'payment-item';
+        item.className = 'payment-item payment-item-clickable';
+        item.setAttribute('role', 'button');
+        item.setAttribute('tabindex', '0');
+        item.setAttribute('aria-label', 'ดูรายละเอียดการแจ้งชำระ');
 
         const amount = Number(result.pay_amount || 0);
-        const statusLabel = result.pay_status_label || 'รอตรวจสอบ';
+        const statusInfo = getPaymentStatusInfo(result.pay_status, result.pay_status_label);
         const payDateText = formatPayDate(result.pay_date || '');
         const billMonthText = formatBillMonth(result.exp_month || '');
+        const payProofUrl = typeof result.pay_proof_url === 'string' ? result.pay_proof_url : '';
+
+        item.dataset.payDate = result.pay_date || '';
+        item.dataset.expMonth = result.exp_month || '';
+        item.dataset.payAmount = String(amount);
+        item.dataset.payStatus = result.pay_status != null ? String(result.pay_status) : '0';
+        item.dataset.payStatusLabel = statusInfo.label;
+        item.dataset.payProofUrl = payProofUrl;
 
         item.innerHTML = `
             <div class="payment-header">
                 <span class="payment-date"><span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> ${payDateText}</span>
-                <span class="payment-status" style="background: rgba(245, 158, 11, 0.2); color: #f59e0b;">${statusLabel}</span>
+                <span class="payment-status" style="background: ${statusInfo.bg}; color: ${statusInfo.color};">${statusInfo.label}</span>
             </div>
             <div class="payment-amount"><span class="amount-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ${amount.toLocaleString()} บาท</div>
             <div class="bill-details">บิลเดือน ${billMonthText}</div>
+            <div class="payment-status-detail">สถานะล่าสุด: ${statusInfo.label}</div>
         `;
 
         const firstItem = section.querySelector('.payment-item');
@@ -1243,6 +1561,261 @@ $paymentStatusMap = [
             section.appendChild(item);
         }
     }
+
+    function setHistorySheetProof(proofUrl) {
+        const proofImage = document.getElementById('historySheetProofImage');
+        const noProof = document.getElementById('historySheetNoProof');
+        const proofLink = document.getElementById('historySheetProofLink');
+        if (!proofImage || !noProof || !proofLink) return;
+
+        if (typeof proofUrl === 'string' && proofUrl.trim() !== '') {
+            const normalizedUrl = proofUrl.trim();
+            proofImage.src = normalizedUrl;
+            proofImage.style.display = 'block';
+            noProof.style.display = 'none';
+            proofLink.href = normalizedUrl;
+            proofLink.style.display = 'inline-block';
+        } else {
+            proofImage.removeAttribute('src');
+            proofImage.style.display = 'none';
+            noProof.style.display = 'block';
+            proofLink.removeAttribute('href');
+            proofLink.style.display = 'none';
+        }
+    }
+
+    function openPaymentHistorySheetFromItem(item) {
+        const overlay = document.getElementById('paymentHistorySheetOverlay');
+        if (!overlay || !item) return;
+
+        const statusInfo = getPaymentStatusInfo(item.dataset.payStatus, item.dataset.payStatusLabel);
+        const payDate = formatPayDate(item.dataset.payDate || '');
+        const billMonth = formatBillMonth(item.dataset.expMonth || '');
+        const payAmount = Number(item.dataset.payAmount || 0).toLocaleString() + ' บาท';
+
+        const payDateEl = document.getElementById('historySheetPayDate');
+        const billMonthEl = document.getElementById('historySheetBillMonth');
+        const payAmountEl = document.getElementById('historySheetPayAmount');
+        const statusBadge = document.getElementById('historySheetStatusBadge');
+
+        if (payDateEl) payDateEl.textContent = payDate;
+        if (billMonthEl) billMonthEl.textContent = billMonth;
+        if (payAmountEl) payAmountEl.textContent = payAmount;
+        if (statusBadge) {
+            statusBadge.textContent = statusInfo.label;
+            statusBadge.style.background = statusInfo.bg;
+            statusBadge.style.color = statusInfo.color;
+        }
+
+        setHistorySheetProof(item.dataset.payProofUrl || '');
+
+        overlay.classList.add('active');
+        overlay.setAttribute('aria-hidden', 'false');
+        document.body.classList.add('sheet-open');
+    }
+
+    function closePaymentHistorySheet() {
+        const overlay = document.getElementById('paymentHistorySheetOverlay');
+        if (!overlay) return;
+        overlay.classList.remove('active');
+        overlay.setAttribute('aria-hidden', 'true');
+        document.body.classList.remove('sheet-open');
+    }
+
+    function bindHistorySheetHandleDragClose() {
+        const overlay = document.getElementById('paymentHistorySheetOverlay');
+        if (!overlay) {
+            return;
+        }
+
+        const sheet = overlay.querySelector('.history-sheet');
+        const handle = overlay.querySelector('.history-sheet-handle');
+        if (!sheet || !handle || handle.dataset.dragCloseBound === '1') {
+            return;
+        }
+
+        handle.dataset.dragCloseBound = '1';
+
+        let startY = 0;
+        let deltaY = 0;
+        let dragging = false;
+
+        function closeThreshold() {
+            const height = sheet.getBoundingClientRect().height || sheet.offsetHeight || 0;
+            if (height > 0) {
+                return Math.round(height * 0.5);
+            }
+            return 72;
+        }
+
+        function beginDrag(clientY) {
+            if (!overlay.classList.contains('active')) {
+                return false;
+            }
+
+            startY = clientY;
+            deltaY = 0;
+            dragging = true;
+            sheet.style.transition = 'none';
+            sheet.style.willChange = 'transform';
+            return true;
+        }
+
+        function updateDrag(clientY) {
+            if (!dragging) {
+                return;
+            }
+            deltaY = Math.max(0, clientY - startY);
+            sheet.style.transform = `translateY(${deltaY}px)`;
+        }
+
+        function finishDrag() {
+            if (!dragging) {
+                return;
+            }
+
+            const shouldClose = deltaY >= closeThreshold();
+            dragging = false;
+            sheet.style.willChange = '';
+            sheet.style.transition = '';
+            sheet.style.transform = '';
+
+            if (shouldClose) {
+                closePaymentHistorySheet();
+            }
+        }
+
+        if (window.PointerEvent) {
+            handle.addEventListener('pointerdown', function(event) {
+                if (event.button !== 0) {
+                    return;
+                }
+
+                if (!beginDrag(event.clientY)) {
+                    return;
+                }
+
+                event.preventDefault();
+                try {
+                    handle.setPointerCapture(event.pointerId);
+                } catch (captureError) {}
+            });
+
+            handle.addEventListener('pointermove', function(event) {
+                updateDrag(event.clientY);
+            });
+
+            handle.addEventListener('pointerup', function() {
+                finishDrag();
+            });
+
+            handle.addEventListener('pointercancel', function() {
+                finishDrag();
+            });
+            return;
+        }
+
+        const onMouseMove = function(event) {
+            updateDrag(event.clientY);
+        };
+        const onMouseUp = function() {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            finishDrag();
+        };
+
+        handle.addEventListener('mousedown', function(event) {
+            if (event.button !== 0) {
+                return;
+            }
+
+            if (!beginDrag(event.clientY)) {
+                return;
+            }
+
+            event.preventDefault();
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        });
+
+        handle.addEventListener('touchstart', function(event) {
+            if (!event.touches || !event.touches.length) {
+                return;
+            }
+
+            if (!beginDrag(event.touches[0].clientY)) {
+                return;
+            }
+
+            event.preventDefault();
+        }, { passive: false });
+
+        handle.addEventListener('touchmove', function(event) {
+            if (!event.touches || !event.touches.length) {
+                return;
+            }
+
+            event.preventDefault();
+            updateDrag(event.touches[0].clientY);
+        }, { passive: false });
+
+        handle.addEventListener('touchend', function() {
+            finishDrag();
+        });
+
+        handle.addEventListener('touchcancel', function() {
+            finishDrag();
+        });
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const historySection = document.getElementById('paymentHistorySection');
+        const historyOverlay = document.getElementById('paymentHistorySheetOverlay');
+        const closeBtn = document.getElementById('historySheetCloseBtn');
+
+        if (!historySection || !historyOverlay) {
+            return;
+        }
+
+        enhancePaymentHistoryItems();
+    bindHistorySheetHandleDragClose();
+
+        historySection.addEventListener('click', function(e) {
+            const item = e.target.closest('.payment-item-clickable, .payment-item');
+            if (!item || !historySection.contains(item)) {
+                return;
+            }
+            openPaymentHistorySheetFromItem(item);
+        });
+
+        historySection.addEventListener('keydown', function(e) {
+            if (e.key !== 'Enter' && e.key !== ' ') {
+                return;
+            }
+            const item = e.target.closest('.payment-item-clickable, .payment-item');
+            if (!item || !historySection.contains(item)) {
+                return;
+            }
+            e.preventDefault();
+            openPaymentHistorySheetFromItem(item);
+        });
+
+        if (closeBtn) {
+            closeBtn.addEventListener('click', closePaymentHistorySheet);
+        }
+
+        historyOverlay.addEventListener('click', function(e) {
+            if (e.target === historyOverlay) {
+                closePaymentHistorySheet();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && historyOverlay.classList.contains('active')) {
+                closePaymentHistorySheet();
+            }
+        });
+    });
 
     document.addEventListener('DOMContentLoaded', function() {
         const form = document.getElementById('paymentForm');
@@ -1285,7 +1858,9 @@ $paymentStatusMap = [
                 }
                 if (result && result.success) {
                     showFormAlert(result.message || 'แจ้งชำระเงินเรียบร้อยแล้ว', 'success');
+                    prependPaymentHistoryItem(result);
                     setTimeout(() => location.reload(), 1500);
+                } else {
                     showFormAlert((result && result.message) ? result.message : 'ไม่สามารถบันทึกข้อมูลได้', 'error');
                     updateSubmitState();
                 }

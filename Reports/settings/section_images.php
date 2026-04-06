@@ -512,11 +512,14 @@
   function createSheetInteractionComponent(options) {
     var config = options || {};
     var closeRatio = typeof config.closeRatio === 'number' ? config.closeRatio : 0.5;
-    var minClosePx = typeof config.minClosePx === 'number' ? config.minClosePx : 120;
+    var minClosePx = typeof config.minClosePx === 'number' ? config.minClosePx : 72;
 
     function getSheetThreshold(sheet) {
       var height = sheet.getBoundingClientRect().height || sheet.offsetHeight || 0;
-      return Math.max(minClosePx, Math.round(height * closeRatio));
+      if (height > 0) {
+        return Math.round(height * closeRatio);
+      }
+      return minClosePx;
     }
 
     function bindRowOpenFallback() {
@@ -704,6 +707,7 @@
         handle.dataset.dragComponentBound = '1';
         handle.dataset.dragBound = '1';
         handle.style.touchAction = 'none';
+        handle.style.cursor = 'pointer';
 
         var startY = 0;
         var deltaY = 0;
@@ -1356,7 +1360,7 @@
   if (!window.appleSheetComponent || typeof window.appleSheetComponent.init !== 'function') {
     window.appleSheetComponent = createSheetInteractionComponent({
       closeRatio: 0.5,
-      minClosePx: 120
+      minClosePx: 72
     });
   }
 
