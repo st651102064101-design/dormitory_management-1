@@ -30,6 +30,18 @@ try {
     // โหลดรูปเก่า
     if (!empty($_POST['load_old_logo'])) {
         $oldLogoFile = trim($_POST['load_old_logo']);
+        if ($oldLogoFile === '') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่ได้ระบุไฟล์รูป']);
+            exit;
+        }
+
+        if (strpos($oldLogoFile, '..') !== false || (substr($oldLogoFile, 0, 1) === '/')) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ชื่อไฟล์ไม่ถูกต้อง']);
+            exit;
+        }
+
         $uploadsDir = __DIR__ . '/../Public/Assets/Images/';
         $oldLogoPath = $uploadsDir . $oldLogoFile;
 
@@ -43,6 +55,12 @@ try {
         // ตรวจสอบว่าเป็นไฟล์ในระบบ
         $realPath = realpath($oldLogoPath);
         $realUploadDir = realpath($uploadsDir);
+        if ($realUploadDir === false) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบโฟลเดอร์รูปภาพในระบบ']);
+            exit;
+        }
+
         if (strpos($realPath, $realUploadDir) !== 0) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'error' => 'ไฟล์ไม่ถูกต้อง']);
@@ -51,38 +69,26 @@ try {
 
         // ตรวจสอบนามสกุลไฟล์
         $ext = strtolower(pathinfo($oldLogoFile, PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) {
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG และ PNG']);
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG, PNG และ WebP']);
             exit;
         }
 
-        // คัดลอกไฟล์เก่ามาเป็น Logo.jpg
-        $newLogoFile = 'Logo.' . $ext;
-        $newLogoPath = $uploadsDir . $newLogoFile;
-
-        // หากไฟล์เดิมคือไฟล์ปัจจุบันอยู่แล้ว ให้ถือว่าสำเร็จทันที
-        if (realpath($oldLogoPath) === realpath($newLogoPath)) {
-            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
-            $stmt->execute(['logo_filename', $newLogoFile, $newLogoFile]);
-
+        // ใช้ไฟล์ที่เลือกโดยตรง เพื่อลดปัญหา copy/permission
+        $relativeLogoFile = ltrim(str_replace('\\', '/', substr($realPath, strlen($realUploadDir))), '/');
+        if ($relativeLogoFile === '') {
             header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'message' => 'โหลดรูปเก่าสำเร็จ']);
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถระบุไฟล์รูปได้']);
             exit;
         }
 
-        if (copy($oldLogoPath, $newLogoPath)) {
-            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
-            $stmt->execute(['logo_filename', $newLogoFile, $newLogoFile]);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+        $stmt->execute(['logo_filename', $relativeLogoFile, $relativeLogoFile]);
 
-            header('Content-Type: application/json');
-            echo json_encode(['success' => true, 'message' => 'โหลดรูปเก่าสำเร็จ']);
-            exit;
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'ไม่สามารถโหลดรูป']);
-            exit;
-        }
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'โหลดรูปเก่าสำเร็จ', 'filename' => $relativeLogoFile]);
+        exit;
     }
 
     // ลบรูปเก่า
@@ -140,10 +146,36 @@ try {
     // จัดการ Logo Upload
     if (!empty($_FILES['logo'])) {
         $file = $_FILES['logo'];
-        $allowedTypes = ['image/jpeg', 'image/png'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        $allowedExtensions = ['jpg', 'jpeg', 'png'];
         $maxSize = 5 * 1024 * 1024; // 5MB
 
-        if (!in_array($file['type'], $allowedTypes)) {
+        $uploadErrors = [
+            UPLOAD_ERR_INI_SIZE => 'ไฟล์ใหญ่เกินค่าที่เซิร์ฟเวอร์กำหนด',
+            UPLOAD_ERR_FORM_SIZE => 'ไฟล์ใหญ่เกินที่ฟอร์มกำหนด',
+            UPLOAD_ERR_PARTIAL => 'อัปโหลดไฟล์ไม่สมบูรณ์',
+            UPLOAD_ERR_NO_FILE => 'ไม่พบไฟล์ที่อัปโหลด',
+            UPLOAD_ERR_NO_TMP_DIR => 'ไม่พบโฟลเดอร์ชั่วคราวของเซิร์ฟเวอร์',
+            UPLOAD_ERR_CANT_WRITE => 'เซิร์ฟเวอร์ไม่สามารถเขียนไฟล์ได้',
+            UPLOAD_ERR_EXTENSION => 'อัปโหลดถูกยกเลิกโดยส่วนขยายของระบบ',
+        ];
+
+        $uploadErrCode = (int)($file['error'] ?? UPLOAD_ERR_NO_FILE);
+        if ($uploadErrCode !== UPLOAD_ERR_OK) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => $uploadErrors[$uploadErrCode] ?? 'เกิดข้อผิดพลาดในการอัปโหลดไฟล์']);
+            exit;
+        }
+
+        $ext = strtolower((string)pathinfo((string)($file['name'] ?? ''), PATHINFO_EXTENSION));
+        if (!in_array($ext, $allowedExtensions, true)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG และ PNG']);
+            exit;
+        }
+
+        $detectedType = strtolower((string)($file['type'] ?? ''));
+        if ($detectedType !== '' && !in_array($detectedType, $allowedTypes, true)) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG และ PNG']);
             exit;
@@ -156,32 +188,57 @@ try {
         }
 
         $uploadsDir = __DIR__ . '/../Public/Assets/Images/';
-        if (!is_dir($uploadsDir)) {
-            mkdir($uploadsDir, 0755, true);
+        if (!is_dir($uploadsDir) && !@mkdir($uploadsDir, 0755, true)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถสร้างโฟลเดอร์เก็บรูปภาพได้']);
+            exit;
         }
 
-        // เก็บสำรองโลโก้เดิม (ถ้ามี) โดยไม่ลบ จนกว่าจะเกิน 10 ไฟล์
-        $existingLogo = null;
-        foreach (['jpg', 'jpeg', 'png'] as $extCheck) {
-            $candidate = $uploadsDir . 'Logo.' . $extCheck;
-            if (file_exists($candidate)) {
-                $existingLogo = $candidate;
-                break;
+        $targetDir = $uploadsDir;
+        $relativePrefix = '';
+        if (!is_writable($targetDir)) {
+            $fallbackDir = rtrim($uploadsDir, '/\\') . '/Payments/';
+            if (!is_dir($fallbackDir)) {
+                @mkdir($fallbackDir, 0777, true);
+            }
+
+            if (!is_writable($fallbackDir)) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'โฟลเดอร์รูปภาพไม่สามารถเขียนไฟล์ได้']);
+                exit;
+            }
+
+            $targetDir = $fallbackDir;
+            $relativePrefix = 'Payments/';
+        }
+
+        $isRootTarget = ($relativePrefix === '');
+
+        // เก็บสำรองโลโก้เดิม (เฉพาะกรณีเขียนไฟล์หลักใน root)
+        if ($isRootTarget) {
+            $existingLogo = null;
+            foreach (['jpg', 'jpeg', 'png'] as $extCheck) {
+                $candidate = $targetDir . 'Logo.' . $extCheck;
+                if (file_exists($candidate)) {
+                    $existingLogo = $candidate;
+                    break;
+                }
+            }
+
+            if ($existingLogo) {
+                $backupName = 'Logo_backup_' . date('Ymd_His') . '.' . pathinfo($existingLogo, PATHINFO_EXTENSION);
+                @copy($existingLogo, $targetDir . $backupName);
             }
         }
 
-        if ($existingLogo) {
-            $backupName = 'Logo_backup_' . date('Ymd_His') . '.' . pathinfo($existingLogo, PATHINFO_EXTENSION);
-            @copy($existingLogo, $uploadsDir . $backupName);
-        }
-
-        $filename = 'Logo.' . pathinfo($file['name'], PATHINFO_EXTENSION);
-        $filepath = $uploadsDir . $filename;
+        $filename = $isRootTarget ? ('Logo.' . $ext) : ('logo_' . date('Ymd_His') . '.' . $ext);
+        $filepath = $targetDir . $filename;
+        $settingLogoFilename = $relativePrefix . $filename;
 
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
             // จำกัดไฟล์ logo ให้เหลือ 10 ไฟล์ล่าสุด
             $logoFiles = [];
-            $dirItems = scandir($uploadsDir);
+            $dirItems = scandir($targetDir);
             foreach ($dirItems as $item) {
                 if ($item === '.' || $item === '..') continue;
                 $ext = strtolower(pathinfo($item, PATHINFO_EXTENSION));
@@ -192,26 +249,26 @@ try {
             }
 
             // เรียงไฟล์ตามเวลาแก้ไข (ใหม่สุดอยู่ท้าย)
-            usort($logoFiles, function($a, $b) use ($uploadsDir) {
-                return filemtime($uploadsDir . $a) <=> filemtime($uploadsDir . $b);
+            usort($logoFiles, function($a, $b) use ($targetDir) {
+                return filemtime($targetDir . $a) <=> filemtime($targetDir . $b);
             });
 
             $deleted = [];
             while (count($logoFiles) > 10) {
                 $old = array_shift($logoFiles);
-                @unlink($uploadsDir . $old);
+                @unlink($targetDir . $old);
                 $deleted[] = $old;
             }
 
             $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
-            $stmt->execute(['logo_filename', $filename, $filename]);
+            $stmt->execute(['logo_filename', $settingLogoFilename, $settingLogoFilename]);
 
             header('Content-Type: application/json');
             $msg = 'บันทึก Logo สำเร็จ';
             if (!empty($deleted)) {
                 $msg .= ' | ลบรูปเก่าอัตโนมัติ ' . count($deleted) . ' ไฟล์';
             }
-            echo json_encode(['success' => true, 'message' => $msg, 'filename' => $filename]);
+            echo json_encode(['success' => true, 'message' => $msg, 'filename' => $settingLogoFilename]);
             exit;
         } else {
             header('Content-Type: application/json');

@@ -3,7 +3,7 @@
   <h2 class="apple-section-title"><?php echo __('settings_images'); ?></h2>
   <div class="apple-section-card">
     <!-- Logo -->
-    <div class="apple-settings-row" data-sheet="sheet-logo" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-logo" onclick="event.preventDefault(); event.stopPropagation(); (window.appleSettings && typeof window.appleSettings.openSheet === 'function') ? window.appleSettings.openSheet('sheet-logo') : (function(){ var sheet = document.getElementById('sheet-logo'); if (sheet) { sheet.classList.add('active'); document.body.style.overflow = 'hidden'; } })();" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); (window.appleSettings && typeof window.appleSettings.openSheet === 'function') ? window.appleSettings.openSheet('sheet-logo') : (function(){ var sheet = document.getElementById('sheet-logo'); if (sheet) { sheet.classList.add('active'); document.body.style.overflow = 'hidden'; } })(); }">
+    <div class="apple-settings-row" data-sheet="sheet-logo" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-logo">
       <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('logo'); ?></p>
@@ -14,7 +14,7 @@
     </div>
     
     <!-- Background -->
-    <div class="apple-settings-row" data-sheet="sheet-background">
+    <div class="apple-settings-row" data-sheet="sheet-background" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-background">
       <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('background_image'); ?></p>
@@ -25,7 +25,7 @@
     </div>
     
     <!-- Owner Signature -->
-    <div class="apple-settings-row" data-sheet="sheet-signature">
+    <div class="apple-settings-row" data-sheet="sheet-signature" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-signature">
       <div class="apple-row-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('owner_signature'); ?></p>
@@ -46,7 +46,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-logo" onclick="event.preventDefault(); event.stopPropagation(); var sheet=document.getElementById('sheet-logo'); if (sheet) { sheet.classList.remove('active'); document.body.style.overflow=''; } "><?php echo __('cancel'); ?></button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-logo"><?php echo __('cancel'); ?></button>
       <h3 class="apple-sheet-title"><?php echo __('manage_logo'); ?></h3>
       <div style="width: 50px;"></div>
     </div>
@@ -75,11 +75,11 @@
       <!-- Upload new -->
       <div class="apple-input-group">
         <label class="apple-input-label"><?php echo __('upload_new'); ?></label>
-        <div class="apple-upload-area" onclick="document.getElementById('logoInput').click()">
+        <div class="apple-upload-area">
           <div class="apple-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
           <p class="apple-upload-text"><?php echo __('click_to_select'); ?></p>
           <p class="apple-upload-hint">รองรับ JPG, PNG</p>
-          <input type="file" id="logoInput" accept="image/jpeg,image/png">
+          <input type="file" id="logoInput" name="logo" accept="image/jpeg,image/png" onchange="if (window.__uploadLogoFromInput) { window.__uploadLogoFromInput(this); }" style="display:block !important; position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; pointer-events:auto; z-index:3;">
         </div>
       </div>
     </div>
@@ -108,6 +108,56 @@
     }
   }
 
+  // Shared helper: Build image URL with path-safe encoding (supports nested paths like Payments/...)
+  function buildImageUrl(filename) {
+    var normalized = String(filename || '').trim().replace(/\\+/g, '/').replace(/^\/+/, '');
+    if (!normalized) {
+      return '/dormitory_management/Public/Assets/Images/';
+    }
+    var encodedPath = normalized
+      .split('/')
+      .filter(function(part) { return part !== ''; })
+      .map(function(part) { return encodeURIComponent(part); })
+      .join('/');
+    return '/dormitory_management/Public/Assets/Images/' + encodedPath;
+  }
+
+  // Shared helper: Sync all logo UI elements from a single filename with cache-busting
+  function syncLogoUiFromFilename(filename) {
+    if (!filename) return;
+    var newSrc = buildImageUrl(filename) + '?t=' + Date.now();
+    
+    // Update preview in sheet
+    var logoPreviewImg = document.getElementById('logoPreviewImg');
+    if (logoPreviewImg) logoPreviewImg.src = newSrc;
+    
+    // Update thumbnail in settings row
+    var logoRowImg = document.getElementById('logoRowImg');
+    if (logoRowImg) logoRowImg.src = newSrc;
+    
+    // Update sidebar logo
+    var sidebarLogos = document.querySelectorAll('.team-avatar-img');
+    if (sidebarLogos) {
+      sidebarLogos.forEach(function(img) {
+        img.src = newSrc;
+      });
+    }
+    
+    // Update any other logo images on page
+    var allLogos = document.querySelectorAll('img[alt="Logo"]');
+    if (allLogos) {
+      allLogos.forEach(function(img) {
+        if (img.id !== 'logoPreviewImg' && !img.classList.contains('team-avatar-img')) {
+          img.src = newSrc;
+        }
+      });
+    }
+    
+    // Update filename text
+    var infoP = document.querySelector('.apple-image-preview .apple-image-info p');
+    if (infoP) infoP.textContent = filename;
+  }
+
   function closeSheetById(sheetId) {
     var overlay = document.getElementById(sheetId);
     if (!overlay) return;
@@ -115,11 +165,296 @@
     document.body.style.overflow = '';
   }
 
+  function openSheetById(sheetId) {
+    var overlay = document.getElementById(sheetId);
+    if (!overlay) return;
+    overlay.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
   function closeOverlay(overlay) {
     if (!overlay) return;
     overlay.classList.remove('active');
     document.body.style.overflow = '';
   }
+
+  function createSheetInteractionComponent(options) {
+    var config = options || {};
+    var closeRatio = typeof config.closeRatio === 'number' ? config.closeRatio : 0.5;
+    var minClosePx = typeof config.minClosePx === 'number' ? config.minClosePx : 120;
+
+    function getSheetThreshold(sheet) {
+      var height = sheet.getBoundingClientRect().height || sheet.offsetHeight || 0;
+      return Math.max(minClosePx, Math.round(height * closeRatio));
+    }
+
+    function bindRowOpenFallback() {
+      if (document.__appleSheetRowFallbackBound) {
+        return;
+      }
+
+      document.__appleSheetRowFallbackBound = true;
+
+      document.querySelectorAll('.apple-settings-row[data-sheet]').forEach(function(row) {
+        if (!row.hasAttribute('role')) {
+          row.setAttribute('role', 'button');
+        }
+        if (!row.hasAttribute('tabindex')) {
+          row.setAttribute('tabindex', '0');
+        }
+      });
+
+      document.addEventListener('click', function(event) {
+        var row = event.target.closest('.apple-settings-row[data-sheet]');
+        if (!row) {
+          return;
+        }
+
+        if (event.target.closest('button, input, select, textarea, a, label, [data-close-sheet]')) {
+          return;
+        }
+
+        var sheetId = (row.getAttribute('data-sheet') || '').trim();
+        if (!sheetId) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
+          window.appleSettings.openSheet(sheetId);
+          return;
+        }
+
+        openSheetById(sheetId);
+      }, true);
+
+      document.addEventListener('keydown', function(event) {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+          return;
+        }
+
+        var row = event.target.closest('.apple-settings-row[data-sheet]');
+        if (!row) {
+          return;
+        }
+
+        var sheetId = (row.getAttribute('data-sheet') || '').trim();
+        if (!sheetId) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
+          window.appleSettings.openSheet(sheetId);
+          return;
+        }
+
+        openSheetById(sheetId);
+      }, true);
+    }
+
+    function bindCloseButtonsFallback() {
+      if (!document.__appleSheetCloseFallbackBound) {
+        document.__appleSheetCloseFallbackBound = true;
+        document.addEventListener('click', function(event) {
+          var closeBtn = event.target.closest('[data-close-sheet]');
+          if (!closeBtn) {
+            return;
+          }
+
+          var sheetId = (closeBtn.getAttribute('data-close-sheet') || '').trim();
+          if (!sheetId) {
+            return;
+          }
+
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (window.appleSettings && typeof window.appleSettings.closeSheet === 'function') {
+            window.appleSettings.closeSheet(sheetId);
+            return;
+          }
+
+          closeSheetById(sheetId);
+        }, true);
+      }
+
+      document.querySelectorAll('[data-close-sheet]').forEach(function(btn) {
+        if (!btn.getAttribute('type')) {
+          btn.setAttribute('type', 'button');
+        }
+      });
+    }
+
+    function bindHandleDragClose() {
+      document.querySelectorAll('.apple-sheet-overlay .apple-sheet-handle').forEach(function(handle) {
+        if (handle.dataset.dragComponentBound === '1') {
+          return;
+        }
+
+        var overlay = handle.closest('.apple-sheet-overlay');
+        if (!overlay) {
+          return;
+        }
+
+        var sheet = overlay.querySelector('.apple-sheet');
+        if (!sheet) {
+          return;
+        }
+
+        handle.dataset.dragComponentBound = '1';
+        handle.dataset.dragBound = '1';
+        handle.style.touchAction = 'none';
+
+        var startY = 0;
+        var deltaY = 0;
+        var dragging = false;
+        var closeThreshold = 0;
+
+        function start(clientY) {
+          startY = clientY;
+          deltaY = 0;
+          closeThreshold = getSheetThreshold(sheet);
+          dragging = true;
+          sheet.style.transition = 'none';
+          sheet.style.willChange = 'transform';
+        }
+
+        function move(clientY) {
+          if (!dragging) return;
+          deltaY = Math.max(0, clientY - startY);
+
+          if (deltaY >= closeThreshold) {
+            dragging = false;
+            sheet.style.transition = 'transform 0.2s ease';
+            sheet.style.willChange = '';
+            sheet.style.transform = '';
+            closeOverlay(overlay);
+            return;
+          }
+
+          sheet.style.transform = 'translateY(' + deltaY + 'px)';
+        }
+
+        function end() {
+          if (!dragging) return;
+          dragging = false;
+          sheet.style.transition = 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)';
+          sheet.style.willChange = '';
+
+          if (deltaY >= closeThreshold) {
+            sheet.style.transform = '';
+            closeOverlay(overlay);
+            return;
+          }
+
+          sheet.style.transform = '';
+        }
+
+        handle.addEventListener('pointerdown', function(event) {
+          if (!overlay.classList.contains('active')) return;
+          event.preventDefault();
+          start(event.clientY);
+          try {
+            handle.setPointerCapture(event.pointerId);
+          } catch (e) {}
+        });
+
+        handle.addEventListener('pointermove', function(event) {
+          move(event.clientY);
+        });
+
+        handle.addEventListener('pointerup', end);
+        handle.addEventListener('pointercancel', end);
+
+        handle.addEventListener('touchstart', function(event) {
+          if (!overlay.classList.contains('active')) return;
+          if (!event.touches || !event.touches.length) return;
+          event.preventDefault();
+          start(event.touches[0].clientY);
+        }, { passive: false });
+
+        handle.addEventListener('touchmove', function(event) {
+          if (!event.touches || !event.touches.length) return;
+          event.preventDefault();
+          move(event.touches[0].clientY);
+        }, { passive: false });
+
+        handle.addEventListener('touchend', function() {
+          end();
+        });
+      });
+    }
+
+    function init() {
+      bindRowOpenFallback();
+      bindCloseButtonsFallback();
+      bindHandleDragClose();
+    }
+
+    return {
+      init: init,
+      refresh: bindHandleDragClose,
+      open: openSheetById,
+      close: closeSheetById
+    };
+  }
+
+  function uploadLogoFile(file, inputEl) {
+    if (!file) {
+      return;
+    }
+
+    if (!/^image\/(jpeg|png)$/i.test(file.type)) {
+      showSheetToast('รองรับเฉพาะไฟล์ JPG และ PNG', 'error');
+      if (inputEl) inputEl.value = '';
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      showSheetToast('ขนาดไฟล์ไม่ควรเกิน 5MB', 'error');
+      if (inputEl) inputEl.value = '';
+      return;
+    }
+
+    var formData = new FormData();
+    formData.append('logo', file);
+
+    fetch('/dormitory_management/Manage/save_system_settings.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(result) {
+      if (!result || !result.success) {
+        throw new Error((result && result.error) ? result.error : 'อัพโหลดไม่สำเร็จ');
+      }
+
+      showSheetToast('อัพโหลด Logo สำเร็จ', 'success');
+      
+      // Sync UI with new filename instead of reloading page
+      if (result.filename) {
+        syncLogoUiFromFilename(result.filename);
+      }
+      
+      // Reset input and close sheet
+      if (inputEl) inputEl.value = '';
+      closeSheetById('sheet-logo');
+    })
+    .catch(function(error) {
+      showSheetToast(error.message || 'อัพโหลดไม่สำเร็จ', 'error');
+      if (inputEl) inputEl.value = '';
+    });
+  }
+
+  window.__uploadLogoFromInput = function(inputEl) {
+    var file = inputEl && inputEl.files && inputEl.files[0];
+    uploadLogoFile(file, inputEl || null);
+  };
 
   function applyOldLogo(filename) {
     if (!filename) {
@@ -138,7 +473,19 @@
       }
 
       showSheetToast('เปลี่ยน Logo สำเร็จ', 'success');
-      window.location.reload();
+      
+      // Sync UI with result filename (fallback to param filename) instead of reloading page
+      var newFilename = (result.filename || filename || '').trim();
+      if (newFilename) {
+        syncLogoUiFromFilename(newFilename);
+      }
+      
+      // Clear old logo selector and preview, then close sheet
+      var selectEl = document.getElementById('oldLogoSelect');
+      if (selectEl) selectEl.value = '';
+      var previewDiv = document.getElementById('oldLogoPreview');
+      if (previewDiv) previewDiv.innerHTML = '';
+      closeSheetById('sheet-logo');
     })
     .catch(function(error) {
       showSheetToast(error.message || 'เปลี่ยนโลโก้ไม่สำเร็จ', 'error');
@@ -166,13 +513,13 @@
         return;
       }
 
-      var encoded = encodeURIComponent(filename);
+      var imageUrl = buildImageUrl(filename);
       previewContainer.innerHTML = '' +
-        '<img src="/dormitory_management/Public/Assets/Images/' + encoded + '" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 12px;">' +
+        '<img src="' + imageUrl + '" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 12px;">' +
         '<button type="button" class="apple-button primary" data-use-old-logo="' + escapeHtml(filename) + '" style="width: auto; padding: 10px 16px; margin-top: 8px;">ใช้รูปนี้</button>';
 
       if (logoPreviewImg) {
-        logoPreviewImg.src = '/dormitory_management/Public/Assets/Images/' + encoded;
+        logoPreviewImg.src = imageUrl;
       }
     }
 
@@ -215,122 +562,10 @@
     }
   }
 
-  function bindSheetHandleDragClose() {
-    document.querySelectorAll('.apple-sheet-overlay .apple-sheet-handle').forEach(function(handle) {
-      if (handle.__dragCloseBound) {
-        return;
-      }
-
-      var overlay = handle.closest('.apple-sheet-overlay');
-      if (!overlay) {
-        return;
-      }
-
-      var sheet = overlay.querySelector('.apple-sheet');
-      if (!sheet) {
-        return;
-      }
-
-      handle.__dragCloseBound = true;
-      handle.dataset.dragBound = '1';
-      handle.style.touchAction = 'none';
-
-      var startY = 0;
-      var deltaY = 0;
-      var dragging = false;
-      var closeThreshold = 0;
-
-      function getCloseThreshold() {
-        var sheetHeight = sheet.getBoundingClientRect().height || sheet.offsetHeight || 0;
-        // Close when dragged down roughly 50% of the visible sheet height.
-        return Math.max(120, Math.round(sheetHeight * 0.5));
-      }
-
-      function start(clientY) {
-        startY = clientY;
-        deltaY = 0;
-        closeThreshold = getCloseThreshold();
-        dragging = true;
-        sheet.style.transition = 'none';
-        sheet.style.willChange = 'transform';
-      }
-
-      function move(clientY) {
-        if (!dragging) return;
-        deltaY = Math.max(0, clientY - startY);
-
-        if (deltaY >= closeThreshold) {
-          dragging = false;
-          sheet.style.transition = 'transform 0.2s ease';
-          sheet.style.willChange = '';
-          sheet.style.transform = '';
-          closeOverlay(overlay);
-          return;
-        }
-
-        sheet.style.transform = 'translateY(' + deltaY + 'px)';
-      }
-
-      function end() {
-        if (!dragging) return;
-        dragging = false;
-        sheet.style.transition = 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)';
-        sheet.style.willChange = '';
-
-        if (deltaY >= closeThreshold) {
-          sheet.style.transform = '';
-          closeOverlay(overlay);
-          return;
-        }
-
-        sheet.style.transform = '';
-      }
-
-      handle.addEventListener('pointerdown', function(event) {
-        if (!overlay.classList.contains('active')) return;
-        event.preventDefault();
-        start(event.clientY);
-        try {
-          handle.setPointerCapture(event.pointerId);
-        } catch (e) {}
-      });
-
-      handle.addEventListener('pointermove', function(event) {
-        move(event.clientY);
-      });
-
-      handle.addEventListener('pointerup', end);
-      handle.addEventListener('pointercancel', end);
-
-      // Touch fallback for mobile browsers where pointer events are unreliable.
-      handle.addEventListener('touchstart', function(event) {
-        if (!overlay.classList.contains('active')) return;
-        if (!event.touches || !event.touches.length) return;
-        event.preventDefault();
-        start(event.touches[0].clientY);
-      }, { passive: false });
-
-      handle.addEventListener('touchmove', function(event) {
-        if (!event.touches || !event.touches.length) return;
-        event.preventDefault();
-        move(event.touches[0].clientY);
-      }, { passive: false });
-
-      handle.addEventListener('touchend', function() {
-        end();
-      });
-    });
-  }
-
-  function bindLogoSheetCloseFallback() {
-    document.querySelectorAll('[data-close-sheet="sheet-logo"]').forEach(function(btn) {
-      if (btn.dataset.closeFallbackBound === '1') return;
-      btn.dataset.closeFallbackBound = '1';
-      btn.addEventListener('click', function(event) {
-        event.preventDefault();
-        event.stopPropagation();
-        closeSheetById('sheet-logo');
-      });
+  if (!window.appleSheetComponent || typeof window.appleSheetComponent.init !== 'function') {
+    window.appleSheetComponent = createSheetInteractionComponent({
+      closeRatio: 0.5,
+      minClosePx: 120
     });
   }
 
@@ -345,63 +580,35 @@
       uploadArea.__logoAreaBound = true;
       uploadArea.dataset.logoAreaBound = '1';
       uploadArea.addEventListener('click', function(event) {
-        event.preventDefault();
-        event.stopPropagation();
+        // Keep native click behavior when the file input itself is the target.
+        if (event.target === logoInput || event.target.closest('#logoInput')) {
+          return;
+        }
+
         logoInput.click();
       });
     }
 
     logoInput.__logoFallbackBound = true;
     logoInput.dataset.logoFallbackBound = '1';
-    logoInput.addEventListener('change', function() {
-      var file = logoInput.files && logoInput.files[0];
-      if (!file) return;
 
-      if (!/^image\/(jpeg|png)$/i.test(file.type)) {
-        showSheetToast('รองรับเฉพาะไฟล์ JPG และ PNG', 'error');
-        logoInput.value = '';
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        showSheetToast('ขนาดไฟล์ไม่ควรเกิน 5MB', 'error');
-        logoInput.value = '';
-        return;
-      }
-
-      var formData = new FormData();
-      formData.append('logo', file);
-
-      fetch('/dormitory_management/Manage/save_system_settings.php', {
-        method: 'POST',
-        body: formData
-      })
-      .then(function(response) { return response.json(); })
-      .then(function(result) {
-        if (!result || !result.success) {
-          throw new Error((result && result.error) ? result.error : 'อัพโหลดไม่สำเร็จ');
-        }
-
-        showSheetToast('อัพโหลด Logo สำเร็จ', 'success');
-
-        window.location.reload();
-      })
-      .catch(function(error) {
-        showSheetToast(error.message || 'อัพโหลดไม่สำเร็จ', 'error');
+    // Fallback in case inline onchange is stripped by browser/DOM sanitizer.
+    if (!logoInput.__logoChangeFallbackBound) {
+      logoInput.__logoChangeFallbackBound = true;
+      logoInput.addEventListener('change', function() {
+        window.__uploadLogoFromInput(logoInput);
       });
-    });
+    }
   }
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-      bindSheetHandleDragClose();
-      bindLogoSheetCloseFallback();
+      window.appleSheetComponent.init();
       bindOldLogoSelectFallback();
       setTimeout(bindLogoUploadFallback, 200);
     });
   } else {
-    bindSheetHandleDragClose();
-    bindLogoSheetCloseFallback();
+    window.appleSheetComponent.init();
     bindOldLogoSelectFallback();
     setTimeout(bindLogoUploadFallback, 200);
   }
@@ -413,7 +620,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-background"><?php echo __('cancel'); ?></button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-background"><?php echo __('cancel'); ?></button>
       <h3 class="apple-sheet-title"><?php echo __('manage_bg'); ?></h3>
       <div style="width: 50px;"></div>
     </div>
@@ -458,7 +665,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-signature"><?php echo __('cancel'); ?></button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-signature"><?php echo __('cancel'); ?></button>
       <h3 class="apple-sheet-title"><?php echo __('owner_signature'); ?></h3>
       <div style="width: 50px;"></div>
     </div>
