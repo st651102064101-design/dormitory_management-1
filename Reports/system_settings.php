@@ -279,6 +279,13 @@ $pageTitle = __('settings');
           max-width: calc(100% - 220px) !important;
         }
       }
+
+      /* Prevent hidden mobile sidebar layers from intercepting taps on settings content */
+      @media (max-width: 1024px) {
+        body.apple-settings-page .app-sidebar:not(.mobile-open) {
+          pointer-events: none !important;
+        }
+      }
       
       body.apple-settings-page .apple-settings-wrapper {
         display: block !important;
@@ -365,113 +372,114 @@ $pageTitle = __('settings');
   
   <!-- Scripts -->
   <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
-  <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>
   <script src="/dormitory_management/Reports/settings/apple-settings.js"></script>
   <script>
-  // Force layout fix for desktop
+  // Keep settings layout stable and avoid click conflicts from duplicated handlers.
   (function() {
-    function forceLayoutFix() {
-      const html = document.documentElement;
+    function syncSettingsLayout() {
       const body = document.body;
-      const appShell = document.querySelector('.app-shell');
-      const appMain = document.querySelector('.app-main');
-      const wrapper = document.querySelector('.apple-settings-wrapper');
-      
-      // Force override styles
-      if (html) {
-        html.style.overflow = 'visible';
-        html.style.overflowY = 'auto';
-        html.style.height = 'auto';
-        html.style.minHeight = '100vh';
-      }
-      
-      if (body) {
-        body.style.overflow = 'visible';
-        body.style.overflowY = 'auto';
-        body.style.height = 'auto';
-        body.style.minHeight = '100vh';
-      }
-      
-      if (appShell) {
-        appShell.style.display = 'flex';
-        appShell.style.flexDirection = 'row';
-        appShell.style.minHeight = '100vh';
-        appShell.style.height = 'auto';
-      }
-      
-      if (appMain) {
-        appMain.style.display = 'block';
-        appMain.style.flex = '1 1 auto';
-        appMain.style.minHeight = '100vh';
-        appMain.style.height = 'auto';
-        appMain.style.overflowY = 'auto';
-        appMain.style.visibility = 'visible';
-        appMain.style.opacity = '1';
-      }
-
       const sidebar = document.querySelector('.app-sidebar');
-      if (sidebar && window.innerWidth > 1024) {
-        // Keep settings page in full sidebar mode on desktop.
-        sidebar.classList.remove('collapsed');
-        sidebar.classList.remove('sidebar-collapsed');
-        try {
-          localStorage.setItem('sidebarCollapsed', 'false');
-        } catch (e) {}
-      }
-      
-      if (wrapper) {
-        wrapper.style.display = 'block';
-        wrapper.style.visibility = 'visible';
-        wrapper.style.opacity = '1';
-      }
-      
-      // Mobile adjustments
-      if (window.innerWidth <= 1024) {
-        if (appShell) {
-          appShell.style.display = 'block';
-          appShell.style.flexDirection = 'column';
-        }
-        if (appMain) {
-          appMain.style.width = '100%';
-          appMain.style.maxWidth = '100%';
-          appMain.style.marginLeft = '0';
-        }
+      const appMain = document.querySelector('.app-main');
+      const toggleBtn = document.getElementById('sidebar-toggle');
+
+      if (!body || !appMain || !sidebar) {
+        return;
       }
 
       if (window.innerWidth > 1024) {
-        if (appMain) {
-          appMain.style.marginLeft = '220px';
-          appMain.style.width = 'calc(100% - 220px)';
-          appMain.style.maxWidth = 'calc(100% - 220px)';
+        sidebar.classList.remove('mobile-open');
+        body.classList.remove('sidebar-open');
+        sidebar.classList.remove('collapsed');
+
+        appMain.style.marginLeft = '220px';
+        appMain.style.width = 'calc(100% - 220px)';
+        appMain.style.maxWidth = 'calc(100% - 220px)';
+
+        if (toggleBtn) {
+          toggleBtn.setAttribute('aria-expanded', 'true');
         }
-        if (sidebar) {
-          sidebar.style.position = 'fixed';
-          sidebar.style.left = '0';
-          sidebar.style.top = '0';
-          sidebar.style.bottom = '0';
-          sidebar.style.transform = 'none';
-          sidebar.style.overflowY = 'auto';
+      } else {
+        appMain.style.marginLeft = '0';
+        appMain.style.width = '100%';
+        appMain.style.maxWidth = '100%';
+
+        if (toggleBtn) {
+          toggleBtn.setAttribute('aria-expanded', sidebar.classList.contains('mobile-open') ? 'true' : 'false');
         }
       }
     }
-    
-    // Run on DOM ready and after a short delay
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', forceLayoutFix);
-    } else {
-      forceLayoutFix();
+
+    function bindQuickActionFallback() {
+      if (document.__settingsQuickActionBound) {
+        return;
+      }
+      document.__settingsQuickActionBound = true;
+
+      document.addEventListener('click', function(event) {
+        const link = event.target.closest('.quick-action-link[href]');
+        if (!link) {
+          return;
+        }
+
+        if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+          return;
+        }
+
+        const href = (link.getAttribute('href') || '').trim();
+        if (!href || href === '#') {
+          return;
+        }
+
+        event.preventDefault();
+        window.location.href = href;
+      }, true);
     }
-    
-    // Also run after window load to catch late-loading CSS
-    window.addEventListener('load', forceLayoutFix);
-    
-    // Run on resize for responsive adjustments
-    window.addEventListener('resize', forceLayoutFix);
-    
-    // Run immediately as well
-    setTimeout(forceLayoutFix, 0);
-    setTimeout(forceLayoutFix, 100);
-    setTimeout(forceLayoutFix, 500);
+
+    function bindSheetOpenFallback() {
+      if (document.__settingsSheetFallbackBound) {
+        return;
+      }
+      document.__settingsSheetFallbackBound = true;
+
+      document.addEventListener('click', function(event) {
+        const row = event.target.closest('.apple-settings-row[data-sheet]');
+        if (!row) {
+          return;
+        }
+
+        if (event.target.closest('button, input, select, textarea, a, .apple-toggle, [data-close-sheet]')) {
+          return;
+        }
+
+        const sheetId = row.getAttribute('data-sheet');
+        if (!sheetId) {
+          return;
+        }
+
+        const sheet = document.getElementById(sheetId);
+        if (!sheet) {
+          return;
+        }
+
+        event.preventDefault();
+        sheet.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }, true);
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() {
+        bindQuickActionFallback();
+        bindSheetOpenFallback();
+        syncSettingsLayout();
+      });
+    } else {
+      bindQuickActionFallback();
+      bindSheetOpenFallback();
+      syncSettingsLayout();
+    }
+
+    window.addEventListener('resize', syncSettingsLayout, { passive: true });
   })();
   
   </script>
