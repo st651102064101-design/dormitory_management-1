@@ -186,6 +186,16 @@ class AppleSettings {
         e.preventDefault();
         this.saveSiteName();
       });
+
+      // Fallback: some layouts can interfere with submit bubbling; bind button click directly too.
+      const saveSiteNameBtn = document.getElementById('saveSiteNameBtn');
+      if (saveSiteNameBtn && !saveSiteNameBtn.dataset.boundClick) {
+        saveSiteNameBtn.dataset.boundClick = '1';
+        saveSiteNameBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.saveSiteName();
+        });
+      }
     }
 
     // Phone Form
@@ -195,6 +205,16 @@ class AppleSettings {
         e.preventDefault();
         this.savePhone();
       });
+
+      // Fallback click binding in case submit flow is interrupted by overlay handlers.
+      const savePhoneBtn = document.getElementById('savePhoneBtn');
+      if (savePhoneBtn && !savePhoneBtn.dataset.boundClick) {
+        savePhoneBtn.dataset.boundClick = '1';
+        savePhoneBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.savePhone();
+        });
+      }
     }
 
     // Email Form
@@ -277,14 +297,20 @@ class AppleSettings {
   }
 
   async saveSiteName() {
+    if (this.isSavingSiteName) {
+      return;
+    }
+
     const siteName = document.getElementById('siteName')?.value.trim();
     if (!siteName) {
       this.showToast('กรุณากรอกชื่อหอพัก', 'error');
       return;
     }
 
+    this.isSavingSiteName = true;
+
     try {
-      const response = await fetch('../Manage/save_system_settings.php', {
+      const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `site_name=${encodeURIComponent(siteName)}`
@@ -294,26 +320,42 @@ class AppleSettings {
       if (result.success) {
         this.showToast('บันทึกชื่อหอพักสำเร็จ', 'success');
         this.closeSheet('sheet-sitename');
-        // Update display
+
+        // Update display in settings row
         const displayEl = document.querySelector('[data-display="sitename"]');
         if (displayEl) displayEl.textContent = siteName;
+
+        // Update profile header card
+        const profileNameEl = document.querySelector('.apple-profile-name');
+        if (profileNameEl) profileNameEl.textContent = siteName;
+
+        // Update document title immediately
+        document.title = `${siteName} - จัดการระบบ`;
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
       }
     } catch (error) {
       this.showToast(error.message, 'error');
+    } finally {
+      this.isSavingSiteName = false;
     }
   }
 
   async savePhone() {
+    if (this.isSavingPhone) {
+      return;
+    }
+
     const phone = document.getElementById('contactPhone')?.value.trim();
     if (!phone || !/^[0-9\-\+\s()]{8,20}$/.test(phone)) {
       this.showToast('รูปแบบเบอร์โทรไม่ถูกต้อง', 'error');
       return;
     }
 
+    this.isSavingPhone = true;
+
     try {
-      const response = await fetch('../Manage/save_system_settings.php', {
+      const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `contact_phone=${encodeURIComponent(phone)}`
@@ -330,6 +372,8 @@ class AppleSettings {
       }
     } catch (error) {
       this.showToast(error.message, 'error');
+    } finally {
+      this.isSavingPhone = false;
     }
   }
 
@@ -826,7 +870,8 @@ class AppleSettings {
   }
 
   async deleteSignature() {
-    if (!confirm('คุณต้องการลบลายเซ็นนี้หรือไม่?')) return;
+    const confirmed = await this.showConfirm('คุณต้องการลบลายเซ็นนี้หรือไม่?', 'ยืนยันการลบลายเซ็น');
+    if (!confirmed) return;
 
     try {
       const response = await fetch('../Manage/save_system_settings.php', {

@@ -396,10 +396,19 @@ try {
     }
 
     // จัดการ Site Name
-    if (!empty($_POST['site_name'])) {
-        $siteName = trim($_POST['site_name']);
+    if (array_key_exists('site_name', $_POST)) {
+        $siteName = trim((string)$_POST['site_name']);
+        if ($siteName === '') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'กรุณากรอกชื่อหอพัก']);
+            exit;
+        }
+
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
         $stmt->execute(['site_name', $siteName, $siteName]);
+
+        // Invalidate sidebar snapshot so refreshed pages read latest site name immediately.
+        unset($_SESSION['__sidebar_snapshot_v2']);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'บันทึกชื่อสำเร็จ', 'site_name' => $siteName]);
@@ -672,12 +681,20 @@ try {
     }
 
     // บันทึกเบอร์โทร
-    if (!empty($_POST['contact_phone'])) {
-        $phone = trim($_POST['contact_phone']);
+    if (array_key_exists('contact_phone', $_POST)) {
+        $phone = trim((string)$_POST['contact_phone']);
+        if ($phone === '') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'กรุณากรอกเบอร์โทร']);
+            exit;
+        }
+
         // ตรวจสอบความถูกต้องของเบอร์โทร
         if (preg_match('/^[0-9\-\+\s()]{8,20}$/', $phone)) {
             $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
             $stmt->execute(['contact_phone', $phone, $phone]);
+
+            unset($_SESSION['__sidebar_snapshot_v2']);
 
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'message' => 'บันทึกเบอร์โทรสำเร็จ']);

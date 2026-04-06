@@ -47,9 +47,9 @@
       <form id="siteNameForm">
         <div class="apple-input-group">
           <label class="apple-input-label"><?php echo __('name_label'); ?></label>
-          <input type="text" id="siteName" class="apple-input" value="<?php echo htmlspecialchars($siteName); ?>" maxlength="100" required>
+          <input type="text" id="siteName" name="site_name" class="apple-input" value="<?php echo htmlspecialchars($siteName); ?>" maxlength="100" required>
         </div>
-        <button type="submit" class="apple-button primary"><?php echo __('save'); ?></button>
+        <button type="submit" id="saveSiteNameBtn" class="apple-button primary"><?php echo __('save'); ?></button>
       </form>
     </div>
   </div>
@@ -68,10 +68,10 @@
       <form id="phoneForm">
         <div class="apple-input-group">
           <label class="apple-input-label"><?php echo __('phone'); ?></label>
-          <input type="tel" id="contactPhone" class="apple-input" value="<?php echo htmlspecialchars($contactPhone); ?>" pattern="[0-9\-\+\s()]{8,20}" maxlength="20" required>
+          <input type="tel" id="contactPhone" name="contact_phone" class="apple-input" value="<?php echo htmlspecialchars($contactPhone); ?>" pattern="[0-9\-\+\s()]{8,20}" maxlength="20" required>
           <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">เช่น 089-565-6083</p>
         </div>
-        <button type="submit" class="apple-button primary"><?php echo __('save'); ?></button>
+        <button type="submit" id="savePhoneBtn" class="apple-button primary"><?php echo __('save'); ?></button>
       </form>
     </div>
   </div>

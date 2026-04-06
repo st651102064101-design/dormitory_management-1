@@ -100,6 +100,36 @@
       .replace(/'/g, '&#39;');
   }
 
+  function showInlineToast(message, type) {
+    var existingToast = document.querySelector('.apple-toast');
+    if (existingToast && existingToast.parentNode) {
+      existingToast.parentNode.removeChild(existingToast);
+    }
+
+    var toast = document.createElement('div');
+    toast.className = 'apple-toast';
+
+    var icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>';
+    if (type === 'success') icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"/></svg>';
+    if (type === 'error') icon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+
+    toast.innerHTML = '<span class="apple-toast-icon">' + icon + '</span>' + escapeHtml(message);
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(function() {
+      toast.classList.add('show');
+    });
+
+    setTimeout(function() {
+      toast.classList.remove('show');
+      setTimeout(function() {
+        if (toast.parentNode) {
+          toast.parentNode.removeChild(toast);
+        }
+      }, 300);
+    }, 2000);
+  }
+
   function showSheetToast(message, type) {
     var settingsInstance = null;
 
@@ -114,9 +144,7 @@
       return;
     }
 
-    if ((type || 'success') === 'error') {
-      alert(message);
-    }
+    showInlineToast(message, type || 'info');
   }
 
   function getSettingsInstance() {
@@ -1310,7 +1338,7 @@
       <!-- Upload new -->
       <div class="apple-input-group">
         <label class="apple-input-label"><?php echo __('upload_new'); ?></label>
-        <div class="apple-upload-area" onclick="document.getElementById('bgInput').click()">
+        <div class="apple-upload-area">
           <div class="apple-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
           <p class="apple-upload-text"><?php echo __('click_to_select'); ?></p>
           <p class="apple-upload-hint">รองรับ JPG, PNG, WebP</p>
@@ -1370,10 +1398,9 @@
         </div>
         
         <!-- Hidden file input -->
-        <input type="file" id="signatureInput" accept="image/png" style="display: none;" onchange="handleSignatureFileSelect(this)">
+        <input type="file" id="signatureInput" accept="image/png" style="display: none;">
         
         <div class="apple-upload-area" id="signatureUploadArea" 
-             onclick="document.getElementById('signatureInput').click()"
              ondragover="event.preventDefault(); this.classList.add('dragover');"
              ondragleave="this.classList.remove('dragover');"
              ondrop="event.preventDefault(); this.classList.remove('dragover'); handleSignatureDrop(event);">
@@ -1386,6 +1413,43 @@
       
       <script>
       // Inline script for immediate signature upload handling
+      function showSignatureMessage(message, type) {
+        var settingsInstance = null;
+        if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+          settingsInstance = window.appleSettings;
+        } else if (typeof appleSettings !== 'undefined' && appleSettings && typeof appleSettings.showToast === 'function') {
+          settingsInstance = appleSettings;
+        }
+
+        if (settingsInstance) {
+          settingsInstance.showToast(message, type || 'info');
+          return;
+        }
+
+        var existingToast = document.querySelector('.apple-toast');
+        if (existingToast && existingToast.parentNode) {
+          existingToast.parentNode.removeChild(existingToast);
+        }
+
+        var toast = document.createElement('div');
+        toast.className = 'apple-toast';
+        toast.textContent = message;
+        document.body.appendChild(toast);
+
+        requestAnimationFrame(function() {
+          toast.classList.add('show');
+        });
+
+        setTimeout(function() {
+          toast.classList.remove('show');
+          setTimeout(function() {
+            if (toast.parentNode) {
+              toast.parentNode.removeChild(toast);
+            }
+          }, 300);
+        }, 2000);
+      }
+
       function handleSignatureFileSelect(input) {
         const file = input.files[0];
         if (file) {
@@ -1405,7 +1469,7 @@
         
         // Validate PNG
         if (file.type !== 'image/png') {
-          alert('กรุณาเลือกไฟล์ PNG เท่านั้น');
+          showSignatureMessage('กรุณาเลือกไฟล์ PNG เท่านั้น', 'error');
           return;
         }
         
@@ -1436,12 +1500,7 @@
         .then(result => {
           console.log('Upload result:', result);
           if (result.success) {
-            // Show success
-            if (typeof appleSettings !== 'undefined' && appleSettings.showToast) {
-              appleSettings.showToast('อัพโหลดลายเซ็นสำเร็จ', 'success');
-            } else {
-              alert('อัพโหลดลายเซ็นสำเร็จ!');
-            }
+            showSignatureMessage('อัพโหลดลายเซ็นสำเร็จ', 'success');
             // Reload page after short delay
             setTimeout(() => location.reload(), 1000);
           } else {
@@ -1450,7 +1509,7 @@
         })
         .catch(error => {
           console.error('Upload error:', error);
-          alert('เกิดข้อผิดพลาด: ' + error.message);
+          showSignatureMessage('เกิดข้อผิดพลาด: ' + error.message, 'error');
           // Reset UI
           previewContainer.style.display = 'none';
           uploadArea.style.display = 'block';
