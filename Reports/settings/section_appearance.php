@@ -31,7 +31,7 @@
     </div>
     
     <!-- Use Background Image -->
-    <div class="apple-settings-row">
+    <div class="apple-settings-row" id="bgImageToggleRow">
       <div class="apple-row-icon blue"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('use_bg_image'); ?></p>
@@ -39,6 +39,119 @@
       </div>
       <div class="apple-toggle" id="bgImageToggle" data-setting="use_bg_image" data-value="<?php echo htmlspecialchars($useBgImage); ?>"></div>
     </div>
+    <script>
+    (function bindInlineBgImageToggle() {
+      const toggle = document.getElementById('bgImageToggle');
+      const row = document.getElementById('bgImageToggleRow');
+      if (!toggle || !row || toggle.dataset.inlineBgToggleBound === '1') {
+        return;
+      }
+
+      const notify = (message, type) => {
+        if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+          window.appleSettings.showToast(message, type);
+          return;
+        }
+
+        if (typeof window.showToast === 'function') {
+          window.showToast(message, type);
+        }
+      };
+
+      const setState = (isActive) => {
+        toggle.classList.toggle('active', isActive);
+        toggle.setAttribute('data-value', isActive ? '1' : '0');
+        toggle.setAttribute('aria-checked', isActive ? 'true' : 'false');
+      };
+
+      const saveToggle = async (nextValue, prevActive) => {
+        if (toggle.dataset.saving === '1') {
+          return;
+        }
+
+        toggle.dataset.saving = '1';
+
+        try {
+          const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `use_bg_image=${encodeURIComponent(nextValue)}`
+          });
+
+          let result = null;
+          try {
+            result = await response.json();
+          } catch (parseError) {
+            throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+          }
+
+          if (!response.ok || !result || !result.success) {
+            throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+          }
+
+          notify(nextValue === '1' ? 'เปิดใช้ภาพพื้นหลัง' : 'ปิดใช้ภาพพื้นหลัง', 'success');
+        } catch (error) {
+          setState(prevActive);
+          notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+        } finally {
+          toggle.dataset.saving = '0';
+        }
+      };
+
+      const runToggle = () => {
+        if (toggle.dataset.saving === '1') {
+          return;
+        }
+
+        const prevActive = toggle.classList.contains('active');
+        const nextActive = !prevActive;
+        const nextValue = nextActive ? '1' : '0';
+        setState(nextActive);
+        saveToggle(nextValue, prevActive);
+      };
+
+      toggle.setAttribute('role', 'switch');
+      toggle.setAttribute('tabindex', '0');
+      setState(toggle.getAttribute('data-value') === '1');
+
+      toggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+          event.stopImmediatePropagation();
+        }
+        runToggle();
+      }, true);
+
+      toggle.addEventListener('keydown', (event) => {
+        if (event.key !== ' ' && event.key !== 'Enter') {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+          event.stopImmediatePropagation();
+        }
+        runToggle();
+      }, true);
+
+      row.addEventListener('click', (event) => {
+        if (event.target.closest('a, button, input, select, textarea, [data-close-sheet]')) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+          event.stopImmediatePropagation();
+        }
+        runToggle();
+      }, true);
+
+      toggle.dataset.inlineBgToggleBound = '1';
+    })();
+    </script>
     
     <!-- System Theme Color -->
     <div class="apple-settings-row" data-sheet="sheet-theme-color">
@@ -46,7 +159,7 @@
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('theme_color_label'); ?></p>
       </div>
-      <div style="width: 24px; height: 24px; border-radius: 6px; background: <?php echo htmlspecialchars($themeColor); ?>; border: 2px solid rgba(0,0,0,0.1); margin-right: 8px;"></div>
+      <div id="themeColorSwatch" style="width: 24px; height: 24px; border-radius: 6px; background: <?php echo htmlspecialchars($themeColor); ?>; border: 2px solid rgba(0,0,0,0.1); margin-right: 8px;"></div>
       <span class="apple-row-chevron">›</span>
     </div>
     
@@ -232,7 +345,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-theme-color">เสร็จ</button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-theme-color">เสร็จ</button>
       <h3 class="apple-sheet-title">สีพื้นหลังระบบ</h3>
       <div style="width: 50px;"></div>
     </div>
@@ -271,6 +384,161 @@
           <span id="colorHexDisplay" style="font-size: 17px; color: var(--apple-text);"><?php echo htmlspecialchars($themeColor); ?></span>
         </div>
       </div>
+      <script>
+      (function bindInlineThemeColorSave() {
+        const sheet = document.getElementById('sheet-theme-color');
+        if (!sheet || sheet.dataset.inlineThemeColorBound === '1') {
+          return;
+        }
+
+        const options = sheet.querySelectorAll('.apple-color-option[data-color]');
+        const colorInput = sheet.querySelector('#themeColor');
+        const hexDisplay = sheet.querySelector('#colorHexDisplay');
+        const swatch = document.getElementById('themeColorSwatch');
+        if (!colorInput || !hexDisplay) {
+          return;
+        }
+
+        const initialColor = <?php echo json_encode($themeColor); ?>;
+        const fallbackColor = '#0f172a';
+        const isValidHex = (value) => /^#[0-9a-fA-F]{6}$/.test(String(value || ''));
+        let savedColor = isValidHex(initialColor) ? initialColor : fallbackColor;
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const isLightColor = (hexColor) => {
+          const hex = String(hexColor || '').replace('#', '');
+          if (hex.length !== 6) {
+            return false;
+          }
+
+          const r = parseInt(hex.substring(0, 2), 16);
+          const g = parseInt(hex.substring(2, 4), 16);
+          const b = parseInt(hex.substring(4, 6), 16);
+          const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          return luminance > 0.5;
+        };
+
+        const applyPreview = (color) => {
+          colorInput.value = color;
+          hexDisplay.textContent = color;
+
+          options.forEach((opt) => {
+            opt.classList.toggle('active', (opt.dataset.color || '').toLowerCase() === color.toLowerCase());
+          });
+
+          if (swatch) {
+            swatch.style.background = color;
+          }
+
+          document.body.setAttribute('data-theme-color', color);
+          document.documentElement.style.setProperty('--theme-bg-color', color);
+
+          if (isLightColor(color)) {
+            document.body.classList.add('live-light');
+            document.body.classList.remove('live-dark');
+          } else {
+            document.body.classList.remove('live-light');
+            document.body.classList.add('live-dark');
+          }
+        };
+
+        const saveColor = async (nextColor) => {
+          if (!isValidHex(nextColor)) {
+            notify('รูปแบบสีไม่ถูกต้อง', 'error');
+            return;
+          }
+
+          if (sheet.dataset.saving === '1') {
+            return;
+          }
+
+          const previousColor = savedColor;
+          sheet.dataset.saving = '1';
+          applyPreview(nextColor);
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `theme_color=${encodeURIComponent(nextColor)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+            }
+
+            savedColor = nextColor;
+            notify(result.message || 'บันทึกสีพื้นหลังสำเร็จ', 'success');
+          } catch (error) {
+            applyPreview(previousColor);
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            sheet.dataset.saving = '0';
+          }
+        };
+
+        options.forEach((option) => {
+          option.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+
+            const nextColor = option.dataset.color || '';
+            if (!isValidHex(nextColor) || nextColor.toLowerCase() === savedColor.toLowerCase()) {
+              return;
+            }
+
+            saveColor(nextColor);
+          }, true);
+        });
+
+        colorInput.addEventListener('change', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+
+          const nextColor = (event.target && event.target.value) ? event.target.value : '';
+          if (!isValidHex(nextColor) || nextColor.toLowerCase() === savedColor.toLowerCase()) {
+            applyPreview(savedColor);
+            return;
+          }
+
+          saveColor(nextColor);
+        }, true);
+
+        colorInput.addEventListener('input', (event) => {
+          const color = (event.target && event.target.value) ? event.target.value : '';
+          if (!isValidHex(color)) {
+            return;
+          }
+
+          hexDisplay.textContent = color;
+        }, true);
+
+        sheet.dataset.inlineThemeColorBound = '1';
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -280,7 +548,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-font-size">เสร็จ</button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-font-size">เสร็จ</button>
       <h3 class="apple-sheet-title">ขนาดตัวอักษร</h3>
       <div style="width: 50px;"></div>
     </div>
@@ -298,6 +566,128 @@
       <div class="font-size-preview" style="padding: 16px; background: var(--apple-card); border-radius: 12px; text-align: center; font-size: calc(1rem * <?php echo htmlspecialchars($fontSize); ?>); color: var(--apple-text);">
         ตัวอย่างข้อความ - Example Text
       </div>
+      <script>
+      (function bindInlineFontSizeSave() {
+        const sheet = document.getElementById('sheet-font-size');
+        if (!sheet || sheet.dataset.inlineFontSizeBound === '1') {
+          return;
+        }
+
+        const select = sheet.querySelector('#fontSize');
+        const preview = sheet.querySelector('.font-size-preview');
+        if (!select) {
+          return;
+        }
+
+        const labelMap = {
+          '0.9': <?php echo json_encode(__('font_small'), JSON_UNESCAPED_UNICODE); ?>,
+          '1': <?php echo json_encode(__('font_normal'), JSON_UNESCAPED_UNICODE); ?>,
+          '1.1': <?php echo json_encode(__('font_large'), JSON_UNESCAPED_UNICODE); ?>,
+          '1.25': <?php echo json_encode(__('font_xlarge'), JSON_UNESCAPED_UNICODE); ?>
+        };
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const isAllowed = (value) => Object.prototype.hasOwnProperty.call(labelMap, value);
+
+        const applyPreview = (value) => {
+          if (!isAllowed(value)) {
+            return;
+          }
+
+          select.value = value;
+
+          if (preview) {
+            preview.style.fontSize = `calc(1rem * ${value})`;
+          }
+
+          document.documentElement.style.setProperty('--font-scale', value);
+          document.documentElement.style.setProperty('--admin-font-scale', value);
+
+          const displayEl = document.querySelector('[data-sheet="sheet-font-size"] .apple-row-value');
+          if (displayEl) {
+            displayEl.textContent = labelMap[value] || value;
+          }
+        };
+
+        let savedValue = isAllowed(select.value) ? select.value : <?php echo json_encode(in_array($fontSize, ['0.9', '1', '1.1', '1.25'], true) ? $fontSize : '1'); ?>;
+        applyPreview(savedValue);
+
+        const saveFontSize = async (nextValue) => {
+          if (!isAllowed(nextValue)) {
+            notify('ขนาดข้อความไม่ถูกต้อง', 'error');
+            return;
+          }
+
+          if (sheet.dataset.saving === '1') {
+            return;
+          }
+
+          const previousValue = savedValue;
+          sheet.dataset.saving = '1';
+          applyPreview(nextValue);
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `font_size=${encodeURIComponent(nextValue)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+            }
+
+            savedValue = nextValue;
+            try {
+              localStorage.setItem('adminFontScale', nextValue);
+            } catch (storageError) {
+              // Ignore storage errors.
+            }
+
+            notify(result.message || 'บันทึกขนาดตัวอักษรสำเร็จ', 'success');
+          } catch (error) {
+            applyPreview(previousValue);
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            sheet.dataset.saving = '0';
+          }
+        };
+
+        select.addEventListener('change', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+
+          const nextValue = select.value;
+          if (nextValue === savedValue) {
+            return;
+          }
+
+          saveFontSize(nextValue);
+        }, true);
+
+        sheet.dataset.inlineFontSizeBound = '1';
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -478,7 +868,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-fps-threshold">เสร็จ</button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-fps-threshold">เสร็จ</button>
       <h3 class="apple-sheet-title">ค่า FPS ขั้นต่ำ</h3>
       <div style="width: 50px;"></div>
     </div>
@@ -523,6 +913,117 @@
           <li>หน้าจอความถี่สูง: 90-120 FPS</li>
         </ul>
       </div>
+      <script>
+      (function bindInlineFpsThresholdSave() {
+        const sheet = document.getElementById('sheet-fps-threshold');
+        if (!sheet || sheet.dataset.inlineFpsBound === '1') {
+          return;
+        }
+
+        const select = sheet.querySelector('#fpsThreshold');
+        if (!select) {
+          return;
+        }
+
+        const allowedValues = ['30', '45', '60', '90', '120', '180', '240', '300'];
+        const isAllowed = (value) => allowedValues.includes(value);
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const updateRowValue = (value) => {
+          const rowValue = document.querySelector('[data-sheet="sheet-fps-threshold"] .apple-row-value');
+          if (rowValue) {
+            rowValue.textContent = `${value} FPS`;
+          }
+        };
+
+        const applyValue = (value) => {
+          if (!isAllowed(value)) {
+            return;
+          }
+
+          select.value = value;
+          updateRowValue(value);
+        };
+
+        let savedValue = isAllowed(select.value) ? select.value : <?php echo json_encode(in_array($fpsThreshold, ['30', '45', '60', '90', '120', '180', '240', '300'], true) ? $fpsThreshold : '60'); ?>;
+        applyValue(savedValue);
+
+        const saveFps = async (nextValue) => {
+          if (!isAllowed(nextValue)) {
+            notify('ค่า FPS ไม่ถูกต้อง', 'error');
+            return;
+          }
+
+          if (sheet.dataset.saving === '1') {
+            return;
+          }
+
+          const previousValue = savedValue;
+          sheet.dataset.saving = '1';
+          applyValue(nextValue);
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `fps_threshold=${encodeURIComponent(nextValue)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+            }
+
+            savedValue = nextValue;
+            try {
+              localStorage.setItem('fpsThreshold', nextValue);
+            } catch (storageError) {
+              // Ignore storage errors.
+            }
+
+            notify(result.message || 'บันทึกค่า FPS สำเร็จ', 'success');
+          } catch (error) {
+            applyValue(previousValue);
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            sheet.dataset.saving = '0';
+          }
+        };
+
+        select.addEventListener('change', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+          }
+
+          const nextValue = select.value;
+          if (nextValue === savedValue) {
+            return;
+          }
+
+          saveFps(nextValue);
+        }, true);
+
+        sheet.dataset.inlineFpsBound = '1';
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -532,7 +1033,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-language">เสร็จ / Done</button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-language">เสร็จ / Done</button>
       <h3 class="apple-sheet-title">ภาษา / Language</h3>
       <div style="width: 50px;"></div>
     </div>
@@ -563,6 +1064,124 @@
           <span style="font-size: 11px;">Language change will affect all pages in the system</span>
         </p>
       </div>
+      <script>
+      (function bindInlineLanguageSave() {
+        const sheet = document.getElementById('sheet-language');
+        if (!sheet || sheet.dataset.inlineLanguageBound === '1') {
+          return;
+        }
+
+        const options = sheet.querySelectorAll('.apple-language-option[data-language]');
+        if (!options.length) {
+          return;
+        }
+
+        const allowedLanguages = ['th', 'en'];
+        const languageLabels = {
+          th: '🇹🇭 ไทย',
+          en: '🇺🇸 English'
+        };
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const setActiveLanguage = (language) => {
+          options.forEach((opt) => {
+            opt.classList.toggle('active', opt.dataset.language === language);
+          });
+
+          const displayEl = document.querySelector('[data-sheet="sheet-language"] .apple-row-value');
+          if (displayEl) {
+            displayEl.textContent = languageLabels[language] || language;
+          }
+        };
+
+        const initialActive = sheet.querySelector('.apple-language-option.active')?.dataset.language;
+        let savedLanguage = allowedLanguages.includes(initialActive)
+          ? initialActive
+          : <?php echo json_encode((($systemLanguage ?? 'th') === 'en') ? 'en' : 'th'); ?>;
+
+        setActiveLanguage(savedLanguage);
+
+        const saveLanguage = async (language) => {
+          if (!allowedLanguages.includes(language)) {
+            notify('ภาษาไม่ถูกต้อง', 'error');
+            return;
+          }
+
+          if (sheet.dataset.saving === '1') {
+            return;
+          }
+
+          const previousLanguage = savedLanguage;
+          sheet.dataset.saving = '1';
+          setActiveLanguage(language);
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `system_language=${encodeURIComponent(language)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+            }
+
+            savedLanguage = language;
+
+            try {
+              localStorage.setItem('systemLanguage', language);
+            } catch (storageError) {
+              // Ignore storage errors.
+            }
+
+            document.cookie = `system_language=${language}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
+
+            notify(result.message || (language === 'th' ? 'บันทึกภาษาสำเร็จ' : 'Language saved successfully'), 'success');
+          } catch (error) {
+            setActiveLanguage(previousLanguage);
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            sheet.dataset.saving = '0';
+          }
+        };
+
+        options.forEach((option) => {
+          option.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+
+            const language = option.dataset.language;
+            if (!allowedLanguages.includes(language) || language === savedLanguage) {
+              return;
+            }
+
+            saveLanguage(language);
+          }, true);
+        });
+
+        sheet.dataset.inlineLanguageBound = '1';
+      })();
+      </script>
     </div>
   </div>
 </div>

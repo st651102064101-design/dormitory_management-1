@@ -416,8 +416,15 @@ try {
     }
 
     // จัดการ Theme Color
-    if (!empty($_POST['theme_color'])) {
-        $color = trim($_POST['theme_color']);
+    if (array_key_exists('theme_color', $_POST)) {
+        $color = trim((string)$_POST['theme_color']);
+
+        if ($color === '') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'กรุณาเลือกสี']);
+            exit;
+        }
+
         // Validate hex color
         if (!preg_match('/^#[0-9A-F]{6}$/i', $color)) {
             header('Content-Type: application/json');
@@ -428,17 +435,19 @@ try {
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
         $stmt->execute(['theme_color', $color, $color]);
 
+        unset($_SESSION['__sidebar_snapshot_v2']);
+
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'บันทึกสีสำเร็จ']);
         exit;
     }
 
     // จัดการ Font Size
-    if (!empty($_POST['font_size'])) {
-        $fontSize = trim($_POST['font_size']);
+    if (array_key_exists('font_size', $_POST)) {
+        $fontSize = trim((string)$_POST['font_size']);
         $allowedSizes = ['0.9', '1', '1.1', '1.25'];
         
-        if (!in_array($fontSize, $allowedSizes)) {
+        if (!in_array($fontSize, $allowedSizes, true)) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'error' => 'ขนาดข้อความไม่ถูกต้อง']);
             exit;
@@ -446,6 +455,8 @@ try {
 
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
         $stmt->execute(['font_size', $fontSize, $fontSize]);
+
+        unset($_SESSION['__sidebar_snapshot_v2']);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'บันทึกขนาดข้อความสำเร็จ']);
@@ -474,11 +485,11 @@ try {
     }
 
     // จัดการ FPS Threshold
-    if (!empty($_POST['fps_threshold'])) {
-        $fpsThreshold = trim($_POST['fps_threshold']);
+    if (array_key_exists('fps_threshold', $_POST)) {
+        $fpsThreshold = trim((string)$_POST['fps_threshold']);
         $allowedFps = ['30', '45', '60', '90', '120', '180', '240', '300'];
         
-        if (!in_array($fpsThreshold, $allowedFps)) {
+        if (!in_array($fpsThreshold, $allowedFps, true)) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'error' => 'ค่า FPS ไม่ถูกต้อง']);
             exit;
@@ -487,17 +498,19 @@ try {
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
         $stmt->execute(['fps_threshold', $fpsThreshold, $fpsThreshold]);
 
+        unset($_SESSION['__sidebar_snapshot_v2']);
+
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'บันทึกค่า FPS สำเร็จ']);
         exit;
     }
 
     // จัดการ System Language (th/en)
-    if (!empty($_POST['system_language'])) {
-        $language = trim($_POST['system_language']);
+    if (array_key_exists('system_language', $_POST)) {
+        $language = trim((string)$_POST['system_language']);
         $allowedLanguages = ['th', 'en'];
         
-        if (!in_array($language, $allowedLanguages)) {
+        if (!in_array($language, $allowedLanguages, true)) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'error' => 'ภาษาไม่ถูกต้อง / Invalid language']);
             exit;
@@ -522,6 +535,7 @@ try {
             
             // Update session
             $_SESSION['system_language'] = $language;
+            unset($_SESSION['__sidebar_snapshot_v2']);
             
             // Clear any cached language data
             if (function_exists('opcache_reset')) {

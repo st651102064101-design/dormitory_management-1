@@ -145,35 +145,104 @@ class AppleSettings {
       if (value === '1') {
         toggle.classList.add('active');
       }
-      
-      toggle.addEventListener('click', () => {
-        toggle.classList.toggle('active');
-        
+
+      toggle.setAttribute('role', 'switch');
+      toggle.setAttribute('aria-checked', value === '1' ? 'true' : 'false');
+      toggle.setAttribute('tabindex', '0');
+
+      const runToggle = () => {
+        if (toggle.dataset.saving === '1') {
+          return;
+        }
+
+        const previousActive = toggle.classList.contains('active');
+        const nextActive = !previousActive;
+
+        toggle.classList.toggle('active', nextActive);
+        toggle.setAttribute('aria-checked', nextActive ? 'true' : 'false');
+
         // Handle background image toggle
         if (toggle.id === 'bgImageToggle') {
-          const isChecked = toggle.classList.contains('active') ? '1' : '0';
-          this.saveBgImageToggle(isChecked);
+          const nextValue = nextActive ? '1' : '0';
+          this.saveBgImageToggle(nextValue, toggle, previousActive);
         }
+      };
+
+      toggle.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runToggle();
       });
+
+      toggle.addEventListener('keydown', (event) => {
+        if (event.key !== ' ' && event.key !== 'Enter') {
+          return;
+        }
+
+        event.preventDefault();
+        runToggle();
+      });
+
+      const row = toggle.closest('.apple-settings-row');
+      if (row && !row.dataset.sheet && row.dataset.toggleRowBound !== '1') {
+        row.dataset.toggleRowBound = '1';
+        row.addEventListener('click', (event) => {
+          if (event.target.closest('.apple-toggle, a, button, input, select, textarea, [data-close-sheet]')) {
+            return;
+          }
+
+          event.preventDefault();
+          runToggle();
+        }, true);
+      }
     });
   }
 
-  async saveBgImageToggle(value) {
+  async saveBgImageToggle(value, toggle = null, previousActive = null) {
+    if (this.isSavingBgImageToggle) {
+      return;
+    }
+
+    this.isSavingBgImageToggle = true;
+    if (toggle) {
+      toggle.dataset.saving = '1';
+    }
+
     try {
-      const response = await fetch('../Manage/save_system_settings.php', {
+      const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `use_bg_image=${encodeURIComponent(value)}`
       });
 
-      const result = await response.json();
-      if (result.success) {
-        this.showToast(value === '1' ? 'เปิดใช้ภาพพื้นหลัง' : 'ปิดใช้ภาพพื้นหลัง', 'success');
-      } else {
-        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('ระบบตอบกลับไม่ถูกต้อง');
       }
+
+      if (!response.ok || !result || !result.success) {
+        throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+      }
+
+      if (toggle) {
+        toggle.setAttribute('data-value', value);
+      }
+
+      this.showToast(value === '1' ? 'เปิดใช้ภาพพื้นหลัง' : 'ปิดใช้ภาพพื้นหลัง', 'success');
     } catch (error) {
+      if (toggle && previousActive !== null) {
+        toggle.classList.toggle('active', previousActive);
+        toggle.setAttribute('aria-checked', previousActive ? 'true' : 'false');
+      }
+
       this.showToast(error.message, 'error');
+    } finally {
+      this.isSavingBgImageToggle = false;
+      if (toggle) {
+        toggle.dataset.saving = '0';
+      }
     }
   }
 
@@ -631,70 +700,107 @@ class AppleSettings {
   }
 
   async saveFontSize() {
+    if (this.isSavingFontSize) {
+      return;
+    }
+
     const fontSize = document.getElementById('fontSize')?.value;
+    if (!fontSize) {
+      return;
+    }
+
+    this.isSavingFontSize = true;
     
     try {
-      const response = await fetch('../Manage/save_system_settings.php', {
+      const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `font_size=${encodeURIComponent(fontSize)}`
       });
 
-      const result = await response.json();
-      if (result.success) {
-        this.showToast('บันทึกขนาดตัวอักษรสำเร็จ', 'success');
-        
-        // Apply font size to entire page immediately via CSS variables
-        document.documentElement.style.setProperty('--font-scale', fontSize);
-        document.documentElement.style.setProperty('--admin-font-scale', fontSize);
-        
-        // Update preview
-        const preview = document.querySelector('.font-size-preview');
-        if (preview) {
-          preview.style.fontSize = `calc(1rem * ${fontSize})`;
-        }
-        
-        // ====== Global Sync ======
-        // Store in localStorage for ALL admin pages to pick up
-        localStorage.setItem('adminFontScale', fontSize);
-        
-        // Dispatch storage event manually for same-page listeners (storage event only fires on OTHER tabs)
-        // Other pages will get notified via 'storage' event automatically
-      } else {
-        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('ระบบตอบกลับไม่ถูกต้อง');
       }
+
+      if (!response.ok || !result || !result.success) {
+        throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+      }
+
+      // Apply font size to entire page immediately via CSS variables
+      document.documentElement.style.setProperty('--font-scale', fontSize);
+      document.documentElement.style.setProperty('--admin-font-scale', fontSize);
+
+      // Update preview
+      const preview = document.querySelector('.font-size-preview');
+      if (preview) {
+        preview.style.fontSize = `calc(1rem * ${fontSize})`;
+      }
+
+      const displayEl = document.querySelector('[data-sheet="sheet-font-size"] .apple-row-value');
+      if (displayEl) {
+        const selectedOption = document.querySelector(`#fontSize option[value="${fontSize}"]`);
+        const optionText = selectedOption ? selectedOption.textContent.trim() : fontSize;
+        displayEl.textContent = optionText.replace(/\s*\([^)]+\)\s*$/, '');
+      }
+
+      // ====== Global Sync ======
+      // Store in localStorage for ALL admin pages to pick up
+      localStorage.setItem('adminFontScale', fontSize);
+
+      this.showToast(result.message || 'บันทึกขนาดตัวอักษรสำเร็จ', 'success');
     } catch (error) {
       this.showToast(error.message, 'error');
+    } finally {
+      this.isSavingFontSize = false;
     }
   }
 
   async saveFpsThreshold() {
+    if (this.isSavingFpsThreshold) {
+      return;
+    }
+
     const fpsThreshold = document.getElementById('fpsThreshold')?.value;
+    if (!fpsThreshold) {
+      return;
+    }
+
+    this.isSavingFpsThreshold = true;
     
     try {
-      const response = await fetch('../Manage/save_system_settings.php', {
+      const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `fps_threshold=${encodeURIComponent(fpsThreshold)}`
       });
 
-      const result = await response.json();
-      if (result.success) {
-        this.showToast('บันทึกค่า FPS สำเร็จ', 'success');
-        
-        // Update display value in row
-        const rowValue = document.querySelector('[data-sheet="sheet-fps-threshold"] .apple-row-value');
-        if (rowValue) {
-          rowValue.textContent = fpsThreshold;
-        }
-        
-        // Store in localStorage for other pages
-        localStorage.setItem('fpsThreshold', fpsThreshold);
-      } else {
-        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('ระบบตอบกลับไม่ถูกต้อง');
       }
+
+      if (!response.ok || !result || !result.success) {
+        throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+      }
+
+      // Update display value in row
+      const rowValue = document.querySelector('[data-sheet="sheet-fps-threshold"] .apple-row-value');
+      if (rowValue) {
+        rowValue.textContent = `${fpsThreshold} FPS`;
+      }
+
+      // Store in localStorage for other pages
+      localStorage.setItem('fpsThreshold', fpsThreshold);
+      this.showToast(result.message || 'บันทึกค่า FPS สำเร็จ', 'success');
     } catch (error) {
       this.showToast(error.message, 'error');
+    } finally {
+      this.isSavingFpsThreshold = false;
     }
   }
 
@@ -1205,90 +1311,99 @@ class AppleSettings {
 
   // ===== Language Selector =====
   initLanguageSelector() {
-    // Use event delegation on the document to handle dynamically loaded content
-    document.addEventListener('click', (e) => {
-      const languageOption = e.target.closest('.apple-language-option');
-      if (languageOption) {
-        console.log('Language option clicked:', languageOption.dataset.language);
-        
-        // Prevent default behavior
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Remove active from all language options
-        document.querySelectorAll('.apple-language-option').forEach(opt => {
-          opt.classList.remove('active');
-        });
-        
-        // Add active to clicked element
-        languageOption.classList.add('active');
-        
-        const language = languageOption.dataset.language;
-        if (language) {
-          console.log('Saving language:', language);
-          this.saveLanguage(language);
+    const options = document.querySelectorAll('#sheet-language .apple-language-option[data-language]');
+    if (!options.length) {
+      return;
+    }
+
+    const setActiveLanguage = (language) => {
+      options.forEach((opt) => {
+        opt.classList.toggle('active', opt.dataset.language === language);
+      });
+    };
+
+    options.forEach((option) => {
+      option.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+          event.stopImmediatePropagation();
         }
-      }
-    }, true); // Use capture phase for better event handling
+
+        const language = option.dataset.language;
+        if (!language) {
+          return;
+        }
+
+        const previousOption = document.querySelector('#sheet-language .apple-language-option.active');
+        const previousLanguage = previousOption?.dataset.language || 'th';
+
+        if (language === previousLanguage || this.isSavingLanguage) {
+          return;
+        }
+
+        setActiveLanguage(language);
+        this.saveLanguage(language, previousLanguage);
+      }, true);
+    });
   }
 
-  async saveLanguage(language) {
-    console.log('[Language] Starting save for:', language);
-    
+  async saveLanguage(language, previousLanguage = null) {
+    if (this.isSavingLanguage) {
+      return;
+    }
+
+    this.isSavingLanguage = true;
+
+    const langNames = { 'th': '🇹🇭 ไทย', 'en': '🇺🇸 English' };
+    const setLanguageState = (value) => {
+      document.querySelectorAll('#sheet-language .apple-language-option[data-language]').forEach((opt) => {
+        opt.classList.toggle('active', opt.dataset.language === value);
+      });
+
+      const displayEl = document.querySelector('[data-sheet="sheet-language"] .apple-row-value');
+      if (displayEl) {
+        displayEl.textContent = langNames[value] || value;
+      }
+    };
+
     try {
       const body = `system_language=${encodeURIComponent(language)}`;
-      console.log('[Language] Request body:', body);
       
-      const response = await fetch('../Manage/save_system_settings.php', {
+      const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: body
       });
 
-      console.log('[Language] Response status:', response.status);
-      console.log('[Language] Response headers:', response.headers);
-      
-      const result = await response.json();
-      console.log('[Language] Response JSON:', result);
-      
-      if (result.success) {
-        console.log('[Language] Success! Language saved:', result.language);
-        
-        // Update display value
-        const displayEl = document.querySelector('[data-sheet="sheet-language"] .apple-row-value');
-        const langNames = { 'th': '🇹🇭 ไทย', 'en': '🇺🇸 English' };
-        if (displayEl) {
-          displayEl.textContent = langNames[language] || language;
-          console.log('[Language] Updated display element');
-        }
-        
-        // Store in localStorage for immediate effect
-        localStorage.setItem('systemLanguage', language);
-        console.log('[Language] Stored in localStorage');
-        
-        // Set cookie for server-side
-        document.cookie = `system_language=${language}; path=/; max-age=${365*24*60*60}; SameSite=Lax`;
-        console.log('[Language] Set cookie');
-        
-        const message = language === 'th' 
-          ? 'บันทึกภาษาสำเร็จ กำลังโหลดหน้าใหม่...' 
-          : 'Language saved. Reloading page...';
-        this.showToast(message, 'success');
-        
-        // Reload page to apply language change (with cache bypass)
-        console.log('[Language] Reloading page in 1500ms with cache bypass...');
-        setTimeout(() => {
-          console.log('[Language] Hard reload initiated');
-          window.location.href = window.location.href;
-        }, 1500);
-      } else {
-        const errorMsg = result.error || 'Unknown error';
-        console.error('[Language] Save failed:', errorMsg);
-        throw new Error(errorMsg);
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('ระบบตอบกลับไม่ถูกต้อง');
       }
+
+      if (!response.ok || !result || !result.success) {
+        throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+      }
+
+      setLanguageState(language);
+
+      // Store in localStorage for immediate effect
+      localStorage.setItem('systemLanguage', language);
+
+      // Set cookie for server-side
+      document.cookie = `system_language=${language}; path=/; max-age=${365 * 24 * 60 * 60}; SameSite=Lax`;
+
+      this.showToast(result.message || (language === 'th' ? 'บันทึกภาษาสำเร็จ' : 'Language saved successfully'), 'success');
     } catch (error) {
-      console.error('[Language] Catch block error:', error);
-      this.showToast('เกิดข้อผิดพลาด: ' + error.message, 'error');
+      if (previousLanguage) {
+        setLanguageState(previousLanguage);
+      }
+
+      this.showToast(error.message || 'เกิดข้อผิดพลาด', 'error');
+    } finally {
+      this.isSavingLanguage = false;
     }
   }
 
