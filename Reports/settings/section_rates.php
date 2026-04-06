@@ -5,57 +5,32 @@
     <script>
     if (typeof window.openRatesSheetFromRow !== 'function') {
       window.openRatesSheetFromRow = function(event, rowId) {
-        if (event && typeof event.preventDefault === 'function') {
-          event.preventDefault();
-        }
-
-        var context = {
-          source: 'section_rates.bootstrapFallback',
-          rowId: rowId || '',
-          sheetId: 'sheet-rates'
-        };
-
-        if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
-          try {
-            if (window.appleSettings.openSheet('sheet-rates', context) === true) {
-              return true;
-            }
-          } catch (error) {}
-        }
-
-        var overlay = document.getElementById('sheet-rates');
-        if (!overlay) {
-          return false;
-        }
-
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
-        return true;
-      };
-    }
-
-    if (typeof window.openManageRatesSheetFromRow !== 'function') {
-      window.openManageRatesSheetFromRow = function(event) {
         if (event && event.type === 'keydown' && event.key && event.key !== 'Enter' && event.key !== ' ') {
           return true;
         }
 
-        if (typeof window.openRatesSheetFromRow === 'function') {
-          var opened = window.openRatesSheetFromRow(event || null, 'manageRatesRow') === true;
-          return opened ? false : true;
-        }
-
-        var overlay = document.getElementById('sheet-rates');
-        if (!overlay) {
-          return true;
-        }
-
         if (event && typeof event.preventDefault === 'function') {
           event.preventDefault();
         }
 
-        overlay.classList.add('active');
-        document.body.style.overflow = 'hidden';
+        var overlay = document.getElementById('sheet-rates');
+        if (!overlay && typeof window.ensureRatesSheetFallback === 'function') {
+          overlay = window.ensureRatesSheetFallback();
+        }
+
+        if (overlay && overlay.parentNode !== document.body && document.body) {
+          document.body.appendChild(overlay);
+        }
+
+        if (overlay) {
+          overlay.classList.add('active');
+          document.body.style.overflow = 'hidden';
+          if (typeof window.refreshSheetHandleDragBindings === 'function') {
+            window.refreshSheetHandleDragBindings();
+          }
+          return true;
+        }
+
         return false;
       };
     }
@@ -66,16 +41,10 @@
           return true;
         }
 
-        if (rowId === 'manageRatesRow' && typeof window.openManageRatesSheetFromRow === 'function') {
-          return window.openManageRatesSheetFromRow(event);
-        }
-
-        return window.openRatesSheetFromRow(event, rowId) ? false : true;
+        return window.openRatesSheetFromRow ? window.openRatesSheetFromRow(event, rowId) ? false : true : true;
       };
     }
     </script>
-
-    <!-- Billing Schedule Setting (combined: generate day + payment due day) -->
     <div class="apple-settings-row" id="billingScheduleRow" data-sheet="sheet-billing-schedule" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-billing-schedule">
       <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
       <div class="apple-row-content">
@@ -121,7 +90,7 @@
         }
       }
   ?>
-    <div class="apple-settings-row" id="currentRatesRow" data-sheet="sheet-rates" style="padding: 16px; cursor: pointer;" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" onclick="openRatesSheetFromRow(event, 'currentRatesRow')" onkeydown="return handleRatesRowKeydown(event, 'currentRatesRow')">
+    <div class="apple-settings-row" id="currentRatesRow" data-sheet="sheet-rates" style="padding: 16px; cursor: pointer;" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" onclick="return openRatesSheetFromRow(event, 'currentRatesRow')" onkeydown="return handleRatesRowKeydown(event, 'currentRatesRow')">
       <div style="display: flex; gap: 20px; width: 100%; pointer-events: none;">
         <div style="flex: 1; text-align: center;">
           <div style="font-size: 28px; color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="icon-animated"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
@@ -138,7 +107,7 @@
     </div>
     
     <!-- Manage Rates -->
-    <div class="apple-settings-row" id="manageRatesRow" data-sheet="sheet-rates" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" style="cursor: pointer;" onclick="return openManageRatesSheetFromRow(event)" onkeydown="return handleRatesRowKeydown(event, 'manageRatesRow')">
+    <div class="apple-settings-row" id="manageRatesRow" data-sheet="sheet-rates" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" style="cursor: pointer;" onclick="return openRatesSheetFromRow(event, 'manageRatesRow')" onkeydown="return handleRatesRowKeydown(event, 'manageRatesRow')">
       <div class="apple-row-icon yellow" style="pointer-events: none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
       <div class="apple-row-content" style="pointer-events: none;">
         <p class="apple-row-label" id="manageRatesRowLabel"><?php echo __('manage_rates_label'); ?></p>
@@ -636,6 +605,14 @@ function refreshSheetHandleDragBindings() {
 
 window.refreshSheetHandleDragBindings = refreshSheetHandleDragBindings;
 
+(function initRatesSettings() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', refreshSheetHandleDragBindings);
+  } else {
+    refreshSheetHandleDragBindings();
+  }
+})();
+
 function ensureRatesSheetFallback() {
   var existingOverlay = document.getElementById('sheet-rates');
   if (existingOverlay) {
@@ -666,175 +643,51 @@ function ensureRatesSheetFallback() {
   return overlay;
 }
 
-function openRatesSheetFromRow(event, rowId) {
-  refreshSheetHandleDragBindings();
-
-  if (event) {
-    var target = event.target;
-    if (target && target.closest && target.closest('button, input, select, textarea, a, [data-close-sheet]')) {
+if (typeof window.openRatesSheetFromRow !== 'function') {
+  window.openRatesSheetFromRow = function(event, rowId) {
+    if (event && event.type === 'keydown' && event.key && event.key !== 'Enter' && event.key !== ' ') {
       return true;
     }
-    if (event.type === 'keydown' && event.key && event.key !== 'Enter' && event.key !== ' ') {
-      return true;
-    }
-    if (typeof event.preventDefault === 'function') {
-      event.preventDefault();
-    }
-  }
 
-  var context = {
-    source: 'section_rates.inlineRowFallback',
-    rowId: rowId || '',
-    sheetId: 'sheet-rates'
-  };
-
-  var opened = false;
-  if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
-    opened = window.appleSettings.openSheet('sheet-rates', context) === true;
-  }
-
-  if (!opened) {
-    var overlay = document.getElementById('sheet-rates');
-    if (!overlay) {
-      overlay = ensureRatesSheetFallback();
-    }
-
-    if (overlay) {
-      overlay.classList.add('active');
-      document.body.style.overflow = 'hidden';
-      opened = true;
-    }
-  }
-
-  if (!opened) {
-    console.error('[SheetDebug] Unable to open sheet-rates from row fallback', context);
-  }
-
-  if (opened) {
-    refreshSheetHandleDragBindings();
-  }
-
-  return opened;
-}
-
-function openManageRatesSheetFromRow(event) {
-  if (event && event.type === 'keydown' && event.key && event.key !== 'Enter' && event.key !== ' ') {
-    return true;
-  }
-
-  var currentOverlay = document.getElementById('sheet-rates');
-  if (currentOverlay && currentOverlay.classList.contains('active')) {
     if (event && typeof event.preventDefault === 'function') {
       event.preventDefault();
     }
-    return false;
-  }
 
-  if (event && typeof event.preventDefault === 'function') {
-    event.preventDefault();
-  }
-  if (event && typeof event.stopPropagation === 'function') {
-    event.stopPropagation();
-  }
-
-  var opened = false;
-  try {
-    opened = openRatesSheetFromRow(event || null, 'manageRatesRow') === true;
-  } catch (openError) {
-    opened = false;
-  }
-
-  if (!opened) {
     var overlay = document.getElementById('sheet-rates');
-    if (!overlay) {
+    if (!overlay && typeof ensureRatesSheetFallback === 'function') {
       overlay = ensureRatesSheetFallback();
+    }
+
+    if (overlay && overlay.parentNode !== document.body && document.body) {
+      document.body.appendChild(overlay);
     }
 
     if (overlay) {
       overlay.classList.add('active');
       document.body.style.overflow = 'hidden';
-      opened = true;
-    }
-  }
-
-  if (opened) {
-    refreshSheetHandleDragBindings();
-  } else {
-    console.error('[SheetDebug] Unable to open sheet-rates from manageRatesRow hard fallback');
-  }
-
-  return opened ? false : true;
-}
-
-function handleRatesRowKeydown(event, rowId) {
-  if (!event || (event.key !== 'Enter' && event.key !== ' ')) {
-    return true;
-  }
-
-  return openRatesSheetFromRow(event, rowId) ? false : true;
-}
-
-window.openRatesSheetFromRow = openRatesSheetFromRow;
-window.openManageRatesSheetFromRow = openManageRatesSheetFromRow;
-window.handleRatesRowKeydown = handleRatesRowKeydown;
-
-(function bindRatesRowFailSafe() {
-  function bindRow(rowId) {
-    var row = document.getElementById(rowId);
-    if (!row || row.dataset.ratesRowFailSafeBound === '1') {
-      return;
-    }
-
-    row.dataset.ratesRowFailSafeBound = '1';
-
-    row.addEventListener('click', function(event) {
-      if (rowId === 'manageRatesRow') {
-        openManageRatesSheetFromRow(event);
-        return;
-      }
-
-      if (event.defaultPrevented) {
-        return;
-      }
-      openRatesSheetFromRow(event, rowId);
-    }, true);
-
-    row.addEventListener('keydown', function(event) {
-      if (rowId === 'manageRatesRow') {
-        openManageRatesSheetFromRow(event);
-        return;
-      }
-
-      handleRatesRowKeydown(event, rowId);
-    }, true);
-
-    if (rowId === 'manageRatesRow') {
-      var handlePointerEnd = function(event) {
-        if (event.type === 'pointerup' && typeof event.button === 'number' && event.button !== 0) {
-          return;
-        }
-        openManageRatesSheetFromRow(event);
-      };
-
-      row.addEventListener('pointerup', handlePointerEnd, true);
-      row.addEventListener('touchend', function(event) {
-        openManageRatesSheetFromRow(event);
-      }, { capture: true, passive: false });
-    }
-  }
-
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
       refreshSheetHandleDragBindings();
-      bindRow('currentRatesRow');
-      bindRow('manageRatesRow');
-    });
-  } else {
-    refreshSheetHandleDragBindings();
-    bindRow('currentRatesRow');
-    bindRow('manageRatesRow');
-  }
-})();
+      return true;
+    }
+
+    return false;
+  };
+}
+
+if (typeof window.openManageRatesSheetFromRow !== 'function') {
+  window.openManageRatesSheetFromRow = function(event) {
+    return window.openRatesSheetFromRow ? window.openRatesSheetFromRow(event, 'manageRatesRow') ? false : true : true;
+  };
+}
+
+if (typeof window.handleRatesRowKeydown !== 'function') {
+  window.handleRatesRowKeydown = function(event, rowId) {
+    if (!event || (event.key !== 'Enter' && event.key !== ' ')) {
+      return true;
+    }
+
+    return window.openRatesSheetFromRow ? window.openRatesSheetFromRow(event, rowId) ? false : true : true;
+  };
+}
 
 const billingScheduleI18n = {
   title: <?php echo json_encode(__('billing_schedule_label'), JSON_UNESCAPED_UNICODE); ?>,
