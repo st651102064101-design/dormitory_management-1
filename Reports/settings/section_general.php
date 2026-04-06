@@ -90,9 +90,9 @@
       <form id="emailForm">
         <div class="apple-input-group">
           <label class="apple-input-label"><?php echo __('email'); ?></label>
-          <input type="email" id="contactEmail" class="apple-input" value="<?php echo htmlspecialchars($contactEmail); ?>" maxlength="100" required>
+          <input type="email" id="contactEmail" name="contact_email" class="apple-input" value="<?php echo htmlspecialchars($contactEmail); ?>" maxlength="100" required>
         </div>
-        <button type="submit" class="apple-button primary"><?php echo __('save'); ?></button>
+        <button type="submit" id="saveEmailBtn" class="apple-button primary"><?php echo __('save'); ?></button>
       </form>
     </div>
   </div>
@@ -158,19 +158,29 @@
       <form id="bankNameForm">
         <div class="apple-input-group">
           <label class="apple-input-label">ชื่อธนาคาร</label>
-          <select id="bankName" class="apple-input">
+          <select id="bankName" name="bank_name" class="apple-input">
             <option value="">-- เลือกธนาคาร --</option>
-            <option value="ธนาคารกสิกรไทย" <?php echo $bankName === 'ธนาคารกสิกรไทย' ? 'selected' : ''; ?>>ธนาคารกสิกรไทย (KBANK)</option>
             <option value="ธนาคารกรุงเทพ" <?php echo $bankName === 'ธนาคารกรุงเทพ' ? 'selected' : ''; ?>>ธนาคารกรุงเทพ (BBL)</option>
+            <option value="ธนาคารกสิกรไทย" <?php echo $bankName === 'ธนาคารกสิกรไทย' ? 'selected' : ''; ?>>ธนาคารกสิกรไทย (KBANK)</option>
             <option value="ธนาคารกรุงไทย" <?php echo $bankName === 'ธนาคารกรุงไทย' ? 'selected' : ''; ?>>ธนาคารกรุงไทย (KTB)</option>
             <option value="ธนาคารไทยพาณิชย์" <?php echo $bankName === 'ธนาคารไทยพาณิชย์' ? 'selected' : ''; ?>>ธนาคารไทยพาณิชย์ (SCB)</option>
             <option value="ธนาคารกรุงศรีอยุธยา" <?php echo $bankName === 'ธนาคารกรุงศรีอยุธยา' ? 'selected' : ''; ?>>ธนาคารกรุงศรีอยุธยา (BAY)</option>
             <option value="ธนาคารทหารไทยธนชาต" <?php echo $bankName === 'ธนาคารทหารไทยธนชาต' ? 'selected' : ''; ?>>ธนาคารทหารไทยธนชาต (TTB)</option>
+            <option value="ธนาคารยูโอบี" <?php echo $bankName === 'ธนาคารยูโอบี' ? 'selected' : ''; ?>>ธนาคารยูโอบี (UOB)</option>
+            <option value="ธนาคารเกียรตินาคินภัทร" <?php echo $bankName === 'ธนาคารเกียรตินาคินภัทร' ? 'selected' : ''; ?>>ธนาคารเกียรตินาคินภัทร (KKP)</option>
+            <option value="ธนาคารซีไอเอ็มบี ไทย" <?php echo $bankName === 'ธนาคารซีไอเอ็มบี ไทย' ? 'selected' : ''; ?>>ธนาคารซีไอเอ็มบี ไทย (CIMBT)</option>
+            <option value="ธนาคารแลนด์ แอนด์ เฮ้าส์" <?php echo $bankName === 'ธนาคารแลนด์ แอนด์ เฮ้าส์' ? 'selected' : ''; ?>>ธนาคารแลนด์ แอนด์ เฮ้าส์ (LH BANK)</option>
+            <option value="ธนาคารไอซีบีซี (ไทย)" <?php echo $bankName === 'ธนาคารไอซีบีซี (ไทย)' ? 'selected' : ''; ?>>ธนาคารไอซีบีซี (ไทย) (ICBC)</option>
+            <option value="ธนาคารไทยเครดิต" <?php echo $bankName === 'ธนาคารไทยเครดิต' ? 'selected' : ''; ?>>ธนาคารไทยเครดิต (CREDIT)</option>
             <option value="ธนาคารออมสิน" <?php echo $bankName === 'ธนาคารออมสิน' ? 'selected' : ''; ?>>ธนาคารออมสิน (GSB)</option>
-            <option value="ธนาคาร ธกส." <?php echo $bankName === 'ธนาคาร ธกส.' ? 'selected' : ''; ?>>ธนาคาร ธกส. (BAAC)</option>
+            <option value="ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร" <?php echo ($bankName === 'ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร' || $bankName === 'ธนาคาร ธกส.') ? 'selected' : ''; ?>>ธนาคารเพื่อการเกษตรและสหกรณ์การเกษตร (BAAC)</option>
+            <option value="ธนาคารอาคารสงเคราะห์" <?php echo $bankName === 'ธนาคารอาคารสงเคราะห์' ? 'selected' : ''; ?>>ธนาคารอาคารสงเคราะห์ (GHB)</option>
+            <option value="ธนาคารเพื่อการส่งออกและนำเข้าแห่งประเทศไทย" <?php echo $bankName === 'ธนาคารเพื่อการส่งออกและนำเข้าแห่งประเทศไทย' ? 'selected' : ''; ?>>ธนาคารเพื่อการส่งออกและนำเข้าแห่งประเทศไทย (EXIM)</option>
+            <option value="ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อมแห่งประเทศไทย" <?php echo $bankName === 'ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อมแห่งประเทศไทย' ? 'selected' : ''; ?>>ธนาคารพัฒนาวิสาหกิจขนาดกลางและขนาดย่อมแห่งประเทศไทย (SME D Bank)</option>
+            <option value="ธนาคารอิสลามแห่งประเทศไทย" <?php echo $bankName === 'ธนาคารอิสลามแห่งประเทศไทย' ? 'selected' : ''; ?>>ธนาคารอิสลามแห่งประเทศไทย (isbank)</option>
           </select>
         </div>
-        <button type="submit" class="apple-button primary">บันทึก</button>
+        <button type="submit" id="saveBankNameBtn" class="apple-button primary">บันทึก</button>
       </form>
     </div>
   </div>
@@ -189,9 +199,9 @@
       <form id="bankAccountNameForm">
         <div class="apple-input-group">
           <label class="apple-input-label">ชื่อบัญชี</label>
-          <input type="text" id="bankAccountName" class="apple-input" value="<?php echo htmlspecialchars($bankAccountName); ?>" maxlength="100" placeholder="เช่น นาย สมชาย ใจดี">
+          <input type="text" id="bankAccountName" name="bank_account_name" class="apple-input" value="<?php echo htmlspecialchars($bankAccountName); ?>" maxlength="100" placeholder="เช่น นาย สมชาย ใจดี">
         </div>
-        <button type="submit" class="apple-button primary">บันทึก</button>
+        <button type="submit" id="saveBankAccountNameBtn" class="apple-button primary">บันทึก</button>
       </form>
     </div>
   </div>

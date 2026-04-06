@@ -707,12 +707,20 @@ try {
     }
 
     // บันทึกอีเมล
-    if (!empty($_POST['contact_email'])) {
-        $email = trim($_POST['contact_email']);
+    if (array_key_exists('contact_email', $_POST)) {
+        $email = trim((string)$_POST['contact_email']);
+        if ($email === '') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'กรุณากรอกอีเมล']);
+            exit;
+        }
+
         // ตรวจสอบความถูกต้องของอีเมล
         if (filter_var($email, FILTER_VALIDATE_EMAIL)) {
             $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
             $stmt->execute(['contact_email', $email, $email]);
+
+            unset($_SESSION['__sidebar_snapshot_v2']);
 
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'message' => 'บันทึกอีเมลสำเร็จ']);
@@ -800,10 +808,12 @@ try {
     }
 
     // บันทึกชื่อธนาคาร
-    if (isset($_POST['bank_name'])) {
-        $bankName = trim($_POST['bank_name']);
+    if (array_key_exists('bank_name', $_POST)) {
+        $bankName = trim((string)$_POST['bank_name']);
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
         $stmt->execute(['bank_name', $bankName, $bankName]);
+
+        unset($_SESSION['__sidebar_snapshot_v2']);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'บันทึกชื่อธนาคารสำเร็จ']);
@@ -811,10 +821,12 @@ try {
     }
 
     // บันทึกชื่อบัญชี
-    if (isset($_POST['bank_account_name'])) {
-        $bankAccountName = trim($_POST['bank_account_name']);
+    if (array_key_exists('bank_account_name', $_POST)) {
+        $bankAccountName = trim((string)$_POST['bank_account_name']);
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
         $stmt->execute(['bank_account_name', $bankAccountName, $bankAccountName]);
+
+        unset($_SESSION['__sidebar_snapshot_v2']);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'บันทึกชื่อบัญชีสำเร็จ']);

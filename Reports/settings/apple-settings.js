@@ -224,6 +224,16 @@ class AppleSettings {
         e.preventDefault();
         this.saveEmail();
       });
+
+      // Fallback click binding in case submit flow is interrupted by overlay handlers.
+      const saveEmailBtn = document.getElementById('saveEmailBtn');
+      if (saveEmailBtn && !saveEmailBtn.dataset.boundClick) {
+        saveEmailBtn.dataset.boundClick = '1';
+        saveEmailBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.saveEmail();
+        });
+      }
     }
 
     // Bank Name Form
@@ -233,6 +243,16 @@ class AppleSettings {
         e.preventDefault();
         this.saveBankName();
       });
+
+      // Fallback click binding in case submit flow is interrupted by overlay handlers.
+      const saveBankNameBtn = document.getElementById('saveBankNameBtn');
+      if (saveBankNameBtn && !saveBankNameBtn.dataset.boundClick) {
+        saveBankNameBtn.dataset.boundClick = '1';
+        saveBankNameBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.saveBankName();
+        });
+      }
     }
 
     // Bank Account Name Form
@@ -242,6 +262,16 @@ class AppleSettings {
         e.preventDefault();
         this.saveBankAccountName();
       });
+
+      // Fallback click binding in case submit flow is interrupted by overlay handlers.
+      const saveBankAccountNameBtn = document.getElementById('saveBankAccountNameBtn');
+      if (saveBankAccountNameBtn && !saveBankAccountNameBtn.dataset.boundClick) {
+        saveBankAccountNameBtn.dataset.boundClick = '1';
+        saveBankAccountNameBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          this.saveBankAccountName();
+        });
+      }
     }
 
     // Bank Account Number Form
@@ -378,14 +408,20 @@ class AppleSettings {
   }
 
   async saveEmail() {
+    if (this.isSavingEmail) {
+      return;
+    }
+
     const email = document.getElementById('contactEmail')?.value.trim();
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       this.showToast('รูปแบบอีเมลไม่ถูกต้อง', 'error');
       return;
     }
 
+    this.isSavingEmail = true;
+
     try {
-      const response = await fetch('../Manage/save_system_settings.php', {
+      const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `contact_email=${encodeURIComponent(email)}`
@@ -402,6 +438,8 @@ class AppleSettings {
       }
     } catch (error) {
       this.showToast(error.message, 'error');
+    } finally {
+      this.isSavingEmail = false;
     }
   }
 
@@ -481,10 +519,16 @@ class AppleSettings {
 
   // ===== Bank Information Forms =====
   async saveBankName() {
+    if (this.isSavingBankName) {
+      return;
+    }
+
     const bankName = document.getElementById('bankName')?.value;
+
+    this.isSavingBankName = true;
     
     try {
-      const response = await fetch('../Manage/save_system_settings.php', {
+      const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `bank_name=${encodeURIComponent(bankName)}`
@@ -501,14 +545,22 @@ class AppleSettings {
       }
     } catch (error) {
       this.showToast(error.message, 'error');
+    } finally {
+      this.isSavingBankName = false;
     }
   }
 
   async saveBankAccountName() {
+    if (this.isSavingBankAccountName) {
+      return;
+    }
+
     const bankAccountName = document.getElementById('bankAccountName')?.value.trim();
+
+    this.isSavingBankAccountName = true;
     
     try {
-      const response = await fetch('../Manage/save_system_settings.php', {
+      const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `bank_account_name=${encodeURIComponent(bankAccountName)}`
@@ -525,6 +577,8 @@ class AppleSettings {
       }
     } catch (error) {
       this.showToast(error.message, 'error');
+    } finally {
+      this.isSavingBankAccountName = false;
     }
   }
 
