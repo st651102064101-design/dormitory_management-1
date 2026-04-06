@@ -1144,6 +1144,18 @@ class AppleSettings {
         // Also update localStorage so it takes effect immediately
         localStorage.setItem('adminDefaultViewMode', viewMode);
         this.showToast('บันทึกรูปแบบการแสดงผลสำเร็จ', 'success');
+
+        window.setTimeout(() => {
+          const sheet = document.getElementById('sheet-default-view');
+          if (!sheet || !sheet.classList.contains('active')) {
+            return;
+          }
+
+          sheet.classList.remove('active');
+          if (!document.querySelector('.apple-sheet-overlay.active')) {
+            document.body.style.overflow = '';
+          }
+        }, 1000);
       } else {
         throw new Error(result.error || 'เกิดข้อผิดพลาด');
       }
@@ -1153,21 +1165,41 @@ class AppleSettings {
   }
 
   async savePublicTheme(theme) {
+    if (this.isSavingPublicTheme) {
+      return;
+    }
+
+    this.isSavingPublicTheme = true;
+
     try {
-      const response = await fetch('../Manage/save_public_theme.php', {
+      const response = await fetch('/dormitory_management/Manage/save_public_theme.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: `theme=${encodeURIComponent(theme)}`
       });
 
-      const result = await response.json();
-      if (result.success) {
-        this.showToast('บันทึกธีมสำเร็จ', 'success');
-      } else {
-        throw new Error(result.error || 'เกิดข้อผิดพลาด');
+      let result = null;
+      try {
+        result = await response.json();
+      } catch (parseError) {
+        throw new Error('ระบบตอบกลับไม่ถูกต้อง');
       }
+
+      if (!response.ok || !result || !result.success) {
+        throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+      }
+
+      const displayEl = document.querySelector('[data-sheet="sheet-public-theme"] .apple-row-value');
+      if (displayEl) {
+        const nameEl = document.querySelector(`.apple-theme-option[data-theme="${theme}"] .apple-theme-name`);
+        displayEl.textContent = nameEl ? nameEl.textContent.trim() : theme;
+      }
+
+      this.showToast(result.message || 'บันทึกธีมสำเร็จ', 'success');
     } catch (error) {
       this.showToast(error.message, 'error');
+    } finally {
+      this.isSavingPublicTheme = false;
     }
   }
 

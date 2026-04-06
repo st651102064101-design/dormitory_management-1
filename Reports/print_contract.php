@@ -52,6 +52,9 @@ if (!empty($_GET['ctr_id']) && !$isTenantAccess && empty($_SESSION['admin_userna
     }
 }
 
+$isAdminOrOwnerAccess = !empty($_SESSION['admin_username']);
+$canEditTenantFields = $isTenantAccess && !$isAdminOrOwnerAccess;
+
 $ctr_id = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
 
 // Page 1: List all contracts
@@ -496,6 +499,12 @@ $contract['ctr_end'] = $contract['ctr_end'] ?? null;
 // Handle AJAX update for tenant data
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['ajax_update'])) {
     header('Content-Type: application/json');
+
+    if (!$canEditTenantFields) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'error' => 'คุณไม่มีสิทธิ์แก้ไขข้อมูลสัญญา']);
+        exit;
+    }
     
     $field = $_POST['field'] ?? '';
     $value = trim($_POST['value'] ?? '');
@@ -800,6 +809,21 @@ function nameWithoutNickname($fullName) {
             border-bottom-color: #ef4444;
             background: rgba(239, 68, 68, 0.1);
         }
+
+        .read-only-contract-fields .editable-field,
+        .editable-field.readonly-field {
+            color: #000 !important;
+            cursor: default !important;
+            pointer-events: none !important;
+            user-select: text;
+            background: transparent !important;
+            border-bottom: 1px dotted #000 !important;
+            animation: none !important;
+        }
+
+        .read-only-contract-fields .editable-hint {
+            display: none !important;
+        }
         
         /* Tooltip for editable fields */
         .editable-hint {
@@ -844,7 +868,7 @@ function nameWithoutNickname($fullName) {
         @media print { body { background: white; padding: 0; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; } .print-container { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 20mm 12.7mm 20mm 20.32mm; box-shadow: none; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; } }
     </style>
 </head>
-<body>
+<body class="<?php echo $canEditTenantFields ? 'tenant-editable-contract' : 'read-only-contract-fields'; ?>">
     <div class="print-container">
         <div class="header" style="text-align: center; border-bottom: none; margin-bottom: 10px;">
             <div class="form-field" style="border: none; font-size: 16px; font-weight: normal;">ห้องเช่าที่ <span class="underline"><?php echo h($contract['room_number'] ?? ''); ?></span> ( <?php echo h($contract['type_name'] ?? ''); ?> )</div>
@@ -855,26 +879,26 @@ function nameWithoutNickname($fullName) {
                 ข้าพเจ้า นางรุ่งทิพย์ ชิ้นจอหอ ผู้จัดการหอพักแสงเทียน ซึ่งต่อไปนี้เรียกว่า "ผู้ให้เช่า" ฝ่ายหนึ่ง กับข้าพเจ้า
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.&nbsp;&nbsp; ชื่อ <span class="editable-field underline-long <?php echo (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_name" data-type="firstname" data-placeholder="กรอกชื่อ..."><?php $fn = firstNameWithoutSurname($contract['tnt_name'] ?? ''); echo ($fn === '-' ? '' : h($fn)); ?></span>
-                สกุล <span class="editable-field underline-long <?php echo (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_name" data-type="lastname" data-placeholder="กรอกนามสกุล..."><?php $ln = surnameFromFullName($contract['tnt_name'] ?? ''); echo ($ln === '-' ? '' : h($ln)); ?></span>
-                อายุ <span class="editable-field underline-short <?php echo (empty($contract['tnt_age']) || $contract['tnt_age'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_age" data-placeholder="..." data-maxlength="3" data-minlength="2" data-type-validate="number"><?php $age = $contract['tnt_age'] ?? ''; echo ($age === '-' ? '' : h($age)); ?></span> ปี
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;3.&nbsp;&nbsp; ชื่อ <span class="editable-field underline-long <?php echo $canEditTenantFields && (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_name" data-type="firstname" data-placeholder="กรอกชื่อ..."><?php $fn = firstNameWithoutSurname($contract['tnt_name'] ?? ''); echo ($fn === '-' ? '' : h($fn)); ?></span>
+                สกุล <span class="editable-field underline-long <?php echo $canEditTenantFields && (empty($contract['tnt_name']) || $contract['tnt_name'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_name" data-type="lastname" data-placeholder="กรอกนามสกุล..."><?php $ln = surnameFromFullName($contract['tnt_name'] ?? ''); echo ($ln === '-' ? '' : h($ln)); ?></span>
+                อายุ <span class="editable-field underline-short <?php echo $canEditTenantFields && (empty($contract['tnt_age']) || $contract['tnt_age'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_age" data-placeholder="..." data-maxlength="3" data-minlength="2" data-type-validate="number"><?php $age = $contract['tnt_age'] ?? ''; echo ($age === '-' ? '' : h($age)); ?></span> ปี
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                เลขประจำตัวบัตรประชาชน <span class="editable-field underline-mid <?php echo (empty($contract['tnt_idcard']) || $contract['tnt_idcard'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_idcard" data-placeholder="กรอกเลขบัตร..." id="idcard-primary" data-maxlength="13" data-minlength="13" data-type-validate="number"><?php $idc = $contract['tnt_idcard'] ?? ''; echo ($idc === '-' ? '' : h($idc)); ?></span>
-                สถานศึกษา <span class="editable-field underline-long <?php echo (empty($contract['tnt_education']) || $contract['tnt_education'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_education" data-placeholder="กรอกสถานศึกษา..."><?php $edu = $contract['tnt_education'] ?? ''; echo ($edu === '-' ? '' : h($edu)); ?></span>
+                เลขประจำตัวบัตรประชาชน <span class="editable-field underline-mid <?php echo $canEditTenantFields && (empty($contract['tnt_idcard']) || $contract['tnt_idcard'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_idcard" data-placeholder="กรอกเลขบัตร..." id="idcard-primary" data-maxlength="13" data-minlength="13" data-type-validate="number"><?php $idc = $contract['tnt_idcard'] ?? ''; echo ($idc === '-' ? '' : h($idc)); ?></span>
+                สถานศึกษา <span class="editable-field underline-long <?php echo $canEditTenantFields && (empty($contract['tnt_education']) || $contract['tnt_education'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_education" data-placeholder="กรอกสถานศึกษา..."><?php $edu = $contract['tnt_education'] ?? ''; echo ($edu === '-' ? '' : h($edu)); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                คณะ <span class="editable-field underline-long <?php echo (empty($contract['tnt_faculty']) || $contract['tnt_faculty'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_faculty" data-placeholder="กรอกคณะ..."><?php $fac = $contract['tnt_faculty'] ?? ''; echo ($fac === '-' ? '' : h($fac)); ?></span>
-                ปีที่ <span class="editable-field underline-short <?php echo (empty($contract['tnt_year']) || $contract['tnt_year'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_year" data-placeholder="..."><?php $yr = formatYearValue($contract['tnt_year'] ?? ''); echo ($yr === '-' ? '' : h($yr)); ?></span>
-                มีรถจักรยานยนต์หมายเลขทะเบียน <span class="editable-field underline-wide <?php echo (empty($contract['tnt_vehicle']) || $contract['tnt_vehicle'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_vehicle" data-placeholder="กรอกเลขทะเบียน..."><?php $veh = $contract['tnt_vehicle'] ?? ''; echo ($veh === '-' ? '' : h($veh)); ?></span>
+                คณะ <span class="editable-field underline-long <?php echo $canEditTenantFields && (empty($contract['tnt_faculty']) || $contract['tnt_faculty'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_faculty" data-placeholder="กรอกคณะ..."><?php $fac = $contract['tnt_faculty'] ?? ''; echo ($fac === '-' ? '' : h($fac)); ?></span>
+                ปีที่ <span class="editable-field underline-short <?php echo $canEditTenantFields && (empty($contract['tnt_year']) || $contract['tnt_year'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_year" data-placeholder="..."><?php $yr = formatYearValue($contract['tnt_year'] ?? ''); echo ($yr === '-' ? '' : h($yr)); ?></span>
+                มีรถจักรยานยนต์หมายเลขทะเบียน <span class="editable-field underline-wide <?php echo $canEditTenantFields && (empty($contract['tnt_vehicle']) || $contract['tnt_vehicle'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_vehicle" data-placeholder="กรอกเลขทะเบียน..."><?php $veh = $contract['tnt_vehicle'] ?? ''; echo ($veh === '-' ? '' : h($veh)); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
-                เบอร์โทร <span class="editable-field underline-phone <?php echo (empty($contract['tnt_phone']) || $contract['tnt_phone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_phone" data-placeholder="กรอกเบอร์..." data-maxlength="10" data-minlength="10" data-type-validate="number"><?php $phone = $contract['tnt_phone'] ?? ''; echo ($phone === '-' ? '' : h($phone)); ?></span>
-                เบอร์โทรผู้ปกครอง <span class="editable-field underline-phone <?php echo (empty($contract['tnt_parentsphone']) || $contract['tnt_parentsphone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_parentsphone" data-placeholder="กรอกเบอร์..." data-maxlength="10" data-minlength="10" data-type-validate="number"><?php $pphone = $contract['tnt_parentsphone'] ?? ''; echo ($pphone === '-' ? '' : h($pphone)); ?></span>
+                เบอร์โทร <span class="editable-field underline-phone <?php echo $canEditTenantFields && (empty($contract['tnt_phone']) || $contract['tnt_phone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_phone" data-placeholder="กรอกเบอร์..." data-maxlength="10" data-minlength="10" data-type-validate="number"><?php $phone = $contract['tnt_phone'] ?? ''; echo ($phone === '-' ? '' : h($phone)); ?></span>
+                เบอร์โทรผู้ปกครอง <span class="editable-field underline-phone <?php echo $canEditTenantFields && (empty($contract['tnt_parentsphone']) || $contract['tnt_parentsphone'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_parentsphone" data-placeholder="กรอกเบอร์..." data-maxlength="10" data-minlength="10" data-type-validate="number"><?php $pphone = $contract['tnt_parentsphone'] ?? ''; echo ($pphone === '-' ? '' : h($pphone)); ?></span>
                 บัตรประจำตัวประชาชน <span class="underline underline-long" id="idcard-secondary"><?php $idc2 = $contract['tnt_idcard'] ?? ''; echo ($idc2 === '-' ? '' : h($idc2)); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left; display: flex; align-items: flex-end; gap: 6px;">
-                ที่อยู่ตามบัตร <span class="editable-field underline-xl <?php echo (empty($contract['tnt_address']) || $contract['tnt_address'] === '-') ? 'needs-input' : ''; ?>" contenteditable="true" data-field="tnt_address" data-placeholder="กรอกที่อยู่..." style="flex: 1; justify-content: flex-start; text-align: left;"><?php $addr = $contract['tnt_address'] ?? ''; echo ($addr === '-' ? '' : h($addr)); ?></span>
+                ที่อยู่ตามบัตร <span class="editable-field underline-xl <?php echo $canEditTenantFields && (empty($contract['tnt_address']) || $contract['tnt_address'] === '-') ? 'needs-input' : ''; ?>" contenteditable="<?php echo $canEditTenantFields ? 'true' : 'false'; ?>" data-field="tnt_address" data-placeholder="กรอกที่อยู่..." style="flex: 1; justify-content: flex-start; text-align: left;"><?php $addr = $contract['tnt_address'] ?? ''; echo ($addr === '-' ? '' : h($addr)); ?></span>
             </div>
             <div class="form-field" style="border: none; font-size: 14px; text-align: left;">
                 ซึ่งต่อไปนี้ในสัญญานี้เรียกว่า "ผู้เช่า" อีกฝ่ายหนึ่ง ทั้งสองฝ่ายตกลงทำสัญญากันดังนี้มีข้อความต่อไปนี้ คือ
@@ -1103,9 +1127,18 @@ function nameWithoutNickname($fullName) {
         }
 
         // ===== EDITABLE FIELDS AUTO-SAVE =====
+        const canEditTenantFields = <?php echo $canEditTenantFields ? 'true' : 'false'; ?>;
         const editableFields = document.querySelectorAll('.editable-field');
         let saveTimeout = null;
         let hint = null;
+
+        if (!canEditTenantFields) {
+            editableFields.forEach((el) => {
+                el.setAttribute('contenteditable', 'false');
+                el.classList.remove('needs-input', 'saving', 'saved', 'error');
+                el.classList.add('readonly-field');
+            });
+        } else {
         
         // Create hint tooltip
         function createHint() {
@@ -1494,6 +1527,8 @@ function nameWithoutNickname($fullName) {
                     }
                 }, 1500);
             }, true); // capture phase
+        }
+
         }
 
         // Auto-print disabled

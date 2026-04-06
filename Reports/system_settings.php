@@ -456,6 +456,53 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
       }, true);
     }
 
+    function bindSheetBackdropCloseFallback() {
+      if (document.__settingsSheetBackdropCloseBound) {
+        return;
+      }
+      document.__settingsSheetBackdropCloseBound = true;
+
+      const closeOverlay = (overlay) => {
+        if (!overlay) {
+          return;
+        }
+
+        overlay.classList.remove('active');
+        if (!document.querySelector('.apple-sheet-overlay.active')) {
+          document.body.style.overflow = '';
+        }
+      };
+
+      document.addEventListener('click', function(event) {
+        const overlay = event.target.closest('.apple-sheet-overlay.active');
+        if (!overlay) {
+          return;
+        }
+
+        const sheet = overlay.querySelector('.apple-sheet');
+        if (sheet && sheet.contains(event.target)) {
+          return;
+        }
+
+        event.preventDefault();
+        closeOverlay(overlay);
+      }, true);
+
+      document.addEventListener('touchend', function(event) {
+        const overlay = event.target.closest('.apple-sheet-overlay.active');
+        if (!overlay) {
+          return;
+        }
+
+        const sheet = overlay.querySelector('.apple-sheet');
+        if (sheet && sheet.contains(event.target)) {
+          return;
+        }
+
+        closeOverlay(overlay);
+      }, { capture: true, passive: true });
+    }
+
     function bindSiteNameSaveFallback() {
       if (document.__siteNameSaveFallbackBound) {
         return;
@@ -549,17 +596,288 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
       }, true);
     }
 
+    function bindPhoneSaveFallback() {
+      if (document.__phoneSaveFallbackBound) {
+        return;
+      }
+
+      const form = document.getElementById('phoneForm');
+      const button = document.getElementById('savePhoneBtn');
+      const input = document.getElementById('contactPhone');
+      if (!form || !button || !input) {
+        return;
+      }
+
+      document.__phoneSaveFallbackBound = true;
+
+      const runSave = async () => {
+        const phone = input.value.trim();
+        if (!/^[0-9+\s()\-]{8,20}$/.test(phone)) {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast('รูปแบบเบอร์โทรไม่ถูกต้อง', 'error');
+          }
+          input.focus();
+          return;
+        }
+
+        if (form.dataset.saving === '1') {
+          return;
+        }
+
+        form.dataset.saving = '1';
+        button.disabled = true;
+
+        try {
+          const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `contact_phone=${encodeURIComponent(phone)}`
+          });
+
+          let result = null;
+          try {
+            result = await response.json();
+          } catch (parseError) {
+            throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+          }
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || 'เกิดข้อผิดพลาด');
+          }
+
+          const displayEl = document.querySelector('[data-display="phone"]');
+          if (displayEl) {
+            displayEl.textContent = phone;
+          }
+
+          const sheet = document.getElementById('sheet-phone');
+          if (sheet) {
+            sheet.classList.remove('active');
+            document.body.style.overflow = '';
+          }
+
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast('บันทึกเบอร์โทรสำเร็จ', 'success');
+          }
+        } catch (error) {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(error.message, 'error');
+          }
+        } finally {
+          form.dataset.saving = '0';
+          button.disabled = false;
+        }
+      };
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runSave();
+      }, true);
+
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runSave();
+      }, true);
+    }
+
+    function bindEmailSaveFallback() {
+      if (document.__emailSaveFallbackBound) {
+        return;
+      }
+
+      const form = document.getElementById('emailForm');
+      const button = document.getElementById('saveEmailBtn');
+      const input = document.getElementById('contactEmail');
+      if (!form || !button || !input) {
+        return;
+      }
+
+      document.__emailSaveFallbackBound = true;
+
+      const runSave = async () => {
+        const email = input.value.trim();
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast('รูปแบบอีเมลไม่ถูกต้อง', 'error');
+          }
+          input.focus();
+          return;
+        }
+
+        if (form.dataset.saving === '1') {
+          return;
+        }
+
+        form.dataset.saving = '1';
+        button.disabled = true;
+
+        try {
+          const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `contact_email=${encodeURIComponent(email)}`
+          });
+
+          let result = null;
+          try {
+            result = await response.json();
+          } catch (parseError) {
+            throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+          }
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || 'เกิดข้อผิดพลาด');
+          }
+
+          const displayEl = document.querySelector('[data-display="email"]');
+          if (displayEl) {
+            displayEl.textContent = email;
+          }
+
+          const sheet = document.getElementById('sheet-email');
+          if (sheet) {
+            sheet.classList.remove('active');
+            document.body.style.overflow = '';
+          }
+
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast('บันทึกอีเมลสำเร็จ', 'success');
+          }
+        } catch (error) {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(error.message, 'error');
+          }
+        } finally {
+          form.dataset.saving = '0';
+          button.disabled = false;
+        }
+      };
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runSave();
+      }, true);
+
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runSave();
+      }, true);
+    }
+
+    function bindPromptpaySaveFallback() {
+      if (document.__promptpaySaveFallbackBound) {
+        return;
+      }
+
+      const form = document.getElementById('promptpayForm');
+      const button = document.getElementById('savePromptpayBtn');
+      const input = document.getElementById('promptpayNumber');
+      if (!form || !button || !input) {
+        return;
+      }
+
+      document.__promptpaySaveFallbackBound = true;
+
+      const isValidPromptpay = (value) => {
+        const digits = value.replace(/[^0-9]/g, '');
+        return digits.length === 10 || digits.length === 13;
+      };
+
+      const runSave = async () => {
+        const promptpayNumber = input.value.trim();
+        if (promptpayNumber !== '' && !isValidPromptpay(promptpayNumber)) {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast('พร้อมเพย์ต้องเป็นเบอร์โทร 10 หลัก หรือเลขบัตร 13 หลัก', 'error');
+          }
+          input.focus();
+          return;
+        }
+
+        if (form.dataset.saving === '1') {
+          return;
+        }
+
+        form.dataset.saving = '1';
+        button.disabled = true;
+
+        try {
+          const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `promptpay_number=${encodeURIComponent(promptpayNumber)}`
+          });
+
+          let result = null;
+          try {
+            result = await response.json();
+          } catch (parseError) {
+            throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+          }
+
+          if (!response.ok || !result.success) {
+            throw new Error(result.error || 'เกิดข้อผิดพลาด');
+          }
+
+          const displayEl = document.querySelector('[data-display="promptpay"]');
+          if (displayEl) {
+            displayEl.textContent = promptpayNumber || 'ไม่ระบุ';
+          }
+
+          const sheet = document.getElementById('sheet-promptpay');
+          if (sheet) {
+            sheet.classList.remove('active');
+            document.body.style.overflow = '';
+          }
+
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast('บันทึกพร้อมเพย์สำเร็จ', 'success');
+          }
+        } catch (error) {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(error.message, 'error');
+          }
+        } finally {
+          form.dataset.saving = '0';
+          button.disabled = false;
+        }
+      };
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runSave();
+      }, true);
+
+      button.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        runSave();
+      }, true);
+    }
+
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', function() {
         bindQuickActionFallback();
         bindSheetOpenFallback();
+        bindSheetBackdropCloseFallback();
         bindSiteNameSaveFallback();
+        bindPhoneSaveFallback();
+        bindEmailSaveFallback();
+        bindPromptpaySaveFallback();
         syncSettingsLayout();
       });
     } else {
       bindQuickActionFallback();
       bindSheetOpenFallback();
+      bindSheetBackdropCloseFallback();
       bindSiteNameSaveFallback();
+      bindPhoneSaveFallback();
+      bindEmailSaveFallback();
+      bindPromptpaySaveFallback();
       syncSettingsLayout();
     }
 

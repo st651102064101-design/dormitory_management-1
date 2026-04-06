@@ -95,7 +95,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-public-theme">เสร็จ</button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-public-theme">เสร็จ</button>
       <h3 class="apple-sheet-title">ธีมหน้าสาธารณะ</h3>
       <div style="width: 50px;"></div>
     </div>
@@ -117,6 +117,112 @@
           <span class="apple-theme-name"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:14px;height:14px;vertical-align:-2px;margin-right:3px;"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/></svg><?php echo __('theme_auto'); ?></span>
         </div>
       </div>
+      <script>
+      (function bindInlinePublicThemeSave() {
+        const sheet = document.getElementById('sheet-public-theme');
+        if (!sheet || sheet.dataset.inlinePublicThemeBound === '1') {
+          return;
+        }
+
+        const options = sheet.querySelectorAll('.apple-theme-option[data-theme]');
+        if (!options.length) {
+          return;
+        }
+
+        const initialTheme = <?php echo json_encode(in_array($publicTheme, ['dark', 'light', 'auto'], true) ? $publicTheme : 'dark'); ?>;
+        const themeLabelMap = {
+          dark: <?php echo json_encode(__('theme_dark'), JSON_UNESCAPED_UNICODE); ?>,
+          light: <?php echo json_encode(__('theme_light'), JSON_UNESCAPED_UNICODE); ?>,
+          auto: <?php echo json_encode(__('theme_auto'), JSON_UNESCAPED_UNICODE); ?>
+        };
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const setActiveTheme = (theme) => {
+          options.forEach((opt) => {
+            opt.classList.toggle('active', opt.dataset.theme === theme);
+          });
+        };
+
+        const updateRowDisplay = (theme) => {
+          const displayEl = document.querySelector('[data-sheet="sheet-public-theme"] .apple-row-value');
+          if (displayEl) {
+            displayEl.textContent = themeLabelMap[theme] || theme;
+          }
+        };
+
+        const saveTheme = async (theme, previousTheme) => {
+          if (!['dark', 'light', 'auto'].includes(theme)) {
+            return;
+          }
+
+          if (sheet.dataset.saving === '1') {
+            return;
+          }
+
+          sheet.dataset.saving = '1';
+          setActiveTheme(theme);
+          updateRowDisplay(theme);
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_public_theme.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `theme=${encodeURIComponent(theme)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && (result.error || result.message)) || 'เกิดข้อผิดพลาด');
+            }
+
+            notify(result.message || 'บันทึกธีมสำเร็จ', 'success');
+          } catch (error) {
+            setActiveTheme(previousTheme);
+            updateRowDisplay(previousTheme);
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            sheet.dataset.saving = '0';
+          }
+        };
+
+        options.forEach((option) => {
+          option.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+
+            const nextTheme = option.dataset.theme;
+            const activeOption = sheet.querySelector('.apple-theme-option.active');
+            const previousTheme = activeOption?.dataset.theme || initialTheme;
+            if (nextTheme === previousTheme) {
+              return;
+            }
+
+            saveTheme(nextTheme, previousTheme);
+          }, true);
+        });
+
+        sheet.dataset.inlinePublicThemeBound = '1';
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -201,7 +307,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-default-view">เสร็จ</button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-default-view">เสร็จ</button>
       <h3 class="apple-sheet-title">รูปแบบการแสดงผล</h3>
       <div style="width: 50px;"></div>
     </div>
@@ -245,6 +351,124 @@
           การตั้งค่านี้จะมีผลกับทุกหน้าแอดมิน เช่น หน้าจัดการห้องพัก, หน้าจัดการผู้เช่า, หน้าจองห้อง เป็นต้น
         </p>
       </div>
+      <script>
+      (function bindInlineDefaultViewModeSave() {
+        const sheet = document.getElementById('sheet-default-view');
+        if (!sheet || sheet.dataset.inlineDefaultViewBound === '1') {
+          return;
+        }
+
+        const options = sheet.querySelectorAll('.apple-view-option[data-view]');
+        if (!options.length) {
+          return;
+        }
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const setActiveView = (viewMode) => {
+          options.forEach((opt) => {
+            opt.classList.toggle('active', opt.dataset.view === viewMode);
+          });
+
+          const displayEl = document.querySelector('[data-sheet="sheet-default-view"] .apple-row-value');
+          if (displayEl) {
+            displayEl.textContent = viewMode === 'grid' ? 'Grid' : 'List';
+          }
+        };
+
+        const closeSheetNow = () => {
+          if (!sheet.classList.contains('active')) {
+            return;
+          }
+
+          sheet.classList.remove('active');
+          if (!document.querySelector('.apple-sheet-overlay.active')) {
+            document.body.style.overflow = '';
+          }
+        };
+
+        const saveViewMode = async (viewMode, previousMode) => {
+          if (!['grid', 'list'].includes(viewMode)) {
+            return;
+          }
+
+          if (sheet.dataset.saving === '1') {
+            return;
+          }
+
+          sheet.dataset.saving = '1';
+          setActiveView(viewMode);
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `default_view_mode=${encodeURIComponent(viewMode)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+            }
+
+            try {
+              localStorage.setItem('adminDefaultViewMode', viewMode);
+            } catch (storageError) {
+              // Ignore storage errors.
+            }
+
+            notify('บันทึกรูปแบบการแสดงผลสำเร็จ', 'success');
+            window.setTimeout(closeSheetNow, 1000);
+          } catch (error) {
+            setActiveView(previousMode);
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            sheet.dataset.saving = '0';
+          }
+        };
+
+        options.forEach((option) => {
+          option.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+
+            const nextMode = option.dataset.view;
+            const activeOption = sheet.querySelector('.apple-view-option.active');
+            const prevMode = activeOption?.dataset.view || '<?php echo $defaultViewMode === 'list' ? 'list' : 'grid'; ?>';
+
+            if (nextMode === prevMode) {
+              return;
+            }
+
+            if (sheet.dataset.saving === '1') {
+              return;
+            }
+
+            saveViewMode(nextMode, prevMode);
+          }, true);
+        });
+
+        sheet.dataset.inlineDefaultViewBound = '1';
+      })();
+      </script>
     </div>
   </div>
 </div>

@@ -44,13 +44,109 @@
       <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
-      <form id="siteNameForm">
+      <form id="siteNameForm" method="post" action="" onsubmit="if (window.__siteNameSubmitHandler) { window.__siteNameSubmitHandler(event); } return false;">
         <div class="apple-input-group">
           <label class="apple-input-label"><?php echo __('name_label'); ?></label>
           <input type="text" id="siteName" name="site_name" class="apple-input" value="<?php echo htmlspecialchars($siteName); ?>" maxlength="100" required>
         </div>
         <button type="submit" id="saveSiteNameBtn" class="apple-button primary"><?php echo __('save'); ?></button>
       </form>
+      <script>
+      (function bindInlineSiteNameSubmit() {
+        const form = document.getElementById('siteNameForm');
+        const input = document.getElementById('siteName');
+        const button = document.getElementById('saveSiteNameBtn');
+        if (!form || !input || !button || form.dataset.inlineSiteNameBound === '1') {
+          return;
+        }
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const submitSiteName = async (event) => {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+          }
+
+          const siteName = input.value.trim();
+          if (!siteName) {
+            notify('กรุณากรอกชื่อหอพัก', 'error');
+            input.focus();
+            return false;
+          }
+
+          if (form.dataset.saving === '1') {
+            return false;
+          }
+
+          form.dataset.saving = '1';
+          button.disabled = true;
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `site_name=${encodeURIComponent(siteName)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+            }
+
+            const displayEl = document.querySelector('[data-display="sitename"]');
+            if (displayEl) {
+              displayEl.textContent = siteName;
+            }
+
+            const profileNameEl = document.querySelector('.apple-profile-name');
+            if (profileNameEl) {
+              profileNameEl.textContent = siteName;
+            }
+
+            document.title = `${siteName} - จัดการระบบ`;
+
+            const sheet = document.getElementById('sheet-sitename');
+            if (sheet) {
+              sheet.classList.remove('active');
+              document.body.style.overflow = '';
+            }
+
+            notify('บันทึกชื่อหอพักสำเร็จ', 'success');
+          } catch (error) {
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            form.dataset.saving = '0';
+            button.disabled = false;
+          }
+
+          return false;
+        };
+
+        window.__siteNameSubmitHandler = submitSiteName;
+        form.dataset.inlineSiteNameBound = '1';
+        form.addEventListener('submit', submitSiteName, true);
+        button.addEventListener('click', submitSiteName, true);
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -65,14 +161,105 @@
       <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
-      <form id="phoneForm">
+      <form id="phoneForm" method="post" action="" onsubmit="if (window.__phoneSubmitHandler) { window.__phoneSubmitHandler(event); } return false;">
         <div class="apple-input-group">
           <label class="apple-input-label"><?php echo __('phone'); ?></label>
-          <input type="tel" id="contactPhone" name="contact_phone" class="apple-input" value="<?php echo htmlspecialchars($contactPhone); ?>" pattern="[0-9\-\+\s()]{8,20}" maxlength="20" required>
+          <input type="tel" id="contactPhone" name="contact_phone" class="apple-input" value="<?php echo htmlspecialchars($contactPhone); ?>" inputmode="tel" maxlength="20" required>
           <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">เช่น 089-565-6083</p>
         </div>
         <button type="submit" id="savePhoneBtn" class="apple-button primary"><?php echo __('save'); ?></button>
       </form>
+      <script>
+      (function bindInlinePhoneSubmit() {
+        const form = document.getElementById('phoneForm');
+        const input = document.getElementById('contactPhone');
+        const button = document.getElementById('savePhoneBtn');
+        if (!form || !input || !button || form.dataset.inlinePhoneBound === '1') {
+          return;
+        }
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const isValidPhone = (value) => /^[0-9+\s()\-]{8,20}$/.test(value);
+
+        const submitPhone = async (event) => {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+          }
+
+          const phone = input.value.trim();
+          if (!isValidPhone(phone)) {
+            notify('รูปแบบเบอร์โทรไม่ถูกต้อง', 'error');
+            input.focus();
+            return false;
+          }
+
+          if (form.dataset.saving === '1') {
+            return false;
+          }
+
+          form.dataset.saving = '1';
+          button.disabled = true;
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `contact_phone=${encodeURIComponent(phone)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+            }
+
+            const displayEl = document.querySelector('[data-display="phone"]');
+            if (displayEl) {
+              displayEl.textContent = phone;
+            }
+
+            const sheet = document.getElementById('sheet-phone');
+            if (sheet) {
+              sheet.classList.remove('active');
+              document.body.style.overflow = '';
+            }
+
+            notify('บันทึกเบอร์โทรสำเร็จ', 'success');
+          } catch (error) {
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            form.dataset.saving = '0';
+            button.disabled = false;
+          }
+
+          return false;
+        };
+
+        window.__phoneSubmitHandler = submitPhone;
+        form.dataset.inlinePhoneBound = '1';
+        form.addEventListener('submit', submitPhone, true);
+        button.addEventListener('click', submitPhone, true);
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -87,13 +274,104 @@
       <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
-      <form id="emailForm">
+      <form id="emailForm" method="post" action="" onsubmit="if (window.__emailSubmitHandler) { window.__emailSubmitHandler(event); } return false;">
         <div class="apple-input-group">
           <label class="apple-input-label"><?php echo __('email'); ?></label>
           <input type="email" id="contactEmail" name="contact_email" class="apple-input" value="<?php echo htmlspecialchars($contactEmail); ?>" maxlength="100" required>
         </div>
         <button type="submit" id="saveEmailBtn" class="apple-button primary"><?php echo __('save'); ?></button>
       </form>
+      <script>
+      (function bindInlineEmailSubmit() {
+        const form = document.getElementById('emailForm');
+        const input = document.getElementById('contactEmail');
+        const button = document.getElementById('saveEmailBtn');
+        if (!form || !input || !button || form.dataset.inlineEmailBound === '1') {
+          return;
+        }
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const isValidEmail = (value) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+        const submitEmail = async (event) => {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+          }
+
+          const email = input.value.trim();
+          if (!isValidEmail(email)) {
+            notify('รูปแบบอีเมลไม่ถูกต้อง', 'error');
+            input.focus();
+            return false;
+          }
+
+          if (form.dataset.saving === '1') {
+            return false;
+          }
+
+          form.dataset.saving = '1';
+          button.disabled = true;
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `contact_email=${encodeURIComponent(email)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+            }
+
+            const displayEl = document.querySelector('[data-display="email"]');
+            if (displayEl) {
+              displayEl.textContent = email;
+            }
+
+            const sheet = document.getElementById('sheet-email');
+            if (sheet) {
+              sheet.classList.remove('active');
+              document.body.style.overflow = '';
+            }
+
+            notify('บันทึกอีเมลสำเร็จ', 'success');
+          } catch (error) {
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            form.dataset.saving = '0';
+            button.disabled = false;
+          }
+
+          return false;
+        };
+
+        window.__emailSubmitHandler = submitEmail;
+        form.dataset.inlineEmailBound = '1';
+        form.addEventListener('submit', submitEmail, true);
+        button.addEventListener('click', submitEmail, true);
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -155,7 +433,7 @@
       <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
-      <form id="bankNameForm">
+      <form id="bankNameForm" method="post" action="" onsubmit="if (window.__bankNameSubmitHandler) { window.__bankNameSubmitHandler(event); } return false;">
         <div class="apple-input-group">
           <label class="apple-input-label">ชื่อธนาคาร</label>
           <select id="bankName" name="bank_name" class="apple-input">
@@ -182,6 +460,90 @@
         </div>
         <button type="submit" id="saveBankNameBtn" class="apple-button primary">บันทึก</button>
       </form>
+      <script>
+      (function bindInlineBankNameSubmit() {
+        const form = document.getElementById('bankNameForm');
+        const select = document.getElementById('bankName');
+        const button = document.getElementById('saveBankNameBtn');
+        if (!form || !select || !button || form.dataset.inlineBankNameBound === '1') {
+          return;
+        }
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const submitBankName = async (event) => {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+          }
+
+          if (form.dataset.saving === '1') {
+            return false;
+          }
+
+          form.dataset.saving = '1';
+          button.disabled = true;
+
+          const bankName = select.value.trim();
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `bank_name=${encodeURIComponent(bankName)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+            }
+
+            const displayEl = document.querySelector('[data-display="bankname"]');
+            if (displayEl) {
+              displayEl.textContent = bankName || 'ไม่ระบุ';
+            }
+
+            const sheet = document.getElementById('sheet-bankname');
+            if (sheet) {
+              sheet.classList.remove('active');
+              document.body.style.overflow = '';
+            }
+
+            notify('บันทึกชื่อธนาคารสำเร็จ', 'success');
+          } catch (error) {
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            form.dataset.saving = '0';
+            button.disabled = false;
+          }
+
+          return false;
+        };
+
+        window.__bankNameSubmitHandler = submitBankName;
+        form.dataset.inlineBankNameBound = '1';
+        form.addEventListener('submit', submitBankName, true);
+        button.addEventListener('click', submitBankName, true);
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -196,13 +558,97 @@
       <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
-      <form id="bankAccountNameForm">
+      <form id="bankAccountNameForm" method="post" action="" onsubmit="if (window.__bankAccountNameSubmitHandler) { window.__bankAccountNameSubmitHandler(event); } return false;">
         <div class="apple-input-group">
           <label class="apple-input-label">ชื่อบัญชี</label>
           <input type="text" id="bankAccountName" name="bank_account_name" class="apple-input" value="<?php echo htmlspecialchars($bankAccountName); ?>" maxlength="100" placeholder="เช่น นาย สมชาย ใจดี">
         </div>
         <button type="submit" id="saveBankAccountNameBtn" class="apple-button primary">บันทึก</button>
       </form>
+      <script>
+      (function bindInlineBankAccountNameSubmit() {
+        const form = document.getElementById('bankAccountNameForm');
+        const input = document.getElementById('bankAccountName');
+        const button = document.getElementById('saveBankAccountNameBtn');
+        if (!form || !input || !button || form.dataset.inlineBankAccountNameBound === '1') {
+          return;
+        }
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const submitBankAccountName = async (event) => {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+          }
+
+          if (form.dataset.saving === '1') {
+            return false;
+          }
+
+          form.dataset.saving = '1';
+          button.disabled = true;
+
+          const bankAccountName = input.value.trim();
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `bank_account_name=${encodeURIComponent(bankAccountName)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+            }
+
+            const displayEl = document.querySelector('[data-display="bankaccountname"]');
+            if (displayEl) {
+              displayEl.textContent = bankAccountName || 'ไม่ระบุ';
+            }
+
+            const sheet = document.getElementById('sheet-bankaccountname');
+            if (sheet) {
+              sheet.classList.remove('active');
+              document.body.style.overflow = '';
+            }
+
+            notify('บันทึกชื่อบัญชีสำเร็จ', 'success');
+          } catch (error) {
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            form.dataset.saving = '0';
+            button.disabled = false;
+          }
+
+          return false;
+        };
+
+        window.__bankAccountNameSubmitHandler = submitBankAccountName;
+        form.dataset.inlineBankAccountNameBound = '1';
+        form.addEventListener('submit', submitBankAccountName, true);
+        button.addEventListener('click', submitBankAccountName, true);
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -217,13 +663,97 @@
       <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
-      <form id="bankAccountNumberForm">
+      <form id="bankAccountNumberForm" method="post" action="" onsubmit="if (window.__bankAccountNumberSubmitHandler) { window.__bankAccountNumberSubmitHandler(event); } return false;">
         <div class="apple-input-group">
           <label class="apple-input-label">เลขบัญชีธนาคาร</label>
-          <input type="text" id="bankAccountNumber" class="apple-input" value="<?php echo htmlspecialchars($bankAccountNumber); ?>" maxlength="20" placeholder="เช่น 123-4-56789-0" pattern="[0-9\-]{10,20}">
+          <input type="text" id="bankAccountNumber" name="bank_account_number" class="apple-input" value="<?php echo htmlspecialchars($bankAccountNumber); ?>" maxlength="20" placeholder="เช่น 123-4-56789-0" pattern="[0-9\-]{10,20}">
         </div>
-        <button type="submit" class="apple-button primary">บันทึก</button>
+        <button type="submit" id="saveBankAccountNumberBtn" class="apple-button primary">บันทึก</button>
       </form>
+      <script>
+      (function bindInlineBankAccountNumberSubmit() {
+        const form = document.getElementById('bankAccountNumberForm');
+        const input = document.getElementById('bankAccountNumber');
+        const button = document.getElementById('saveBankAccountNumberBtn');
+        if (!form || !input || !button || form.dataset.inlineBankAccountNumberBound === '1') {
+          return;
+        }
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const submitBankAccountNumber = async (event) => {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+          }
+
+          if (form.dataset.saving === '1') {
+            return false;
+          }
+
+          form.dataset.saving = '1';
+          button.disabled = true;
+
+          const bankAccountNumber = input.value.trim();
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `bank_account_number=${encodeURIComponent(bankAccountNumber)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+            }
+
+            const displayEl = document.querySelector('[data-display="bankaccountnumber"]');
+            if (displayEl) {
+              displayEl.textContent = bankAccountNumber || 'ไม่ระบุ';
+            }
+
+            const sheet = document.getElementById('sheet-bankaccountnumber');
+            if (sheet) {
+              sheet.classList.remove('active');
+              document.body.style.overflow = '';
+            }
+
+            notify('บันทึกเลขบัญชีสำเร็จ', 'success');
+          } catch (error) {
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            form.dataset.saving = '0';
+            button.disabled = false;
+          }
+
+          return false;
+        };
+
+        window.__bankAccountNumberSubmitHandler = submitBankAccountNumber;
+        form.dataset.inlineBankAccountNumberBound = '1';
+        form.addEventListener('submit', submitBankAccountNumber, true);
+        button.addEventListener('click', submitBankAccountNumber, true);
+      })();
+      </script>
     </div>
   </div>
 </div>
@@ -238,14 +768,108 @@
       <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
-      <form id="promptpayForm">
+      <form id="promptpayForm" method="post" action="" onsubmit="if (window.__promptpaySubmitHandler) { window.__promptpaySubmitHandler(event); } return false;">
         <div class="apple-input-group">
           <label class="apple-input-label">หมายเลขพร้อมเพย์</label>
-          <input type="tel" id="promptpayNumber" class="apple-input" value="<?php echo htmlspecialchars($promptpayNumber); ?>" maxlength="13" placeholder="เบอร์โทรหรือเลขบัตรประชาชน">
+          <input type="tel" id="promptpayNumber" name="promptpay_number" class="apple-input" value="<?php echo htmlspecialchars($promptpayNumber); ?>" inputmode="numeric" maxlength="13" placeholder="เบอร์โทรหรือเลขบัตรประชาชน">
           <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">เช่น เบอร์โทร 089-565-6083 หรือเลข 13 หลัก</p>
         </div>
-        <button type="submit" class="apple-button primary">บันทึก</button>
+        <button type="submit" id="savePromptpayBtn" class="apple-button primary">บันทึก</button>
       </form>
+      <script>
+      (function bindInlinePromptpaySubmit() {
+        const form = document.getElementById('promptpayForm');
+        const input = document.getElementById('promptpayNumber');
+        const button = document.getElementById('savePromptpayBtn');
+        if (!form || !input || !button || form.dataset.inlinePromptpayBound === '1') {
+          return;
+        }
+
+        const notify = (message, type) => {
+          if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+            window.appleSettings.showToast(message, type);
+            return;
+          }
+
+          if (typeof window.showToast === 'function') {
+            window.showToast(message, type);
+          }
+        };
+
+        const isValidPromptpay = (value) => {
+          const digits = value.replace(/[^0-9]/g, '');
+          return digits.length === 10 || digits.length === 13;
+        };
+
+        const submitPromptpay = async (event) => {
+          if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+              event.stopImmediatePropagation();
+            }
+          }
+
+          if (form.dataset.saving === '1') {
+            return false;
+          }
+
+          const promptpayNumber = input.value.trim();
+          if (promptpayNumber !== '' && !isValidPromptpay(promptpayNumber)) {
+            notify('พร้อมเพย์ต้องเป็นเบอร์โทร 10 หลัก หรือเลขบัตร 13 หลัก', 'error');
+            input.focus();
+            return false;
+          }
+
+          form.dataset.saving = '1';
+          button.disabled = true;
+
+          try {
+            const response = await fetch('/dormitory_management/Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: `promptpay_number=${encodeURIComponent(promptpayNumber)}`
+            });
+
+            let result = null;
+            try {
+              result = await response.json();
+            } catch (parseError) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (!response.ok || !result || !result.success) {
+              throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+            }
+
+            const displayEl = document.querySelector('[data-display="promptpay"]');
+            if (displayEl) {
+              displayEl.textContent = promptpayNumber || 'ไม่ระบุ';
+            }
+
+            const sheet = document.getElementById('sheet-promptpay');
+            if (sheet) {
+              sheet.classList.remove('active');
+              document.body.style.overflow = '';
+            }
+
+            notify('บันทึกพร้อมเพย์สำเร็จ', 'success');
+          } catch (error) {
+            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+          } finally {
+            form.dataset.saving = '0';
+            button.disabled = false;
+          }
+
+          return false;
+        };
+
+        window.__promptpaySubmitHandler = submitPromptpay;
+        form.dataset.inlinePromptpayBound = '1';
+        form.addEventListener('submit', submitPromptpay, true);
+        button.addEventListener('click', submitPromptpay, true);
+      })();
+      </script>
     </div>
   </div>
 </div>

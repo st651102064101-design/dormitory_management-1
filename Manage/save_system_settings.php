@@ -453,8 +453,8 @@ try {
     }
 
     // จัดการ Default View Mode (grid/list)
-    if (!empty($_POST['default_view_mode'])) {
-        $viewMode = trim($_POST['default_view_mode']);
+    if (array_key_exists('default_view_mode', $_POST)) {
+        $viewMode = trim((string)$_POST['default_view_mode']);
         $allowedModes = ['grid', 'list'];
         
         if (!in_array($viewMode, $allowedModes)) {
@@ -465,6 +465,8 @@ try {
 
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
         $stmt->execute(['default_view_mode', $viewMode, $viewMode]);
+
+        unset($_SESSION['__sidebar_snapshot_v2']);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'บันทึกรูปแบบการแสดงผลสำเร็จ']);
@@ -845,10 +847,12 @@ try {
     }
 
     // บันทึกพร้อมเพย์
-    if (isset($_POST['promptpay_number'])) {
-        $promptpayNumber = trim($_POST['promptpay_number']);
+    if (array_key_exists('promptpay_number', $_POST)) {
+        $promptpayNumber = trim((string)$_POST['promptpay_number']);
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
         $stmt->execute(['promptpay_number', $promptpayNumber, $promptpayNumber]);
+
+        unset($_SESSION['__sidebar_snapshot_v2']);
 
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'บันทึกพร้อมเพย์สำเร็จ']);
