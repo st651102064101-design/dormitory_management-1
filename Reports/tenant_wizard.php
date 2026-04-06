@@ -3331,14 +3331,14 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 const payId    = Number(pay.pay_id    || 0);
                 const amount   = Number(pay.pay_amount || 0);
                 const payStatus = String(pay.pay_status || '0');
+                const proofFilename = String(pay.pay_proof || '').trim();
                 const canReview = allowReviewAction && payId > 0 && payStatus === '0';
                 const statusBadge = payStatus === '1'
                     ? `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(34,197,94,0.15);color:#4ade80;font-size:0.78rem;font-weight:600;">✓ อนุมัติแล้ว</span>`
                     : canReview
-                        ? `<button type="button" onclick="openSlipReview(${payId},${expenseId},${JSON.stringify(proofFilename)},${JSON.stringify(pay.pay_date_display||'-')},${amount})" title="คลิกเพื่อดูสลิปและอนุมัติ" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.18);color:#fbbf24;font-size:0.78rem;font-weight:600;border:1px solid rgba(245,158,11,0.4);cursor:pointer;transition:background 0.15s,transform 0.1s;" onmouseover="this.style.background='rgba(245,158,11,0.32)'" onmouseout="this.style.background='rgba(245,158,11,0.18)'">🔍 ตรวจสอบ</button>`
+                        ? `<button type="button" onclick="openSlipReview(${payId},${expenseId},${JSON.stringify(proofFilename).replace(/"/g, '&quot;')},${JSON.stringify(pay.pay_date_display||'-').replace(/"/g, '&quot;')},${amount})" title="คลิกเพื่อดูสลิปและอนุมัติ" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.18);color:#fbbf24;font-size:0.78rem;font-weight:600;border:1px solid rgba(245,158,11,0.4);cursor:pointer;transition:background 0.15s,transform 0.1s;" onmouseover="this.style.background='rgba(245,158,11,0.32)'" onmouseout="this.style.background='rgba(245,158,11,0.18)'">🔍 ตรวจสอบ</button>`
                         : `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.15);color:#fbbf24;font-size:0.78rem;font-weight:600;">⏳ รอตรวจสอบ</span>`;
                 const purpose  = getBillRemarkText(pay.pay_remark, monthText, `ชำระ${title}`);
-                const proofFilename = String(pay.pay_proof || '').trim();
                 const slipThumb = proofFilename
                     ? (() => {
                         const url = '/dormitory_management/Public/Assets/Images/Payments/' + encodeURIComponent(proofFilename);
@@ -3408,14 +3408,16 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         firstBillPaymentsSection.innerHTML  = loadingHtml;
         latestBillPaymentsSection.innerHTML = loadingHtml;
 
-        // First refresh session to prevent timeout errors, then fetch billing payments
-        Promise.resolve()
-            .then(() => fetch('../Manage/session_refresh.php', { method: 'POST', credentials: 'include' }))
-            .catch(() => null) // Ignore refresh errors, continue anyway
-            .then(() => fetch(`../Manage/get_first_bill_payments.php?ctr_id=${encodeURIComponent(ctrId)}`, { credentials: 'include' }))
+        // First refresh session to prevent timeout errors
+        fetch('../Manage/session_refresh.php', { method: 'POST', credentials: 'include' })
+            .catch(() => {}) // Ignore refresh errors, continue anyway
+            .then(() => {
+                // Now fetch billing payments with valid session
+                return fetch(`../Manage/get_first_bill_payments.php?ctr_id=${encodeURIComponent(ctrId)}`, { credentials: 'include' });
+            })
             .then(response => {
-                if (!response || !response.ok) {
-                    throw new Error('Failed to load bill payments: ' + (response?.status || 'unknown'));
+                if (!response.ok) {
+                    throw new Error('Failed to load bill payments');
                 }
                 return response.json();
             })
@@ -3490,8 +3492,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 }
 
             })
-            .catch((error) => {
-                console.error('Billing payments fetch error:', error);
+            .catch((e) => {
+                console.error('[refreshBillingPayments] Error loading or rendering data:', e);
                 firstBillPaymentsSection.innerHTML = `
                     <div style="font-weight: 700; color: #93c5fd; margin-bottom: 0.5rem;">รายการชำระเดือนแรก</div>
                     <div style="color: #fca5a5;">ไม่สามารถโหลดข้อมูลการชำระจากระบบได้</div>
