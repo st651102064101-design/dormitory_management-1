@@ -3968,7 +3968,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     
     <div style="margin-top:0.4rem">
       <form action="../logout.php" method="post" data-allow-submit>
-        <button type="submit" class="logout-btn" aria-label="Log out">
+        <button type="submit" class="logout-btn" aria-label="<?php echo __('logout'); ?>">
           <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></span>
           <span class="app-nav-label"><?php echo __('logout'); ?></span>
         </button>
@@ -4000,7 +4000,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
         <?php endif; ?>
       </div>
       <form action="../logout.php" method="post" class="rail-logout" data-allow-submit>
-        <button type="submit" class="app-nav-icon" aria-label="Log out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
+        <button type="submit" class="app-nav-icon" aria-label="<?php echo __('logout'); ?>"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg></button>
       </form>
     </div>
   </div>

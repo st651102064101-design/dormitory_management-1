@@ -1,6 +1,6 @@
 <!-- Section: Appearance Settings -->
 <div class="apple-section-group">
-  <h2 class="apple-section-title"><?php echo __('settings_appearance'); ?></h2>
+  <h2 id="appearanceSectionTitle" class="apple-section-title"><?php echo __('settings_appearance'); ?></h2>
   <div class="apple-section-card">
     <!-- Default View Mode -->
     <div class="apple-settings-row" data-sheet="sheet-default-view">
@@ -10,8 +10,8 @@
         <p class="apple-row-sublabel"><?php echo __('default_view_mode_desc'); ?></p>
       </div>
       <span class="apple-row-value"><?php 
-        $viewModeNames = ['grid' => 'Grid', 'list' => 'List'];
-        echo $viewModeNames[$defaultViewMode] ?? 'Grid';
+        $viewModeNames = ['grid' => __('view_grid'), 'list' => __('view_list')];
+        echo $viewModeNames[$defaultViewMode] ?? __('view_grid');
       ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -180,7 +180,7 @@
     <div class="apple-settings-row" data-sheet="sheet-fps-threshold">
       <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label">FPS Threshold</p>
+        <p class="apple-row-label"><?php echo __('fps_threshold'); ?></p>
         <p class="apple-row-sublabel"><?php echo __('fps_threshold_desc'); ?></p>
       </div>
       <span class="apple-row-value"><?php echo htmlspecialchars($fpsThreshold ?? '60'); ?> FPS</span>
@@ -771,7 +771,12 @@
 
           const displayEl = document.querySelector('[data-sheet="sheet-default-view"] .apple-row-value');
           if (displayEl) {
-            displayEl.textContent = viewMode === 'grid' ? 'Grid' : 'List';
+            const activeLanguage = document.querySelector('#sheet-language .apple-language-option.active')?.dataset.language
+              || localStorage.getItem('systemLanguage')
+              || 'th';
+            displayEl.textContent = viewMode === 'grid'
+              ? (activeLanguage === 'th' ? 'ตาราง' : 'Grid')
+              : (activeLanguage === 'th' ? 'รายการ' : 'List');
           }
         };
 
@@ -1092,7 +1097,41 @@
             infoMain: 'การเปลี่ยนภาษาจะมีผลกับทุกหน้าในระบบ',
             infoSub: 'Language change will affect all pages in the system',
             settingsTitle: 'ตั้งค่า',
-            settingsSubtitle: 'จัดการระบบหอพัก'
+            settingsSubtitle: 'จัดการระบบหอพัก',
+            appearanceSectionTitle: 'การแสดงผล',
+            defaultViewLabel: 'รูปแบบการแสดงผลเริ่มต้น',
+            defaultViewDesc: 'ใช้กับทุกหน้าแอดมิน',
+            viewGrid: 'ตาราง',
+            viewList: 'รายการ',
+            publicThemeLabel: 'ธีมหน้าสาธารณะ',
+            publicThemeDesc: 'ธีมสำหรับผู้เยี่ยมชม',
+            themeDark: 'มืด',
+            themeLight: 'สว่าง',
+            themeAuto: 'อัตโนมัติ',
+            useBgLabel: 'ใช้ภาพพื้นหลัง',
+            useBgDesc: 'แสดงภาพพื้นหลังบนหน้าแรก',
+            themeColorLabel: 'สีพื้นหลังระบบ',
+            fontSizeLabel: 'ขนาดตัวอักษร',
+            fontSmall: 'เล็ก',
+            fontNormal: 'ปกติ',
+            fontLarge: 'ใหญ่',
+            fontXLarge: 'ใหญ่มาก',
+            fpsLabel: 'เกณฑ์ FPS',
+            fpsDesc: 'แจ้งเตือนเมื่อ FPS ต่ำกว่า',
+            languageRowLabel: 'ภาษา / Language',
+            languageRowDesc: 'เปลี่ยนภาษาทั้งระบบ',
+            expensesSectionTitle: 'ค่าใช้จ่าย',
+            billingScheduleLabel: 'รอบบิลและกำหนดชำระ',
+            manageRatesLabel: 'จัดการอัตราค่าน้ำค่าไฟ',
+            effectiveFromLabel: 'เริ่มใช้:',
+            sidebarDashboard: 'แดชบอร์ด',
+            sidebarTodo: 'รายการงาน',
+            sidebarTenants: 'ผู้เช่า',
+            sidebarSettings: 'ตั้งค่าระบบ',
+            sidebarEditHint: 'คลิกเพื่อจัดการชื่อผู้ใช้ รหัสผ่าน และอีเมลกู้คืน',
+            sidebarEditHintShort: 'คลิกเพื่อเปลี่ยนชื่อผู้ใช้/รหัสผ่าน',
+            sidebarLinkGoogle: 'เชื่อมบัญชี Google',
+            sidebarLogout: 'ออกจากระบบ'
           },
           en: {
             done: 'Done',
@@ -1104,7 +1143,41 @@
             infoMain: 'Language change will affect all pages in the system',
             infoSub: 'Changes are applied immediately without page refresh',
             settingsTitle: 'Settings',
-            settingsSubtitle: 'Manage Dormitory System'
+            settingsSubtitle: 'Manage Dormitory System',
+            appearanceSectionTitle: 'Appearance',
+            defaultViewLabel: 'Default View Mode',
+            defaultViewDesc: 'Applied to all admin pages',
+            viewGrid: 'Grid',
+            viewList: 'List',
+            publicThemeLabel: 'Public Theme',
+            publicThemeDesc: 'Theme for visitors',
+            themeDark: 'Dark',
+            themeLight: 'Light',
+            themeAuto: 'Auto',
+            useBgLabel: 'Use Background Image',
+            useBgDesc: 'Show background image on home page',
+            themeColorLabel: 'System Background Color',
+            fontSizeLabel: 'Font Size',
+            fontSmall: 'Small',
+            fontNormal: 'Normal',
+            fontLarge: 'Large',
+            fontXLarge: 'Extra Large',
+            fpsLabel: 'FPS Threshold',
+            fpsDesc: 'Alert when FPS drops below',
+            languageRowLabel: 'Language',
+            languageRowDesc: 'Change system language',
+            expensesSectionTitle: 'Expenses',
+            billingScheduleLabel: 'Billing cycle and due date',
+            manageRatesLabel: 'Manage Water/Electric Rates',
+            effectiveFromLabel: 'Effective from:',
+            sidebarDashboard: 'Dashboard',
+            sidebarTodo: 'Todo List',
+            sidebarTenants: 'Tenants',
+            sidebarSettings: 'System Settings',
+            sidebarEditHint: 'Click to manage username, password, and recovery email',
+            sidebarEditHintShort: 'Click to change username/password',
+            sidebarLinkGoogle: 'Link Google Account',
+            sidebarLogout: 'Logout'
           }
         };
 
@@ -1142,6 +1215,13 @@
         const applyLanguageUi = (language) => {
           const ui = languageUiText[language] || languageUiText.th;
 
+          const setText = (selector, value) => {
+            const el = document.querySelector(selector);
+            if (el) {
+              el.textContent = value;
+            }
+          };
+
           if (doneBtn) {
             doneBtn.textContent = ui.done;
           }
@@ -1175,6 +1255,89 @@
           const settingsSubtitleEl = document.querySelector('.apple-settings-header p');
           if (settingsSubtitleEl) {
             settingsSubtitleEl.textContent = ui.settingsSubtitle;
+          }
+
+          // Appearance section live labels
+          setText('#appearanceSectionTitle', ui.appearanceSectionTitle);
+          setText('[data-sheet="sheet-default-view"] .apple-row-label', ui.defaultViewLabel);
+          setText('[data-sheet="sheet-default-view"] .apple-row-sublabel', ui.defaultViewDesc);
+          setText('[data-sheet="sheet-public-theme"] .apple-row-label', ui.publicThemeLabel);
+          setText('[data-sheet="sheet-public-theme"] .apple-row-sublabel', ui.publicThemeDesc);
+          setText('#bgImageToggleRow .apple-row-label', ui.useBgLabel);
+          setText('#bgImageToggleRow .apple-row-sublabel', ui.useBgDesc);
+          setText('[data-sheet="sheet-theme-color"] .apple-row-label', ui.themeColorLabel);
+          setText('[data-sheet="sheet-font-size"] .apple-row-label', ui.fontSizeLabel);
+          setText('[data-sheet="sheet-fps-threshold"] .apple-row-label', ui.fpsLabel);
+          setText('[data-sheet="sheet-fps-threshold"] .apple-row-sublabel', ui.fpsDesc);
+          setText('[data-sheet="sheet-language"] .apple-row-label', ui.languageRowLabel);
+          setText('[data-sheet="sheet-language"] .apple-row-sublabel', ui.languageRowDesc);
+
+          // Expenses section live labels
+          setText('#expensesSectionTitle', ui.expensesSectionTitle);
+          setText('#billingScheduleRowLabel', ui.billingScheduleLabel);
+          setText('#manageRatesRowLabel', ui.manageRatesLabel);
+
+          const billingSublabel = document.getElementById('billingScheduleSublabel');
+          if (billingSublabel) {
+            const matchedNumbers = (billingSublabel.textContent || '').match(/\d+/g) || [];
+            const billDay = matchedNumbers[0] || '1';
+            const dueDay = matchedNumbers[1] || '25';
+            billingSublabel.textContent = language === 'th'
+              ? `ออกบิลวันที่ ${billDay} · ชำระภายในวันที่ ${dueDay}`
+              : `Bill on day ${billDay} · Due by day ${dueDay}`;
+          }
+
+          const rateDateLabel = document.getElementById('currentRateDateLabel');
+          if (rateDateLabel) {
+            const currentText = (rateDateLabel.textContent || '').trim();
+            const datePart = currentText.replace(/^.*?:\s*/, '').trim();
+            rateDateLabel.textContent = datePart ? `${ui.effectiveFromLabel} ${datePart}` : ui.effectiveFromLabel;
+          }
+
+          // Keep value text consistent with selected language (when page was loaded in another language).
+          const defaultViewValueEl = document.querySelector('[data-sheet="sheet-default-view"] .apple-row-value');
+          if (defaultViewValueEl) {
+            const currentMode = document.querySelector('#sheet-default-view .apple-view-option.active')?.dataset.view || 'grid';
+            defaultViewValueEl.textContent = currentMode === 'list' ? ui.viewList : ui.viewGrid;
+          }
+
+          const publicThemeValueEl = document.querySelector('[data-sheet="sheet-public-theme"] .apple-row-value');
+          if (publicThemeValueEl) {
+            const activeTheme = document.querySelector('#sheet-public-theme .apple-theme-option.active')?.dataset.theme || 'dark';
+            const themeValueMap = { dark: ui.themeDark, light: ui.themeLight, auto: ui.themeAuto };
+            publicThemeValueEl.textContent = themeValueMap[activeTheme] || ui.themeDark;
+          }
+
+          const fontSizeValueEl = document.querySelector('[data-sheet="sheet-font-size"] .apple-row-value');
+          if (fontSizeValueEl) {
+            const fontSize = document.getElementById('fontSize')?.value || '1';
+            const fontValueMap = {
+              '0.9': ui.fontSmall,
+              '1': ui.fontNormal,
+              '1.1': ui.fontLarge,
+              '1.25': ui.fontXLarge
+            };
+            fontSizeValueEl.textContent = fontValueMap[fontSize] || ui.fontNormal;
+          }
+
+          // Sidebar summary labels and footer hints/buttons.
+          setText('#nav-dashboard > summary .summary-label', ui.sidebarDashboard);
+          setText('#nav-todo > summary .summary-label', ui.sidebarTodo);
+          setText('#nav-tenants > summary .summary-label', ui.sidebarTenants);
+          setText('#nav-settings > summary .summary-label', ui.sidebarSettings);
+          setText('#sidebarAccountTrigger .edit-hint', ui.sidebarEditHint);
+          setText('.google-link-btn .app-nav-label', ui.sidebarLinkGoogle);
+          setText('.logout-btn .app-nav-label', ui.sidebarLogout);
+
+          const accountTrigger = document.getElementById('sidebarAccountTrigger');
+          if (accountTrigger) {
+            accountTrigger.setAttribute('aria-label', ui.sidebarEditHint);
+            accountTrigger.setAttribute('data-bs-title', ui.sidebarEditHintShort);
+          }
+
+          const logoutBtn = document.querySelector('.logout-btn');
+          if (logoutBtn) {
+            logoutBtn.setAttribute('aria-label', ui.sidebarLogout);
           }
         };
 

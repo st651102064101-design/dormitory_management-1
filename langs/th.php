@@ -292,7 +292,7 @@ return [
     'default_view_mode' => 'รูปแบบการแสดงผลเริ่มต้น',
     'view_grid' => 'ตาราง',
     'view_list' => 'รายการ',
-    'fps_threshold' => 'FPS Threshold',
+    'fps_threshold' => 'เกณฑ์ FPS',
     'fps_description' => 'แจ้งเตือนเมื่อ FPS ต่ำกว่า',
     'payment_due_day' => 'วันครบกำหนดชำระ',
     'settings_subtitle' => 'จัดการระบบหอพัก',
