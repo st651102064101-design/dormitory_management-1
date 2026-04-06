@@ -906,6 +906,20 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             display: flex;
             align-items: center;
             gap: 0.4rem;
+            position: relative;
+            z-index: 30;
+            overflow: visible;
+        }
+
+        .wizard-table td[data-label="สถานะ"] {
+            position: relative;
+            z-index: 30;
+            overflow: visible;
+        }
+
+        .wizard-table td[data-label="ขั้นตอนถัดไป"] {
+            position: relative;
+            z-index: 1;
         }
 
         .step-circle {
@@ -969,6 +983,23 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             opacity: 1;
             visibility: visible;
             transform: translateX(-50%) translateY(0);
+        }
+
+        .step-indicator .step-circle:last-of-type::before {
+            left: auto;
+            right: 0;
+            transform: translateX(0) translateY(5px);
+        }
+
+        .step-indicator .step-circle:last-of-type::after {
+            left: auto;
+            right: 11px;
+            transform: translateX(0) translateY(5px);
+        }
+
+        .step-indicator .step-circle:last-of-type:hover::before,
+        .step-indicator .step-circle:last-of-type:hover::after {
+            transform: translateX(0) translateY(0);
         }
 
         /* Step states */
@@ -4317,6 +4348,100 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         } catch(e) { if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); }
     }
 
+    // Add tooltip to all buttons in wizard scope (clickable + disabled-like).
+    let _wizTooltipObserver = null;
+
+    function normalizeTooltipText(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function isDisabledLikeButton(el) {
+        if (!el || !(el instanceof HTMLElement)) return false;
+        const cursorStyle = (el.style && el.style.cursor ? el.style.cursor : '').toLowerCase();
+        return el.disabled === true
+            || el.getAttribute('aria-disabled') === 'true'
+            || el.classList.contains('btn-disabled')
+            || cursorStyle.includes('not-allowed');
+    }
+
+    function deriveWizardButtonTooltip(el) {
+        const bsTitle = normalizeTooltipText(el.getAttribute('data-bs-title'));
+        if (bsTitle) return bsTitle;
+
+        const title = normalizeTooltipText(el.getAttribute('title'));
+        if (title) return title;
+
+        const ariaLabel = normalizeTooltipText(el.getAttribute('aria-label'));
+        if (ariaLabel) return ariaLabel;
+
+        const dataTooltip = normalizeTooltipText(el.getAttribute('data-tooltip'));
+        if (dataTooltip) return dataTooltip;
+
+        const text = normalizeTooltipText(el.textContent);
+        if (text && text !== '×' && text !== '✕') return text;
+
+        if (text === '×' || text === '✕' || el.classList.contains('modal-close')) {
+            return 'ปิดหน้าต่าง';
+        }
+
+        if (isDisabledLikeButton(el)) {
+            return 'ปุ่มนี้ยังไม่พร้อมใช้งาน';
+        }
+
+        return 'กดเพื่อดำเนินการ';
+    }
+
+    function isInWizardTooltipScope(el) {
+        if (!el || !(el instanceof HTMLElement)) return false;
+        return !!el.closest('.wizard-panel, .modal-overlay, #billingModal, #meterOnlyModal, #slipReviewModal, #_refundModal');
+    }
+
+    function applyWizardButtonTooltips(root) {
+        const scope = root || document;
+        const targets = scope.querySelectorAll('button, a.action-btn, a.wiz-meter-alert, [role="button"]');
+
+        targets.forEach(function(el) {
+            if (!isInWizardTooltipScope(el)) return;
+
+            const tooltipText = deriveWizardButtonTooltip(el);
+            if (!tooltipText) return;
+
+            // Keep native tooltip and bootstrap tooltip in sync.
+            el.setAttribute('title', tooltipText);
+            el.setAttribute('data-bs-toggle', 'tooltip');
+            if (!el.hasAttribute('data-bs-placement')) {
+                el.setAttribute('data-bs-placement', 'top');
+            }
+            el.setAttribute('data-bs-title', tooltipText);
+
+            if (window.bootstrap && window.bootstrap.Tooltip) {
+                const existing = window.bootstrap.Tooltip.getInstance(el);
+                if (existing) {
+                    existing.dispose();
+                }
+                new window.bootstrap.Tooltip(el, { container: 'body' });
+            }
+        });
+    }
+
+    function startWizardTooltipObserver() {
+        if (_wizTooltipObserver || !window.MutationObserver) return;
+
+        _wizTooltipObserver = new MutationObserver(function(mutations) {
+            for (const mutation of mutations) {
+                if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                    applyWizardButtonTooltips(document);
+                    break;
+                }
+            }
+        });
+
+        _wizTooltipObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    }
+
     // === AJAX Wizard Step Submission ===
     function submitWizardStep(formId, closeModalFn) {
         const form = document.getElementById(formId);
@@ -4388,12 +4513,16 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             if (newWrapper) {
                 wrapper.innerHTML = newWrapper.innerHTML;
                 if (typeof wizFilterApply === 'function') wizFilterApply(window._wizCurrentGroup || 0);
+                applyWizardButtonTooltips(wrapper);
             } else {
                 // Table might have been replaced by empty state
                 const newPanelBody = doc.querySelector('.wizard-panel-body');
                 if (newPanelBody) {
                     const panelBody = document.querySelector('.wizard-panel-body');
-                    if (panelBody) panelBody.innerHTML = newPanelBody.innerHTML;
+                    if (panelBody) {
+                        panelBody.innerHTML = newPanelBody.innerHTML;
+                        applyWizardButtonTooltips(panelBody);
+                    }
                 }
             }
         })
@@ -4441,6 +4570,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
     document.addEventListener('DOMContentLoaded', function() {
         wizFilter(_wizCurrentGroup);
+        applyWizardButtonTooltips(document);
+        startWizardTooltipObserver();
     });
     // --- end wizard filter ---
 

@@ -14,6 +14,12 @@ if (empty($_SESSION['admin_username'])) {
   header('Location: ../Login.php');
   exit;
 }
+
+if (empty($_SESSION['csrf_token'])) {
+  $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+}
+$csrfToken = (string)($_SESSION['csrf_token'] ?? '');
+
 require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/../includes/water_calc.php';
@@ -478,6 +484,7 @@ $collectionPct = $totalAll > 0 ? round(($stats['total_paid'] / $totalAll) * 100)
 $pendingPartialCount = $stats['pending'] + $stats['partial'];
 $pendingPartialTotal = $stats['total_pending'] + $stats['total_partial'];
 $totalExpenseCount = $stats['unpaid'] + $stats['paid'] + $stats['pending'] + $stats['partial'] + $stats['overdue'];
+$reminderEligibleCount = $stats['unpaid'] + $stats['partial'] + $stats['overdue'];
 
 $selectedStatusFilter = isset($_GET['filter_status']) ? trim((string)$_GET['filter_status']) : 'all';
 $allowedStatusFilters = ['all', '0', '1', '2', '3', '4'];
@@ -1673,6 +1680,43 @@ try {
         border-color: #60a5fa;
         box-shadow: 0 0 0 3px rgba(96,165,250,0.15);
       }
+      .expense-reminder-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.45rem;
+        padding: 0.55rem 0.85rem;
+        border-radius: 10px;
+        border: 1.5px solid #f59e0b;
+        background: #fff7ed;
+        color: #b45309;
+        font-size: 0.88rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+      }
+      .expense-reminder-btn:hover:not(:disabled) {
+        background: #ffedd5;
+        border-color: #ea580c;
+        color: #9a3412;
+      }
+      .expense-reminder-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      .expense-reminder-btn-count {
+        display: inline-flex;
+        min-width: 1.55rem;
+        height: 1.55rem;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        padding: 0 0.4rem;
+        background: rgba(217, 119, 6, 0.14);
+        color: #b45309;
+        line-height: 1;
+        font-size: 0.78rem;
+      }
       .expense-toolbar .toolbar-divider {
         width: 1px;
         height: 28px;
@@ -2274,6 +2318,16 @@ try {
                 <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เก่าสุด</option>
                 <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>ห้อง</option>
               </select>
+              <button
+                type="button"
+                id="sendReminderBtn"
+                class="expense-reminder-btn"
+                data-default-label="ส่งแจ้งเตือน"
+                title="ส่งแจ้งเตือนให้ผู้เช่าที่รอชำระ/ค้างชำระในหน้าปัจจุบัน"
+                <?php echo $reminderEligibleCount > 0 ? '' : 'disabled'; ?>>
+                ส่งแจ้งเตือน
+                <span id="sendReminderCount" class="expense-reminder-btn-count"><?php echo number_format($reminderEligibleCount); ?></span>
+              </button>
             </div>
             </div><!-- /.expense-controls-row -->
             <div id="expensesTableWrap" class="report-table is-hidden">
@@ -2501,6 +2555,8 @@ try {
       // Current filter state (managed via AJAX, no page reloads)
       let _ajaxSort = '<?php echo htmlspecialchars($sortBy, ENT_QUOTES, "UTF-8"); ?>';
       let _ajaxMonth = '<?php echo htmlspecialchars($selectedMonth, ENT_QUOTES, "UTF-8"); ?>';
+      const PAYMENT_REMINDER_CSRF = '<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, "UTF-8"); ?>';
+      const REMINDER_STATUSES = new Set(['0', '3', '4']);
 
       function applyStatusFilterSelection(statusValue) {
         const normalizedStatus = String(statusValue || 'all');
@@ -2688,6 +2744,134 @@ try {
       function fmtBaht(n) { return '฿' + Number(n || 0).toLocaleString('th-TH'); }
       function padId(id) { return '#' + String(id).padStart(4, '0'); }
 
+      function collectReminderExpenseIds() {
+        const idSet = new Set();
+        document.querySelectorAll('.payment-preview-trigger[data-expense-id]').forEach(function(row) {
+          const status = String(row.dataset.status || '').trim();
+          const expenseId = parseInt(String(row.dataset.expenseId || '0'), 10);
+          if (!expenseId || !REMINDER_STATUSES.has(status)) return;
+          idSet.add(expenseId);
+        });
+        return Array.from(idSet);
+      }
+
+      function refreshReminderButtonState() {
+        const reminderBtn = document.getElementById('sendReminderBtn');
+        const reminderCount = document.getElementById('sendReminderCount');
+        if (!reminderBtn) return;
+
+        const expenseIds = collectReminderExpenseIds();
+        const total = expenseIds.length;
+        if (reminderCount) reminderCount.textContent = Number(total).toLocaleString('th-TH');
+
+        reminderBtn.disabled = total === 0;
+        reminderBtn.setAttribute('aria-disabled', total === 0 ? 'true' : 'false');
+      }
+
+      function summarizeReminderResult(summary) {
+        if (!summary || typeof summary !== 'object') return '';
+
+        const parts = [];
+        if (Number(summary.sent || 0) > 0) {
+          parts.push('ส่งสำเร็จ ' + Number(summary.sent).toLocaleString('th-TH') + ' รายการ');
+        }
+        if (Number(summary.queued || 0) > 0) {
+          parts.push('บันทึกคิว ' + Number(summary.queued).toLocaleString('th-TH') + ' รายการ');
+        }
+        if (Number(summary.skipped || 0) > 0) {
+          parts.push('ข้าม ' + Number(summary.skipped).toLocaleString('th-TH') + ' รายการ');
+        }
+        if (Number(summary.failed || 0) > 0) {
+          parts.push('ล้มเหลว ' + Number(summary.failed).toLocaleString('th-TH') + ' รายการ');
+        }
+
+        return parts.join(' | ');
+      }
+
+      async function sendPaymentReminders() {
+        const reminderBtn = document.getElementById('sendReminderBtn');
+        const expenseIds = collectReminderExpenseIds();
+
+        if (expenseIds.length === 0) {
+          if (typeof showErrorToast === 'function') {
+            showErrorToast('ไม่พบรายการรอชำระสำหรับส่งแจ้งเตือน');
+          }
+          refreshReminderButtonState();
+          return;
+        }
+
+        let confirmed = false;
+        if (typeof showConfirmDialog === 'function') {
+          confirmed = await showConfirmDialog(
+            'ยืนยันการส่งแจ้งเตือน',
+            `ต้องการส่งแจ้งเตือนชำระเงิน <strong>${expenseIds.length.toLocaleString('th-TH')}</strong> รายการในหน้าปัจจุบันหรือไม่?`,
+            'warning'
+          );
+        } else {
+          confirmed = confirm('ต้องการส่งแจ้งเตือนชำระเงิน ' + expenseIds.length.toLocaleString('th-TH') + ' รายการในหน้าปัจจุบันหรือไม่?');
+        }
+
+        if (!confirmed) return;
+
+        const originalHtml = reminderBtn ? reminderBtn.innerHTML : '';
+        if (reminderBtn) {
+          reminderBtn.disabled = true;
+          reminderBtn.textContent = 'กำลังส่ง...';
+        }
+
+        try {
+          const formData = new FormData();
+          formData.append('expense_ids', JSON.stringify(expenseIds));
+          formData.append('csrf_token', PAYMENT_REMINDER_CSRF);
+
+          const response = await fetch('../Manage/send_payment_reminders.php', {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          });
+
+          let result;
+          try {
+            result = await response.json();
+          } catch (parseError) {
+            result = { success: false, error: 'ไม่สามารถอ่านผลลัพธ์จากเซิร์ฟเวอร์ได้' };
+          }
+
+          const summaryText = summarizeReminderResult(result.summary);
+          const displayText = result.message || result.error || summaryText || 'ไม่สามารถส่งแจ้งเตือนได้';
+
+          if (result.success) {
+            if (typeof showSuccessToast === 'function') {
+              showSuccessToast(displayText);
+            }
+          } else {
+            if (typeof showErrorToast === 'function') {
+              showErrorToast(displayText);
+            }
+          }
+        } catch (error) {
+          console.error('sendPaymentReminders error:', error);
+          if (typeof showErrorToast === 'function') {
+            showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message);
+          }
+        } finally {
+          if (reminderBtn) {
+            reminderBtn.innerHTML = originalHtml;
+          }
+          refreshReminderButtonState();
+        }
+      }
+
+      function bindReminderButton() {
+        const reminderBtn = document.getElementById('sendReminderBtn');
+        if (!reminderBtn || reminderBtn.dataset.boundReminder === '1') return;
+
+        reminderBtn.dataset.boundReminder = '1';
+        reminderBtn.addEventListener('click', sendPaymentReminders);
+      }
+
       function rebuildExpensePage(data) {
         _hasLoadedAjaxExpenses = true;
         // Update month filter options
@@ -2851,6 +3035,7 @@ try {
         rebuildCards(filteredExpenses);
         bindPaymentPreviewTriggers();
         reinitDataTable();
+        refreshReminderButtonState();
       }
 
       function escHtml(s) {
@@ -3060,6 +3245,9 @@ try {
           } catch (e) {
             applyExpensesView('grid');
           }
+
+          bindReminderButton();
+          refreshReminderButtonState();
         });
       } else {
         setupStatusButtons();
@@ -3080,6 +3268,9 @@ try {
         } catch (e) {
           applyExpensesView('grid');
         }
+
+        bindReminderButton();
+        refreshReminderButtonState();
       }
 
       (function setupExpenseCalculator() {

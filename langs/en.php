@@ -115,7 +115,7 @@ return [
     'booking_status_pending' => 'Pending booking status',
     'utility_needs_action' => 'Needs action: Rooms not yet metered',
     'utility_status_pending' => 'Pending meter reading status',
-    'expense_needs_action' => 'Needs action: Awaiting payment/review/partial payment',
+    'expense_needs_action' => 'Needs action: Awaiting payment',
     'expense_status_label' => 'Expense status',
     'payment_needs_action' => 'Needs action: Awaiting payment/review',
     'payment_status_label' => 'Payment status',
