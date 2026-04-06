@@ -221,35 +221,12 @@ $pageTitle = __('settings');
           flex-direction: column !important;
         }
 
-        body.apple-settings-page .app-main {
-          margin-left: 220px !important;
-          width: calc(100% - 220px) !important;
-          max-width: calc(100% - 220px) !important;
-        }
-
-        /* If collapsed state is carried from other pages, force full menu rendering here */
+        /* Keep collapsed rail width consistent with global sidebar behavior */
         body.apple-settings-page .app-sidebar.collapsed,
         body.apple-settings-page aside.sidebar-collapsed {
-          width: 220px !important;
-          min-width: 220px !important;
-          max-width: 220px !important;
-        }
-
-        body.apple-settings-page .app-sidebar.collapsed .app-nav-label,
-        body.apple-settings-page .app-sidebar.collapsed .summary-label,
-        body.apple-settings-page aside.sidebar-collapsed .app-nav-label,
-        body.apple-settings-page aside.sidebar-collapsed .summary-label {
-          display: inline !important;
-        }
-
-        body.apple-settings-page .app-sidebar.collapsed details[open] > :not(summary),
-        body.apple-settings-page aside.sidebar-collapsed details[open] > :not(summary) {
-          display: block !important;
-        }
-
-        body.apple-settings-page .app-sidebar.collapsed details summary .chev,
-        body.apple-settings-page aside.sidebar-collapsed details summary .chev {
-          display: inline-flex !important;
+          width: 80px !important;
+          min-width: 80px !important;
+          max-width: 80px !important;
         }
 
         body.apple-settings-page .apple-menu-btn {
@@ -277,6 +254,13 @@ $pageTitle = __('settings');
           margin-left: 220px !important;
           width: calc(100% - 220px) !important;
           max-width: calc(100% - 220px) !important;
+        }
+
+        body.apple-settings-page .app-sidebar.collapsed ~ .app-main,
+        body.apple-settings-page aside.sidebar-collapsed ~ .app-main {
+          margin-left: 80px !important;
+          width: calc(100% - 80px) !important;
+          max-width: calc(100% - 80px) !important;
         }
       }
 
@@ -389,19 +373,18 @@ $pageTitle = __('settings');
       if (window.innerWidth > 1024) {
         sidebar.classList.remove('mobile-open');
         body.classList.remove('sidebar-open');
-        sidebar.classList.remove('collapsed');
 
-        appMain.style.marginLeft = '220px';
-        appMain.style.width = 'calc(100% - 220px)';
-        appMain.style.maxWidth = 'calc(100% - 220px)';
+        appMain.style.removeProperty('margin-left');
+        appMain.style.removeProperty('width');
+        appMain.style.removeProperty('max-width');
 
         if (toggleBtn) {
-          toggleBtn.setAttribute('aria-expanded', 'true');
+          toggleBtn.setAttribute('aria-expanded', sidebar.classList.contains('collapsed') ? 'false' : 'true');
         }
       } else {
-        appMain.style.marginLeft = '0';
-        appMain.style.width = '100%';
-        appMain.style.maxWidth = '100%';
+        appMain.style.removeProperty('margin-left');
+        appMain.style.removeProperty('width');
+        appMain.style.removeProperty('max-width');
 
         if (toggleBtn) {
           toggleBtn.setAttribute('aria-expanded', sidebar.classList.contains('mobile-open') ? 'true' : 'false');
