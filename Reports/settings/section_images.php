@@ -147,6 +147,157 @@
     showInlineToast(message, type || 'info');
   }
 
+  var billingScheduleFallbackI18n = {
+    title: <?php echo json_encode(__('billing_schedule_label'), JSON_UNESCAPED_UNICODE); ?>,
+    generatePrefix: <?php echo json_encode(__('billing_generate_day_prefix'), JSON_UNESCAPED_UNICODE); ?>,
+    duePrefix: <?php echo json_encode(__('billing_due_day_prefix'), JSON_UNESCAPED_UNICODE); ?>,
+    done: <?php echo json_encode(__('done'), JSON_UNESCAPED_UNICODE); ?>,
+    save: <?php echo json_encode(__('save'), JSON_UNESCAPED_UNICODE); ?>,
+    savedSuccess: <?php echo json_encode(__('billing_schedule_saved_success'), JSON_UNESCAPED_UNICODE); ?>,
+    saveError: <?php echo json_encode(__('error_occurred'), JSON_UNESCAPED_UNICODE); ?>
+  };
+
+  function normalizeBillingDay(value, fallbackValue) {
+    var parsed = parseInt(value, 10);
+    if (!Number.isFinite(parsed)) {
+      return fallbackValue;
+    }
+    return Math.max(1, Math.min(28, parsed));
+  }
+
+  function getBillingScheduleDefaultsFromUi() {
+    var defaults = {
+      generateDay: 1,
+      dueDay: 25
+    };
+
+    var sublabel = document.getElementById('billingScheduleSublabel');
+    if (!sublabel) {
+      return defaults;
+    }
+
+    var nums = String(sublabel.textContent || '').match(/\d+/g);
+    if (nums && nums.length > 0) {
+      defaults.generateDay = normalizeBillingDay(nums[0], defaults.generateDay);
+      if (nums.length > 1) {
+        defaults.dueDay = normalizeBillingDay(nums[1], defaults.dueDay);
+      }
+    }
+
+    return defaults;
+  }
+
+  function syncBillingScheduleSublabel(generateDay, dueDay) {
+    var sublabel = document.getElementById('billingScheduleSublabel');
+    if (!sublabel) {
+      return;
+    }
+    sublabel.textContent = billingScheduleFallbackI18n.generatePrefix + ' ' + generateDay + ' · ' + billingScheduleFallbackI18n.duePrefix + ' ' + dueDay;
+  }
+
+  function ensureBillingScheduleSheetFallback() {
+    var existingOverlay = document.getElementById('sheet-billing-schedule');
+    if (existingOverlay) {
+      return existingOverlay;
+    }
+
+    var defaults = getBillingScheduleDefaultsFromUi();
+    var overlay = document.createElement('div');
+    overlay.className = 'apple-sheet-overlay';
+    overlay.id = 'sheet-billing-schedule';
+    overlay.innerHTML = '' +
+      '<div class="apple-sheet">' +
+        '<div class="apple-sheet-handle"></div>' +
+        '<div class="apple-sheet-header">' +
+          '<button type="button" class="apple-sheet-action" data-close-sheet="sheet-billing-schedule">' + escapeHtml(billingScheduleFallbackI18n.done) + '</button>' +
+          '<h3 class="apple-sheet-title">' + escapeHtml(billingScheduleFallbackI18n.title) + '</h3>' +
+          '<div style="width: 50px;"></div>' +
+        '</div>' +
+        '<div class="apple-sheet-body">' +
+          '<div class="apple-input-group" style="margin-bottom: 12px;">' +
+            '<label class="apple-input-label">' + escapeHtml(billingScheduleFallbackI18n.generatePrefix) + ' (1-28)</label>' +
+            '<input type="number" id="billingGenerateDay" class="apple-input" value="' + defaults.generateDay + '" min="1" max="28" step="1">' +
+          '</div>' +
+          '<div class="apple-input-group" style="margin-bottom: 16px;">' +
+            '<label class="apple-input-label">' + escapeHtml(billingScheduleFallbackI18n.duePrefix) + ' (1-28)</label>' +
+            '<input type="number" id="paymentDueDay" class="apple-input" value="' + defaults.dueDay + '" min="1" max="28" step="1">' +
+          '</div>' +
+          '<button type="button" class="apple-button primary" style="width: 100%;" data-billing-sheet-save="1">' + escapeHtml(billingScheduleFallbackI18n.save) + '</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    var closeBtn = overlay.querySelector('[data-close-sheet="sheet-billing-schedule"]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        closeSheetById('sheet-billing-schedule');
+      });
+    }
+
+    var saveBtn = overlay.querySelector('[data-billing-sheet-save="1"]');
+    if (saveBtn) {
+      saveBtn.addEventListener('click', function() {
+        if (saveBtn.dataset.saving === '1') {
+          return;
+        }
+
+        var generateInput = overlay.querySelector('#billingGenerateDay');
+        var dueInput = overlay.querySelector('#paymentDueDay');
+        var generateDay = normalizeBillingDay(generateInput ? generateInput.value : defaults.generateDay, defaults.generateDay);
+        var dueDay = normalizeBillingDay(dueInput ? dueInput.value : defaults.dueDay, defaults.dueDay);
+
+        if (generateInput) {
+          generateInput.value = String(generateDay);
+        }
+        if (dueInput) {
+          dueInput.value = String(dueDay);
+        }
+
+        saveBtn.dataset.saving = '1';
+        saveBtn.disabled = true;
+
+        var fdGenerate = new FormData();
+        fdGenerate.append('billing_generate_day', String(generateDay));
+
+        var fdDue = new FormData();
+        fdDue.append('payment_due_day', String(dueDay));
+
+        Promise.all([
+          fetch('/dormitory_management/Manage/save_system_settings.php', { method: 'POST', body: fdGenerate }).then(function(response) { return response.json(); }),
+          fetch('/dormitory_management/Manage/save_system_settings.php', { method: 'POST', body: fdDue }).then(function(response) { return response.json(); })
+        ])
+        .then(function(results) {
+          var resultGenerate = results[0] || {};
+          var resultDue = results[1] || {};
+
+          if (!resultGenerate.success || !resultDue.success) {
+            throw new Error(resultGenerate.error || resultDue.error || billingScheduleFallbackI18n.saveError);
+          }
+
+          syncBillingScheduleSublabel(generateDay, dueDay);
+          closeSheetById('sheet-billing-schedule');
+          showSheetToast(billingScheduleFallbackI18n.savedSuccess, 'success');
+        })
+        .catch(function(error) {
+          showSheetToast((error && error.message) ? error.message : billingScheduleFallbackI18n.saveError, 'error');
+        })
+        .finally(function() {
+          saveBtn.dataset.saving = '0';
+          saveBtn.disabled = false;
+        });
+      });
+    }
+
+    console.warn('[SheetDebug] Injected fallback overlay for missing sheet-billing-schedule (section_images)');
+    return overlay;
+  }
+
+  if (typeof window.ensureBillingScheduleSheetFallback !== 'function') {
+    window.ensureBillingScheduleSheetFallback = ensureBillingScheduleSheetFallback;
+  }
+
   function getSettingsInstance() {
     if (window.appleSettings && typeof window.appleSettings.showConfirm === 'function') {
       return window.appleSettings;
@@ -299,14 +450,19 @@
     var overlay = document.getElementById(sheetId);
     if (!overlay && sheetId === 'sheet-billing-schedule' && typeof window.ensureBillingScheduleSheetFallback === 'function') {
       try {
-        window.ensureBillingScheduleSheetFallback();
+        var fallbackOverlay = window.ensureBillingScheduleSheetFallback();
+        if (fallbackOverlay && fallbackOverlay.id === sheetId) {
+          overlay = fallbackOverlay;
+        }
       } catch (fallbackError) {
         if (context && context.rowId === 'billingScheduleRow') {
           console.warn('[SheetDebug] Failed to build billing schedule fallback sheet', fallbackError);
         }
       }
 
-      overlay = document.getElementById(sheetId);
+      if (!overlay) {
+        overlay = document.getElementById(sheetId);
+      }
     }
 
     if (!overlay) {

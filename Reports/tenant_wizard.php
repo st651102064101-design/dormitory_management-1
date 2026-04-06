@@ -2640,28 +2640,28 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
     </div>
 
     <!-- Slip Review Modal -->
-    <div id="slipReviewModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.82);align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)this.style.display='none';">
-        <div style="background:#1e293b;border-radius:16px;border:1px solid rgba(255,255,255,0.12);max-width:520px;width:100%;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;max-height:95vh;overflow-y:auto;">
+    <div id="slipReviewModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,23,42,0.45);align-items:center;justify-content:center;padding:1rem;" onclick="if(event.target===this)this.style.display='none';">
+        <div style="background:#ffffff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 20px 48px rgba(15,23,42,0.16);max-width:520px;width:100%;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;max-height:95vh;overflow-y:auto;">
             <div style="display:flex;align-items:center;justify-content:space-between;">
-                <span style="font-weight:700;font-size:1.05rem;color:#f8fafc;">🔍 ตรวจสอบหลักฐานการชำระ</span>
-                <button type="button" onclick="document.getElementById('slipReviewModal').style.display='none'" style="background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+                <span style="font-weight:700;font-size:1.05rem;color:#0f172a;">🔍 ตรวจสอบหลักฐานการชำระ</span>
+                <button type="button" onclick="document.getElementById('slipReviewModal').style.display='none'" style="background:none;border:none;color:#64748b;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
             </div>
             <!-- info bar -->
-            <div style="display:flex;gap:1.5rem;padding:0.75rem 1rem;background:rgba(255,255,255,0.05);border-radius:10px;border:1px solid rgba(255,255,255,0.08);">
-                <div><div style="font-size:0.75rem;color:#94a3b8;">วันที่ชำระ</div><div id="slipReviewDate" style="font-weight:600;color:#f8fafc;font-size:0.95rem;">-</div></div>
-                <div><div style="font-size:0.75rem;color:#94a3b8;">จำนวน</div><div id="slipReviewAmount" style="font-weight:700;color:#4ade80;font-size:1rem;">฿0</div></div>
+            <div style="display:flex;gap:1.5rem;padding:0.75rem 1rem;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
+                <div><div style="font-size:0.75rem;color:#64748b;">วันที่ชำระ</div><div id="slipReviewDate" style="font-weight:600;color:#0f172a;font-size:0.95rem;">-</div></div>
+                <div><div style="font-size:0.75rem;color:#64748b;">จำนวน</div><div id="slipReviewAmount" style="font-weight:700;color:#16a34a;font-size:1rem;">฿0</div></div>
             </div>
             <!-- slip image -->
-            <div style="background:rgba(0,0,0,0.3);border-radius:12px;border:1px solid rgba(255,255,255,0.1);overflow:hidden;min-height:200px;display:flex;align-items:center;justify-content:center;">
+            <div style="background:#f8fafc;border-radius:12px;border:1px solid #cbd5e1;overflow:hidden;min-height:200px;display:flex;align-items:center;justify-content:center;">
                 <img id="slipReviewImg" src="" alt="สลิป" style="display:none;max-width:100%;max-height:60vh;object-fit:contain;border-radius:10px;" onerror="this.style.display='none';document.getElementById('slipReviewEmpty').style.display='flex';">
-                <div id="slipReviewEmpty" style="display:none;flex-direction:column;align-items:center;gap:0.5rem;padding:2rem;color:rgba(148,163,184,0.6);">
+                <div id="slipReviewEmpty" style="display:none;flex-direction:column;align-items:center;gap:0.5rem;padding:2rem;color:#94a3b8;">
                     <span style="font-size:2.5rem;">🖼</span>
                     <span style="font-size:0.85rem;">ไม่มีหลักฐานการชำระ</span>
                 </div>
             </div>
             <!-- action buttons -->
             <div style="display:flex;gap:0.75rem;justify-content:flex-end;">
-                <button id="slipReviewRejectBtn" type="button" style="padding:0.6rem 1.4rem;border-radius:8px;border:1px solid rgba(239,68,68,0.5);background:rgba(239,68,68,0.1);color:#f87171;font-size:0.9rem;font-weight:600;cursor:pointer;">✕ ตีกลับ</button>
+                <button id="slipReviewRejectBtn" type="button" style="padding:0.6rem 1.4rem;border-radius:8px;border:1px solid #fca5a5;background:#fff1f2;color:#dc2626;font-size:0.9rem;font-weight:600;cursor:pointer;">✕ ตีกลับ</button>
                 <button id="slipReviewApproveBtn" type="button" style="padding:0.6rem 1.6rem;border-radius:8px;border:none;background:#16a34a;color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;">✓ อนุมัติการชำระ</button>
             </div>
         </div>
@@ -3335,9 +3335,11 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 const canReview = allowReviewAction && payId > 0 && payStatus === '0';
                 const statusBadge = payStatus === '1'
                     ? `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(34,197,94,0.15);color:#4ade80;font-size:0.78rem;font-weight:600;">✓ อนุมัติแล้ว</span>`
-                    : canReview
-                        ? `<button type="button" onclick="openSlipReview(${payId},${expenseId},${JSON.stringify(proofFilename).replace(/"/g, '&quot;')},${JSON.stringify(pay.pay_date_display||'-').replace(/"/g, '&quot;')},${amount})" title="คลิกเพื่อดูสลิปและอนุมัติ" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.18);color:#fbbf24;font-size:0.78rem;font-weight:600;border:1px solid rgba(245,158,11,0.4);cursor:pointer;transition:background 0.15s,transform 0.1s;" onmouseover="this.style.background='rgba(245,158,11,0.32)'" onmouseout="this.style.background='rgba(245,158,11,0.18)'">🔍 ตรวจสอบ</button>`
-                        : `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.15);color:#fbbf24;font-size:0.78rem;font-weight:600;">⏳ รอตรวจสอบ</span>`;
+                    : payStatus === '2'
+                        ? `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(239,68,68,0.15);color:#f87171;font-size:0.78rem;font-weight:600;">✕ ตีกลับ</span>`
+                        : canReview
+                            ? `<button type="button" onclick="openSlipReview(${payId},${expenseId},${JSON.stringify(proofFilename).replace(/"/g, '&quot;')},${JSON.stringify(pay.pay_date_display||'-').replace(/"/g, '&quot;')},${amount})" title="คลิกเพื่อตรวจสอบสลิป" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.18);color:#fbbf24;font-size:0.78rem;font-weight:600;border:1px solid rgba(245,158,11,0.4);cursor:pointer;transition:background 0.15s,transform 0.1s;" onmouseover="this.style.background='rgba(245,158,11,0.32)'" onmouseout="this.style.background='rgba(245,158,11,0.18)'">🔍 ตรวจสอบ</button>`
+                            : `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(245,158,11,0.15);color:#fbbf24;font-size:0.78rem;font-weight:600;">⏳ รอตรวจสอบ</span>`;
                 const purpose  = getBillRemarkText(pay.pay_remark, monthText, `ชำระ${title}`);
                 const slipThumb = proofFilename
                     ? (() => {
@@ -3505,6 +3507,46 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             });
     }
 
+    function resetSlipReviewActionButtons() {
+        const approveBtn = document.getElementById('slipReviewApproveBtn');
+        const rejectBtn = document.getElementById('slipReviewRejectBtn');
+
+        if (approveBtn) {
+            approveBtn.disabled = false;
+            approveBtn.textContent = '✓ อนุมัติการชำระ';
+            approveBtn.style.opacity = '1';
+            approveBtn.style.cursor = 'pointer';
+        }
+
+        if (rejectBtn) {
+            rejectBtn.disabled = false;
+            rejectBtn.textContent = '✕ ตีกลับ';
+            rejectBtn.style.opacity = '1';
+            rejectBtn.style.cursor = 'pointer';
+        }
+    }
+
+    function setSlipReviewActionPending(actionType) {
+        const approveBtn = document.getElementById('slipReviewApproveBtn');
+        const rejectBtn = document.getElementById('slipReviewRejectBtn');
+
+        if (!approveBtn || !rejectBtn) {
+            return;
+        }
+
+        const isApproveAction = actionType === 'approve';
+        approveBtn.disabled = true;
+        rejectBtn.disabled = true;
+
+        approveBtn.textContent = isApproveAction ? 'กำลังดำเนินการ...' : '✓ อนุมัติการชำระ';
+        rejectBtn.textContent = isApproveAction ? '✕ ตีกลับ' : 'กำลังดำเนินการ...';
+
+        approveBtn.style.opacity = isApproveAction ? '0.6' : '1';
+        rejectBtn.style.opacity = isApproveAction ? '1' : '0.6';
+        approveBtn.style.cursor = 'not-allowed';
+        rejectBtn.style.cursor = 'not-allowed';
+    }
+
     function openSlipReview(payId, expId, proofFilename, payDate, amount) {
         const modal = document.getElementById('slipReviewModal');
         const slipImg = document.getElementById('slipReviewImg');
@@ -3529,27 +3571,16 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         }
 
         // Reset buttons
-        approveBtn.disabled = false;
-        approveBtn.textContent = '✓ อนุมัติการชำระ';
-        approveBtn.style.opacity = '1';
-        rejectBtn.disabled = false;
-        rejectBtn.textContent = '✕ ตีกลับ';
-        rejectBtn.style.opacity = '1';
+        resetSlipReviewActionButtons();
 
         approveBtn.onclick = () => {
-            approveBtn.disabled = true;
-            approveBtn.textContent = 'กำลังดำเนินการ...';
-            approveBtn.style.opacity = '0.6';
-            rejectBtn.disabled = true;
+            setSlipReviewActionPending('approve');
             _doReviewBillPayment(payId, expId, '1', () => {
                 document.getElementById('slipReviewModal').style.display = 'none';
             });
         };
         rejectBtn.onclick = () => {
-            rejectBtn.disabled = true;
-            rejectBtn.textContent = 'กำลังดำเนินการ...';
-            rejectBtn.style.opacity = '0.6';
-            approveBtn.disabled = true;
+            setSlipReviewActionPending('reject');
             _doReviewBillPayment(payId, expId, '2', () => {
                 document.getElementById('slipReviewModal').style.display = 'none';
             });
@@ -3566,26 +3597,42 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         formData.append('exp_id', String(expId));
         formData.append('pay_status', String(nextStatus));
 
-        fetch('../Manage/update_payment_status.php', {
+        const fetchOptions = {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData.toString(),
             credentials: 'include',
-        })
+        };
+
+        let requestTimeout = null;
+        if (typeof AbortController !== 'undefined') {
+            const controller = new AbortController();
+            fetchOptions.signal = controller.signal;
+            requestTimeout = window.setTimeout(() => controller.abort(), 15000);
+        }
+
+        fetch('../Manage/update_payment_status.php', fetchOptions)
             .then(r => r.json())
             .then(result => {
                 if (!result?.success) throw new Error(result?.error || 'ไม่สามารถอัปเดตสถานะได้');
                 refreshBillingPayments(ctrId);
                 refreshWizardTable();
-                if (typeof showSuccessToast === 'function') showSuccessToast('อัปเดตสถานะการชำระเรียบร้อย');
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast(result.message || 'อัปเดตสถานะการชำระเรียบร้อย');
+                }
                 if (onDone) onDone();
             })
             .catch(err => {
-                const approveBtn = document.getElementById('slipReviewApproveBtn');
-                const rejectBtn = document.getElementById('slipReviewRejectBtn');
-                if (approveBtn) { approveBtn.disabled = false; approveBtn.style.opacity = '1'; }
-                if (rejectBtn) { rejectBtn.disabled = false; rejectBtn.style.opacity = '1'; }
-                alert(err.message || 'เกิดข้อผิดพลาด');
+                resetSlipReviewActionButtons();
+                const errorMessage = err && err.name === 'AbortError'
+                    ? 'การเชื่อมต่อล่าช้า กรุณาลองใหม่อีกครั้ง'
+                    : (err.message || 'เกิดข้อผิดพลาด');
+                alert(errorMessage);
+            })
+            .finally(() => {
+                if (requestTimeout) {
+                    window.clearTimeout(requestTimeout);
+                }
             });
     }
 

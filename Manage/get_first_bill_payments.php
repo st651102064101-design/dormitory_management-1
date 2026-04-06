@@ -78,7 +78,7 @@ function buildExpensePayload(PDO $pdo, array $expense, bool $hasPayRemark): arra
 
         if ($payStatus === '1') {
             $approvedAmount += $payAmount;
-        } else {
+        } elseif ($payStatus === '0') {
             $pendingAmount += $payAmount;
         }
 

@@ -14,6 +14,73 @@ $pdo = connectDB();
 
 header('Content-Type: application/json');
 
+function hasPayRemarkColumn(PDO $pdo): bool
+{
+    static $cached = null;
+
+    if ($cached !== null) {
+        return $cached;
+    }
+
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM payment LIKE 'pay_remark'");
+        $cached = (bool)$stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        $cached = false;
+    }
+
+    return $cached;
+}
+
+function recalculateExpenseStatus(PDO $pdo, int $expId): void
+{
+    if ($expId <= 0) {
+        return;
+    }
+
+    $expenseStmt = $pdo->prepare("SELECT exp_total, exp_status FROM expense WHERE exp_id = ? LIMIT 1");
+    $expenseStmt->execute([$expId]);
+    $expense = $expenseStmt->fetch(PDO::FETCH_ASSOC);
+    if (!$expense) {
+        return;
+    }
+
+    $expTotal = (float)($expense['exp_total'] ?? 0);
+    $existingStatus = (string)($expense['exp_status'] ?? '0');
+    $hasPayRemark = hasPayRemarkColumn($pdo);
+
+    if ($hasPayRemark) {
+        $approvedSql = "SELECT COALESCE(SUM(pay_amount), 0) FROM payment WHERE exp_id = ? AND pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')";
+        $pendingSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')";
+    } else {
+        $approvedSql = "SELECT COALESCE(SUM(pay_amount), 0) FROM payment WHERE exp_id = ? AND pay_status = '1'";
+        $pendingSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0'";
+    }
+
+    $approvedStmt = $pdo->prepare($approvedSql);
+    $approvedStmt->execute([$expId]);
+    $approvedAmount = (float)($approvedStmt->fetchColumn() ?: 0);
+
+    $pendingStmt = $pdo->prepare($pendingSql);
+    $pendingStmt->execute([$expId]);
+    $pendingCount = (int)($pendingStmt->fetchColumn() ?: 0);
+
+    if ($expTotal > 0 && $approvedAmount >= ($expTotal - 0.00001)) {
+        $nextStatus = '1';
+    } elseif ($approvedAmount > 0) {
+        $nextStatus = '3';
+    } elseif ($pendingCount > 0) {
+        $nextStatus = '2';
+    } elseif ($existingStatus === '4') {
+        $nextStatus = '4';
+    } else {
+        $nextStatus = '0';
+    }
+
+    $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = ? WHERE exp_id = ?");
+    $updateExpStmt->execute([$nextStatus, $expId]);
+}
+
 // CSRF validation
 if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $_POST['csrf_token'])) {
     http_response_code(403);
@@ -23,7 +90,7 @@ if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $
 
 // รับข้อมูลจาก POST
 $payId = $_POST['pay_id'] ?? '';
-$payStatus = $_POST['pay_status'] ?? '';
+$payStatus = (string)($_POST['pay_status'] ?? '');
 
 // ตรวจสอบข้อมูลที่จำเป็น
 if (empty($payId)) {
@@ -31,7 +98,7 @@ if (empty($payId)) {
     exit;
 }
 
-if (!in_array($payStatus, ['0', '1'], true)) {
+if (!in_array($payStatus, ['0', '1', '2'], true)) {
     echo json_encode(['success' => false, 'error' => 'สถานะไม่ถูกต้อง']);
     exit;
 }
@@ -59,49 +126,17 @@ try {
     $updateStmt = $pdo->prepare("UPDATE payment SET pay_status = ? WHERE pay_id = ?");
     $updateStmt->execute([$payStatus, $payId]);
 
-    // ถ้ายืนยันการชำระ (status = 1) และมี exp_id ให้ตรวจสอบยอดชำระ
-    if ($payStatus === '1' && !empty($expId)) {
-        // ดึงยอดรวมของ expense
-        $expStmt = $pdo->prepare("SELECT exp_total FROM expense WHERE exp_id = ?");
-        $expStmt->execute([$expId]);
-        $expense = $expStmt->fetch(PDO::FETCH_ASSOC);
-        $expTotal = (int)($expense['exp_total'] ?? 0);
-        
-        // คำนวณยอดที่ชำระแล้วทั้งหมด (เฉพาะที่ยืนยันแล้ว pay_status='1')
-        // สำคัญ: ไม่นับรวมยอดที่มี pay_remark = 'มัดจำ' เพราะมัดจำไม่ใช่ค่าใช้จ่ายรายเดือน
-        $paidStmt = $pdo->prepare("SELECT SUM(pay_amount) as total_paid FROM payment WHERE exp_id = ? AND pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')");
-        $paidStmt->execute([$expId]);
-        $paidResult = $paidStmt->fetch(PDO::FETCH_ASSOC);
-        $totalPaid = (int)($paidResult['total_paid'] ?? 0);
-        
-        // ตรวจสอบว่าชำระครบหรือไม่
-        if ($totalPaid >= $expTotal) {
-            // ชำระครบแล้ว -> exp_status = '1' (ชำระแล้ว)
-            $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = '1' WHERE exp_id = ?");
-            $updateExpStmt->execute([$expId]);
-        } else if ($totalPaid > 0) {
-            // ชำระยังไม่ครบ -> exp_status = '3' (ชำระยังไม่ครบ)
-            $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = '3' WHERE exp_id = ?");
-            $updateExpStmt->execute([$expId]);
-        } else {
-            // ยังไม่ได้ชำระเลย -> exp_status = '0' (รอชำระ)
-            $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = '0' WHERE exp_id = ?");
-            $updateExpStmt->execute([$expId]);
-        }
-    }
-    
-    // ถ้ายกเลิกการยืนยัน (status = 0) และมี exp_id ให้ตรวจสอบว่ามีการชำระอื่นที่ยืนยันแล้วหรือไม่
-    if ($payStatus === '0' && !empty($expId)) {
-        $otherPayments = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_id != ? AND pay_status = '1'");
-        $otherPayments->execute([$expId, $payId]);
-        if ((int)$otherPayments->fetchColumn() === 0) {
-            // ไม่มีการชำระอื่นที่ยืนยัน -> เปลี่ยน expense status กลับเป็น '2' (รอตรวจสอบ)
-            $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = '2' WHERE exp_id = ?");
-            $updateExpStmt->execute([$expId]);
-        }
+    if (!empty($expId)) {
+        recalculateExpenseStatus($pdo, (int)$expId);
     }
 
-    $statusText = $payStatus === '1' ? 'ตรวจสอบแล้ว' : 'รอตรวจสอบ';
+    $statusTextMap = [
+        '0' => 'รอตรวจสอบ',
+        '1' => 'ตรวจสอบแล้ว',
+        '2' => 'ตีกลับแล้ว',
+    ];
+
+    $statusText = $statusTextMap[$payStatus] ?? 'อัปเดตแล้ว';
     echo json_encode([
         'success' => true,
         'message' => 'อัปเดตสถานะเป็น "' . $statusText . '" สำเร็จ'

@@ -2,6 +2,49 @@
 <div class="apple-section-group">
   <h2 id="expensesSectionTitle" class="apple-section-title"><?php echo __('expenses_section'); ?></h2>
   <div class="apple-section-card">
+    <script>
+    if (typeof window.openRatesSheetFromRow !== 'function') {
+      window.openRatesSheetFromRow = function(event, rowId) {
+        if (event && typeof event.preventDefault === 'function') {
+          event.preventDefault();
+        }
+
+        var context = {
+          source: 'section_rates.bootstrapFallback',
+          rowId: rowId || '',
+          sheetId: 'sheet-rates'
+        };
+
+        if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
+          try {
+            if (window.appleSettings.openSheet('sheet-rates', context) === true) {
+              return true;
+            }
+          } catch (error) {}
+        }
+
+        var overlay = document.getElementById('sheet-rates');
+        if (!overlay) {
+          return false;
+        }
+
+        overlay.classList.add('active');
+        document.body.style.overflow = 'hidden';
+        return true;
+      };
+    }
+
+    if (typeof window.handleRatesRowKeydown !== 'function') {
+      window.handleRatesRowKeydown = function(event, rowId) {
+        if (!event || (event.key !== 'Enter' && event.key !== ' ')) {
+          return true;
+        }
+
+        return window.openRatesSheetFromRow(event, rowId) ? false : true;
+      };
+    }
+    </script>
+
     <!-- Billing Schedule Setting (combined: generate day + payment due day) -->
     <div class="apple-settings-row" id="billingScheduleRow" data-sheet="sheet-billing-schedule" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-billing-schedule">
       <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
@@ -48,8 +91,8 @@
         }
       }
   ?>
-  <div class="apple-settings-row" id="currentRatesRow" data-sheet="sheet-rates" style="padding: 16px;" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates">
-      <div style="display: flex; gap: 20px; width: 100%;">
+    <div class="apple-settings-row" id="currentRatesRow" data-sheet="sheet-rates" style="padding: 16px; cursor: pointer;" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" onclick="openRatesSheetFromRow(event, 'currentRatesRow')" onkeydown="return handleRatesRowKeydown(event, 'currentRatesRow')">
+      <div style="display: flex; gap: 20px; width: 100%; pointer-events: none;">
         <div style="flex: 1; text-align: center;">
           <div style="font-size: 28px; color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="icon-animated"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
           <div id="currentWaterRate" style="font-size: 24px; font-weight: 700; color: var(--apple-blue);">฿<?php echo number_format($waterRate); ?></div>
@@ -65,7 +108,7 @@
     </div>
     
     <!-- Manage Rates -->
-    <div class="apple-settings-row" id="manageRatesRow" data-sheet="sheet-rates" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates">
+    <div class="apple-settings-row" id="manageRatesRow" data-sheet="sheet-rates" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" style="cursor: pointer;" onclick="openRatesSheetFromRow(event, 'manageRatesRow')" onkeydown="return handleRatesRowKeydown(event, 'manageRatesRow')">
       <div class="apple-row-icon yellow"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label" id="manageRatesRowLabel"><?php echo __('manage_rates_label'); ?></p>
@@ -393,6 +436,299 @@
 </div>
 
 <script>
+const ratesSheetI18n = {
+  title: <?php echo json_encode(__('manage_rates_label'), JSON_UNESCAPED_UNICODE); ?>,
+  done: <?php echo json_encode(__('done'), JSON_UNESCAPED_UNICODE); ?>
+};
+
+function closeSheetOverlayByElement(overlay) {
+  if (!overlay) {
+    return;
+  }
+
+  overlay.classList.remove('active');
+  if (!document.querySelector('.apple-sheet-overlay.active')) {
+    document.body.style.overflow = '';
+  }
+}
+
+function bindSheetHandleDragClose(sheetId) {
+  var overlay = document.getElementById(sheetId);
+  if (!overlay) {
+    return;
+  }
+
+  var handle = overlay.querySelector('.apple-sheet-handle');
+  var sheet = overlay.querySelector('.apple-sheet');
+  if (!handle || !sheet || handle.dataset.dragCloseFallbackBound === '1') {
+    return;
+  }
+
+  handle.dataset.dragCloseFallbackBound = '1';
+  handle.style.touchAction = 'none';
+  handle.style.cursor = 'ns-resize';
+
+  var startY = 0;
+  var deltaY = 0;
+  var dragging = false;
+
+  function getCloseThreshold() {
+    var height = sheet.getBoundingClientRect().height || sheet.offsetHeight || 0;
+    return Math.max(72, Math.round(height * 0.25));
+  }
+
+  function beginDrag(clientY) {
+    if (!overlay.classList.contains('active')) {
+      return false;
+    }
+
+    startY = clientY;
+    deltaY = 0;
+    dragging = true;
+    sheet.style.transition = 'none';
+    sheet.style.willChange = 'transform';
+    return true;
+  }
+
+  function updateDrag(clientY) {
+    if (!dragging) {
+      return;
+    }
+
+    deltaY = Math.max(0, clientY - startY);
+    sheet.style.transform = 'translateY(' + deltaY + 'px)';
+  }
+
+  function finishDrag() {
+    if (!dragging) {
+      return;
+    }
+
+    var shouldClose = deltaY >= getCloseThreshold();
+    dragging = false;
+    sheet.style.willChange = '';
+    sheet.style.transition = 'transform 0.22s cubic-bezier(0.32, 0.72, 0, 1)';
+    sheet.style.transform = '';
+
+    if (shouldClose) {
+      closeSheetOverlayByElement(overlay);
+    }
+  }
+
+  handle.addEventListener('pointerdown', function(event) {
+    if (event.button !== 0) {
+      return;
+    }
+    if (!beginDrag(event.clientY)) {
+      return;
+    }
+
+    event.preventDefault();
+    try {
+      handle.setPointerCapture(event.pointerId);
+    } catch (captureError) {}
+  });
+
+  handle.addEventListener('pointermove', function(event) {
+    updateDrag(event.clientY);
+  });
+
+  handle.addEventListener('pointerup', function() {
+    finishDrag();
+  });
+
+  handle.addEventListener('pointercancel', function() {
+    finishDrag();
+  });
+
+  var onMouseMove = function(event) {
+    updateDrag(event.clientY);
+  };
+  var onMouseUp = function() {
+    document.removeEventListener('mousemove', onMouseMove);
+    document.removeEventListener('mouseup', onMouseUp);
+    finishDrag();
+  };
+
+  handle.addEventListener('mousedown', function(event) {
+    if (event.button !== 0) {
+      return;
+    }
+    if (!beginDrag(event.clientY)) {
+      return;
+    }
+
+    event.preventDefault();
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+  });
+
+  handle.addEventListener('touchstart', function(event) {
+    if (!event.touches || !event.touches.length) {
+      return;
+    }
+    if (!beginDrag(event.touches[0].clientY)) {
+      return;
+    }
+
+    event.preventDefault();
+  }, { passive: false });
+
+  handle.addEventListener('touchmove', function(event) {
+    if (!event.touches || !event.touches.length) {
+      return;
+    }
+
+    event.preventDefault();
+    updateDrag(event.touches[0].clientY);
+  }, { passive: false });
+
+  handle.addEventListener('touchend', function() {
+    finishDrag();
+  });
+
+  handle.addEventListener('touchcancel', function() {
+    finishDrag();
+  });
+}
+
+function refreshSheetHandleDragBindings() {
+  bindSheetHandleDragClose('sheet-rates');
+  bindSheetHandleDragClose('sheet-billing-schedule');
+
+  if (window.appleSheetComponent && typeof window.appleSheetComponent.refresh === 'function') {
+    window.appleSheetComponent.refresh();
+  }
+}
+
+window.refreshSheetHandleDragBindings = refreshSheetHandleDragBindings;
+
+function ensureRatesSheetFallback() {
+  var existingOverlay = document.getElementById('sheet-rates');
+  if (existingOverlay) {
+    refreshSheetHandleDragBindings();
+    return existingOverlay;
+  }
+
+  var overlay = document.createElement('div');
+  overlay.className = 'apple-sheet-overlay';
+  overlay.id = 'sheet-rates';
+  overlay.innerHTML = `
+    <div class="apple-sheet">
+      <div class="apple-sheet-handle"></div>
+      <div class="apple-sheet-header">
+        <button type="button" class="apple-sheet-action" data-close-sheet="sheet-rates">${escapeBillingSheetText(ratesSheetI18n.done)}</button>
+        <h3 class="apple-sheet-title">${escapeBillingSheetText(ratesSheetI18n.title)}</h3>
+        <div style="width: 50px;"></div>
+      </div>
+      <div class="apple-sheet-body">
+        <p style="font-size: 14px; color: var(--apple-text-secondary); margin: 0;">ไม่พบข้อมูลอัตราค่าน้ำค่าไฟของหน้านี้ กรุณารีเฟรชหน้าอีกครั้ง</p>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  refreshSheetHandleDragBindings();
+  console.warn('[SheetDebug] Injected fallback overlay for missing sheet-rates');
+  return overlay;
+}
+
+function openRatesSheetFromRow(event, rowId) {
+  refreshSheetHandleDragBindings();
+
+  if (event) {
+    var target = event.target;
+    if (target && target.closest && target.closest('button, input, select, textarea, a, [data-close-sheet]')) {
+      return true;
+    }
+    if (event.type === 'keydown' && event.key && event.key !== 'Enter' && event.key !== ' ') {
+      return true;
+    }
+    if (typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+  }
+
+  var context = {
+    source: 'section_rates.inlineRowFallback',
+    rowId: rowId || '',
+    sheetId: 'sheet-rates'
+  };
+
+  var opened = false;
+  if (window.appleSettings && typeof window.appleSettings.openSheet === 'function') {
+    opened = window.appleSettings.openSheet('sheet-rates', context) === true;
+  }
+
+  if (!opened) {
+    var overlay = document.getElementById('sheet-rates');
+    if (!overlay) {
+      overlay = ensureRatesSheetFallback();
+    }
+
+    if (overlay) {
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      opened = true;
+    }
+  }
+
+  if (!opened) {
+    console.error('[SheetDebug] Unable to open sheet-rates from row fallback', context);
+  }
+
+  if (opened) {
+    refreshSheetHandleDragBindings();
+  }
+
+  return opened;
+}
+
+function handleRatesRowKeydown(event, rowId) {
+  if (!event || (event.key !== 'Enter' && event.key !== ' ')) {
+    return true;
+  }
+
+  return openRatesSheetFromRow(event, rowId) ? false : true;
+}
+
+window.openRatesSheetFromRow = openRatesSheetFromRow;
+window.handleRatesRowKeydown = handleRatesRowKeydown;
+
+(function bindRatesRowFailSafe() {
+  function bindRow(rowId) {
+    var row = document.getElementById(rowId);
+    if (!row || row.dataset.ratesRowFailSafeBound === '1') {
+      return;
+    }
+
+    row.dataset.ratesRowFailSafeBound = '1';
+
+    row.addEventListener('click', function(event) {
+      if (event.defaultPrevented) {
+        return;
+      }
+      openRatesSheetFromRow(event, rowId);
+    }, true);
+
+    row.addEventListener('keydown', function(event) {
+      handleRatesRowKeydown(event, rowId);
+    }, true);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      refreshSheetHandleDragBindings();
+      bindRow('currentRatesRow');
+      bindRow('manageRatesRow');
+    });
+  } else {
+    refreshSheetHandleDragBindings();
+    bindRow('currentRatesRow');
+    bindRow('manageRatesRow');
+  }
+})();
+
 const billingScheduleI18n = {
   title: <?php echo json_encode(__('billing_schedule_label'), JSON_UNESCAPED_UNICODE); ?>,
   generatePrefix: <?php echo json_encode(__('billing_generate_day_prefix'), JSON_UNESCAPED_UNICODE); ?>,
@@ -423,6 +759,7 @@ function escapeBillingSheetText(value) {
 function ensureBillingScheduleSheetFallback() {
   var existingOverlay = document.getElementById('sheet-billing-schedule');
   if (existingOverlay) {
+    refreshSheetHandleDragBindings();
     return existingOverlay;
   }
 
@@ -452,6 +789,7 @@ function ensureBillingScheduleSheetFallback() {
   `;
 
   document.body.appendChild(overlay);
+  refreshSheetHandleDragBindings();
   console.warn('[SheetDebug] Injected fallback overlay for missing sheet-billing-schedule');
 
   return overlay;

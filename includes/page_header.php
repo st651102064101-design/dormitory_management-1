@@ -347,10 +347,11 @@ $buildHeaderAttributes = static function (array $attributes): string {
 <style>
 /* Page Header Styles - Apple-style Auto-hide */
 .page-header-bar {
-  position: sticky;
+  position: -webkit-sticky !important;
+  position: sticky !important;
   width: 100%;
-  top: 1rem;
-  z-index: 120;
+  top: 1rem !important;
+  z-index: 120 !important;
   padding: 1rem 1.5rem;
   background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(20px) saturate(180%);
@@ -382,7 +383,7 @@ $buildHeaderAttributes = static function (array $attributes): string {
 }
 
 .page-header-bar.header-hidden {
-  transform: translateY(calc(-100% - 1rem));
+  transform: translateY(0);
 }
 
 .page-header-bar.header-scrolled {
@@ -488,7 +489,7 @@ $buildHeaderAttributes = static function (array $attributes): string {
   background: rgba(15, 23, 42, 0.5) !important;
 }
 .page-header-bar.header-hidden h2 {
-  opacity: 0;
+  opacity: 1;
 }
 .sidebar-toggle-btn {
   position: relative;
@@ -524,7 +525,7 @@ $buildHeaderAttributes = static function (array $attributes): string {
 }
 @media (max-width: 768px) {
   .page-header-bar {
-    top: 0.75rem;
+    top: 0.75rem !important;
     padding: 0.875rem 1rem;
     flex-direction: column;
     align-items: stretch;
