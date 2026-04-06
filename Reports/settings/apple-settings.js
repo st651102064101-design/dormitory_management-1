@@ -980,7 +980,7 @@ class AppleSettings {
         }
         
         // Clear the select dropdown
-        const selectEl = document.getElementById('bgSelectDropdown');
+        const selectEl = document.getElementById('bgSelect');
         if (selectEl) {
           selectEl.value = '';
         }

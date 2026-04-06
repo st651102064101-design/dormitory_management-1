@@ -106,6 +106,12 @@ try {
 
         $realPath = realpath($oldLogoPath);
         $realUploadDir = realpath($uploadsDir);
+        if ($realUploadDir === false) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบโฟลเดอร์รูปภาพในระบบ']);
+            exit;
+        }
+
         if (strpos($realPath, $realUploadDir) !== 0) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'error' => 'ไฟล์ไม่ถูกต้อง']);
@@ -114,9 +120,9 @@ try {
 
         // ตรวจสอบนามสกุลไฟล์
         $ext = strtolower(pathinfo($oldLogoFile, PATHINFO_EXTENSION));
-        if (!in_array($ext, ['jpg', 'jpeg', 'png'])) {
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG และ PNG']);
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG, PNG และ WebP']);
             exit;
         }
 
@@ -131,6 +137,23 @@ try {
             exit;
         }
 
+        // Ensure directory/file are writable before unlink (common in shared hosting/XAMPP)
+        $targetDir = dirname($oldLogoPath);
+        if (is_dir($targetDir) && !is_writable($targetDir)) {
+            @chmod($targetDir, 0777);
+            clearstatcache(true, $targetDir);
+        }
+        if (file_exists($oldLogoPath) && !is_writable($oldLogoPath)) {
+            @chmod($oldLogoPath, 0666);
+            clearstatcache(true, $oldLogoPath);
+        }
+
+        if (!is_dir($targetDir) || !is_writable($targetDir) || !is_writable($oldLogoPath)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบรูปได้ กรุณาตรวจสอบสิทธิ์ไฟล์/โฟลเดอร์']);
+            exit;
+        }
+
         // ลบไฟล์
         if (unlink($oldLogoPath)) {
             header('Content-Type: application/json');
@@ -138,7 +161,7 @@ try {
             exit;
         } else {
             header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบรูป']);
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบรูปได้ กรุณาตรวจสอบสิทธิ์ไฟล์/โฟลเดอร์']);
             exit;
         }
     }
@@ -236,6 +259,9 @@ try {
         $settingLogoFilename = $relativePrefix . $filename;
 
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            // Make file deletable by anyone (needed for delete feature)
+            @chmod($filepath, 0666);
+            
             // จำกัดไฟล์ logo ให้เหลือ 10 ไฟล์ล่าสุด
             $logoFiles = [];
             $dirItems = scandir($targetDir);

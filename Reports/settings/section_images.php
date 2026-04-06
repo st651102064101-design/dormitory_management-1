@@ -63,12 +63,15 @@
       <!-- Select from existing -->
       <div class="apple-input-group">
         <label class="apple-input-label"><?php echo __('select_existing'); ?></label>
-        <select id="oldLogoSelect" class="apple-input">
-          <option value="">-- <?php echo __('select_existing'); ?> --</option>
-          <?php foreach ($imageFiles as $file): ?>
-            <option value="<?php echo htmlspecialchars($file); ?>"><?php echo htmlspecialchars($file); ?></option>
-          <?php endforeach; ?>
-        </select>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <select id="oldLogoSelect" class="apple-input" style="flex: 1;">
+            <option value="">-- <?php echo __('select_existing'); ?> --</option>
+            <?php foreach ($imageFiles as $file): ?>
+              <option value="<?php echo htmlspecialchars($file); ?>"><?php echo htmlspecialchars($file); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <button type="button" id="deleteLogoBtn" class="apple-btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 10px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; opacity: 0.5; pointer-events: none;" disabled>ลบรูป</button>
+        </div>
         <div id="oldLogoPreview" style="margin-top: 12px;"></div>
       </div>
       
@@ -98,14 +101,36 @@
   }
 
   function showSheetToast(message, type) {
-    if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
-      window.appleSettings.showToast(message, type || 'success');
+    var settingsInstance = null;
+
+    if (typeof appleSettings !== 'undefined' && appleSettings && typeof appleSettings.showToast === 'function') {
+      settingsInstance = appleSettings;
+    } else if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+      settingsInstance = window.appleSettings;
+    }
+
+    if (settingsInstance) {
+      settingsInstance.showToast(message, type || 'success');
       return;
     }
 
     if ((type || 'success') === 'error') {
       alert(message);
     }
+  }
+
+  function getSettingsInstance() {
+    if (window.appleSettings && typeof window.appleSettings.showConfirm === 'function') {
+      return window.appleSettings;
+    }
+
+    if (typeof appleSettings !== 'undefined' && appleSettings && typeof appleSettings.showConfirm === 'function') {
+      // Keep a stable global reference for inline handlers.
+      window.appleSettings = appleSettings;
+      return appleSettings;
+    }
+
+    return null;
   }
 
   // Shared helper: Build image URL with path-safe encoding (supports nested paths like Payments/...)
@@ -122,40 +147,112 @@
     return '/dormitory_management/Public/Assets/Images/' + encodedPath;
   }
 
+  // Force reload image by creating new element (bypasses browser cache completely)
+  function forceReloadImage(imgElement, newSrc) {
+    if (!imgElement) return;
+    // Create new img to force browser to re-fetch
+    var tempImg = new Image();
+    tempImg.onload = function() {
+      imgElement.src = newSrc;
+      console.log('[forceReloadImage] Image reloaded:', newSrc);
+    };
+    tempImg.onerror = function() {
+      // Even if preload fails, try to set src anyway
+      imgElement.src = newSrc;
+      console.warn('[forceReloadImage] Preload failed but setting src anyway:', newSrc);
+    };
+    tempImg.src = newSrc;
+  }
+
   // Shared helper: Sync all logo UI elements from a single filename with cache-busting
   function syncLogoUiFromFilename(filename) {
-    if (!filename) return;
+    if (!filename) {
+      console.warn('[syncLogoUiFromFilename] Empty filename provided');
+      return;
+    }
     var newSrc = buildImageUrl(filename) + '?t=' + Date.now();
+    console.log('[syncLogoUiFromFilename] Updating with filename:', filename, 'newSrc:', newSrc);
     
-    // Update preview in sheet
+    // Update preview in logo sheet (MUST be specific to logo sheet - use parent context)
     var logoPreviewImg = document.getElementById('logoPreviewImg');
-    if (logoPreviewImg) logoPreviewImg.src = newSrc;
+    if (logoPreviewImg) {
+      console.log('[syncLogoUiFromFilename] Updating #logoPreviewImg');
+      forceReloadImage(logoPreviewImg, newSrc);
+      logoPreviewImg.dataset.baseSrc = buildImageUrl(filename);
+    } else {
+      console.warn('[syncLogoUiFromFilename] #logoPreviewImg not found');
+    }
     
     // Update thumbnail in settings row
     var logoRowImg = document.getElementById('logoRowImg');
-    if (logoRowImg) logoRowImg.src = newSrc;
+    if (logoRowImg) {
+      console.log('[syncLogoUiFromFilename] Updating #logoRowImg');
+      forceReloadImage(logoRowImg, newSrc);
+    } else {
+      console.warn('[syncLogoUiFromFilename] #logoRowImg not found');
+    }
     
-    // Update sidebar logo
+    // Update sidebar logo icons with cache bust
     var sidebarLogos = document.querySelectorAll('.team-avatar-img');
-    if (sidebarLogos) {
+    if (sidebarLogos && sidebarLogos.length > 0) {
       sidebarLogos.forEach(function(img) {
-        img.src = newSrc;
+        forceReloadImage(img, newSrc);
       });
+      console.log('[syncLogoUiFromFilename] Updated', sidebarLogos.length, '.team-avatar-img elements');
     }
     
     // Update any other logo images on page
     var allLogos = document.querySelectorAll('img[alt="Logo"]');
-    if (allLogos) {
+    if (allLogos && allLogos.length > 0) {
+      var count = 0;
       allLogos.forEach(function(img) {
         if (img.id !== 'logoPreviewImg' && !img.classList.contains('team-avatar-img')) {
-          img.src = newSrc;
+          forceReloadImage(img, newSrc);
+          count++;
         }
       });
+      if (count > 0) console.log('[syncLogoUiFromFilename] Updated', count, 'other img[alt="Logo"] elements');
     }
     
-    // Update filename text
-    var infoP = document.querySelector('.apple-image-preview .apple-image-info p');
-    if (infoP) infoP.textContent = filename;
+    // Update filename text - MUST be inside #sheet-logo to avoid background/signature
+    var logoSheet = document.getElementById('sheet-logo');
+    if (logoSheet) {
+      var infoP = logoSheet.querySelector('.apple-image-preview .apple-image-info p');
+      if (infoP) {
+        console.log('[syncLogoUiFromFilename] Updating filename text to:', filename);
+        infoP.textContent = filename;
+      } else {
+        console.warn('[syncLogoUiFromFilename] .apple-image-info p not found in logo sheet');
+      }
+    } else {
+      console.warn('[syncLogoUiFromFilename] #sheet-logo not found');
+    }
+    
+    console.log('[syncLogoUiFromFilename] Sync complete');
+  }
+
+  // Shared helper: Sync background UI elements from a single filename with cache-busting
+  function syncBgUiFromFilename(filename) {
+    if (!filename) {
+      return;
+    }
+
+    var newSrc = buildImageUrl(filename) + '?t=' + Date.now();
+
+    var bgPreviewImg = document.getElementById('bgPreviewImg');
+    if (bgPreviewImg) {
+      forceReloadImage(bgPreviewImg, newSrc);
+    }
+
+    var bgRowImg = document.getElementById('bgRowImg');
+    if (bgRowImg) {
+      forceReloadImage(bgRowImg, newSrc);
+    }
+
+    var bgInfoP = document.querySelector('#sheet-background .apple-image-preview .apple-image-info p');
+    if (bgInfoP) {
+      bgInfoP.textContent = filename;
+    }
   }
 
   function closeSheetById(sheetId) {
@@ -430,22 +527,30 @@
     })
     .then(function(response) { return response.json(); })
     .then(function(result) {
+      console.log('[uploadLogoFile] API response:', result);
       if (!result || !result.success) {
         throw new Error((result && result.error) ? result.error : 'อัพโหลดไม่สำเร็จ');
       }
 
       showSheetToast('อัพโหลด Logo สำเร็จ', 'success');
+      console.log('[uploadLogoFile] Uploaded successfully, filename:', result.filename);
       
       // Sync UI with new filename instead of reloading page
       if (result.filename) {
+        console.log('[uploadLogoFile] Calling syncLogoUiFromFilename with:', result.filename);
         syncLogoUiFromFilename(result.filename);
+      } else {
+        console.warn('[uploadLogoFile] No filename in result!');
       }
       
       // Reset input and close sheet
       if (inputEl) inputEl.value = '';
-      closeSheetById('sheet-logo');
+      setTimeout(function() {
+        closeSheetById('sheet-logo');
+      }, 500);
     })
     .catch(function(error) {
+      console.error('[uploadLogoFile] Error occurred:', error);
       showSheetToast(error.message || 'อัพโหลดไม่สำเร็จ', 'error');
       if (inputEl) inputEl.value = '';
     });
@@ -455,6 +560,110 @@
     var file = inputEl && inputEl.files && inputEl.files[0];
     uploadLogoFile(file, inputEl || null);
   };
+
+  function uploadBgFile(file, inputEl) {
+    if (!file) {
+      return;
+    }
+
+    if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+      showSheetToast('รองรับเฉพาะไฟล์ JPG, PNG และ WebP', 'error');
+      if (inputEl) inputEl.value = '';
+      return;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      showSheetToast('ขนาดไฟล์ไม่ควรเกิน 10MB', 'error');
+      if (inputEl) inputEl.value = '';
+      return;
+    }
+
+    var formData = new FormData();
+    formData.append('bg', file);
+
+    fetch('/dormitory_management/Manage/save_system_settings.php', {
+      method: 'POST',
+      body: formData
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(result) {
+      if (!result || !result.success) {
+        throw new Error((result && result.error) ? result.error : 'อัพโหลดภาพพื้นหลังไม่สำเร็จ');
+      }
+
+      var newFilename = (result.filename || '').trim();
+      if (newFilename) {
+        syncBgUiFromFilename(newFilename);
+      }
+
+      showSheetToast('อัพโหลดภาพพื้นหลังสำเร็จ', 'success');
+
+      var bgSelectEl = document.getElementById('bgSelect');
+      if (bgSelectEl) {
+        bgSelectEl.value = '';
+      }
+      var bgSelectPreview = document.getElementById('bgSelectPreview');
+      if (bgSelectPreview) {
+        bgSelectPreview.innerHTML = '';
+      }
+
+      if (inputEl) inputEl.value = '';
+
+      setTimeout(function() {
+        closeSheetById('sheet-background');
+      }, 250);
+    })
+    .catch(function(error) {
+      showSheetToast(error.message || 'อัพโหลดภาพพื้นหลังไม่สำเร็จ', 'error');
+      if (inputEl) inputEl.value = '';
+    });
+  }
+
+  window.__uploadBgFromInput = function(inputEl) {
+    var file = inputEl && inputEl.files && inputEl.files[0];
+    uploadBgFile(file, inputEl || null);
+  };
+
+  function applyOldBg(filename) {
+    if (!filename) {
+      return;
+    }
+
+    fetch('/dormitory_management/Manage/save_system_settings.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'bg_filename=' + encodeURIComponent(filename)
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(result) {
+      if (!result || !result.success) {
+        throw new Error((result && result.error) ? result.error : 'เปลี่ยนภาพพื้นหลังไม่สำเร็จ');
+      }
+
+      var newFilename = (result.filename || filename || '').trim();
+      if (newFilename) {
+        syncBgUiFromFilename(newFilename);
+      }
+
+      showSheetToast('เปลี่ยนภาพพื้นหลังสำเร็จ', 'success');
+
+      var bgSelectEl = document.getElementById('bgSelect');
+      if (bgSelectEl) {
+        bgSelectEl.value = '';
+      }
+      var bgSelectPreview = document.getElementById('bgSelectPreview');
+      if (bgSelectPreview) {
+        bgSelectPreview.innerHTML = '';
+      }
+
+      setTimeout(function() {
+        closeSheetById('sheet-background');
+      }, 250);
+    })
+    .catch(function(error) {
+      showSheetToast(error.message || 'เปลี่ยนภาพพื้นหลังไม่สำเร็จ', 'error');
+    });
+  }
 
   function applyOldLogo(filename) {
     if (!filename) {
@@ -468,16 +677,21 @@
     })
     .then(function(response) { return response.json(); })
     .then(function(result) {
+      console.log('[applyOldLogo] API response:', result);
       if (!result || !result.success) {
         throw new Error((result && result.error) ? result.error : 'เปลี่ยนโลโก้ไม่สำเร็จ');
       }
 
       showSheetToast('เปลี่ยน Logo สำเร็จ', 'success');
+      console.log('[applyOldLogo] Applied successfully, filename:', result.filename);
       
       // Sync UI with result filename (fallback to param filename) instead of reloading page
       var newFilename = (result.filename || filename || '').trim();
       if (newFilename) {
+        console.log('[applyOldLogo] Calling syncLogoUiFromFilename with:', newFilename);
         syncLogoUiFromFilename(newFilename);
+      } else {
+        console.warn('[applyOldLogo] No filename available!');
       }
       
       // Clear old logo selector and preview, then close sheet
@@ -485,10 +699,191 @@
       if (selectEl) selectEl.value = '';
       var previewDiv = document.getElementById('oldLogoPreview');
       if (previewDiv) previewDiv.innerHTML = '';
-      closeSheetById('sheet-logo');
+      setTimeout(function() {
+        closeSheetById('sheet-logo');
+      }, 500);
     })
     .catch(function(error) {
       showSheetToast(error.message || 'เปลี่ยนโลโก้ไม่สำเร็จ', 'error');
+    });
+  }
+
+  function showInlineConfirmDialog(title, message, onConfirm) {
+    var existingDialog = document.querySelector('.apple-confirm-overlay');
+    if (existingDialog) {
+      existingDialog.remove();
+    }
+
+    var overlay = document.createElement('div');
+    overlay.className = 'apple-confirm-overlay';
+    overlay.innerHTML = '' +
+      '<div class="apple-confirm-dialog">' +
+        '<div class="apple-confirm-content">' +
+          '<h3 class="apple-confirm-title">' + escapeHtml(title) + '</h3>' +
+          '<p class="apple-confirm-message">' + escapeHtml(message) + '</p>' +
+        '</div>' +
+        '<div class="apple-confirm-actions">' +
+          '<button type="button" class="apple-confirm-btn cancel">ยกเลิก</button>' +
+          '<button type="button" class="apple-confirm-btn confirm">ตกลง</button>' +
+        '</div>' +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    requestAnimationFrame(function() {
+      overlay.classList.add('show');
+    });
+
+    var isClosed = false;
+    var escHandler = function(event) {
+      if (event.key === 'Escape') {
+        closeDialog(false);
+      }
+    };
+
+    function closeDialog(confirmed) {
+      if (isClosed) {
+        return;
+      }
+      isClosed = true;
+      document.removeEventListener('keydown', escHandler);
+
+      overlay.classList.remove('show');
+      window.setTimeout(function() {
+        if (overlay.parentNode) {
+          overlay.parentNode.removeChild(overlay);
+        }
+      }, 200);
+
+      if (confirmed && typeof onConfirm === 'function') {
+        onConfirm();
+      }
+    }
+
+    var cancelBtn = overlay.querySelector('.cancel');
+    var confirmBtn = overlay.querySelector('.confirm');
+
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', function() {
+        closeDialog(false);
+      });
+    }
+
+    if (confirmBtn) {
+      confirmBtn.addEventListener('click', function() {
+        closeDialog(true);
+      });
+    }
+
+    overlay.addEventListener('click', function(event) {
+      if (event.target === overlay) {
+        closeDialog(false);
+      }
+    });
+
+    document.addEventListener('keydown', escHandler);
+  }
+
+  // Custom confirmation dialog for delete actions
+  function showDeleteConfirmation(filename, onConfirm) {
+    var message = 'คุณแน่ใจหรือว่าต้องการลบรูป ' + filename + ' ?';
+    var settingsInstance = getSettingsInstance();
+
+    // Prefer project confirm component
+    if (settingsInstance && typeof settingsInstance.showConfirm === 'function') {
+      settingsInstance.showConfirm(message, 'ยืนยันการลบรูป').then(function(confirmed) {
+        if (confirmed) {
+          onConfirm();
+        }
+      });
+      return;
+    }
+
+    // Fallback to global confirm dialog component (used in other pages)
+    if (typeof window.showConfirmDialog === 'function') {
+      window.showConfirmDialog('ยืนยันการลบรูป', message, 'warning').then(function(confirmed) {
+        if (confirmed) {
+          onConfirm();
+        }
+      });
+      return;
+    }
+
+    // Final fallback: local component-style dialog (never use native confirm)
+    showInlineConfirmDialog('ยืนยันการลบรูป', message, onConfirm);
+  }
+
+  function deleteSelectedLogo(filename) {
+    if (!filename) {
+      console.warn('[deleteSelectedLogo] Empty filename');
+      return;
+    }
+
+    console.log('[deleteSelectedLogo] Deleting logo:', filename);
+
+    fetch('/dormitory_management/Manage/save_system_settings.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'delete_old_logo=' + encodeURIComponent(filename)
+    })
+    .then(function(response) {
+      console.log('[deleteSelectedLogo] Response status:', response.status, response.statusText);
+      return response.json();
+    })
+    .then(function(result) {
+      console.log('[deleteSelectedLogo] API response:', JSON.stringify(result));
+      if (!result || !result.success) {
+        var errorMsg = (result && result.error) ? result.error : 'ไม่สามารถลบรูปได้';
+        console.error('[deleteSelectedLogo] Delete failed:', errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      showSheetToast('ลบรูปสำเร็จ', 'success');
+      console.log('[deleteSelectedLogo] Deleted successfully');
+      
+      // Reset selection and preview
+      var select = document.getElementById('oldLogoSelect');
+      if (select) {
+        select.value = '';
+      }
+      var previewDiv = document.getElementById('oldLogoPreview');
+      if (previewDiv) {
+        previewDiv.innerHTML = '';
+      }
+      var deleteBtn = document.getElementById('deleteLogoBtn');
+      if (deleteBtn) {
+        deleteBtn.disabled = true;
+        deleteBtn.style.opacity = '0.5';
+        deleteBtn.style.pointerEvents = 'none';
+      }
+
+      // Remove deleted option from logo and background selects without page reload
+      function removeOptionByValue(selectEl, value) {
+        if (!selectEl) return;
+        for (var i = selectEl.options.length - 1; i >= 0; i--) {
+          if ((selectEl.options[i].value || '').trim() === value) {
+            selectEl.remove(i);
+          }
+        }
+      }
+
+      removeOptionByValue(document.getElementById('oldLogoSelect'), filename);
+      removeOptionByValue(document.getElementById('bgSelect'), filename);
+
+      // Restore preview image to current logo when available
+      var logoPreviewImg = document.getElementById('logoPreviewImg');
+      if (logoPreviewImg) {
+        var baseSrc = logoPreviewImg.dataset.baseSrc || '';
+        if (baseSrc) {
+          logoPreviewImg.src = baseSrc + '?t=' + Date.now();
+        }
+      }
+
+      console.log('[deleteSelectedLogo] UI refreshed without page reload');
+    })
+    .catch(function(error) {
+      console.error('[deleteSelectedLogo] Error occurred:', error.message || error);
+      showSheetToast(error.message || 'ไม่สามารถลบรูปได้', 'error');
     });
   }
 
@@ -503,12 +898,22 @@
     select.__logoSelectBound = true;
     select.dataset.logoSelectBound = '1';
     var originalPreviewSrc = logoPreviewImg ? logoPreviewImg.getAttribute('src') : '';
+    if (logoPreviewImg && originalPreviewSrc) {
+      logoPreviewImg.dataset.baseSrc = originalPreviewSrc;
+    }
+    var deleteLogoBtn = document.getElementById('deleteLogoBtn');
 
     function renderLocalPreview(filename) {
       if (!filename) {
         previewContainer.innerHTML = '';
         if (logoPreviewImg && originalPreviewSrc) {
           logoPreviewImg.src = originalPreviewSrc;
+        }
+        // Disable delete button when nothing is selected
+        if (deleteLogoBtn) {
+          deleteLogoBtn.disabled = true;
+          deleteLogoBtn.style.opacity = '0.5';
+          deleteLogoBtn.style.pointerEvents = 'none';
         }
         return;
       }
@@ -521,12 +926,37 @@
       if (logoPreviewImg) {
         logoPreviewImg.src = imageUrl;
       }
+      
+      // Enable delete button when a logo is selected
+      if (deleteLogoBtn) {
+        deleteLogoBtn.disabled = false;
+        deleteLogoBtn.style.opacity = '1';
+        deleteLogoBtn.style.pointerEvents = 'auto';
+      }
     }
 
     select.addEventListener('change', function() {
       var filename = (select.value || '').trim();
       renderLocalPreview(filename);
     });
+
+    // Handle delete button click
+    if (deleteLogoBtn) {
+      deleteLogoBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        var filename = (select.value || '').trim();
+        if (!filename) {
+          showSheetToast('กรุณาเลือกรูปที่ต้องการลบ', 'error');
+          return;
+        }
+        
+        // Use custom confirmation dialog
+        showDeleteConfirmation(filename, function() {
+          deleteSelectedLogo(filename);
+        });
+      });
+    }
 
     previewContainer.addEventListener('click', function(event) {
       var applyBtn = event.target.closest('[data-use-old-logo]');
@@ -601,16 +1031,120 @@
     }
   }
 
+  function bindBgSelectFallback() {
+    var bgSelect = document.getElementById('bgSelect');
+    var previewContainer = document.getElementById('bgSelectPreview');
+    var bgPreviewImg = document.getElementById('bgPreviewImg');
+    if (!bgSelect || !previewContainer || bgSelect.__bgSelectBound) {
+      return;
+    }
+
+    bgSelect.__bgSelectBound = true;
+    bgSelect.dataset.bgSelectBound = '1';
+    var originalPreviewSrc = bgPreviewImg ? bgPreviewImg.getAttribute('src') : '';
+
+    function renderBgLocalPreview(filename) {
+      if (!filename) {
+        previewContainer.innerHTML = '';
+        if (bgPreviewImg && originalPreviewSrc) {
+          bgPreviewImg.src = originalPreviewSrc;
+        }
+        return;
+      }
+
+      var imageUrl = buildImageUrl(filename);
+      previewContainer.innerHTML = '' +
+        '<img src="' + imageUrl + '" alt="Preview" style="max-width: 200px; max-height: 120px; border-radius: 12px; object-fit: cover;">' +
+        '<button type="button" class="apple-button primary" data-use-old-bg="' + escapeHtml(filename) + '" style="width: auto; padding: 10px 16px; margin-top: 8px;">ใช้ภาพนี้</button>';
+
+      if (bgPreviewImg) {
+        bgPreviewImg.src = imageUrl;
+      }
+    }
+
+    bgSelect.addEventListener('change', function() {
+      var filename = (bgSelect.value || '').trim();
+      renderBgLocalPreview(filename);
+    });
+
+    previewContainer.addEventListener('click', function(event) {
+      var applyBtn = event.target.closest('[data-use-old-bg]');
+      if (!applyBtn) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      var filename = (applyBtn.getAttribute('data-use-old-bg') || '').trim();
+      if (!filename) return;
+
+      applyOldBg(filename);
+    });
+
+    if (!document.__useOldBgDelegatedBound) {
+      document.__useOldBgDelegatedBound = true;
+      document.addEventListener('click', function(event) {
+        var applyBtn = event.target.closest('[data-use-old-bg]');
+        if (!applyBtn) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        var filename = (applyBtn.getAttribute('data-use-old-bg') || '').trim();
+        if (!filename) {
+          return;
+        }
+
+        applyOldBg(filename);
+      }, true);
+    }
+  }
+
+  function bindBgUploadFallback() {
+    var bgInput = document.getElementById('bgInput');
+    if (!bgInput || bgInput.__bgFallbackBound) {
+      return;
+    }
+
+    var uploadArea = document.querySelector('#sheet-background .apple-upload-area');
+    if (uploadArea && !uploadArea.__bgAreaBound) {
+      uploadArea.__bgAreaBound = true;
+      uploadArea.dataset.bgAreaBound = '1';
+      uploadArea.addEventListener('click', function(event) {
+        if (event.target === bgInput || event.target.closest('#bgInput')) {
+          return;
+        }
+
+        bgInput.click();
+      });
+    }
+
+    bgInput.__bgFallbackBound = true;
+    bgInput.dataset.bgFallbackBound = '1';
+
+    if (!bgInput.__bgChangeFallbackBound) {
+      bgInput.__bgChangeFallbackBound = true;
+      bgInput.addEventListener('change', function() {
+        window.__uploadBgFromInput(bgInput);
+      });
+    }
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
       window.appleSheetComponent.init();
       bindOldLogoSelectFallback();
+      bindBgSelectFallback();
       setTimeout(bindLogoUploadFallback, 200);
+      setTimeout(bindBgUploadFallback, 200);
     });
   } else {
     window.appleSheetComponent.init();
     bindOldLogoSelectFallback();
+    bindBgSelectFallback();
     setTimeout(bindLogoUploadFallback, 200);
+    setTimeout(bindBgUploadFallback, 200);
   }
 })();
 </script>
@@ -653,7 +1187,7 @@
           <div class="apple-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
           <p class="apple-upload-text"><?php echo __('click_to_select'); ?></p>
           <p class="apple-upload-hint">รองรับ JPG, PNG, WebP</p>
-          <input type="file" id="bgInput" accept="image/jpeg,image/png,image/webp">
+          <input type="file" id="bgInput" name="bg" accept="image/jpeg,image/png,image/webp" onchange="if (window.__uploadBgFromInput) { window.__uploadBgFromInput(this); }" style="display:block !important; position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; pointer-events:auto; z-index:3;">
         </div>
       </div>
     </div>
