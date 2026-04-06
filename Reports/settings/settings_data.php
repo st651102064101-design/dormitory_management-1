@@ -204,7 +204,23 @@ try {
 
 // ดึงรายการรูปภาพจากโฟลเดอร์
 $imageFiles = [];
-$logoDir = realpath(__DIR__ . '/..//dormitory_management/Public/Assets/Images/');
+$imagesDirPath = __DIR__ . '/../../Public/Assets/Images/';
+$logoDir = realpath($imagesDirPath);
+if ($logoDir === false && is_dir($imagesDirPath)) {
+    $logoDir = $imagesDirPath;
+}
+
+$imagesBaseDir = $logoDir ?: $imagesDirPath;
+$imagesBaseDir = rtrim((string)$imagesBaseDir, '/\\') . '/';
+
+if (!is_file($imagesBaseDir . $logoFilename) && is_file($imagesBaseDir . 'Logo.jpg')) {
+    $logoFilename = 'Logo.jpg';
+}
+
+if (!is_file($imagesBaseDir . $bgFilename) && is_file($imagesBaseDir . 'bg.jpg')) {
+    $bgFilename = 'bg.jpg';
+}
+
 if ($logoDir && is_dir($logoDir)) {
     $files = scandir($logoDir);
     foreach ($files as $file) {
@@ -216,3 +232,13 @@ if ($logoDir && is_dir($logoDir)) {
         }
     }
 }
+
+if (!empty($logoFilename) && !in_array($logoFilename, $imageFiles, true)) {
+    $imageFiles[] = $logoFilename;
+}
+
+if (!empty($bgFilename) && !in_array($bgFilename, $imageFiles, true)) {
+    $imageFiles[] = $bgFilename;
+}
+
+sort($imageFiles, SORT_NATURAL | SORT_FLAG_CASE);

@@ -3,7 +3,7 @@
   <h2 class="apple-section-title"><?php echo __('settings_images'); ?></h2>
   <div class="apple-section-card">
     <!-- Logo -->
-    <div class="apple-settings-row" data-sheet="sheet-logo">
+    <div class="apple-settings-row" data-sheet="sheet-logo" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-logo" onclick="event.preventDefault(); event.stopPropagation(); (window.appleSettings && typeof window.appleSettings.openSheet === 'function') ? window.appleSettings.openSheet('sheet-logo') : (function(){ var sheet = document.getElementById('sheet-logo'); if (sheet) { sheet.classList.add('active'); document.body.style.overflow = 'hidden'; } })();" onkeydown="if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); event.stopPropagation(); (window.appleSettings && typeof window.appleSettings.openSheet === 'function') ? window.appleSettings.openSheet('sheet-logo') : (function(){ var sheet = document.getElementById('sheet-logo'); if (sheet) { sheet.classList.add('active'); document.body.style.overflow = 'hidden'; } })(); }">
       <div class="apple-row-icon orange"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg></div>
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('logo'); ?></p>
@@ -46,7 +46,7 @@
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
     <div class="apple-sheet-header">
-      <button class="apple-sheet-action" data-close-sheet="sheet-logo"><?php echo __('cancel'); ?></button>
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-logo" onclick="event.preventDefault(); event.stopPropagation(); var sheet=document.getElementById('sheet-logo'); if (sheet) { sheet.classList.remove('active'); document.body.style.overflow=''; } "><?php echo __('cancel'); ?></button>
       <h3 class="apple-sheet-title"><?php echo __('manage_logo'); ?></h3>
       <div style="width: 50px;"></div>
     </div>
@@ -85,6 +85,328 @@
     </div>
   </div>
 </div>
+
+<script>
+(function() {
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function showSheetToast(message, type) {
+    if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+      window.appleSettings.showToast(message, type || 'success');
+      return;
+    }
+
+    if ((type || 'success') === 'error') {
+      alert(message);
+    }
+  }
+
+  function closeSheetById(sheetId) {
+    var overlay = document.getElementById(sheetId);
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function closeOverlay(overlay) {
+    if (!overlay) return;
+    overlay.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function applyOldLogo(filename) {
+    if (!filename) {
+      return;
+    }
+
+    fetch('/dormitory_management/Manage/save_system_settings.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'load_old_logo=' + encodeURIComponent(filename)
+    })
+    .then(function(response) { return response.json(); })
+    .then(function(result) {
+      if (!result || !result.success) {
+        throw new Error((result && result.error) ? result.error : 'เปลี่ยนโลโก้ไม่สำเร็จ');
+      }
+
+      showSheetToast('เปลี่ยน Logo สำเร็จ', 'success');
+      window.location.reload();
+    })
+    .catch(function(error) {
+      showSheetToast(error.message || 'เปลี่ยนโลโก้ไม่สำเร็จ', 'error');
+    });
+  }
+
+  function bindOldLogoSelectFallback() {
+    var select = document.getElementById('oldLogoSelect');
+    var previewContainer = document.getElementById('oldLogoPreview');
+    var logoPreviewImg = document.getElementById('logoPreviewImg');
+    if (!select || !previewContainer || select.__logoSelectBound) {
+      return;
+    }
+
+    select.__logoSelectBound = true;
+    select.dataset.logoSelectBound = '1';
+    var originalPreviewSrc = logoPreviewImg ? logoPreviewImg.getAttribute('src') : '';
+
+    function renderLocalPreview(filename) {
+      if (!filename) {
+        previewContainer.innerHTML = '';
+        if (logoPreviewImg && originalPreviewSrc) {
+          logoPreviewImg.src = originalPreviewSrc;
+        }
+        return;
+      }
+
+      var encoded = encodeURIComponent(filename);
+      previewContainer.innerHTML = '' +
+        '<img src="/dormitory_management/Public/Assets/Images/' + encoded + '" alt="Preview" style="max-width: 100px; max-height: 100px; border-radius: 12px;">' +
+        '<button type="button" class="apple-button primary" data-use-old-logo="' + escapeHtml(filename) + '" style="width: auto; padding: 10px 16px; margin-top: 8px;">ใช้รูปนี้</button>';
+
+      if (logoPreviewImg) {
+        logoPreviewImg.src = '/dormitory_management/Public/Assets/Images/' + encoded;
+      }
+    }
+
+    select.addEventListener('change', function() {
+      var filename = (select.value || '').trim();
+      renderLocalPreview(filename);
+    });
+
+    previewContainer.addEventListener('click', function(event) {
+      var applyBtn = event.target.closest('[data-use-old-logo]');
+      if (!applyBtn) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+
+      var filename = (applyBtn.getAttribute('data-use-old-logo') || '').trim();
+      if (!filename) return;
+
+      applyOldLogo(filename);
+    });
+
+    if (!document.__useOldLogoDelegatedBound) {
+      document.__useOldLogoDelegatedBound = true;
+      document.addEventListener('click', function(event) {
+        var applyBtn = event.target.closest('[data-use-old-logo]');
+        if (!applyBtn) {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        var filename = (applyBtn.getAttribute('data-use-old-logo') || '').trim();
+        if (!filename) {
+          return;
+        }
+
+        applyOldLogo(filename);
+      }, true);
+    }
+  }
+
+  function bindSheetHandleDragClose() {
+    document.querySelectorAll('.apple-sheet-overlay .apple-sheet-handle').forEach(function(handle) {
+      if (handle.__dragCloseBound) {
+        return;
+      }
+
+      var overlay = handle.closest('.apple-sheet-overlay');
+      if (!overlay) {
+        return;
+      }
+
+      var sheet = overlay.querySelector('.apple-sheet');
+      if (!sheet) {
+        return;
+      }
+
+      handle.__dragCloseBound = true;
+      handle.dataset.dragBound = '1';
+      handle.style.touchAction = 'none';
+
+      var startY = 0;
+      var deltaY = 0;
+      var dragging = false;
+      var closeThreshold = 0;
+
+      function getCloseThreshold() {
+        var sheetHeight = sheet.getBoundingClientRect().height || sheet.offsetHeight || 0;
+        // Close when dragged down roughly 50% of the visible sheet height.
+        return Math.max(120, Math.round(sheetHeight * 0.5));
+      }
+
+      function start(clientY) {
+        startY = clientY;
+        deltaY = 0;
+        closeThreshold = getCloseThreshold();
+        dragging = true;
+        sheet.style.transition = 'none';
+        sheet.style.willChange = 'transform';
+      }
+
+      function move(clientY) {
+        if (!dragging) return;
+        deltaY = Math.max(0, clientY - startY);
+
+        if (deltaY >= closeThreshold) {
+          dragging = false;
+          sheet.style.transition = 'transform 0.2s ease';
+          sheet.style.willChange = '';
+          sheet.style.transform = '';
+          closeOverlay(overlay);
+          return;
+        }
+
+        sheet.style.transform = 'translateY(' + deltaY + 'px)';
+      }
+
+      function end() {
+        if (!dragging) return;
+        dragging = false;
+        sheet.style.transition = 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)';
+        sheet.style.willChange = '';
+
+        if (deltaY >= closeThreshold) {
+          sheet.style.transform = '';
+          closeOverlay(overlay);
+          return;
+        }
+
+        sheet.style.transform = '';
+      }
+
+      handle.addEventListener('pointerdown', function(event) {
+        if (!overlay.classList.contains('active')) return;
+        event.preventDefault();
+        start(event.clientY);
+        try {
+          handle.setPointerCapture(event.pointerId);
+        } catch (e) {}
+      });
+
+      handle.addEventListener('pointermove', function(event) {
+        move(event.clientY);
+      });
+
+      handle.addEventListener('pointerup', end);
+      handle.addEventListener('pointercancel', end);
+
+      // Touch fallback for mobile browsers where pointer events are unreliable.
+      handle.addEventListener('touchstart', function(event) {
+        if (!overlay.classList.contains('active')) return;
+        if (!event.touches || !event.touches.length) return;
+        event.preventDefault();
+        start(event.touches[0].clientY);
+      }, { passive: false });
+
+      handle.addEventListener('touchmove', function(event) {
+        if (!event.touches || !event.touches.length) return;
+        event.preventDefault();
+        move(event.touches[0].clientY);
+      }, { passive: false });
+
+      handle.addEventListener('touchend', function() {
+        end();
+      });
+    });
+  }
+
+  function bindLogoSheetCloseFallback() {
+    document.querySelectorAll('[data-close-sheet="sheet-logo"]').forEach(function(btn) {
+      if (btn.dataset.closeFallbackBound === '1') return;
+      btn.dataset.closeFallbackBound = '1';
+      btn.addEventListener('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        closeSheetById('sheet-logo');
+      });
+    });
+  }
+
+  function bindLogoUploadFallback() {
+    var logoInput = document.getElementById('logoInput');
+    if (!logoInput || logoInput.__logoFallbackBound) {
+      return;
+    }
+
+    var uploadArea = document.querySelector('#sheet-logo .apple-upload-area');
+    if (uploadArea && !uploadArea.__logoAreaBound) {
+      uploadArea.__logoAreaBound = true;
+      uploadArea.dataset.logoAreaBound = '1';
+      uploadArea.addEventListener('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        logoInput.click();
+      });
+    }
+
+    logoInput.__logoFallbackBound = true;
+    logoInput.dataset.logoFallbackBound = '1';
+    logoInput.addEventListener('change', function() {
+      var file = logoInput.files && logoInput.files[0];
+      if (!file) return;
+
+      if (!/^image\/(jpeg|png)$/i.test(file.type)) {
+        showSheetToast('รองรับเฉพาะไฟล์ JPG และ PNG', 'error');
+        logoInput.value = '';
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        showSheetToast('ขนาดไฟล์ไม่ควรเกิน 5MB', 'error');
+        logoInput.value = '';
+        return;
+      }
+
+      var formData = new FormData();
+      formData.append('logo', file);
+
+      fetch('/dormitory_management/Manage/save_system_settings.php', {
+        method: 'POST',
+        body: formData
+      })
+      .then(function(response) { return response.json(); })
+      .then(function(result) {
+        if (!result || !result.success) {
+          throw new Error((result && result.error) ? result.error : 'อัพโหลดไม่สำเร็จ');
+        }
+
+        showSheetToast('อัพโหลด Logo สำเร็จ', 'success');
+
+        window.location.reload();
+      })
+      .catch(function(error) {
+        showSheetToast(error.message || 'อัพโหลดไม่สำเร็จ', 'error');
+      });
+    });
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', function() {
+      bindSheetHandleDragClose();
+      bindLogoSheetCloseFallback();
+      bindOldLogoSelectFallback();
+      setTimeout(bindLogoUploadFallback, 200);
+    });
+  } else {
+    bindSheetHandleDragClose();
+    bindLogoSheetCloseFallback();
+    bindOldLogoSelectFallback();
+    setTimeout(bindLogoUploadFallback, 200);
+  }
+})();
+</script>
 
 <!-- Sheet: Background -->
 <div class="apple-sheet-overlay" id="sheet-background">
