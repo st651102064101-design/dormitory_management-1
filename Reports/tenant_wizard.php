@@ -3408,10 +3408,14 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         firstBillPaymentsSection.innerHTML  = loadingHtml;
         latestBillPaymentsSection.innerHTML = loadingHtml;
 
-        fetch(`../Manage/get_first_bill_payments.php?ctr_id=${encodeURIComponent(ctrId)}`)
+        // First refresh session to prevent timeout errors, then fetch billing payments
+        Promise.resolve()
+            .then(() => fetch('../Manage/session_refresh.php', { method: 'POST', credentials: 'include' }))
+            .catch(() => null) // Ignore refresh errors, continue anyway
+            .then(() => fetch(`../Manage/get_first_bill_payments.php?ctr_id=${encodeURIComponent(ctrId)}`, { credentials: 'include' }))
             .then(response => {
-                if (!response.ok) {
-                    throw new Error('Failed to load bill payments');
+                if (!response || !response.ok) {
+                    throw new Error('Failed to load bill payments: ' + (response?.status || 'unknown'));
                 }
                 return response.json();
             })
@@ -3486,7 +3490,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 }
 
             })
-            .catch(() => {
+            .catch((error) => {
+                console.error('Billing payments fetch error:', error);
                 firstBillPaymentsSection.innerHTML = `
                     <div style="font-weight: 700; color: #93c5fd; margin-bottom: 0.5rem;">รายการชำระเดือนแรก</div>
                     <div style="color: #fca5a5;">ไม่สามารถโหลดข้อมูลการชำระจากระบบได้</div>
@@ -3563,6 +3568,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData.toString(),
+            credentials: 'include',
         })
             .then(r => r.json())
             .then(result => {
@@ -3604,6 +3610,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: formData.toString(),
+            credentials: 'include',
         })
             .then(response => response.json())
             .then(result => {
@@ -3672,7 +3679,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         document.body.style.overflow = 'hidden';
         document.documentElement.style.overflow = 'hidden';
 
-        fetch('../Manage/get_utility_reading.php?ctr_id=' + encodeURIComponent(ctrId) + '&target_month=' + _moMonth + '&target_year=' + _moYear)
+        fetch('../Manage/get_utility_reading.php?ctr_id=' + encodeURIComponent(ctrId) + '&target_month=' + _moMonth + '&target_year=' + _moYear, { credentials: 'include' })
             .then(r => r.text().then(txt => { try { return JSON.parse(txt); } catch(e) { return {error:'Invalid response'}; } }))
             .then(d => {
                 if (d.error) return;
@@ -3773,7 +3780,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         fd.append('elec_new',    ev);
         fd.append('meter_month', _moMonth);
         fd.append('meter_year',  _moYear);
-        fetch('../Manage/save_utility_ajax.php', { method: 'POST', body: fd })
+        fetch('../Manage/save_utility_ajax.php', { method: 'POST', body: fd, credentials: 'include' })
             .then(r => {
                 if (!r.ok) {
                     return r.text().then(txt => {
@@ -3846,7 +3853,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         document.getElementById('prevWaterDisplay').textContent = '...';
         document.getElementById('prevElecDisplay').textContent  = '...';
 
-        fetch(`../Manage/get_utility_reading.php?ctr_id=${encodeURIComponent(ctrId)}`)
+        fetch(`../Manage/get_utility_reading.php?ctr_id=${encodeURIComponent(ctrId)}`, { credentials: 'include' })
             .then(r => r.text().then(txt => { try { return JSON.parse(txt); } catch(e) { return {error:'Invalid response'}; } }))
             .then(d => {
                 if (d.error) return;
@@ -3952,7 +3959,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         fd.append('meter_month', _meterMonth);
         fd.append('meter_year',  _meterYear);
 
-        fetch('../Manage/save_utility_ajax.php', { method: 'POST', body: fd })
+        fetch('../Manage/save_utility_ajax.php', { method: 'POST', body: fd, credentials: 'include' })
             .then(r => {
                 return r.text().then(txt => {
                     try { return JSON.parse(txt); } catch(e) { return {success:false, error:'เซิร์ฟเวอร์ตอบกลับข้อมูลไม่ถูกต้อง (HTTP ' + r.status + ')'}; }
@@ -4016,7 +4023,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         document.getElementById('latestBillPaymentsSection').innerHTML = '';
 
         // โหลดอัตราค่าน้ำ-ไฟจาก DB
-        fetch('../Manage/get_latest_rate.php')
+        fetch('../Manage/get_latest_rate.php', { credentials: 'include' })
             .then(response => {
                 // even if response.ok, server may signal failure via JSON
                 return response.json();

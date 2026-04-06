@@ -601,7 +601,51 @@ if (!function_exists('formatNewsDateForManageNews')) {
     <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
     <script src="/dormitory_management/Public/Assets/Javascript/main.js" defer></script>
     <script>
+      const currentNewsLang = <?php echo json_encode($currentLang); ?>;
+      const newsI18n = {
+        hideForm: <?php echo json_encode(__('toggle_hide_form'), JSON_UNESCAPED_UNICODE); ?>,
+        showForm: <?php echo json_encode(__('toggle_show_form'), JSON_UNESCAPED_UNICODE); ?>,
+        invalidResponse: <?php echo json_encode(__('news_invalid_response'), JSON_UNESCAPED_UNICODE); ?>,
+        updateSuccess: <?php echo json_encode(__('news_update_success'), JSON_UNESCAPED_UNICODE); ?>,
+        updateError: <?php echo json_encode(__('news_update_error'), JSON_UNESCAPED_UNICODE); ?>,
+        updateConnectionError: <?php echo json_encode(__('news_connection_error'), JSON_UNESCAPED_UNICODE); ?>,
+        publishSuccess: <?php echo json_encode(__('news_publish_success'), JSON_UNESCAPED_UNICODE); ?>,
+        publishError: <?php echo json_encode(__('news_publish_error'), JSON_UNESCAPED_UNICODE); ?>,
+        submitError: <?php echo json_encode(__('news_submit_error'), JSON_UNESCAPED_UNICODE); ?>,
+        notFound: <?php echo json_encode(__('news_not_found'), JSON_UNESCAPED_UNICODE); ?>,
+        deleteConfirmTitle: <?php echo json_encode(__('news_delete_confirm_title'), JSON_UNESCAPED_UNICODE); ?>,
+        deleteConfirmStart: <?php echo json_encode(__('news_delete_confirm_start'), JSON_UNESCAPED_UNICODE); ?>,
+        deleteConfirmEnd: <?php echo json_encode(__('news_delete_confirm_end'), JSON_UNESCAPED_UNICODE); ?>,
+        cannotUndo: <?php echo json_encode(__('action_cannot_undo'), JSON_UNESCAPED_UNICODE); ?>,
+        deleteSuccess: <?php echo json_encode(__('deleted_successfully'), JSON_UNESCAPED_UNICODE); ?>,
+        deleteError: <?php echo json_encode(__('news_delete_error'), JSON_UNESCAPED_UNICODE); ?>,
+        deleteConnectionError: <?php echo json_encode(__('news_delete_connection_error'), JSON_UNESCAPED_UNICODE); ?>,
+        edit: <?php echo json_encode(__('edit'), JSON_UNESCAPED_UNICODE); ?>,
+        delete: <?php echo json_encode(__('delete'), JSON_UNESCAPED_UNICODE); ?>
+      };
+
       const newsData = <?php echo json_encode($newsList); ?>;
+
+      function formatNewsDateClient(dateValue) {
+        const parsed = new Date(dateValue);
+        if (Number.isNaN(parsed.getTime())) {
+          return dateValue || '';
+        }
+
+        if (currentNewsLang === 'en') {
+          return parsed.toLocaleDateString('en-US', {
+            day: 'numeric',
+            month: 'short',
+            year: 'numeric'
+          });
+        }
+
+        return parsed.toLocaleDateString('th-TH', {
+          day: 'numeric',
+          month: 'short',
+          year: 'numeric'
+        });
+      }
       
       // ฟังก์ชันอัพเดทสถิติข่าว
       function updateStats(action) {
@@ -661,12 +705,12 @@ if (!function_exists('formatNewsDateForManageNews')) {
         if (isHidden) {
           section.style.display = '';
           icon.textContent = '▼';
-          text.textContent = 'ซ่อนฟอร์ม';
+          text.textContent = newsI18n.hideForm;
           localStorage.setItem('newsFormVisible', 'true');
         } else {
           section.style.display = 'none';
           icon.textContent = '▶';
-          text.textContent = 'แสดงฟอร์ม';
+          text.textContent = newsI18n.showForm;
           localStorage.setItem('newsFormVisible', 'false');
         }
       }
@@ -681,7 +725,7 @@ if (!function_exists('formatNewsDateForManageNews')) {
         if (!isFormVisible) {
           section.style.display = 'none';
           icon.textContent = '▶';
-          text.textContent = 'แสดงฟอร์ม';
+          text.textContent = newsI18n.showForm;
         }
       });
 
@@ -720,14 +764,14 @@ if (!function_exists('formatNewsDateForManageNews')) {
                 result = JSON.parse(text);
               } catch (e) {
                 console.error('Failed to parse JSON:', e);
-                showErrorToast('เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ');
+                showErrorToast(newsI18n.invalidResponse);
                 return;
               }
               
               console.log('Parsed result:', result);
               
               if (result.success) {
-                showSuccessToast(result.message || 'แก้ไขข่าวสำเร็จ');
+                showSuccessToast(newsI18n.updateSuccess);
                 closeEditModal();
                 
                 // อัพเดท card ใน DOM
@@ -740,10 +784,7 @@ if (!function_exists('formatNewsDateForManageNews')) {
                   const by = formData.get('news_by');
                   
                   // Format date
-                  const dateObj = new Date(date);
-                  const formattedDate = String(dateObj.getDate()).padStart(2, '0') + '/' + 
-                                       String(dateObj.getMonth() + 1).padStart(2, '0') + '/' + 
-                                       dateObj.getFullYear();
+                  const formattedDate = formatNewsDateClient(date);
                   
                   // อัพเดท card content - ตรวจสอบว่า element มีอยู่
                   const titleEl = newsCard.querySelector('.news-card-title');
@@ -777,11 +818,11 @@ if (!function_exists('formatNewsDateForManageNews')) {
                   }
                 }
               } else {
-                showErrorToast(result.error || 'เกิดข้อผิดพลาดในการแก้ไขข่าว');
+                showErrorToast(result.error || newsI18n.updateError);
               }
             } catch (error) {
               console.error('Update error:', error);
-              showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+              showErrorToast(newsI18n.updateConnectionError);
             }
           }, true);
         }
@@ -818,7 +859,7 @@ if (!function_exists('formatNewsDateForManageNews')) {
             .then(response => response.json())
             .then(result => {
               if (result.success) {
-                showSuccessToast(result.message || 'เผยแพร่ข่าวสำเร็จ');
+                showSuccessToast(newsI18n.publishSuccess);
                 
                 // เก็บข้อมูลก่อน reset
                 const newsInfo = {
@@ -840,12 +881,12 @@ if (!function_exists('formatNewsDateForManageNews')) {
                   updateStats('add'); // อัพเดทสถิติ
                 }
               } else {
-                showErrorToast(result.error || 'เกิดข้อผิดพลาดในการเผยแพร่ข่าว');
+                showErrorToast(result.error || newsI18n.publishError);
               }
             })
             .catch(error => {
               console.error(error);
-              showErrorToast('เกิดข้อผิดพลาดในการส่งข้อมูล');
+              showErrorToast(newsI18n.submitError);
             });
             
             return false;
@@ -857,7 +898,7 @@ if (!function_exists('formatNewsDateForManageNews')) {
         const news = newsData.find(n => n.news_id == newsId);
         console.log('เปิด modal แก้ไขข่าว', newsId, news);
         if (!news) {
-          showErrorToast('ไม่พบข้อมูลข่าว');
+          showErrorToast(newsI18n.notFound);
           return;
         }
         document.getElementById('edit_news_id').value = news.news_id;
@@ -887,8 +928,8 @@ if (!function_exists('formatNewsDateForManageNews')) {
       
       async function deleteNews(newsId, newsTitle) {
         const confirmed = await showConfirmDialog(
-          'ยืนยันการลบข่าว',
-          `คุณต้องการลบข่าว <strong>"${escapeHtml(newsTitle)}"</strong> หรือไม่?<br><br>การดำเนินการนี้ไม่สามารถย้อนกลับได้`
+          newsI18n.deleteConfirmTitle,
+          `${newsI18n.deleteConfirmStart} <strong>"${escapeHtml(newsTitle)}"</strong> ${newsI18n.deleteConfirmEnd}<br><br>${newsI18n.cannotUndo}`
         );
         
         if (!confirmed) return;
@@ -908,7 +949,7 @@ if (!function_exists('formatNewsDateForManageNews')) {
           const result = await response.json();
           
           if (result.success) {
-            showSuccessToast(result.message);
+            showSuccessToast(newsI18n.deleteSuccess);
             // ลบ card ออกจาก DOM
             const newsCard = document.querySelector(`[data-news-id="${newsId}"]`);
             if (newsCard) {
@@ -921,11 +962,11 @@ if (!function_exists('formatNewsDateForManageNews')) {
               }, 300);
             }
           } else {
-            showErrorToast(result.error || 'เกิดข้อผิดพลาดในการลบข่าว');
+            showErrorToast(result.error || newsI18n.deleteError);
           }
         } catch (error) {
           console.error('Delete error:', error);
-          showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
+          showErrorToast(newsI18n.deleteConnectionError);
         }
       }
       
@@ -942,11 +983,7 @@ if (!function_exists('formatNewsDateForManageNews')) {
           news_by: by
         });
         
-        // Format date เป็น dd/mm/yyyy
-        const dateObj = new Date(date);
-        const formattedDate = String(dateObj.getDate()).padStart(2, '0') + '/' + 
-                             String(dateObj.getMonth() + 1).padStart(2, '0') + '/' + 
-                             dateObj.getFullYear();
+        const formattedDate = formatNewsDateClient(date);
         
         const newsHTML = `
           <div class="news-card news-item" data-news-id="${newsId}" style="opacity: 0; transform: scale(0.95);">
@@ -967,8 +1004,8 @@ if (!function_exists('formatNewsDateForManageNews')) {
               <p>${escapeHtml(details)}</p>
             </div>
             <div class="news-card-actions">
-              <button type="button" class="animate-ui-action-btn edit" data-news-id="${newsId}">แก้ไข</button>
-              <button type="button" class="animate-ui-action-btn delete" onclick="deleteNews(${newsId}, '${escapeHtml(title).replace(/'/g, "\\'")}')">ลบ</button>
+              <button type="button" class="animate-ui-action-btn edit" data-news-id="${newsId}">${newsI18n.edit}</button>
+              <button type="button" class="animate-ui-action-btn delete" onclick="deleteNews(${newsId}, '${escapeHtml(title).replace(/'/g, "\\'")}')">${newsI18n.delete}</button>
             </div>
           </div>
         `;

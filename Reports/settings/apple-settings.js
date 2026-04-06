@@ -157,7 +157,21 @@ class AppleSettings {
       return false;
     }
 
-    const overlay = document.getElementById(sheetId);
+    let overlay = document.getElementById(sheetId);
+    if (!overlay && sheetId === 'sheet-billing-schedule' && typeof window.ensureBillingScheduleSheetFallback === 'function') {
+      try {
+        window.ensureBillingScheduleSheetFallback();
+        overlay = document.getElementById(sheetId);
+        if (debugContext.rowId === 'billingScheduleRow') {
+          console.info('[SheetDebug] Created fallback billing schedule sheet', debugContext);
+        }
+      } catch (fallbackError) {
+        if (debugContext.rowId === 'billingScheduleRow') {
+          console.warn('[SheetDebug] Failed to build billing schedule fallback sheet', fallbackError);
+        }
+      }
+    }
+
     if (!overlay) {
       console.error(`[SheetDebug] Sheet overlay not found: #${sheetId}`, debugContext);
       return false;

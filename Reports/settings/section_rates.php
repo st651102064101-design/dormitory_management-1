@@ -6,8 +6,8 @@
     <div class="apple-settings-row" id="billingScheduleRow" data-sheet="sheet-billing-schedule" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-billing-schedule">
       <div class="apple-row-icon purple"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
       <div class="apple-row-content">
-        <p class="apple-row-label" id="billingScheduleRowLabel">รอบบิลและกำหนดชำระ</p>
-        <p class="apple-row-sublabel" id="billingScheduleSublabel">ออกบิลวันที่ <?php echo (int)$billingGenerateDay; ?> · ชำระภายในวันที่ <?php echo (int)$paymentDueDay; ?></p>
+        <p class="apple-row-label" id="billingScheduleRowLabel"><?php echo __('billing_schedule_label'); ?></p>
+        <p class="apple-row-sublabel" id="billingScheduleSublabel"><?php echo __('billing_generate_day_prefix'); ?> <?php echo (int)$billingGenerateDay; ?> · <?php echo __('billing_due_day_prefix'); ?> <?php echo (int)$paymentDueDay; ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -393,6 +393,76 @@
 </div>
 
 <script>
+const billingScheduleI18n = {
+  title: <?php echo json_encode(__('billing_schedule_label'), JSON_UNESCAPED_UNICODE); ?>,
+  generatePrefix: <?php echo json_encode(__('billing_generate_day_prefix'), JSON_UNESCAPED_UNICODE); ?>,
+  duePrefix: <?php echo json_encode(__('billing_due_day_prefix'), JSON_UNESCAPED_UNICODE); ?>,
+  done: <?php echo json_encode(__('done'), JSON_UNESCAPED_UNICODE); ?>,
+  save: <?php echo json_encode(__('save'), JSON_UNESCAPED_UNICODE); ?>,
+  savedSuccess: <?php echo json_encode(__('billing_schedule_saved_success'), JSON_UNESCAPED_UNICODE); ?>,
+  saveError: <?php echo json_encode(__('error_occurred'), JSON_UNESCAPED_UNICODE); ?>
+};
+
+const billingScheduleDefaults = {
+  generateDay: <?php echo (int)$billingGenerateDay; ?>,
+  dueDay: <?php echo (int)$paymentDueDay; ?>
+};
+
+function escapeBillingSheetText(value) {
+  return String(value || '').replace(/[&<>"']/g, function(ch) {
+    return {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[ch] || ch;
+  });
+}
+
+function ensureBillingScheduleSheetFallback() {
+  var existingOverlay = document.getElementById('sheet-billing-schedule');
+  if (existingOverlay) {
+    return existingOverlay;
+  }
+
+  var overlay = document.createElement('div');
+  overlay.className = 'apple-sheet-overlay';
+  overlay.id = 'sheet-billing-schedule';
+  overlay.innerHTML = `
+    <div class="apple-sheet">
+      <div class="apple-sheet-handle"></div>
+      <div class="apple-sheet-header">
+        <button type="button" class="apple-sheet-action" data-close-sheet="sheet-billing-schedule">${escapeBillingSheetText(billingScheduleI18n.done)}</button>
+        <h3 class="apple-sheet-title">${escapeBillingSheetText(billingScheduleI18n.title)}</h3>
+        <div style="width: 50px;"></div>
+      </div>
+      <div class="apple-sheet-body">
+        <div class="apple-input-group" style="margin-bottom: 12px;">
+          <label class="apple-input-label">${escapeBillingSheetText(billingScheduleI18n.generatePrefix)} (1-28)</label>
+          <input type="number" id="billingGenerateDay" class="apple-input" value="${billingScheduleDefaults.generateDay}" min="1" max="28" step="1">
+        </div>
+        <div class="apple-input-group" style="margin-bottom: 16px;">
+          <label class="apple-input-label">${escapeBillingSheetText(billingScheduleI18n.duePrefix)} (1-28)</label>
+          <input type="number" id="paymentDueDay" class="apple-input" value="${billingScheduleDefaults.dueDay}" min="1" max="28" step="1">
+        </div>
+        <button type="button" class="apple-button primary" style="width: 100%;" onclick="saveBillingSchedule()">${escapeBillingSheetText(billingScheduleI18n.save)}</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(overlay);
+  console.warn('[SheetDebug] Injected fallback overlay for missing sheet-billing-schedule');
+
+  return overlay;
+}
+
+window.ensureBillingScheduleSheetFallback = ensureBillingScheduleSheetFallback;
+
+if (!document.getElementById('sheet-billing-schedule')) {
+  ensureBillingScheduleSheetFallback();
+}
+
 // Billing Generate Day - live preview
 document.getElementById('billingGenerateDay')?.addEventListener('input', function() {
   const val = Math.max(1, Math.min(28, parseInt(this.value) || 1));
@@ -434,17 +504,19 @@ function saveBillingSchedule() {
     if (res1.success && res2.success) {
       // Update sublabel on main settings page
       const sublabel = document.getElementById('billingScheduleSublabel');
-      if (sublabel) sublabel.textContent = 'ออกบิลวันที่ ' + genDay + ' · ชำระภายในวันที่ ' + dueDay;
+      if (sublabel) {
+        sublabel.textContent = `${billingScheduleI18n.generatePrefix} ${genDay} · ${billingScheduleI18n.duePrefix} ${dueDay}`;
+      }
 
       if (typeof appleToast === 'function') {
-        appleToast('บันทึกรอบบิลและกำหนดชำระสำเร็จ', 'success');
+        appleToast(billingScheduleI18n.savedSuccess, 'success');
       } else {
-        alert('บันทึกสำเร็จ');
+        alert(billingScheduleI18n.savedSuccess);
       }
     } else {
-      alert(res1.error || res2.error || 'เกิดข้อผิดพลาด');
+      alert(res1.error || res2.error || billingScheduleI18n.saveError);
     }
   })
-  .catch(() => alert('เกิดข้อผิดพลาดในการเชื่อมต่อ'));
+  .catch(() => alert(billingScheduleI18n.saveError));
 }
 </script>

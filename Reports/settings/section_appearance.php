@@ -1131,7 +1131,15 @@
             sidebarEditHint: 'คลิกเพื่อจัดการชื่อผู้ใช้ รหัสผ่าน และอีเมลกู้คืน',
             sidebarEditHintShort: 'คลิกเพื่อเปลี่ยนชื่อผู้ใช้/รหัสผ่าน',
             sidebarLinkGoogle: 'เชื่อมบัญชี Google',
-            sidebarLogout: 'ออกจากระบบ'
+            sidebarLogout: 'ออกจากระบบ',
+            quickActionsLabel: 'ปุ่มลัด',
+            quickActionPayments: 'การชำระเงิน',
+            quickActionBookings: 'การจอง',
+            quickActionExpenses: 'ค่าใช้จ่าย',
+            quickActionContracts: 'สัญญา',
+            quickActionWizard: 'ตัวช่วยผู้เช่า',
+            paymentInfoHint: 'ข้อมูลนี้จะแสดงให้ผู้เช่าเห็นในหน้าชำระเงิน',
+            notSet: 'ยังไม่ได้ตั้งค่า'
           },
           en: {
             done: 'Done',
@@ -1177,7 +1185,15 @@
             sidebarEditHint: 'Click to manage username, password, and recovery email',
             sidebarEditHintShort: 'Click to change username/password',
             sidebarLinkGoogle: 'Link Google Account',
-            sidebarLogout: 'Logout'
+            sidebarLogout: 'Logout',
+            quickActionsLabel: 'Quick actions',
+            quickActionPayments: 'Payments',
+            quickActionBookings: 'Bookings',
+            quickActionExpenses: 'Expenses',
+            quickActionContracts: 'Contracts',
+            quickActionWizard: 'Tenant Wizard',
+            paymentInfoHint: 'This information will be shown to tenants on the payment page',
+            notSet: 'Not configured'
           }
         };
 
@@ -1276,6 +1292,7 @@
           setText('#expensesSectionTitle', ui.expensesSectionTitle);
           setText('#billingScheduleRowLabel', ui.billingScheduleLabel);
           setText('#manageRatesRowLabel', ui.manageRatesLabel);
+          setText('#paymentInfoTenantHint', ui.paymentInfoHint);
 
           const billingSublabel = document.getElementById('billingScheduleSublabel');
           if (billingSublabel) {
@@ -1328,6 +1345,54 @@
           setText('#sidebarAccountTrigger .edit-hint', ui.sidebarEditHint);
           setText('.google-link-btn .app-nav-label', ui.sidebarLinkGoogle);
           setText('.logout-btn .app-nav-label', ui.sidebarLogout);
+
+          const quickActionsNav = document.querySelector('.quick-actions');
+          if (quickActionsNav) {
+            quickActionsNav.setAttribute('aria-label', ui.quickActionsLabel);
+          }
+
+          const quickActionLabelsByHref = {
+            'manage_payments.php': ui.quickActionPayments,
+            'manage_booking.php': ui.quickActionBookings,
+            'manage_expenses.php': ui.quickActionExpenses,
+            'manage_contracts.php': ui.quickActionContracts,
+            'tenant_wizard.php': ui.quickActionWizard
+          };
+
+          const knownQuickActionLabelsByHref = {
+            'manage_payments.php': ['การชำระเงิน', 'Payments'],
+            'manage_booking.php': ['จองห้อง', 'การจอง', 'Bookings'],
+            'manage_expenses.php': ['ค่าใช้จ่าย', 'Expenses'],
+            'manage_contracts.php': ['สัญญา', 'Contracts'],
+            'tenant_wizard.php': ['ตัวช่วยผู้เช่า', 'Tenant Wizard']
+          };
+
+          document.querySelectorAll('.quick-actions .quick-action-link[href]').forEach((link) => {
+            const hrefRaw = (link.getAttribute('href') || '').trim();
+            const hrefPath = hrefRaw.split('#')[0].split('?')[0];
+            const hrefKey = hrefPath.split('/').pop();
+            if (!hrefKey) {
+              return;
+            }
+
+            const knownLabels = knownQuickActionLabelsByHref[hrefKey] || [];
+            const currentLabel = (link.textContent || '').trim();
+            if (!knownLabels.includes(currentLabel)) {
+              return;
+            }
+
+            const localizedLabel = quickActionLabelsByHref[hrefKey];
+            if (localizedLabel) {
+              link.textContent = localizedLabel;
+            }
+          });
+
+          document.querySelectorAll('[data-display="bankname"], [data-display="bankaccountname"], [data-display="bankaccountnumber"], [data-display="promptpay"]').forEach((el) => {
+            const value = (el.textContent || '').trim();
+            if (value === 'ไม่ระบุ' || value === 'Not configured' || value === 'ยังไม่ได้ตั้งค่า') {
+              el.textContent = ui.notSet;
+            }
+          });
 
           const accountTrigger = document.getElementById('sidebarAccountTrigger');
           if (accountTrigger) {

@@ -297,6 +297,18 @@
 
   function openSheetById(sheetId, context) {
     var overlay = document.getElementById(sheetId);
+    if (!overlay && sheetId === 'sheet-billing-schedule' && typeof window.ensureBillingScheduleSheetFallback === 'function') {
+      try {
+        window.ensureBillingScheduleSheetFallback();
+      } catch (fallbackError) {
+        if (context && context.rowId === 'billingScheduleRow') {
+          console.warn('[SheetDebug] Failed to build billing schedule fallback sheet', fallbackError);
+        }
+      }
+
+      overlay = document.getElementById(sheetId);
+    }
+
     if (!overlay) {
       if (context && context.rowId === 'billingScheduleRow') {
         console.error('[SheetDebug] Overlay not found for sheet:', sheetId, context);

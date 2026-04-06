@@ -386,7 +386,7 @@
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('bank_name'); ?></p>
       </div>
-      <span class="apple-row-value" data-display="bankname"><?php echo htmlspecialchars($bankName) ?: 'ไม่ระบุ'; ?></span>
+      <span class="apple-row-value" data-display="bankname"><?php echo htmlspecialchars($bankName) ?: __('not_set'); ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
     
@@ -396,7 +396,7 @@
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('bank_account_name'); ?></p>
       </div>
-      <span class="apple-row-value" data-display="bankaccountname"><?php echo htmlspecialchars($bankAccountName) ?: 'ไม่ระบุ'; ?></span>
+      <span class="apple-row-value" data-display="bankaccountname"><?php echo htmlspecialchars($bankAccountName) ?: __('not_set'); ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
     
@@ -406,7 +406,7 @@
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('bank_account_number'); ?></p>
       </div>
-      <span class="apple-row-value" data-display="bankaccountnumber"><?php echo htmlspecialchars($bankAccountNumber) ?: 'ไม่ระบุ'; ?></span>
+      <span class="apple-row-value" data-display="bankaccountnumber"><?php echo htmlspecialchars($bankAccountNumber) ?: __('not_set'); ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
     
@@ -416,11 +416,11 @@
       <div class="apple-row-content">
         <p class="apple-row-label"><?php echo __('promptpay_number'); ?></p>
       </div>
-      <span class="apple-row-value" data-display="promptpay"><?php echo htmlspecialchars($promptpayNumber) ?: 'ไม่ระบุ'; ?></span>
+      <span class="apple-row-value" data-display="promptpay"><?php echo htmlspecialchars($promptpayNumber) ?: __('not_set'); ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
   </div>
-  <p class="apple-section-hint">ข้อมูลนี้จะแสดงให้ผู้เช่าเห็นในหน้าชำระเงิน</p>
+  <p class="apple-section-hint" id="paymentInfoTenantHint"><?php echo __('payment_info_tenant_hint'); ?></p>
 </div>
 
 <!-- Sheet: Bank Name -->
@@ -518,7 +518,7 @@
 
             const displayEl = document.querySelector('[data-display="bankname"]');
             if (displayEl) {
-              displayEl.textContent = bankName || 'ไม่ระบุ';
+              displayEl.textContent = bankName || <?php echo json_encode(__('not_set'), JSON_UNESCAPED_UNICODE); ?>;
             }
 
             const sheet = document.getElementById('sheet-bankname');
@@ -623,7 +623,7 @@
 
             const displayEl = document.querySelector('[data-display="bankaccountname"]');
             if (displayEl) {
-              displayEl.textContent = bankAccountName || 'ไม่ระบุ';
+              displayEl.textContent = bankAccountName || <?php echo json_encode(__('not_set'), JSON_UNESCAPED_UNICODE); ?>;
             }
 
             const sheet = document.getElementById('sheet-bankaccountname');
@@ -728,7 +728,7 @@
 
             const displayEl = document.querySelector('[data-display="bankaccountnumber"]');
             if (displayEl) {
-              displayEl.textContent = bankAccountNumber || 'ไม่ระบุ';
+              displayEl.textContent = bankAccountNumber || <?php echo json_encode(__('not_set'), JSON_UNESCAPED_UNICODE); ?>;
             }
 
             const sheet = document.getElementById('sheet-bankaccountnumber');
@@ -785,6 +785,14 @@
           return;
         }
 
+        const promptpayI18n = {
+          invalidFormat: <?php echo json_encode(__('promptpay_invalid_format'), JSON_UNESCAPED_UNICODE); ?>,
+          invalidResponse: <?php echo json_encode(__('invalid_server_response'), JSON_UNESCAPED_UNICODE); ?>,
+          saveError: <?php echo json_encode(__('error_occurred'), JSON_UNESCAPED_UNICODE); ?>,
+          notSet: <?php echo json_encode(__('not_set'), JSON_UNESCAPED_UNICODE); ?>,
+          savedSuccess: <?php echo json_encode(__('promptpay_saved_success'), JSON_UNESCAPED_UNICODE); ?>
+        };
+
         const notify = (message, type) => {
           if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
             window.appleSettings.showToast(message, type);
@@ -816,7 +824,7 @@
 
           const promptpayNumber = input.value.trim();
           if (promptpayNumber !== '' && !isValidPromptpay(promptpayNumber)) {
-            notify('พร้อมเพย์ต้องเป็นเบอร์โทร 10 หลัก หรือเลขบัตร 13 หลัก', 'error');
+            notify(promptpayI18n.invalidFormat, 'error');
             input.focus();
             return false;
           }
@@ -835,16 +843,16 @@
             try {
               result = await response.json();
             } catch (parseError) {
-              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+              throw new Error(promptpayI18n.invalidResponse);
             }
 
             if (!response.ok || !result || !result.success) {
-              throw new Error((result && result.error) || 'เกิดข้อผิดพลาด');
+              throw new Error((result && result.error) || promptpayI18n.saveError);
             }
 
             const displayEl = document.querySelector('[data-display="promptpay"]');
             if (displayEl) {
-              displayEl.textContent = promptpayNumber || 'ไม่ระบุ';
+              displayEl.textContent = promptpayNumber || promptpayI18n.notSet;
             }
 
             const sheet = document.getElementById('sheet-promptpay');
@@ -853,9 +861,9 @@
               document.body.style.overflow = '';
             }
 
-            notify('บันทึกพร้อมเพย์สำเร็จ', 'success');
+            notify(promptpayI18n.savedSuccess, 'success');
           } catch (error) {
-            notify(error.message || 'เกิดข้อผิดพลาด', 'error');
+            notify(error.message || promptpayI18n.saveError, 'error');
           } finally {
             form.dataset.saving = '0';
             button.disabled = false;

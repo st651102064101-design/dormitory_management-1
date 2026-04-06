@@ -38,11 +38,11 @@ $appleSettingsScriptPath = __DIR__ . '/settings/apple-settings.js';
 $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemtime($appleSettingsScriptPath) : (string)time();
 ?>
 <!doctype html>
-<html lang="th" class="apple-settings-html">
+<html lang="<?php echo htmlspecialchars($systemLanguage === 'en' ? 'en' : 'th', ENT_QUOTES, 'UTF-8'); ?>" class="apple-settings-html">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - จัดการระบบ</title>
+  <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - <?php echo htmlspecialchars(__('settings'), ENT_QUOTES, 'UTF-8'); ?></title>
   <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>">
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
@@ -141,6 +141,7 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
     }
 
     body.apple-settings-page .apple-settings-wrapper .page-header-bar {
+      position: sticky !important;
       top: 0 !important;
       margin-top: 0 !important;
       margin-bottom: 1rem !important;
@@ -366,6 +367,14 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
   <script>
   // Keep settings layout stable and avoid click conflicts from duplicated handlers.
   (function() {
+    const settingsPromptpayI18n = {
+      invalidFormat: <?php echo json_encode(__('promptpay_invalid_format'), JSON_UNESCAPED_UNICODE); ?>,
+      invalidResponse: <?php echo json_encode(__('invalid_server_response'), JSON_UNESCAPED_UNICODE); ?>,
+      saveError: <?php echo json_encode(__('error_occurred'), JSON_UNESCAPED_UNICODE); ?>,
+      notSet: <?php echo json_encode(__('not_set'), JSON_UNESCAPED_UNICODE); ?>,
+      savedSuccess: <?php echo json_encode(__('promptpay_saved_success'), JSON_UNESCAPED_UNICODE); ?>
+    };
+
     function syncSettingsLayout() {
       const body = document.body;
       const sidebar = document.querySelector('.app-sidebar');
@@ -476,7 +485,19 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
         }
         debugContext.sheetId = sheetId;
 
-        const sheet = document.getElementById(sheetId);
+        let sheet = document.getElementById(sheetId);
+        if (!sheet && sheetId === 'sheet-billing-schedule' && typeof window.ensureBillingScheduleSheetFallback === 'function') {
+          try {
+            window.ensureBillingScheduleSheetFallback();
+            sheet = document.getElementById(sheetId);
+            if (sheet) {
+              logBillingIssue('info', 'Created fallback billing schedule sheet', debugContext);
+            }
+          } catch (fallbackError) {
+            logBillingIssue('warn', 'Failed to build billing schedule fallback sheet', fallbackError);
+          }
+        }
+
         if (!sheet) {
           logBillingIssue('error', 'Sheet overlay not found in system fallback', debugContext);
           return;
@@ -844,7 +865,7 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
         const promptpayNumber = input.value.trim();
         if (promptpayNumber !== '' && !isValidPromptpay(promptpayNumber)) {
           if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
-            window.appleSettings.showToast('พร้อมเพย์ต้องเป็นเบอร์โทร 10 หลัก หรือเลขบัตร 13 หลัก', 'error');
+            window.appleSettings.showToast(settingsPromptpayI18n.invalidFormat, 'error');
           }
           input.focus();
           return;
@@ -868,16 +889,16 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
           try {
             result = await response.json();
           } catch (parseError) {
-            throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            throw new Error(settingsPromptpayI18n.invalidResponse);
           }
 
           if (!response.ok || !result.success) {
-            throw new Error(result.error || 'เกิดข้อผิดพลาด');
+            throw new Error(result.error || settingsPromptpayI18n.saveError);
           }
 
           const displayEl = document.querySelector('[data-display="promptpay"]');
           if (displayEl) {
-            displayEl.textContent = promptpayNumber || 'ไม่ระบุ';
+            displayEl.textContent = promptpayNumber || settingsPromptpayI18n.notSet;
           }
 
           const sheet = document.getElementById('sheet-promptpay');
@@ -887,11 +908,11 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
           }
 
           if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
-            window.appleSettings.showToast('บันทึกพร้อมเพย์สำเร็จ', 'success');
+            window.appleSettings.showToast(settingsPromptpayI18n.savedSuccess, 'success');
           }
         } catch (error) {
           if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
-            window.appleSettings.showToast(error.message, 'error');
+            window.appleSettings.showToast(error.message || settingsPromptpayI18n.saveError, 'error');
           }
         } finally {
           form.dataset.saving = '0';

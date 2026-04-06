@@ -642,7 +642,7 @@ try {
                 </button>
             </form>
             
-            <a href="index.php" class="back-link">← กลับหน้าหลัก</a>
+            <a href="Login.php" class="back-link">← กลับหน้าหลัก</a>
         </div>
     </div>
     

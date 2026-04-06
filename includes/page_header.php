@@ -20,15 +20,42 @@
  * Required: sidebar_toggle.php must be included in <head> first
  */
 
+$translateHeader = static function (string $key, string $fallback): string {
+  if (function_exists('__')) {
+    $translated = (string) __($key);
+    if ($translated !== '' && $translated !== $key) {
+      return $translated;
+    }
+  }
+
+  return $fallback;
+};
+
 $defaultHeaderActions = [
-  ['label' => 'การชำระเงิน', 'href' => 'manage_payments.php', 'shortcut' => 'Ctrl+1'],
-  ['label' => 'จองห้อง', 'href' => 'manage_booking.php', 'shortcut' => 'Ctrl+2'],
-  ['label' => 'ค่าใช้จ่าย', 'href' => 'manage_expenses.php', 'shortcut' => 'Ctrl+3'],
-  ['label' => 'สัญญา', 'href' => 'manage_contracts.php', 'shortcut' => 'Ctrl+4'],
-  ['label' => 'ตัวช่วยผู้เช่า', 'href' => 'tenant_wizard.php', 'shortcut' => 'Ctrl+5'],
+  ['label' => $translateHeader('menu_payments', 'การชำระเงิน'), 'href' => 'manage_payments.php', 'shortcut' => 'Ctrl+1'],
+  ['label' => $translateHeader('menu_bookings', 'จองห้อง'), 'href' => 'manage_booking.php', 'shortcut' => 'Ctrl+2'],
+  ['label' => $translateHeader('menu_expenses', 'ค่าใช้จ่าย'), 'href' => 'manage_expenses.php', 'shortcut' => 'Ctrl+3'],
+  ['label' => $translateHeader('menu_contracts', 'สัญญา'), 'href' => 'manage_contracts.php', 'shortcut' => 'Ctrl+4'],
+  ['label' => $translateHeader('menu_wizard', 'ตัวช่วยผู้เช่า'), 'href' => 'tenant_wizard.php', 'shortcut' => 'Ctrl+5'],
 ];
 
-$normalizeHeaderActions = static function (array $actions, array $defaults): array {
+$normalizeHeaderActions = static function (array $actions, array $defaults) use ($translateHeader): array {
+  $knownDefaultLabelsByHref = [
+    'manage_payments.php' => ['การชำระเงิน', 'Payments'],
+    'manage_booking.php' => ['จองห้อง', 'การจอง', 'Bookings'],
+    'manage_expenses.php' => ['ค่าใช้จ่าย', 'Expenses'],
+    'manage_contracts.php' => ['สัญญา', 'Contracts'],
+    'tenant_wizard.php' => ['ตัวช่วยผู้เช่า', 'Tenant Wizard'],
+  ];
+
+  $localizedLabelsByHref = [
+    'manage_payments.php' => $translateHeader('menu_payments', 'การชำระเงิน'),
+    'manage_booking.php' => $translateHeader('menu_bookings', 'จองห้อง'),
+    'manage_expenses.php' => $translateHeader('menu_expenses', 'ค่าใช้จ่าย'),
+    'manage_contracts.php' => $translateHeader('menu_contracts', 'สัญญา'),
+    'tenant_wizard.php' => $translateHeader('menu_wizard', 'ตัวช่วยผู้เช่า'),
+  ];
+
   $normalized = [];
   foreach ($actions as $index => $action) {
     if (!is_array($action)) {
@@ -44,6 +71,32 @@ $normalizeHeaderActions = static function (array $actions, array $defaults): arr
     $label = trim((string) ($action['label'] ?? $default['label']));
     $href = trim((string) ($action['href'] ?? $default['href']));
     $shortcut = trim((string) ($action['shortcut'] ?? $default['shortcut']));
+
+    $hrefPath = parse_url($href, PHP_URL_PATH);
+    if (!is_string($hrefPath) || $hrefPath === '') {
+      $hrefPath = preg_replace('/[?#].*$/', '', $href);
+    }
+
+    $hrefPath = trim((string)$hrefPath);
+    $hrefPath = ltrim($hrefPath, './');
+    $hrefKey = basename($hrefPath);
+    if ($hrefKey === '') {
+      $hrefKey = $hrefPath;
+    }
+
+    $labelNormalized = preg_replace('/\s+/u', ' ', trim(html_entity_decode($label, ENT_QUOTES | ENT_HTML5, 'UTF-8')));
+    $knownLabels = $knownDefaultLabelsByHref[$hrefKey] ?? null;
+    if (is_array($knownLabels)) {
+      $knownLabels = array_map(
+        static fn(string $known): string => preg_replace('/\s+/u', ' ', trim(html_entity_decode($known, ENT_QUOTES | ENT_HTML5, 'UTF-8'))),
+        $knownLabels
+      );
+    }
+
+    if (is_array($knownLabels) && in_array($labelNormalized, $knownLabels, true)) {
+      $label = $localizedLabelsByHref[$hrefKey] ?? $label;
+    }
+
     if ($label === '' || $href === '') {
       continue;
     }
@@ -88,7 +141,7 @@ if (isset($pageHeaderActions) && is_array($pageHeaderActions)) {
   }
 }
 
-$headerActionsLabel = $pageHeaderActionsLabel ?? 'Quick actions';
+$headerActionsLabel = $pageHeaderActionsLabel ?? $translateHeader('quick_actions', 'Quick actions');
 $pageHeaderTitle = '';
 if (isset($pageTitle)) {
   $pageHeaderTitle = trim((string) $pageTitle);
@@ -236,9 +289,9 @@ $buildHeaderAttributes = static function (array $attributes): string {
 
       if (currentScrollTop <= 16) {
         header.classList.remove('header-hidden');
-      } else if (scrollDelta > 6) {
+      } else if (scrollDelta > 3) {
         header.classList.add('header-hidden');
-      } else if (scrollDelta < -6) {
+      } else if (scrollDelta < -1) {
         header.classList.remove('header-hidden');
       }
 
@@ -625,6 +678,13 @@ body[data-theme="light"] .sidebar-toggle-btn:hover {
   }
   
   function initHeaderScroll() {
+    const header = document.querySelector('.page-header-bar');
+    if (!header || header.__autoHideBound) {
+      return;
+    }
+
+    header.__autoHideBound = true;
+
     // Find scroll container - check common containers used in the app
     scrollContainer = document.querySelector('.app-main') || 
                       document.querySelector('.main-content') || 
