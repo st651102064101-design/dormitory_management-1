@@ -222,16 +222,47 @@ if (!is_file($imagesBaseDir . $bgFilename) && is_file($imagesBaseDir . 'bg.jpg')
 }
 
 if ($logoDir && is_dir($logoDir)) {
-    $files = scandir($logoDir);
-    foreach ($files as $file) {
-        if ($file === '.' || $file === '..') continue;
-        if (is_dir($logoDir . '/' . $file)) continue;
-        $ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
-        if (in_array($ext, ['jpg', 'jpeg', 'png', 'webp'])) {
-            $imageFiles[] = $file;
+    $iterator = new RecursiveIteratorIterator(
+        new RecursiveDirectoryIterator($logoDir, FilesystemIterator::SKIP_DOTS),
+        RecursiveIteratorIterator::LEAVES_ONLY
+    );
+
+    foreach ($iterator as $item) {
+        if (!$item->isFile()) {
+            continue;
         }
+
+        $ext = strtolower((string)$item->getExtension());
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            continue;
+        }
+
+        $fullPath = (string)$item->getPathname();
+        $relativePath = ltrim(str_replace('\\', '/', substr($fullPath, strlen($imagesBaseDir))), '/');
+        if ($relativePath === '') {
+            continue;
+        }
+
+        // Limit selector options to image root and Payments subfolder only.
+        if (strpos($relativePath, '/') !== false && stripos($relativePath, 'Payments/') !== 0) {
+            continue;
+        }
+
+        $baseNameLower = strtolower(basename($relativePath));
+        if (strpos($baseNameLower, 'logo') === false && strpos($baseNameLower, 'bg') !== 0) {
+            continue;
+        }
+
+        // Signature files should not appear in logo/background selectors.
+        if (stripos(basename($relativePath), 'owner_signature_') === 0) {
+            continue;
+        }
+
+        $imageFiles[] = $relativePath;
     }
 }
+
+$imageFiles = array_values(array_unique($imageFiles));
 
 if (!empty($logoFilename) && !in_array($logoFilename, $imageFiles, true)) {
     $imageFiles[] = $logoFilename;

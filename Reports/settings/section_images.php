@@ -82,7 +82,7 @@
           <div class="apple-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div>
           <p class="apple-upload-text"><?php echo __('click_to_select'); ?></p>
           <p class="apple-upload-hint">รองรับ JPG, PNG</p>
-          <input type="file" id="logoInput" name="logo" accept="image/jpeg,image/png" onchange="if (window.__uploadLogoFromInput) { window.__uploadLogoFromInput(this); }" style="display:block !important; position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; pointer-events:auto; z-index:3;">
+          <input type="file" id="logoInput" name="logo" accept="image/jpeg,image/png" style="display:block !important; position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; pointer-events:auto; z-index:3;">
         </div>
       </div>
     </div>
@@ -200,6 +200,8 @@
       });
       console.log('[syncLogoUiFromFilename] Updated', sidebarLogos.length, '.team-avatar-img elements');
     }
+
+    ensureSelectHasOption(document.getElementById('oldLogoSelect'), filename);
     
     // Update any other logo images on page
     var allLogos = document.querySelectorAll('img[alt="Logo"]');
@@ -242,6 +244,7 @@
     var bgPreviewImg = document.getElementById('bgPreviewImg');
     if (bgPreviewImg) {
       forceReloadImage(bgPreviewImg, newSrc);
+      bgPreviewImg.dataset.baseSrc = buildImageUrl(filename);
     }
 
     var bgRowImg = document.getElementById('bgRowImg');
@@ -253,6 +256,8 @@
     if (bgInfoP) {
       bgInfoP.textContent = filename;
     }
+
+    ensureSelectHasOption(document.getElementById('bgSelect'), filename);
   }
 
   function closeSheetById(sheetId) {
@@ -273,6 +278,28 @@
     if (!overlay) return;
     overlay.classList.remove('active');
     document.body.style.overflow = '';
+  }
+
+  function ensureSelectHasOption(selectEl, value) {
+    if (!selectEl) {
+      return;
+    }
+
+    var normalizedValue = String(value || '').trim();
+    if (!normalizedValue) {
+      return;
+    }
+
+    for (var i = 0; i < selectEl.options.length; i++) {
+      if ((selectEl.options[i].value || '').trim() === normalizedValue) {
+        return;
+      }
+    }
+
+    var option = document.createElement('option');
+    option.value = normalizedValue;
+    option.textContent = normalizedValue;
+    selectEl.appendChild(option);
   }
 
   function createSheetInteractionComponent(options) {
@@ -824,7 +851,7 @@
     fetch('/dormitory_management/Manage/save_system_settings.php', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: 'delete_old_logo=' + encodeURIComponent(filename)
+      body: 'delete_image=' + encodeURIComponent(filename)
     })
     .then(function(response) {
       console.log('[deleteSelectedLogo] Response status:', response.status, response.statusText);
@@ -883,6 +910,69 @@
     })
     .catch(function(error) {
       console.error('[deleteSelectedLogo] Error occurred:', error.message || error);
+      showSheetToast(error.message || 'ไม่สามารถลบรูปได้', 'error');
+    });
+  }
+
+  function deleteSelectedBg(filename) {
+    if (!filename) {
+      console.warn('[deleteSelectedBg] Empty filename');
+      return;
+    }
+
+    fetch('/dormitory_management/Manage/save_system_settings.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'delete_image=' + encodeURIComponent(filename)
+    })
+    .then(function(response) {
+      return response.json();
+    })
+    .then(function(result) {
+      if (!result || !result.success) {
+        throw new Error((result && result.error) ? result.error : 'ไม่สามารถลบรูปได้');
+      }
+
+      showSheetToast('ลบรูปสำเร็จ', 'success');
+
+      var bgSelect = document.getElementById('bgSelect');
+      if (bgSelect) {
+        bgSelect.value = '';
+      }
+
+      var bgSelectPreview = document.getElementById('bgSelectPreview');
+      if (bgSelectPreview) {
+        bgSelectPreview.innerHTML = '';
+      }
+
+      var deleteBgBtn = document.getElementById('deleteBgBtn');
+      if (deleteBgBtn) {
+        deleteBgBtn.disabled = true;
+        deleteBgBtn.style.opacity = '0.5';
+        deleteBgBtn.style.pointerEvents = 'none';
+      }
+
+      function removeOptionByValue(selectEl, value) {
+        if (!selectEl) return;
+        for (var i = selectEl.options.length - 1; i >= 0; i--) {
+          if ((selectEl.options[i].value || '').trim() === value) {
+            selectEl.remove(i);
+          }
+        }
+      }
+
+      removeOptionByValue(document.getElementById('bgSelect'), filename);
+      removeOptionByValue(document.getElementById('oldLogoSelect'), filename);
+
+      var bgPreviewImg = document.getElementById('bgPreviewImg');
+      if (bgPreviewImg) {
+        var baseSrc = bgPreviewImg.dataset.baseSrc || '';
+        if (baseSrc) {
+          bgPreviewImg.src = baseSrc + '?t=' + Date.now();
+        }
+      }
+    })
+    .catch(function(error) {
       showSheetToast(error.message || 'ไม่สามารถลบรูปได้', 'error');
     });
   }
@@ -1022,8 +1112,9 @@
     logoInput.__logoFallbackBound = true;
     logoInput.dataset.logoFallbackBound = '1';
 
-    // Fallback in case inline onchange is stripped by browser/DOM sanitizer.
-    if (!logoInput.__logoChangeFallbackBound) {
+    // Bind fallback upload only when primary AppleSettings handler is not attached.
+    var hasPrimaryLogoHandler = logoInput.dataset.appleUploadBound === '1';
+    if (!logoInput.__logoChangeFallbackBound && !hasPrimaryLogoHandler) {
       logoInput.__logoChangeFallbackBound = true;
       logoInput.addEventListener('change', function() {
         window.__uploadLogoFromInput(logoInput);
@@ -1035,6 +1126,7 @@
     var bgSelect = document.getElementById('bgSelect');
     var previewContainer = document.getElementById('bgSelectPreview');
     var bgPreviewImg = document.getElementById('bgPreviewImg');
+    var deleteBgBtn = document.getElementById('deleteBgBtn');
     if (!bgSelect || !previewContainer || bgSelect.__bgSelectBound) {
       return;
     }
@@ -1042,12 +1134,20 @@
     bgSelect.__bgSelectBound = true;
     bgSelect.dataset.bgSelectBound = '1';
     var originalPreviewSrc = bgPreviewImg ? bgPreviewImg.getAttribute('src') : '';
+    if (bgPreviewImg && originalPreviewSrc) {
+      bgPreviewImg.dataset.baseSrc = originalPreviewSrc;
+    }
 
     function renderBgLocalPreview(filename) {
       if (!filename) {
         previewContainer.innerHTML = '';
         if (bgPreviewImg && originalPreviewSrc) {
           bgPreviewImg.src = originalPreviewSrc;
+        }
+        if (deleteBgBtn) {
+          deleteBgBtn.disabled = true;
+          deleteBgBtn.style.opacity = '0.5';
+          deleteBgBtn.style.pointerEvents = 'none';
         }
         return;
       }
@@ -1060,12 +1160,35 @@
       if (bgPreviewImg) {
         bgPreviewImg.src = imageUrl;
       }
+
+      if (deleteBgBtn) {
+        deleteBgBtn.disabled = false;
+        deleteBgBtn.style.opacity = '1';
+        deleteBgBtn.style.pointerEvents = 'auto';
+      }
     }
 
     bgSelect.addEventListener('change', function() {
       var filename = (bgSelect.value || '').trim();
       renderBgLocalPreview(filename);
     });
+
+    if (deleteBgBtn) {
+      deleteBgBtn.addEventListener('click', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        var filename = (bgSelect.value || '').trim();
+        if (!filename) {
+          showSheetToast('กรุณาเลือกรูปที่ต้องการลบ', 'error');
+          return;
+        }
+
+        showDeleteConfirmation(filename, function() {
+          deleteSelectedBg(filename);
+        });
+      });
+    }
 
     previewContainer.addEventListener('click', function(event) {
       var applyBtn = event.target.closest('[data-use-old-bg]');
@@ -1123,7 +1246,8 @@
     bgInput.__bgFallbackBound = true;
     bgInput.dataset.bgFallbackBound = '1';
 
-    if (!bgInput.__bgChangeFallbackBound) {
+    var hasPrimaryBgHandler = bgInput.dataset.appleUploadBound === '1';
+    if (!bgInput.__bgChangeFallbackBound && !hasPrimaryBgHandler) {
       bgInput.__bgChangeFallbackBound = true;
       bgInput.addEventListener('change', function() {
         window.__uploadBgFromInput(bgInput);
@@ -1171,12 +1295,15 @@
       <!-- Select from existing -->
       <div class="apple-input-group">
         <label class="apple-input-label"><?php echo __('select_existing'); ?></label>
-        <select id="bgSelect" class="apple-input">
-          <option value="">-- <?php echo __('select_existing'); ?> --</option>
-          <?php foreach ($imageFiles as $file): ?>
-            <option value="<?php echo htmlspecialchars($file); ?>" <?php echo ($file === $bgFilename) ? 'selected' : ''; ?>><?php echo htmlspecialchars($file); ?></option>
-          <?php endforeach; ?>
-        </select>
+        <div style="display: flex; gap: 8px; margin-top: 8px;">
+          <select id="bgSelect" class="apple-input" style="flex: 1;">
+            <option value="">-- <?php echo __('select_existing'); ?> --</option>
+            <?php foreach ($imageFiles as $file): ?>
+              <option value="<?php echo htmlspecialchars($file); ?>" <?php echo ($file === $bgFilename) ? 'selected' : ''; ?>><?php echo htmlspecialchars($file); ?></option>
+            <?php endforeach; ?>
+          </select>
+          <button type="button" id="deleteBgBtn" class="apple-btn" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); padding: 10px 16px; border-radius: 8px; cursor: pointer; white-space: nowrap; opacity: 0.5; pointer-events: none;" disabled>ลบรูป</button>
+        </div>
         <div id="bgSelectPreview" style="margin-top: 12px;"></div>
       </div>
       
@@ -1187,7 +1314,7 @@
           <div class="apple-upload-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="32" height="32"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
           <p class="apple-upload-text"><?php echo __('click_to_select'); ?></p>
           <p class="apple-upload-hint">รองรับ JPG, PNG, WebP</p>
-          <input type="file" id="bgInput" name="bg" accept="image/jpeg,image/png,image/webp" onchange="if (window.__uploadBgFromInput) { window.__uploadBgFromInput(this); }" style="display:block !important; position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; pointer-events:auto; z-index:3;">
+          <input type="file" id="bgInput" name="bg" accept="image/jpeg,image/png,image/webp" style="display:block !important; position:absolute; inset:0; width:100%; height:100%; opacity:0; cursor:pointer; pointer-events:auto; z-index:3;">
         </div>
       </div>
     </div>

@@ -607,6 +607,7 @@ class AppleSettings {
     // Logo upload
     const logoInput = document.getElementById('logoInput');
     if (logoInput) {
+      logoInput.dataset.appleUploadBound = '1';
       logoInput.addEventListener('change', (e) => {
         this.handleLogoUpload(e.target.files[0]);
       });
@@ -615,6 +616,7 @@ class AppleSettings {
     // Background upload
     const bgInput = document.getElementById('bgInput');
     if (bgInput) {
+      bgInput.dataset.appleUploadBound = '1';
       bgInput.addEventListener('change', (e) => {
         this.handleBgUpload(e.target.files[0]);
       });
@@ -1764,6 +1766,7 @@ class AppleSettings {
 let appleSettings;
 document.addEventListener('DOMContentLoaded', () => {
   appleSettings = new AppleSettings();
+  window.appleSettings = appleSettings;
   
   // Initialize sidebar toggle for Apple Settings page
   initSidebarToggle();

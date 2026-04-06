@@ -92,6 +92,98 @@ try {
     }
 
     // ลบรูปเก่า
+    if (!empty($_POST['delete_image'])) {
+        $imageFile = trim($_POST['delete_image']);
+        if ($imageFile === '') {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่ได้ระบุไฟล์รูป']);
+            exit;
+        }
+
+        if (strpos($imageFile, '..') !== false || (substr($imageFile, 0, 1) === '/') || strpos($imageFile, "\0") !== false) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ชื่อไฟล์ไม่ถูกต้อง']);
+            exit;
+        }
+
+        $uploadsDir = __DIR__ . '/../Public/Assets/Images/';
+        $normalizedImageFile = ltrim(str_replace('\\', '/', $imageFile), '/');
+        $imagePath = $uploadsDir . $normalizedImageFile;
+
+        if (!file_exists($imagePath) || realpath($imagePath) === false) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบไฟล์รูป']);
+            exit;
+        }
+
+        $realPath = realpath($imagePath);
+        $realUploadDir = realpath($uploadsDir);
+        if ($realUploadDir === false) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่พบโฟลเดอร์รูปภาพในระบบ']);
+            exit;
+        }
+
+        if (strpos($realPath, $realUploadDir) !== 0) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไฟล์ไม่ถูกต้อง']);
+            exit;
+        }
+
+        $ext = strtolower(pathinfo($normalizedImageFile, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['jpg', 'jpeg', 'png', 'webp'], true)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG, PNG และ WebP']);
+            exit;
+        }
+
+        $settingsStmt = $pdo->prepare("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('logo_filename', 'bg_filename', 'owner_signature')");
+        $settingsStmt->execute();
+        $activeSettings = $settingsStmt->fetchAll(PDO::FETCH_KEY_PAIR);
+
+        $inUseMessages = [
+            'logo_filename' => 'ไม่สามารถลบรูปได้ เพราะกำลังใช้งานเป็นโลโก้ปัจจุบัน',
+            'bg_filename' => 'ไม่สามารถลบรูปได้ เพราะกำลังใช้งานเป็นพื้นหลังปัจจุบัน',
+            'owner_signature' => 'ไม่สามารถลบรูปได้ เพราะกำลังใช้งานเป็นลายเซ็นปัจจุบัน',
+        ];
+
+        foreach ($inUseMessages as $settingKey => $message) {
+            $settingValue = isset($activeSettings[$settingKey]) ? trim((string)$activeSettings[$settingKey]) : '';
+            if ($settingValue !== '' && $settingValue === $normalizedImageFile) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => $message]);
+                exit;
+            }
+        }
+
+        $targetDir = dirname($imagePath);
+        if (is_dir($targetDir) && !is_writable($targetDir)) {
+            @chmod($targetDir, 0777);
+            clearstatcache(true, $targetDir);
+        }
+        if (file_exists($imagePath) && !is_writable($imagePath)) {
+            @chmod($imagePath, 0666);
+            clearstatcache(true, $imagePath);
+        }
+
+        if (!is_dir($targetDir) || !is_writable($targetDir) || !is_writable($imagePath)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบรูปได้ กรุณาตรวจสอบสิทธิ์ไฟล์/โฟลเดอร์']);
+            exit;
+        }
+
+        if (unlink($imagePath)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'ลบรูปสำเร็จ']);
+            exit;
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'ไม่สามารถลบรูปได้ กรุณาตรวจสอบสิทธิ์ไฟล์/โฟลเดอร์']);
+        exit;
+    }
+
+    // ลบรูปเก่า
     if (!empty($_POST['delete_old_logo'])) {
         $oldLogoFile = trim($_POST['delete_old_logo']);
         $uploadsDir = __DIR__ . '/../Public/Assets/Images/';
