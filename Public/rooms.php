@@ -38,12 +38,14 @@ try {
     $roomTypes = $stmt->fetchAll(PDO::FETCH_ASSOC);
     $debugInfo .= "RoomTypes: " . count($roomTypes) . " | ";
     
-    // ดึงห้องทั้งหมด — room_status คำนวณจาก contract จริง เพื่อป้องกัน room.room_status ค้างค่า
+    // ดึงห้องทั้งหมด — สถานะห้องบังคับคำนวณจาก contract และ booking จริงเท่านั้น (ตัดการพึ่งพา r.room_status ที่อาจค้างค่า)
     $stmt = $pdo->query("
         SELECT r.*, rt.type_name, rt.type_price,
-               CASE WHEN EXISTS (
-                   SELECT 1 FROM contract c WHERE c.room_id = r.room_id AND c.ctr_status = '0'
-               ) THEN '1' ELSE r.room_status END AS room_status
+               CASE 
+                   WHEN EXISTS (SELECT 1 FROM contract c WHERE c.room_id = r.room_id AND c.ctr_status = '0') THEN '1' 
+                   WHEN EXISTS (SELECT 1 FROM booking b WHERE b.room_id = r.room_id AND b.bkg_status = '1') THEN '1'
+                   ELSE '0' 
+               END AS room_status
         FROM room r LEFT JOIN roomtype rt ON r.type_id = rt.type_id
         ORDER BY CAST(r.room_number AS UNSIGNED) ASC
     ");
