@@ -130,37 +130,7 @@
   </div>
 </div>
 
-<style>
-/* Override any potential CSS blockers or caching holding back the visual display of the active sheet */
-#sheet-rates.active {
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-  z-index: 999999 !important;
-}
-#sheet-rates.active .apple-sheet {
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
-}
-</style>
-
 <!-- Sheet: Rates -->
-<style>
-/* Failsafe for rates modal */
-#sheet-rates.active {
-  display: block !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  pointer-events: auto !important;
-  z-index: 999999 !important;
-}
-#sheet-rates.active .apple-sheet {
-  transform: translateY(0) !important;
-  pointer-events: auto !important;
-}
-</style>
-
 <div class="apple-sheet-overlay" id="sheet-rates">
   <div class="apple-sheet">
     <div class="apple-sheet-handle"></div>
@@ -683,6 +653,36 @@ function ensureRatesSheetFallback() {
   refreshSheetHandleDragBindings();
   console.warn('[SheetDebug] Injected fallback overlay for missing sheet-rates');
   return overlay;
+}
+
+if (typeof window.openRatesSheetFromRow !== 'function') {
+  window.openRatesSheetFromRow = function(event, rowId) {
+    if (event && event.type === 'keydown' && event.key && event.key !== 'Enter' && event.key !== ' ') {
+      return true;
+    }
+
+    if (event && typeof event.preventDefault === 'function') {
+      event.preventDefault();
+    }
+
+    var overlay = document.getElementById('sheet-rates');
+    if (!overlay && typeof ensureRatesSheetFallback === 'function') {
+      overlay = ensureRatesSheetFallback();
+    }
+
+    if (overlay && overlay.parentNode !== document.body && document.body) {
+      document.body.appendChild(overlay);
+    }
+
+    if (overlay) {
+      overlay.classList.add('active');
+      document.body.style.overflow = 'hidden';
+      refreshSheetHandleDragBindings();
+      return true;
+    }
+
+    return false;
+  };
 }
 
 if (typeof window.openManageRatesSheetFromRow !== 'function') {
