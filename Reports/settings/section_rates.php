@@ -17,17 +17,49 @@
         
         // Debugging info explicitly surfaced to user/console
         console.log('[DEBUG] openRatesSheetFromRow executed for row:', rowId);
-        if (!overlay) {
-            console.error('[DEBUG] overlay sheet-rates missing from DOM');
-            if (typeof window.appleToast === 'function') {
-                window.appleToast('Error: Sheet not found.', 'error');
-            } else {
-                alert('Error: ไม่พบหน้าต่าง (Sheet missing)');
-            }
-        }
         
-        if (!overlay && typeof window.ensureRatesSheetFallback === 'function') {
-          overlay = window.ensureRatesSheetFallback();
+        if (!overlay) {
+            // Try to find it by class or inner text if ID was stripped
+            var allOverlays = Array.from(document.querySelectorAll('.apple-sheet-overlay'));
+            overlay = allOverlays.find(o => o.innerHTML.includes('อัตราค่าน้ำค่าไฟ')) || null;
+        }
+
+        if (!overlay) {
+            console.warn('[DEBUG] overlay sheet-rates missing from DOM, attempting async recovery...');
+            if (typeof window.appleToast === 'function') {
+                window.appleToast('กำลังกู้คืนหน้าต่าง (Recovering window...)', 'info');
+            }
+            
+            // Async recovery from the server
+            fetch(window.location.href)
+              .then(res => res.text())
+              .then(html => {
+                  const parser = new DOMParser();
+                  const doc = parser.parseFromString(html, 'text/html');
+                  const recoveredOverlay = doc.getElementById('sheet-rates');
+                  if (recoveredOverlay) {
+                      document.body.appendChild(recoveredOverlay);
+                      // Re-bind actions
+                      const closeBtn = recoveredOverlay.querySelector('[data-close-sheet="sheet-rates"]');
+                      if (closeBtn) {
+                          closeBtn.addEventListener('click', () => {
+                              recoveredOverlay.classList.remove('active');
+                              document.body.style.overflow = '';
+                          });
+                      }
+                      
+                      // Trigger active state
+                      recoveredOverlay.classList.add('active');
+                      document.body.style.overflow = 'hidden';
+                      if (typeof window.refreshSheetHandleDragBindings === 'function') {
+                          window.refreshSheetHandleDragBindings();
+                      }
+                  } else {
+                      alert('Error: ไม่สามารถกู้คืนหน้าต่างค่าน้ำค่าไฟได้ (Recovery failed)');
+                  }
+              })
+              .catch(e => alert('Error: ' + e.message));
+            return false;
         }
 
         if (overlay && overlay.parentNode !== document.body && document.body) {

@@ -157,7 +157,8 @@ try {
     if ($rate) {
         $waterRate = (int)$rate['rate_water'];
         $electricRate = (int)$rate['rate_elec'];
-        $currentRateDate = (!empty($rate['effective_date']) && $rate['effective_date'] !== '0000-00-00') ? $rate['effective_date'] : date('Y-m-d');
+        $effDateStr = trim($rate['effective_date'] ?? '');
+        $currentRateDate = (!empty($effDateStr) && strpos($effDateStr, '0000-00') === false) ? $effDateStr : date('Y-m-d');
     }
     
     // ดึงประวัติทั้งหมด
