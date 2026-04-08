@@ -29,7 +29,7 @@ try {
     $targetMonthEnd = (new DateTimeImmutable($targetMonthStart))->modify('+1 month')->format('Y-m-d');
 
     // อัตราค่าน้ำ-ไฟล่าสุด และค่าน้ำเหมาจ่าย
-    $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY effective_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+    $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY effective_date DESC, rate_id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
     $rateWater = $rateRow ? (float)$rateRow['rate_water'] : 18.0;
     $rateElec  = $rateRow ? (float)$rateRow['rate_elec']  : 8.0;
     

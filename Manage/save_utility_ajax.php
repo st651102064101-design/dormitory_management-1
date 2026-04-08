@@ -46,7 +46,7 @@ try {
 
     // อัตราค่าน้ำ-ไฟล่าสุด
     try {
-        $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY effective_date DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+        $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY effective_date DESC, rate_id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {
         $rateRow = null;
     }

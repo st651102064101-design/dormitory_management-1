@@ -47,7 +47,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $rateToDelete = $stmt->fetch(PDO::FETCH_ASSOC);
     
     // Check current active rate
-    $stmt = $pdo->query("SELECT * FROM rate WHERE effective_date <= CURDATE() ORDER BY effective_date DESC LIMIT 1");
+    $stmt = $pdo->query("SELECT * FROM rate WHERE effective_date <= CURDATE() ORDER BY effective_date DESC, rate_id DESC LIMIT 1");
     $currentActiveRate = $stmt->fetch(PDO::FETCH_ASSOC);
 
     // Check count
@@ -69,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 // Fetch current rate
-$stmt = $pdo->query("SELECT * FROM rate WHERE effective_date <= CURDATE() ORDER BY effective_date DESC LIMIT 1");
+$stmt = $pdo->query("SELECT * FROM rate WHERE effective_date <= CURDATE() ORDER BY effective_date DESC, rate_id DESC LIMIT 1");
 $currentRate = $stmt->fetch(PDO::FETCH_ASSOC);
 
 // Fetch rate history

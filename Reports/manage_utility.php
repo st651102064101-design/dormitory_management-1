@@ -128,7 +128,7 @@ if (!$isExplicitSelection && !in_array($month, $yearMonths, true)) {
 $waterRate = 18;
 $electricRate = 8;
 try {
-    $rateStmt = $pdo->query("SELECT * FROM rate ORDER BY effective_date DESC LIMIT 1");
+    $rateStmt = $pdo->query("SELECT * FROM rate WHERE effective_date <= CURDATE() ORDER BY effective_date DESC, rate_id DESC LIMIT 1");
     $rate = $rateStmt->fetch(PDO::FETCH_ASSOC);
     if ($rate) {
         $waterRate = (int)$rate['rate_water'];

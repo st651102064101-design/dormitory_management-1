@@ -152,7 +152,7 @@ $allRates = [];
 $rateUsage = []; // เก็บจำนวนการใช้งานของแต่ละอัตรา
 try {
     // ดึงอัตราล่าสุด
-    $rateStmt = $pdo->query("SELECT rate_id, rate_water, rate_elec, effective_date FROM rate ORDER BY effective_date DESC, rate_id DESC LIMIT 1");
+    $rateStmt = $pdo->query("SELECT rate_id, rate_water, rate_elec, effective_date FROM rate WHERE effective_date <= CURDATE() ORDER BY effective_date DESC, rate_id DESC LIMIT 1");
     $rate = $rateStmt->fetch(PDO::FETCH_ASSOC);
     if ($rate) {
         $waterRate = (int)$rate['rate_water'];
