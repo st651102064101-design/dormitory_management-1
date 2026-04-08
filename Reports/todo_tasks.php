@@ -49,7 +49,7 @@ try {
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
                         LEFT JOIN contract active_ctr
                             ON active_ctr.room_id = b.room_id
-                         AND active_ctr.ctr_status IN ('0','2')
+                           AND active_ctr.ctr_status = '1'
             WHERE b.bkg_status = 1
                             AND active_ctr.ctr_id IS NULL
             ORDER BY b.bkg_date DESC

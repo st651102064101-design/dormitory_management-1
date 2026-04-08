@@ -101,21 +101,7 @@ try {
 
     // Line OA
     $lineChannelToken = $settings['line_channel_token'] ?? $lineChannelToken;
-    $lineChannelSecret = $settings['line_channel_secret'] ?? $lineChannelSecret;
-    $wsEnabled = $settings['ws_enabled'] ?? $wsEnabled;
-    $wsUrl = $settings['ws_url'] ?? $wsUrl;
-    $wsPort = $settings['ws_port'] ?? $wsPort;
-    $wsHost = $settings['ws_host'] ?? $wsHost;
-    $wsPort = $settings['ws_port'] ?? $wsPort;
-    $wsHost = $settings['ws_host'] ?? $wsHost;
-    $wsEnabled = $settings['ws_enabled'] ?? $wsEnabled;
-    $wsUrl = $settings['ws_url'] ?? $wsUrl;
-    $wsPort = $settings['ws_port'] ?? $wsPort;
-    $wsHost = $settings['ws_host'] ?? $wsHost;
-    $wsPort = $settings['ws_port'] ?? $wsPort;
-    $wsHost = $settings['ws_host'] ?? $wsHost;
-
-    // ข้อมูลบัญชีธนาคาร
+    $lineChannelSecret = $settings['line_channel_secret'] ?? $lineChannelSecret;// ข้อมูลบัญชีธนาคาร
     $bankName = $settings['bank_name'] ?? $bankName;
     $bankAccountName = $settings['bank_account_name'] ?? $bankAccountName;
     $bankAccountNumber = $settings['bank_account_number'] ?? $bankAccountNumber;

@@ -21,17 +21,11 @@ $csrfToken = $_SESSION['csrf_token'];
 
 
 // ดึง theme color จากการตั้งค่าระบบ
-$wsEnabled = 0;
-$wsUrl = 'ws://localhost:8080';
-$settingsStmt = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('theme_color', 'ws_enabled', 'ws_url')");
+$settingsStmt = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key = 'theme_color'");
 if ($settingsStmt) {
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'theme_color' && !empty($row['setting_value'])) {
             $themeColor = htmlspecialchars($row['setting_value'], ENT_QUOTES, 'UTF-8');
-        } elseif ($row['setting_key'] === 'ws_enabled') {
-            $wsEnabled = (int)$row['setting_value'];
-        } elseif ($row['setting_key'] === 'ws_url' && !empty($row['setting_value'])) {
-            $wsUrl = htmlspecialchars($row['setting_value'], ENT_QUOTES, 'UTF-8');
         }
     }
 }
@@ -1312,10 +1306,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         body.modal-open { overflow: hidden; }
 
         .modal-container {
-            background: rgba(255,255,255,0.92);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 2px solid transparent;
+            background: rgba(255,255,255,0.98);
+            border: 1px solid #e2e8f0;
             border-radius: 20px;
             max-width: 800px;
             width: 90%;
@@ -1329,24 +1321,6 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             position: relative;
         }
         .modal-container::-webkit-scrollbar { display: none; }
-        .modal-container::before {
-            content: '';
-            position: absolute;
-            inset: -2px;
-            border-radius: 22px;
-            background: conic-gradient(from var(--wiz-angle), #6366f1, #8b5cf6, #a855f7, #ec4899, #22c55e, #06b6d4, #6366f1);
-            z-index: -1;
-            animation: wizSpinBorder 6s linear infinite;
-            opacity: 0.3;
-        }
-        .modal-container::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 20px;
-            background: rgba(255,255,255,0.92);
-            z-index: -1;
-        }
 
         /* Gradient accent bar at top of modal */
         .modal-header {
@@ -2238,11 +2212,11 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                 <?php echo $step2 ? '✓' : ($currentStep == 2 ? '<svg class="payment-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect class="p-slot" x="4" y="12" width="16" height="8" rx="2" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" fill="rgba(255,255,255,0.1)"/><line class="p-slot" x1="7" y1="16" x2="11" y2="16" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round"/><circle class="p-coin" cx="12" cy="7" r="3.5" stroke="#fff" stroke-width="1.8" fill="rgba(255,255,255,0.15)"/><line class="p-coin" x1="12" y1="5.5" x2="12" y2="8.5" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>' : '2'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step3 ? 'completed' : ($currentStep == 3 ? 'current' : 'pending'); ?>" data-tooltip="3. สร้างสัญญา" <?php if ($step3): ?>onclick="openContractModal(<?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['type_price'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bkg_checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_end'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, <?php echo (int)($tenant['ctr_id'] ?? 0); ?>, <?php echo ((int)($tenant['has_tenant_signature'] ?? 0) > 0) ? 'true' : 'false'; ?>, true)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step3 ? 'completed' : ($currentStep == 3 ? 'current' : 'pending'); ?>" data-tooltip="3. สร้างสัญญา" <?php if ($step3 || $currentStep == 3): ?>onclick="openContractModal(<?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)$tenant['room_id']; ?>, <?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['type_name'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['type_price'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['bkg_checkin_date'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_start'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['ctr_end'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>, <?php echo (int)($tenant['bp_amount'] ?? 0); ?>, <?php echo (int)($tenant['ctr_id'] ?? 0); ?>, <?php echo ((int)($tenant['has_tenant_signature'] ?? 0) > 0) ? 'true' : 'false'; ?>, true)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step3 ? '✓' : ($currentStep == 3 ? '<svg class="contract-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="2" width="12" height="16" rx="1.5" stroke="rgba(255,255,255,0.75)" stroke-width="1.6" fill="rgba(255,255,255,0.08)"/><line class="ct-line1" x1="7" y1="7" x2="13" y2="7" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="10" stroke-dashoffset="10"/><line class="ct-line2" x1="7" y1="10" x2="13" y2="10" stroke="#fff" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="10" stroke-dashoffset="10"/><line class="ct-line3" x1="7" y1="13" x2="10" y2="13" stroke="rgba(255,255,255,0.6)" stroke-width="1.4" stroke-linecap="round" stroke-dasharray="10" stroke-dashoffset="10"/><g class="ct-pen"><line x1="14" y1="15" x2="20" y2="9" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/><polyline points="14,18 14,15 17,15" stroke="#fff" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></g></svg>' : '3'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
-                                            <div class="step-circle <?php echo $step4 ? 'completed' : ($currentStep == 4 ? 'current' : 'pending'); ?>" data-tooltip="4. เช็คอิน" <?php if ($step4): ?>onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step4 ? 'completed' : ($currentStep == 4 ? 'current' : 'pending'); ?>" data-tooltip="4. เช็คอิน" <?php if ($step4 || $currentStep == 4): ?>onclick="openCheckinModal(<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_start'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode(thaiDate($tenant['ctr_end'] ?? 'now')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['checkin_date'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['water_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode((string)($tenant['elec_meter_start'] ?? '')), ENT_QUOTES, 'UTF-8'); ?>, true)" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step4 ? '✓' : ($currentStep == 4 ? '<svg class="checkin-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="2" width="10" height="20" rx="1.5" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" fill="rgba(255,255,255,0.08)"/><circle cx="16.5" cy="12" r="1.2" fill="rgba(255,255,255,0.8)"/><g class="c-arrow"><line x1="2" y1="12" x2="9" y2="12" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><polyline points="6,9 9.5,12 6,15" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>' : '4'); ?>
                                             </div>
                                             <span class="step-arrow">→</span>
@@ -2910,7 +2884,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                     </a>
                 </div>
 
-                <div class="alert-box-modal" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.25rem;">
+                <div class="alert-box-modal" style="background: #f0fdf4; border: none; border-radius: 12px; padding: 1.25rem;">
                     <h4 style="color: #15803d; margin-top: 0; margin-bottom: 0.75rem; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
                         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
                         ดำเนินการต่อไปนี้โดยอัตโนมัติ:
@@ -4768,79 +4742,6 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         }
     }
 </script>
-
-<?php if ($wsEnabled): ?>
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    let checkInterval = null;
-    let isChecking = false;
-
-    // ตัวแปรเก็บค่าตารางปัจจุบันเพื่อเปรียบเทียบ
-    let currentTbodyHtml = '';
-
-    function captureCurrentTbody() {
-        const tbody = document.querySelector('.wizard-table tbody');
-        if (tbody) {
-            currentTbodyHtml = tbody.innerHTML;
-        }
-    }
-
-    function checkRealtimeUpdates() {
-        // อย่าโหลดทับถ้าผู้ใช้ทำงานอยู่
-        if (isChecking || window._wizSoftNavigating) return;
-        
-        const hasOpenModals = document.querySelector('.apple-sheet-overlay.active') || 
-                              document.querySelector('.sweet-alert') || 
-                              document.querySelector('.swal2-container.swal2-shown') ||
-                              document.querySelector('.modal.show') ||
-                              document.activeElement.tagName === 'INPUT' || 
-                              document.activeElement.tagName === 'TEXTAREA';
-        if (hasOpenModals) return;
-
-        isChecking = true;
-        
-        const fetchUrl = new URL(window.location.href);
-        fetchUrl.searchParams.set('_t', Date.now().toString());
-
-        fetch(fetchUrl.toString(), {
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(res => res.text())
-        .then(html => {
-            if (document.querySelector('.apple-sheet-overlay.active')) return; // double check
-
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(html, 'text/html');
-            const newTbody = doc.querySelector('.wizard-table tbody');
-            const newFilter = doc.querySelector('#wizFilterEmptyState');
-            
-            const newTbodyHtml = newTbody ? newTbody.innerHTML : '';
-            
-            // เปรียบเทียบเนื้อหาแถวตารางแบบเป๊ะๆ
-            if (newTbodyHtml !== currentTbodyHtml) {
-                console.log('Wizard Table updated via Server Polling!');
-                currentTbodyHtml = newTbodyHtml;
-                
-                // ถ้ายาวไม่เท่าเดิมหรือคอนเทนต์เปลี่ยน ให้เอามาแทนที่เลย (Soft UI Refresh)
-                softNavigateWizard(window.location.href);
-            }
-        })
-        .catch(err => {
-            console.error('Auto-refresh Error:', err);
-        })
-        .finally(() => {
-            isChecking = false;
-        });
-    }
-
-    // เก็บตารางตั้งต้น
-    captureCurrentTbody();
-
-    // เช็คอัปเดตทุก 5 วินาที
-    checkInterval = setInterval(checkRealtimeUpdates, 5000);
-});
-</script>
-<?php endif; ?>
 
 <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
 <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
