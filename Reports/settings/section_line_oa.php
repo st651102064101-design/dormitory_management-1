@@ -11,7 +11,7 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
     
     <!-- LINE Status -->
     <div class="apple-settings-row" data-sheet="sheet-line-channel-token">
-      <div class="apple-row-icon line-oa-icon" style="background: linear-gradient(135deg, #00C300, #00A300);">
+      <div class="apple-row-icon line-oa-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
           <path d="M21 11.5a8.38 8.38 0 0 1-9 8.3c-1.72-.08-3.45-.63-4.9-1.63L3 19l1.45-3.5a10.87 10.87 0 0 1-1.45-4 8.38 8.38 0 0 1 9-8.3 8.38 8.38 0 0 1 9 8.3z"/>
         </svg>
@@ -90,7 +90,7 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
 
     <!-- LINE Console Link -->
     <div class="apple-settings-row" onclick="window.open('https://developers.line.biz/console/', '_blank')">
-      <div class="apple-row-icon line-oa-icon" style="background: linear-gradient(135deg, #00C300, #00A300);">
+      <div class="apple-row-icon line-oa-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
           <circle cx="12" cy="12" r="10"/>
           <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/>

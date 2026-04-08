@@ -45,6 +45,16 @@
       ?></span>
       <span class="apple-row-chevron">›</span>
     </div>
+    <!-- WebSocket -->
+    <div class="apple-settings-row" data-sheet="sheet-websocket">
+      <div class="apple-row-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">WebSocket (Real-time)</p>
+        <p class="apple-row-sublabel">จัดการการเชื่อมต่อแบบเรียลไทม์</p>
+      </div>
+      <span class="apple-row-value" id="wsStatusDisplay"><?php echo $wsEnabled ? 'เปิดใช้งาน' : 'ปิด'; ?></span>
+      <span class="apple-row-chevron">›</span>
+    </div>
   </div>
 </div>
 
@@ -233,6 +243,52 @@
         </div>
         <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 12px 0 16px;">ผู้ใช้จะถูกล็อกอินออกโดยอัตโนมัติหลังจากไม่มีความเคลื่อนไหวในจำนวนนาทีที่กำหนด</p>
         <button type="submit" class="apple-button primary">บันทึกการตั้งค่า</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+
+<!-- Sheet: WebSocket -->
+<div class="apple-sheet-overlay" id="sheet-websocket">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-websocket">ยกเลิก</button>
+      <h3 class="apple-sheet-title">WebSocket</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <form id="websocketForm" data-allow-submit>
+        <div class="apple-settings-group">
+          <div class="apple-settings-row">
+            <span class="apple-row-label">เปิดใช้งาน WebSocket</span>
+            <label class="apple-switch">
+              <input type="checkbox" id="wsEnabled" <?php echo $wsEnabled ? 'checked' : ''; ?>>
+              <span class="apple-slider"></span>
+            </label>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 8px 0 16px;">เปิดใช้งานการอัปเดตแบบเรียลไทม์สำหรับหน้าต่าง ๆ</p>
+        <div class="apple-input-group">
+          <label class="apple-input-label">เซิร์ฟเวอร์ URL</label>
+          <input type="text" id="wsUrl" class="apple-input" value="<?php echo htmlspecialchars((string)$wsUrl, ENT_QUOTES, 'UTF-8'); ?>" placeholder="ws://localhost:8080">
+        </div>
+        
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 8px 0 16px;">URL สำหรับหน้าเว็บให้ผู้ใช้เชื่อมต่อ (เช่น wss://domain.com/ws หรือ ws://localhost:8080)</p>
+        
+        <div class="apple-input-group">
+          <label class="apple-input-label">พอร์ต (Port)</label>
+          <input type="number" id="wsPort" class="apple-input" value="<?php echo htmlspecialchars((string)$wsPort, ENT_QUOTES, 'UTF-8'); ?>" placeholder="8080">
+        </div>
+        
+        <div class="apple-input-group">
+          <label class="apple-input-label">โฮสต์ / เชื่อมต่อ (Host Address)</label>
+          <input type="text" id="wsHost" class="apple-input" value="<?php echo htmlspecialchars((string)$wsHost, ENT_QUOTES, 'UTF-8'); ?>" placeholder="0.0.0.0">
+        </div>
+        
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 8px 0 16px;">การเชื่อมต่อภายในสำหรับ Server (แนะนำค่าเริ่มต้น Host เป็น 0.0.0.0)</p>
+        <button type="button" id="saveWsBtn" class="apple-button primary" style="margin-top: 24px;">บันทึกการตั้งค่า</button>
       </form>
     </div>
   </div>

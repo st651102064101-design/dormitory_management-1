@@ -462,9 +462,9 @@ body.auto-dark .apple-alert-overlay[data-theme="auto"] .apple-alert-btn:active {
     padding: 12px;
     background: transparent;
     border: none;
-    color: <?php echo htmlspecialchars($appleAlertColor, ENT_QUOTES, 'UTF-8'); ?>;
+    color: #007AFF !important; /* Force iOS Blue for visibility */
     font-size: 17px;
-    font-weight: 400;
+    font-weight: 600; /* Make text bolder */
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     letter-spacing: -0.4px;

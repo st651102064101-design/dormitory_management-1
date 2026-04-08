@@ -2928,29 +2928,71 @@ body.apple-settings-page .sidebar-overlay.active {
   box-shadow: 0 3px 10px rgba(0, 195, 0, 0.3) !important;
 }
 
-@keyframes lineOAPulse {
-  0%, 100% { transform: scale(1) translateZ(0); filter: drop-shadow(0 0 2px rgba(255,255,255,0.4)); -webkit-filter: drop-shadow(0 0 2px rgba(255,255,255,0.4)); }
-  50% { transform: scale(1.15) rotate(-2deg) translateZ(0); filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); -webkit-filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); }
-}
-
 .apple-row-icon.line-oa-icon svg {
-  animation: lineOAPulse 2.5s ease-in-out infinite;
-  stroke: white !important;
-  transform-origin: center;
-  -webkit-transform-origin: center;
-  transform: translateZ(0); /* Force hardware acceleration to prevent SVG vanishing bug in Safari */
+  color: #ffffff;
+  stroke: #ffffff;
+  display: block;
 }
 
 .apple-row-icon.line-oa-icon svg path,
 .apple-row-icon.line-oa-icon svg circle,
 .apple-row-icon.line-oa-icon svg polyline,
 .apple-row-icon.line-oa-icon svg line {
+  stroke: #ffffff !important;
+  stroke-width: 2 !important;
   stroke-dasharray: none !important;
   stroke-dashoffset: 0 !important;
   animation: none !important;
   opacity: 1 !important;
+  visibility: visible !important;
+  display: block !important;
 }
 
-.apple-settings-row:hover .apple-row-icon.line-oa-icon svg {
-  animation-duration: 1s;
+.apple-settings-row:hover .apple-row-icon.line-oa-icon {
+  transform: scale(1.12) rotate(-3deg);
 }
+
+.apple-switch {
+  position: relative;
+  display: inline-block;
+  width: 51px;
+  height: 31px;
+}
+.apple-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.apple-switch .apple-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #e5e5ea;
+  transition: .4s;
+  border-radius: 31px;
+}
+.apple-switch .apple-slider:before {
+  position: absolute;
+  content: "";
+  height: 27px;
+  width: 27px;
+  left: 2px;
+  bottom: 2px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 3px 1px rgba(0,0,0,0.06);
+}
+.apple-switch input:checked + .apple-slider {
+  background-color: #34c759;
+}
+.apple-switch input:focus + .apple-slider {
+  box-shadow: 0 0 1px #34c759;
+}
+.apple-switch input:checked + .apple-slider:before {
+  transform: translateX(20px);
+}
+

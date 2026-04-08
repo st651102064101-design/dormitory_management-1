@@ -19,15 +19,23 @@ if (empty($_SESSION['csrf_token'])) {
 }
 $csrfToken = $_SESSION['csrf_token'];
 
+
 // ดึง theme color จากการตั้งค่าระบบ
-$settingsStmt = $conn->query("SELECT setting_value FROM system_settings WHERE setting_key = 'theme_color' LIMIT 1");
-$themeColor = '#0f172a'; // ค่า default (dark mode)
+$wsEnabled = 0;
+$wsUrl = 'ws://localhost:8080';
+$settingsStmt = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('theme_color', 'ws_enabled', 'ws_url')");
 if ($settingsStmt) {
-    $theme = $settingsStmt->fetch(PDO::FETCH_ASSOC);
-    if ($theme && !empty($theme['setting_value'])) {
-        $themeColor = htmlspecialchars($theme['setting_value'], ENT_QUOTES, 'UTF-8');
+    while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
+        if ($row['setting_key'] === 'theme_color' && !empty($row['setting_value'])) {
+            $themeColor = htmlspecialchars($row['setting_value'], ENT_QUOTES, 'UTF-8');
+        } elseif ($row['setting_key'] === 'ws_enabled') {
+            $wsEnabled = (int)$row['setting_value'];
+        } elseif ($row['setting_key'] === 'ws_url' && !empty($row['setting_value'])) {
+            $wsUrl = htmlspecialchars($row['setting_value'], ENT_QUOTES, 'UTF-8');
+        }
     }
 }
+
 
 // ดึงข้อมูลผู้เช่าที่อยู่ในกระบวนการ Wizard
 try {
@@ -4760,6 +4768,64 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         }
     }
 </script>
+
+<?php if ($wsEnabled): ?>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const wsUrl = "<?php echo $wsUrl; ?>";
+    let ws = null;
+    let wsReconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+
+    function connectWebSocket() {
+        if (wsReconnectAttempts >= maxReconnectAttempts) {
+            console.log('WebSocket: Reached maximum reconnect attempts.');
+            return;
+        }
+        
+        try {
+            ws = new WebSocket(wsUrl);
+            
+            ws.onopen = function() {
+                console.log('WebSocket Connected');
+                wsReconnectAttempts = 0;
+            };
+
+            ws.onmessage = function(event) {
+                console.log('WebSocket Message Received', event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    
+                    if (data.type === 'tenant_update' || data.type === 'wizard_update' || data.action === 'refresh') {
+                        console.log('WebSocket: Triggering soft navigation refresh');
+                        // Use existing soft-refresh function
+                        softNavigateWizard(window.location.href);
+                    }
+                } catch (e) {
+                    console.error('WebSocket Error parsing message:', e);
+                }
+            };
+
+            ws.onclose = function() {
+                console.log('WebSocket Disconnected. Reconnecting...');
+                wsReconnectAttempts++;
+                setTimeout(connectWebSocket, 3000 * wsReconnectAttempts);
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket Error:', error);
+                ws.close();
+            };
+        } catch (err) {
+            console.error('WebSocket Exception:', err);
+        }
+    }
+
+    connectWebSocket();
+});
+</script>
+<?php endif; ?>
+
 <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
 <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
 <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>

@@ -949,6 +949,44 @@ try {
         exit;
     }
 
+    if (isset($_POST['ws_enabled'])) {
+        $enabled = (int)$_POST['ws_enabled'];
+        $url = isset($_POST['ws_url']) ? trim($_POST['ws_url']) : '';
+        $port = isset($_POST['ws_port']) ? trim($_POST['ws_port']) : '';
+        $host = isset($_POST['ws_host']) ? trim($_POST['ws_host']) : '';
+
+        // Only allow valid HTTP/HTTPS URLs if not empty
+        if (!empty($url) && !filter_var($url, FILTER_VALIDATE_URL) && !preg_match('/^https?:\/\//i', $url)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รูปแบบ URL ไม่ถูกต้อง (ต้องขึ้นต้นด้วย http:// หรือ https://)']);
+            exit;
+        }
+
+        try {
+            $pdo->beginTransaction();
+
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['ws_enabled', (string)$enabled, (string)$enabled]);
+            $stmt->execute(['ws_url', $url, $url]);
+            $stmt->execute(['ws_port', $port, $port]);
+            $stmt->execute(['ws_host', $host, $host]);
+
+            $pdo->commit();
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'บันทึกการตั้งค่า WebSocket สำเร็จ']);
+            exit;
+        } catch (Exception $e) {
+            $pdo->rollBack();
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'เกิดข้อผิดพลาดในการบันทึก: ' . $e->getMessage()]);
+            exit;
+        }
+    }
+
+    
+
+
     header('Content-Type: application/json');
     echo json_encode(['success' => false, 'error' => 'ไม่มีข้อมูลที่จะบันทึก']);
     exit;

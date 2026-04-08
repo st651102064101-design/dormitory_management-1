@@ -448,7 +448,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             if (!empty($ctrStart)) {
                                 $msg .= "📅 วันที่เข้าพัก: " . date('d/m/Y', strtotime($ctrStart)) . "\n";
                             }
-                            $msg .= "สถานะ: รอตรวจสอบการชำระเงิน";
+                            $msg .= "สถานะ: รอตรวจสอบการชำระเงิน\n\n";
+                            
+                            $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' || isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+                            $domainName = $_SERVER['HTTP_HOST'] ?? 'localhost';
+                            $scriptDir = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
+                            $statusUrl = $protocol . $domainName . $scriptDir . "/booking_status.php?ref=" . urlencode((string)$bookingId) . "&phone=" . urlencode((string)$phone) . "&auto=1";
+                            
+                            $msg .= "🔍 ตรวจสอบการจองทึ่นี่เลย:\n" . $statusUrl;
                             
                             sendLineBroadcast($pdo, $msg);
                         } catch (Exception $e) {
@@ -458,6 +465,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         // Store IDs for success page display
                         $_SESSION['last_booking_id'] = $bookingId;
                         $_SESSION['last_tenant_id'] = $tenantId;
+                        $_SESSION['last_phone_number'] = $phone;
                         $_SESSION['last_booking_time'] = time();
                         } // end else (active contract check)
                         } // end else (error check)
@@ -1894,105 +1902,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php
         $lastBookingId = $_SESSION['last_booking_id'] ?? '';
         $lastTenantId = $_SESSION['last_tenant_id'] ?? '';
+        $lastPhoneNumber = $_SESSION['last_phone_number'] ?? '';
         $lastBookingTime = $_SESSION['last_booking_time'] ?? time();
+        
         // Clear session data if older than 10 minutes
         if (time() - $lastBookingTime > 600) {
-            unset($_SESSION['last_booking_id'], $_SESSION['last_tenant_id'], $_SESSION['last_booking_time']);
+            unset($_SESSION['last_booking_id'], $_SESSION['last_tenant_id'], $_SESSION['last_phone_number'], $_SESSION['last_booking_time']);
             $lastBookingId = '';
             $lastTenantId = '';
+            $lastPhoneNumber = '';
         }
+        
+        $statusLink = "/dormitory_management/Public/booking_status.php?ref=" . urlencode((string)$lastBookingId) . "&phone=" . urlencode((string)$lastPhoneNumber) . "&auto=1";
         ?>
         <!-- Success Page -->
-        <div class="success-page">
-            <div class="success-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                </svg>
-            </div>
-            <h1 class="success-title">จองห้องพักสำเร็จ!</h1>
-            <p class="success-message">ขอบคุณที่ไว้วางใจ เจ้าหน้าที่จะติดต่อกลับเพื่อยืนยันการจองภายใน 24 ชั่วโมง</p>
-            
-            <!-- Booking Reference Section -->
-            <div style="background: rgba(16, 185, 129, 0.1); border: 2px solid #10b981; border-radius: 16px; padding: 16px; margin: 24px 0; text-align: center;" id="bookingReferenceSection">
-                <p style="color: #10b981; font-size: 14px; font-weight: 600; margin: 0 0 12px 0; text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; justify-content: center; gap: 8px;">
-                    <svg class="animated-clipboard" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                    </svg>
-                    หมายเลขการจองของคุณ
-                </p>
-                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-bottom: 16px; max-width: 100%;">
-                    <?php if ($lastBookingId): ?>
-                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">เลขที่การจอง</div>
-                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: var(--text-primary); font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="bookingIdText"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
-                        <button onclick="copyBookingId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
-                            <svg class="animated-clipboard" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <?php endif; ?>
-                    <?php if ($lastTenantId): ?>
-                    <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); padding: 12px 16px; border-radius: 12px; min-width: 160px; max-width: 100%; position: relative; flex: 1; overflow: hidden;">
-                        <div style="font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">รหัสผู้เช่า</div>
-                        <div style="font-size: clamp(18px, 5vw, 28px); font-weight: 700; color: var(--text-primary); font-family: 'Courier New', monospace; letter-spacing: 1px; word-break: break-all; overflow-wrap: break-word; line-height: 1.2;" id="tenantIdText"><?php echo htmlspecialchars($lastTenantId); ?></div>
-                        <button onclick="copyTenantId()" style="position: absolute; top: 6px; right: 6px; background: rgba(16, 185, 129, 0.2); border: none; padding: 6px; border-radius: 6px; cursor: pointer; color: #10b981; font-size: 10px; transition: all 0.2s; display: flex; align-items: center; justify-content: center;">
-                            <svg class="animated-clipboard" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                            </svg>
-                        </button>
-                    </div>
-                    <?php endif; ?>
-                </div>
-                
-                <!-- Quick Action Buttons -->
-                <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin: 20px 0; position: relative; z-index: 9999;">
-                    <button type="button" onclick="copyAllInfo(); return false;" style="background: #10b981; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); font-size: 14px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; position: relative; z-index: 9999; pointer-events: auto;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; pointer-events: none;">
-                            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-                        </svg>
-                        <span style="pointer-events: none;">คัดลอกทั้งหมด</span>
-                    </button>
-                    
-                    <button type="button" onclick="shareBookingInfo(); return false;" style="background: #3b82f6; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3); font-size: 14px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; position: relative; z-index: 9999; pointer-events: auto;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; pointer-events: none;">
-                            <circle cx="18" cy="5" r="3"></circle>
-                            <circle cx="6" cy="12" r="3"></circle>
-                            <circle cx="18" cy="19" r="3"></circle>
-                            <line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line>
-                            <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
-                        </svg>
-                        <span style="pointer-events: none;">แชร์ข้อมูล</span>
-                    </button>
-                    
-                    <button type="button" onclick="saveToNotes(); return false;" style="background: #8b5cf6; color: white; border: none; padding: 12px 20px; border-radius: 10px; cursor: pointer; font-weight: 600; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); font-size: 14px; white-space: nowrap; -webkit-tap-highlight-color: transparent; touch-action: manipulation; position: relative; z-index: 9999; pointer-events: auto;">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink: 0; pointer-events: none;">
-                            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                            <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                            <polyline points="7 3 7 8 15 8"></polyline>
-                        </svg>
-                        <span style="pointer-events: none;">บันทึกข้อมูล</span>
-                    </button>
-                </div>
-                
-                <p style="color: var(--text-primary); font-size: 14px; margin: 16px 0 0 0; line-height: 1.6; display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap;">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0; margin-top: 2px;"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                    <span><strong>กรุณาบันทึกหมายเลขนี้</strong> เพื่อใช้ตรวจสอบสถานะการจองและข้อมูลการชำระเงินภายหลัง<br>
-                    <a href="/dormitory_management/Public/booking_status.php" style="color: #10b981; text-decoration: underline; font-weight: 600;">คลิกที่นี่เพื่อตรวจสอบสถานะ</a></span>
-                </p>
+        <div class="success-page" style="text-align:center; padding:40px 20px; max-width:600px; margin:0 auto;">
+            <div style="width:80px;height:80px;background:#10b981;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 24px;box-shadow:0 4px 14px rgba(16,185,129,0.4);">
+                <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:40px;height:40px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
             </div>
             
-            <div class="success-actions">
-                <a href="/dormitory_management/" class="success-btn primary">กลับหน้าหลัก</a>
-                <a href="/dormitory_management/Public/booking_status.php" class="success-btn secondary">ดูสถานะการจอง</a>
-                <a href="/dormitory_management/Public/booking.php" class="success-btn secondary">จองห้องอื่น</a>
+            <h1 style="font-size:24px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">จองห้องพักสำเร็จ!</h1>
+            <p style="color:var(--text-secondary);font-size:15px;margin-bottom:32px;">ระบบได้รับข้อมูลการจองของคุณแล้ว กรุณารอเจ้าหน้าที่ติดต่อกลับเพื่อยืนยันภายใน 24 ชั่วโมง</p>
+            
+            <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:1px solid var(--border-color);padding-bottom:16px;">
+                    <div style="font-weight:600;color:var(--text-primary);font-size:16px;">หมายเลขการจองของคุณ</div>
+                    <div style="background:rgba(245,158,11,0.1);color:#d97706;padding:6px 12px;border-radius:20px;font-size:12px;font-weight:600;">รอการยืนยัน</div>
+                </div>
+                
+                <div id="bookingIdText" style="font-size:32px;font-weight:700;color:var(--text-primary);letter-spacing:2px;margin-bottom:8px;font-family:'Courier New', monospace;"><?php echo htmlspecialchars((string)$lastBookingId); ?></div>
+                
+                <button onclick="copyBookingId()" style="background:rgba(16,185,129,0.1);color:#10b981;border:none;padding:8px 16px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                    คัดลอกหมายเลข
+                </button>
+                
+                <?php if ($lastTenantId): ?>
+                <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--border-color);display:flex;justify-content:space-between;color:var(--text-secondary);font-size:14px;">
+                    <span>รหัสผู้เช่า:</span>
+                    <strong style="color:var(--text-primary);"><?php echo htmlspecialchars($lastTenantId); ?></strong>
+                </div>
+                <?php endif; ?>
+            </div>
+            
+            <div style="display:flex;flex-direction:column;gap:12px;">
+                <a href="<?php echo htmlspecialchars($statusLink); ?>" style="background:#3b82f6;color:white;display:flex;align-items:center;justify-content:center;padding:16px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;transition:all 0.3s;gap:8px;box-shadow:0 4px 12px rgba(59,130,246,0.3);">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                    ดูสถานะการจองทันที
+                </a>
+                
+                <div style="display:flex;gap:12px;">
+                    <a href="/dormitory_management/" style="flex:1;background:transparent;color:var(--text-primary);border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;padding:16px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;">กลับหน้าหลัก</a>
+                    <a href="/dormitory_management/Public/booking.php" style="flex:1;background:transparent;color:var(--text-primary);border:1px solid var(--border-color);display:flex;align-items:center;justify-content:center;padding:16px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;">จองเพิ่ม</a>
+                </div>
             </div>
         </div>
-        
+
         <?php else: ?>
         <!-- Page Title -->
         <div class="page-title">
@@ -2537,19 +2502,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         });
         
         // Start Month Change
-        document.getElementById('ctrStartMonth').addEventListener('change', function() {
+        document.getElementById('ctrStartMonth')?.addEventListener('change', function() {
             updateContractDates();
         });
 
-        document.getElementById('ctrStartDay').addEventListener('input', function() {
+        document.getElementById('ctrStartDay')?.addEventListener('input', function() {
             updateContractDates();
         });
         
         // Update Contract Dates
         function updateContractDates() {
-            const startMonthValue = document.getElementById('ctrStartMonth').value;
-            const duration = parseInt(document.getElementById('ctrDuration').value);
+            const startMonthEl = document.getElementById('ctrStartMonth');
+            const durationEl = document.getElementById('ctrDuration');
             const dayInput = document.getElementById('ctrStartDay');
+            
+            if (!startMonthEl || !durationEl || !dayInput) return;
+            
+            const startMonthValue = startMonthEl.value;
+            const duration = parseInt(durationEl.value);
 
             const [year, month] = startMonthValue.split('-').map(Number);
             const today = new Date();
@@ -3662,13 +3632,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 localStorage.setItem('dormitory_bookings', JSON.stringify(savedBookings));
                 
                 console.log('✅ ข้อมูลการจองถูกบันทึกอัตโนมัติแล้ว');
-                
-                // Show alert and redirect to booking_status.php after 3 seconds
-                setTimeout(function() {
-                    if (confirm('✅ จองห้องพักสำเร็จ!\n\n📋 กรุณาบันทึกหมายเลขการจอง:\n' + bookingId + '\n\n🔔 คลิก "ตกลง" เพื่อไปยังหน้าตรวจสอบสถานะการจอง')) {
-                        window.location.href = '/dormitory_management/Public/booking_status.php';
-                    }
-                }, 2000);
             }
         });
         

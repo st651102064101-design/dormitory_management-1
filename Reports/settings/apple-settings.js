@@ -12,6 +12,7 @@ class AppleSettings {
     this.initSheets();
     this.initToggles();
     this.initForms();
+    this.initWebSocketSettings();
     this.initImageUploads();
     this.initThemeSelector();
     this.initColorPicker();
@@ -342,6 +343,64 @@ class AppleSettings {
   }
 
   // ===== Form Handling =====
+  
+  initWebSocketSettings() {
+    const btn = document.getElementById('saveWsBtn');
+    if (!btn) return;
+    
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        const btnText = btn.textContent;
+        btn.textContent = 'กำลังบันทึก...';
+        btn.style.opacity = '0.7';
+        btn.style.pointerEvents = 'none';
+
+        const enabled = document.getElementById('wsEnabled').checked ? 1 : 0;
+        const urlParam = document.getElementById('wsUrl').value.trim();
+        const portParam = document.getElementById('wsPort').value.trim();
+        const hostParam = document.getElementById('wsHost').value.trim();
+
+        const response = await fetch('../Manage/save_system_settings.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `ws_enabled=${enabled}&ws_url=${encodeURIComponent(urlParam)}&ws_port=${encodeURIComponent(portParam)}&ws_host=${encodeURIComponent(hostParam)}`
+        });
+
+        const result = await response.json();
+        
+        btn.textContent = btnText;
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+
+        if (result.success) {
+          if (window.showToast) {
+            window.showToast(result.message, 'success');
+          } else {
+            alert(result.message);
+          }
+          const display = document.getElementById('wsStatusDisplay');
+          if (display) {
+            display.textContent = enabled ? 'เปิดใช้งาน' : 'ปิด';
+          }
+          this.closeSheet('sheet-websocket');
+        } else {
+          if (window.showToast) {
+            window.showToast(result.error || 'เกิดข้อผิดพลาด', 'error');
+          } else {
+            alert(result.error || 'เกิดข้อผิดพลาด');
+          }
+        }
+      } catch (error) {
+        console.error('WebSocket Error:', error);
+        btn.textContent = 'บันทึกการตั้งค่า';
+        btn.style.opacity = '1';
+        btn.style.pointerEvents = 'auto';
+        alert('ไม่สามารถบันทึกได้');
+      }
+    });
+  }
+
   initForms() {
     // Site Name Form
     const siteNameForm = document.getElementById('siteNameForm');
