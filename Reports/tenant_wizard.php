@@ -2515,7 +2515,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                         </div>
                         <div class="form-group">
                             <label>เงินประกัน (บาท) *</label>
-                            <input type="number" name="ctr_deposit" id="modal_contract_deposit" min="0" step="0.01" required readonly>
+                            <input type="number" name="ctr_deposit" id="modal_contract_deposit" min="0" step="0.01" required readonly tabindex="-1" style="background-color: rgba(255, 255, 255, 0.05); cursor: not-allowed; pointer-events: none; color: #a1a1aa;">
                         </div>
                     </div>
 
@@ -3276,7 +3276,6 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         if (isNaN(start.getTime())) { endDisplay.textContent = '-'; return; }
         const end = new Date(start);
         end.setMonth(end.getMonth() + durationVal);
-        end.setDate(end.getDate() - 1);
         endDisplay.textContent = end.toLocaleDateString('th-TH', {year:'numeric', month:'long', day:'numeric'});
     }
 

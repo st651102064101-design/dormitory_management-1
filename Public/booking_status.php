@@ -207,7 +207,7 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo) && $autoFill
                 t.tnt_id, t.tnt_name, t.tnt_phone,
                 b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
                 r.room_number, rt.type_name, rt.type_price,
-                c.ctr_id, c.ctr_deposit, c.access_token,
+                c.ctr_id, c.ctr_deposit, c.access_token, c.ctr_start, c.ctr_end,
                 e.exp_status,
                 (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount
             FROM booking b
@@ -244,7 +244,7 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo)) {
                 t.tnt_id, t.tnt_name, t.tnt_phone,
                 b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status,
                 r.room_number, rt.type_name, rt.type_price,
-                c.ctr_id, c.ctr_deposit, c.access_token,
+                c.ctr_id, c.ctr_deposit, c.access_token, c.ctr_start, c.ctr_end,
                 (SELECT exp_status FROM expense WHERE ctr_id = c.ctr_id ORDER BY exp_month DESC LIMIT 1) as exp_status,
                 COALESCE(tw.current_step, 1) as current_step,
                 COALESCE(tw.completed, 0) as workflow_completed,
