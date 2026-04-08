@@ -57,33 +57,209 @@
     </div>
     <div class="apple-sheet-body">
       <form id="quickActionsForm">
-        <?php foreach ($adminQuickActions as $index => $action): ?>
-        <div style="border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; margin-bottom: 14px; background: rgba(255,255,255,0.03);">
-          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:12px;">
-            <strong style="font-size: 14px; color: var(--apple-text);">ปุ่ม <?php echo $index + 1; ?></strong>
-            <label style="display:flex; align-items:center; gap:8px; font-size:13px; color: var(--apple-text-secondary);">
-              <input type="checkbox" id="quickActionEnabled<?php echo $index; ?>" <?php echo !empty($action['enabled']) ? 'checked' : ''; ?>>
-              เปิดใช้งาน
-            </label>
+        <div id="quickActionsContainer">
+          <?php foreach ($adminQuickActions as $index => $action): ?>
+          <div class="quick-action-item" style="border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; margin-bottom: 14px; background: rgba(255,255,255,0.03); position: relative;">
+            <button type="button" class="btn-remove-qa" style="position: absolute; top: 12px; right: 12px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; z-index: 2;">&times;</button>
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:12px; padding-right: 32px;">
+              <strong style="font-size: 14px; color: var(--apple-text);" class="qa-title-index">ปุ่ม <span class="qa-index-number"><?php echo $index + 1; ?></span></strong>
+              <label style="display:flex; align-items:center; gap:8px; font-size:13px; color: var(--apple-text-secondary);">
+                <input type="checkbox" class="qa-enabled" <?php echo !empty($action['enabled']) ? 'checked' : ''; ?>>
+                เปิดใช้งาน
+              </label>
+            </div>
+            <div class="apple-input-group">
+              <label class="apple-input-label">ชื่อปุ่ม</label>
+              <input type="text" class="apple-input qa-label" maxlength="50" value="<?php echo htmlspecialchars((string)$action['label']); ?>">
+            </div>
+            <div class="apple-input-group">
+              <label class="apple-input-label">ลิงก์</label>
+              <input type="text" class="apple-input qa-href" maxlength="255" value="<?php echo htmlspecialchars((string)$action['href']); ?>">
+            </div>
+            <div class="apple-input-group" style="margin-bottom: 0;">
+              <label class="apple-input-label">คีย์ลัด</label>
+              <input type="text" class="apple-input qa-shortcut" maxlength="20" value="<?php echo htmlspecialchars((string)$action['shortcut']); ?>" placeholder="เช่น Ctrl+1">
+            </div>
           </div>
-          <div class="apple-input-group">
-            <label class="apple-input-label">ชื่อปุ่ม</label>
-            <input type="text" id="quickActionLabel<?php echo $index; ?>" class="apple-input" maxlength="50" value="<?php echo htmlspecialchars((string)$action['label']); ?>">
-          </div>
-          <div class="apple-input-group">
-            <label class="apple-input-label">ลิงก์</label>
-            <input type="text" id="quickActionHref<?php echo $index; ?>" class="apple-input" maxlength="255" value="<?php echo htmlspecialchars((string)$action['href']); ?>">
-          </div>
-          <div class="apple-input-group" style="margin-bottom: 0;">
-            <label class="apple-input-label">คีย์ลัด</label>
-            <input type="text" id="quickActionShortcut<?php echo $index; ?>" class="apple-input" maxlength="20" value="<?php echo htmlspecialchars((string)$action['shortcut']); ?>" placeholder="เช่น Ctrl+1">
-          </div>
+          <?php endforeach; ?>
         </div>
-        <?php endforeach; ?>
+        
+        <div style="display: flex; justify-content: center; margin-bottom: 24px;">
+           <button type="button" id="btnAddQuickAction" style="background: rgba(0, 122, 255, 0.1); color: var(--apple-blue); border: 1px dashed rgba(0, 122, 255, 0.3); border-radius: 12px; padding: 10px 20px; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s;">
+             + เพิ่มปุ่มลัดใหม่
+           </button>
+        </div>
+
         <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 0 0 16px;">ใช้ลิงก์ภายในระบบเท่านั้น เช่น `manage_payments.php` หรือ `tenant_wizard.php`</p>
         <button type="submit" class="apple-button primary">บันทึกปุ่มลัด</button>
       </form>
-    </div>
+      <script>
+      (function bindInlineQuickActionsSubmit() {
+        const form = document.getElementById('quickActionsForm');
+        if (!form || form.dataset.inlineBound === '1') return;
+        form.dataset.inlineBound = '1';
+
+        const container = document.getElementById('quickActionsContainer');
+        const btnAdd = document.getElementById('btnAddQuickAction');
+
+        const updateIndices = () => {
+          const items = container.querySelectorAll('.quick-action-item');
+          items.forEach((item, idx) => {
+            const indexEl = item.querySelector('.qa-index-number');
+            if (indexEl) indexEl.textContent = idx + 1;
+          });
+        };
+
+        // Delegate delete button clicks
+        container.addEventListener('click', (e) => {
+          const btnRemove = e.target.closest('.btn-remove-qa');
+          if (btnRemove) {
+            const item = btnRemove.closest('.quick-action-item');
+            if (item) {
+              item.style.transition = 'opacity 0.3s, transform 0.3s';
+              item.style.opacity = '0';
+              item.style.transform = 'scale(0.95)';
+              setTimeout(() => {
+                item.remove();
+                updateIndices();
+              }, 300);
+            }
+          }
+        });
+
+        // Add new item
+        if (btnAdd) {
+          btnAdd.addEventListener('click', () => {
+            const newIndex = container.querySelectorAll('.quick-action-item').length + 1;
+            const newItemHtml = `
+              <div class="quick-action-item" style="border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 16px; margin-bottom: 14px; background: rgba(255,255,255,0.03); position: relative; opacity: 0; transform: translateY(10px); transition: opacity 0.3s, transform 0.3s;">
+                <button type="button" class="btn-remove-qa" style="position: absolute; top: 12px; right: 12px; background: rgba(255, 59, 48, 0.1); color: #ff3b30; border: none; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 16px; z-index: 2;">&times;</button>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:12px; gap:12px; padding-right: 32px;">
+                  <strong style="font-size: 14px; color: var(--apple-text);" class="qa-title-index">ปุ่ม <span class="qa-index-number">${newIndex}</span></strong>
+                  <label style="display:flex; align-items:center; gap:8px; font-size:13px; color: var(--apple-text-secondary);">
+                    <input type="checkbox" class="qa-enabled" checked>
+                    เปิดใช้งาน
+                  </label>
+                </div>
+                <div class="apple-input-group">
+                  <label class="apple-input-label">ชื่อปุ่ม</label>
+                  <input type="text" class="apple-input qa-label" maxlength="50" value="">
+                </div>
+                <div class="apple-input-group">
+                  <label class="apple-input-label">ลิงก์</label>
+                  <input type="text" class="apple-input qa-href" maxlength="255" value="">
+                </div>
+                <div class="apple-input-group" style="margin-bottom: 0;">
+                  <label class="apple-input-label">คีย์ลัด</label>
+                  <input type="text" class="apple-input qa-shortcut" maxlength="20" value="" placeholder="เช่น Ctrl+1">
+                </div>
+              </div>
+            `;
+            
+            container.insertAdjacentHTML('beforeend', newItemHtml);
+            const addedItem = container.lastElementChild;
+            // trigger reflow
+            void addedItem.offsetWidth;
+            addedItem.style.opacity = '1';
+            addedItem.style.transform = 'translateY(0)';
+          });
+        }
+
+        form.addEventListener('submit', async function(event) {
+          event.preventDefault();
+
+          const notify = (message, type) => {
+            if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+              window.appleSettings.showToast(message, type);
+            } else if (typeof window.showToast === 'function') {
+              window.showToast(message, type);
+            }
+          };
+
+          try {
+            const actions = [];
+            container.querySelectorAll('.quick-action-item').forEach(item => {
+              const label = item.querySelector('.qa-label').value.trim();
+              if(label) {
+                actions.push({
+                  enabled: item.querySelector('.qa-enabled').checked,
+                  label: label,
+                  href: item.querySelector('.qa-href').value.trim(),
+                  shortcut: item.querySelector('.qa-shortcut').value.trim()
+                });
+              }
+            });
+
+            const payload = JSON.stringify(actions);
+
+            const response = await fetch('../Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+              },
+              body: 'admin_quick_actions=' + encodeURIComponent(payload)
+            });
+
+            let result;
+            try {
+              result = await response.json();
+            } catch (err) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (result && result.success) {
+              notify('บันทึกปุ่มลัดสำเร็จ', 'success');
+              
+              const formPayload = JSON.parse(payload);
+              const enabledCount = formPayload.filter(action => action.enabled).length;
+
+              // Update the row count UI
+              const countEl = document.querySelector('[data-display="quickactions-count"]');
+              if (countEl) {
+                countEl.textContent = countEl.textContent.replace(/\d+/, enabledCount);
+              }
+
+              // Update top navigation bar seamlessly
+              const nav = document.querySelector('nav.quick-actions');
+              if (nav) {
+                nav.innerHTML = ''; // clear out old buttons
+                formPayload.forEach(action => {
+                  if (!action.enabled || !action.label) return;
+                  
+                  const a = document.createElement('a');
+                  const href = action.href || '#';
+                  const shortcut = action.shortcut || '';
+                  
+                  a.className = 'quick-action-link';
+                  a.href = href;
+                  a.textContent = action.label;
+                  
+                  if (shortcut) {
+                    a.setAttribute('data-shortcut', shortcut);
+                  }
+                  
+                  nav.appendChild(a);
+                });
+              }
+              
+              // Hide the sheet
+              if (window.appleSettings && typeof window.appleSettings.closeSheet === 'function') {
+                window.appleSettings.closeSheet('sheet-quick-actions');
+              } else {
+                const sheetOverlay = document.getElementById('sheet-quick-actions');
+                if (sheetOverlay) sheetOverlay.classList.remove('active');
+              }
+
+            } else {
+              throw new Error((result && result.error) || (result && result.message) || 'เกิดข้อผิดพลาดในการบันทึก');
+            }
+          } catch (err) {
+            notify(err.message || 'เกิดข้อผิดพลาด', 'error');
+          }
+        });
+      })();
+      </script>
+      </div>
   </div>
 </div>
 

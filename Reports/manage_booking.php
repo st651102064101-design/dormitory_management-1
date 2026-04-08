@@ -49,13 +49,22 @@ $fetchBookings = static function(PDO $pdo, string $orderBy, string $bookingFilte
   if (strpos($extraFilter, 'b.bkg_id') !== false) {
     $whereSql = "WHERE $extraFilter";
   } else {
-    // For other filters, keep only supported statuses (0/1/2) and show status='1' only when no blockers
-    $baseCondition = "COALESCE(b.bkg_status, '0') IN ('0','1','2') AND (COALESCE(b.bkg_status, '0') <> '1' OR (living_ctr.ctr_id IS NULL AND cancel_ctr.ctr_id IS NULL AND booking_ctr.ctr_id IS NULL))";
-    $whereSql = "WHERE $baseCondition";
-    if ($extraFilter !== '') {
-      $whereSql .= " AND ($extraFilter)";
+      if (isset($bookingFilterParams[':bkg_status_filter']) && $bookingFilterParams[':bkg_status_filter'] === '1') {
+          // ถ้าตั้งใจกรองเพื่อ "รายการจองที่ต้องจัดการ" (สถานะ 1) ให้ซ่อนคนที่ทำสัญญาและเข้าพักไปแล้ว
+          $baseCondition = "COALESCE(b.bkg_status, '0') = '1' AND living_ctr.ctr_id IS NULL AND cancel_ctr.ctr_id IS NULL AND booking_ctr.ctr_id IS NULL";
+          $whereSql = "WHERE $baseCondition";
+          if ($extraFilter !== '') {
+             $whereSql .= " AND ($extraFilter)";
+          }
+      } else {
+          // ถ้ารายการจองทั้งหมด (หรือสถานะ 2) ให้แสดงการจองทั้งหมดที่ยังไม่ยกเลิก
+          $baseCondition = "COALESCE(b.bkg_status, '0') IN ('1','2')";
+          $whereSql = "WHERE $baseCondition";
+          if ($extraFilter !== '') {
+            $whereSql .= " AND ($extraFilter)";
+          }
+      }
     }
-  }
 
   $sql = "
         SELECT b.*, r.room_number, rt.type_name, rt.type_price, t.tnt_name,
@@ -4883,7 +4892,25 @@ try {
           .then(data => {
             if (data.success) {
               showToast('สำเร็จ', data.message, 'success');
-              setTimeout(() => location.reload(), 1500);
+              // จัดการอัปเดต UI แทนการ reload
+                const targetTd = Array.from(document.querySelectorAll('td[data-label="รหัส"]')).find(td => td.textContent.includes('#' + bookingId));
+                const targetRow = targetTd ? targetTd.closest('tr') : null;
+                if (targetRow) {
+                  if (newStatus === '0') {
+                    targetRow.style.transition = "opacity 0.5s";
+                    targetRow.style.opacity = "0";
+                    setTimeout(() => targetRow.remove(), 500);
+                  } else if (newStatus === '2') {
+                    const statusTd = targetRow.querySelector('td[data-label="สถานะ"]');
+                    if (statusTd) {
+                      statusTd.innerHTML = '<span style="padding: 0.25rem 0.75rem; border-radius: 12px; font-size: 0.875rem; background: #4caf50; color: white;">เข้าพักแล้ว</span>';
+                    }
+                    const manageTd = targetRow.querySelector('td.crud-column');
+                    if (manageTd) {
+                      manageTd.innerHTML = '<span style="color: #34C759; font-weight: 500;">เข้าพักอยู่</span>';
+                    }
+                  }
+                }
             } else {
               showToast('ผิดพลาด', data.error || 'ไม่สามารถอัปเดตได้', 'error');
             }

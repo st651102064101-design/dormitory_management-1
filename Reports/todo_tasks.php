@@ -49,9 +49,15 @@ try {
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
                         LEFT JOIN contract active_ctr
                             ON active_ctr.room_id = b.room_id
-                           AND active_ctr.ctr_status = '1'
+                           AND active_ctr.ctr_status IN ('0','2')
+                        LEFT JOIN (
+                            SELECT bkg_id, MAX(current_step) as max_step 
+                            FROM tenant_workflow 
+                            GROUP BY bkg_id
+                        ) w ON w.bkg_id = b.bkg_id
             WHERE b.bkg_status = 1
                             AND active_ctr.ctr_id IS NULL
+                            AND (w.max_step IS NULL OR w.max_step < 3)
             ORDER BY b.bkg_date DESC
             LIMIT 50
         ");
