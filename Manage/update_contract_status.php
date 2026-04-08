@@ -2,12 +2,25 @@
 declare(strict_types=1);
 session_start();
 
+$isAjax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+
 if (empty($_SESSION['admin_username'])) {
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        http_response_code(401);
+        echo json_encode(['success' => false, 'error' => 'เซสชันหมดอายุ กรุณาเข้าสู่ระบบใหม่']);
+        exit;
+    }
     header('Location: ../Login.php');
     exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    if ($isAjax) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => false, 'error' => 'Method not allowed']);
+        exit;
+    }
     header('Location: ../Reports/manage_contracts.php');
     exit;
 }
@@ -206,6 +219,22 @@ try {
     }
 
     $pdo->commit();
+
+    // ส่งแจ้งเตือนยกเลิกสัญญาเข้า LINE OA
+    require_once __DIR__ . '/../LineHelper.php';
+    try {
+        $stmtRoom = $pdo->prepare("SELECT room_number FROM room WHERE room_id = ?");
+        $stmtRoom->execute([$room_id]);
+        $roomName = $stmtRoom->fetchColumn() ?: $room_id;
+
+        if ($ctr_status === '1') {
+            sendLineBroadcast($pdo, "⚠️ แจ้งเตือน: สัญญาสำหรับห้อง {$roomName} ถูกยกเลิกเรียบร้อยแล้ว");
+        } elseif ($ctr_status === '2') {
+            sendLineBroadcast($pdo, "📝 แจ้งเตือน: ผู้เช่าห้อง {$roomName} แจ้งความประสงค์ขอยกเลิกสัญญา ล่วงหน้า");
+        }
+    } catch (Exception $e) {
+        error_log("Line Notification Error (Contract Cancel): " . $e->getMessage());
+    }
 
     $statusMessage = [
         '0' => 'แก้ไขสถานะสัญญาเป็นปกติแล้ว',

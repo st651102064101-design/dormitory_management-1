@@ -64,6 +64,12 @@ try {
     error_log('Insert result: ' . ($result ? 'success' : 'failed') . ', Last ID: ' . $lastId);
 
     if ($result && $lastId > 0) {
+        require_once __DIR__ . '/../LineHelper.php';
+        try {
+            $msg = "📢 ข่าวสารใหม่จากหอพัก: {$news_title}\n\nรายละเอียด: {$news_details}";
+            sendLineBroadcast($pdo, $msg);
+        } catch (Exception $e) {}
+
         if ($isAjax) {
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'message' => 'เพิ่มข่าวเรียบร้อยแล้ว', 'news_id' => $lastId]);

@@ -508,6 +508,16 @@ function dispatchPaymentReminder(PDO $pdo, int $expenseId, array $options = []):
         'response_preview' => $dispatchResponse,
     ]);
 
+    // แจ้งเตือนการค้างชำระผ่าน LINE OA
+    if (!$dryRun) {
+        require_once dirname(__DIR__) . '/LineHelper.php';
+        try {
+            sendLineBroadcast($pdo, "⚠️ " . $messageBody);
+        } catch (Exception $e) {
+            error_log("Line Notification Error (Payment Reminder): " . $e->getMessage());
+        }
+    }
+
     return [
         'success' => $dispatchStatus !== 'failed',
         'status' => $dispatchStatus,

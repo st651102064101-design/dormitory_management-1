@@ -22,6 +22,7 @@ $pdo = connectDB();
 
 // Load language helper for page content translation
 require_once __DIR__ . '/../includes/lang.php';
+require_once __DIR__ . '/../includes/thai_date_helper.php';
 
 // Include settings data
 include __DIR__ . '/settings/settings_data.php';
@@ -33,6 +34,9 @@ $pageTitle = __('settings');
 
 $toastScriptPath = __DIR__ . '/../Public/Assets/Javascript/toast-notification.js';
 $toastScriptVersion = is_file($toastScriptPath) ? (string)filemtime($toastScriptPath) : (string)time();
+
+$appleSettingsCssPath = __DIR__ . '/settings/apple-settings.css';
+$appleSettingsCssVersion = is_file($appleSettingsCssPath) ? (string)filemtime($appleSettingsCssPath) : (string)time();
 
 $appleSettingsScriptPath = __DIR__ . '/settings/apple-settings.js';
 $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemtime($appleSettingsScriptPath) : (string)time();
@@ -49,7 +53,7 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
   <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/lottie-icons.css">
-  <link rel="stylesheet" href="/dormitory_management/Reports/settings/apple-settings.css">
+  <link rel="stylesheet" href="/dormitory_management/Reports/settings/apple-settings.css?v=<?php echo urlencode($appleSettingsCssVersion); ?>">
   <!-- Explicit Prompt font load to ensure Thai sans-serif (no serifs) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

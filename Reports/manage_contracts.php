@@ -220,13 +220,16 @@ try {
         FROM contract c
         JOIN tenant t ON c.tnt_id = t.tnt_id
         LEFT JOIN room r ON c.room_id = r.room_id
-        LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+        JOIN termination tm ON tm.term_id = (
+            SELECT MAX(term_id) FROM termination WHERE ctr_id = c.ctr_id
+        )
         WHERE c.ctr_status IN ('1', '2')
           AND COALESCE(c.ctr_deposit, 0) > 0
+          AND tm.bank_account_number IS NOT NULL 
+          AND TRIM(tm.bank_account_number) != ''
           AND NOT EXISTS (
               SELECT 1 FROM deposit_refund dr
               WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1'
-              AND (tm.bank_account_number IS NOT NULL AND TRIM(tm.bank_account_number) != '')
           )
         ORDER BY tm.term_date ASC, c.ctr_id ASC
     ");
@@ -1709,11 +1712,15 @@ $pendingRefundCtrIdSet = array_flip(array_column($refundPendingContracts, 'ctr_i
             headers: { 'X-Requested-With': 'XMLHttpRequest' },
             body: form
           });
+          if (res.status === 401) {
+            window.location.href = '../Login.php';
+            return { success: false, error: 'เซสชันหมดอายุ' };
+          }
           const data = await res.json();
           return data;
         } catch (err) {
           console.error('Cancel contract error', err);
-          return { success: false, error: 'ข้อผิดพลาดเครือข่าย' };
+          return { success: false, error: 'ข้อผิดพลาดเครือข่าย หรือพบปัญหากับเซสชัน' };
         }
       }
 

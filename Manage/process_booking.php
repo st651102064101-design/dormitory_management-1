@@ -89,6 +89,31 @@ try {
     // commit transaction
     $pdo->commit();
     
+    // ส่งแจ้งเตือนการจองใหม่เข้า LINE OA
+    require_once __DIR__ . '/../LineHelper.php';
+    try {
+        $stmtRoomInfo = $pdo->prepare("SELECT room_number FROM room WHERE room_id = ?");
+        $stmtRoomInfo->execute([$room_id]);
+        $roomName = $stmtRoomInfo->fetchColumn() ?: $room_id;
+        
+        $stmtTenant = $pdo->prepare("SELECT tnt_name, tnt_phone FROM tenant WHERE tnt_id = ?");
+        $stmtTenant->execute([$tnt_id]);
+        $tenantMatch = $stmtTenant->fetch(PDO::FETCH_ASSOC);
+
+        $tName = $tenantMatch ? $tenantMatch['tnt_name'] : 'เจ้าหน้าที่เพิ่ม';
+        $tPhone = $tenantMatch ? $tenantMatch['tnt_phone'] : '-';
+        
+        $msg = "🔔 เจ้าหน้าที่เพิ่มการจองห้องพักใหม่!\n";
+        $msg .= "👤 ผู้เช่า: {$tName}\n";
+        $msg .= "📞 เบอร์ติดต่อ: {$tPhone}\n";
+        $msg .= "🏠 ห้องที่จอง: {$roomName}\n";
+        $msg .= "📅 วันที่เข้าพัก: " . date('d/m/Y', strtotime($bkg_checkin_date)) . "\n";
+        
+        sendLineBroadcast($pdo, $msg);
+    } catch (Exception $e) {
+        error_log("Line Notification Error: " . $e->getMessage());
+    }
+
     if ($isAjax) {
         header('Content-Type: application/json');
         echo json_encode([

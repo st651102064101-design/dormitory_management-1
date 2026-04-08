@@ -3,7 +3,7 @@
   <h2 class="apple-section-title">Google Authentication</h2>
   <div class="apple-section-card">
     <!-- Google Status -->
-    <div class="apple-settings-row">
+    <div class="apple-settings-row" data-sheet="sheet-google-client-id">
       <div class="apple-row-icon google-auth-icon" style="background: linear-gradient(135deg, #4285F4, #34A853);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
           <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
@@ -51,7 +51,7 @@
     </div>
     
     <!-- Google Redirect URI (Read Only) -->
-    <div class="apple-settings-row">
+    <div class="apple-settings-row" data-sheet="sheet-google-redirect-uri">
       <div class="apple-row-icon purple">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
           <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
@@ -62,6 +62,7 @@
         <p class="apple-row-label">Redirect URI</p>
         <p class="apple-row-sublabel" style="font-size: 11px; word-break: break-all;"><?php echo htmlspecialchars($googleRedirectUri); ?></p>
       </div>
+      <span class="apple-row-chevron">›</span>
     </div>
   </div>
   
@@ -136,7 +137,65 @@
   </div>
 </div>
 
+<!-- Sheet: Google Redirect URI -->
+<div class="apple-sheet-overlay" id="sheet-google-redirect-uri">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-google-redirect-uri">ยกเลิก</button>
+      <h3 class="apple-sheet-title">Redirect URI</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <div class="apple-input-group">
+        <label class="apple-input-label">Authorized Redirect URI</label>
+        <input
+          type="text"
+          id="googleRedirectUriReadonly"
+          class="apple-input"
+          value="<?php echo htmlspecialchars((preg_match('/^https?:\\/\\//i', (string)$googleRedirectUri) ? (string)$googleRedirectUri : ((isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] . (string)$googleRedirectUri))); ?>"
+          readonly
+        >
+        <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">คัดลอกค่าไปวางใน Google Cloud Console > Authorized redirect URIs</p>
+      </div>
+      <button type="button" id="copyGoogleRedirectBtn" class="apple-button primary">คัดลอก Redirect URI</button>
+    </div>
+  </div>
+</div>
+
 <script>
+window.showAppleToast = window.showAppleToast || function(msg, type) {
+  if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+    window.appleSettings.showToast(msg, type);
+  } else {
+    alert(msg);
+  }
+};
+
+// Copy Redirect URI
+document.getElementById('copyGoogleRedirectBtn')?.addEventListener('click', async function() {
+  const input = document.getElementById('googleRedirectUriReadonly');
+  const value = input ? input.value : '';
+
+  if (!value) {
+    showAppleToast('ไม่พบ Redirect URI', 'error');
+    return;
+  }
+
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(value);
+    } else {
+      input.focus();
+      input.select();
+      document.execCommand('copy');
+    }
+    showAppleToast('คัดลอก Redirect URI แล้ว', 'success');
+  } catch (err) {
+    showAppleToast('คัดลอกไม่สำเร็จ กรุณาคัดลอกเอง', 'error');
+  }
+});
+
 // Google Client ID Form
 document.getElementById('googleClientIdForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();

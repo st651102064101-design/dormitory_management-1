@@ -2767,6 +2767,11 @@ body.apple-settings-page .sidebar-overlay.active {
   color: #0f172a !important;
 }
 
+
+
+
+
+
 /* Upload Icon Animation */
 .apple-upload-area svg {
   transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -2915,4 +2920,35 @@ body.apple-settings-page .sidebar-overlay.active {
 .apple-language-option.active .apple-theme-name {
   color: var(--apple-blue);
   font-weight: 700;
+}
+
+/* LINE OA Custom Row Icon Styles */
+.apple-row-icon.line-oa-icon {
+  background: linear-gradient(135deg, #00C300, #00A300) !important;
+  box-shadow: 0 3px 10px rgba(0, 195, 0, 0.3) !important;
+}
+
+@keyframes lineOAPulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255,255,255,0.4)); }
+  50% { transform: scale(1.15) rotate(-2deg); filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); }
+}
+
+.apple-row-icon.line-oa-icon svg {
+  animation: lineOAPulse 2.5s ease-in-out infinite;
+  stroke: white !important;
+  transform-origin: center;
+}
+
+.apple-row-icon.line-oa-icon svg path,
+.apple-row-icon.line-oa-icon svg circle,
+.apple-row-icon.line-oa-icon svg polyline,
+.apple-row-icon.line-oa-icon svg line {
+  stroke-dasharray: none !important;
+  stroke-dashoffset: 0 !important;
+  animation: none !important;
+  opacity: 1 !important;
+}
+
+.apple-settings-row:hover .apple-row-icon.line-oa-icon svg {
+  animation-duration: 1s;
 }

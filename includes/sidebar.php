@@ -48,10 +48,12 @@ $contractStatusBadgeCounts = [
 $sidebarDataLoadedFromDb = false;
 $sidebarCacheTtlSeconds = 20;
 $sidebarCacheKey = '__sidebar_snapshot_v2';
+$sidebarSnapshotVersion = 2;
 $sidebarSnapshot = $_SESSION[$sidebarCacheKey] ?? null;
 $currentAdminId = isset($_SESSION['admin_id']) ? (int)$_SESSION['admin_id'] : 0;
 $canUseSidebarSnapshot = is_array($sidebarSnapshot)
   && isset($sidebarSnapshot['ts'], $sidebarSnapshot['admin_id'], $sidebarSnapshot['data'])
+  && (int)($sidebarSnapshot['version'] ?? 0) === $sidebarSnapshotVersion
   && (time() - (int)$sidebarSnapshot['ts'] <= $sidebarCacheTtlSeconds)
   && (int)$sidebarSnapshot['admin_id'] === $currentAdminId;
 
@@ -315,7 +317,9 @@ try {
     ];
 
     // ดึงจำนวนสถานะการจองเพื่อแสดงที่เมนูการจองห้อง
-    $bookingStatusStmt = $pdo->query("\n        SELECT\n          SUM(CASE WHEN COALESCE(b.bkg_status, '0') = '1' AND active_ctr.ctr_id IS NULL THEN 1 ELSE 0 END) AS reserved_count,\n          SUM(CASE WHEN COALESCE(b.bkg_status, '0') = '2' THEN 1 ELSE 0 END) AS checkedin_count,\n          SUM(CASE WHEN COALESCE(b.bkg_status, '0') = '0' THEN 1 ELSE 0 END) AS cancelled_count\n        FROM booking b\n        LEFT JOIN contract active_ctr\n          ON active_ctr.room_id = b.room_id\n         AND active_ctr.ctr_status = '0'\n    ");
+    // reserved_count ต้องตรงกับหน้า manage_booking: นับเฉพาะรายการจอง (status=1)
+    // ที่ยัง "ไม่มี" blocker (สัญญาใช้งาน/แจ้งยกเลิก/สัญญาที่ถูกสร้างแล้วสำหรับ room+tnt)
+    $bookingStatusStmt = $pdo->query("\n        SELECT\n          SUM(CASE\n                WHEN COALESCE(b.bkg_status, '0') = '1'\n                 AND living_ctr.ctr_id IS NULL\n                 AND cancel_ctr.ctr_id IS NULL\n                 AND booking_ctr.ctr_id IS NULL\n                THEN 1 ELSE 0\n              END) AS reserved_count,\n          SUM(CASE WHEN COALESCE(b.bkg_status, '0') = '2' THEN 1 ELSE 0 END) AS checkedin_count,\n          SUM(CASE WHEN COALESCE(b.bkg_status, '0') = '0' THEN 1 ELSE 0 END) AS cancelled_count\n        FROM booking b\n        LEFT JOIN (\n          SELECT c.room_id, MAX(c.ctr_id) AS ctr_id\n          FROM contract c\n          WHERE c.ctr_status = '0'\n            AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE())\n          GROUP BY c.room_id\n        ) living_ctr ON living_ctr.room_id = b.room_id\n        LEFT JOIN (\n          SELECT c.room_id, MAX(c.ctr_id) AS ctr_id\n          FROM contract c\n          LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id\n          WHERE c.ctr_status = '2'\n            AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())\n          GROUP BY c.room_id\n        ) cancel_ctr ON cancel_ctr.room_id = b.room_id\n        LEFT JOIN (\n          SELECT c.room_id, c.tnt_id, MAX(c.ctr_id) AS ctr_id\n          FROM contract c\n          GROUP BY c.room_id, c.tnt_id\n        ) booking_ctr ON booking_ctr.room_id = b.room_id AND booking_ctr.tnt_id = b.tnt_id\n        WHERE COALESCE(b.bkg_status, '0') IN ('0','1','2')\n    ");
     $bookingStatusResult = $bookingStatusStmt ? $bookingStatusStmt->fetch(PDO::FETCH_ASSOC) : [];
     $bookingStatusBadgeCounts = [
       'reserved' => (int)($bookingStatusResult['reserved_count'] ?? 0),
@@ -327,7 +331,21 @@ try {
     $contractStatusStmt = $pdo->query("
         SELECT
           (SELECT COUNT(*) FROM contract WHERE ctr_status = '2') AS termination_requested,
-          (SELECT COUNT(*) FROM deposit_refund WHERE refund_status = '0') AS refund_pending
+          (
+            SELECT COUNT(*)
+            FROM contract c
+            JOIN termination tm ON tm.term_id = (
+                SELECT MAX(term_id) FROM termination WHERE ctr_id = c.ctr_id
+            )
+            WHERE c.ctr_status IN ('1', '2')
+              AND COALESCE(c.ctr_deposit, 0) > 0
+              AND tm.bank_account_number IS NOT NULL 
+              AND TRIM(tm.bank_account_number) != ''
+              AND NOT EXISTS (
+                  SELECT 1 FROM deposit_refund dr
+                  WHERE dr.ctr_id = c.ctr_id AND dr.refund_status = '1'
+              )
+          ) AS refund_pending
     ");
     $contractStatusResult = $contractStatusStmt ? $contractStatusStmt->fetch(PDO::FETCH_ASSOC) : [];
     $contractStatusBadgeCounts = [
@@ -378,6 +396,7 @@ try {
 
 if ($sidebarDataLoadedFromDb) {
   $_SESSION[$sidebarCacheKey] = [
+    'version' => $sidebarSnapshotVersion,
     'ts' => time(),
     'admin_id' => $currentAdminId,
     'data' => [

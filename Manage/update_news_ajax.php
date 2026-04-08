@@ -25,6 +25,14 @@ try {
     $stmt = $pdo->prepare("UPDATE news SET news_title=?, news_details=?, news_date=?, news_by=? WHERE news_id=?");
     $result = $stmt->execute([$title, $details, $date, $by ?: null, $id]);
     
+    if ($result) {
+        require_once __DIR__ . '/../LineHelper.php';
+        try {
+            $msg = "📢 อัปเดตข่าวสารหอพัก: {$title}\n\nรายละเอียด: {$details}";
+            sendLineBroadcast($pdo, $msg);
+        } catch (Exception $e) {}
+    }
+
     echo json_encode(['success' => $result, 'message' => 'แก้ไขสำเร็จ']);
 } catch (Exception $e) {
     echo json_encode(['success' => false, 'error' => 'ผิดพลาด']);

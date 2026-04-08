@@ -219,6 +219,26 @@ try {
             $expMonth, $elecUsed, $waterUsed, $rateElec, $rateWater,
             $roomPrice, $elecCost, $waterCost, $expTotal, $ctrId,
         ]);
+
+        // แจ้งเตือนเรื่องการออกรอบบิล (กรณีห้องนี้มีการคำนวณบิลสำเร็จ)
+        require_once __DIR__ . '/../LineHelper.php';
+        try {
+            $stmtRoom = $pdo->prepare("SELECT r.room_number FROM room r JOIN contract c ON r.room_id = c.room_id WHERE c.ctr_id = ?");
+            $stmtRoom->execute([$ctrId]);
+            $roomName = $stmtRoom->fetchColumn() ?: 'ไม่ทราบห้อง';
+
+            $msg = "🧾 รอบบิลห้อง {$roomName}\nประจำเดือน: {$expMonth}\n";
+            $msg .= "------------------------\n";
+            $msg .= "ค่าน้ำ: " . number_format($waterCost, 2) . " บาท\n";
+            $msg .= "ค่าไฟ: " . number_format($elecCost, 2) . " บาท\n";
+            $msg .= "ค่าเช่า: " . number_format($roomPrice, 2) . " บาท\n";
+            $msg .= "------------------------\n";
+            $msg .= "ยอดรวมสุทธิ: " . number_format($expTotal, 2) . " บาท\n";
+            
+            sendLineBroadcast($pdo, $msg);
+        } catch (Exception $e) {
+            error_log("Line Notification Error (Utility): " . $e->getMessage());
+        }
     }
 
     echo json_encode([

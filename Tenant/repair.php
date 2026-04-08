@@ -75,6 +75,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$repair_desc, $repair_image, $contract['ctr_id']]);
             
             $success = 'แจ้งซ่อมเรียบร้อยแล้ว';
+
+            // ส่งแจ้งเตือนการแจ้งซ่อมใหม่เข้า LINE OA
+            require_once __DIR__ . '/../LineHelper.php';
+            try {
+                $stmtRoom = $pdo->prepare("SELECT r.room_number, t.tnt_name FROM room r JOIN contract c ON r.room_id = c.room_id JOIN tenant t ON c.tnt_id = t.tnt_id WHERE c.ctr_id = ?");
+                $stmtRoom->execute([$contract['ctr_id']]);
+                $row = $stmtRoom->fetch(PDO::FETCH_ASSOC);
+                $roomName = $row ? $row['room_number'] : 'ไม่ทราบห้อง';
+                $tenantName = $row ? $row['tnt_name'] : 'ผู้เช่า';
+                
+                $msg = "🛠️ มีการแจ้งซ่อมใหม่จากห้อง {$roomName}\n";
+                $msg .= "👤 ผู้แจ้ง: {$tenantName}\n";
+                $msg .= "รายการ: " . mb_substr($repair_desc, 0, 50) . (mb_strlen($repair_desc) > 50 ? '...' : '') . "\n";
+                $msg .= "สถานะ: รอคนรับเรื่อง";
+                
+                sendLineBroadcast($pdo, $msg);
+            } catch (Exception $e) {
+                // Ignore LINE error
+            }
             } // end spam-check else
         }
         

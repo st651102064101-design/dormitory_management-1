@@ -104,7 +104,13 @@ try {
             GROUP BY DATE_FORMAT(pay_date, '%Y-%m')
             ORDER BY DATE_FORMAT(pay_date, '%Y-%m') DESC
             LIMIT 12");
-        $monthly_revenue = array_reverse($stmt->fetchAll());
+        $monthly_revenue = array_reverse($stmt->fetchAll() ?: []);
+        $miniRevenueLabels = [];
+        $miniRevenueData = [];
+        foreach ($monthly_revenue as $data) {
+            $miniRevenueLabels[] = thaiMonthYear($data['month'] ?? '');
+            $miniRevenueData[] = (float)($data['total'] ?? 0);
+        }
     
     // ข้อมูล Booking trend (7 วันล่าสุด)
     $stmt = $pdo->query("SELECT DATE(bkg_date) as date, COUNT(*) as count 
@@ -170,7 +176,7 @@ try {
     $last_elec_total  = intval($last_utility['total_elec'] ?? 0);
     // Format reading as 7-digit string for odometer
     $water_digits = str_pad($cur_water_read, 7, '0', STR_PAD_LEFT);
-    $elec_digits  = str_pad($cur_elec_read,  7, '0', STR_PAD_LEFT);
+    $elec_digits  = str_pad($cur_elec_read, 5, '0', STR_PAD_LEFT);
     $water_delta = $cur_water_total - $last_water_total;
     $elec_delta  = $cur_elec_total  - $last_elec_total;
 
@@ -214,7 +220,7 @@ try {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+    <script src="/dormitory_management/Public/Assets/Javascript/chart.umd.min.js"></script>
     <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <style>
         @keyframes slideDown {
@@ -366,6 +372,13 @@ try {
             height: 90px;
             flex-shrink: 0;
             position: relative;
+            overflow: hidden;
+        }
+
+        .mini-chart-container canvas {
+            display: block;
+            width: 100% !important;
+            height: 100% !important;
         }
         
         .report-flex {
@@ -890,203 +903,162 @@ try {
             }
         }
 
-        /* ===== DASHBOARD MINI METERS ===== */
-        .dash-meters-wrap {
-            display: flex;
-            gap: 14px;
-            justify-content: center;
-            margin: 6px 0 10px;
+        /* ===== DASHBOARD METER SUMMARY (report_utility style) ===== */
+        .dash-meter-summary {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin: 8px 0 10px;
         }
-        .dash-mini-meter {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 6px;
-            flex: 1;
-        }
-        /* Housing */
-        .dmm-body {
-            position: relative;
-            width: 110px;
-            height: 110px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        .dmm-body.water {
-            background:
-                radial-gradient(ellipse at 35% 30%, rgba(255,255,255,0.22) 0%, transparent 55%),
-                radial-gradient(circle at 50% 50%, #1da1c8 0%, #0c7a9e 40%, #085d7a 70%, #043d52 100%);
-            box-shadow:
-                0 0 0 3px #0a6a88,
-                0 4px 18px rgba(8,90,120,0.55),
-                inset 0 3px 8px rgba(255,255,255,0.18),
-                inset 0 -4px 10px rgba(0,0,0,0.35);
-        }
-        .dmm-body.elec {
-            background:
-                radial-gradient(ellipse at 35% 30%, rgba(255,255,255,0.2) 0%, transparent 55%),
-                radial-gradient(circle at 50% 50%, #5a5a6e 0%, #3a3a4e 40%, #252534 70%, #141420 100%);
-            box-shadow:
-                0 0 0 3px #2a2a3a,
-                0 4px 18px rgba(10,10,30,0.55),
-                inset 0 3px 8px rgba(255,255,255,0.12),
-                inset 0 -4px 10px rgba(0,0,0,0.45);
-        }
-        /* Brass ring */
-        .dmm-face {
-            width: 84px;
-            height: 84px;
-            border-radius: 50%;
-            background: #fff;
-            position: relative;
+        .dash-meter-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 12px 8px 10px;
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.06);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            gap: 1px;
-            padding: 4px;
-            box-sizing: border-box;
             overflow: hidden;
-            box-shadow:
-                0 0 0 1.5px #7a5c28,
-                0 0 0 4px #c9972a,
-                0 0 0 4.5px #7a5c28,
-                0 0 0 6px #e8b84b,
-                0 0 0 6.5px #7a5c28,
-                0 0 0 8px #b8871e,
-                inset 0 2px 6px rgba(0,0,0,0.25),
-                inset 0 -1px 3px rgba(0,0,0,0.15);
         }
-        /* Glass reflection */
-        .dmm-face::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            border-radius: 50%;
-            background: radial-gradient(ellipse 70% 45% at 38% 25%, rgba(255,255,255,0.38) 0%, rgba(255,255,255,0.06) 60%, transparent 100%);
-            pointer-events: none;
-            z-index: 10;
-        }
-        .dmm-unit {
-            font-size: 9px;
-            font-weight: 700;
-            color: #333;
-            letter-spacing: 0.5px;
-            margin-bottom: 1px;
-            font-family: 'Arial', sans-serif;
-            z-index: 2;
-        }
-        /* Odometer strip */
-        .dmm-odo {
-            display: flex;
-            gap: 1px;
-            background: #1a1a1a;
-            border-radius: 3px;
-            padding: 2px 2px;
-            box-shadow: inset 0 2px 5px rgba(0,0,0,0.7), inset 0 -1px 3px rgba(0,0,0,0.5);
-            z-index: 2;
-        }
-        .dmm-digit {
-            width: 13px;
-            height: 18px;
+        .dash-meter-visual {
+            width: 100%;
+            min-height: 150px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 11px;
-            font-weight: 900;
-            font-family: 'Courier New', monospace;
-            border-radius: 2px;
-            background: linear-gradient(180deg, #2a2a2a 0%, #0a0a0a 45%, #1a1a1a 55%, #2a2a2a 100%);
-            color: #f0f0f0;
-            box-shadow: inset 0 1px 3px rgba(255,255,255,0.08), inset 0 -1px 2px rgba(0,0,0,0.6);
         }
-        .dmm-digit.red {
-            background: linear-gradient(180deg, #cc2222 0%, #880000 45%, #aa1111 55%, #cc2222 100%);
-            color: #fff;
+        .dash-meter-card.water .vm-water-body {
+            transform: scale(0.70);
+            transform-origin: center top;
+            margin: -22px auto -34px;
         }
-        .dmm-specs {
-            font-size: 7.5px;
-            color: #555;
-            font-family: Arial, sans-serif;
+        .dash-meter-card.electric .vm-elec-body {
+            transform: scale(0.88);
+            transform-origin: center top;
+            margin: -2px auto -20px;
+        }
+        .dash-meter-info {
             text-align: center;
-            line-height: 1.3;
-            z-index: 2;
+            margin-top: 6px;
         }
-        /* Sub-dial */
-        .dmm-sub {
-            width: 16px;
-            height: 16px;
-            border-radius: 50%;
-            background: conic-gradient(
-                #ddd 0deg 30deg, #aaa 30deg 36deg,
-                #ddd 36deg 66deg, #aaa 66deg 72deg,
-                #ddd 72deg 102deg, #aaa 102deg 108deg,
-                #ddd 108deg 138deg, #aaa 138deg 144deg,
-                #ddd 144deg 174deg, #aaa 174deg 180deg,
-                #ddd 180deg 210deg, #aaa 210deg 216deg,
-                #ddd 216deg 246deg, #aaa 246deg 252deg,
-                #ddd 252deg 282deg, #aaa 282deg 288deg,
-                #ddd 288deg 318deg, #aaa 318deg 324deg,
-                #ddd 324deg 354deg, #aaa 354deg 360deg
-            );
-            box-shadow: 0 0 0 1px #c00, inset 0 0 3px rgba(0,0,0,0.3);
-            position: absolute;
-            bottom: 9px;
-            right: 9px;
-            z-index: 3;
+        .dash-meter-label {
+            font-size: 1.02rem;
+            font-weight: 800;
+            color: #0f172a;
+            margin-bottom: 2px;
         }
-        .dmm-sub::after {
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 60%; height: 2px;
-            background: linear-gradient(90deg, #c00 0%, #ff4444 100%);
-            transform-origin: 15% 50%;
-            transform: translate(-15%, -50%) rotate(40deg);
-            border-radius: 1px;
-        }
-        .dmm-sub::before {
-            content: '';
-            position: absolute;
-            inset: 35%;
-            background: #c00;
-            border-radius: 50%;
-            z-index: 4;
-        }
-        /* Info below meter */
-        .dmm-info {
-            text-align: center;
-        }
-        .dmm-label {
-            font-size: 11px;
-            font-weight: 700;
-            margin-bottom: 3px;
-        }
-        .dmm-label.water { color: #0a7a9e; }
-        .dmm-label.elec  { color: #d97706; }
-        .dmm-stat {
-            font-size: 10px;
-            color: #6b7280;
-        }
-        .dmm-delta {
-            display: inline-block;
-            font-size: 9.5px;
+        .dash-meter-stat {
+            font-size: 0.95rem;
+            color: #334155;
             font-weight: 600;
-            padding: 1px 5px;
-            border-radius: 10px;
-            margin-top: 2px;
         }
-        .dmm-delta.up   { background: #fef3c7; color: #b45309; }
-        .dmm-delta.down { background: #d1fae5; color: #065f46; }
-        .dmm-delta.same { background: #f3f4f6; color: #6b7280; }
-        .dmm-divider {
-            width: 1px;
-            background: #e5e7eb;
-            align-self: stretch;
-            margin: 4px 0;
+        .dash-meter-delta {
+            display: inline-block;
+            margin-top: 6px;
+            font-size: 0.98rem;
+            font-weight: 800;
+            border-radius: 999px;
+            padding: 2px 10px;
+        }
+        .dash-meter-delta.up { background: #fef3c7; color: #92400e; }
+        .dash-meter-delta.down { background: #dcfce7; color: #166534; }
+        .dash-meter-delta.same { background: #f1f5f9; color: #475569; }
+        .dash-meter-link {
+            color: #0f172a;
+            text-decoration: none;
+            font-size: 1.03rem;
+            font-weight: 500;
+        }
+        body.live-dark .dash-meter-card {
+            background: rgba(30, 41, 59, 0.88);
+            border-color: rgba(148, 163, 184, 0.28);
+            box-shadow: 0 2px 12px rgba(2, 6, 23, 0.45);
+        }
+        body.live-dark .dash-meter-label { color: #e2e8f0; }
+        body.live-dark .dash-meter-stat { color: #cbd5e1; }
+        body.live-dark .dash-meter-link { color: #e2e8f0; }
+
+        .vm-water-body { display: flex; align-items: center; justify-content: center; margin: 0 auto; max-width: 280px; position: relative; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.35)); }
+        .vm-pipe-left, .vm-pipe-right {
+            width: 42px; height: 48px; flex-shrink: 0; position: relative; z-index: 2;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 8%, transparent 92%, rgba(0,0,0,0.10) 100%),
+                linear-gradient(180deg, #52c8da 0%, #3cb8cc 5%, #2ea0b6 12%, #2290a8 22%, #1a7d96 35%, #146d84 50%, #0f5c72 65%, #0b4e62 78%, #084454 90%, #063a4a 100%);
+            border-top: 1px solid rgba(100,210,230,0.35); border-bottom: 1.5px solid #042830;
+        }
+        .vm-pipe-left { border-radius: 8px 0 0 8px; border-right: none; margin-right: -3px; border-left: 1.5px solid #073e4c; box-shadow: inset 0 4px 8px rgba(255,255,255,0.15), inset 0 -4px 8px rgba(0,0,0,0.25), inset -3px 0 6px rgba(0,0,0,0.10), -2px 0 4px rgba(0,0,0,0.12); }
+        .vm-pipe-right { border-radius: 0 8px 8px 0; border-left: none; margin-left: -3px; border-right: 1.5px solid #073e4c; box-shadow: inset 0 4px 8px rgba(255,255,255,0.15), inset 0 -4px 8px rgba(0,0,0,0.25), inset 3px 0 6px rgba(0,0,0,0.10), 2px 0 4px rgba(0,0,0,0.12); }
+        .vm-pipe-flange {
+            position: absolute; width: 14px; height: 110%; top: -5%; z-index: 3; border-radius: 2px;
+            background: linear-gradient(180deg, #6ad0e0 0%, #48bcd0 8%, #30a4ba 20%, #228c9e 38%, #187888 55%, #106878 70%, #0c5868 85%, #084a5a 100%);
+            border-top: 1px solid rgba(120,220,240,0.4); border-bottom: 1.5px solid #042830;
+            box-shadow: inset 0 3px 5px rgba(255,255,255,0.20), inset 0 -3px 5px rgba(0,0,0,0.20);
+        }
+        .vm-pipe-left .vm-pipe-flange { right: -2px; border-right: 2px solid #0a3540; border-left: 1px solid #0a3540; box-shadow: 3px 0 6px rgba(0,0,0,0.25), inset 0 3px 5px rgba(255,255,255,0.20), inset 0 -3px 5px rgba(0,0,0,0.20); }
+        .vm-pipe-right .vm-pipe-flange { left: -2px; border-left: 2px solid #0a3540; border-right: 1px solid #0a3540; box-shadow: -3px 0 6px rgba(0,0,0,0.25), inset 0 3px 5px rgba(255,255,255,0.20), inset 0 -3px 5px rgba(0,0,0,0.20); }
+        .vm-pipe-bolt { position: absolute; width: 12px; height: 12px; background: radial-gradient(circle at 38% 30%, #a0e4ef 0%, #60c8d8 20%, #38a8bc 40%, #1e8ca0 60%, #0f6a7c 80%, #084a5a 100%); border-radius: 50%; top: 50%; left: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 2px 3px rgba(255,255,255,0.50), inset 0 -2px 3px rgba(0,0,0,0.35), 0 1.5px 4px rgba(0,0,0,0.45); border: 0.5px solid #063a4a; }
+        .vm-pipe-bolt::after { content: '+'; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 7px; font-weight: 900; color: rgba(0,0,0,0.22); line-height: 1; text-shadow: 0 0.5px 0 rgba(255,255,255,0.2); }
+
+        .vm-dial-water {
+            width: 190px; height: 190px; border-radius: 50%; flex-shrink: 0; position: relative; z-index: 1;
+            background:
+                radial-gradient(ellipse at 38% 25%, rgba(80,200,220,0.20) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, #1e8fa2 0%, #1a8496 12%, #157688 25%, #10687a 38%, #0c5a6c 52%, #094e60 65%, #074456 78%, #053a4c 90%, #043242 100%);
+            border: 4.5px solid #053545;
+            box-shadow: 0 0 0 1px rgba(60,180,210,0.25), inset 0 4px 10px rgba(80,200,230,0.12), inset 0 -6px 14px rgba(0,0,0,0.30), inset 4px 0 8px rgba(0,0,0,0.10), inset -4px 0 8px rgba(0,0,0,0.10), 0 10px 30px rgba(0,0,0,0.35), 0 3px 10px rgba(0,0,0,0.20);
+        }
+        .vm-dial-water::before { content: ''; position: absolute; top: 0; left: 10%; right: 10%; height: 40%; border-radius: 50%; background: radial-gradient(ellipse at 50% 0%, rgba(100,210,230,0.15) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+        .vm-dial-face {
+            position: absolute; top: 9px; left: 9px; right: 9px; bottom: 9px; border-radius: 50%;
+            background: radial-gradient(ellipse at 45% 35%, #ffffff 0%, #fefcf6 15%, #faf6ec 30%, #f4efe2 48%, #eee8d8 65%, #e6dfce 80%, #ddd6c4 100%);
+            border: 6px solid transparent; background-clip: padding-box;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; overflow: hidden;
+            box-shadow: inset 0 3px 10px rgba(0,0,0,0.12), inset 0 -2px 6px rgba(0,0,0,0.06), inset 2px 0 4px rgba(0,0,0,0.04), inset -2px 0 4px rgba(0,0,0,0.04), 0 0 0 1px #6b5504, 0 0 0 2.5px #8c6d08, 0 0 0 4px #b8920e, 0 0 0 5.5px #d4aa18, 0 0 0 6.5px #e4bc28, 0 0 0 7.5px #d4aa18, 0 0 0 8.5px #b08010, 0 0 0 9px #8c6d08, 0 0 0 9.5px #6b5504;
+        }
+        .vm-dial-face::before { content: ''; position: absolute; top: -9px; left: -9px; right: -9px; bottom: -9px; border-radius: 50%; border: 8px solid transparent; background: linear-gradient(145deg, rgba(255,240,160,0.80) 0%, rgba(230,200,80,0.50) 15%, rgba(200,160,30,0.70) 30%, rgba(160,120,10,0.80) 45%, rgba(140,105,8,0.60) 55%, rgba(180,140,20,0.70) 65%, rgba(220,180,50,0.50) 78%, rgba(255,230,120,0.75) 88%, rgba(200,160,30,0.60) 100%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask-composite: exclude; pointer-events: none; z-index: 5; }
+        .vm-dial-face::after { content: ''; position: absolute; top: 2%; left: 6%; width: 65%; height: 40%; background: radial-gradient(ellipse at 40% 30%, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.30) 25%, rgba(255,255,255,0.10) 50%, transparent 70%); border-radius: 50%; pointer-events: none; z-index: 10; transform: rotate(-8deg); }
+        .vm-dial-unit-top { font-size: 0.65rem; font-weight: 900; color: #1a1a1a; letter-spacing: 0.5px; margin-bottom: 2px; position: relative; z-index: 2; text-shadow: 0 0.5px 0 rgba(255,255,255,0.6); }
+        .vm-dial-deco { font-size: 1rem; color: #555; margin: 1px 0; line-height: 1; opacity: 0.45; animation: waterMeterSpin 2.5s linear infinite; position: relative; z-index: 2; }
+        @keyframes waterMeterSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .vm-dial-specs { font-size: 0.36rem; color: #888; letter-spacing: 0.3px; margin: 0; white-space: nowrap; position: relative; z-index: 2; }
+        .vm-dial-label { font-size: 0.42rem; font-weight: 800; color: #555; letter-spacing: 1.5px; text-transform: uppercase; position: relative; z-index: 2; }
+        .vm-sub-dial {
+            position: absolute; bottom: 13%; right: 16%; width: 24px; height: 24px; border-radius: 50%; z-index: 3;
+            background:
+                conic-gradient(from 0deg, #ccc 0deg, #ccc 1deg, transparent 1deg, transparent 36deg, #ccc 36deg, #ccc 37deg, transparent 37deg, transparent 72deg, #ccc 72deg, #ccc 73deg, transparent 73deg, transparent 108deg, #ccc 108deg, #ccc 109deg, transparent 109deg, transparent 144deg, #ccc 144deg, #ccc 145deg, transparent 145deg, transparent 180deg, #ccc 180deg, #ccc 181deg, transparent 181deg, transparent 216deg, #ccc 216deg, #ccc 217deg, transparent 217deg, transparent 252deg, #ccc 252deg, #ccc 253deg, transparent 253deg, transparent 288deg, #ccc 288deg, #ccc 289deg, transparent 289deg, transparent 324deg, #ccc 324deg, #ccc 325deg, transparent 325deg, transparent 360deg),
+                radial-gradient(circle at 45% 38%, #fff 0%, #fcf8f8 40%, #f5eaea 65%, #eedede 100%);
+            border: 2px solid #c62828; box-shadow: inset 0 1.5px 4px rgba(0,0,0,0.15), inset 0 -1px 2px rgba(0,0,0,0.05), 0 1.5px 4px rgba(0,0,0,0.18);
+        }
+        .vm-sub-dial::before { content: ''; position: absolute; top: 50%; left: 50%; width: 8px; height: 1.5px; background: linear-gradient(90deg, #c62828 0%, #e53935 100%); transform-origin: 0 50%; transform: translate(0, -50%) rotate(-30deg); border-radius: 1px; animation: subDialSpin 8s linear infinite; box-shadow: 0 0.5px 1px rgba(0,0,0,0.3); }
+        .vm-sub-dial::after { content: ''; position: absolute; top: 50%; left: 50%; width: 4px; height: 4px; background: radial-gradient(circle at 40% 35%, #f44336, #b71c1c); border-radius: 50%; transform: translate(-50%, -50%); box-shadow: inset 0 0.5px 1px rgba(255,255,255,0.4), 0 0.5px 1px rgba(0,0,0,0.3); }
+        @keyframes subDialSpin { from { transform: translate(0, -50%) rotate(-30deg); } to { transform: translate(0, -50%) rotate(330deg); } }
+
+        .vm-elec-body { display: flex; flex-direction: column; align-items: center; margin: 0 auto; max-width: 160px; }
+        .vm-elec-frame { width: 140px; min-height: 160px; background: linear-gradient(160deg, #f8f8f8 0%, #ededed 25%, #e0e0e0 50%, #d5d5d5 80%, #ccc 100%); border: 2.5px solid #a0a0a0; border-radius: 14px 14px 8px 8px; position: relative; padding: 1rem 0.6rem 0.75rem; display: flex; flex-direction: column; align-items: center; gap: 5px; box-shadow: inset 0 1px 4px rgba(255,255,255,0.7), inset 0 -2px 5px rgba(0,0,0,0.06), 0 5px 18px rgba(0,0,0,0.2); overflow: hidden; }
+        .vm-elec-frame::before { content: ''; position: absolute; top: 7px; left: 7px; right: 7px; bottom: 7px; border: 1.5px solid rgba(255,255,255,0.5); border-radius: 12px 12px 6px 6px; pointer-events: none; }
+        .vm-elec-frame::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 50%, rgba(0,0,0,0.03) 100%); border-radius: inherit; pointer-events: none; }
+        .vm-elec-screw { position: absolute; width: 10px; height: 10px; background: radial-gradient(circle at 35% 35%, #e8e8e8, #aaa 50%, #888); border-radius: 50%; border: 1px solid #888; box-shadow: inset 0 1px 1px rgba(255,255,255,0.5), 0 1px 2px rgba(0,0,0,0.3); z-index: 2; }
+        .vm-elec-screw::after { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(30deg); width: 5px; height: 1.2px; background: #666; }
+        .vm-screw-tl { top: 5px; left: 5px; } .vm-screw-tr { top: 5px; right: 5px; } .vm-screw-bl { bottom: 5px; left: 5px; } .vm-screw-br { bottom: 5px; right: 5px; }
+        .vm-elec-title { font-size: 0.44rem; font-weight: 700; color: #555; letter-spacing: 0.7px; text-transform: uppercase; margin-top: 2px; }
+        .vm-elec-counter { display: flex; align-items: center; gap: 4px; background: linear-gradient(180deg, #1a1a1a 0%, #2d2d2d 100%); padding: 4px 6px; border-radius: 4px; border: 1.5px solid #444; box-shadow: inset 0 2px 5px rgba(0,0,0,0.6); }
+        .vm-elec-kwh { font-size: 0.5rem; font-weight: 700; color: #ccc; letter-spacing: 0.5px; }
+        .vm-elec-disc-area { width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle, #1a1a1a 0%, #111 100%); border: 2px solid #555; display: flex; align-items: center; justify-content: center; box-shadow: inset 0 1px 4px rgba(0,0,0,0.6); }
+        .vm-elec-disc { width: 20px; height: 20px; border-radius: 50%; background: conic-gradient(#d0d0d0 0deg, #888 90deg, #d0d0d0 180deg, #888 270deg, #d0d0d0 360deg); border: 1px solid #666; animation: elecSpin 3s linear infinite; }
+        @keyframes elecSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .vm-elec-specs { font-size: 0.4rem; color: #999; letter-spacing: 0.5px; }
+        .vm-elec-base { width: 105px; height: 18px; background: linear-gradient(180deg, #c8c8c8 0%, #adadad 30%, #999 70%, #888 100%); border-radius: 0 0 10px 10px; border: 1.5px solid #888; border-top: 1px solid #bbb; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+
+        .vm-digits { display: flex; gap: 0px; background: linear-gradient(180deg, #050505 0%, #111 8%, #1a1a1a 15%, #222 50%, #1a1a1a 85%, #111 92%, #050505 100%); padding: 3px 4px; border-radius: 4px; border: 1.5px solid #333; box-shadow: inset 0 3px 8px rgba(0,0,0,0.85), inset 0 -2px 6px rgba(0,0,0,0.60), inset 2px 0 4px rgba(0,0,0,0.40), inset -2px 0 4px rgba(0,0,0,0.40), 0 1px 3px rgba(0,0,0,0.2); position: relative; z-index: 2; }
+        .vm-digits::before { content: ''; position: absolute; top: 0; left: 4px; right: 4px; height: 3px; background: linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 100%); border-radius: 4px 4px 0 0; pointer-events: none; z-index: 1; }
+        .vm-digit { width: 18px; height: 24px; text-align: center; font-family: 'Courier New', 'Lucida Console', monospace; font-size: 0.85rem; font-weight: 900; border: none; padding: 0; display: flex; align-items: center; justify-content: center; background: linear-gradient(180deg, #999 0%, #bbb 3%, #d8d8d8 7%, #eee 14%, #f6f6f6 22%, #fafafa 35%, #fff 50%, #fafafa 65%, #f6f6f6 78%, #eee 86%, #d8d8d8 93%, #bbb 97%, #999 100%); color: #0a0a0a; text-shadow: 0 0.5px 0 rgba(255,255,255,0.5); border-radius: 2px; border-left: 0.5px solid rgba(0,0,0,0.10); border-right: 0.5px solid rgba(0,0,0,0.10); box-shadow: inset 0 3px 5px rgba(0,0,0,0.20), inset 0 -3px 5px rgba(0,0,0,0.15), inset 1px 0 2px rgba(0,0,0,0.10), inset -1px 0 2px rgba(0,0,0,0.10), 0 0 0 0.5px rgba(0,0,0,0.12); }
+        .vm-digit.vm-digit-red { background: linear-gradient(180deg, #7f1d1d 0%, #991b1b 4%, #b91c1c 8%, #d42a2a 15%, #e53935 25%, #ef4444 38%, #f44840 50%, #ef4444 62%, #e53935 75%, #d42a2a 85%, #b91c1c 92%, #991b1b 96%, #7f1d1d 100%); color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,0.45); box-shadow: inset 0 3px 5px rgba(0,0,0,0.30), inset 0 -3px 5px rgba(0,0,0,0.20), inset 1px 0 2px rgba(0,0,0,0.15), inset -1px 0 2px rgba(0,0,0,0.15), 0 0 0 0.5px rgba(100,0,0,0.20); }
+
+        @media (max-width: 980px) {
+            .dash-meter-summary {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 </head>
@@ -1515,53 +1487,69 @@ try {
                 <!-- น้ำ-ไฟ -->
                 <div class="report-section" data-link="report_utility.php">
                     <h3><span class="section-icon teal"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-4V4a2 2 0 0 0-4 0v6H6a2 2 0 0 0-2 2v8h16v-8a2 2 0 0 0-2-2z"/><path d="M8 20v-6"/><path d="M16 20v-6"/></svg></span>รายงานสรุปการใช้น้ำ-ไฟ</h3>
-                    <div class="dash-meters-wrap">
-                        <!-- Water Meter -->
-                        <div class="dash-mini-meter">
-                            <div class="dmm-body water">
-                                <div class="dmm-face">
-                                    <div class="dmm-unit">m³</div>
-                                    <div class="dmm-odo">
-                                        <?php for($i=0;$i<7;$i++): $d=$water_digits[$i]; $rc=($i>=5)?'red':''; ?>
-                                        <div class="dmm-digit <?php echo $rc; ?>"><?php echo $d; ?></div>
-                                        <?php endfor; ?>
+                    <div class="dash-meter-summary">
+                        <div class="dash-meter-card water">
+                            <div class="dash-meter-visual">
+                                <div class="vm-water-body">
+                                    <div class="vm-pipe-left"><div class="vm-pipe-flange"></div><div class="vm-pipe-bolt"></div></div>
+                                    <div class="vm-dial-water">
+                                        <div class="vm-dial-face">
+                                            <div class="vm-dial-unit-top">m³</div>
+                                            <div class="vm-digits">
+                                                <?php for ($i = 0; $i < 7; $i++): ?>
+                                                <div class="vm-digit <?php echo $i >= 5 ? 'vm-digit-red' : ''; ?>"><?php echo htmlspecialchars($water_digits[$i]); ?></div>
+                                                <?php endfor; ?>
+                                            </div>
+                                            <div class="vm-dial-specs">20 mm · Qn 2.5 m³/hB</div>
+                                            <div class="vm-dial-deco">✻</div>
+                                            <div class="vm-dial-label">WATER METER</div>
+                                            <div class="vm-sub-dial"></div>
+                                        </div>
                                     </div>
-                                    <div class="dmm-specs">20mm · Qn2.5<br>m³/hB</div>
-                                    <div class="dmm-sub"></div>
+                                    <div class="vm-pipe-right"><div class="vm-pipe-flange"></div><div class="vm-pipe-bolt"></div></div>
                                 </div>
                             </div>
-                            <div class="dmm-info">
-                                <div class="dmm-label water">มิเตอร์น้ำ</div>
-                                <div class="dmm-stat">เดือนนี้รวม <?php echo number_format($cur_water_total); ?> หน่วย</div>
-                                <?php $wd = $water_delta; $wc = $wd>0?'up':($wd<0?'down':'same'); $ws=$wd>0?'▲':'▼'; ?>
-                                <span class="dmm-delta <?php echo $wc; ?>"><?php echo ($wd!=0?$ws:'—').' '.abs($wd); ?> vs เดิม</span>
+                            <div class="dash-meter-info">
+                                <div class="dash-meter-label">มิเตอร์น้ำ</div>
+                                <div class="dash-meter-stat">เดือนนี้รวม <?php echo number_format($cur_water_total); ?> หน่วย</div>
+                                <?php $wd = $water_delta; $wc = $wd > 0 ? 'up' : ($wd < 0 ? 'down' : 'same'); $ws = $wd > 0 ? '▲' : '▼'; ?>
+                                <span class="dash-meter-delta <?php echo $wc; ?>"><?php echo ($wd !== 0 ? $ws : '—') . ' ' . abs($wd); ?> vs เดือนก่อน</span>
                             </div>
                         </div>
-                        <div class="dmm-divider"></div>
-                        <!-- Electric Meter -->
-                        <div class="dash-mini-meter">
-                            <div class="dmm-body elec">
-                                <div class="dmm-face">
-                                    <div class="dmm-unit">kWh</div>
-                                    <div class="dmm-odo">
-                                        <?php for($i=0;$i<7;$i++): $d=$elec_digits[$i]; $rc=($i>=5)?'red':''; ?>
-                                        <div class="dmm-digit <?php echo $rc; ?>"><?php echo $d; ?></div>
-                                        <?php endfor; ?>
+
+                        <div class="dash-meter-card electric">
+                            <div class="dash-meter-visual">
+                                <div class="vm-elec-body">
+                                    <div class="vm-elec-frame">
+                                        <div class="vm-elec-screw vm-screw-tl"></div>
+                                        <div class="vm-elec-screw vm-screw-tr"></div>
+                                        <div class="vm-elec-title">KILOWATT-HOUR METER</div>
+                                        <div class="vm-elec-counter">
+                                            <div class="vm-digits">
+                                                <?php for ($i = 0; $i < 5; $i++): ?>
+                                                <div class="vm-digit <?php echo $i >= 4 ? 'vm-digit-red' : ''; ?>"><?php echo htmlspecialchars($elec_digits[$i]); ?></div>
+                                                <?php endfor; ?>
+                                            </div>
+                                            <span class="vm-elec-kwh">kWh</span>
+                                        </div>
+                                        <div class="vm-elec-disc-area"><div class="vm-elec-disc"></div></div>
+                                        <div class="vm-elec-specs">220V 50Hz</div>
+                                        <div class="vm-elec-screw vm-screw-bl"></div>
+                                        <div class="vm-elec-screw vm-screw-br"></div>
                                     </div>
-                                    <div class="dmm-specs">220V · 50Hz<br>kWh METER</div>
-                                    <div class="dmm-sub"></div>
+                                    <div class="vm-elec-base"></div>
                                 </div>
                             </div>
-                            <div class="dmm-info">
-                                <div class="dmm-label elec">มิเตอร์ไฟ</div>
-                                <div class="dmm-stat">เดือนนี้รวม <?php echo number_format($cur_elec_total); ?> หน่วย</div>
-                                <?php $ed=$elec_delta; $ec=$ed>0?'up':($ed<0?'down':'same'); $es=$ed>0?'▲':'▼'; ?>
-                                <span class="dmm-delta <?php echo $ec; ?>"><?php echo ($ed!=0?$es:'—').' '.abs($ed); ?> vs เดิม</span>
+                            <div class="dash-meter-info">
+                                <div class="dash-meter-label">มิเตอร์ไฟ</div>
+                                <div class="dash-meter-stat">เดือนนี้รวม <?php echo number_format($cur_elec_total); ?> หน่วย</div>
+                                <?php $ed = $elec_delta; $ec = $ed > 0 ? 'up' : ($ed < 0 ? 'down' : 'same'); $es = $ed > 0 ? '▲' : '▼'; ?>
+                                <span class="dash-meter-delta <?php echo $ec; ?>"><?php echo ($ed !== 0 ? $es : '—') . ' ' . abs($ed); ?> vs เดือนก่อน</span>
                             </div>
                         </div>
                     </div>
-                    <div style="margin-top:8px;text-align:center;">
-                        <a href="report_utility.php" style="color:#14b8a6;text-decoration:none;font-size:12px;">ดูรายละเอียด →</a>
+                    <div style="margin-top: 8px; text-align: center;">
+                        <a href="report_utility.php" class="dash-meter-link">ดูรายละเอียด →</a>
                     </div>
                 </div>
             </div>
@@ -1674,6 +1662,7 @@ try {
             });
         });
 
+        function initDashboardCharts() {
         // สีสำหรับ Charts
         const colors = {
             primary: 'rgba(0, 123, 255, 0.7)',
@@ -2318,24 +2307,10 @@ try {
         // Mini Chart: Revenue (Bar chart - works better with few data points)
         const miniRevenueCtx = document.getElementById('miniRevenueChart');
         if (miniRevenueCtx) {
-            const revenueLabels = [<?php 
-                if (!empty($monthly_revenue)) {
-                    foreach ($monthly_revenue as $data) {
-                        echo "'" . thaiMonthYear($data['month']) . "',";
-                    }
-                } else {
-                    echo "'ไม่มีข้อมูล'";
-                }
-            ?>];
-            const revenueData = [<?php 
-                if (!empty($monthly_revenue)) {
-                    foreach ($monthly_revenue as $data) { 
-                        echo ($data['total'] ?? 0) . ","; 
-                    }
-                } else {
-                    echo "0";
-                }
-            ?>];
+            const revenueLabelsRaw = <?php echo json_encode($miniRevenueLabels, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+            const revenueDataRaw = <?php echo json_encode($miniRevenueData, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES); ?>;
+            const revenueLabels = revenueLabelsRaw.length ? revenueLabelsRaw : ['ไม่มีข้อมูล'];
+            const revenueData = revenueDataRaw.length ? revenueDataRaw : [0];
             
             new Chart(miniRevenueCtx.getContext('2d'), {
                 type: revenueData.length <= 2 ? 'bar' : 'line',
@@ -2392,6 +2367,22 @@ try {
                 plugins: { legend: { display: false } }
             }
         });
+        }
+
+        (function bootstrapDashboardCharts() {
+            if (typeof window.Chart !== 'undefined') {
+                initDashboardCharts();
+                return;
+            }
+
+            var fallbackScript = document.createElement('script');
+            fallbackScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js';
+            fallbackScript.onload = initDashboardCharts;
+            fallbackScript.onerror = function() {
+                console.error('[Dashboard] Unable to load Chart.js from CDN fallback');
+            };
+            document.head.appendChild(fallbackScript);
+        })();
     </script>
 </body>
 </html>

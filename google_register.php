@@ -12,8 +12,8 @@ $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 // ฟังก์ชันสร้าง tnt_id อัตโนมัติ (13 หลัก เริ่มด้วย T)
 function generateTntId($pdo) {
     do {
-        $tntId = 'T' . time() . sprintf('%02d', rand(0, 99));
-        $tntId = substr($tntId, 0, 13);
+        $tntId = time() . sprintf('%02d', rand(0, 99));
+        $tntId = substr((string)$tntId, 0, 13);
         $stmt = $pdo->prepare('SELECT tnt_id FROM tenant WHERE tnt_id = ?');
         $stmt->execute([$tntId]);
     } while ($stmt->fetch());

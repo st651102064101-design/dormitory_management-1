@@ -900,24 +900,36 @@ try {
         $googleClientId = trim($_POST['google_client_id']);
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('google_client_id', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
         $stmt->execute([$googleClientId]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึก Google Client ID สำเร็จ']);
+        exit;
     }
 
     if (isset($_POST['google_client_secret'])) {
         $googleClientSecret = trim($_POST['google_client_secret']);
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('google_client_secret', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
         $stmt->execute([$googleClientSecret]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึก Google Client Secret สำเร็จ']);
+        exit;
     }
 
     if (isset($_POST['line_channel_token'])) {
         $lineChannelToken = trim($_POST['line_channel_token']);
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('line_channel_token', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
         $stmt->execute([$lineChannelToken]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึก LINE Channel Token สำเร็จ']);
+        exit;
     }
 
     if (isset($_POST['line_channel_secret'])) {
         $lineChannelSecret = trim($_POST['line_channel_secret']);
         $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('line_channel_secret', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
         $stmt->execute([$lineChannelSecret]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึก LINE Channel Secret สำเร็จ']);
+        exit;
     }
 
     if (isset($_POST['session_timeout_minutes'])) {

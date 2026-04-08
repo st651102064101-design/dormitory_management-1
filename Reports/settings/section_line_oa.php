@@ -1,10 +1,16 @@
 <!-- Section: Line Notification -->
+<?php
+$lineTokenTrim = trim((string)($lineChannelToken ?? ''));
+$lineSecretTrim = trim((string)($lineChannelSecret ?? ''));
+$lineTokenLooksValid = ($lineTokenTrim !== '') && (preg_match('/^\d+$/', $lineTokenTrim) !== 1) && (strlen($lineTokenTrim) >= 30);
+$lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
+?>
 <div class="apple-section-group">
   <h2 class="apple-section-title">LINE OA Notifications (แจ้งเตือนผ่านไลน์)</h2>
   <div class="apple-section-card">
     
     <!-- LINE Status -->
-    <div class="apple-settings-row">
+    <div class="apple-settings-row" data-sheet="sheet-line-channel-token">
       <div class="apple-row-icon line-oa-icon" style="background: linear-gradient(135deg, #00C300, #00A300);">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
           <path d="M21 11.5a8.38 8.38 0 0 1-9 8.3c-1.72-.08-3.45-.63-4.9-1.63L3 19l1.45-3.5a10.87 10.87 0 0 1-1.45-4 8.38 8.38 0 0 1 9-8.3 8.38 8.38 0 0 1 9 8.3z"/>
@@ -12,10 +18,20 @@
       </div>
       <div class="apple-row-content">
         <p class="apple-row-label">สถานะการทำงาน LINE OA</p>
-        <p class="apple-row-sublabel"><?php echo (!empty($lineChannelToken) && !empty($lineChannelSecret)) ? 'เปิดใช้งานอยู่' : 'ยังไม่ได้เชื่อมต่อ'; ?></p>
+        <p class="apple-row-sublabel">
+          <?php
+          if ($lineReady) {
+              echo 'เปิดใช้งานอยู่';
+          } elseif ($lineTokenTrim !== '' && !$lineTokenLooksValid) {
+              echo 'Token ไม่ถูกต้อง (ดูเหมือน Channel ID)';
+          } else {
+              echo 'ยังไม่ได้เชื่อมต่อ';
+          }
+          ?>
+        </p>
       </div>
-      <span class="apple-row-badge <?php echo (!empty($lineChannelToken) && !empty($lineChannelSecret)) ? 'success' : 'warning'; ?>">
-        <?php echo (!empty($lineChannelToken) && !empty($lineChannelSecret)) ? 'เปิดใช้งานแล้ว' : 'ปิดใช้งาน'; ?>
+      <span class="apple-row-badge <?php echo $lineReady ? 'success' : 'warning'; ?>">
+        <?php echo $lineReady ? 'เปิดใช้งานแล้ว' : 'ปิดใช้งาน'; ?>
       </span>
     </div>
     
@@ -28,7 +44,17 @@
       </div>
       <div class="apple-row-content">
         <p class="apple-row-label">Channel Access Token</p>
-        <p class="apple-row-sublabel"><?php echo !empty($lineChannelToken) ? substr($lineChannelToken, 0, 15) . '...' : 'ยังไม่ได้กำหนด'; ?></p>
+        <p class="apple-row-sublabel">
+          <?php
+          if ($lineTokenTrim === '') {
+              echo 'ยังไม่ได้กำหนด';
+          } elseif (!$lineTokenLooksValid) {
+              echo 'รูปแบบไม่ถูกต้อง (กรุณาวาง Long-lived token)';
+          } else {
+              echo substr($lineTokenTrim, 0, 15) . '...';
+          }
+          ?>
+        </p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -130,10 +156,10 @@
 
 <!-- Sheet: Broadcast Message -->
 <div class="apple-sheet-overlay" id="sheet-line-broadcast">
-  <div class="apple-sheet-container" style="background: var(--apple-card-bg); border-radius: 20px; padding: 24px; max-width: 400px; width: 90%; margin: 40px auto;">
+  <div class="apple-sheet" style="background: var(--apple-card-bg); border-radius: 20px; padding: 24px; max-width: 400px; width: 90%; margin: 40px auto;">
     <div class="apple-sheet-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
       <h3 style="margin: 0; font-size: 18px; font-weight: 600;">ส่งข้อความประกาศ</h3>
-      <button type="button" class="apple-sheet-close" onclick="closeSheet('sheet-line-broadcast')" style="background: none; border: none; font-size: 20px; color: var(--apple-text-secondary); cursor: pointer;">&times;</button>
+      <button type="button" class="apple-sheet-close" data-close-sheet="sheet-line-broadcast" style="background: none; border: none; font-size: 20px; color: var(--apple-text-secondary); cursor: pointer;">&times;</button>
     </div>
     <div class="apple-sheet-body">
       <form id="lineBroadcastForm">
@@ -149,12 +175,36 @@
 </div>
 
 <script>
+window.showAppleToast = window.showAppleToast || function(msg, type) {
+  if (window.appleSettings && typeof window.appleSettings.showToast === 'function') {
+    window.appleSettings.showToast(msg, type);
+  } else {
+    alert(msg);
+  }
+};
+
+function closeLineSheet(sheetId) {
+  if (window.appleSettings && typeof window.appleSettings.closeSheet === 'function') {
+    window.appleSettings.closeSheet(sheetId);
+    return;
+  }
+
+  const overlay = document.getElementById(sheetId);
+  if (!overlay) {
+    return;
+  }
+
+  overlay.classList.remove('active');
+  if (!document.querySelector('.apple-sheet-overlay.active')) {
+    document.body.style.overflow = '';
+  }
+}
+
 // LINE Broadcast Form
 document.getElementById('lineBroadcastForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
   const value = document.getElementById('lineBroadcastMessage').value;
   if (!value.trim()) return;
-  if (!confirm('ต้องการส่งข้อความ Broadcast ไปยังทุกคนหรือไม่?')) return;
   
   try {
     const res = await fetch('../Manage/send_line_broadcast.php', {
@@ -166,7 +216,7 @@ document.getElementById('lineBroadcastForm')?.addEventListener('submit', async f
     if (data.success) {
       showAppleToast('ส่งข้อความ Broadcast สำเร็จ', 'success');
       document.getElementById('lineBroadcastMessage').value = '';
-      closeSheet('sheet-line-broadcast');
+      closeLineSheet('sheet-line-broadcast');
     } else {
       showAppleToast('ส่งไม่สำเร็จ: ' + data.error, 'error');
     }
@@ -189,7 +239,7 @@ document.getElementById('lineChannelTokenForm')?.addEventListener('submit', asyn
     const data = await res.json();
     if (data.success) {
       showAppleToast('บันทึก Channel Token สำเร็จ', 'success');
-      closeSheet('sheet-line-channel-token');
+      closeLineSheet('sheet-line-channel-token');
       setTimeout(() => location.reload(), 1000);
     } else {
       showAppleToast('เกิดข้อผิดพลาด: ' + data.error, 'error');
@@ -213,7 +263,7 @@ document.getElementById('lineChannelSecretForm')?.addEventListener('submit', asy
     const data = await res.json();
     if (data.success) {
       showAppleToast('บันทึก Channel Secret สำเร็จ', 'success');
-      closeSheet('sheet-line-channel-secret');
+      closeLineSheet('sheet-line-channel-secret');
       setTimeout(() => location.reload(), 1000);
     } else {
       showAppleToast('เกิดข้อผิดพลาด: ' + data.error, 'error');

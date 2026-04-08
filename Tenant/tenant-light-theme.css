@@ -411,3 +411,21 @@ body.light-theme::-webkit-scrollbar-thumb {
     background: #cbd5e1;
     border-radius: 3px;
 }
+
+/* --- Bank Account Box Fix for Light Theme --- */
+body.light-theme .bank-account-box {
+    background: rgba(59, 130, 246, 0.05) !important;
+    border-color: rgba(59, 130, 246, 0.3) !important;
+}
+body.light-theme .bank-title {
+    color: #475569 !important;
+}
+body.light-theme .bank-name, 
+body.light-theme .bank-acc-name {
+    color: #1e293b !important;
+    font-weight: 500 !important;
+}
+body.light-theme .bank-acc-num {
+    color: #1d4ed8 !important;
+    font-weight: 700 !important;
+}

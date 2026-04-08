@@ -618,13 +618,19 @@ function _bankFormFields(?array $term): string {
                         <?php if ($depositRefund['refund_status'] === '1' && !empty($depositRefund['refund_date'])): ?>
                         <div style="margin-top:0.3rem;display:flex;justify-content:space-between;">
                             <span style="color:#94a3b8;">วันที่โอนคืน</span>
-                            <span style="color:#e2e8f0;"><?php echo thaiDate($depositRefund['refund_date'], 'long'); ?></span>
+                            <span style="color:#000000;"><?php echo thaiDate($depositRefund['refund_date'], 'long'); ?></span>
                         </div>
                         <?php endif; ?>
                         <?php if (!empty($depositRefund['refund_proof'])): ?>
-                        <div style="margin-top:0.4rem;">
-                            <a href="/<?php echo htmlspecialchars($depositRefund['refund_proof']); ?>" target="_blank"
-                               style="color:#38bdf8;font-size:0.82rem;text-decoration:none;">📎 ดูหลักฐานการโอนคืน</a>
+                        <div style="margin-top:0.8rem;border-top:1px dashed rgba(34,197,94,0.2);padding-top:0.8rem;">
+                            <div style="color:#94a3b8;margin-bottom:0.4rem;font-size:0.85rem;">หลักฐานการโอนคืน:</div>
+                            <a href="/<?php echo htmlspecialchars($depositRefund['refund_proof']); ?>" target="_blank" style="display:block;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
+                                <img src="/<?php echo htmlspecialchars($depositRefund['refund_proof']); ?>" alt="หลักฐานการโอนคืน" style="width:100%;max-width:100%;display:block;object-fit:cover;" />
+                            </a>
+                            <div style="text-align:center;margin-top:0.4rem;">
+                                <a href="/<?php echo htmlspecialchars($depositRefund['refund_proof']); ?>" target="_blank"
+                                   style="color:#38bdf8;font-size:0.82rem;text-decoration:none;">📎 เปิดดูภาพขนาดเต็ม</a>
+                            </div>
                         </div>
                         <?php endif; ?>
                     </div>
@@ -677,20 +683,20 @@ function _bankFormFields(?array $term): string {
             <?php endif; ?>
             <?php $refundDoneHT = isset($depositRefund['refund_status']) && $depositRefund['refund_status'] === '1'; ?>
             <?php if ($refundDoneHT): ?>
-            <div style="margin-top:0.75rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:0.8rem;text-align:left;">
-                <div style="font-size:0.78rem;color:#94a3b8;font-weight:600;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.03em;">🏦 บัญชีรับคืนเงินมัดจำที่ระบุไว้</div>
-                <div style="font-size:0.88rem;color:#e2e8f0;"><?php echo htmlspecialchars($termination['bank_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></div>
-                <div style="font-size:0.88rem;color:#cbd5e1;"><?php echo htmlspecialchars($termination['bank_account_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></div>
-                <div style="font-size:0.97rem;color:#60a5fa;font-weight:700;letter-spacing:0.06em;margin-top:0.2rem;"><?php echo htmlspecialchars($termination['bank_account_number'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></div>
+            <div class="bank-account-box" style="margin-top:0.75rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.25);border-radius:10px;padding:0.8rem;text-align:left;">
+                <div class="bank-title" style="font-size:0.78rem;color:#94a3b8;font-weight:600;margin-bottom:0.4rem;text-transform:uppercase;letter-spacing:0.03em;">🏦 บัญชีรับคืนเงินมัดจำที่ระบุไว้</div>
+                <div class="bank-name" style="font-size:0.88rem;color:#e2e8f0;"><?php echo htmlspecialchars($termination['bank_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="bank-acc-name" style="font-size:0.88rem;color:#cbd5e1;"><?php echo htmlspecialchars($termination['bank_account_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="bank-acc-num" style="font-size:0.97rem;color:#60a5fa;font-weight:700;letter-spacing:0.06em;margin-top:0.2rem;"><?php echo htmlspecialchars($termination['bank_account_number'] ?? '-', ENT_QUOTES, 'UTF-8'); ?></div>
             </div>
             <?php else: ?>
             <div style="margin-top:0.75rem;">
                 <?php if (!empty($termination['bank_name']) || !empty($termination['bank_account_number'])): ?>
-                <div style="padding:0.7rem;border-radius:10px;background:rgba(15,23,42,0.4);border:1px solid rgba(59,130,246,0.3);margin-bottom:0.7rem;">
-                    <div style="font-size:0.75rem;color:#93c5fd;font-weight:600;margin-bottom:0.3rem;">บัญชีที่ระบุไว้</div>
-                    <div style="font-size:0.88rem;color:#f1f5f9;"><?php echo htmlspecialchars($termination['bank_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
-                    <div style="font-size:0.85rem;color:#cbd5e1;"><?php echo htmlspecialchars($termination['bank_account_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
-                    <div style="font-size:0.95rem;color:#60a5fa;font-weight:700;letter-spacing:0.05em;margin-top:0.15rem;"><?php echo htmlspecialchars($termination['bank_account_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                <div class="bank-account-box" style="padding:0.7rem;border-radius:10px;background:rgba(15,23,42,0.4);border:1px solid rgba(59,130,246,0.3);margin-bottom:0.7rem;">
+                    <div class="bank-title" style="font-size:0.75rem;color:#93c5fd;font-weight:600;margin-bottom:0.3rem;">บัญชีที่ระบุไว้</div>
+                    <div class="bank-name" style="font-size:0.88rem;color:#f1f5f9;"><?php echo htmlspecialchars($termination['bank_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="bank-acc-name" style="font-size:0.85rem;color:#cbd5e1;"><?php echo htmlspecialchars($termination['bank_account_name'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
+                    <div class="bank-acc-num" style="font-size:0.95rem;color:#60a5fa;font-weight:700;letter-spacing:0.05em;margin-top:0.15rem;"><?php echo htmlspecialchars($termination['bank_account_number'] ?? '', ENT_QUOTES, 'UTF-8'); ?></div>
                 </div>
                 <?php else: ?>
                 <div style="padding:0.6rem;border-radius:8px;background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.3);margin-bottom:0.7rem;font-size:0.82rem;color:#fbbf24;">

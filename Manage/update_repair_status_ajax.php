@@ -59,6 +59,16 @@ try {
     $message = $statusMessages[$repair_status] ?? 'อัปเดตสถานะเรียบร้อย';
     
     if ($result) {
+        require_once __DIR__ . '/../LineHelper.php';
+        try {
+            $stmtInfo = $pdo->prepare("SELECT r.room_number, rep.repair_desc FROM repair rep JOIN contract c ON rep.ctr_id = c.ctr_id JOIN room r ON c.room_id = r.room_id WHERE rep.repair_id = ?");
+            $stmtInfo->execute([$repair_id]);
+            if ($row = $stmtInfo->fetch()) {
+                $msg = "🔧 อัปเดตสถานะแจ้งซ่อมห้อง {$row['room_number']}\nรายการ: {$row['repair_desc']}\nสถานะใหม่: " . ($statusMessages[$repair_status] ?? 'อัปเดตแล้ว');
+                sendLineBroadcast($pdo, $msg);
+            }
+        } catch (Exception $e) {}
+
         echo json_encode(['success' => true, 'message' => $message]);
     } else {
         echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัปเดตได้']);

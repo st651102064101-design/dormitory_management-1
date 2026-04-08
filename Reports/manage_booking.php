@@ -49,8 +49,8 @@ $fetchBookings = static function(PDO $pdo, string $orderBy, string $bookingFilte
   if (strpos($extraFilter, 'b.bkg_id') !== false) {
     $whereSql = "WHERE $extraFilter";
   } else {
-    // For other filters, apply base condition to show "available to manage" bookings
-    $baseCondition = "(COALESCE(b.bkg_status, '0') <> '1' OR active_ctr.ctr_id IS NULL)";
+    // For other filters, keep only supported statuses (0/1/2) and show status='1' only when no blockers
+    $baseCondition = "COALESCE(b.bkg_status, '0') IN ('0','1','2') AND (COALESCE(b.bkg_status, '0') <> '1' OR (living_ctr.ctr_id IS NULL AND cancel_ctr.ctr_id IS NULL AND booking_ctr.ctr_id IS NULL))";
     $whereSql = "WHERE $baseCondition";
     if ($extraFilter !== '') {
       $whereSql .= " AND ($extraFilter)";
@@ -58,12 +58,34 @@ $fetchBookings = static function(PDO $pdo, string $orderBy, string $bookingFilte
   }
 
   $sql = "
-    SELECT b.*, r.room_number, rt.type_name, rt.type_price, t.tnt_name
+        SELECT b.*, r.room_number, rt.type_name, rt.type_price, t.tnt_name,
+          living_ctr.ctr_id AS living_ctr_id,
+          cancel_ctr.ctr_id AS cancel_ctr_id,
+          booking_ctr.ctr_id AS booking_ctr_id
     FROM booking b
     LEFT JOIN room r ON b.room_id = r.room_id
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id
     LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
-    LEFT JOIN contract active_ctr ON active_ctr.room_id = b.room_id AND active_ctr.ctr_status = '0'
+    LEFT JOIN (
+      SELECT c.room_id, MAX(c.ctr_id) AS ctr_id
+      FROM contract c
+      WHERE c.ctr_status = '0'
+        AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE())
+      GROUP BY c.room_id
+    ) living_ctr ON living_ctr.room_id = b.room_id
+    LEFT JOIN (
+      SELECT c.room_id, MAX(c.ctr_id) AS ctr_id
+      FROM contract c
+      LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+      WHERE c.ctr_status = '2'
+        AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())
+      GROUP BY c.room_id
+    ) cancel_ctr ON cancel_ctr.room_id = b.room_id
+    LEFT JOIN (
+      SELECT c.room_id, c.tnt_id, MAX(c.ctr_id) AS ctr_id
+      FROM contract c
+      GROUP BY c.room_id, c.tnt_id
+    ) booking_ctr ON booking_ctr.room_id = b.room_id AND booking_ctr.tnt_id = b.tnt_id
     $whereSql
     ORDER BY $orderBy
   ";
@@ -87,8 +109,12 @@ $stmt = $pdo->query("
       AND NOT EXISTS (
         SELECT 1
         FROM contract c2
+        LEFT JOIN termination tm2 ON tm2.ctr_id = c2.ctr_id
         WHERE c2.room_id = r.room_id
-          AND c2.ctr_status = '0'
+          AND (
+            (c2.ctr_status = '0' AND (c2.ctr_end IS NULL OR c2.ctr_end >= CURDATE()))
+            OR (c2.ctr_status = '2' AND (tm2.term_date IS NULL OR tm2.term_date >= CURDATE()))
+          )
       )
   ORDER BY CASE WHEN r.room_number REGEXP '^[0-9]+$' THEN 0 ELSE 1 END,
        CAST(r.room_number AS UNSIGNED),
@@ -141,21 +167,39 @@ $stats = [
   'reserved' => 0,
   'checkedin' => 0,
 ];
-foreach ($bookings as $bkg) {
-  $status = (string)($bkg['bkg_status'] ?? '');
-  if ($status !== '0') {
-    if ($status === '1') {
-      $stats['reserved']++;
-    } elseif ($status === '2') {
-      $stats['checkedin']++;
-    }
-  }
+
+try {
+  // นับจำนวนจองแล้ว (สถานะ 1) โดยไม่รวมรายการที่สร้างสัญญาไปแล้ว (มีใน contract)
+  $stmtStatsRes = $pdo->query("
+    SELECT COUNT(*) as cnt 
+    FROM booking b 
+    WHERE COALESCE(b.bkg_status, '0') = '1'
+      AND NOT EXISTS (
+        SELECT 1 FROM contract c 
+        WHERE c.room_id = b.room_id AND c.tnt_id = b.tnt_id
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM contract c 
+        WHERE c.room_id = b.room_id AND c.ctr_status = '0' AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE())
+      )
+  ");
+  $stats['reserved'] = (int)$stmtStatsRes->fetchColumn();
+
+  // นับจำนวนเข้าพักอยู่ (สถานะ 2)
+  $stmtStatsChk = $pdo->query("
+    SELECT COUNT(*) as cnt 
+    FROM booking b 
+    WHERE COALESCE(b.bkg_status, '0') = '2'
+  ");
+  $stats['checkedin'] = (int)$stmtStatsChk->fetchColumn();
+} catch (PDOException $e) {
+  error_log("Failed to load booking stats: " . $e->getMessage());
 }
 
 $statusMap = [
   '0' => 'ยกเลิก',
   '1' => 'จองแล้ว',
-  '2' => 'เข้าพักแล้ว',
+  '2' => 'เข้าพักอยู่',
 ];
 
 // ดึงค่าตั้งค่าระบบ
@@ -4460,7 +4504,7 @@ try {
                           </span>
                         </td>
                         <td data-label="จัดการ" class="crud-column">
-                          <?php if ($bkg['bkg_status'] === '1'): ?>
+                          <?php if ($bkg['bkg_status'] === '1' && empty($bkg['living_ctr_id']) && empty($bkg['cancel_ctr_id']) && empty($bkg['booking_ctr_id'])): ?>
                             <button type="button"
                                     class="animate-ui-action-btn btn-success"
                                     onclick="updateBookingStatus(<?php echo $bkg['bkg_id']; ?>, '2')">
@@ -4471,10 +4515,18 @@ try {
                                     onclick="updateBookingStatus(<?php echo $bkg['bkg_id']; ?>, '0')">
                               ยกเลิก
                             </button>
+                          <?php elseif ($bkg['bkg_status'] === '1' && !empty($bkg['living_ctr_id'])): ?>
+                            <span style="color: #34C759; font-weight: 500;">เข้าพักอยู่</span>
+                          <?php elseif ($bkg['bkg_status'] === '1' && !empty($bkg['cancel_ctr_id'])): ?>
+                            <span style="color: #f59e0b; font-weight: 500;">อยู่ระหว่างปิดงานสัญญา</span>
+                          <?php elseif ($bkg['bkg_status'] === '1' && !empty($bkg['booking_ctr_id'])): ?>
+                            <span style="color: #34C759; font-weight: 500;">เข้าพักอยู่</span>
                           <?php elseif ($bkg['bkg_status'] === '2'): ?>
-                            <span style="color: #34C759; font-weight: 500;">เข้าพักแล้ว</span>
+                            <span style="color: #34C759; font-weight: 500;">เข้าพักอยู่</span>
                           <?php elseif ($bkg['bkg_status'] === '0'): ?>
                             <span style="color: #FF3B30; font-weight: 500;">ยกเลิกแล้ว</span>
+                          <?php else: ?>
+                            <span style="color: #94a3b8; font-weight: 500;">สถานะไม่ชัดเจน</span>
                           <?php endif; ?>
                         </td>
                       </tr>

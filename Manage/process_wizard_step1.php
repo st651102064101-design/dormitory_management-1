@@ -93,6 +93,31 @@ try {
 
     $pdo->commit();
 
+    // แจ้งเตือนการจองใหม่ผ่านระบบ Wizard (เจ้าหน้าที่ยืนยัน)
+    require_once __DIR__ . '/../LineHelper.php';
+    try {
+        $stmtRoomInfo = $pdo->prepare("SELECT room_number FROM room WHERE room_id = ?");
+        $stmtRoomInfo->execute([$room_id]);
+        $roomName = $stmtRoomInfo->fetchColumn() ?: $room_id;
+        
+        $stmtTenant = $pdo->prepare("SELECT tnt_name, tnt_phone FROM tenant WHERE tnt_id = ?");
+        $stmtTenant->execute([$tnt_id]);
+        $tenantMatch = $stmtTenant->fetch(PDO::FETCH_ASSOC);
+
+        $tName = $tenantMatch ? $tenantMatch['tnt_name'] : 'ผู้เช่า (ตรวจสอบในระบบ)';
+        $tPhone = $tenantMatch ? $tenantMatch['tnt_phone'] : '-';
+        
+        $msg = "✅ เจ้าหน้าที่ยืนยันการจองห้องพัก (Wizard Step 1)\n";
+        $msg .= "👤 ผู้เช่า: {$tName}\n";
+        $msg .= "📞 เบอร์ติดต่อ: {$tPhone}\n";
+        $msg .= "🏠 ห้อง: {$roomName}\n";
+        $msg .= "สถานะ: รอผู้เช่าชำระเงินมัดจำ/จอง";
+        
+        sendLineBroadcast($pdo, $msg);
+    } catch (Exception $e) {
+        error_log("Line Notification Error (Step 1): " . $e->getMessage());
+    }
+
     $successMsg = 'ยืนยันการจองเรียบร้อย! ขั้นตอนถัดไป: ยืนยันชำระเงินจอง';
     if ($isAjax) {
         header('Content-Type: application/json; charset=utf-8');

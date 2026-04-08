@@ -67,14 +67,25 @@ try {
     }
 } catch (PDOException $e) {}
 
-// ดึงข้อมูลห้องว่าง (room_status = '0' คือห้องว่าง)
+// ดึงข้อมูลห้องว่างจากสถานะจริงแบบเดียวกับหน้า Public/rooms
 $availableRooms = [];
 try {
     $stmt = $pdo->query("
         SELECT r.*, rt.type_name, rt.type_price 
         FROM room r 
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id 
-        WHERE r.room_status = '0' 
+                WHERE NOT EXISTS (
+                        SELECT 1
+                        FROM contract c
+                        WHERE c.room_id = r.room_id
+                            AND c.ctr_status = '0'
+                )
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM booking b
+                        WHERE b.room_id = r.room_id
+                            AND b.bkg_status = '1'
+                )
         ORDER BY CAST(r.room_number AS UNSIGNED) ASC
         LIMIT 6
     ");
@@ -90,13 +101,35 @@ try {
     // debug: echo $e->getMessage();
 }
 
-// นับจำนวนห้องว่าง (room_status = '0' คือห้องว่าง)
+// นับจำนวนห้องทั้งหมด/ห้องว่างจากสถานะจริงแบบเดียวกับหน้า Public/rooms
 $roomStats = ['total' => 0, 'available' => 0];
 try {
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM room");
-    $roomStats['total'] = (int)$stmt->fetchColumn();
-    $stmt = $pdo->query("SELECT COUNT(*) as available FROM room WHERE room_status = '0'");
-    $roomStats['available'] = (int)$stmt->fetchColumn();
+    $stmt = $pdo->query("
+        SELECT
+            COUNT(*) AS total,
+            SUM(
+                CASE
+                    WHEN NOT EXISTS (
+                        SELECT 1
+                        FROM contract c
+                        WHERE c.room_id = r.room_id
+                          AND c.ctr_status = '0'
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1
+                        FROM booking b
+                        WHERE b.room_id = r.room_id
+                          AND b.bkg_status = '1'
+                    )
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS available
+        FROM room r
+    ");
+    $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+    $roomStats['total'] = (int)($row['total'] ?? 0);
+    $roomStats['available'] = (int)($row['available'] ?? 0);
 } catch (PDOException $e) {}
 ?>
 <!DOCTYPE html>

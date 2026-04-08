@@ -93,18 +93,25 @@ if (!empty($_GET['room'])) {
     exit;
 }
 
-// ดึงห้องว่าง (สำหรับการแสดงตอนไม่มีการเลือก)
+// ดึงห้องว่างจากสถานะจริง (เหมือนหน้า rooms.php)
 try {
     $stmt = $pdo->prepare("
         SELECT r.*, rt.type_name, rt.type_price
         FROM room r
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-        WHERE r.room_status = '0'
-            AND NOT EXISTS (
-                SELECT 1 FROM booking b WHERE b.room_id = r.room_id AND b.bkg_status IN ('1','2')
-            )
-            AND NOT EXISTS (
+        WHERE NOT EXISTS (
                 SELECT 1 FROM contract c WHERE c.room_id = r.room_id AND c.ctr_status = '0'
+            )
+          AND NOT EXISTS (
+                SELECT 1 FROM contract c 
+                LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+                WHERE c.room_id = r.room_id AND c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())
+            )
+          AND NOT EXISTS (
+                SELECT 1 FROM booking b WHERE b.room_id = r.room_id AND b.bkg_status = '1'
+                AND NOT EXISTS (
+                    SELECT 1 FROM contract c2 WHERE c2.room_id = b.room_id AND c2.tnt_id = b.tnt_id
+                )
             )
         ORDER BY CAST(r.room_number AS UNSIGNED) ASC
     ");
@@ -112,7 +119,26 @@ try {
     $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
     try {
-        $stmt = $pdo->query("SELECT r.*, rt.type_name, rt.type_price FROM room r LEFT JOIN roomtype rt ON r.type_id = rt.type_id WHERE r.room_status = '0' ORDER BY CAST(r.room_number AS UNSIGNED) ASC");
+        $stmt = $pdo->query("
+            SELECT r.*, rt.type_name, rt.type_price
+            FROM room r
+            LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+            WHERE NOT EXISTS (
+                    SELECT 1 FROM contract c WHERE c.room_id = r.room_id AND c.ctr_status = '0'
+                )
+              AND NOT EXISTS (
+                    SELECT 1 FROM contract c 
+                    LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+                    WHERE c.room_id = r.room_id AND c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())
+                )
+              AND NOT EXISTS (
+                    SELECT 1 FROM booking b WHERE b.room_id = r.room_id AND b.bkg_status = '1'
+                    AND NOT EXISTS (
+                        SELECT 1 FROM contract c2 WHERE c2.room_id = b.room_id AND c2.tnt_id = b.tnt_id
+                    )
+                )
+            ORDER BY CAST(r.room_number AS UNSIGNED) ASC
+        ");
         $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
     } catch (PDOException $e) {}
 }
@@ -231,11 +257,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'กรุณาระบุวันที่เข้าพักและวันที่ออก';
     } else {
         try {
-            $stmt = $pdo->prepare("SELECT room_status, r.type_id, rt.type_price FROM room r LEFT JOIN roomtype rt ON r.type_id = rt.type_id WHERE room_id = ?");
+            $stmt = $pdo->prepare("
+                SELECT
+                    r.room_id,
+                    r.type_id,
+                    rt.type_price,
+                    CASE
+                        WHEN EXISTS (SELECT 1 FROM contract c WHERE c.room_id = r.room_id AND c.ctr_status = '0') THEN 0
+                        WHEN EXISTS (
+                            SELECT 1 FROM contract c 
+                            LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+                            WHERE c.room_id = r.room_id AND c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())
+                        ) THEN 0
+                        WHEN EXISTS (
+                            SELECT 1 FROM booking b 
+                            WHERE b.room_id = r.room_id AND b.bkg_status = '1'
+                            AND NOT EXISTS (
+                                SELECT 1 FROM contract c2 WHERE c2.room_id = b.room_id AND c2.tnt_id = b.tnt_id
+                            )
+                        ) THEN 0
+                        ELSE 1
+                    END AS is_available
+                FROM room r
+                LEFT JOIN roomtype rt ON r.type_id = rt.type_id
+                WHERE r.room_id = ?
+            ");
             $stmt->execute([$roomId]);
             $roomData = $stmt->fetch(PDO::FETCH_ASSOC);
             
-            if (!$roomData || $roomData['room_status'] !== '0') {
+            if (!$roomData || (int)$roomData['is_available'] !== 1) {
                 $error = 'ขออภัย ห้องนี้ถูกจองไปแล้ว';
             } else {
                 $roomPrice = (int)($roomData['type_price'] ?? 1500);
@@ -285,7 +335,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             ]);
                         } else {
                             // Create new tenant (อนุญาตให้เบอร์ซ้ำได้ตามความต้องการใหม่)
-                            $tenantId = 'T' . time();
+                            $tenantId = (string)time();
                             try {
                                 $stmtTenant = $pdo->prepare("
                                     INSERT INTO tenant (tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status, tnt_ceatetime)
@@ -383,6 +433,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         $pdo->commit();
                         $success = true;
+
+                        // ส่งแจ้งเตือนการจองใหม่เข้า LINE OA
+                        require_once __DIR__ . '/../LineHelper.php';
+                        try {
+                            $stmtRoomInfo = $pdo->prepare("SELECT room_number FROM room WHERE room_id = ?");
+                            $stmtRoomInfo->execute([$roomId]);
+                            $roomName = $stmtRoomInfo->fetchColumn() ?: $roomId;
+                            
+                            $msg = "🔔 มีการจองห้องพักใหม่!\n";
+                            $msg .= "👤 ผู้เช่า: " . $fname . " " . $lname . "\n";
+                            $msg .= "📞 เบอร์ติดต่อ: " . $phone . "\n";
+                            $msg .= "🏠 ห้องที่จอง: " . $roomName . "\n";
+                            $msg .= "📅 วันที่เข้าพัก: " . date('d/m/Y', strtotime($checkinDate)) . "\n";
+                            $msg .= "สถานะ: รอตรวจสอบการชำระเงิน";
+                            
+                            sendLineBroadcast($pdo, $msg);
+                        } catch (Exception $e) {
+                            error_log("Line Notification Error: " . $e->getMessage());
+                        }
+
                         // Store IDs for success page display
                         $_SESSION['last_booking_id'] = $bookingId;
                         $_SESSION['last_tenant_id'] = $tenantId;
