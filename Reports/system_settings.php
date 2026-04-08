@@ -355,6 +355,7 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
         <?php include __DIR__ . '/settings/section_appearance.php'; ?>
         <?php include __DIR__ . '/settings/section_rates.php'; ?>
         <?php include __DIR__ . '/settings/section_google_auth.php'; ?>
+        <?php include __DIR__ . '/settings/section_line_oa.php'; ?>
         <?php include __DIR__ . '/settings/section_system.php'; ?>
         
       </div>

@@ -62,18 +62,8 @@ try {
         exit;
     }
 
-    // ตรวจสอบเบอร์โทรศัพท์ซ้ำ
-    if (!empty($tnt_phone)) {
-        $stmtPhoneCheck = $pdo->prepare('SELECT COUNT(*) FROM tenant WHERE tnt_phone = ?');
-        $stmtPhoneCheck->execute([$tnt_phone]);
-        if ((int)$stmtPhoneCheck->fetchColumn() > 0) {
-            $_SESSION['error'] = 'เบอร์โทรศัพท์นี้มีผู้ใช้งานอยู่แล้ว (' . htmlspecialchars($tnt_phone) . ')';
-            error_log("ERROR: Duplicate phone number - '$tnt_phone'");
-            header('Location: ../Reports/manage_tenants.php');
-            exit;
-        }
-    }
-
+    // (ลบการตรวจสอบเบอร์โทรซ้ำออก)
+    
     try {
         $insert = $pdo->prepare('INSERT INTO tenant (tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)');
         $insert->execute([

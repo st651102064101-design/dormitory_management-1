@@ -284,36 +284,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $tenantId
                             ]);
                         } else {
-                            // Create new tenant - ตรวจสอบเบอร์ซ้ำก่อน
-                            if (!empty($phone)) {
-                                $stmtPhoneCheck = $pdo->prepare('SELECT COUNT(*) FROM tenant WHERE tnt_phone = ?');
-                                $stmtPhoneCheck->execute([$phone]);
-                                if ((int)$stmtPhoneCheck->fetchColumn() > 0) {
-                                    $error = 'เบอร์โทรศัพท์นี้มีผู้ใช้งานอยู่แล้ว (' . htmlspecialchars($phone) . ') กรุณาค้นหาผู้เช่าเดิมหรือใช้เบอร์โทรศัพท์อื่น';
-                                    error_log("ERROR: Duplicate phone in booking: '$phone'");
-                                } else {
-                                    $tenantId = 'T' . time();
-                                    try {
-                                        $stmtTenant = $pdo->prepare("
-                                            INSERT INTO tenant (tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status, tnt_ceatetime)
-                                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '3', NOW())
-                                        ");
-                                        $stmtTenant->execute([$tenantId, $name, $age ?: null, $address ?: null, $phone, $education ?: null, $faculty ?: null, $year ?: null, $vehicle ?: null, $parent ?: null, $parentsphone ?: null]);
-                                    } catch (PDOException $e) {
-                                        if (strpos($e->getMessage(), 'Duplicate entry') !== false && strpos($e->getMessage(), 'tnt_phone') !== false) {
-                                            $error = 'เบอร์โทรศัพท์นี้มีผู้ใช้งานอยู่แล้ว (' . htmlspecialchars($phone) . ')';
-                                        } else {
-                                            $error = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage();
-                                        }
-                                    }
-                                }
-                            } else {
-                                $tenantId = 'T' . time();
+                            // Create new tenant (อนุญาตให้เบอร์ซ้ำได้ตามความต้องการใหม่)
+                            $tenantId = 'T' . time();
+                            try {
                                 $stmtTenant = $pdo->prepare("
                                     INSERT INTO tenant (tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status, tnt_ceatetime)
                                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '3', NOW())
                                 ");
                                 $stmtTenant->execute([$tenantId, $name, $age ?: null, $address ?: null, $phone, $education ?: null, $faculty ?: null, $year ?: null, $vehicle ?: null, $parent ?: null, $parentsphone ?: null]);
+                            } catch (PDOException $e) {
+                                $error = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' . $e->getMessage();
                             }
                         }
 

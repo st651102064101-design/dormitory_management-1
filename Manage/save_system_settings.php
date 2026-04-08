@@ -908,6 +908,18 @@ try {
         $stmt->execute([$googleClientSecret]);
     }
 
+    if (isset($_POST['line_channel_token'])) {
+        $lineChannelToken = trim($_POST['line_channel_token']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('line_channel_token', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$lineChannelToken]);
+    }
+
+    if (isset($_POST['line_channel_secret'])) {
+        $lineChannelSecret = trim($_POST['line_channel_secret']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('line_channel_secret', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$lineChannelSecret]);
+    }
+
     if (isset($_POST['session_timeout_minutes'])) {
         $timeout = (int)$_POST['session_timeout_minutes'];
         
