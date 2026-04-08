@@ -91,7 +91,9 @@ if (empty($resolvedTenantId) && $autoRedirect && !empty($_SESSION['tenant_logged
             SELECT t.tnt_id
             FROM tenant t
             INNER JOIN booking b ON t.tnt_id = b.tnt_id
+            LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND b.room_id = c.room_id
             WHERE t.tnt_name = ? AND b.bkg_status IN ('1','2')
+              AND (c.ctr_status IS NULL OR c.ctr_status <> '1')
             ORDER BY b.bkg_date DESC
             LIMIT 1
         ");
@@ -166,7 +168,9 @@ if ($isTenantLoggedIn) {
             SELECT DISTINCT b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status
             FROM booking b
             JOIN tenant t ON b.tnt_id = t.tnt_id
+            LEFT JOIN contract c ON b.room_id = c.room_id AND t.tnt_id = c.tnt_id
             WHERE (b.tnt_id = ? OR t.tnt_phone = ?) AND b.bkg_status IN ('1','2')
+              AND (c.ctr_status IS NULL OR c.ctr_status <> '1')
             ORDER BY b.bkg_date DESC
         ");
         error_log("SQL: SELECT bkg_id FROM booking WHERE tnt_id = '$tenantId' OR phone = '$tenantPhone'");
@@ -215,8 +219,9 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo) && $autoFill
             LEFT JOIN room r ON b.room_id = r.room_id
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
             LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+            LEFT JOIN contract cc ON t.tnt_id = cc.tnt_id AND cc.room_id = b.room_id AND cc.ctr_status = '1'
             LEFT JOIN expense e ON c.ctr_id = e.ctr_id
-            WHERE b.bkg_id = ?
+            WHERE b.bkg_id = ? AND cc.ctr_id IS NULL
             GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
             LIMIT 1
         ");
@@ -256,8 +261,9 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo)) {
             LEFT JOIN room r ON b.room_id = r.room_id
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
             LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+            LEFT JOIN contract cc ON t.tnt_id = cc.tnt_id AND cc.room_id = b.room_id AND cc.ctr_status = '1'
             LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-            WHERE t.tnt_id = ? AND b.bkg_id = ?
+            WHERE t.tnt_id = ? AND b.bkg_id = ? AND cc.ctr_id IS NULL
             LIMIT 1
         ");
         $stmt->execute([$resolvedTenantId, $bookingRef]);
@@ -319,8 +325,9 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                     LEFT JOIN room r ON b.room_id = r.room_id
                     LEFT JOIN roomtype rt ON r.type_id = rt.type_id
                     LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+                    LEFT JOIN contract cc ON t.tnt_id = cc.tnt_id AND cc.room_id = b.room_id AND cc.ctr_status = '1'
                     LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-                    WHERE (b.bkg_id = ? OR t.tnt_id = ?) AND t.tnt_phone = ?
+                    WHERE (b.bkg_id = ? OR t.tnt_id = ?) AND t.tnt_phone = ? AND cc.ctr_id IS NULL
                     LIMIT 1
                 ");
                 $stmt->execute([$bookingRef, $bookingRef, $contactInfo]);
@@ -343,8 +350,9 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                     LEFT JOIN room r ON b.room_id = r.room_id
                     LEFT JOIN roomtype rt ON r.type_id = rt.type_id
                     LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.ctr_status = '0'
+                    LEFT JOIN contract cc ON t.tnt_id = cc.tnt_id AND cc.room_id = b.room_id AND cc.ctr_status = '1'
                     LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-                    WHERE t.tnt_phone = ?
+                    WHERE t.tnt_phone = ? AND cc.ctr_id IS NULL
                     ORDER BY b.bkg_date DESC
                     LIMIT 1
                 ");

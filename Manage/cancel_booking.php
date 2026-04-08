@@ -20,6 +20,7 @@ if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../LineHelper.php';
 
 $pdo = null;
 
@@ -36,7 +37,13 @@ try {
     $pdo->beginTransaction();
     
     // 1. ดึงข้อมูลที่เกี่ยวข้องจาก booking
-    $stmtBooking = $pdo->prepare("SELECT room_id, tnt_id FROM booking WHERE bkg_id = ?");
+    $stmtBooking = $pdo->prepare("
+        SELECT b.room_id, b.tnt_id, r.room_number, t.tnt_name 
+        FROM booking b 
+        LEFT JOIN room r ON b.room_id = r.room_id 
+        LEFT JOIN tenant t ON b.tnt_id = t.tnt_id 
+        WHERE b.bkg_id = ?
+    ");
     $stmtBooking->execute([$bkg_id]);
     $booking = $stmtBooking->fetch(PDO::FETCH_ASSOC);
     
@@ -47,6 +54,8 @@ try {
     
     $room_id = $booking['room_id'];
     $tnt_id = $tnt_id ?: $booking['tnt_id']; // ใช้จาก booking ถ้าไม่ได้ส่งมา
+    $roomName = $booking['room_number'] ?? '-';
+    $tntName = $booking['tnt_name'] ?? '-';
     
     // 2. ดึง contract_id จาก tenant_workflow (ถ้ามี)
     $ctr_ids = [];
@@ -175,6 +184,19 @@ try {
                 @unlink($fullPath);
             }
         }
+    }
+    
+    // 7. แจ้งเตือนผ่าน LINE Dashboard
+    try {
+        $msg = "❌ ผู้ดูแลระบบกดยกเลิกการทำรายการจอง/เข้าพัก\n";
+        $msg .= "👤 ผู้เช่า: {$tntName}\n";
+        $msg .= "🏠 ห้อง: {$roomName}\n";
+        if (!empty($_SESSION['admin_username'])) {
+            $msg .= "ผู้ปฏิบัติงาน: Admin (" . $_SESSION['admin_username'] . ")";
+        }
+        sendLineBroadcast($pdo, $msg);
+    } catch (Exception $e) {
+        error_log("Line Notification Error (Cancel Booking): " . $e->getMessage());
     }
     
     echo json_encode([
