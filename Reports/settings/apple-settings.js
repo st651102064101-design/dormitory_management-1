@@ -11,8 +11,8 @@ class AppleSettings {
   init() {
     this.initSheets();
     this.initToggles();
-    this.initForms();
-    this.initImageUploads();
+    // this.initForms();
+    // this.initImageUploads();
     this.initThemeSelector();
     this.initColorPicker();
     this.initViewModeSelector();
@@ -1019,16 +1019,48 @@ class AppleSettings {
         // Show download area
         const downloadArea = document.getElementById('backupDownloadArea');
         const downloadLink = document.getElementById('backupDownloadLink');
-        if (downloadArea && downloadLink && result.file) {
-          downloadLink.href = result.file;
+        if (downloadArea && downloadLink && result.filename) {
+          downloadLink.href = '../Manage/download_backup.php?file=' + encodeURIComponent(result.filename);
           downloadLink.setAttribute('download', result.filename);
           downloadArea.style.display = 'block';
         }
         
-        // Refresh backup list
-        setTimeout(() => {
-          location.reload();
-        }, 1500);
+        // Update backup list dynamically without reload
+        const listContainer = document.getElementById('backupListContainer');
+        if (listContainer && result.filename) {
+          // Remove empty state message if it is the only child and says 'ยังไม่มี'
+          if (listContainer.children.length === 1 && listContainer.textContent.includes('ยังไม่มีไฟล์')) {
+            listContainer.innerHTML = '';
+          }
+          
+          const d = new Date();
+          const p2 = n => n.toString().padStart(2, '0');
+          const thaiMonths = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'];
+          const fDate = `${d.getDate()} ${thaiMonths[d.getMonth()]} ${d.getFullYear()+543} ${p2(d.getHours())}:${p2(d.getMinutes())} • ล่าสุด`;
+          
+          const newRow = document.createElement('div');
+          newRow.className = 'apple-settings-row';
+          newRow.style.cursor = 'pointer';
+          newRow.setAttribute('onclick', `downloadBackup('${result.filename}')`);
+          newRow.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 12px;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:24px;height:24px;color:var(--apple-blue);"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+              <div>
+                <div style="font-size: 15px; color: var(--apple-text);">${result.filename}</div>
+                <div style="font-size: 12px; color: var(--apple-text-secondary);">${fDate}</div>
+              </div>
+            </div>
+            <svg viewBox="0 0 24 24" fill="none" stroke="var(--apple-blue)" stroke-width="2" style="width:20px;height:20px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          `;
+          
+          listContainer.insertBefore(newRow, listContainer.firstChild);
+          
+          // keep only 5 backups in the UI
+          if (listContainer.children.length > 5) {
+            listContainer.removeChild(listContainer.lastChild);
+          }
+        }
+
       } else {
         throw new Error(result.error || result.message || 'เกิดข้อผิดพลาด');
       }
@@ -1043,7 +1075,7 @@ class AppleSettings {
   // Download existing backup
   downloadBackup(filename) {
     const link = document.createElement('a');
-    link.href = '../backups/' + filename;
+    link.href = '../Manage/download_backup.php?file=' + encodeURIComponent(filename);
     link.download = filename;
     document.body.appendChild(link);
     link.click();

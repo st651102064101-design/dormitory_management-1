@@ -409,6 +409,65 @@
         <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 12px 0 16px;">ผู้ใช้จะถูกล็อกอินออกโดยอัตโนมัติหลังจากไม่มีความเคลื่อนไหวในจำนวนนาทีที่กำหนด</p>
         <button type="submit" class="apple-button primary">บันทึกการตั้งค่า</button>
       </form>
+      <script>
+      (function() {
+        const form = document.getElementById('sessionTimeoutForm');
+        if (!form) return;
+        form.addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const btn = form.querySelector('button[type="submit"]');
+          const originalText = btn.textContent;
+          const inputVal = document.getElementById('sessionTimeoutInput').value;
+          
+          try {
+            btn.textContent = 'กำลังบันทึก...';
+            btn.disabled = true;
+
+            const response = await fetch('../Manage/save_system_settings.php', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+              body: 'session_timeout_minutes=' + encodeURIComponent(inputVal)
+            });
+
+            let result;
+            try {
+              result = await response.json();
+            } catch (err) {
+              throw new Error('ระบบตอบกลับไม่ถูกต้อง');
+            }
+
+            if (result && result.success) {
+              if (typeof notify === 'function') {
+                notify('บันทึกการตั้งค่าสำเร็จ', 'success');
+              }
+              
+              const displayEls = document.querySelectorAll('[data-display="session-timeout-display"]');
+              displayEls.forEach(el => {
+                el.textContent = inputVal + ' นาที';
+              });
+
+              if (window.appleSettings && typeof window.appleSettings.closeSheet === 'function') {
+                window.appleSettings.closeSheet('sheet-session-timeout');
+              } else {
+                const sheetOverlay = document.getElementById('sheet-session-timeout');
+                if (sheetOverlay) sheetOverlay.classList.remove('active');
+              }
+            } else {
+              throw new Error((result && result.error) || (result && result.message) || 'เกิดข้อผิดพลาดในการบันทึก');
+            }
+          } catch (err) {
+            if (typeof notify === 'function') {
+              notify(err.message || 'เกิดข้อผิดพลาด', 'error');
+            } else {
+              alert(err.message || 'เกิดข้อผิดพลาด');
+            }
+          } finally {
+            btn.textContent = originalText;
+            btn.disabled = false;
+          }
+        });
+      })();
+      </script>
     </div>
   </div>
 </div>

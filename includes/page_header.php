@@ -383,7 +383,9 @@ $buildHeaderAttributes = static function (array $attributes): string {
 }
 
 .page-header-bar.header-hidden {
-  transform: translateY(0);
+  transform: translateY(calc(-100% - 2rem));
+  opacity: 0;
+  pointer-events: none;
 }
 
 .page-header-bar.header-scrolled {
