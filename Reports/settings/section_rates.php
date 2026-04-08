@@ -140,7 +140,7 @@
         }
       }
   ?>
-    <div class="apple-settings-row" id="currentRatesRow" data-sheet="sheet-rates" style="padding: 16px; cursor: pointer;" role="button" tabindex="0" aria-haspopup="dialog" aria-controls="sheet-rates" onclick="return openRatesSheetFromRow(event, 'currentRatesRow')" onkeydown="return handleRatesRowKeydown(event, 'currentRatesRow')">
+    <div class="apple-settings-row" id="currentRatesRow" style="padding: 16px; cursor: pointer;" role="button" tabindex="0" onclick="document.location.href='manage_rates.php'" onkeydown="if(event.key==='Enter'||event.key===' ') document.location.href='manage_rates.php'">
       <div style="display: flex; gap: 20px; width: 100%; pointer-events: none;">
         <div style="flex: 1; text-align: center;">
           <div style="font-size: 28px; color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="icon-animated"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>

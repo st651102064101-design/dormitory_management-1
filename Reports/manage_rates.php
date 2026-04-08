@@ -37,6 +37,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     }
 }
 
+// Handle rate deletion
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_rate' && !empty($_POST['rate_id'])) {
+    $rateIdToDelete = (int)$_POST['rate_id'];
+    
+    // Safety check
+    $stmt = $pdo->prepare("SELECT * FROM rate WHERE rate_id = ?");
+    $stmt->execute([$rateIdToDelete]);
+    $rateToDelete = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    // Check current active rate
+    $stmt = $pdo->query("SELECT * FROM rate WHERE effective_date <= CURDATE() ORDER BY effective_date DESC LIMIT 1");
+    $currentActiveRate = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Check count
+    $stmt = $pdo->query("SELECT COUNT(*) FROM rate");
+    $count = $stmt->fetchColumn();
+
+    if ($count <= 1) {
+    $stmt = $pdo->query("SELECT COUNT(*) FROM rate");
+    $count = $stmt->fetchColumn();
+
+    if ($count <= 1) {
+        $message = '<div class="alert error" style="margin-bottom:20px;padding:12px 16px;border-radius:8px;background:#fee2e2;color:#991b1b;font-weight:500;">ไม่สามารถลบอัตราสุดท้ายในระบบได้ครับ</div>';
+    } elseif ($currentActiveRate && $currentActiveRate['rate_id'] == $rateIdToDelete) {
+        $message = '<div class="alert error" style="margin-bottom:20px;padding:12px 16px;border-radius:8px;background:#fee2e2;color:#991b1b;font-weight:500;">ไม่สามารถลบอัตราที่กำลังใช้งานอยู่ในปัจจุบันได้ครับ</div>';
+    } else {
+        try {
+            $stmt = $pdo->prepare("DELETE FROM rate WHERE rate_id = ?");
+            $stmt->execute([$rateIdToDelete]);
+            $message = '<div class="alert success" style="margin-bottom:20px;padding:12px 16px;border-radius:8px;background:#dcfce7;color:#166534;font-weight:500;">ลบข้อมูลอัตราค่าน้ำค่าไฟสำเร็จเรียบร้อยแล้ว</div>';
+        } catch (PDOException $e) {
+            $message = '<div class="alert error" style="margin-bottom:20px;padding:12px 16px;border-radius:8px;background:#fee2e2;color:#991b1b;font-weight:500;">เกิดข้อผิดพลาดในการลบข้อมูล: ' . htmlspecialchars($e->getMessage()) . '</div>';
+        }
+    }
+}
 // Fetch current rate
 $stmt = $pdo->query("SELECT * FROM rate WHERE effective_date <= CURDATE() ORDER BY effective_date DESC LIMIT 1");
 $currentRate = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -155,6 +190,7 @@ if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                             <th>ค่าน้ำส่วนเกิน</th>
                             <th>ค่าไฟฟ้า (ต่อหน่วย)</th>
                             <th>สถานะการใช้งาน</th>
+                            <th style="text-align:center;">จัดการ</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -178,12 +214,23 @@ if ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
                                         <span style="color:#94a3b8; font-weight:500;">หมดอายุ (อดีต)</span>
                                     <?php endif; ?>
                                 </td>
+                                <td style="text-align:center;">
+                                    <?php if (!$isCurrent): ?>
+                                    <form method="POST" action="" onsubmit="return confirm('คุณแน่ใจหรือไม่ว่าต้องการลบอัตรานี้?');" style="display:inline-block; margin:0;">
+                                        <input type="hidden" name="action" value="delete_rate">
+                                        <input type="hidden" name="rate_id" value="<?php echo $rate['rate_id']; ?>">
+                                        <button type="submit" style="background:none; border:none; padding:8px; cursor:pointer; color:#ef4444; border-radius:6px; transition:0.2s;" onmouseover="this.style.background='#fee2e2'" onmouseout="this.style.background='none'" title="ลบข้อมูลอัตรานี้">
+                                            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
+                                    </form>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                         
                         <?php if (empty($rateHistory)): ?>
                             <tr>
-                                <td colspan="6" style="text-align: center; color: #94a3b8; padding: 30px;">ยังไม่มีข้อมูลประวัติอัตราค่าน้ำค่าไฟในระบบ</td>
+                                <td colspan="7" style="text-align: center; color: #94a3b8; padding: 30px;">ยังไม่มีข้อมูลประวัติอัตราค่าน้ำค่าไฟในระบบ</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
