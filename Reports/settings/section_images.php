@@ -228,6 +228,10 @@
 
     document.body.appendChild(overlay);
 
+    if (typeof bindSheetHandleDragClose === 'function') {
+      bindSheetHandleDragClose('sheet-billing-schedule');
+    }
+
     var closeBtn = overlay.querySelector('[data-close-sheet="sheet-billing-schedule"]');
     if (closeBtn) {
       closeBtn.addEventListener('click', function(event) {

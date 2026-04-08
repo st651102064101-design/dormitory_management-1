@@ -144,7 +144,7 @@ function bindSheetHandleDragClose(sheetId) {
     };
 
     target.addEventListener('mousedown', function(e) {
-      if (e.target.tagName.toLowerCase() === 'button') return;
+      if (e.target.closest && e.target.closest('button, a, input, select, textarea, [data-close-sheet]')) return;
       if (e.button !== 0) return;
       if (beginDrag(e.clientY)) {
         e.preventDefault();
@@ -154,7 +154,7 @@ function bindSheetHandleDragClose(sheetId) {
     });
 
     target.addEventListener('touchstart', function(e) {
-      if (e.target.tagName.toLowerCase() === 'button') return;
+      if (e.target.closest && e.target.closest('button, a, input, select, textarea, [data-close-sheet]')) return;
       if (!e.touches || !e.touches.length) return;
       beginDrag(e.touches[0].clientY);
     }, { passive: true });
