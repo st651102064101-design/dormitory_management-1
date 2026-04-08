@@ -143,10 +143,10 @@ document.getElementById('googleClientIdForm')?.addEventListener('submit', async 
   const value = document.getElementById('googleClientId').value;
   
   try {
-    const res = await fetch('settings/save_setting.php', {
+    const res = await fetch('../Manage/save_system_settings.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'google_client_id', value: value })
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `google_client_id=${encodeURIComponent(value)}`
     });
     const data = await res.json();
     
@@ -168,10 +168,10 @@ document.getElementById('googleClientSecretForm')?.addEventListener('submit', as
   const value = document.getElementById('googleClientSecret').value;
   
   try {
-    const res = await fetch('settings/save_setting.php', {
+    const res = await fetch('../Manage/save_system_settings.php', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ key: 'google_client_secret', value: value })
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `google_client_secret=${encodeURIComponent(value)}`
     });
     const data = await res.json();
     

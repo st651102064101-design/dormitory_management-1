@@ -55,10 +55,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $count = $stmt->fetchColumn();
 
     if ($count <= 1) {
-    $stmt = $pdo->query("SELECT COUNT(*) FROM rate");
-    $count = $stmt->fetchColumn();
-
-    if ($count <= 1) {
         $message = '<div class="alert error" style="margin-bottom:20px;padding:12px 16px;border-radius:8px;background:#fee2e2;color:#991b1b;font-weight:500;">ไม่สามารถลบอัตราสุดท้ายในระบบได้ครับ</div>';
     } elseif ($currentActiveRate && $currentActiveRate['rate_id'] == $rateIdToDelete) {
         $message = '<div class="alert error" style="margin-bottom:20px;padding:12px 16px;border-radius:8px;background:#fee2e2;color:#991b1b;font-weight:500;">ไม่สามารถลบอัตราที่กำลังใช้งานอยู่ในปัจจุบันได้ครับ</div>';

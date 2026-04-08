@@ -896,6 +896,18 @@ try {
     }
 
     // บันทึกระยะเวลา Session หมดอายุ
+    if (isset($_POST['google_client_id'])) {
+        $googleClientId = trim($_POST['google_client_id']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('google_client_id', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$googleClientId]);
+    }
+
+    if (isset($_POST['google_client_secret'])) {
+        $googleClientSecret = trim($_POST['google_client_secret']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('google_client_secret', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$googleClientSecret]);
+    }
+
     if (isset($_POST['session_timeout_minutes'])) {
         $timeout = (int)$_POST['session_timeout_minutes'];
         
