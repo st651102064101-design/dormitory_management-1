@@ -2292,8 +2292,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $r = $readings[$room['room_id']];
                                     $hasCtr = !empty($room['ctr_id']);
                                     $wUsed = ($r['water_new']!==''&&$r['water_new']!==null) ? ((int)$r['water_new']-$r['water_old']) : 0;
-                                    $waterOldDisplay = ($hasCtr && !$r['isFirstReading']) ? str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT) : '-';
-                                    $waterOldPlaceholder = $r['isFirstReading'] ? '' : str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT);
+                                    $waterOldDisplay = $hasCtr ? str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT) : '-';
+                                    $waterOldPlaceholder = str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT);
                                 ?>
                                 <?php $needsWater = $hasCtr && !$r['water_saved'] && ($r['water_new'] === '' || $r['water_new'] === null); ?>
                                 <tr class="<?php echo $r['water_saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsWater ? 'needs-meter needs-water' : ''; ?>">
@@ -2361,8 +2361,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $r = $readings[$room['room_id']];
                                     $hasCtr = !empty($room['ctr_id']);
                                     $eUsed = ($r['elec_new']!==''&&$r['elec_new']!==null) ? ((int)$r['elec_new']-$r['elec_old']) : 0;
-                                    $elecOldDisplay = ($hasCtr && !$r['isFirstReading']) ? str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT) : '-';
-                                    $elecOldPlaceholder = $r['isFirstReading'] ? '' : str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT);
+                                    $elecOldDisplay = $hasCtr ? str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT) : '-';
+                                    $elecOldPlaceholder = str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT);
                                 ?>
                                 <?php $needsElec = $hasCtr && !$r['elec_saved'] && ($r['elec_new'] === '' || $r['elec_new'] === null); ?>
                                 <tr class="<?php echo $r['elec_saved']?'saved-row':''; ?> <?php echo !$hasCtr?'empty-row':''; ?> <?php echo $needsElec ? 'needs-meter needs-electric' : ''; ?>">
