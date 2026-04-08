@@ -48,6 +48,20 @@
       <span class="apple-row-chevron">›</span>
     </div>
 
+    <!-- Broadcast Message -->
+    <div class="apple-settings-row" data-sheet="sheet-line-broadcast">
+      <div class="apple-row-icon blue">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
+      </div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">ส่งข้อความประกาศ (Broadcast)</p>
+        <p class="apple-row-sublabel">ส่งข้อความถึงผู้ติดตาม LINE OA ทุกคน</p>
+      </div>
+      <span class="apple-row-chevron">›</span>
+    </div>
+
     <!-- LINE Console Link -->
     <div class="apple-settings-row" onclick="window.open('https://developers.line.biz/console/', '_blank')">
       <div class="apple-row-icon line-oa-icon" style="background: linear-gradient(135deg, #00C300, #00A300);">
@@ -114,7 +128,53 @@
   </div>
 </div>
 
+<!-- Sheet: Broadcast Message -->
+<div class="apple-sheet-overlay" id="sheet-line-broadcast">
+  <div class="apple-sheet-container" style="background: var(--apple-card-bg); border-radius: 20px; padding: 24px; max-width: 400px; width: 90%; margin: 40px auto;">
+    <div class="apple-sheet-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h3 style="margin: 0; font-size: 18px; font-weight: 600;">ส่งข้อความประกาศ</h3>
+      <button type="button" class="apple-sheet-close" onclick="closeSheet('sheet-line-broadcast')" style="background: none; border: none; font-size: 20px; color: var(--apple-text-secondary); cursor: pointer;">&times;</button>
+    </div>
+    <div class="apple-sheet-body">
+      <form id="lineBroadcastForm">
+        <div class="apple-input-group">
+          <label class="apple-input-label">ข้อความ Broadcast</label>
+          <textarea id="lineBroadcastMessage" name="message" class="apple-input" rows="5" placeholder="พิมพ์ข้อความที่ต้องการแจ้งเตือนไปยังลูกหอทุกคน (ต้องแอด Line บอทรับไว้แล้ว)" required style="resize:vertical;"></textarea>
+          <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">* จะส่งถึง User ทุกคนที่รับข้อความจากระบบ</p>
+        </div>
+        <button type="submit" class="apple-button primary" style="width: 100%; margin-top: 16px;">ส่งข้อความทันที</button>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
+// LINE Broadcast Form
+document.getElementById('lineBroadcastForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const value = document.getElementById('lineBroadcastMessage').value;
+  if (!value.trim()) return;
+  if (!confirm('ต้องการส่งข้อความ Broadcast ไปยังทุกคนหรือไม่?')) return;
+  
+  try {
+    const res = await fetch('../Manage/send_line_broadcast.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `message=${encodeURIComponent(value)}`
+    });
+    const data = await res.json();
+    if (data.success) {
+      showAppleToast('ส่งข้อความ Broadcast สำเร็จ', 'success');
+      document.getElementById('lineBroadcastMessage').value = '';
+      closeSheet('sheet-line-broadcast');
+    } else {
+      showAppleToast('ส่งไม่สำเร็จ: ' + data.error, 'error');
+    }
+  } catch (err) {
+    showAppleToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+  }
+});
+
 // LINE Channel Token Form
 document.getElementById('lineChannelTokenForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
