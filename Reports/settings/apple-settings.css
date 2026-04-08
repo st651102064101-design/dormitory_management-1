@@ -2929,14 +2929,16 @@ body.apple-settings-page .sidebar-overlay.active {
 }
 
 @keyframes lineOAPulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 2px rgba(255,255,255,0.4)); }
-  50% { transform: scale(1.15) rotate(-2deg); filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); }
+  0%, 100% { transform: scale(1) translateZ(0); filter: drop-shadow(0 0 2px rgba(255,255,255,0.4)); -webkit-filter: drop-shadow(0 0 2px rgba(255,255,255,0.4)); }
+  50% { transform: scale(1.15) rotate(-2deg) translateZ(0); filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); -webkit-filter: drop-shadow(0 0 8px rgba(255,255,255,0.8)); }
 }
 
 .apple-row-icon.line-oa-icon svg {
   animation: lineOAPulse 2.5s ease-in-out infinite;
   stroke: white !important;
   transform-origin: center;
+  -webkit-transform-origin: center;
+  transform: translateZ(0); /* Force hardware acceleration to prevent SVG vanishing bug in Safari */
 }
 
 .apple-row-icon.line-oa-icon svg path,

@@ -34,7 +34,13 @@ try {
             t.tnt_vehicle,
             t.tnt_parent,
             t.tnt_parentsphone,
-            t.tnt_status
+            CASE
+                WHEN EXISTS (SELECT 1 FROM contract c WHERE c.tnt_id = t.tnt_id AND c.ctr_status IN ('0', '2')) THEN '1'
+                WHEN EXISTS (SELECT 1 FROM booking b WHERE b.tnt_id = t.tnt_id AND b.bkg_status = '1' AND NOT EXISTS (SELECT 1 FROM contract cx WHERE cx.room_id = b.room_id AND cx.tnt_id = b.tnt_id)) THEN '3'
+                WHEN EXISTS (SELECT 1 FROM contract c WHERE c.tnt_id = t.tnt_id AND c.ctr_status = '1') THEN '0'
+                WHEN EXISTS (SELECT 1 FROM booking b WHERE b.tnt_id = t.tnt_id AND b.bkg_status = '0') THEN '4'
+                ELSE t.tnt_status
+            END as computed_status
         FROM tenant t
         WHERE (t.tnt_name LIKE :query1 OR t.tnt_phone LIKE :query2)
         ORDER BY t.tnt_name ASC
@@ -52,11 +58,11 @@ try {
     // Format data for response
     $results = [];
     foreach ($tenants as $tenant) {
-        $statusText = match($tenant['tnt_status']) {
+        $statusText = match($tenant['computed_status']) {
             '0' => 'ย้ายออก',
             '1' => 'พักอยู่',
             '2' => 'รอการเข้าพัก',
-            '3' => 'จองห้อง',
+            '3' => 'จองห้องพักอยู่',
             '4' => 'ยกเลิกจองห้อง',
             default => 'ไม่ทราบ'
         };
@@ -73,7 +79,7 @@ try {
             'vehicle' => $tenant['tnt_vehicle'],
             'parent' => $tenant['tnt_parent'],
             'parentsphone' => $tenant['tnt_parentsphone'],
-            'status' => $tenant['tnt_status'],
+            'status' => $tenant['computed_status'],
             'statusText' => $statusText,
             'label' => $tenant['tnt_name'] . ($tenant['tnt_phone'] ? ' (' . $tenant['tnt_phone'] . ')' : '')
         ];

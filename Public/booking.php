@@ -442,10 +442,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $roomName = $stmtRoomInfo->fetchColumn() ?: $roomId;
                             
                             $msg = "🔔 มีการจองห้องพักใหม่!\n";
-                            $msg .= "👤 ผู้เช่า: " . $fname . " " . $lname . "\n";
+                            $msg .= "👤 ผู้เช่า: " . $name . "\n";
                             $msg .= "📞 เบอร์ติดต่อ: " . $phone . "\n";
                             $msg .= "🏠 ห้องที่จอง: " . $roomName . "\n";
-                            $msg .= "📅 วันที่เข้าพัก: " . date('d/m/Y', strtotime($checkinDate)) . "\n";
+                            if (!empty($ctrStart)) {
+                                $msg .= "📅 วันที่เข้าพัก: " . date('d/m/Y', strtotime($ctrStart)) . "\n";
+                            }
                             $msg .= "สถานะ: รอตรวจสอบการชำระเงิน";
                             
                             sendLineBroadcast($pdo, $msg);
