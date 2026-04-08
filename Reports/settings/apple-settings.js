@@ -346,6 +346,56 @@ class AppleSettings {
   
   initWebSocketSettings() {
     const btn = document.getElementById('saveWsBtn');
+    const testBtn = document.getElementById('testWsBtn');
+
+    if (testBtn) {
+      testBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        const urlParam = document.getElementById('wsUrl').value.trim();
+        if (!urlParam) {
+          this.showToast('กรุณากรอก เซิร์ฟเวอร์ URL ก่อนทำการทดสอบ', 'error');
+          return;
+        }
+
+        const originalText = testBtn.textContent;
+        testBtn.textContent = 'กำลังทดสอบ...';
+        testBtn.style.opacity = '0.7';
+        testBtn.style.pointerEvents = 'none';
+
+        const resetBtnStatus = () => {
+          testBtn.textContent = originalText;
+          testBtn.style.opacity = '1';
+          testBtn.style.pointerEvents = 'auto';
+        };
+
+        try {
+          const ws = new WebSocket(urlParam);
+          
+          let timeout = setTimeout(() => {
+            ws.close();
+            this.showToast('การเชื่อมต่อหมดเวลา (Timeout)', 'error');
+            resetBtnStatus();
+          }, 3000);
+
+          ws.onopen = () => {
+            clearTimeout(timeout);
+            this.showToast('การเชื่อมต่อ WebSocket สำเร็จ!', 'success');
+            ws.close();
+            resetBtnStatus();
+          };
+
+          ws.onerror = (err) => {
+            clearTimeout(timeout);
+            this.showToast('ไม่สามารถเชื่อมต่อ WebSocket ได้ กรุณาตรวจสอบ URL', 'error');
+            resetBtnStatus();
+          };
+        } catch (err) {
+          this.showToast('รูปแบบ WebSocket URL ไม่ถูกต้อง', 'error');
+          resetBtnStatus();
+        }
+      });
+    }
+
     if (!btn) return;
     
     btn.addEventListener('click', async (e) => {

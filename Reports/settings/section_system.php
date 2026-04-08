@@ -261,9 +261,9 @@
     <div class="apple-sheet-body">
       <form id="websocketForm" data-allow-submit>
         <div class="apple-settings-group">
-          <div class="apple-settings-row">
+          <div class="apple-settings-row" style="display: flex; justify-content: space-between; align-items: center;">
             <span class="apple-row-label">เปิดใช้งาน WebSocket</span>
-            <label class="apple-switch">
+            <label class="apple-switch" style="margin-left: auto;">
               <input type="checkbox" id="wsEnabled" <?php echo $wsEnabled ? 'checked' : ''; ?>>
               <span class="apple-slider"></span>
             </label>
@@ -288,7 +288,10 @@
         </div>
         
         <p style="font-size: 13px; color: var(--apple-text-secondary); margin: 8px 0 16px;">การเชื่อมต่อภายในสำหรับ Server (แนะนำค่าเริ่มต้น Host เป็น 0.0.0.0)</p>
-        <button type="button" id="saveWsBtn" class="apple-button primary" style="margin-top: 24px;">บันทึกการตั้งค่า</button>
+        <div style="display: flex; gap: 12px; margin-top: 24px;">
+          <button type="button" id="testWsBtn" class="apple-button" style="flex: 1; background-color: var(--apple-surface); border: 1px solid var(--apple-border); color: var(--apple-text);">ทดสอบการเชื่อมต่อ</button>
+          <button type="button" id="saveWsBtn" class="apple-button primary" style="flex: 2;">บันทึกการตั้งค่า</button>
+        </div>
       </form>
     </div>
   </div>
