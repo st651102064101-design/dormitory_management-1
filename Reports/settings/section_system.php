@@ -44,18 +44,7 @@
         echo __('buttons_count', ['count' => $enabledCount]);
       ?></span>
       <span class="apple-row-chevron">›</span>
-    </div>
-    <!-- WebSocket -->
-    <div class="apple-settings-row" data-sheet="sheet-websocket">
-      <div class="apple-row-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v20"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
-      <div class="apple-row-content">
-        <p class="apple-row-label">WebSocket (Real-time)</p>
-        <p class="apple-row-sublabel">จัดการการเชื่อมต่อแบบเรียลไทม์</p>
-      </div>
-      <span class="apple-row-value" id="wsStatusDisplay"><?php echo $wsEnabled ? 'เปิดใช้งาน' : 'ปิด'; ?></span>
-      <span class="apple-row-chevron">›</span>
-    </div>
-  </div>
+    </div>  </div>
 </div>
 
 <div class="apple-sheet-overlay" id="sheet-quick-actions">

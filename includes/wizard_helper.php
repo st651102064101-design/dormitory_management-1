@@ -50,7 +50,7 @@ function updateWorkflowStep(
             $sql .= ", completed = TRUE";
         }
 
-        $sql .= " WHERE tnt_id = ?";
+        $sql .= " WHERE id = (SELECT tmp.max_id FROM (SELECT MAX(id) AS max_id FROM tenant_workflow WHERE tnt_id = ?) AS tmp)";
 
         $stmt = $pdo->prepare($sql);
 
@@ -75,6 +75,7 @@ function getWorkflow(PDO $pdo, string $tnt_id): ?array {
     $stmt = $pdo->prepare("
         SELECT * FROM tenant_workflow
         WHERE tnt_id = ?
+        ORDER BY id DESC
         LIMIT 1
     ");
     $stmt->execute([$tnt_id]);

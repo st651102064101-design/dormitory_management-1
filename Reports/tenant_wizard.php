@@ -4772,56 +4772,72 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 <?php if ($wsEnabled): ?>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const wsUrl = "<?php echo $wsUrl; ?>";
-    let ws = null;
-    let wsReconnectAttempts = 0;
-    const maxReconnectAttempts = 5;
+    let checkInterval = null;
+    let isChecking = false;
 
-    function connectWebSocket() {
-        if (wsReconnectAttempts >= maxReconnectAttempts) {
-            console.log('WebSocket: Reached maximum reconnect attempts.');
-            return;
-        }
-        
-        try {
-            ws = new WebSocket(wsUrl);
-            
-            ws.onopen = function() {
-                console.log('WebSocket Connected');
-                wsReconnectAttempts = 0;
-            };
+    // ตัวแปรเก็บค่าตารางปัจจุบันเพื่อเปรียบเทียบ
+    let currentTbodyHtml = '';
 
-            ws.onmessage = function(event) {
-                console.log('WebSocket Message Received', event.data);
-                try {
-                    const data = JSON.parse(event.data);
-                    
-                    if (data.type === 'tenant_update' || data.type === 'wizard_update' || data.action === 'refresh') {
-                        console.log('WebSocket: Triggering soft navigation refresh');
-                        // Use existing soft-refresh function
-                        softNavigateWizard(window.location.href);
-                    }
-                } catch (e) {
-                    console.error('WebSocket Error parsing message:', e);
-                }
-            };
-
-            ws.onclose = function() {
-                console.log('WebSocket Disconnected. Reconnecting...');
-                wsReconnectAttempts++;
-                setTimeout(connectWebSocket, 3000 * wsReconnectAttempts);
-            };
-
-            ws.onerror = function(error) {
-                console.error('WebSocket Error:', error);
-                ws.close();
-            };
-        } catch (err) {
-            console.error('WebSocket Exception:', err);
+    function captureCurrentTbody() {
+        const tbody = document.querySelector('.wizard-table tbody');
+        if (tbody) {
+            currentTbodyHtml = tbody.innerHTML;
         }
     }
 
-    connectWebSocket();
+    function checkRealtimeUpdates() {
+        // อย่าโหลดทับถ้าผู้ใช้ทำงานอยู่
+        if (isChecking || window._wizSoftNavigating) return;
+        
+        const hasOpenModals = document.querySelector('.apple-sheet-overlay.active') || 
+                              document.querySelector('.sweet-alert') || 
+                              document.querySelector('.swal2-container.swal2-shown') ||
+                              document.querySelector('.modal.show') ||
+                              document.activeElement.tagName === 'INPUT' || 
+                              document.activeElement.tagName === 'TEXTAREA';
+        if (hasOpenModals) return;
+
+        isChecking = true;
+        
+        const fetchUrl = new URL(window.location.href);
+        fetchUrl.searchParams.set('_t', Date.now().toString());
+
+        fetch(fetchUrl.toString(), {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(res => res.text())
+        .then(html => {
+            if (document.querySelector('.apple-sheet-overlay.active')) return; // double check
+
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newTbody = doc.querySelector('.wizard-table tbody');
+            const newFilter = doc.querySelector('#wizFilterEmptyState');
+            
+            const newTbodyHtml = newTbody ? newTbody.innerHTML : '';
+            
+            // เปรียบเทียบเนื้อหาแถวตารางแบบเป๊ะๆ
+            if (newTbodyHtml !== currentTbodyHtml) {
+                console.log('Wizard Table updated via Server Polling!');
+                currentTbodyHtml = newTbodyHtml;
+                
+                // ถ้ายาวไม่เท่าเดิมหรือคอนเทนต์เปลี่ยน ให้เอามาแทนที่เลย (Soft UI Refresh)
+                softNavigateWizard(window.location.href);
+            }
+        })
+        .catch(err => {
+            console.error('Auto-refresh Error:', err);
+        })
+        .finally(() => {
+            isChecking = false;
+        });
+    }
+
+    // เก็บตารางตั้งต้น
+    captureCurrentTbody();
+
+    // เช็คอัปเดตทุก 5 วินาที
+    checkInterval = setInterval(checkRealtimeUpdates, 5000);
 });
 </script>
 <?php endif; ?>
