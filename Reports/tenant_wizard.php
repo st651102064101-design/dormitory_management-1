@@ -2884,28 +2884,33 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             <div class="modal-header">
                 <button class="modal-close" onclick="closePaymentModal()">&times;</button>
                 <div style="text-align: center;">
-                    <div style="width: 48px; height: 48px; background: #22c55e; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 1rem; box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);">2</div>
-                    <h2 style="color: #f8fafc; margin: 0.5rem 0;">ยืนยันการชำระเงินจอง</h2>
-                    <p style="color: rgba(241, 245, 249, 0.7); margin: 0;">ตรวจสอบหลักฐานและยืนยันการชำระเงินจอง</p>
+                    <div style="width: 56px; height: 56px; background: linear-gradient(135deg, #10b981, #059669); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.75rem; font-weight: bold; margin: 0 auto 1rem; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                        <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"></path></svg>
+                    </div>
+                    <h2 style="color: #1e293b; margin: 0.5rem 0; font-size: 1.5rem;">ยืนยันการชำระเงินจอง</h2>
+                    <p style="color: #64748b; margin: 0; font-size: 0.95rem;">ตรวจสอบหลักฐานและยืนยันความถูกต้อง</p>
                 </div>
             </div>
             
             <div class="modal-body">
-                <div class="info-box-modal" id="paymentInfo"></div>
-                <div id="paymentProofContainer" style="margin: 1rem 0; text-align: center; display: none;">
-                    <p style="color: rgba(255,255,255,0.7); margin-bottom: 0.5rem;">หลักฐานการชำระเงิน:</p>
-                    <a id="paymentProofLink" href="#" target="_blank">
-                        <img id="paymentProofImg" src="" style="max-width: 100%; max-height: 200px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.2);">
+                <div id="paymentInfo"></div>
+                
+                <div id="paymentProofContainer" style="margin: 1.5rem 0; text-align: center; display: none;">
+                    <p style="color: #475569; margin-bottom: 0.75rem; font-weight: 500; font-size: 0.95rem;">หลักฐานการโอนเงิน:</p>
+                    <a id="paymentProofLink" href="#" target="_blank" style="display: inline-block; padding: 4px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.2s;">
+                        <img id="paymentProofImg" src="" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 8px;">
                     </a>
                 </div>
 
-                <div class="alert-box-modal" style="background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.3);">
-                    <h4 style="color: #22c55e;">✓ การดำเนินการ:</h4>
-                    <ul style="padding-left: 1.5rem; line-height: 1.8; color: #e2e8f0;">
-                        <li>บันทึกวันที่ชำระเงินจอง</li>
-                        <li>สร้างเลขที่ใบเสร็จอัตโนมัติ</li>
-                        <li>ทำเครื่องหมายการชำระเงินเสร็จสิ้น</li>
-                        <li>พร้อมสำหรับขั้นตอนถัดไป: สร้างสัญญา</li>
+                <div class="alert-box-modal" style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 1.25rem;">
+                    <h4 style="color: #15803d; margin-top: 0; margin-bottom: 0.75rem; font-size: 1rem; display: flex; align-items: center; gap: 8px;">
+                        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        ดำเนินการต่อไปนี้โดยอัตโนมัติ:
+                    </h4>
+                    <ul style="padding-left: 1.5rem; line-height: 1.8; color: #166534; font-size: 0.9rem; margin: 0;">
+                        <li>บันทึกการรับชำระเงินมัดจำเข้าสู่ระบบ</li>
+                        <li>สร้างใบเสร็จรับเงิน (Receipt) อัตโนมัติ</li>
+                        <li>ปลดล็อกปุ่มสำหรับ <b>ทำสัญญาเช่า</b> ในขั้นตอนถัดไป</li>
                     </ul>
                 </div>
 
@@ -4156,18 +4161,18 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         paymentCloseBtn.textContent = readOnly ? 'ปิด' : 'ยกเลิก';
         
         document.getElementById('paymentInfo').innerHTML = `
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
                 <div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ผู้เช่า</div>
-                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${tntName}</div>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">ผู้เช่า</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #0f172a;">${tntName}</div>
                 </div>
                 <div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ห้องพัก</div>
-                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${roomNumber}</div>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">ห้องพัก</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #0f172a;">${roomNumber}</div>
                 </div>
                 <div>
-                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">จำนวนเงินจอง</div>
-                    <div style="font-size: 1.1rem; font-weight: 600; color: #22c55e;">฿${Number(bpAmount).toLocaleString()}</div>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">จำนวนเงินจอง</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #059669;">฿${Number(bpAmount).toLocaleString()}</div>
                 </div>
             </div>
         `;
