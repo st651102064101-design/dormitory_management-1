@@ -2159,8 +2159,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
                                 $isCancelPending = ((string)($tenant['ctr_status'] ?? '') === '2');
 
-                                $step5CircleClass = $step5 ? 'completed' : (($currentStep == 5) ? 'current' : 'pending');
-                                $step5CircleLabel = $step5 ? '✓' : (($currentStep == 5) ? '<svg class="bill-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect class="b-doc" x="5" y="2" width="14" height="18" rx="2" stroke="rgba(255,255,255,0.85)" stroke-width="1.8" fill="rgba(255,255,255,0.1)"/><line class="b-line1" x1="8" y1="7" x2="16" y2="7" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="8" stroke-dashoffset="8"/><line class="b-line2" x1="8" y1="11" x2="16" y2="11" stroke="#fff" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="8" stroke-dashoffset="8"/><line class="b-line3" x1="8" y1="15" x2="13" y2="15" stroke="rgba(255,255,255,0.7)" stroke-width="1.5" stroke-linecap="round" stroke-dasharray="8" stroke-dashoffset="8"/></svg>' : '5');
+                                $step5CircleClass = $step5 ? 'current' : (($currentStep == 5) ? 'current' : 'pending');
+                                $step5CircleLabel = ($step5 || $currentStep == 5) ? "<svg class=\"bill-anim\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect class=\"b-doc\" x=\"5\" y=\"2\" width=\"14\" height=\"18\" rx=\"2\" stroke=\"rgba(255,255,255,0.85)\" stroke-width=\"1.8\" fill=\"rgba(255,255,255,0.1)\"/><line class=\"b-line1\" x1=\"8\" y1=\"7\" x2=\"16\" y2=\"7\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line2\" x1=\"8\" y1=\"11\" x2=\"16\" y2=\"11\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line3\" x1=\"8\" y1=\"15\" x2=\"13\" y2=\"15\" stroke=\"rgba(255,255,255,0.7)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/></svg>" : '5';
                                 $step5Tooltip = '5. เริ่มบิลรายเดือน';
 
                                 if ($step5) {
@@ -2187,8 +2187,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                         }
                                     } elseif ($firstBillPaid && $latestBillPaid) {
                                         // ชำระครบทุกบิลแล้ว — ✓ เฉพาะเมื่อบิลล่าสุดชำระแล้วด้วย
-                                        $step5CircleClass = 'completed';
-                                        $step5CircleLabel = '✓';
+                                        $step5CircleClass = 'current';
+                                        $step5CircleLabel = "<svg class=\"bill-anim\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect class=\"b-doc\" x=\"5\" y=\"2\" width=\"14\" height=\"18\" rx=\"2\" stroke=\"rgba(255,255,255,0.85)\" stroke-width=\"1.8\" fill=\"rgba(255,255,255,0.1)\"/><line class=\"b-line1\" x1=\"8\" y1=\"7\" x2=\"16\" y2=\"7\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line2\" x1=\"8\" y1=\"11\" x2=\"16\" y2=\"11\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line3\" x1=\"8\" y1=\"15\" x2=\"13\" y2=\"15\" stroke=\"rgba(255,255,255,0.7)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/></svg>";
                                         $step5Tooltip = '5. ชำระแล้ว (' . $latestMonthDisplay . ')';
                                     } elseif ($latestBillOverdue || $firstBillOverdue) {
                                         $step5CircleClass = 'overdue';
@@ -2233,8 +2233,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                         $step5Tooltip = '5. บิลค้างชำระ';
                                     } elseif ($meterBillDone && $firstBillPaid && $latestBillPaid) {
                                         // บิลชำระครบแล้ว แม้ step_5_confirmed = 0
-                                        $step5CircleClass = 'completed';
-                                        $step5CircleLabel = '✓';
+                                        $step5CircleClass = 'current';
+                                        $step5CircleLabel = "<svg class=\"bill-anim\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect class=\"b-doc\" x=\"5\" y=\"2\" width=\"14\" height=\"18\" rx=\"2\" stroke=\"rgba(255,255,255,0.85)\" stroke-width=\"1.8\" fill=\"rgba(255,255,255,0.1)\"/><line class=\"b-line1\" x1=\"8\" y1=\"7\" x2=\"16\" y2=\"7\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line2\" x1=\"8\" y1=\"11\" x2=\"16\" y2=\"11\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line3\" x1=\"8\" y1=\"15\" x2=\"13\" y2=\"15\" stroke=\"rgba(255,255,255,0.7)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/></svg>";
                                         $displayMonth = $latestMonthDisplay !== '-' ? $latestMonthDisplay : $firstBillMonthDisplay;
                                         $step5Tooltip = '5. ชำระแล้ว (' . $displayMonth . ')';
                                     }
@@ -2265,15 +2265,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                     ENT_QUOTES,
                                     'UTF-8'
                                 );
-                                $canOpenStep5Circle = !$isCancelPending
-                                    && (int)$tenant['ctr_id'] > 0
-                                    && (
-                                        $step5
-                                        || $step4
-                                        || $step5CircleClass === 'completed'
-                                        || $currentStep >= 5
-                                        || (int)($tenant['completed'] ?? 0) === 1
-                                    );
+                                $canOpenStep5Circle = (int)$tenant['ctr_id'] > 0;
 
                                 // Advance currentStep based on completed steps
                                 // Ensure we move to the next action step based on what's completed
