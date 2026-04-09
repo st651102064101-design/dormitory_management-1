@@ -240,23 +240,84 @@ try {
         $adminRecoveryEmail = (string)($recoveryEmailStmt->fetchColumn() ?: '');
       }
 
-    // ดึงจำนวนผู้เช่าที่ยังไม่ครบ 5 ขั้นตอน ใน wizard
+    // สร้างเงื่อนไขการนับที่สอดคล้องกับ tenant_wizard.php
+    $firstBillPaidCondition = "
+        EXISTS (
+                SELECT 1
+                FROM expense e_first
+                WHERE e_first.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                    AND (
+                        c.ctr_start IS NULL
+                        OR DATE_FORMAT(e_first.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
+                    )
+                    AND e_first.exp_month = (
+                        SELECT MIN(e_min.exp_month)
+                        FROM expense e_min
+                        WHERE e_min.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                            AND (
+                                c.ctr_start IS NULL
+                                OR DATE_FORMAT(e_min.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
+                            )
+                    )
+                    AND e_first.exp_total > 0
+                    AND COALESCE((
+                        SELECT SUM(p.pay_amount)
+                        FROM payment p
+                        WHERE p.exp_id = e_first.exp_id
+                          AND p.pay_status = '1'
+                          AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                    ), 0) >= e_first.exp_total - 0.00001
+        )
+    ";
+
+    $meterRecordedCondition = "
+        EXISTS (
+            SELECT 1
+            FROM utility u_meter
+            WHERE u_meter.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+              AND u_meter.utl_water_end IS NOT NULL
+        )
+    ";
+
+    $latestBillPaidCondition = "
+        EXISTS (
+            SELECT 1
+            FROM expense e_latest
+            WHERE e_latest.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                AND e_latest.exp_month = (
+                    SELECT MAX(e_max.exp_month)
+                    FROM expense e_max
+                    WHERE e_max.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                )
+                AND e_latest.exp_total > 0
+                AND COALESCE((
+                    SELECT SUM(p.pay_amount)
+                    FROM payment p
+                    WHERE p.exp_id = e_latest.exp_id
+                      AND p.pay_status = '1'
+                      AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                ), 0) >= e_latest.exp_total - 0.00001
+        )
+    ";
+
+    $allStepsDoneCondition = "
+        c.ctr_status = '0'
+        AND cr.checkin_date IS NOT NULL
+        AND cr.checkin_date <> '0000-00-00'
+        AND $firstBillPaidCondition
+        AND $latestBillPaidCondition
+        AND $meterRecordedCondition
+    ";
+
     $wizardCountStmt = $pdo->query("
-        SELECT COUNT(*) as incomplete_count FROM booking b
+        SELECT COUNT(*) as incomplete_count 
+        FROM booking b
         LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-        WHERE b.bkg_status != '0'
+        LEFT JOIN contract c ON COALESCE(c.ctr_id, tw.ctr_id) = c.ctr_id
+        LEFT JOIN checkin_records cr ON COALESCE(c.ctr_id, tw.ctr_id) = cr.ctr_id
+        WHERE b.bkg_status != '0' 
           AND COALESCE(b.bkg_status, '') <> '5'
-          AND (
-            tw.id IS NULL
-            OR (
-              COALESCE(tw.completed, 0) = 0
-              AND COALESCE(tw.current_step, 0) <> 5
-              AND NOT (
-                COALESCE(tw.step_4_confirmed, 0) = 1
-                AND COALESCE(tw.step_5_confirmed, 0) = 0
-              )
-            )
-          )
+          AND NOT ($allStepsDoneCondition)
     ");
     $wizardCountResult = $wizardCountStmt->fetch(PDO::FETCH_ASSOC);
     $wizardIncompleteCount = (int)($wizardCountResult['incomplete_count'] ?? 0);

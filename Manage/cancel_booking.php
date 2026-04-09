@@ -140,6 +140,14 @@ try {
         $stmtDelUtility->execute($ctr_ids);
     }
     
+    // 4.4.2 ลบ deposit_refund, repair, termination ที่อาจตกค้าง
+    if (!empty($ctr_ids)) {
+        $placeholders = implode(',', array_fill(0, count($ctr_ids), '?'));
+        $pdo->prepare("DELETE FROM deposit_refund WHERE ctr_id IN ($placeholders)")->execute($ctr_ids);
+        $pdo->prepare("DELETE FROM repair WHERE ctr_id IN ($placeholders)")->execute($ctr_ids);
+        $pdo->prepare("DELETE FROM termination WHERE ctr_id IN ($placeholders)")->execute($ctr_ids);
+    }
+
     // 4.5 ลบ tenant_workflow
     $stmtDelWorkflow = $pdo->prepare("DELETE FROM tenant_workflow WHERE bkg_id = ?");
     $stmtDelWorkflow->execute([$bkg_id]);
@@ -164,6 +172,7 @@ try {
         
         // ลบ tenant เฉพาะเมื่อไม่มี booking อื่น
         if ($otherBookings === 0) {
+            $pdo->prepare("DELETE FROM tenant_oauth WHERE tnt_id = ?")->execute([$tnt_id]);
             $stmtDelTenant = $pdo->prepare("DELETE FROM tenant WHERE tnt_id = ?");
             $stmtDelTenant->execute([$tnt_id]);
         }

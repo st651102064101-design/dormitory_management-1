@@ -144,6 +144,9 @@ try {
 }
 
 $success = false;
+if (isset($_GET['success']) && $_GET['success'] == '1') {
+    $success = true;
+}
 $error = '';
 
 // ดึงอัตราค่าน้ำค่าไฟปัจจุบัน
@@ -468,6 +471,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $_SESSION['last_tenant_id'] = $tenantId;
                         $_SESSION['last_phone_number'] = $phone;
                         $_SESSION['last_booking_time'] = time();
+                        
+                        // Redirect to the same page with success flag in GET
+                        header("Location: booking.php?room=" . urlencode((string)$roomId) . "&success=1");
+                        exit;
                         } // end else (active contract check)
                         } // end else (error check)
                     }
@@ -1948,15 +1955,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             <?php
             try {
-                $stmtLine = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'line_add_friend_url'");
-                $lineAddFriendUrl = $stmtLine->fetchColumn();
-            } catch (Exception $e) { $lineAddFriendUrl = ''; }
+                $stmtLine = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('line_add_friend_url', 'line_qr_code_image', 'line_bot_basic_id', 'line_login_channel_id')");
+                $lineSettings = $stmtLine->fetchAll(PDO::FETCH_KEY_PAIR);
+                $lineAddFriendUrl = $lineSettings['line_add_friend_url'] ?? '';
+                $lineQrCodeImage = $lineSettings['line_qr_code_image'] ?? '';
+                $lineBotBasicId = $lineSettings['line_bot_basic_id'] ?? '';
+                $lineLoginChannelId = $lineSettings['line_login_channel_id'] ?? '';
+            } catch (Exception $e) { 
+                $lineAddFriendUrl = ''; 
+                $lineQrCodeImage = '';
+                $lineBotBasicId = '';
+                $lineLoginChannelId = '';
+            }
             
-            if ($lineAddFriendUrl):
+            if ($lineLoginChannelId):
             ?>
+            <div style="background:var(--bg-secondary);border:1px solid #06c755;border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);text-align:center;">
+                <h3 style="margin-top:0;margin-bottom:12px;color:#06c755;font-size:1.2rem;">เปิดรับการแจ้งเตือนบิลฟรี! ขั้นตอนเดียว</h3>
+                <p style="color:var(--text-secondary);font-size:0.95rem;margin-bottom:20px;">
+                    ผูกบัญชีผู้เช่าด้วย LINE เพื่อรับใบแจ้งหนี้, แจ้งซ่อม, และพยากรณ์อากาศรายวัน ง่ายๆ ในคลิกเดียว
+                </p>
+                <a href="../line_login.php?action=link&tenant_id=<?php echo urlencode((string)$lastTenantId); ?>" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:#fff; font-weight:bold; font-size:1.1rem; background-color:#06c755; border-radius:12px; padding:12px 24px; box-shadow:0 4px 10px rgba(6,199,85,0.3); transition:all 0.2s;">
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="margin-right:8px;"><path d="M22.5 10.4c0-4.3-4.7-7.8-10.5-7.8S1.5 6.1 1.5 10.4c0 3.8 3.7 7 8.5 7.7.4.1.9.3 1 .6l.3 1.8c0 .2.2.3.4.2 1.6-1.1 5.9-4 8.2-6.2 1.5-1.3 2.6-2.7 2.6-4.1zM9.5 12.3c0 .3-.2.5-.5.5H6.2c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h2.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5zM13.6 12.3c0 .3-.2.5-.5.5h-1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h1c.3 0 .5.2.5.5v3.8zM17.4 12.3c0 .3-.2.5-.5.5h-2.1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h.6c.3 0 .5.2.5.5v2.8h1.5c.3 0 .5.2.5.5z"/></svg>
+                    ผูกบัญชีด้วย LINE ทันที
+                </a>
+            </div>
+            <?php elseif ($lineAddFriendUrl): ?>
             <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);text-align:center;">
                 <div style="margin-bottom:10px;">
-                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=<?php echo urlencode($lineAddFriendUrl); ?>" alt="LINE QR Code" style="width:120px; height:120px; border-radius:8px; border:1px solid var(--border-color); padding:4px; background:#fff;">
+                    <?php if (!empty($lineQrCodeImage) && file_exists(__DIR__ . '/Assets/Images/' . $lineQrCodeImage)): ?>
+                        <img src="Assets/Images/<?php echo htmlspecialchars($lineQrCodeImage); ?>" alt="LINE QR Code" style="width:120px; height:120px; border-radius:8px; border:1px solid var(--border-color); padding:4px; background:#fff; object-fit: contain;">
+                    <?php else: ?>
+                        <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=<?php echo urlencode($lineAddFriendUrl); ?>" alt="LINE QR Code" style="width:120px; height:120px; border-radius:8px; border:1px solid var(--border-color); padding:4px; background:#fff; object-fit: contain;">
+                    <?php endif; ?>
                 </div>
                 <a href="<?php echo htmlspecialchars($lineAddFriendUrl); ?>" target="_blank" style="display:inline-block; text-decoration:none; color:#06c755; font-weight:600; margin-bottom:8px; border:1px solid #06c755; padding:6px 12px; border-radius:24px; background-color: #f6fff9;">
                     <span style="font-size:1.1rem; vertical-align:middle; margin-right:4px;">💬</span> <span style="vertical-align:middle;">เพิ่มเพื่อน LINE หอพักคลิกที่นี่</span>

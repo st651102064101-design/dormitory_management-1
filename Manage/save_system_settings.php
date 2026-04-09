@@ -629,6 +629,67 @@ try {
         }
     }
 
+    // จัดการ LINE QR Code Image Upload
+    if (!empty($_FILES['line_qr'])) {
+        $file = $_FILES['line_qr'];
+        $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+        $maxSize = 5 * 1024 * 1024; // 5MB
+
+        if (!in_array($file['type'], $allowedTypes)) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'รองรับเฉพาะไฟล์ JPG หรือ PNG']);
+            exit;
+        }
+
+        if ($file['size'] > $maxSize) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ขนาดไฟล์ไม่ควรเกิน 5MB']);
+            exit;
+        }
+
+        $uploadsDir = __DIR__ . '/../Public/Assets/Images/';
+        if (!is_dir($uploadsDir)) {
+            @mkdir($uploadsDir, 0755, true);
+        }
+
+        $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+        $filename = 'line_qr_' . date('Ymd_His') . '.' . $ext;
+        $filepath = $uploadsDir . $filename;
+
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmt->execute(['line_qr_code_image', $filename, $filename]);
+
+            header('Content-Type: application/json');
+            echo json_encode(['success' => true, 'message' => 'อัพโหลด QR Code สำหรับเพิ่มเพื่อนสำเร็จ', 'filename' => $filename]);
+            exit;
+        } else {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัพโหลดไฟล์: ' . (error_get_last()['message'] ?? 'ไม่ทราบสาเหตุ')]);
+            exit;
+        }
+    }
+
+    // ลบภาพ LINE QR Code ปัจจุบัน
+    if (isset($_POST['delete_line_qr'])) {
+        $stmt = $pdo->prepare("SELECT setting_value FROM system_settings WHERE setting_key = 'line_qr_code_image'");
+        $stmt->execute();
+        $currentQr = $stmt->fetchColumn();
+
+        if ($currentQr) {
+            $uploadsDir = __DIR__ . '/../Public/Assets/Images/';
+            $qrPath = $uploadsDir . $currentQr;
+            if (file_exists($qrPath)) {
+                @unlink($qrPath);
+            }
+            $pdo->prepare("DELETE FROM system_settings WHERE setting_key = 'line_qr_code_image'")->execute();
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'ลบภาพ QR Code สำเร็จ']);
+        exit;
+    }
+
     // จัดการ Signature Upload (ลายเซ็นเจ้าของหอ)
     if (!empty($_FILES['signature'])) {
         $file = $_FILES['signature'];
@@ -929,6 +990,33 @@ try {
         $stmt->execute([$lineChannelSecret]);
         header('Content-Type: application/json');
         echo json_encode(['success' => true, 'message' => 'บันทึก LINE Channel Secret สำเร็จ']);
+        exit;
+    }
+
+    if (isset($_POST['line_login_channel_id'])) {
+        $lineLoginId = trim($_POST['line_login_channel_id']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('line_login_channel_id', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$lineLoginId]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึก LINE Login Channel ID สำเร็จ']);
+        exit;
+    }
+
+    if (isset($_POST['line_login_channel_secret'])) {
+        $lineLoginSecret = trim($_POST['line_login_channel_secret']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('line_login_channel_secret', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$lineLoginSecret]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึก LINE Login Channel Secret สำเร็จ']);
+        exit;
+    }
+
+    if (isset($_POST['line_add_friend_url'])) {
+        $lineAddFriendUrl = trim($_POST['line_add_friend_url']);
+        $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('line_add_friend_url', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+        $stmt->execute([$lineAddFriendUrl]);
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'message' => 'บันทึกลิงก์เพิ่มเพื่อนสำเร็จ']);
         exit;
     }
 

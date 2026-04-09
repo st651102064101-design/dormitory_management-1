@@ -91,9 +91,16 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
     <!-- URL สำหรับเพิ่มเพื่อน -->
     <?php
     $lineAddFriendUrl = '';
+    $lineQrCodeImage = '';
+    $lineLoginChannelId = '';
+    $lineLoginChannelSecret = '';
     try {
-        $stmtLineUrl = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'line_add_friend_url'");
-        $lineAddFriendUrl = (string)$stmtLineUrl->fetchColumn();
+        $stmtLineOpts = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('line_add_friend_url', 'line_qr_code_image', 'line_login_channel_id', 'line_login_channel_secret')");
+        $lineSettingsOpts = $stmtLineOpts->fetchAll(PDO::FETCH_KEY_PAIR);
+        $lineAddFriendUrl = $lineSettingsOpts['line_add_friend_url'] ?? '';
+        $lineQrCodeImage = $lineSettingsOpts['line_qr_code_image'] ?? '';
+        $lineLoginChannelId = $lineSettingsOpts['line_login_channel_id'] ?? '';
+        $lineLoginChannelSecret = $lineSettingsOpts['line_login_channel_secret'] ?? '';
     } catch (Exception $e) { }
     ?>
     <div class="apple-settings-row" data-sheet="sheet-line-add-friend-url">
@@ -103,8 +110,52 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
         </svg>
       </div>
       <div class="apple-row-content">
-        <p class="apple-row-label">URL เพิ่มเพื่อน (สำหรับผู้เช่าสแกน)</p>
-        <p class="apple-row-sublabel"><?php echo !empty($lineAddFriendUrl) ? htmlspecialchars($lineAddFriendUrl) : 'ยังไม่ได้เชื่อมต่อ URL (QR Code จะไม่แสดง)'; ?></p>
+        <p class="apple-row-label">URL เพิ่มเพื่อน (สำหรับกดลิงก์)</p>
+        <p class="apple-row-sublabel"><?php echo !empty($lineAddFriendUrl) ? htmlspecialchars($lineAddFriendUrl) : 'ยังไม่ได้เชื่อมต่อ URL (ปุ่มจะไม่มีลิงก์)'; ?></p>
+      </div>
+      <span class="apple-row-chevron">›</span>
+    </div>
+    
+    <!-- ภาพ QR Code LINE -->
+    <div class="apple-settings-row" data-sheet="sheet-line-qr-code">
+      <div class="apple-row-icon line-oa-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
+          <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><rect x="7" y="7" width="3" height="3"></rect><rect x="14" y="7" width="3" height="3"></rect><rect x="7" y="14" width="3" height="3"></rect><rect x="14" y="14" width="3" height="3"></rect>
+        </svg>
+      </div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">ภาพ QR Code LINE (แทนการสุ่มอัตโนมัติ)</p>
+        <p class="apple-row-sublabel">
+          <?php echo !empty($lineQrCodeImage) ? "อัปโหลดแล้ว (" . htmlspecialchars($lineQrCodeImage) . ")" : "ยังไม่ได้อัปโหลด (ระบบจะสุ่มสร้างจาก URL อัตโนมัติแทน)"; ?>
+        </p>
+      </div>
+      <span class="apple-row-chevron">›</span>
+    </div>
+
+    <!-- LINE Login Channel ID -->
+    <div class="apple-settings-row" data-sheet="sheet-line-login-channel-id">
+      <div class="apple-row-icon line-oa-icon" style="background:#f1f5f9; color:#06c755;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
+          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline>
+        </svg>
+      </div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">LINE Login Channel ID</p>
+        <p class="apple-row-sublabel"><?php echo !empty($lineLoginChannelId) ? 'ตั้งค่าแล้ว' : 'ยังไม่ได้ตั้งค่า'; ?></p>
+      </div>
+      <span class="apple-row-chevron">›</span>
+    </div>
+
+    <!-- LINE Login Channel Secret -->
+    <div class="apple-settings-row" data-sheet="sheet-line-login-channel-secret">
+      <div class="apple-row-icon line-oa-icon" style="background:#f1f5f9; color:#06c755;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+      </div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">LINE Login Channel Secret</p>
+        <p class="apple-row-sublabel"><?php echo !empty($lineLoginChannelSecret) ? 'ตั้งค่าแล้ว (ซ่อนเพื่อความปลอดภัย)' : 'ยังไม่ได้ตั้งค่า'; ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -210,11 +261,90 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
       <form id="lineAddFriendUrlForm">
         <div class="apple-input-group">
           <label class="apple-input-label">URL เพิ่มเพื่อน</label>
-          <input type="url" id="lineAddFriendUrlInput" name="line_add_friend_url" class="apple-input" value="<?php echo htmlspecialchars($lineAddFriendUrl); ?>" placeholder="ตัวอย่าง: https://lin.ee/xxxxx หรือ https://page.line.me/xxxxx">
-          <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">ลิงก์นี้จะเอาไปใช้สร้างปุ่มแอดไลน์ และสร้าง QR Code อัตโนมัติที่หน้าจองห้องพัก และหน้าผู้เช่า</p>
+          <input type="url" id="lineAddFriendUrlInput" name="line_add_friend_url" class="apple-input" value="<?php echo htmlspecialchars($lineAddFriendUrl); ?>" placeholder="ตัวอย่าง: https://lin.ee/xxxxx">
+          <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">
+            วิธีก๊อปลิงก์ที่ถูกต้อง: เข้า LINE OA Manager &gt; "เพิ่มเพื่อน" (Gain friends) &gt; "ลิงก์" (Link)<br>
+            ลิงก์นี้จะเอาไปใช้สร้างปุ่มแอดไลน์ และสร้าง QR Code อัตโนมัติที่หน้าจองห้องพัก และหน้าผู้เช่า
+          </p>
         </div>
         <button type="submit" class="apple-button primary">บันทึก</button>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: LINE QR Code Upload -->
+<div class="apple-sheet-overlay" id="sheet-line-qr-code">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-line-qr-code">ยกเลิก</button>
+      <h3 class="apple-sheet-title">อัปโหลดภาพ QR Code</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <form id="lineQrCodeForm">
+        <div class="apple-input-group" style="text-align:center;">
+          <?php if (!empty($lineQrCodeImage) && file_exists(__DIR__ . '/../../Public/Assets/Images/' . $lineQrCodeImage)): ?>
+            <img src="../Public/Assets/Images/<?php echo htmlspecialchars($lineQrCodeImage); ?>" alt="LINE QR Code" style="max-width: 200px; max-height: 200px; border-radius: 8px; margin-bottom: 16px; border: 1px solid var(--apple-border-color);">
+            <div style="margin-bottom: 16px;">
+              <button type="button" id="btnDeleteLineQr" class="apple-button secondary" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">ลบภาพปัจจุบัน</button>
+            </div>
+          <?php else: ?>
+            <div style="width: 150px; height: 150px; background: var(--apple-bg-primary); border: 2px dashed var(--apple-border-color); border-radius: 12px; display:flex; align-items:center; justify-content:center; margin: 0 auto 16px;">
+              <span style="color: var(--apple-text-secondary); font-size: 13px;">ไม่มีภาพ</span>
+            </div>
+          <?php endif; ?>
+          <input type="file" id="lineQrInput" name="line_qr" accept="image/jpeg, image/png, image/jpg" style="display:none;" onchange="document.getElementById('qrFileName').textContent = this.files[0]?.name || 'ไม่ได้เลือกไฟล์';">
+          <label for="lineQrInput" class="apple-button secondary" style="display: inline-block; cursor:pointer; width:auto; margin-bottom: 8px;">
+            เลือกไฟล์ภาพ (JPG, PNG)
+          </label>
+          <div id="qrFileName" style="font-size: 12px; color: var(--apple-text-secondary);">ไม่ได้เลือกไฟล์</div>
+        </div>
+        <button type="submit" class="apple-button primary" style="margin-top: 16px;">บันทึกและอัปโหลด</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Sheet: LINE Login Channel ID -->
+  <div class="apple-sheet-overlay" id="sheet-line-login-channel-id">
+    <div class="apple-sheet">
+      <div class="apple-sheet-handle"></div>
+      <div class="apple-sheet-header">
+        <button class="apple-sheet-action" data-close-sheet="sheet-line-login-channel-id">ยกเลิก</button>
+        <h3 class="apple-sheet-title">LINE Login Channel ID</h3>
+        <div style="width: 50px;"></div>
+      </div>
+      <div class="apple-sheet-body">
+        <form id="lineLoginChannelIdForm">
+          <div class="apple-input-group">
+            <label class="apple-input-label">ตั้งค่าสำหรับปุ่มผูกบัญชี LINE Login 1-Click</label>
+            <input type="text" id="lineLoginChannelIdInput" name="line_login_channel_id" class="apple-input" value="<?php echo htmlspecialchars($lineLoginChannelId); ?>" placeholder="ตัวอย่าง: 165xxxxxxxx">
+          </div>
+          <button type="submit" class="apple-button primary">บันทึก</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sheet: LINE Login Channel Secret -->
+  <div class="apple-sheet-overlay" id="sheet-line-login-channel-secret">
+    <div class="apple-sheet">
+      <div class="apple-sheet-handle"></div>
+      <div class="apple-sheet-header">
+        <button class="apple-sheet-action" data-close-sheet="sheet-line-login-channel-secret">ยกเลิก</button>
+        <h3 class="apple-sheet-title">LINE Login Secret</h3>
+        <div style="width: 50px;"></div>
+      </div>
+      <div class="apple-sheet-body">
+        <form id="lineLoginChannelSecretForm">
+          <div class="apple-input-group">
+            <label class="apple-input-label">ซ่อนตัวอักษรเพื่อความปลอดภัย</label>
+            <input type="password" id="lineLoginChannelSecretInput" name="line_login_channel_secret" class="apple-input" value="<?php echo !empty($lineLoginChannelSecret) ? '********' : ''; ?>" placeholder="Channel Secret สำหรับ LINE Login">
+          </div>
+          <button type="submit" class="apple-button primary">บันทึก</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>
@@ -318,6 +448,49 @@ document.getElementById('lineChannelSecretForm')?.addEventListener('submit', asy
   }
 });
 
+// LINE Login Channel ID
+document.getElementById('lineLoginChannelIdForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const value = document.getElementById('lineLoginChannelIdInput').value;
+  try {
+    const res = await fetch('../Manage/save_system_settings.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `line_login_channel_id=${encodeURIComponent(value)}`
+    });
+    const data = await res.json();
+    if (data.success) {
+      showAppleToast('บันทึก LINE Login Channel ID สำเร็จ', 'success');
+      closeLineSheet('sheet-line-login-channel-id');
+      setTimeout(() => location.reload(), 1000);
+    }
+  } catch (err) { showAppleToast('เกิดข้อผิดพลาด', 'error'); }
+});
+
+// LINE Login Channel Secret
+document.getElementById('lineLoginChannelSecretForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const input = document.getElementById('lineLoginChannelSecretInput');
+  const value = input.value;
+  if(value === '********') {
+    closeLineSheet('sheet-line-login-channel-secret');
+    return;
+  }
+  try {
+    const res = await fetch('../Manage/save_system_settings.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `line_login_channel_secret=${encodeURIComponent(value)}`
+    });
+    const data = await res.json();
+    if (data.success) {
+      showAppleToast('บันทึก LINE Login Channel Secret สำเร็จ', 'success');
+      closeLineSheet('sheet-line-login-channel-secret');
+      setTimeout(() => location.reload(), 1000);
+    }
+  } catch (err) { showAppleToast('เกิดข้อผิดพลาด', 'error'); }
+});
+
 // LINE Add Friend URL Form
 document.getElementById('lineAddFriendUrlForm')?.addEventListener('submit', async function(e) {
   e.preventDefault();
@@ -336,6 +509,58 @@ document.getElementById('lineAddFriendUrlForm')?.addEventListener('submit', asyn
       setTimeout(() => location.reload(), 1000);
     } else {
       showAppleToast('เกิดข้อผิดพลาด: ' + data.error, 'error');
+    }
+  } catch (err) {
+    showAppleToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+  }
+});
+
+// LINE QR Code Form Upload
+document.getElementById('lineQrCodeForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const fileInput = document.getElementById('lineQrInput');
+  if (!fileInput.files.length) {
+    showAppleToast('กรุณาเลือกไฟล์ก่อน', 'warning');
+    return;
+  }
+  
+  const formData = new FormData();
+  formData.append('line_qr', fileInput.files[0]);
+  
+  try {
+    const res = await fetch('../Manage/save_system_settings.php', {
+      method: 'POST',
+      body: formData
+    });
+    const data = await res.json();
+    if (data.success) {
+      showAppleToast('อัปโหลดภาพเรียบร้อย', 'success');
+      closeLineSheet('sheet-line-qr-code');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showAppleToast('ผิดพลาด: ' + data.error, 'error');
+    }
+  } catch (err) {
+    showAppleToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+  }
+});
+
+// Delete LINE QR Code
+document.getElementById('btnDeleteLineQr')?.addEventListener('click', async function() {
+  if (!confirm('ยืนยันลบภาพ QR Code ใช่หรือไม่?')) return;
+  
+  try {
+    const res = await fetch('../Manage/save_system_settings.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: 'delete_line_qr=1'
+    });
+    const data = await res.json();
+    if (data.success) {
+      showAppleToast('ลบภาพสำเร็จ', 'success');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showAppleToast('ลบไม่สำเร็จ: ' + data.error, 'error');
     }
   } catch (err) {
     showAppleToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');

@@ -99,7 +99,7 @@ $logoFilename = 'Logo.jpg';
 $publicTheme = 'dark';
 $settings = [];
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'public_theme', 'openweathermap_api_key', 'openweathermap_city', 'google_maps_embed', 'line_add_friend_url')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'public_theme', 'openweathermap_api_key', 'openweathermap_city', 'google_maps_embed', 'line_add_friend_url', 'line_qr_code_image', 'line_login_channel_id')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
@@ -1029,8 +1029,21 @@ if (($contract['ctr_status'] ?? '0') === '1') {
                         ${laundryTip}
                         ${
                             <?php if (empty($contractData['line_user_id']) || empty($contractData['is_weather_alert_enabled'])): ?>
+                            <?php if (!empty($settings['line_login_channel_id'])): ?>
                             `<div style="margin-top:12px; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:12px; text-align:center;">
-                                <?php if(!empty($settings['line_add_friend_url'])): ?>
+                                <a href="../line_login.php?action=link&tenant_id=<?php echo urlencode((string)$contractData['tnt_id']); ?>" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:#fff; font-weight:bold; font-size:1.0rem; background-color:#06c755; border-radius:12px; padding:10px 20px; box-shadow:0 4px 10px rgba(6,199,85,0.3); transition:all 0.2s;">
+                                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" style="margin-right:8px;"><path d="M22.5 10.4c0-4.3-4.7-7.8-10.5-7.8S1.5 6.1 1.5 10.4c0 3.8 3.7 7 8.5 7.7.4.1.9.3 1 .6l.3 1.8c0 .2.2.3.4.2 1.6-1.1 5.9-4 8.2-6.2 1.5-1.3 2.6-2.7 2.6-4.1zM9.5 12.3c0 .3-.2.5-.5.5H6.2c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h2.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5zM13.6 12.3c0 .3-.2.5-.5.5h-1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h1c.3 0 .5.2.5.5v3.8zM17.4 12.3c0 .3-.2.5-.5.5h-2.1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h.6c.3 0 .5.2.5.5v2.8h1.5c.3 0 .5.2.5.5z"/></svg>
+                                    ผูกบัญชีด้วย LINE ทันที
+                                </a>
+                                <br><span style="font-size:0.75rem; color:#94a3b8; display:inline-block; margin-top:8px;">ผูกด้วยคลิกเดียว เพื่อรับบิลและพยากรณ์อากาศฟรี!</span>
+                            </div>`
+                            <?php else: ?>
+                            `<div style="margin-top:12px; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:12px; text-align:center;">
+                                <?php if(!empty($settings['line_qr_code_image']) && file_exists(__DIR__ . '/../Public/Assets/Images/' . $settings['line_qr_code_image'])): ?>
+                                <div style="margin-bottom:10px;">
+                                    <img src="../Public/Assets/Images/<?php echo htmlspecialchars($settings['line_qr_code_image']); ?>" alt="LINE QR Code" style="width:120px; height:120px; border-radius:8px; border:1px solid #e2e8f0; padding:4px; background:#fff;">
+                                </div>
+                                <?php elseif(!empty($settings['line_add_friend_url'])): ?>
                                 <div style="margin-bottom:10px;">
                                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=<?php echo urlencode($settings['line_add_friend_url']); ?>" alt="LINE QR Code" style="width:120px; height:120px; border-radius:8px; border:1px solid #e2e8f0; padding:4px; background:#fff;">
                                 </div>
@@ -1040,6 +1053,7 @@ if (($contract['ctr_status'] ?? '0') === '1') {
                                 </a>
                                 <br>หรือสแกน QR Code ด้านบน จากนั้นพิมพ์ใน LINE: <br><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#1d4ed8; font-weight:600;">ลงทะเบียน <?php echo htmlspecialchars($contractData['tnt_phone'] ?? 'เบอร์โทรศัพท์ของคุณ', ENT_QUOTES, 'UTF-8'); ?></code><br><span style="font-size:0.75rem; color:#94a3b8; display:inline-block; margin-top:4px;">เพื่อรับการแจ้งเตือนบิลและพยากรณ์อากาศฟรี!</span>
                             </div>`
+                            <?php endif; ?>
                             <?php else: ?>
                             `<div style="margin-top:12px; font-size:0.8rem; color:#10b981; border-top:1px solid rgba(16,185,129,0.2); padding-top:12px; text-align:center;">
                                 ✓ แจ้งเตือนทาง LINE ทำงานอยู่<br>
