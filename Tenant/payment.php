@@ -67,7 +67,7 @@ try {
             SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
             FROM payment
             WHERE pay_status IN ('0', '1')
-              AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
+              
             GROUP BY exp_id
         ) ps ON ps.exp_id = e.exp_id
         JOIN contract c ON e.ctr_id = c.ctr_id
@@ -101,7 +101,7 @@ if ($selectedExpId > 0 && $selectedExpense === null) {
             JOIN contract c ON e.ctr_id = c.ctr_id
             JOIN room r ON c.room_id = r.room_id
             LEFT JOIN payment p ON p.exp_id = e.exp_id
-              AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+              
             WHERE e.exp_id = ? AND e.ctr_id = ?
             GROUP BY e.exp_id, e.exp_month, e.exp_total, r.room_number
             HAVING SUM(CASE WHEN p.pay_status = '0' THEN p.pay_amount ELSE 0 END) > 0
@@ -194,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' FOR UPDATE");
+            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1')  FOR UPDATE");
             $sumRowsStmt->execute([$exp_id]);
             $submittedAmount = 0;
             foreach ($sumRowsStmt->fetchAll(PDO::FETCH_ASSOC) as $payRow) {
@@ -202,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // ปกป้องการส่งซ้ำ: ตรวจสอบว่ามีการแจ้งชำระเงินที่ยังรอตรวจสอบอยู่สำหรับบิลนี้หรือไม่ (ไม่นับมัดจำ)
-            $checkPendingStmt = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'");
+            $checkPendingStmt = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' ");
             $checkPendingStmt->execute([$exp_id]);
             if ($checkPendingStmt->fetchColumn() > 0) {
                 throw new Exception('มีการแจ้งชำระเงินที่รอการตรวจสอบอยู่แล้ว กรุณารอผู้ดูแลตรวจสอบก่อนส่งใหม่');
@@ -283,7 +283,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
                     FROM payment
                     WHERE pay_status IN ('0', '1')
-                      AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
+                      
                     GROUP BY exp_id
                 ) ps ON ps.exp_id = e.exp_id
                 JOIN contract c ON e.ctr_id = c.ctr_id
@@ -334,7 +334,7 @@ try {
         FROM payment p
         JOIN expense e ON p.exp_id = e.exp_id
         WHERE e.ctr_id = ?
-          AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+          
         ORDER BY p.pay_date DESC
     ");
     $stmt->execute([$contract['ctr_id']]);
@@ -1263,7 +1263,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
     } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     $billCount = 0;
     try {
-        $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN contract c ON e.ctr_id = c.ctr_id WHERE c.tnt_id = ? AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m') AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) < e.exp_total");
+        $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN contract c ON e.ctr_id = c.ctr_id WHERE c.tnt_id = ? AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m') AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' ), 0) < e.exp_total");
         $billStmt->execute([$contract['tnt_id']]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
     } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
