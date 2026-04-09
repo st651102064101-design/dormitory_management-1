@@ -89,7 +89,7 @@ $logoFilename = 'Logo.jpg';
 $publicTheme = 'dark';
 $settings = [];
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'public_theme', 'openweathermap_api_key', 'openweathermap_city', 'google_maps_embed')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'public_theme', 'openweathermap_api_key', 'openweathermap_city', 'google_maps_embed', 'line_add_friend_url')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
@@ -1020,7 +1020,15 @@ if (($contract['ctr_status'] ?? '0') === '1') {
                         ${
                             <?php if (empty($contractData['line_user_id']) || empty($contractData['is_weather_alert_enabled'])): ?>
                             `<div style="margin-top:12px; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:12px; text-align:center;">
-                                💡 <span style="font-weight:600;">รับการแจ้งเตือนทาง LINE ฟรี!</span><br>แอดไลน์หอพัก แล้วพิมพ์: <br><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#1d4ed8; font-weight:600;">ลงทะเบียน <?php echo htmlspecialchars($contractData['tnt_phone'] ?? 'เบอร์โทรศัพท์ของคุณ', ENT_QUOTES, 'UTF-8'); ?></code>
+                                <?php if(!empty($settings['line_add_friend_url'])): ?>
+                                <div style="margin-bottom:10px;">
+                                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=<?php echo urlencode($settings['line_add_friend_url']); ?>" alt="LINE QR Code" style="width:120px; height:120px; border-radius:8px; border:1px solid #e2e8f0; padding:4px; background:#fff;">
+                                </div>
+                                <?php endif; ?>
+                                <a href="<?php echo htmlspecialchars($settings['line_add_friend_url'] ?? '#', ENT_QUOTES, 'UTF-8'); ?>" target="_blank" style="display:inline-block; text-decoration:none; color:#06c755; font-weight:600; margin-bottom:8px; border:1px solid #06c755; padding:6px 12px; border-radius:24px; background-color: #f6fff9;">
+                                    <span style="font-size:1.1rem; vertical-align:middle; margin-right:4px;">💬</span> <span style="vertical-align:middle;">เพิ่มเพื่อน LINE หอพักคลิกที่นี่</span>
+                                </a>
+                                <br>หรือสแกน QR Code ด้านบน จากนั้นพิมพ์ใน LINE: <br><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#1d4ed8; font-weight:600;">ลงทะเบียน <?php echo htmlspecialchars($contractData['tnt_phone'] ?? 'เบอร์โทรศัพท์ของคุณ', ENT_QUOTES, 'UTF-8'); ?></code><br><span style="font-size:0.75rem; color:#94a3b8; display:inline-block; margin-top:4px;">เพื่อรับการแจ้งเตือนบิลและพยากรณ์อากาศฟรี!</span>
                             </div>`
                             <?php else: ?>
                             `<div style="margin-top:12px; font-size:0.8rem; color:#10b981; border-top:1px solid #ecc; border-top-color:rgba(16,185,129,0.2); padding-top:12px; text-align:center;">
