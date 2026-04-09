@@ -955,14 +955,33 @@ if (($contract['ctr_status'] ?? '0') === '1') {
         
         <!-- OpenWeatherMap Widget -->
         <?php if (!empty($settings['openweathermap_api_key']) && !empty($settings['openweathermap_city'])): ?>
-        <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg></span> สภาพอากาศวันนี้</div>
-        <div class="info-card" id="weather-widget">
-            <div style="display:flex; justify-content:center; align-items:center; padding:20px;">
-                <span style="color:#64748b; font-size:0.9rem;">⏳ กำลังเรียกข้อมูลสภาพอากาศ...</span>
+        <div id="weather-wrapper" style="display: none;">
+            <div class="section-title" style="display:flex; justify-content:space-between; align-items:center;">
+                <div><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-top:-2px;"><circle cx="12" cy="12" r="5" /><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg></span> สภาพอากาศวันนี้</div>
+                <button type="button" onclick="closeWeatherWidget()" style="background:none; border:none; cursor:pointer; color:#94a3b8; display:flex; align-items:center; padding:4px; border-radius:50%; transition:background 0.2s;" onmouseover="this.style.background='rgba(0,0,0,0.05)'" onmouseout="this.style.background='none'" title="ปิดแจ้งเตือน"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div class="info-card" id="weather-widget">
+                <div style="display:flex; justify-content:center; align-items:center; padding:20px;">
+                    <span style="color:#64748b; font-size:0.9rem;">⏳ กำลังเรียกข้อมูลสภาพอากาศ...</span>
+                </div>
             </div>
         </div>
         <script>
+        function closeWeatherWidget() {
+            const wrapper = document.getElementById('weather-wrapper');
+            if(wrapper) wrapper.style.display = 'none';
+            localStorage.setItem('hide_weather_date', new Date().toDateString());
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
+            const hideDate = localStorage.getItem('hide_weather_date');
+            const today = new Date().toDateString();
+            if (hideDate === today) {
+                return; // Hide widget today
+            }
+            const wrapper = document.getElementById('weather-wrapper');
+            if(wrapper) wrapper.style.display = 'block';
+
             const apiKey = <?php echo json_encode($settings['openweathermap_api_key']); ?>;
             const city = <?php echo json_encode($settings['openweathermap_city']); ?>;
             const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${encodeURIComponent(apiKey)}&units=metric&lang=th`;
