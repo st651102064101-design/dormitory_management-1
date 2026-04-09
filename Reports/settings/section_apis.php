@@ -61,6 +61,47 @@ $hasMaps = !empty($apiSettings['google_maps_embed']);
       <span class="apple-row-chevron">›</span>
     </div>
 
+    <!-- Weather Alert TEST Button -->
+    <?php if ($hasOwm && $hasOwmCity): ?>
+    <div class="apple-settings-row" style="cursor: pointer;" onclick="testWeatherAlert()">
+      <div class="apple-row-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+      </div>
+      <div class="apple-row-content">
+        <p class="apple-row-label" style="color: #16a34a;">ทดสอบแจ้งเตือนสภาพอากาศไปยังผู้เช่า</p>
+        <p class="apple-row-sublabel">ส่ง LINE เพื่อทดสอบว่าสภาพอากาศพร้อมทำงาน</p>
+      </div>
+    </div>
+    
+    <script>
+    function testWeatherAlert() {
+        if (!confirm('ยืนยันส่งข้อความทดสอบแจ้งสภาพอากาศถึงผู้เช่าทุกคนทาง LINE OA?')) return;
+        
+        Toast.fire({ icon: 'info', title: 'กำลังดึงข้อมูลสภาพอากาศและส่ง LINE...' });
+        
+        const formData = new FormData();
+        formData.append('test', '1');
+        
+        fetch('../Manage/send_weather_alert.php', {
+            method: 'POST',
+            body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.success) {
+                Toast.fire({ icon: 'success', title: data.message });
+            } else {
+                Toast.fire({ icon: 'error', title: data.message });
+            }
+        })
+        .catch(err => {
+            console.error('Weather alert error:', err);
+            Toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาดในการเชื่อมต่อ' });
+        });
+    }
+    </script>
+    <?php endif; ?>
+
     <div style="height: 1px; background: rgba(0,0,0,0.05); margin: 0.5rem 1rem;"></div>
 
     <!-- Google Maps Configuration Status -->

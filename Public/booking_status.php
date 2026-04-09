@@ -209,15 +209,20 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo) && $autoFill
                 r.room_number, rt.type_name, rt.type_price,
                 c.ctr_id, c.ctr_deposit, c.access_token, c.ctr_start, c.ctr_end,
                 e.exp_status,
-                (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount
+                COALESCE(tw.current_step, 1) as current_step,
+                COALESCE(tw.completed, 0) as workflow_completed,
+                COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
+                (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
+                (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
             FROM booking b
             JOIN tenant t ON b.tnt_id = t.tnt_id
             LEFT JOIN room r ON b.room_id = r.room_id
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id
             LEFT JOIN contract c ON t.tnt_id = c.tnt_id AND c.room_id = b.room_id AND c.ctr_status = '0'
             LEFT JOIN expense e ON c.ctr_id = e.ctr_id
+            LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
             WHERE b.bkg_id = ?
-            GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id
+            GROUP BY t.tnt_id, b.bkg_id, r.room_id, rt.type_id, c.ctr_id, e.exp_id, tw.current_step, tw.completed, tw.step_2_confirmed
             LIMIT 1
         ");
         $stmt->execute([$bookingRef]);
