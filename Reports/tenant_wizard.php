@@ -2343,22 +2343,22 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                         ?>
                                             <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0.4rem;">
                                                 <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.7rem;border-radius:20px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);color:#f87171;font-size:0.82rem;font-weight:700;">
-                                                    ⚠ ผู้เช่าแจ้งยกเลิกสัญญา<?php if ($termDateDisplay !== '-'): ?>&nbsp;<span style="font-weight:400;opacity:0.8;">(ย้ายออก <?php echo htmlspecialchars($termDateDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span><?php endif; ?>
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> ผู้เช่าแจ้งยกเลิกสัญญา<?php if ($termDateDisplay !== '-'): ?>&nbsp;<span style="font-weight:400;opacity:0.8;">(ย้ายออก <?php echo htmlspecialchars($termDateDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span><?php endif; ?>
                                                 </div>
                                                 <?php if (!$billsComplete): ?>
                                                 <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(220,38,38,0.6);background:rgba(220,38,38,0.1);color:#dc2626;font-size:0.78rem;font-weight:600;">
-                                                    ⚠️ ยังชำระไม่ครบ ต้องชำระให้เสร็จก่อน
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> ยังชำระไม่ครบ ต้องชำระให้เสร็จก่อน
                                                 </div>
                                                 <?php else: ?>
                                                 <div style="display:flex;flex-wrap:wrap;gap:0.4rem;align-items:center;">
                                                     <?php if ($needsRefund && !$hasBankInfo): ?>
                                                     <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(245,158,11,0.55);background:rgba(245,158,11,0.1);color:#fbbf24;font-size:0.78rem;font-weight:600;">
-                                                        ⚠️ ยังไม่มีบัญชีธนาคาร
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> ยังไม่มีบัญชีธนาคาร
                                                     </div>
                                                     <button type="button" title="ส่ง SMS แจ้งเตือนผู้เช่าให้ระบุบัญชีธนาคาร"
                                                         onclick="remindBankAccount(<?php echo $ctrIdCancel; ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, this)"
-                                                        style="font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid #10b981;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;cursor:pointer;">
-                                                        💬 แจ้งผ่าน LINE
+                                                        style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid #10b981;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.2)'" onmouseout="this.style.background='rgba(16,185,129,0.1)'">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> แจ้งผู้เช่า
                                                     </button>
                                                     <?php elseif ($needsRefund && !$refundDone): ?>
                                                     <button type="button"
