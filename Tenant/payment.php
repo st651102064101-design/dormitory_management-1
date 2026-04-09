@@ -194,15 +194,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') FOR UPDATE");
+            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' FOR UPDATE");
             $sumRowsStmt->execute([$exp_id]);
             $submittedAmount = 0;
             foreach ($sumRowsStmt->fetchAll(PDO::FETCH_ASSOC) as $payRow) {
                 $submittedAmount += (int)($payRow['pay_amount'] ?? 0);
             }
 
-            // ปกป้องการส่งซ้ำ: ตรวจสอบว่ามีการแจ้งชำระเงินที่ยังรอตรวจสอบอยู่สำหรับบิลนี้หรือไม่
-            $checkPendingStmt = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0'");
+            // ปกป้องการส่งซ้ำ: ตรวจสอบว่ามีการแจ้งชำระเงินที่ยังรอตรวจสอบอยู่สำหรับบิลนี้หรือไม่ (ไม่นับมัดจำ)
+            $checkPendingStmt = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'");
             $checkPendingStmt->execute([$exp_id]);
             if ($checkPendingStmt->fetchColumn() > 0) {
                 throw new Exception('มีการแจ้งชำระเงินที่รอการตรวจสอบอยู่แล้ว กรุณารอผู้ดูแลตรวจสอบก่อนส่งใหม่');
@@ -1092,7 +1092,9 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 <div class="form-group" style="<?php echo (count($unpaidExpenses) == 1) ? 'display:none;' : ''; ?>">
                     <label>เลือกบิลที่ต้องการชำระ *</label>
                     <select name="exp_id" id="exp_id" <?php echo (count($unpaidExpenses) != 1) ? 'required' : ''; ?> onchange="updatePaymentAmount()">
+                        <?php if (count($unpaidExpenses) != 1): ?>
                         <option value="">-- เลือกบิล --</option>
+                        <?php endif; ?>
                         <?php foreach ($unpaidExpenses as $expense): ?>
                         <?php 
                             $paidAmount = (float)($expense['paid_amount'] ?? 0);
