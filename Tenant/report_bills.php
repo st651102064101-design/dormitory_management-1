@@ -73,14 +73,18 @@ $totalPaid = 0;
 $totalUnpaid = 0;
 foreach ($expenses as $exp) {
     $paidAmount = (float)($exp['paid_amount'] ?? 0);
+    $pendingAmount = (float)($exp['pending_amount'] ?? 0);
     $expTotal = (float)$exp['exp_total'];
     $remaining = max(0, $expTotal - $paidAmount);
     
     if ($paidAmount >= $expTotal && $expTotal > 0) {
         $totalPaid += $expTotal;
+    } elseif ($pendingAmount >= $expTotal) {
+        // ถ้ารอตรวจสอบเต็มจำนวน ไม่นับว่าค้างชำระ แต่จะถือว่ากำลังดำเนินการ (ไม่ควรโชว์ค้างชำระในยอดรวมด้านบน)
+        // หรือนำไปแสดงแยกถ้ามีพื้นที่ แต่ตอนนี้หักจาก totalUnpaid ออกไปก่อนเพื่อนไม่ให้สับสน
     } else {
-        // นับเฉพาะยอดที่ยังไม่ได้จ่าย
-        $totalUnpaid += $remaining;
+        // นับเฉพาะยอดที่ยังไม่ได้จ่าย และยังไม่มีการส่งสลิปครอบคลุม
+        $totalUnpaid += max(0, $remaining - $pendingAmount);
     }
 }
 ?>
@@ -352,6 +356,15 @@ foreach ($expenses as $exp) {
             $pendingAmount = (float)($exp['pending_amount'] ?? 0);
             $expTotal = (float)$exp['exp_total'];
             $remaining = max(0, $expTotal - $paidAmount);
+            
+            $roomPrice = (float)($exp['room_price'] ?? 0);
+            $elecChg = (float)($exp['exp_elec_chg'] ?? 0);
+            $waterChg = (float)($exp['exp_water'] ?? 0);
+            $calculatedTotal = $roomPrice + $elecChg + $waterChg;
+            $otherFee = $expTotal - $calculatedTotal;
+            $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
+            $isDepositOnly = ($expTotal > 0 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $otherFee > 0);
+
             $statusKey = '0';
             if ($paidAmount >= $expTotal && $expTotal > 0) {
                 $statusKey = '1';
@@ -360,27 +373,23 @@ foreach ($expenses as $exp) {
             } elseif ($pendingAmount > 0) {
                 $statusKey = '5'; // รอตรวจสอบ
             }
+
+            $displayLabel = $expenseStatusMap[$statusKey]['label'];
+            if ($statusKey === '5' && $isDepositOnly) {
+                $displayLabel = 'รอยืนยันการจอง';
+            }
         ?>
         <div class="bill-card">
             <div class="bill-header">
                 <span class="bill-month"><span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <?php echo thaiMonthYearLong($exp['exp_month']); ?></span>
                 <span class="bill-status" style="background: <?php echo $expenseStatusMap[$statusKey]['bg']; ?>; color: <?php echo $expenseStatusMap[$statusKey]['color']; ?>">
-                    <?php echo $expenseStatusMap[$statusKey]['label']; ?>
+                    <?php echo $displayLabel; ?>
                 </span>
             </div>
             <div class="bill-details">
                 <?php 
-                    $roomPrice = (float)($exp['room_price'] ?? 0);
-                    $elecChg = (float)($exp['exp_elec_chg'] ?? 0);
-                    $waterChg = (float)($exp['exp_water'] ?? 0);
-                    $calculatedTotal = $roomPrice + $elecChg + $waterChg;
-                    $otherFee = $expTotal - $calculatedTotal;
-                    
                     // ตรวจสอบว่าบิลนี้เจตนาให้เป็นบิลมัดจำเพียวๆ หรือไม่
                     // เช่น หาก exp_total ตรงกับค่ามัดจำ (2,000) แล้วมันไม่ได้มาจากค่าห้องรวมกับน้ำไฟ
-                    $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
-                    $isDepositOnly = ($expTotal > 0 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $otherFee > 0);
-
                     if ($isDepositOnly): 
                 ?>
                 <div class="bill-row">
@@ -417,10 +426,19 @@ foreach ($expenses as $exp) {
                     <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount); ?> บาท</span>
                 </div>
                 <?php endif; ?>
-                <?php if ($remaining > 0): ?>
+                <?php if ($pendingAmount > 0): ?>
+                <div class="bill-row" style="color: #8b5cf6; font-size: 0.85rem; margin-top: 0.25rem;">
+                    <span class="bill-label" style="color: #8b5cf6;">รอตรวจสอบ</span>
+                    <span class="bill-value" style="color: #8b5cf6;"><?php echo number_format($pendingAmount); ?> บาท</span>
+                </div>
+                <?php endif; ?>
+                <?php 
+                    $actualRemaining = max(0, $remaining - $pendingAmount);
+                    if ($actualRemaining > 0): 
+                ?>
                 <div class="bill-row" style="color: #ef4444; font-size: 0.85rem;">
                     <span class="bill-label" style="color: #ef4444;">ค้างชำระ</span>
-                    <span class="bill-value" style="color: #ef4444;"><?php echo number_format($remaining); ?> บาท</span>
+                    <span class="bill-value" style="color: #ef4444;"><?php echo number_format($actualRemaining); ?> บาท</span>
                 </div>
                 <?php endif; ?>
             </div>
