@@ -83,6 +83,40 @@ try {
         $ctr_id
     ]);
 
+    require_once __DIR__ . '/../LineHelper.php';
+    if (function_exists('sendLineBroadcast')) {
+        try {
+            $stmtRoom = $pdo->prepare("SELECT r.room_number FROM room r JOIN contract c ON r.room_id = c.room_id WHERE c.ctr_id = ?");
+            $stmtRoom->execute([$ctr_id]);
+            $roomName = $stmtRoom->fetchColumn() ?: 'ไม่ทราบห้อง';
+
+            $tokenStmt = $pdo->prepare("SELECT access_token FROM contract WHERE ctr_id = ?");
+            $tokenStmt->execute([$ctr_id]);
+            $accessToken = $tokenStmt->fetchColumn() ?: '';
+
+            $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' || isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+            $domainName = $_SERVER['HTTP_HOST'];
+            $scriptDir = dirname(dirname($_SERVER['SCRIPT_NAME']));
+            
+            $url = $accessToken 
+                ? rtrim($protocol . $domainName . $scriptDir, '/') . "/Tenant/index.php?token=" . urlencode((string)$accessToken)
+                : "";
+
+            $msg = "🧾 บิลค่าใช้จ่ายใหม่ ห้อง {$roomName}\nประจำเดือน: " . date('m/Y', strtotime($exp_month_date)) . "\n";
+            $msg .= "สถานะ: รอชำระ\n";
+            $msg .= "------------------------\n";
+            $msg .= "ค่าเช่า: ฿" . number_format($room_price, 2) . "\n";
+            if ($exp_water > 0) $msg .= "ค่าน้ำ: ฿" . number_format($exp_water, 2) . "\n";
+            if ($exp_elec_chg > 0)  $msg .= "ค่าไฟ: ฿" . number_format($exp_elec_chg, 2) . "\n";
+            $msg .= "------------------------\n";
+            $msg .= "รวมยอดชำระ: ฿" . number_format($exp_total, 2) . "\n";
+            if ($url) {
+                $msg .= "\nดูรายละเอียด/ชำระเงิน:\n" . str_replace('/Manage/Tenant', '/Tenant', $url);
+            }
+            sendLineBroadcast($pdo, $msg);
+        } catch (Exception $e) {}
+    }
+
     echo json_encode([
         'success' => true,
         'message' => 'เพิ่มค่าใช้จ่ายเรียบร้อยแล้ว (ยอดรวม ฿' . number_format($exp_total) . ')'

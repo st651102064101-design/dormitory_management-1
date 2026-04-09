@@ -136,6 +136,47 @@ try {
         '2' => 'ตีกลับแล้ว',
     ];
 
+    require_once __DIR__ . '/../LineHelper.php';
+    if ($payStatus === '1' && function_exists('sendLineBroadcast')) {
+        try {
+            // ดึงข้อมูลห้องและบิล
+            // ดึง room_id และเลขห้องก่อน
+            // payment -> expense -> contract -> room
+            $stmtInfo = $pdo->prepare("
+                SELECT r.room_number, e.exp_month, e.exp_total, c.tnt_id, t.tnt_name, p.pay_amount
+                FROM payment p
+                JOIN expense e ON p.exp_id = e.exp_id
+                JOIN contract c ON e.ctr_id = c.ctr_id
+                JOIN room r ON c.room_id = r.room_id
+                JOIN tenant t ON c.tnt_id = t.tnt_id
+                WHERE p.pay_id = ?
+            ");
+            $stmtInfo->execute([$payId]);
+            $info = $stmtInfo->fetch(PDO::FETCH_ASSOC);
+
+            if ($info) {
+                $roomName = $info['room_number'] ?? 'ไม่ทราบห้อง';
+                $tenantName = $info['tnt_name'] ?? 'ผู้เช่า';
+                $payAmount = (float)($info['pay_amount'] ?? 0);
+                $monthStr = $info['exp_month'] ? date('m/Y', strtotime((string)$info['exp_month'])) : '';
+
+                $msg = "✅ อนุมัติการชำระเงินเรียบร้อย\n";
+                $msg .= "------------------------\n";
+                $msg .= "ผู้เช่า: {$tenantName}\n";
+                $msg .= "ห้อง: {$roomName}\n";
+                if ($monthStr) {
+                    $msg .= "บิลประจำเดือน: {$monthStr}\n";
+                }
+                $msg .= "ยอดที่อนุมัติ: ฿" . number_format($payAmount, 2) . "\n";
+                $msg .= "------------------------\n";
+                $msg .= "ขอบคุณที่ใช้บริการ Sangthian Dormitory 😊\n";
+                sendLineBroadcast($pdo, $msg);
+            }
+        } catch (Exception $e) {
+            error_log("Line Notification Error (Payment Approval): " . $e->getMessage());
+        }
+    }
+
     $statusText = $statusTextMap[$payStatus] ?? 'อัปเดตแล้ว';
     echo json_encode([
         'success' => true,

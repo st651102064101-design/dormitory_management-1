@@ -231,6 +231,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->commit();
 
+            require_once __DIR__ . '/../LineHelper.php';
+            if (function_exists('sendLineBroadcast')) {
+                $tenantName = $contract['tnt_name'] ?? 'ผู้เช่า';
+                $roomNumberText = $contract['room_number'] ?? 'ไม่ทราบห้อง';
+                $monthStr = isset($expense['exp_month']) ? date('m/Y', strtotime((string)$expense['exp_month'])) : '';
+                $msg = "💰 แจ้งการชำระเงินใหม่!\n";
+                $msg .= "------------------------\n";
+                $msg .= "ผู้เช่า: {$tenantName}\n";
+                $msg .= "ห้อง: {$roomNumberText}\n";
+                if ($monthStr) {
+                    $msg .= "บิลประจำเดือน: {$monthStr}\n";
+                }
+                $msg .= "ยอดโอน: ฿" . number_format((float)$recordAmount, 2) . "\n";
+                $msg .= "------------------------\n";
+                $msg .= "กรุณาตรวจสอบหลักฐานในระบบ\n";
+                $msg .= "http://project.3bbddns.com:36140/dormitory_management/Manage/index.php"; // เปลี่ยน URL เป็นหน้า Admin จริงของคุณ
+                sendLineBroadcast($pdo, $msg);
+            }
+
             $remainingAfterSubmit = max(0, $remainingAmount - $recordAmount);
             
             $success = 'แจ้งชำระเงินเรียบร้อยแล้ว รอการตรวจสอบจากผู้ดูแล';
