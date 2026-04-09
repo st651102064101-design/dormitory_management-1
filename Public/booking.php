@@ -2014,10 +2014,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 
                 <a href="../line_login.php?action=link&tenant_id=<?php echo urlencode((string)$lastTenantId); ?>&room=<?php echo urlencode($_GET['room'] ?? ''); ?>" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:#fff; font-weight:bold; font-size:1.1rem; background-color:#06c755; border-radius:12px; padding:12px 24px; box-shadow:0 4px 10px rgba(6,199,85,0.3); transition:all 0.2s;">
-                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="margin-right:8px;"><path d="M22.5 10.4c0-4.3-4.7-7.8-10.5-7.8S1.5 6.1 1.5 10.4c0 3.8 3.7 7 8.5 7.7.4.1.9.3 1 .6l.3 1.8c0 .2.2.3.4.2 1.6-1.1 5.9-4 8.2-6.2 1.5-1.3 2.6-2.7 2.6-4.1zM9.5 12.3c0 .3-.2.5-.5.5H6.2c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h2.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5zM13.6 12.3c0 .3-.2.5-.5.5h-1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h1c.3 0 .5.2.5.5v3.8zM17.4 12.3c0 .3-.2.5-.5.5h-2.1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h.6c.3 0 .5.2.5.5v2.8h1.5c.3 0 .5.2.5.5z"/></svg>
+                    <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="margin-right:8px;"><path d="M22.5 10.4c0-4.3-4.7-7.8-10.5-7.8S1.5 6.1 1.5 10.4c0 3.8 3.7 7 8.5 7.7.4.1.9.3 1 .6l.3 1.8c0 .2.2.3.4.2 1.6-1.1 5.9-4 8.2-6.2 1.5-1.3 2.6-2.7 2.6-4.1zM9.5 12.3c0 .3-.2.5-.5.5H6.2c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h2.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5zM13.6 12.3c0 .3-.2.5-.5.5h-1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h1c.3 0 .5.2.5.5v3.8zM17.4 12.3c0 .3-.2.5-.5.5h-2.1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h.6c.3 0 .5.2.5.5v2.8h1.5c.3 0 .5.2.5.5z"/></svg>
                     ผูกบัญชีด้วย LINE ทันทีบนอุปกรณ์นี้
                 </a>
             </div>
+            
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    const tntId = "<?php echo addslashes((string)$lastTenantId); ?>";
+                    const roomId = "<?php echo addslashes($_GET['room'] ?? ''); ?>";
+                    if (tntId) {
+                        const checkInterval = setInterval(() => {
+                            fetch(`../check_line_linked.php?tenant_id=${encodeURIComponent(tntId)}`)
+                                .then(res => res.json())
+                                .then(data => {
+                                    if (data.linked) {
+                                        clearInterval(checkInterval);
+                                        window.location.href = `?room=${encodeURIComponent(roomId)}&success=1&line_linked=1`;
+                                    }
+                                })
+                                .catch(err => console.error('Error polling LINE link status:', err));
+                        }, 3000); // เช็คทุก 3 วินาที
+                    }
+                });
+            </script>
             <?php elseif ($lineAddFriendUrl): ?>
             <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);text-align:center;">
                 <div style="margin-bottom:10px;">
