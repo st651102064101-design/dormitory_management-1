@@ -1,22 +1,9 @@
 <?php
-require_once __DIR__ . '/ConnectDB.php';
+require 'ConnectDB.php';
 $pdo = connectDB();
-
-$tnt_id = '1775444378';
-
-// Get the latest workflow
-$stmt = $pdo->prepare("SELECT MAX(id) as latest_wf FROM tenant_workflow WHERE tnt_id = ?");
-$stmt->execute([$tnt_id]);
-$latest_id = $stmt->fetchColumn();
-
-if ($latest_id) {
-    // Reset any workflow that is NOT the latest for this tenant, which were corrupted
-    // by the UPDATE tenant_workflow SET ... WHERE tnt_id = ? bug.
-    $stmt = $pdo->prepare("
-        UPDATE tenant_workflow 
-        SET ctr_id = (SELECT MIN(ctr_id) FROM contract WHERE bkg_id = tenant_workflow.bkg_id OR (tnt_id = tenant_workflow.tnt_id AND ctr_status = '1'))
-        WHERE tnt_id = ? AND id < ?
-    ");
-    $stmt->execute([$tnt_id, $latest_id]);
-    echo "Fixed corrupted workflows for {$tnt_id}!\n";
-}
+// อัปเดตสถานะการจองของผู้ที่เข้าพักแล้ว
+$pdo->exec("UPDATE booking b JOIN tenant t ON b.tnt_id = t.tnt_id SET b.bkg_status = '2' WHERE t.tnt_status = '1' AND b.bkg_status = '1'");
+// อัปเดตผู้เช่าที่สัญญายกเลิกแต่สถานะยังค้าง (เช่น จองห้อง)
+// $pdo->exec("UPDATE booking SET bkg_status = '0' WHERE tnt_id IN (SELECT tnt_id FROM contract WHERE ctr_status = '1') AND bkg_status = '1'");
+echo "DB Fixed\n";
+?>

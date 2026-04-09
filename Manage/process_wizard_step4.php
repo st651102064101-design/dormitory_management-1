@@ -96,6 +96,10 @@ try {
     if ($contract) {
         $stmt = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_id = ?");
         $stmt->execute([$contract['room_id']]);
+
+        // อัปเดตสถานะการจองเป็น "เข้าพักแล้ว" (2)
+        $stmt = $pdo->prepare("UPDATE booking SET bkg_status = '2' WHERE room_id = ? AND tnt_id = ? AND bkg_status = '1'");
+        $stmt->execute([$contract['room_id'], $tnt_id]);
     }
 
     // ใช้เดือนเริ่มสัญญาเป็นเดือนอ้างอิงหลักสำหรับมิเตอร์/บิลแรก

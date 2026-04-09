@@ -18,13 +18,18 @@ try {
     }
 } catch (PDOException $e) {}
 
-// รับค่า status filter - Default แสดงกำลังเข้าพัก (สถานะ 0 = ปกติ)
-$selectedStatus = isset($_GET['status']) ? $_GET['status'] : '0';
+// รับค่า status filter - Default แสดงผู้ที่แจ้งยกเลิก (สถานะ 2) หรือ ยกเลิกสัญญา (สถานะ 1)
+$selectedStatus = isset($_GET['status']) ? $_GET['status'] : 'all';
 
-// Query with status filter - แสดงเฉพาะกำลังเข้าพัก (1) และยกเลิก/สิ้นสุด (2)
+// Query with status filter - แสดงเฉพาะที่ต้องการ (ตามโจทย์คือเฉพาะ 1 และ 2)
 $whereClause = '';
-if ($selectedStatus !== '') {
-  $whereClause = "WHERE c.ctr_status = " . $pdo->quote($selectedStatus);
+if ($selectedStatus === '1') {
+  $whereClause = "WHERE c.ctr_status = '1'";
+} elseif ($selectedStatus === '2') {
+  $whereClause = "WHERE c.ctr_status = '2'";
+} else {
+  // ค่าเริ่มต้นถ้าไม่ได้เลือก filter อะไรเป็นพิเศษ ให้โหลดทั้ง 1 (ยกเลิกสัญญา) และ 2 (แจ้งยกเลิก)
+  $whereClause = "WHERE c.ctr_status IN ('1', '2')";
 }
 
 try {
@@ -556,7 +561,7 @@ try {
 
             <!-- ปุ่มสถานะ -->
             <div class="status-buttons">
-              <a href="manage_stay.php?status=0" class="status-btn <?php echo !isset($_GET['status']) || $_GET['status'] === '0' ? 'active' : ''; ?>">กำลังเข้าพัก</a>
+              <a href="manage_stay.php?status=all" class="status-btn <?php echo !isset($_GET['status']) || $_GET['status'] === 'all' ? 'active' : ''; ?>">ทั้งหมด</a>
               <a href="manage_stay.php?status=1" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '1' ? 'active' : ''; ?>">ยกเลิกสัญญา</a>
               <a href="manage_stay.php?status=2" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '2' ? 'active' : ''; ?>">แจ้งยกเลิก</a>
             </div>

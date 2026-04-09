@@ -1003,7 +1003,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
         <?php endif; ?>
         
         <!-- Bank Information Section -->
-        <?php if (!empty($settings['bank_name']) || !empty($settings['promptpay_number'])): ?>
+        <?php if ((!empty($settings['bank_name']) || !empty($settings['promptpay_number'])) && !$pendingExpense && !empty($unpaidExpenses)): ?>
         <div class="form-section bank-info-section">
             <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ข้อมูลการชำระเงิน</div>
             
@@ -1059,6 +1059,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
         </div>
         <?php endif; ?>
         
+        <?php if ($pendingExpense || !empty($unpaidExpenses)): ?>
         <div class="form-section">
             <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span> แจ้งชำระเงิน</div>
             
@@ -1071,11 +1072,6 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                     ส่งสลิปแล้ว <?php echo number_format((float)$pendingExpense['pending_amount']); ?> บาท รอผู้ดูแลตรวจสอบ
                 </div>
                 <div style="font-size:0.82rem;color:#94a3b8;">หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลหอพัก</div>
-            </div>
-            <?php elseif (empty($unpaidExpenses)): ?>
-            <div class="no-unpaid">
-                <div class="no-unpaid-icon" style="margin-bottom: 0.5rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div>
-                <p>ไม่มีบิลค้างชำระ</p>
             </div>
             <?php else: ?>
             <form method="POST" enctype="multipart/form-data" id="paymentForm" onsubmit="preventDoubleSubmit(this)">
@@ -1174,6 +1170,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             </form>
             <?php endif; ?>
         </div>
+        <?php endif; ?>
 
         <div class="unpaid-report">
             <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span> รายงานรอชำระ</div>
