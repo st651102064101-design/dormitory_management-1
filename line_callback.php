@@ -9,6 +9,9 @@ require_once __DIR__ . '/ConnectDB.php';
 
 function buildLineRedirectUri(): string {
     $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+        $protocol = 'https';
+    }
     $serverName = trim((string)($_SERVER['SERVER_NAME'] ?? ''));
 
     if ($serverName === '' || $serverName === '_') {
