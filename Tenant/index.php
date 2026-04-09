@@ -87,12 +87,14 @@ $_SESSION['tenant_name'] = $contract['tnt_name'];
 $siteName = 'Sangthian Dormitory';
 $logoFilename = 'Logo.jpg';
 $publicTheme = 'dark';
+$settings = [];
 try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'public_theme')");
+    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'public_theme', 'openweathermap_api_key', 'openweathermap_city', 'google_maps_embed')");
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
+        $settings[$row['setting_key']] = $row['setting_value'];
     }
 } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
@@ -951,6 +953,68 @@ if (($contract['ctr_status'] ?? '0') === '1') {
         </div>
         <?php endif; ?>
         
+        <!-- OpenWeatherMap Widget -->
+        <?php if (!empty($settings['openweathermap_api_key']) && !empty($settings['openweathermap_city'])): ?>
+        <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5" /><path d="M12 1v2m0 18v2M4.22 4.22l1.42 1.42m12.72 12.72l1.42 1.42M1 12h2m18 0h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" /></svg></span> สภาพอากาศวันนี้</div>
+        <div class="info-card" id="weather-widget">
+            <div style="display:flex; justify-content:center; align-items:center; padding:20px;">
+                <span style="color:#64748b; font-size:0.9rem;">⏳ กำลังเรียกข้อมูลสภาพอากาศ...</span>
+            </div>
+        </div>
+        <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiKey = <?php echo json_encode($settings['openweathermap_api_key']); ?>;
+            const city = <?php echo json_encode($settings['openweathermap_city']); ?>;
+            const url = `https://api.openweathermap.org/data/2.5/weather?q=${encodeURIComponent(city)}&appid=${encodeURIComponent(apiKey)}&units=metric&lang=th`;
+            
+            fetch(url)
+            .then(res => res.json())
+            .then(data => {
+                if(data.cod === 200) {
+                    const temp = Math.round(data.main.temp);
+                    const desc = data.weather[0].description;
+                    const icon = data.weather[0].icon;
+                    
+                    let laundryTip = '';
+                    const weatherMain = data.weather[0].main.toLowerCase();
+                    if(weatherMain.includes('rain') || weatherMain.includes('drizzle') || weatherMain.includes('thunderstorm')) {
+                        laundryTip = '<div style="margin-top:10px; font-size:0.85rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:8px 12px; border-radius:8px; display:flex; gap:6px;"><span>🌧️</span> <span>โอกาสฝนตก แนะนำให้ตากผ้าในร่ม</span></div>';
+                    } else if(data.main.humidity > 80) {
+                        laundryTip = '<div style="margin-top:10px; font-size:0.85rem; color:#f59e0b; background:rgba(245,158,11,0.1); padding:8px 12px; border-radius:8px; display:flex; gap:6px;"><span>☁️</span> <span>อากาศค่อนข้างชื้น ผ้าอาจแห้งช้าซักนิด</span></div>';
+                    } else {
+                        laundryTip = '<div style="margin-top:10px; font-size:0.85rem; color:#10b981; background:rgba(16,185,129,0.1); padding:8px 12px; border-radius:8px; display:flex; gap:6px;"><span>☀️</span> <span>ท้องฟ้าโปร่ง เหมาะกับการซักผ้าตากแดด</span></div>';
+                    }
+                    
+                    document.getElementById('weather-widget').innerHTML = `
+                        <div style="display:flex; align-items:center; gap:16px;">
+                            <img src="https://openweathermap.org/img/wn/${icon}@2x.png" style="width:64px; height:64px; filter:drop-shadow(0 4px 6px rgba(0,0,0,0.1));" alt="${desc}">
+                            <div style="flex:1;">
+                                <div style="font-size:1.8rem; font-weight:700; color:#1e293b; line-height:1;">${temp}°C</div>
+                                <div style="font-size:0.95rem; color:#64748b; margin-top:4px; text-transform:capitalize;">${desc} (${data.name})</div>
+                            </div>
+                        </div>
+                        ${laundryTip}
+                    `;
+                } else {
+                    console.error("OpenWeatherMap API Error:", data);
+                    document.getElementById('weather-widget').innerHTML = `<div style="color:#ef4444; text-align:center; font-size:0.9rem; padding:10px;">❌ ไม่สามารถตรวจสอบอากาศได้<br><small style="color:#94a3b8;">${data.message || 'รหัสข้อผิดพลาด: ' + data.cod}</small></div>`;
+                }
+            })
+            .catch(err => {
+                document.getElementById('weather-widget').innerHTML = '<div style="color:#ef4444; text-align:center; font-size:0.9rem; padding:10px;">❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์อากาศได้</div>';
+            });
+        });
+        </script>
+        <?php endif; ?>
+
+        <!-- Google Maps Content -->
+        <?php if (!empty($settings['google_maps_embed'])): ?>
+        <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></span> แผนที่หอพัก</div>
+        <div class="info-card" style="padding:0; overflow:hidden; border-radius:16px; margin-bottom:20px;">
+            <iframe src="<?php echo htmlspecialchars($settings['google_maps_embed']); ?>" width="100%" height="250" style="border:0; margin-bottom:-5px;" allowfullscreen="" loading="lazy"></iframe>
+        </div>
+        <?php endif; ?>
+
         <!-- Latest News -->
         <?php if (!empty($latestNews)): ?>
         <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="18" y2="14"/></svg></span> ข่าวล่าสุด</div>

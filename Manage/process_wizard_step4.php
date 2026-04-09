@@ -149,6 +149,10 @@ try {
     $checkExpStmt = $pdo->prepare("SELECT COUNT(*) FROM expense WHERE ctr_id = ? AND DATE_FORMAT(exp_month, '%Y-%m') = ?");
     $checkExpStmt->execute([$ctr_id, $targetMonth]);
     
+        $isFirstBillCreated = false;
+    $firstBillAmount = 0;
+    $firstBillMonth = $targetMonth;
+
     if ((int)$checkExpStmt->fetchColumn() === 0) {
         // ดึงข้อมูลห้องและค่าเช่า
         $roomStmt = $pdo->prepare("
@@ -170,6 +174,8 @@ try {
         
         // สร้างบิลใหม่
         $exp_total = $room_price;
+        $firstBillAmount = $exp_total;
+        $isFirstBillCreated = true;
         
         $createExpStmt = $pdo->prepare("
             INSERT INTO expense (
@@ -236,6 +242,24 @@ try {
             $msg .= $url;
             
             sendLineBroadcast($pdo, $msg);
+
+            // แจ้งเตือนบิลแรกเข้าถ้ามีการสร้างใหม่
+            if ($isFirstBillCreated) {
+                $monthTexts = ['01'=>'ม.ค.','02'=>'ก.พ.','03'=>'มี.ค.','04'=>'เม.ย.','05'=>'พ.ค.','06'=>'มิ.ย.','07'=>'ก.ค.','08'=>'ส.ค.','09'=>'ก.ย.','10'=>'ต.ค.','11'=>'พ.ย.','12'=>'ธ.ค.'];
+                $mParts = explode('-', $firstBillMonth);
+                $mStr = (isset($mParts[1]) && isset($monthTexts[$mParts[1]])) ? $monthTexts[$mParts[1]] . ' ' . ((int)$mParts[0] + 543) : $firstBillMonth;
+
+                $msgBill = "🧾 แจ้งบิลค่าเช่าล่วงหน้า (เดือนแรกเข้า) ห้อง {$lineInfo['room_number']}\n";
+                $msgBill .= "ประจำเดือน: {$mStr}\n";
+                $msgBill .= "สถานะ: รอชำระเงิน\n";
+                $msgBill .= "------------------------\n";
+                $msgBill .= "ยอดที่ต้องชำระ: ฿" . number_format((float)$firstBillAmount, 2) . "\n";
+                $msgBill .= "------------------------\n";
+                $msgBill .= "ตรวจสอบรายละเอียดและแนบสลิปได้ที่:\n";
+                $msgBill .= $url;
+
+                sendLineBroadcast($pdo, $msgBill);
+            }
         }
     } catch (Exception $e) {
         error_log("Line Notification Error (Checkin): " . $e->getMessage());

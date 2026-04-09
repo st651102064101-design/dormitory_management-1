@@ -93,11 +93,14 @@ function getSystemSettings(PDO $pdo): array {
         'bank_account_name' => '',
         'bank_account_number' => '',
         'promptpay_number' => '',
-        'public_theme' => 'dark'
+        'public_theme' => 'dark',
+        'openweathermap_api_key' => '',
+        'openweathermap_city' => '',
+        'google_maps_embed' => ''
     ];
     
     try {
-        $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'public_theme')");
+        $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename', 'bank_name', 'bank_account_name', 'bank_account_number', 'promptpay_number', 'public_theme', 'openweathermap_api_key', 'openweathermap_city', 'google_maps_embed')");
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $settings[$row['setting_key']] = $row['setting_value'];
         }

@@ -984,7 +984,21 @@ try {
         }
     }
 
-    
+    if (isset($_POST['openweathermap_api_key'])) {
+        $v = trim($_POST['openweathermap_api_key']);
+        $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('openweathermap_api_key', ?) ON DUPLICATE KEY UPDATE setting_value=?")->execute([$v, $v]);
+        echo json_encode(['success' => true]); exit;
+    }
+    if (isset($_POST['openweathermap_city'])) {
+        $v = trim($_POST['openweathermap_city']);
+        $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('openweathermap_city', ?) ON DUPLICATE KEY UPDATE setting_value=?")->execute([$v, $v]);
+        echo json_encode(['success' => true]); exit;
+    }
+    if (isset($_POST['google_maps_embed'])) {
+        $v = trim($_POST['google_maps_embed']);
+        $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES ('google_maps_embed', ?) ON DUPLICATE KEY UPDATE setting_value=?")->execute([$v, $v]);
+        echo json_encode(['success' => true]); exit;
+    }
 
 
     header('Content-Type: application/json');
