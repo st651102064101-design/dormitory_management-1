@@ -42,6 +42,15 @@ try {
         die('<div style="text-align:center;padding:50px;font-family:sans-serif;"><h1>⚠️ ไม่พบข้อมูล</h1></div>');
     }
 
+    // ดึงค่าเริ่มต้นมิเตอร์จากรอบบิลเดือนแรก (ถ้ามี)
+    $utilStmt = $pdo->prepare("SELECT utl_water_start, utl_elec_start FROM utility WHERE ctr_id = ? ORDER BY utl_date ASC LIMIT 1");
+    $utilStmt->execute([$data['ctr_id']]);
+    $firstUtil = $utilStmt->fetch();
+    if ($firstUtil) {
+        $data['water_meter_start'] = $firstUtil['utl_water_start'];
+        $data['elec_meter_start']  = $firstUtil['utl_elec_start'];
+    }
+
     // ดึงค่าตั้งค่าระบบ
     $siteName = 'Sangthian Dormitory';
     $logoFilename = 'Logo.jpg';
