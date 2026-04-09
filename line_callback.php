@@ -151,8 +151,15 @@ try {
         header('Location: Tenant/index.php');
         exit;
     } else {
-        // หาไม่เจอ
-        header('Location: Login.php?error=' . urlencode('บัญชี LINE ของคุณยังไม่ได้ผูกกับผู้เช่าหอพักใดๆ กรุณาล็อกอินด้วยเบอร์แล้วค่อยกดผูก LINE ภายหลัง'));
+        // หาไม่เจอ ให้เด้งไปหน้าลงทะเบียนผูกบัญชี/สร้างบัญชีใหม่
+        $_SESSION['line_register'] = [
+            'line_id' => $lineUserId,
+            'name' => $lineDisplayName,
+            'email' => $profileData['email'] ?? '',
+            'picture' => $profileData['pictureUrl'] ?? '',
+            'phone' => '' // LINE doesn't provide phone number easily without extra scopes
+        ];
+        header('Location: line_register.php');
         exit;
     }
 
