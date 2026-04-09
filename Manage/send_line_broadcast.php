@@ -43,57 +43,17 @@ if (strlen($token) < 30) {
     exit;
 }
 
-$data = [
-    'messages' => [
-        [
-            'type' => 'text',
-            'text' => $message
-        ]
-    ]
-];
+require_once __DIR__ . '/../LineHelper.php';
 
-$ch = curl_init('https://api.line.me/v2/bot/message/broadcast');
-curl_setopt($ch, CURLOPT_POST, true);
-curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'POST');
-curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-curl_setopt($ch, CURLOPT_HTTPHEADER, [
-    'Content-Type: application/json',
-    'Authorization: Bearer ' . $token
-]);
+// ใช้ sendLineBroadcast จาก LineHelper ซึ่งถูกปรับให้อ่านเฉพาะคนที่มีการผูกเบอร์เท่านั้น
+$success = sendLineBroadcast($pdo, $message);
 
-$curlError = '';
-
-$result = curl_exec($ch);
-$curlError = curl_error($ch);
-$httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-curl_close($ch);
-
-if ($result === false) {
-    echo json_encode([
-        'success' => false,
-        'error' => 'ไม่สามารถเชื่อมต่อ LINE API ได้: ' . ($curlError !== '' ? $curlError : 'unknown cURL error')
-    ], JSON_UNESCAPED_UNICODE);
-    exit;
-}
-
-if ($httpCode === 200) {
+if ($success) {
     echo json_encode(['success' => true]);
 } else {
-    $errData = json_decode($result, true);
-    $errMsg = $errData['message'] ?? $result;
-    $detail = '';
-    if (!empty($errData['details']) && is_array($errData['details'])) {
-        $detail = ' (' . implode('; ', array_map(static function ($item) {
-            if (is_array($item) && isset($item['message'])) {
-                return (string)$item['message'];
-            }
-            return (string)$item;
-        }, $errData['details'])) . ')';
-    }
-
     echo json_encode([
         'success' => false,
-        'error' => 'LINE API Error [' . $httpCode . ']: ' . $errMsg . $detail
+        'error' => 'ไม่สามารถส่งข้อความได้ (อาจไม่มีผู้เช่าที่ผูกเบอร์อยู่หรือ Token ไม่ถูกต้อง)'
     ], JSON_UNESCAPED_UNICODE);
 }
+

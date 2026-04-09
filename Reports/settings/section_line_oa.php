@@ -82,8 +82,29 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
         </svg>
       </div>
       <div class="apple-row-content">
-        <p class="apple-row-label">ส่งข้อความประกาศ (Broadcast)</p>
-        <p class="apple-row-sublabel">ส่งข้อความถึงผู้ติดตาม LINE OA ทุกคน</p>
+        <p class="apple-row-label">ส่งข้อความประกาศ (Broadcast/Multicast)</p>
+        <p class="apple-row-sublabel">ส่งข้อความถึงผู้เช่าที่ผูกเบอร์ในระบบ</p>
+      </div>
+      <span class="apple-row-chevron">›</span>
+    </div>
+
+    <!-- URL สำหรับเพิ่มเพื่อน -->
+    <?php
+    $lineAddFriendUrl = '';
+    try {
+        $stmtLineUrl = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'line_add_friend_url'");
+        $lineAddFriendUrl = (string)$stmtLineUrl->fetchColumn();
+    } catch (Exception $e) { }
+    ?>
+    <div class="apple-settings-row" data-sheet="sheet-line-add-friend-url">
+      <div class="apple-row-icon line-oa-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
+          <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="8.5" cy="7" r="4"></circle><line x1="20" y1="8" x2="20" y2="14"></line><line x1="23" y1="11" x2="17" y2="11"></line>
+        </svg>
+      </div>
+      <div class="apple-row-content">
+        <p class="apple-row-label">URL เพิ่มเพื่อน (สำหรับผู้เช่าสแกน)</p>
+        <p class="apple-row-sublabel"><?php echo !empty($lineAddFriendUrl) ? htmlspecialchars($lineAddFriendUrl) : 'ยังไม่ได้เชื่อมต่อ URL (QR Code จะไม่แสดง)'; ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -167,10 +188,32 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
       <form id="lineBroadcastForm">
         <div class="apple-input-group">
           <label class="apple-input-label">ข้อความ Broadcast</label>
-          <textarea id="lineBroadcastMessage" name="message" class="apple-input" rows="5" placeholder="พิมพ์ข้อความที่ต้องการแจ้งเตือนไปยังลูกหอทุกคน (ต้องแอด Line บอทรับไว้แล้ว)" required style="resize:vertical;"></textarea>
-          <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">* จะส่งถึง User ทุกคนที่รับข้อความจากระบบ</p>
+          <textarea id="lineBroadcastMessage" name="message" class="apple-input" rows="5" placeholder="พิมพ์ข้อความที่ต้องการแจ้งเตือนไปยังลูกหอ" required style="resize:vertical;"></textarea>
+          <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">* จะส่งถึงผู้เช่าเฉพาะคนที่ลงทะเบียนผูกเบอร์ไว้ในระบบเท่านั้น</p>
         </div>
         <button type="submit" class="apple-button primary" style="width: 100%; margin-top: 16px;">ส่งข้อความทันที</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet: Add Friend URL -->
+<div class="apple-sheet-overlay" id="sheet-line-add-friend-url">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-line-add-friend-url">ยกเลิก</button>
+      <h3 class="apple-sheet-title">ลิงก์เพิ่มเพื่อน LINE</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <form id="lineAddFriendUrlForm">
+        <div class="apple-input-group">
+          <label class="apple-input-label">URL เพิ่มเพื่อน</label>
+          <input type="url" id="lineAddFriendUrlInput" name="line_add_friend_url" class="apple-input" value="<?php echo htmlspecialchars($lineAddFriendUrl); ?>" placeholder="ตัวอย่าง: https://lin.ee/xxxxx หรือ https://page.line.me/xxxxx">
+          <p style="font-size: 13px; color: var(--apple-text-secondary); margin-top: 8px;">ลิงก์นี้จะเอาไปใช้สร้างปุ่มแอดไลน์ และสร้าง QR Code อัตโนมัติที่หน้าจองห้องพัก และหน้าผู้เช่า</p>
+        </div>
+        <button type="submit" class="apple-button primary">บันทึก</button>
       </form>
     </div>
   </div>
@@ -266,6 +309,30 @@ document.getElementById('lineChannelSecretForm')?.addEventListener('submit', asy
     if (data.success) {
       showAppleToast('บันทึก Channel Secret สำเร็จ', 'success');
       closeLineSheet('sheet-line-channel-secret');
+      setTimeout(() => location.reload(), 1000);
+    } else {
+      showAppleToast('เกิดข้อผิดพลาด: ' + data.error, 'error');
+    }
+  } catch (err) {
+    showAppleToast('เกิดข้อผิดพลาดในการเชื่อมต่อ', 'error');
+  }
+});
+
+// LINE Add Friend URL Form
+document.getElementById('lineAddFriendUrlForm')?.addEventListener('submit', async function(e) {
+  e.preventDefault();
+  const value = document.getElementById('lineAddFriendUrlInput').value;
+  
+  try {
+    const res = await fetch('../Manage/save_system_settings.php', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `line_add_friend_url=${encodeURIComponent(value)}`
+    });
+    const data = await res.json();
+    if (data.success) {
+      showAppleToast('บันทึกลิงก์เพิ่มเพื่อนสำเร็จ', 'success');
+      closeLineSheet('sheet-line-add-friend-url');
       setTimeout(() => location.reload(), 1000);
     } else {
       showAppleToast('เกิดข้อผิดพลาด: ' + data.error, 'error');

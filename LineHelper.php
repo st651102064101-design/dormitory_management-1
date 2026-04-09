@@ -16,30 +16,18 @@ if (!function_exists('sendLineBroadcast')) {
                 return false;
             }
 
-            $data = [
-                'messages' => [
-                    [
-                        'type' => 'text',
-                        'text' => $message
-                    ]
-                ]
-            ];
+            // แทนที่จะใช้ API Broadcast ของ LINE ซึ่งจะส่งหาทุกคนที่แอดบอท (รวมถึงคนที่ยังไม่ลงทะเบียนเบอร์)
+            // เราจะดึงเฉพาะ line_user_id ที่ได้ทำการลงทะเบียนผูกเบอร์กับระบบแล้วเท่านั้น แล้วส่งผ่าน Multicast
+            $usersStmt = $pdo->query("SELECT DISTINCT line_user_id FROM tenant WHERE line_user_id IS NOT NULL AND line_user_id != ''");
+            $userIds = $usersStmt->fetchAll(PDO::FETCH_COLUMN);
 
-            $ch = curl_init('https://api.line.me/v2/bot/message/broadcast');
-            curl_setopt($ch, CURLOPT_POST, true);
-            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-            curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-            curl_setopt($ch, CURLOPT_HTTPHEADER, [
-                'Content-Type: application/json',
-                'Authorization: Bearer ' . $token
-            ]);
-            $result = curl_exec($ch);
-            $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-            curl_close($ch);
+            if (empty($userIds)) {
+                return true; // ไม่มีใครให้ส่ง ก็ถือว่าสำเร็จ
+            }
 
-            return $httpCode === 200;
+            return sendLineMulticast($pdo, $userIds, $message);
         } catch (Exception $e) {
-            error_log("Failed to send LINE Broadcast: " . $e->getMessage());
+            error_log("Failed to send LINE Broadcast (Multicast Fallback): " . $e->getMessage());
             return false;
         }
     }

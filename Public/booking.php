@@ -1946,6 +1946,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <?php endif; ?>
             </div>
             
+            <?php
+            try {
+                $stmtLine = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'line_add_friend_url'");
+                $lineAddFriendUrl = $stmtLine->fetchColumn();
+            } catch (Exception $e) { $lineAddFriendUrl = ''; }
+            
+            if ($lineAddFriendUrl):
+            ?>
+            <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);text-align:center;">
+                <div style="margin-bottom:10px;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=<?php echo urlencode($lineAddFriendUrl); ?>" alt="LINE QR Code" style="width:120px; height:120px; border-radius:8px; border:1px solid var(--border-color); padding:4px; background:#fff;">
+                </div>
+                <a href="<?php echo htmlspecialchars($lineAddFriendUrl); ?>" target="_blank" style="display:inline-block; text-decoration:none; color:#06c755; font-weight:600; margin-bottom:8px; border:1px solid #06c755; padding:6px 12px; border-radius:24px; background-color: #f6fff9;">
+                    <span style="font-size:1.1rem; vertical-align:middle; margin-right:4px;">💬</span> <span style="vertical-align:middle;">เพิ่มเพื่อน LINE หอพักคลิกที่นี่</span>
+                </a>
+                <br><span style="color:var(--text-secondary);font-size:0.85rem;">หรือสแกน QR Code ด้านบน จากนั้นพิมพ์ใน LINE:</span><br>
+                <code style="background:rgba(59,130,246,0.1); padding:4px 8px; border-radius:6px; color:#3b82f6; font-weight:600;display:inline-block;margin-top:8px;">ลงทะเบียน <?php echo htmlspecialchars((string)($lastPhoneNumber ?? 'เบอร์โทรศัพท์ของคุณ')); ?></code><br>
+                <span style="font-size:0.75rem; color:var(--text-secondary); display:inline-block; margin-top:8px;">เพื่อรับการแจ้งเตือนสถานะการจองและบิลผ่าน LINE ได้ทันที!</span>
+            </div>
+            <?php endif; ?>
+            
             <div style="display:flex;flex-direction:column;gap:12px;">
                 <a href="<?php echo htmlspecialchars($statusLink); ?>" style="background:#3b82f6;color:white;display:flex;align-items:center;justify-content:center;padding:16px;border-radius:12px;font-size:16px;font-weight:600;text-decoration:none;transition:all 0.3s;gap:8px;box-shadow:0 4px 12px rgba(59,130,246,0.3);">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>

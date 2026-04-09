@@ -75,6 +75,16 @@ if (!$contractData) {
 
 $contract = $contractData;
 
+// จัดการการยกเลิกผูก LINE
+if (isset($_GET['action']) && $_GET['action'] === 'unlink_line' && !empty($contract['tnt_id'])) {
+    try {
+        $undoStmt = $pdo->prepare("UPDATE tenant SET line_user_id = NULL, is_weather_alert_enabled = 0 WHERE tnt_id = ?");
+        $undoStmt->execute([$contract['tnt_id']]);
+        header("Location: index.php" . (!empty($token) ? "?token=" . urlencode($token) : ""));
+        exit;
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
+}
+
 // เก็บข้อมูลใน session สำหรับหน้าอื่นๆ
 $_SESSION['tenant_token'] = $token;
 $_SESSION['tenant_ctr_id'] = $contract['ctr_id'];
@@ -1031,8 +1041,11 @@ if (($contract['ctr_status'] ?? '0') === '1') {
                                 <br>หรือสแกน QR Code ด้านบน จากนั้นพิมพ์ใน LINE: <br><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#1d4ed8; font-weight:600;">ลงทะเบียน <?php echo htmlspecialchars($contractData['tnt_phone'] ?? 'เบอร์โทรศัพท์ของคุณ', ENT_QUOTES, 'UTF-8'); ?></code><br><span style="font-size:0.75rem; color:#94a3b8; display:inline-block; margin-top:4px;">เพื่อรับการแจ้งเตือนบิลและพยากรณ์อากาศฟรี!</span>
                             </div>`
                             <?php else: ?>
-                            `<div style="margin-top:12px; font-size:0.8rem; color:#10b981; border-top:1px solid #ecc; border-top-color:rgba(16,185,129,0.2); padding-top:12px; text-align:center;">
-                                ✓ แจ้งเตือนทาง LINE ทำงานอยู่<br><span style="color:#94a3b8;">(พิมพ์ "ปิดแจ้งเตือนอากาศ" ในไลน์เพื่อยกเลิก)</span>
+                            `<div style="margin-top:12px; font-size:0.8rem; color:#10b981; border-top:1px solid rgba(16,185,129,0.2); padding-top:12px; text-align:center;">
+                                ✓ แจ้งเตือนทาง LINE ทำงานอยู่<br>
+                                <a href="?<?php echo !empty($token) ? 'token=' . urlencode($token) . '&' : ''; ?>action=unlink_line" onclick="return confirm('คุณต้องการยกเลิกการแจ้งเตือนและผูกบัญชี LINE ใช่หรือไม่?');" style="display:inline-block; margin-top:8px; padding:4px 12px; border-radius:16px; background:#fef2f2; color:#ef4444; border:1px solid rgba(239,68,68,0.3); text-decoration:none; font-weight:600;">
+                                    ❌ ยกเลิกผูกบัญชี LINE
+                                </a>
                             </div>`
                             <?php endif; ?>
                         }
