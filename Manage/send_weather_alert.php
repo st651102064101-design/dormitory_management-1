@@ -14,12 +14,15 @@ try {
     $pdo = connectDB();
 
     // 1. ดึงข้อมูล Settings API
-    $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('openweathermap_api_key', 'openweathermap_city', 'site_name')");
+    $stmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('openweathermap_api_key', 'openweathermap_city', 'site_name', 'last_weather_alert_type', 'last_weather_alert_date')");
     $dbSettings = $stmt->fetchAll(PDO::FETCH_KEY_PAIR);
     
     $apiKey = $dbSettings['openweathermap_api_key'] ?? '';
     $city = $dbSettings['openweathermap_city'] ?? '';
     $siteName = $dbSettings['site_name'] ?? 'หอพัก';
+    
+    $lastAlertType = $dbSettings['last_weather_alert_type'] ?? '';
+    $lastAlertDate = $dbSettings['last_weather_alert_date'] ?? '';
 
     if (empty($apiKey) || empty($city)) {
         echo json_encode(['success' => false, 'message' => 'กรุณาตั้งค่า API Key และ City สำหรับ OpenWeatherMap ก่อนใช้งาน']);
@@ -56,30 +59,47 @@ try {
     $temp = round($weatherData['main']['temp'] ?? 0);
     $mainWeather = strtolower($weatherData['weather'][0]['main'] ?? '');
     $desc = $weatherData['weather'][0]['description'] ?? '';
+    $icon = strtolower($weatherData['weather'][0]['icon'] ?? '');
+    $isNight = strpos($icon, 'n') !== false; // มีตัว n หมายถึงกลางคืน (night)
     
     // ตรวจสอบเงื่อนไข แดดแรง หรือ มีฝน
     $isRainy = in_array($mainWeather, ['rain', 'drizzle', 'thunderstorm']);
-    $isHotAndSunny = ($temp >= 35 || in_array($mainWeather, ['clear']));
-    $isTest = isset($_POST['test']) && $_POST['test'] === '1';
+    $isHotAndSunny = !$isNight && ($temp >= 35 || in_array($mainWeather, ['clear'])); // แดดแรงต้องไม่ใช่เวลากลางคืน
+    
+    $isTest = isset($_POST['test']) && $_POST['test'] === '1' || isset($_GET['test']) && $_GET['test'] === '1';
 
+    $currentDate = date('Y-m-d');
+    $currentType = '';
     $lineMsg = "";
     
     if ($isRainy) {
+        $currentType = 'rain';
         $lineMsg = "🌧 แจ้งเตือนสภาพอากาศจาก {$siteName}\n";
         $lineMsg .= "ขณะนี้มีสภาพอากาศ: {$desc} (อุณหภูมิ {$temp}°C)\n";
-        $lineMsg .= "มีโอกาสเกิดฝนตก กรุณาเก็บผ้าที่ตากไว้และปิดหน้าต่างห้องพักเพื่อป้องกันละอองฝนด้วยครับ/ค่ะ";
+        $lineMsg .= "มีโอกาสเกิดฝนตก กรุณาเก็บผ้าที่ตากไว้และตาสอดส่องเปิดหน้าต่างห้องพักเพื่อป้องกันละอองฝนด้วยครับ/ค่ะ";
     } elseif ($isHotAndSunny) {
-        $lineMsg = "☀ แจ้งเตือนสภาพอากาศจาก {$siteName}\n";
+        $currentType = 'sunny';
+        $lineMsg = "☀️ แจ้งเตือนสภาพอากาศจาก {$siteName}\n";
         $lineMsg .= "สภาพอากาศ: {$desc} (อุณหภูมิ {$temp}°C)\n";
-        $lineMsg .= "แดดแรง เหมาะกับการซักผ้าตากแดดครับ/ค่ะ";
+        $lineMsg .= "แดดแรง สภาพอากาศโปร่ง เหมาะกับการซักผ้าตากแดดครับ/ค่ะ";
     } else {
         if ($isTest) {
             // กรณีทดสอบแต่สภาพอากาศปกติ
-            $lineMsg = "☁ แจ้งเตือนสภาพอากาศจาก {$siteName}\n";
+            $currentType = 'normal';
+            $lineMsg = "☁️ แจ้งเตือนสภาพอากาศจาก {$siteName}\n";
             $lineMsg .= "สภาพอากาศ: {$desc} (อุณหภูมิ {$temp}°C)\n";
-            $lineMsg .= "ระบบรายงานอากาศทำงานปกติครับ/ค่ะ";
+            $lineMsg .= "ระบบรายงานอากาศทำงานปกติครับ/ค่ะ" . ($isNight ? " (เวลากลางคืน)" : "");
         } else {
-            echo json_encode(['success' => true, 'message' => "ขณะนี้สภาพอากาศปกติ ($desc {$temp}°C) ไม่เข้าเงื่อนไขที่จะส่ง LINE"]);
+            echo json_encode(['success' => true, 'message' => "ขณะนี้สภาพอากาศปกติ ($desc {$temp}°C" . ($isNight?", เวลากลางคืน":"") .") ไม่เข้าเงื่อนไขที่จะส่ง LINE"]);
+            exit;
+        }
+    }
+
+    // ระบบ Throttling: ถ้าเป็นการรันอัตโนมัติ (ไม่ใช้แบบกด Test) จะเช็คว่าส่งของวันนี้ไปหรือยัง
+    if (!$isTest) {
+        // เงื่อนไข: ถ้าส่งแบบเดิม ในวันเดียวกันไปแล้ว จะไม่ส่งซ้ำอีกเพื่อป้องกันสแปมผู้เช่า (เช่น ห้ามส่งแดดแรง 10 รอบในวันเดียวตลอดบ่าย)
+        if ($lastAlertType === $currentType && $lastAlertDate === $currentDate) {
+            echo json_encode(['success' => true, 'message' => "เข้าเงื่อนไข $currentType แต่ระบบได้ส่งแจ้งเตือนนี้ไปแล้วในวันนี้ ($currentDate) ข้ามการส่งเพื่อป้องกันสแปม"]);
             exit;
         }
     }
@@ -96,6 +116,13 @@ try {
 
     $sendResult = sendLineBroadcast($pdo, $lineMsg);
     if ($sendResult) {
+        // อัปเดตสถานะการส่งล่าสุดลง DB (เพื่อที่การรัน cron รอบต่อไปจะได้ไม่ส่งซ้ำรัวๆ)
+        if (!$isTest && in_array($currentType, ['rain', 'sunny'])) {
+            $stmtUpdate = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
+            $stmtUpdate->execute(['last_weather_alert_date', $currentDate, $currentDate]);
+            $stmtUpdate->execute(['last_weather_alert_type', $currentType, $currentType]);
+        }
+        
         echo json_encode(['success' => true, 'message' => "ส่งข้อความทาง LINE สำเร็จ ($desc {$temp}°C)"]);
     } else {
         echo json_encode(['success' => false, 'message' => 'ส่งข้อความ LINE ล้มเหลว โปรดตรวจสอบการตั้งค่า LINE OA']);
