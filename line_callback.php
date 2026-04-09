@@ -106,12 +106,23 @@ try {
     $lineUserId = $profileData['userId'];
     $lineDisplayName = $profileData['displayName'] ?? 'ผู้ใช้ LINE';
 
-    // 3. จัดการผูกบัชญี (ผูก LINE เข้ากับ Tenant)
+    // 3. จัดการผูกบัญชี (ผูก LINE เข้ากับ Tenant)
     if (($_SESSION['line_login_action'] ?? '') === 'link' && !empty($_SESSION['line_login_target_tenant'])) {
         $targetTenantId = $_SESSION['line_login_target_tenant'];
         
         $stmtUpdate = $pdo->prepare("UPDATE tenant SET line_user_id = ?, is_weather_alert_enabled = 1 WHERE tnt_id = ?");
         $stmtUpdate->execute([$lineUserId, $targetTenantId]);
+        
+        // ล็อกอินให้ทันทีหลังจากผูกเสร็จ
+        $stmtTenant = $pdo->prepare("SELECT tnt_name, tnt_phone FROM tenant WHERE tnt_id = ? LIMIT 1");
+        $stmtTenant->execute([$targetTenantId]);
+        $tntData = $stmtTenant->fetch(PDO::FETCH_ASSOC);
+        if ($tntData) {
+            $_SESSION['tenant_logged_in'] = true;
+            $_SESSION['tenant_id'] = $targetTenantId;
+            $_SESSION['tenant_name'] = $tntData['tnt_name'];
+            $_SESSION['tenant_phone'] = $tntData['tnt_phone'];
+        }
         
         // ล้างค่า
         $linkedRoom = $_SESSION['line_login_room_back'] ?? '';

@@ -1986,9 +1986,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:30px;height:30px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
                 <h3 style="margin-top:0;margin-bottom:12px;color:#10b981;font-size:1.2rem;">ผูกบัญชี LINE เรียบร้อยแล้ว!</h3>
-                <p style="color:var(--text-secondary);font-size:0.95rem;margin-bottom:0;">
+                <p style="color:var(--text-secondary);font-size:0.95rem;margin-bottom:20px;">
                     คุณจะได้รับการแจ้งเตือนสถานะการจอง ใบแจ้งหนี้ และข่าวสารต่างๆ ผ่านทาง LINE อัตโนมัติ
                 </p>
+                <a href="../Tenant/index.php" class="btn btn-primary" style="display:inline-block;padding:12px 24px;background:#10b981;color:#fff;text-decoration:none;border-radius:8px;font-weight:500;">เข้าสู่ระบบจัดการผู้เช่า</a>
             </div>
             <?php
             elseif ($lineLoginChannelId):
