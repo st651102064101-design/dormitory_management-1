@@ -19,7 +19,7 @@ if (!empty($token)) {
     try {
         $stmt = $pdo->prepare("
             SELECT c.*, 
-                   t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
+                   t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age, t.line_user_id, t.is_weather_alert_enabled,
                    r.room_id, r.room_number, r.room_image,
                    rt.type_name, rt.type_price
             FROM contract c
@@ -41,7 +41,7 @@ if (!$contractData && !empty($_SESSION['tenant_logged_in'])) {
         if (!empty($tenantId)) {
             $stmt = $pdo->prepare("
                 SELECT c.*, 
-                       t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
+                       t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age, t.line_user_id, t.is_weather_alert_enabled,
                        r.room_id, r.room_number, r.room_image,
                        rt.type_name, rt.type_price
                 FROM contract c
@@ -1017,6 +1017,17 @@ if (($contract['ctr_status'] ?? '0') === '1') {
                             </div>
                         </div>
                         ${laundryTip}
+                        ${
+                            <?php if (empty($contractData['line_user_id']) || empty($contractData['is_weather_alert_enabled'])): ?>
+                            `<div style="margin-top:12px; font-size:0.85rem; color:#475569; border-top:1px solid #f1f5f9; padding-top:12px; text-align:center;">
+                                💡 <span style="font-weight:600;">รับการแจ้งเตือนทาง LINE ฟรี!</span><br>แอดไลน์หอพัก แล้วพิมพ์: <br><code style="background:#f1f5f9; padding:2px 6px; border-radius:4px; color:#1d4ed8; font-weight:600;">ลงทะเบียน <?php echo htmlspecialchars($contractData['tnt_phone'] ?? 'เบอร์โทรศัพท์ของคุณ', ENT_QUOTES, 'UTF-8'); ?></code>
+                            </div>`
+                            <?php else: ?>
+                            `<div style="margin-top:12px; font-size:0.8rem; color:#10b981; border-top:1px solid #ecc; border-top-color:rgba(16,185,129,0.2); padding-top:12px; text-align:center;">
+                                ✓ แจ้งเตือนทาง LINE ทำงานอยู่<br><span style="color:#94a3b8;">(พิมพ์ "ปิดแจ้งเตือนอากาศ" ในไลน์เพื่อยกเลิก)</span>
+                            </div>`
+                            <?php endif; ?>
+                        }
                     `;
                 } else {
                     console.error("OpenWeatherMap API Error:", data);

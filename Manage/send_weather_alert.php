@@ -108,13 +108,21 @@ try {
         $lineMsg = "[TEST]\n" . $lineMsg;
     }
 
-    // 4. ส่งข้อความผ่าน LINE Broadcast
-    if (!function_exists('sendLineBroadcast')) {
-        echo json_encode(['success' => false, 'message' => 'ไม่พบฟังก์ชันส่ง LINE']);
+    // 4. ส่งข้อความผ่าน LINE แบบ Multicast (เฉพาะผู้ที่เปิดแจ้งเตือน)
+    if (!function_exists('sendLineMulticast')) {
+        echo json_encode(['success' => false, 'message' => 'ไม่พบฟังก์ชันส่ง LINE Multicast']);
         exit;
     }
 
-    $sendResult = sendLineBroadcast($pdo, $lineMsg);
+    $stmtUsers = $pdo->query("SELECT line_user_id FROM tenant WHERE tnt_status = '1' AND line_user_id IS NOT NULL AND line_user_id != '' AND is_weather_alert_enabled = 1");
+    $userIds = $stmtUsers->fetchAll(PDO::FETCH_COLUMN);
+
+    if (empty($userIds)) {
+        echo json_encode(['success' => true, 'message' => "เข้าเงื่อนไขสภาพอากาศแต่ไม่มีรายชื่อผู้เช่าที่ลงทะเบียนรับการแจ้งเตือนไว้ ข้ามการส่ง LINE"]);
+        exit;
+    }
+
+    $sendResult = sendLineMulticast($pdo, $userIds, $lineMsg);
     if ($sendResult) {
         // อัปเดตสถานะการส่งล่าสุดลง DB (เพื่อที่การรัน cron รอบต่อไปจะได้ไม่ส่งซ้ำรัวๆ)
         if (!$isTest && in_array($currentType, ['rain', 'sunny'])) {
