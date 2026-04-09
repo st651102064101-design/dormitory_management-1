@@ -1824,22 +1824,42 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 text-align: center;
             }
             .step-indicator {
-                flex-wrap: nowrap;
-                gap: 0.25rem;
-                justify-content: flex-start;
-                overflow-x: auto;
-                padding-bottom: 5px;
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.5rem;
+                padding-bottom: 0;
+                overflow: hidden;
             }
             .step-circle {
-                width: 28px;
-                height: 28px;
-                font-size: 0.7rem;
-                flex-shrink: 0;
+                width: 100%;
+                height: auto;
+                min-height: 38px;
+                border-radius: 12px;
+                justify-content: flex-start;
+                padding: 8px 16px;
+                font-size: 0.9rem;
+            }
+            .step-circle::after {
+                content: attr(data-tooltip);
+                position: static;
+                transform: none;
+                opacity: 1;
+                visibility: visible;
+                background: transparent;
+                box-shadow: none;
+                border: none;
+                color: inherit;
+                font-weight: 600;
+                margin-left: 12px;
+                white-space: normal;
+                text-align: left;
+                padding: 0;
+            }
+            .step-circle::before {
+                display: none !important;
             }
             .step-arrow {
-                font-size: 0.75rem;
-                flex-shrink: 0;
-                margin: 0 2px;
+                display: none;
             }
         }
     </style>
