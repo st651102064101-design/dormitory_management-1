@@ -44,6 +44,10 @@ try {
     if (!empty($_GET['action']) && $_GET['action'] === 'link' && !empty($_GET['tenant_id'])) {
         $_SESSION['line_login_action'] = 'link';
         $_SESSION['line_login_target_tenant'] = $_GET['tenant_id'];
+        
+        if (!empty($_GET['room'])) {
+            $_SESSION['line_login_room_back'] = $_GET['room'];
+        }
     } else {
         $_SESSION['line_login_action'] = 'login';
     }

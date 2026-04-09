@@ -114,7 +114,13 @@ try {
         $stmtUpdate->execute([$lineUserId, $targetTenantId]);
         
         // ล้างค่า
-        unset($_SESSION['line_login_action'], $_SESSION['line_login_target_tenant']);
+        $linkedRoom = $_SESSION['line_login_room_back'] ?? '';
+        unset($_SESSION['line_login_action'], $_SESSION['line_login_target_tenant'], $_SESSION['line_login_room_back']);
+
+        if (!empty($linkedRoom)) {
+            header('Location: Public/booking.php?room=' . urlencode((string)$linkedRoom) . '&success=1&line_linked=1');
+            exit;
+        }
 
         // วนกลับหน้าตรวจสอบสถานะจอง / ผู้เช่า
         // สมมุติว่าดึง ref ย้อนกลับจาก booking success

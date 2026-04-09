@@ -1906,6 +1906,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </header>
 
     <div class="main-container">
+        <?php if (!empty($_GET['line_linked']) && $_GET['line_linked'] == '1'): ?>
+            <script>
+                document.addEventListener('DOMContentLoaded', () => {
+                    if (typeof showAppleAlert === 'function') {
+                        showAppleAlert('ผูกบัญชี LINE กับผู้เช่าเรียบร้อยแล้ว หากจองสำเร็จจะได้รับการแจ้งเตือนผ่าน LINE', 'ผูกบัญชีสำเร็จ');
+                    } else {
+                        alert('ผูกบัญชี LINE สำเร็จแล้ว');
+                    }
+                });
+            </script>
+        <?php endif; ?>
         <?php if ($success): ?>
         <?php
         $lastBookingId = $_SESSION['last_booking_id'] ?? '';
@@ -1968,14 +1979,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $lineLoginChannelId = '';
             }
             
-            if ($lineLoginChannelId):
+            if (!empty($_GET['line_linked']) && $_GET['line_linked'] == '1'):
+            ?>
+            <div style="background:var(--bg-secondary);border:1px solid #10b981;border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);text-align:center;">
+                <div style="width:60px;height:60px;background:rgba(16,185,129,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" style="width:30px;height:30px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h3 style="margin-top:0;margin-bottom:12px;color:#10b981;font-size:1.2rem;">ผูกบัญชี LINE เรียบร้อยแล้ว!</h3>
+                <p style="color:var(--text-secondary);font-size:0.95rem;margin-bottom:0;">
+                    คุณจะได้รับการแจ้งเตือนสถานะการจอง ใบแจ้งหนี้ และข่าวสารต่างๆ ผ่านทาง LINE อัตโนมัติ
+                </p>
+            </div>
+            <?php
+            elseif ($lineLoginChannelId):
             ?>
             <div style="background:var(--bg-secondary);border:1px solid #06c755;border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);text-align:center;">
                 <h3 style="margin-top:0;margin-bottom:12px;color:#06c755;font-size:1.2rem;">เปิดรับการแจ้งเตือนบิลฟรี! ขั้นตอนเดียว</h3>
                 <p style="color:var(--text-secondary);font-size:0.95rem;margin-bottom:20px;">
                     ผูกบัญชีผู้เช่าด้วย LINE เพื่อรับใบแจ้งหนี้, แจ้งซ่อม, และพยากรณ์อากาศรายวัน ง่ายๆ ในคลิกเดียว
                 </p>
-                <a href="../line_login.php?action=link&tenant_id=<?php echo urlencode((string)$lastTenantId); ?>" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:#fff; font-weight:bold; font-size:1.1rem; background-color:#06c755; border-radius:12px; padding:12px 24px; box-shadow:0 4px 10px rgba(6,199,85,0.3); transition:all 0.2s;">
+                <a href="../line_login.php?action=link&tenant_id=<?php echo urlencode((string)$lastTenantId); ?>&room=<?php echo urlencode($_GET['room'] ?? ''); ?>" style="display:inline-flex; align-items:center; justify-content:center; text-decoration:none; color:#fff; font-weight:bold; font-size:1.1rem; background-color:#06c755; border-radius:12px; padding:12px 24px; box-shadow:0 4px 10px rgba(6,199,85,0.3); transition:all 0.2s;">
                     <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor" style="margin-right:8px;"><path d="M22.5 10.4c0-4.3-4.7-7.8-10.5-7.8S1.5 6.1 1.5 10.4c0 3.8 3.7 7 8.5 7.7.4.1.9.3 1 .6l.3 1.8c0 .2.2.3.4.2 1.6-1.1 5.9-4 8.2-6.2 1.5-1.3 2.6-2.7 2.6-4.1zM9.5 12.3c0 .3-.2.5-.5.5H6.2c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h2.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5s-.2.5-.5.5H7.2v1h1.8c.3 0 .5.2.5.5zM13.6 12.3c0 .3-.2.5-.5.5h-1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h1c.3 0 .5.2.5.5v3.8zM17.4 12.3c0 .3-.2.5-.5.5h-2.1c-.3 0-.5-.2-.5-.5V8.5c0-.3.2-.5.5-.5h.6c.3 0 .5.2.5.5v2.8h1.5c.3 0 .5.2.5.5z"/></svg>
                     ผูกบัญชีด้วย LINE ทันที
                 </a>
