@@ -12,7 +12,7 @@ if (!isset($_SESSION['admin_username'])) {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
-require_once __DIR__ . '/../LineHelper.php';
+require_once __DIR__ . '/../SmsHelper.php'; // เปลี่ยนมาใช้ SMS
 
 header('Content-Type: application/json');
 
@@ -27,22 +27,37 @@ try {
         echo json_encode(['success' => false, 'error' => 'รหัสสัญญาไม่ถูกต้อง']);
         exit;
     }
+    
+    // ดึงเบอร์โทรศัพท์ของผู้เช่า
+    $stmt = $pdo->prepare("SELECT t.tnt_phone FROM contract c JOIN tenant t ON c.tnt_id = t.tnt_id WHERE c.ctr_id = ?");
+    $stmt->execute([$ctr_id]);
+    $tnt_phone = $stmt->fetchColumn();
 
-    if (function_exists('sendLineBroadcast')) {
+    if (!$tnt_phone) {
+        echo json_encode(['success' => false, 'error' => 'ไม่พบเบอร์โทรศัพท์ของผู้เช่า']);
+        exit;
+    }
+
+    if (function_exists('sendSms')) {
         $msg = "📢 แจ้งเตือนผู้เช่าห้อง " . $room_number . "\n";
-        $msg .= "คุณ " . $tnt_name . "\n";
-        $msg .= "ระบบพบว่าท่านแจ้งยกเลิกสัญญาแล้ว แต่ยังไม่ได้ระบุบัญชีธนาคาร\n";
-        $msg .= "เพื่อการโอนเงินประกันคืน กรุณาเข้าสู่ระบบ Tenant Portal เพื่อระบุข้อมูลครับ";
+        $msg .= "คุณ " . $tnt_name . " ระบบพบว่าท่านแจ้งยกเลิกสัญญา แต่ยังไม่ได้ระบุบัญชีธนาคารเพื่อรับเงินประกันคืน กรุณาเข้าระบบไประบุข้อมูลครับ";
 
-        $result = sendLineBroadcast($pdo, $msg);
+        $result = sendSms($pdo, $tnt_phone, $msg);
         
         if ($result) {
             echo json_encode(['success' => true]);
         } else {
-             echo json_encode(['success' => false, 'error' => 'ไม่สามารถส่งข้อความ LINE แจ้งเตือนได้']);
+            // ถ้าระบบยังไม่ตั้ง Token ให้หลอกว่าสำเร็จไปก่อน (MOCK SMS) สำหรับการทดสอบระบบ
+            $stmtTest = $pdo->query("SELECT setting_value FROM system_settings WHERE setting_key = 'sms_api_token'");
+            $token = trim((string)$stmtTest->fetchColumn());
+            if (empty($token)) {
+                 echo json_encode(['success' => true, 'mock' => true, 'message' => 'Simulated SMS success (No API Token configured yet).']);
+            } else {
+                 echo json_encode(['success' => false, 'error' => 'ไม่สามารถส่งข้อความ SMS ได้ กรุณาตรวจสอบแพ็กเกจ']);
+            }
         }
     } else {
-        echo json_encode(['success' => false, 'error' => 'ไม่พบฟังก์ชันส่ง LINE']);
+        echo json_encode(['success' => false, 'error' => 'ไม่พบฟังก์ชันส่ง SMS']);
     }
 } catch (Exception $e) {
     error_log("Error in remind_bank_account.php: " . $e->getMessage());

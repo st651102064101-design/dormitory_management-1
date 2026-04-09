@@ -74,10 +74,16 @@ $hasMaps = !empty($apiSettings['google_maps_embed']);
     </div>
     
     <script>
-    function testWeatherAlert() {
-        if (!confirm('ยืนยันส่งข้อความทดสอบแจ้งสภาพอากาศถึงผู้เช่าทุกคนทาง LINE OA?')) return;
+    async function testWeatherAlert() {
+        let confirmed = false;
+        if (typeof showConfirmDialog === 'function') {
+            confirmed = await showConfirmDialog('ยืนยันแจ้งเตือนสภาพอากาศ', 'ต้องการส่งข้อความทดสอบแจ้งสภาพอากาศถึงผู้เช่าทุกคนทาง LINE OA หรือไม่?', 'warning');
+        } else {
+            confirmed = confirm('ยืนยันส่งข้อความทดสอบแจ้งสภาพอากาศถึงผู้เช่าทุกคนทาง LINE OA?');
+        }
+        if (!confirmed) return;
         
-        Toast.fire({ icon: 'info', title: 'กำลังดึงข้อมูลสภาพอากาศและส่ง LINE...' });
+        if (typeof showToast === 'function') showToast('กำลังดำเนินการ', 'กำลังดึงข้อมูลสภาพอากาศและเตรียมส่ง LINE...', 'info');
         
         const formData = new FormData();
         formData.append('test', '1');
@@ -89,14 +95,17 @@ $hasMaps = !empty($apiSettings['google_maps_embed']);
         .then(res => res.json())
         .then(data => {
             if(data.success) {
-                Toast.fire({ icon: 'success', title: data.message });
+                if (typeof showToast === 'function') showToast('สำเร็จ', data.message, 'success');
+                else alert(data.message);
             } else {
-                Toast.fire({ icon: 'error', title: data.message });
+                if (typeof showToast === 'function') showToast('ข้อผิดพลาด', data.message, 'error');
+                else alert(data.message);
             }
         })
         .catch(err => {
             console.error('Weather alert error:', err);
-            Toast.fire({ icon: 'error', title: 'เกิดข้อผิดพลาดในการเชื่อมต่อ' });
+            if (typeof showToast === 'function') showToast('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อข้อมูลเซิร์ฟเวอร์', 'error');
+            else alert('เกิดข้อผิดพลาดในการเชื่อมต่อข้อมูลเซิร์ฟเวอร์');
         });
     }
     </script>

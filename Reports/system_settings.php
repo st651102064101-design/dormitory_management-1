@@ -50,6 +50,7 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
   <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>">
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
+  <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css">
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
   <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
   <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/lottie-icons.css">
@@ -368,6 +369,7 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
   </div>
   
   <!-- Scripts -->
+  <script src="/dormitory_management/Public/Assets/Javascript/confirm-modal.js"></script>
   <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js?v=<?php echo urlencode($toastScriptVersion); ?>"></script>
   <script src="/dormitory_management/Reports/settings/apple-settings.js?v=<?php echo urlencode($appleSettingsScriptVersion); ?>"></script>
   <script>

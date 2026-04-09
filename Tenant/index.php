@@ -977,10 +977,14 @@ if (($contract['ctr_status'] ?? '0') === '1') {
                     
                     let laundryTip = '';
                     const weatherMain = data.weather[0].main.toLowerCase();
+                    const isNight = icon.includes('n');
+                    
                     if(weatherMain.includes('rain') || weatherMain.includes('drizzle') || weatherMain.includes('thunderstorm')) {
                         laundryTip = '<div style="margin-top:10px; font-size:0.85rem; color:#ef4444; background:rgba(239,68,68,0.1); padding:8px 12px; border-radius:8px; display:flex; gap:6px;"><span>🌧️</span> <span>โอกาสฝนตก แนะนำให้ตากผ้าในร่ม</span></div>';
                     } else if(data.main.humidity > 80) {
                         laundryTip = '<div style="margin-top:10px; font-size:0.85rem; color:#f59e0b; background:rgba(245,158,11,0.1); padding:8px 12px; border-radius:8px; display:flex; gap:6px;"><span>☁️</span> <span>อากาศค่อนข้างชื้น ผ้าอาจแห้งช้าซักนิด</span></div>';
+                    } else if(isNight) {
+                        laundryTip = '<div style="margin-top:10px; font-size:0.85rem; color:#6366f1; background:rgba(99,102,241,0.1); padding:8px 12px; border-radius:8px; display:flex; gap:6px;"><span>🌙</span> <span>เวลากลางคืน พักผ่อนให้สบายพรุ่งนี้ค่อยว่ากัน</span></div>';
                     } else {
                         laundryTip = '<div style="margin-top:10px; font-size:0.85rem; color:#10b981; background:rgba(16,185,129,0.1); padding:8px 12px; border-radius:8px; display:flex; gap:6px;"><span>☀️</span> <span>ท้องฟ้าโปร่ง เหมาะกับการซักผ้าตากแดด</span></div>';
                     }

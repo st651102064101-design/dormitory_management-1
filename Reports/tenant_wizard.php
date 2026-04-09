@@ -2355,7 +2355,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                     <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(245,158,11,0.55);background:rgba(245,158,11,0.1);color:#fbbf24;font-size:0.78rem;font-weight:600;">
                                                         ⚠️ ยังไม่มีบัญชีธนาคาร
                                                     </div>
-                                                    <button type="button" title="ส่ง LINE แจ้งเตือนผู้เช่าให้ระบุบัญชีธนาคาร"
+                                                    <button type="button" title="ส่ง SMS แจ้งเตือนผู้เช่าให้ระบุบัญชีธนาคาร"
                                                         onclick="remindBankAccount(<?php echo $ctrIdCancel; ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, this)"
                                                         style="font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid #10b981;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;cursor:pointer;">
                                                         💬 แจ้งผ่าน LINE
@@ -4331,10 +4331,10 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
     async function remindBankAccount(ctrId, roomNumber, tntName, btnElement) {
         let confirmed = false;
-        const msg = `ยืนยันการส่ง LINE แจ้งเตือนผู้เช่าห้อง ${roomNumber} (${tntName}) \nให้ระบุบัญชีธนาคารเพื่อรับเงินประกันคืนหรือไม่?`;
+        const msg = `ยืนยันการส่ง SMS แจ้งเตือนผู้เช่าห้อง ${roomNumber} (${tntName}) \nให้ระบุบัญชีธนาคารเพื่อรับเงินประกันคืนหรือไม่?`;
         
         if (typeof showConfirmDialog === 'function') {
-            confirmed = await showConfirmDialog('ยืนยันส่ง LINE แจ้งเตือน', msg);
+            confirmed = await showConfirmDialog('ยืนยันส่ง SMS แจ้งเตือน', msg);
         } else {
             confirmed = confirm(msg);
         }
@@ -4359,9 +4359,9 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             
             if (result.success) {
                 if (typeof showToast === 'function') {
-                    showToast('สำเร็จ', 'ส่งแจ้งเตือนผ่าน LINE สำเร็จ', 'success');
+                    showToast('สำเร็จ', 'ส่งแจ้งเตือนผ่าน SMS สำเร็จ', 'success');
                 } else {
-                    alert('ส่งแจ้งเตือนผ่าน LINE สำเร็จ');
+                    alert('ส่งแจ้งเตือนผ่าน SMS สำเร็จ');
                 }
                 btnElement.innerHTML = '✅ ส่งแล้ว';
                 setTimeout(() => {
