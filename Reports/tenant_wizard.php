@@ -1811,6 +1811,37 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             0%, 100% { opacity: 1; transform: scale(1); }
             50%      { opacity: 0.75; transform: scale(1.06); }
         }
+
+        /* === Mobile Adjustments === */
+        @media (max-width: 768px) {
+            .wiz-filter-bar {
+                flex-direction: column;
+                align-items: stretch;
+                overflow: visible;
+            }
+            .wiz-filter-btn {
+                width: 100%;
+                text-align: center;
+            }
+            .step-indicator {
+                flex-wrap: nowrap;
+                gap: 0.25rem;
+                justify-content: flex-start;
+                overflow-x: auto;
+                padding-bottom: 5px;
+            }
+            .step-circle {
+                width: 28px;
+                height: 28px;
+                font-size: 0.7rem;
+                flex-shrink: 0;
+            }
+            .step-arrow {
+                font-size: 0.75rem;
+                flex-shrink: 0;
+                margin: 0 2px;
+            }
+        }
     </style>
 </head>
 <body>

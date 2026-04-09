@@ -156,10 +156,12 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
 
 <!-- Sheet: Broadcast Message -->
 <div class="apple-sheet-overlay" id="sheet-line-broadcast">
-  <div class="apple-sheet" style="background: var(--apple-card-bg); border-radius: 20px; padding: 24px; max-width: 400px; width: 90%; margin: 40px auto;">
-    <div class="apple-sheet-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h3 style="margin: 0; font-size: 18px; font-weight: 600;">ส่งข้อความประกาศ</h3>
-      <button type="button" class="apple-sheet-close" data-close-sheet="sheet-line-broadcast" style="background: none; border: none; font-size: 20px; color: var(--apple-text-secondary); cursor: pointer;">&times;</button>
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button type="button" class="apple-sheet-action" data-close-sheet="sheet-line-broadcast">ยกเลิก</button>
+      <h3 class="apple-sheet-title">ส่งข้อความประกาศ</h3>
+      <div style="width: 50px;"></div>
     </div>
     <div class="apple-sheet-body">
       <form id="lineBroadcastForm">
