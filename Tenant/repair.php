@@ -697,7 +697,7 @@ $repairStatusMap = [
     } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     
     // นับรายการบิลที่ยังไม่ชำระ
-    $billCount = 0;
+        $billCount = 0;
     try {
         $billStmt = $pdo->prepare("
             SELECT COUNT(*) FROM expense e
@@ -707,15 +707,26 @@ $repairStatusMap = [
             WHERE e.ctr_id = ?
             AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m')
             AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+            AND (
+                e.exp_month = (SELECT MIN(e2.exp_month) FROM expense e2 WHERE e2.ctr_id = e.ctr_id)
+                OR EXISTS (
+                    SELECT 1
+                    FROM utility u
+                    WHERE u.ctr_id = e.ctr_id
+                        AND YEAR(u.utl_date) = YEAR(e.exp_month)
+                        AND MONTH(u.utl_date) = MONTH(e.exp_month)
+                        AND u.utl_water_end IS NOT NULL
+                        AND u.utl_elec_end IS NOT NULL
+                )
+            )
             AND COALESCE((
                 SELECT SUM(p.pay_amount) FROM payment p
                 WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
-                AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
             ), 0) < e.exp_total
         ");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
+    } catch (Exception $e) { error_log("Exception calculating bill count in " . __FILE__ . ": " . $e->getMessage()); }
     ?>
     
     <nav class="bottom-nav">
