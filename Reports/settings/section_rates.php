@@ -140,7 +140,7 @@
         }
       }
   ?>
-    <div class="apple-settings-row" id="currentRatesRow" style="padding: 16px; cursor: pointer;" role="button" tabindex="0" onclick="document.location.href='manage_rates.php'" onkeydown="if(event.key==='Enter'||event.key===' ') document.location.href='manage_rates.php'">
+    <div class="apple-settings-row" id="currentRatesRow" style="padding: 16px; cursor: pointer;" role="button" tabindex="0" data-sheet="sheet-rates">
       <div style="display: flex; gap: 20px; width: 100%; pointer-events: none;">
         <div style="flex: 1; text-align: center;">
           <div style="font-size: 28px; color: #3b82f6;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="32" height="32" class="icon-animated"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg></div>
@@ -157,7 +157,7 @@
     </div>
     
     <!-- Manage Rates -->
-    <div class="apple-settings-row" id="manageRatesRow" style="cursor: pointer;" onclick="document.location.href='manage_rates.php'">
+    <div class="apple-settings-row" id="manageRatesRow" style="cursor: pointer;" data-sheet="sheet-rates">
       <div class="apple-row-icon yellow" style="pointer-events: none;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg></div>
       <div class="apple-row-content" style="pointer-events: none;">
         <p class="apple-row-label" id="manageRatesRowLabel"><?php echo __('manage_rates_label'); ?></p>
@@ -532,104 +532,7 @@ function closeSheetOverlayByElement(overlay) {
 }
 
 function bindSheetHandleDragClose(sheetId) {
-  var overlay = document.getElementById(sheetId);
-  if (!overlay) return;
-  var sheet = overlay.querySelector('.apple-sheet');
-  if (!sheet) return;
-
-  var dragTargets = [
-    overlay.querySelector('.apple-sheet-handle'),
-    overlay.querySelector('.apple-sheet-header')
-  ].filter(Boolean);
-
-  if (dragTargets.length === 0 || sheet.dataset.dragCloseFallbackBound === '1') {
-    return;
-  }
-  sheet.dataset.dragCloseFallbackBound = '1';
-
-  var startY = 0, deltaY = 0, dragging = false;
-
-  function getCloseThreshold() {
-    var height = sheet.getBoundingClientRect().height || sheet.offsetHeight || 0;
-    return height > 0 ? Math.round(height * 0.35) : 72;
-  }
-
-  function beginDrag(clientY) {
-    if (!overlay.classList.contains('active')) return false;
-    startY = clientY;
-    deltaY = 0;
-    dragging = true;
-    sheet.style.transition = 'none';
-    sheet.style.willChange = 'transform';
-    return true;
-  }
-
-  function updateDrag(clientY) {
-    if (!dragging) return;
-    deltaY = Math.max(0, clientY - startY);
-    sheet.style.transform = 'translateY(' + deltaY + 'px)';
-  }
-
-  function finishDrag() {
-    if (!dragging) return;
-    var shouldClose = deltaY >= getCloseThreshold();
-    dragging = false;
-    sheet.style.willChange = '';
-    sheet.style.transition = 'transform 0.25s cubic-bezier(0.32, 0.72, 0, 1)';
-    
-    if (shouldClose) {
-      sheet.style.transform = 'translateY(100%)';
-      setTimeout(function() {
-        if (typeof closeSheetOverlayByElement !== 'undefined') {
-            closeSheetOverlayByElement(overlay);
-        } else {
-            overlay.classList.remove('active');
-            if (!document.querySelector('.apple-sheet-overlay.active')) document.body.style.overflow = '';
-        }
-        sheet.style.transform = '';
-      }, 250);
-    } else {
-      sheet.style.transform = 'translateY(0)';
-      setTimeout(function() { sheet.style.transform = ''; }, 250);
-    }
-  }
-
-  dragTargets.forEach(function(target) {
-    target.style.touchAction = 'none';
-    
-    var onMouseMove = function(e) { updateDrag(e.clientY); };
-    var onMouseUp = function() {
-      document.removeEventListener('mousemove', onMouseMove);
-      document.removeEventListener('mouseup', onMouseUp);
-      finishDrag();
-    };
-
-    target.addEventListener('mousedown', function(e) {
-      if (e.target.closest && e.target.closest('button, a, input, select, textarea, [data-close-sheet]')) return;
-      if (e.button !== 0) return;
-      if (beginDrag(e.clientY)) {
-        e.preventDefault();
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-      }
-    });
-
-    target.addEventListener('touchstart', function(e) {
-      if (e.target.closest && e.target.closest('button, a, input, select, textarea, [data-close-sheet]')) return;
-      if (!e.touches || !e.touches.length) return;
-      beginDrag(e.touches[0].clientY);
-    }, { passive: true });
-
-    target.addEventListener('touchmove', function(e) {
-      if (!dragging || !e.touches || !e.touches.length) return;
-      var curY = e.touches[0].clientY;
-      if (curY > startY) e.preventDefault();
-      updateDrag(curY);
-    }, { passive: false });
-
-    target.addEventListener('touchend', finishDrag);
-    target.addEventListener('touchcancel', finishDrag);
-  });
+  // Handled globally by AppleSettings.initSheetHandles() in apple-settings.js
 }
 
 function refreshSheetHandleDragBindings() {

@@ -31,7 +31,7 @@ try {
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = 2");
     $booking_checkedin = $stmt->fetch()['total'] ?? 0;
     
-    $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status IN (0, 1)");
+    $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking b WHERE COALESCE(b.bkg_status, '0') = '1' AND NOT EXISTS (SELECT 1 FROM contract c WHERE c.room_id = b.room_id AND c.tnt_id = b.tnt_id) AND NOT EXISTS (SELECT 1 FROM contract c WHERE c.room_id = b.room_id AND c.ctr_status = '0' AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE()))");
     $booking_pending = $stmt->fetch()['total'] ?? 0;
     
     // 2. รายงานข้อมูลข่าวประชาสัมพันธ์
@@ -196,7 +196,7 @@ try {
     $room_types = $stmt->fetchAll() ?: [];
     
     // Today's Stats - จองห้องใหม่วันนี้
-    $stmt = $pdo->query("SELECT COUNT(*) as today_bookings FROM booking WHERE bkg_status IN (0, 1) AND DATE(bkg_date) = CURDATE()");
+    $stmt = $pdo->query("SELECT COUNT(*) as today_bookings FROM booking b WHERE COALESCE(b.bkg_status, '0') = '1' AND DATE(bkg_date) = CURDATE() AND NOT EXISTS (SELECT 1 FROM contract c WHERE c.room_id = b.room_id AND c.tnt_id = b.tnt_id) AND NOT EXISTS (SELECT 1 FROM contract c WHERE c.room_id = b.room_id AND c.ctr_status = '0' AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE()))");
     $today_bookings = $stmt->fetch()['today_bookings'] ?? 0;
     
     $stmt = $pdo->query("SELECT COUNT(*) as today_repairs FROM repair WHERE DATE(repair_date) = CURDATE()");

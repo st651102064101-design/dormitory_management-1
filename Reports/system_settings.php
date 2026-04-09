@@ -960,6 +960,21 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
       syncSettingsLayout();
     }
 
+    // Auto-open sheet if hash is present
+    if (window.location.hash && window.location.hash.startsWith('#sheet-')) {
+      setTimeout(() => {
+        const sheetId = window.location.hash.substring(1);
+        const toggleBtn = document.querySelector(`[data-sheet="${sheetId}"]`);
+        if (toggleBtn) {
+          toggleBtn.click();
+        } else {
+          // Fallback if no specific trigger row
+          const sheetObj = document.getElementById(sheetId);
+          if (sheetObj) sheetObj.classList.add('active');
+        }
+      }, 300);
+    }
+
     window.addEventListener('resize', syncSettingsLayout, { passive: true });
   })();
   

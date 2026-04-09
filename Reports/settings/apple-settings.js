@@ -10,6 +10,7 @@ class AppleSettings {
 
   init() {
     this.initSheets();
+    this.initSheetHandles();
     this.initToggles();
     // this.initForms();
     // this.initImageUploads();
@@ -148,6 +149,65 @@ class AppleSettings {
         currentY = 0;
       });
     });
+  }
+
+  initSheetHandles() {
+    let activeSheet = null;
+    let startY = 0;
+    let currentY = 0;
+    let isDragging = false;
+
+    const eventOptions = { passive: false };
+
+    const handleStart = (e) => {
+      const handle = e.target.closest('.apple-sheet-handle') || e.target.closest('.apple-sheet-header');
+      if (e.target.closest('button, a, input, select, textarea, [data-close-sheet]')) return;
+      if (!handle) return;
+      activeSheet = handle.closest('.apple-sheet');
+      if (!activeSheet) return;
+      
+      isDragging = true;
+      startY = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+      currentY = startY;
+      
+      activeSheet.style.transition = 'none';
+      if (e.cancelable && e.type !== 'touchstart') e.preventDefault();
+    };
+
+    const handleMove = (e) => {
+      if (!isDragging || !activeSheet) return;
+      currentY = e.clientY || (e.touches && e.touches[0].clientY) || currentY;
+      const diff = currentY - startY;
+      
+      if (diff > 0) {
+        activeSheet.style.transform = `translateY(${diff}px)`;
+        if (e.cancelable) e.preventDefault();
+      }
+    };
+
+    const handleEnd = (e) => {
+      if (!isDragging || !activeSheet) return;
+      isDragging = false;
+      
+      const diff = currentY - startY;
+      const overlay = activeSheet.closest('.apple-sheet-overlay');
+      
+      activeSheet.style.transition = '';
+      
+      if (diff > 60 || diff < 5) {
+        activeSheet.style.transform = '';
+        if (overlay) this.closeSheet(overlay.id);
+      } else {
+        activeSheet.style.transform = '';
+      }
+      
+      activeSheet = null;
+    };
+
+    document.addEventListener('pointerdown', handleStart, eventOptions);
+    document.addEventListener('pointermove', handleMove, eventOptions);
+    document.addEventListener('pointerup', handleEnd);
+    document.addEventListener('pointercancel', handleEnd);
   }
 
   openSheet(sheetId, context = null) {

@@ -205,7 +205,7 @@ $totalBookings = 0;
 try {
     $totalRooms = (int)$pdo->query("SELECT COUNT(*) FROM room")->fetchColumn();
     $totalTenants = (int)$pdo->query("SELECT COUNT(DISTINCT tnt_id) FROM contract WHERE ctr_status = 0")->fetchColumn(); // นับผู้เช่าที่มีสัญญาที่กำลังใช้งาน
-    $totalBookings = (int)$pdo->query("SELECT COUNT(*) FROM booking WHERE bkg_status IN (0, 1)")->fetchColumn(); // นับการจองที่รอดำเนินการ
+    $totalBookings = (int)$pdo->query("SELECT COUNT(*) FROM booking b WHERE COALESCE(b.bkg_status, '0') = '1' AND NOT EXISTS (SELECT 1 FROM contract c WHERE c.room_id = b.room_id AND c.tnt_id = b.tnt_id) AND NOT EXISTS (SELECT 1 FROM contract c WHERE c.room_id = b.room_id AND c.ctr_status = '0' AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE()))")->fetchColumn(); // นับการจองที่รอดำเนินการ (ยังไม่ทำสัญญา)
 } catch (PDOException $e) {}
 
 // ดึงรายการรูปภาพจากโฟลเดอร์
