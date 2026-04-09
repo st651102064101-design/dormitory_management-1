@@ -2355,6 +2355,11 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                     <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(245,158,11,0.55);background:rgba(245,158,11,0.1);color:#fbbf24;font-size:0.78rem;font-weight:600;">
                                                         ⚠️ ยังไม่มีบัญชีธนาคาร
                                                     </div>
+                                                    <button type="button" title="ส่ง SMS แจ้งเตือนผู้เช่าให้ระบะบัญชีธนาคาร"
+                                                        onclick="remindBankAccount(<?php echo $ctrIdCancel; ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, this)"
+                                                        style="font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid #10b981;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;cursor:pointer;">
+                                                        💬 แจ้งผ่าน SMS
+                                                    </button>
                                                     <?php elseif ($needsRefund && !$refundDone): ?>
                                                     <button type="button"
                                                         onclick="openRefundModal(<?php echo $ctrIdCancel; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccNum), ENT_QUOTES, 'UTF-8'); ?>, <?php echo $depositAmt; ?>)"
@@ -4322,6 +4327,66 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         document.getElementById('paymentModal').classList.remove('active');
         document.body.style.overflow = '';
         document.body.classList.remove('modal-open');
+    }
+
+    async function remindBankAccount(ctrId, roomNumber, tntName, btnElement) {
+        let confirmed = false;
+        const msg = `ยืนยันการส่ง SMS แจ้งเตือนผู้เช่าห้อง ${roomNumber} (${tntName}) \nให้ระบุบัญชีธนาคารเพื่อรับเงินประกันคืนหรือไม่?`;
+        
+        if (typeof showConfirmDialog === 'function') {
+            confirmed = await showConfirmDialog('ยืนยันส่ง SMS แจ้งเตือน', msg);
+        } else {
+            confirmed = confirm(msg);
+        }
+        
+        if (!confirmed) return;
+        
+        btnElement.disabled = true;
+        let originalText = btnElement.innerHTML;
+        btnElement.innerHTML = '⏳ กำลังส่ง...';
+        
+        try {
+            const formData = new FormData();
+            formData.append('ctr_id', ctrId);
+            formData.append('room_number', roomNumber);
+            formData.append('tnt_name', tntName);
+            
+            const response = await fetch('../Manage/remind_bank_account.php', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await response.json();
+            
+            if (result.success) {
+                if (typeof showToast === 'function') {
+                    showToast('สำเร็จ', 'ส่งแจ้งเตือนผ่าน SMS สำเร็จ', 'success');
+                } else {
+                    alert('ส่งแจ้งเตือนผ่าน SMS สำเร็จ');
+                }
+                btnElement.innerHTML = '✅ ส่งแล้ว';
+                setTimeout(() => {
+                    btnElement.innerHTML = '💬 ส่งแจ้งเตือนซ้ำ';
+                    btnElement.disabled = false;
+                }, 5000);
+            } else {
+                if (typeof showToast === 'function') {
+                    showToast('ไม่สำเร็จ', result.error || 'เกิดข้อผิดพลาดในการส่งแจ้งเตือน', 'error');
+                } else {
+                    alert(result.error || 'เกิดข้อผิดพลาดในการส่งแจ้งเตือน');
+                }
+                btnElement.innerHTML = originalText;
+                btnElement.disabled = false;
+            }
+        } catch (error) {
+            console.error('Error reminding bank account:', error);
+            if (typeof showToast === 'function') {
+                showToast('ข้อผิดพลาด', 'เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์', 'error');
+            } else {
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+            }
+            btnElement.innerHTML = originalText;
+            btnElement.disabled = false;
+        }
     }
 
     // Function สำหรับยกเลิกการจอง
