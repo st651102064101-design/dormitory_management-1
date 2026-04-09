@@ -28,10 +28,10 @@ $expenses = [];
 try {
     $stmt = $pdo->prepare("
         SELECT e.*, 
-               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as paid_amount,
-               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as pending_amount,
-               (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as payment_count,
-               (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1') as paid_amount,
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0') as pending_amount,
+               (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id) as payment_count,
+               (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status
         FROM expense e
         JOIN (
             SELECT MAX(exp_id) AS exp_id
@@ -64,7 +64,8 @@ $expenseStatusMap = [
     '0' => ['label' => 'รอชำระ', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
     '1' => ['label' => 'ชำระแล้ว', 'color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.2)'],
     '3' => ['label' => 'ชำระยังไม่ครบ', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
-    '4' => ['label' => 'ค้างชำระ', 'color' => '#ef4444', 'bg' => 'rgba(239, 68, 68, 0.2)']
+    '4' => ['label' => 'ค้างชำระ', 'color' => '#ef4444', 'bg' => 'rgba(239, 68, 68, 0.2)'],
+    '5' => ['label' => 'รอตรวจสอบ', 'color' => '#8b5cf6', 'bg' => 'rgba(139, 92, 246, 0.2)']
 ];
 
 // Calculate totals
@@ -348,6 +349,7 @@ foreach ($expenses as $exp) {
         <?php foreach ($expenses as $exp): ?>
         <?php 
             $paidAmount = (float)($exp['paid_amount'] ?? 0);
+            $pendingAmount = (float)($exp['pending_amount'] ?? 0);
             $expTotal = (float)$exp['exp_total'];
             $remaining = max(0, $expTotal - $paidAmount);
             $statusKey = '0';
@@ -355,6 +357,8 @@ foreach ($expenses as $exp) {
                 $statusKey = '1';
             } elseif ($paidAmount > 0) {
                 $statusKey = '3';
+            } elseif ($pendingAmount > 0) {
+                $statusKey = '5'; // รอตรวจสอบ
             }
         ?>
         <div class="bill-card">
