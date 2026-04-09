@@ -901,6 +901,22 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 text-transform: uppercase;
                 letter-spacing: 0.05em;
             }
+            .wizard-table td[data-label="ขั้นตอนถัดไป"] {
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            .wizard-table td[data-label="ขั้นตอนถัดไป"]:before {
+                text-align: center;
+                width: 100%;
+            }
+            .wizard-table td[data-label="ขั้นตอนถัดไป"] > div {
+                align-items: center !important;
+                text-align: center;
+                width: 100%;
+            }
         }
 
         /* === Step Indicator === */
@@ -1825,24 +1841,28 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             }
             .step-indicator {
                 flex-direction: column;
-                align-items: stretch;
-                gap: 0.5rem;
-                padding-bottom: 0;
-                overflow: hidden;
+                align-items: center;
+                gap: 2rem;
+                padding-bottom: 1rem;
+                overflow: visible;
             }
             .step-circle {
-                width: 100%;
-                height: auto;
-                min-height: 38px;
-                border-radius: 12px;
-                justify-content: flex-start;
-                padding: 8px 16px;
-                font-size: 0.9rem;
+                width: 32px;
+                height: 32px;
+                min-height: 32px;
+                border-radius: 50%;
+                justify-content: center;
+                padding: 0;
+                font-size: 0.85rem;
+                flex-shrink: 0;
+                position: relative;
             }
             .step-circle::after {
                 content: attr(data-tooltip);
-                position: static;
-                transform: none;
+                position: absolute;
+                left: 50%;
+                top: 100%;
+                transform: translateX(-50%);
                 opacity: 1;
                 visibility: visible;
                 background: transparent;
@@ -1850,9 +1870,10 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 border: none;
                 color: inherit;
                 font-weight: 600;
-                margin-left: 12px;
-                white-space: normal;
-                text-align: left;
+                margin-left: 0;
+                margin-top: 6px;
+                white-space: nowrap !important;
+                text-align: center;
                 padding: 0;
             }
             .step-circle::before {
@@ -1860,6 +1881,22 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             }
             .step-arrow {
                 display: none;
+            }
+            .wizard-table td[data-label="ขั้นตอนถัดไป"] {
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+            }
+            .wizard-table td[data-label="ขั้นตอนถัดไป"]:before {
+                text-align: center;
+                width: 100%;
+            }
+            .wizard-table td[data-label="ขั้นตอนถัดไป"] > div {
+                align-items: center !important;
+                text-align: center;
+                width: 100%;
             }
         }
     </style>
@@ -2362,7 +2399,10 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                             <?php endif; ?>
                                         <?php elseif ($currentStep == 5 || $currentStep >= 6 || (int)($tenant['completed'] ?? 0) === 1): ?>
                                             <?php if ($step5 && $meterBillDone && $latestBillPaid && $firstBillPaid): ?>
-                                                <span style="color: #16a34a; font-weight: 600;">✓ ชำระแล้ว (<?php echo htmlspecialchars($latestMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>
+                                                <div style="display:flex;flex-direction:column;align-items:center;color:#16a34a;font-weight:600;font-size:0.85rem;line-height:1.4;">
+                                                    <span style="font-size:1.1rem; margin-bottom:0.1rem;">✓</span>
+                                                    <span>ชำระแล้ว (<?php echo htmlspecialchars($latestMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span>
+                                                </div>
                                             <?php elseif ($step5 && $meterBillDone && ($firstBillWaiting || $latestBillWaiting)): ?>
                                                 <?php
                                                     // แสดงเดือนที่รอตรวจสอบ — first bill ก่อนเสมอ ถ้ายังค้างอยู่
@@ -2410,7 +2450,10 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                                         <?php endif; ?>
                                                         <?php if ($latestBillPaid && $firstBillPaid): ?>
                                                             <?php $paidMonthDisp = $latestMonthDisplay !== '-' ? $latestMonthDisplay : $firstBillMonthDisplay; ?>
-                                                            <span style="color:#16a34a;font-weight:600;font-size:0.82rem;">✓ ชำระแล้ว (<?php echo htmlspecialchars($paidMonthDisp, ENT_QUOTES, 'UTF-8'); ?>)</span>
+                                                            <div style="display:flex;flex-direction:column;align-items:center;color:#16a34a;font-weight:600;font-size:0.85rem;line-height:1.4;">
+                                                                <span style="font-size:1.1rem; margin-bottom:0.1rem;">✓</span>
+                                                                <span>ชำระแล้ว (<?php echo htmlspecialchars($paidMonthDisp, ENT_QUOTES, 'UTF-8'); ?>)</span>
+                                                            </div>
                                                         <?php elseif (!$latestBillPaid || !$firstBillPaid): ?>
                                                             <?php
                                                                 $unpaidDisp = $firstBillUnpaid && !$firstBillWaiting && $firstBillMonthDisplay !== '-'
