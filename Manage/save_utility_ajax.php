@@ -53,6 +53,15 @@ try {
     $rateWater = $rateRow ? (float)$rateRow['rate_water'] : 18.0;
     $rateElec  = $rateRow ? (float)$rateRow['rate_elec']  : 8.0;
 
+    // การจดมิเตอร์ครั้งแรก = เดือนเป้าหมาย ตรงกับเดือนเริ่มสัญญา (ctr_start) เท่านั้น
+    $ctrStartStmt = $pdo->prepare("SELECT ctr_start FROM contract WHERE ctr_id = ?");
+    $ctrStartStmt->execute([$ctrId]);
+    $ctrStart = $ctrStartStmt->fetchColumn();
+    $ctrStartYm = $ctrStart ? date('Y-m', strtotime((string)$ctrStart)) : null;
+    $targetMonthStartYm = sprintf('%04d-%02d', $meterYear, $meterMonth);
+
+    $isFirstReading = ($ctrStartYm !== null && $targetMonthStartYm === $ctrStartYm);
+
     // ค่าปลายล่าสุดก่อนเดือนเป้าหมาย → เป็นค่าต้นของเดือนนี้
     // คำนวณเดือน/ปีที่แล้ว
     $prevMonth = $meterMonth > 1 ? $meterMonth - 1 : 12;
@@ -152,16 +161,12 @@ try {
     $waterUsed = $waterEnd - $waterStart;
     $elecUsed  = $elecEnd  - $elecStart;
     
-    // ตรวจสอบว่าเป็นการจดมิเตอร์ครั้งแรกหรือไม่ (ไม่มีค่า utl_water_start ที่มา จาก previous record)
-    // ถ้า $prev เป็น empty/null แสดงว่าไม่มี utility record ก่อนหน้านี้ = ครั้งแรก
-    $isFirstReading = ($prev === false || $prev === null);
-    
     if ($isFirstReading) {
-        // ครั้งแรกของการจดมิเตอร์ - ไม่คิดค่าใช้จ่าย เฉพาะบันทึกค่าเบื้องต้น
+        // ครั้งแรกของการจดมิเตอร์ของสัญญานี้ - ไม่คิดค่าใช้จ่าย เฉพาะบันทึกค่าเบื้องต้น
         $waterCost = 0;
         $elecCost  = 0;
     } else {
-        // มีการจดมิเตอร์ก่อนหน้า - คิดค่าใช้จ่ายปกติ
+        // มีการจดมิเตอร์ก่อนหน้าในสัญญานี้ - คิดค่าใช้จ่ายปกติ
         $waterCost = calculateWaterCost($waterUsed);
         $elecCost  = (int)round($elecUsed * $rateElec);
     }
@@ -185,9 +190,11 @@ try {
 
     // ถ้าไม่มี expense record อยู่แล้ว ให้ INSERT ใหม่ (ไม่ใช่ครั้งแรก = มีค่าใช้จ่าย)
     // ตรวจสอบด้วย SELECT จริงๆ แทน rowCount() เพราะ MySQL คืน 0 แม้ record มีอยู่แต่ค่าไม่เปลี่ยน
-    $chkExpStmt = $pdo->prepare("SELECT exp_id FROM expense WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ? LIMIT 1");
+    $chkExpStmt = $pdo->prepare("SELECT exp_id, room_price, exp_status FROM expense WHERE ctr_id = ? AND MONTH(exp_month) = ? AND YEAR(exp_month) = ? LIMIT 1");
     $chkExpStmt->execute([$ctrId, $meterMonth, $meterYear]);
-    $expExists = $chkExpStmt->fetch();
+    $expExists = $chkExpStmt->fetch(PDO::FETCH_ASSOC);
+    $expMonth = sprintf('%04d-%02d-01', $meterYear, $meterMonth);
+
     if (!$expExists && !$isFirstReading) {
         $roomStmt = $pdo->prepare("
             SELECT rt.type_price
@@ -200,44 +207,58 @@ try {
         $roomRow = $roomStmt->fetch(PDO::FETCH_ASSOC);
         $roomPrice = (int)($roomRow['type_price'] ?? 0);
         $expTotal  = $roomPrice + $elecCost + $waterCost;
-        $expMonth  = sprintf('%04d-%02d-01', $meterYear, $meterMonth);
         $insertExpStmt = $pdo->prepare("
             INSERT INTO expense
                 (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water,
                  room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '2', ?)
-            ON DUPLICATE KEY UPDATE
-                exp_elec_unit = VALUES(exp_elec_unit),
-                exp_water_unit = VALUES(exp_water_unit),
-                rate_elec = VALUES(rate_elec),
-                rate_water = VALUES(rate_water),
-                exp_elec_chg = VALUES(exp_elec_chg),
-                exp_water = VALUES(exp_water),
-                exp_total = VALUES(exp_total)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, '0', ?)
         ");
         $insertExpStmt->execute([
             $expMonth, $elecUsed, $waterUsed, $rateElec, $rateWater,
             $roomPrice, $elecCost, $waterCost, $expTotal, $ctrId,
         ]);
+    } else if ($expExists) {
+        $roomPrice = (int)$expExists['room_price'];
+        $expTotal = $roomPrice + $elecCost + $waterCost;
+    }
 
-        // แจ้งเตือนเรื่องการออกรอบบิล (กรณีห้องนี้มีการคำนวณบิลสำเร็จ)
+    // ส่งแจ้งเตือนเรื่องการออกรอบบิล หากไม่เป็นการจดมิเตอร์ครั้งแรกที่ไม่มีค่าใช้จ่าย
+    if (!$isFirstReading) {
         require_once __DIR__ . '/../LineHelper.php';
         try {
             $stmtRoom = $pdo->prepare("SELECT r.room_number FROM room r JOIN contract c ON r.room_id = c.room_id WHERE c.ctr_id = ?");
             $stmtRoom->execute([$ctrId]);
             $roomName = $stmtRoom->fetchColumn() ?: 'ไม่ทราบห้อง';
 
-            $msg = "🧾 รอบบิลห้อง {$roomName}\nประจำเดือน: {$expMonth}\n";
+            // ดึง access_token ของสัญญาเพื่อสร้างลิงก์สำหรับผู้เช่า
+            $tokenStmt = $pdo->prepare("SELECT access_token FROM contract WHERE ctr_id = ?");
+            $tokenStmt->execute([$ctrId]);
+            $accessToken = $tokenStmt->fetchColumn() ?: '';
+
+            $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' || isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+            $domainName = $_SERVER['HTTP_HOST'];
+            $scriptDir = dirname(dirname($_SERVER['SCRIPT_NAME']));
+            
+            $url = $accessToken 
+                ? rtrim($protocol . $domainName . $scriptDir, '/') . "/Tenant/index.php?token=" . urlencode((string)$accessToken)
+                : "";
+
+            $msg = "🧾 บิลค่าใช้จ่ายใหม่ ห้อง {$roomName}\nประจำเดือน: {$meterMonth}/{$meterYear}\n";
+            $msg .= "สถานะ: รอชำระ\n";
             $msg .= "------------------------\n";
-            $msg .= "ค่าน้ำ: " . number_format($waterCost, 2) . " บาท\n";
-            $msg .= "ค่าไฟ: " . number_format($elecCost, 2) . " บาท\n";
-            $msg .= "ค่าเช่า: " . number_format($roomPrice, 2) . " บาท\n";
+            $msg .= "ค่าเช่า: ฿" . number_format($roomPrice, 2) . "\n";
+            if ($waterCost > 0) $msg .= "ค่าน้ำ: ฿" . number_format($waterCost, 2) . "\n";
+            if ($elecCost > 0)  $msg .= "ค่าไฟ: ฿" . number_format($elecCost, 2) . "\n";
             $msg .= "------------------------\n";
-            $msg .= "ยอดรวมสุทธิ: " . number_format($expTotal, 2) . " บาท\n";
+            $msg .= "รวมยอดที่ต้องชำระ: ฿" . number_format($expTotal, 2) . "\n";
+            
+            if ($url) {
+                $msg .= "\nสามารถตรวจสอบรายละเอียดบิล ชำระเงิน และแนบสลิป ได้ที่ระบบผู้เช่า:\n" . $url;
+            }
             
             sendLineBroadcast($pdo, $msg);
         } catch (Exception $e) {
-            error_log("Line Notification Error (Utility): " . $e->getMessage());
+            error_log("Line Notification Error (Utility Save): " . $e->getMessage());
         }
     }
 

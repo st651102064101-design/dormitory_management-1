@@ -365,18 +365,44 @@ foreach ($expenses as $exp) {
                 </span>
             </div>
             <div class="bill-details">
+                <?php 
+                    $roomPrice = (float)($exp['room_price'] ?? 0);
+                    $elecChg = (float)($exp['exp_elec_chg'] ?? 0);
+                    $waterChg = (float)($exp['exp_water'] ?? 0);
+                    $calculatedTotal = $roomPrice + $elecChg + $waterChg;
+                    $otherFee = $expTotal - $calculatedTotal;
+                    
+                    // ตรวจสอบว่าบิลนี้เจตนาให้เป็นบิลมัดจำเพียวๆ หรือไม่
+                    // เช่น หาก exp_total ตรงกับค่ามัดจำ (2,000) แล้วมันไม่ได้มาจากค่าห้องรวมกับน้ำไฟ
+                    $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
+                    $isDepositOnly = ($expTotal > 0 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $otherFee > 0);
+
+                    if ($isDepositOnly): 
+                ?>
+                <div class="bill-row">
+                    <span class="bill-label" style="font-weight: 600; color: #f59e0b;">เงินมัดจำสถานที่</span>
+                    <span class="bill-value" style="font-weight: 600; color: #f59e0b;"><?php echo number_format($expTotal); ?> บาท</span>
+                </div>
+                <?php else: ?>
                 <div class="bill-row">
                     <span class="bill-label">ค่าห้อง</span>
-                    <span class="bill-value"><?php echo number_format($exp['room_price'] ?? 0); ?> บาท</span>
+                    <span class="bill-value"><?php echo number_format($roomPrice); ?> บาท</span>
                 </div>
                 <div class="bill-row">
                     <span class="bill-label">ค่าไฟ (<?php echo $exp['exp_elec_unit'] ?? 0; ?> หน่วย × <?php echo $exp['rate_elec'] ?? 0; ?> บาท)</span>
-                    <span class="bill-value"><?php echo number_format($exp['exp_elec_chg'] ?? 0); ?> บาท</span>
+                    <span class="bill-value"><?php echo number_format($elecChg); ?> บาท</span>
                 </div>
                 <div class="bill-row">
                     <span class="bill-label">ค่าน้ำ (<?php echo $exp['exp_water_unit'] ?? 0; ?> หน่วย × <?php echo $exp['rate_water'] ?? 0; ?> บาท)</span>
-                    <span class="bill-value"><?php echo number_format($exp['exp_water'] ?? 0); ?> บาท</span>
+                    <span class="bill-value"><?php echo number_format($waterChg); ?> บาท</span>
                 </div>
+                <?php if ($otherFee > 0): ?>
+                <div class="bill-row">
+                    <span class="bill-label" style="color: #f59e0b;">ค่าใช้จ่ายอื่นๆ</span>
+                    <span class="bill-value" style="color: #f59e0b;"><?php echo number_format($otherFee); ?> บาท</span>
+                </div>
+                <?php endif; ?>
+                <?php endif; ?>
                 <div class="bill-total">
                     <span class="bill-label">ยอดรวม</span>
                     <span class="bill-value"><?php echo number_format($expTotal); ?> บาท</span>

@@ -449,6 +449,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 $msg .= "📅 วันที่เข้าพัก: " . date('d/m/Y', strtotime($ctrStart)) . "\n";
                             }
                             $msg .= "สถานะ: รอตรวจสอบการชำระเงิน\n\n";
+                            $msg .= "⚠️ กรุณาชำระเงินเงินมัดจำหรือค่าจอง ทันที เพื่อยืนยันการจองของท่าน\n\n";
                             
                             $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' || isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
                             $domainName = $_SERVER['HTTP_HOST'] ?? 'localhost';
@@ -1980,7 +1981,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         <?php endif; ?>
         
-        <form method="POST" enctype="multipart/form-data" id="bookingForm" novalidate>
+        <form method="POST" enctype="multipart/form-data" id="bookingForm" onsubmit="preventDoubleSubmit(this)" novalidate>
+            <script>
+                function preventDoubleSubmit(form) {
+                    var btn = form.querySelector('button[type="submit"]');
+                    if (btn) {
+                        btn.innerHTML = 'กำลังดำเนินการ...';
+                        btn.style.pointerEvents = 'none';
+                        btn.style.opacity = '0.7';
+                        setTimeout(function() { btn.disabled = true; }, 50); // Delay so form definitely submits
+                    }
+                }
+            </script>
             <?php if (!isset($_GET['room'])): ?>
             <!-- Fullscreen Layout: No Room Selected -->
             <div class="booking-layout-fullscreen">
@@ -2322,6 +2334,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                         </div>
                         
+                        <!-- Line Notification Info -->
+                        <div style="background: rgba(0, 195, 0, 0.08); border: 1px solid rgba(0, 195, 0, 0.2); padding: 12px 14px; border-radius: 10px; margin-bottom: 20px; display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 2px 8px rgba(0, 195, 0, 0.04);">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="#00c300" style="flex-shrink: 0; margin-top: 1px;">
+                                <path d="M21.5 10.5C21.5 5.8 17.2 2 12 2C6.8 2 2.5 5.8 2.5 10.5C2.5 14.7 5.2 18.2 9.2 19L8.6 21.2C8.5 21.6 8.9 21.9 9.3 21.7L14.7 18.2C15.3 18.4 16 18.5 16.7 18.6C17.4 18.7 18.2 18.8 18.9 18.8C19.6 18.8 21.5 18 21.5 10.5Z" />
+                            </svg>
+                            <div style="font-size: 13.5px; color: #166534; line-height: 1.5;">
+                                <strong>แจ้งเตือนผ่าน LINE:</strong> เมื่อกดยืนยัน ระบบจะส่งข้อความแจ้งเตือนการจองนี้ไปยัง <strong>LINE</strong> ทันที เพื่อความรวดเร็วในการติดต่อกลับ
+                            </div>
+                        </div>
+                        
                         <!-- Submit Button -->
                         <button type="submit" class="submit-btn" id="submitBtn" disabled style="opacity: 0.5; cursor: not-allowed;">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -2452,7 +2474,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                     
-                    <button type="button" class="submit-btn" id="mobileSubmitBtn" style="margin-top: 24px;">
+                    <div style="background: rgba(0, 195, 0, 0.08); border: 1px solid rgba(0, 195, 0, 0.2); padding: 12px 14px; border-radius: 10px; margin-top: 20px; display: flex; align-items: flex-start; gap: 10px; box-shadow: 0 2px 8px rgba(0, 195, 0, 0.04);">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="#00c300" style="flex-shrink: 0; margin-top: 1px;">
+                            <path d="M21.5 10.5C21.5 5.8 17.2 2 12 2C6.8 2 2.5 5.8 2.5 10.5C2.5 14.7 5.2 18.2 9.2 19L8.6 21.2C8.5 21.6 8.9 21.9 9.3 21.7L14.7 18.2C15.3 18.4 16 18.5 16.7 18.6C17.4 18.7 18.2 18.8 18.9 18.8C19.6 18.8 21.5 18 21.5 10.5Z" />
+                        </svg>
+                        <div style="font-size: 13.5px; color: #166534; line-height: 1.5;">
+                            <strong>แจ้งเตือนผ่าน LINE:</strong> เมื่อกดยืนยัน ระบบจะส่งข้อความแจ้งเตือนการจองนี้ไปยัง <strong>LINE</strong> ทันที เพื่อความรวดเร็วในการติดต่อกลับ
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="submit-btn" id="mobileSubmitBtn" style="margin-top: 20px;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
                             <polyline points="22 4 12 14.01 9 11.01"/>

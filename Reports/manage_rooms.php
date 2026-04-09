@@ -1192,7 +1192,7 @@ try {
                   <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
                   <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
                 </select>
-                <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()">
+                <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()" style="position: relative; z-index: 99; pointer-events: auto;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                   <span id="viewToggleText">มุมมองแถว</span>
                 </button>
@@ -1209,7 +1209,7 @@ try {
               <!-- Grid View -->
               <div class="rooms-grid rooms-grid-view" id="roomsGrid">
                 <?php foreach ($rooms as $index => $room): ?>
-                  <div class="room-card <?php echo $index >= 20 ? 'hidden-card' : ''; ?>" data-room-id="<?php echo $room['room_id']; ?>">
+                  <div class="room-card <?php echo $index >= 20 ? 'hidden-card' : ''; ?>" data-room-id="<?php echo $room['room_id']; ?>" data-room-number="<?php echo htmlspecialchars($room['room_number']); ?>">
                     <div class="room-card-image room-card-image-upload" onclick="triggerImageUpload(<?php echo $room['room_id']; ?>, '<?php echo htmlspecialchars($room['room_number']); ?>')" style="cursor: pointer; position: relative;" title="คลิกเพื่ออัปโหลดรูปภาพ">
                       <?php if (!empty($room['room_image'])): ?>
                         <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="ห้อง <?php echo htmlspecialchars($room['room_number']); ?>" />
@@ -1272,7 +1272,7 @@ try {
 
               <?php if (count($rooms) > 20): ?>
               <div class="load-more-container">
-                <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreRooms()">
+                <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreRooms()" style="position: relative; z-index: 99; pointer-events: auto;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                   <span id="loadMoreText">โหลดเพิ่มเติม (<span id="remainingCount"><?php echo count($rooms) - 20; ?></span> ห้อง)</span>
                 </button>
@@ -1292,7 +1292,7 @@ try {
                   </thead>
                   <tbody>
                     <?php foreach ($rooms as $index => $room): ?>
-                      <tr class="room-row <?php echo $index >= 20 ? 'hidden-row' : ''; ?>" data-index="<?php echo $index; ?>" data-room-id="<?php echo $room['room_id']; ?>">
+                      <tr class="room-row <?php echo $index >= 20 ? 'hidden-row' : ''; ?>" data-index="<?php echo $index; ?>" data-room-id="<?php echo $room['room_id']; ?>" data-room-number="<?php echo htmlspecialchars($room['room_number']); ?>">
                         <td>
                           <div class="room-image-small">
                             <?php if (!empty($room['room_image'])): ?>
@@ -1991,7 +1991,7 @@ try {
         const roomsGrid = document.getElementById('roomsGrid');
         if (roomsGrid) {
           const cardHTML = `
-            <div class="room-card" data-room-id="${room.room_id}">
+            <div class="room-card" data-room-id="${room.room_id}" data-room-number="${room.room_number}">
               <div class="room-card-image">
                 ${room.room_image ? 
                   `<img src="/dormitory_management/Public/Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
@@ -2035,7 +2035,7 @@ try {
           const tableBody = roomsTable.querySelector('tbody');
           if (tableBody) {
             const rowHTML = `
-              <tr class="room-row" data-room-id="${room.room_id}">
+              <tr class="room-row" data-room-id="${room.room_id}" data-room-number="${room.room_number}">
                 <td>
                   <div class="room-image-small">
                     ${room.room_image ?
@@ -2116,9 +2116,56 @@ try {
       }
 
       function changeSortBy(sortValue) {
+        // ใช้ pushState เพื่ออัปเดต URL เงียบๆ ไม่รีเฟรชหน้า
         const url = new URL(window.location);
         url.searchParams.set('sort', sortValue);
-        window.location.href = url.toString();
+        window.history.pushState({}, '', url.toString());
+
+        const sortComparer = (a, b) => {
+          if (sortValue === 'newest') {
+            return parseInt(b.dataset.roomId || 0) - parseInt(a.dataset.roomId || 0);
+          } else if (sortValue === 'oldest') {
+            return parseInt(a.dataset.roomId || 0) - parseInt(b.dataset.roomId || 0);
+          } else if (sortValue === 'room_number') {
+            return String(a.dataset.roomNumber || '').localeCompare(String(b.dataset.roomNumber || ''), undefined, {numeric: true});
+          }
+          return 0;
+        };
+
+        // จัดเรียงมุมมองการ์ด
+        const grid = document.getElementById('roomsGrid');
+        if (grid) {
+          const cards = Array.from(grid.querySelectorAll('.room-card'));
+          cards.sort(sortComparer);
+          
+          cards.forEach((card, index) => {
+            if (index < visibleRooms) {
+              card.classList.remove('hidden-card');
+            } else {
+              card.classList.add('hidden-card');
+            }
+            grid.appendChild(card);
+          });
+        }
+
+        // จัดเรียงมุมมองตาราง
+        const roomsTable = document.getElementById('roomsTable');
+        if (roomsTable) {
+          const tableBody = roomsTable.querySelector('tbody');
+          if (tableBody) {
+            const rows = Array.from(tableBody.querySelectorAll('tr.room-row'));
+            rows.sort(sortComparer);
+            
+            rows.forEach((row, index) => {
+              if (index < visibleRooms) {
+                row.classList.remove('hidden-row');
+              } else {
+                row.classList.add('hidden-row');
+              }
+              tableBody.appendChild(row);
+            });
+          }
+        }
       }
       
       // Restore saved view on page load

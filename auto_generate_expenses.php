@@ -15,6 +15,7 @@ if (php_sapi_name() !== 'cli') {
 }
 
 require_once __DIR__ . '/ConnectDB.php';
+require_once __DIR__ . '/LineHelper.php';
 
 try {
     $pdo = connectDB();
@@ -57,7 +58,7 @@ try {
         
         // Get room price
         $roomStmt = $pdo->prepare("
-            SELECT r.room_id, rt.type_price 
+            SELECT r.room_id, r.room_number, rt.type_price 
             FROM contract c 
             LEFT JOIN room r ON c.room_id = r.room_id 
             LEFT JOIN roomtype rt ON r.type_id = rt.type_id 
@@ -103,6 +104,20 @@ try {
         
         echo "  [OK] Contract $ctr_id: Generated expense for $currentMonth (Room: ฿$room_price, Rates: Elec ฿$rate_elec/unit, Water ฿$rate_water/unit)\n";
         $generated++;
+
+        // ส่งแจ้งเตือน LINE สำหรับบิลเริ่มต้นที่ประกอบด้วยแค่ค่าห้อง (ยังไม่มีค่าน้ำค่าไฟ)
+        if (function_exists('sendLineBroadcast')) {
+            $monthTxt = date('m/Y', strtotime($currentMonth . '-01'));
+            $roomNum = (string)($room['room_number'] ?? $room['room_id']);
+            $msg = "🧾 บิลค่าห้องใหม่ ห้อง {$roomNum}\n";
+            $msg .= "ประจำเดือน: {$monthTxt}\n";
+            $msg .= "------------------------\n";
+            $msg .= "ค่าเช่า: ฿" . number_format($room_price, 2) . "\n";
+            $msg .= "------------------------\n";
+            $msg .= "รวมยอดที่ต้องชำระ: ฿" . number_format($exp_total, 2) . "\n";
+            $msg .= "\nหมายเหตุ: ข้อมูลนี้ยังไม่รวมค่าน้ำ/ค่าไฟ";
+            sendLineBroadcast($pdo, $msg);
+        }
     }
     
     echo "\n[" . date('Y-m-d H:i:s') . "] Expense generation complete!\n";

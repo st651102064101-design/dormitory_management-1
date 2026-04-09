@@ -1,6 +1,9 @@
 <?php
 declare(strict_types=1);
 session_start();
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Cache-Control: post-check=0, pre-check=0", false);
+header("Pragma: no-cache");
 
 if (empty($_SESSION['admin_username'])) {
     header('Location: ../Login.php');
@@ -538,6 +541,13 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         /* ============================================================
            🎨 FUTURISTIC WIZARD UI — Bright Indigo-Purple Theme
            ============================================================ */
+
+        .billing-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.4rem;
+            margin-bottom: 0.85rem;
+        }
 
         /* === CSS Custom Property for animated conic-gradient border === */
         @property --wiz-angle {
@@ -1830,6 +1840,10 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
         /* === Mobile Adjustments === */
         @media (max-width: 768px) {
+            .billing-summary-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 0.6rem;
+            }
             .wiz-filter-bar {
                 flex-direction: column;
                 align-items: stretch;
@@ -2923,16 +2937,16 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                         <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;">ค่าก่อน: <span id="moPrevWater" style="color:#f8fafc;font-weight:600;">...</span></div>
                         <input type="number" id="moWaterInput" min="0" max="9999999" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(96,165,250,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
-                            oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7)"
-                            onfocus="this.style.borderColor='#60a5fa'" onblur="this.style.borderColor='rgba(96,165,250,0.4)'" oninput="updateMoPreview()">
+                            oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); updateMoPreview();"
+                            onfocus="this.style.borderColor='#60a5fa'" onblur="this.style.borderColor='rgba(96,165,250,0.4)'">
                     </div>
                     <div>
                         <div style="font-size:0.8rem;font-weight:600;color:#fbbf24;margin-bottom:0.3rem;">⚡ มิเตอร์ไฟ</div>
                         <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;">ค่าก่อน: <span id="moPrevElec" style="color:#f8fafc;font-weight:600;">...</span></div>
                         <input type="number" id="moElecInput" min="0" max="99999" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(251,191,36,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
-                            oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5)"
-                            onfocus="this.style.borderColor='#fbbf24'" onblur="this.style.borderColor='rgba(251,191,36,0.4)'" oninput="updateMoPreview()">
+                            oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); updateMoPreview();"
+                            onfocus="this.style.borderColor='#fbbf24'" onblur="this.style.borderColor='rgba(251,191,36,0.4)'">
                     </div>
                 </div>
                 <div id="moPreview" style="display:none;flex-wrap:wrap;gap:0.75rem;padding:0.6rem 0.75rem;border-radius:8px;background:rgba(15,23,42,0.4);border:1px solid rgba(255,255,255,0.08);font-size:0.82rem;color:rgba(226,232,240,0.9);margin-bottom:0.85rem;"></div>
@@ -3476,7 +3490,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                     <span style="padding:0.2rem 0.65rem;border-radius:20px;background:rgba(255,255,255,0.06);font-size:0.78rem;color:${statusClr};font-weight:600;">${escapeHtml(statusText)}</span>
                 </div>
                 <!-- amount summary -->
-                <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:0.4rem;margin-bottom:0.85rem;">
+                <div class="billing-summary-grid">
                     ${[
                         {label:'ยอดบิล',    val:expenseTotal,   clr:'#f8fafc',  bdr:'rgba(148,163,184,0.25)'},
                         {label:'ชำระแล้ว',  val:approvedAmount, clr:'#4ade80',  bdr:'rgba(34,197,94,0.3)'},
@@ -3923,6 +3937,19 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         const ev  = document.getElementById('moElecInput').value.trim();
         const btn = document.getElementById('moSaveBtn');
         const msg = document.getElementById('moMsg');
+        
+        // Validate minimum values
+        if (wv !== '' && parseInt(wv, 10) < _moPrevWater) {
+            msg.style.color = '#f87171';
+            msg.textContent = '❌ เลขมิเตอร์น้ำต้องไม่น้อยกว่าค่าก่อนหน้า (' + _moPrevWater + ')';
+            return;
+        }
+        if (ev !== '' && parseInt(ev, 10) < _moPrevElec) {
+            msg.style.color = '#f87171';
+            msg.textContent = '❌ เลขมิเตอร์ไฟต้องไม่น้อยกว่าค่าก่อนหน้า (' + _moPrevElec + ')';
+            return;
+        }
+        
         btn.disabled = true;
         btn.textContent = 'กำลังบันทึก...';
         msg.textContent = '';

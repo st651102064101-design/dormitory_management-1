@@ -194,11 +194,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' FOR UPDATE");
+            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') FOR UPDATE");
             $sumRowsStmt->execute([$exp_id]);
             $submittedAmount = 0;
             foreach ($sumRowsStmt->fetchAll(PDO::FETCH_ASSOC) as $payRow) {
                 $submittedAmount += (int)($payRow['pay_amount'] ?? 0);
+            }
+
+            // ปกป้องการส่งซ้ำ: ตรวจสอบว่ามีการแจ้งชำระเงินที่ยังรอตรวจสอบอยู่สำหรับบิลนี้หรือไม่
+            $checkPendingStmt = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0'");
+            $checkPendingStmt->execute([$exp_id]);
+            if ($checkPendingStmt->fetchColumn() > 0) {
+                throw new Exception('มีการแจ้งชำระเงินที่รอการตรวจสอบอยู่แล้ว กรุณารอผู้ดูแลตรวจสอบก่อนส่งใหม่');
             }
 
             $expTotal = (int)($expense['exp_total'] ?? 0);
@@ -1031,13 +1038,23 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             <?php endif; ?>
             
             <?php if (!empty($settings['promptpay_number'])): ?>
-            <div class="bank-info-item">
-                <div class="bank-info-icon promptpay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
-                <div class="bank-info-content">
-                    <div class="bank-info-label">พร้อมเพย์</div>
-                    <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['promptpay_number']); ?>')"><?php echo htmlspecialchars($settings['promptpay_number']); ?> <span class="copy-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;opacity:0.75;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span></div>
+            <div class="bank-info-item" style="flex-wrap: wrap;">
+                <div style="display: flex; align-items: center; gap: 1rem; width: 100%;">
+                    <div class="bank-info-icon promptpay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg></div>
+                    <div class="bank-info-content">
+                        <div class="bank-info-label">พร้อมเพย์</div>
+                        <div class="bank-info-value copy-text" onclick="copyToClipboard('<?php echo htmlspecialchars($settings['promptpay_number']); ?>')"><?php echo htmlspecialchars($settings['promptpay_number']); ?> <span class="copy-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;opacity:0.75;"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg></span></div>
+                    </div>
+                </div>
+                <div style="width: 100%; display: flex; justify-content: center; margin-top: 1rem; flex-direction: column; align-items: center;">
+                    <img id="promptpay-qr" src="https://promptpay.io/<?php echo urlencode($settings['promptpay_number']); ?>.png" alt="PromptPay QR Code" style="max-width: 180px; background: white; padding: 10px; border-radius: 8px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
+                    <small style="color:#94a3b8; margin-top: 8px;">สแกนเพื่อชำระเงิน <span id="promptpay-qr-amount-text" style="display:none; color:#ef4444; font-weight:bold;"></span></small>
                 </div>
             </div>
+            <script>
+                // เก็บค่า promptpay number ไว้ใช้ใน Javascript
+                window.tenantPromptpayNumber = <?php echo json_encode($settings['promptpay_number']); ?>;
+            </script>
             <?php endif; ?>
         </div>
         <?php endif; ?>
@@ -1061,10 +1078,20 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 <p>ไม่มีบิลค้างชำระ</p>
             </div>
             <?php else: ?>
-            <form method="POST" enctype="multipart/form-data" id="paymentForm">
-                <div class="form-group">
+            <form method="POST" enctype="multipart/form-data" id="paymentForm" onsubmit="preventDoubleSubmit(this)">
+                <script>
+                    function preventDoubleSubmit(form) {
+                        var btn = form.querySelector('.submit-btn');
+                        if (btn) {
+                            btn.innerHTML = '<span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> กำลังส่ง...';
+                            btn.style.pointerEvents = 'none';
+                            btn.style.opacity = '0.7';
+                        }
+                    }
+                </script>
+                <div class="form-group" style="<?php echo (count($unpaidExpenses) == 1) ? 'display:none;' : ''; ?>">
                     <label>เลือกบิลที่ต้องการชำระ *</label>
-                    <select name="exp_id" id="exp_id" required onchange="updatePaymentAmount()">
+                    <select name="exp_id" id="exp_id" <?php echo (count($unpaidExpenses) != 1) ? 'required' : ''; ?> onchange="updatePaymentAmount()">
                         <option value="">-- เลือกบิล --</option>
                         <?php foreach ($unpaidExpenses as $expense): ?>
                         <?php 
@@ -1076,7 +1103,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                                 data-total="<?php echo $expTotal; ?>"
                                 data-paid="<?php echo $paidAmount; ?>"
                                 data-remaining="<?php echo $remaining; ?>"
-                                <?php echo ($selectedExpId == $expense['exp_id']) ? 'selected' : ''; ?>>
+                                <?php echo ($selectedExpId == $expense['exp_id'] || count($unpaidExpenses) == 1) ? 'selected' : ''; ?>>
                             <?php echo thaiMonthYear($expense['exp_month']); ?> - 
                             ยอดรวม <?php echo number_format($expTotal); ?> บาท
                             <?php if ($paidAmount > 0): ?>
@@ -1086,6 +1113,25 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                         <?php endforeach; ?>
                     </select>
                 </div>
+                
+                <?php if (count($unpaidExpenses) == 1): ?>
+                <div class="form-group">
+                    <label>บิลที่ต้องการชำระ</label>
+                    <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; color: #000; font-weight: 500;">
+                        <?php 
+                            $singleExp = $unpaidExpenses[0];
+                            $singlePaid = (float)($singleExp['paid_amount'] ?? 0);
+                            $singleTotal = (float)$singleExp['exp_total'];
+                            $singleRemain = $singleTotal - $singlePaid;
+                            
+                            echo thaiMonthYear($singleExp['exp_month']) . " - ยอดรวม " . number_format($singleTotal) . " บาท";
+                            if ($singlePaid > 0) {
+                                echo " (ส่งแล้ว " . number_format($singlePaid) . " / คงเหลือ " . number_format($singleRemain) . ")";
+                            }
+                        ?>
+                    </div>
+                </div>
+                <?php endif; ?>
                 
                 <div class="form-group" id="payment-summary" style="display: none; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1rem;">
                     <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
@@ -1276,6 +1322,20 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
         const validAmount = amount > 0 && (remaining <= 0 || amount <= remaining);
 
         submitBtn.disabled = !(hasExpense && validAmount && hasProof);
+        
+        // Update QR code if PromptPay is available
+        const qrImage = document.getElementById('promptpay-qr');
+        const qrAmountText = document.getElementById('promptpay-qr-amount-text');
+        if (qrImage && window.tenantPromptpayNumber) {
+            if (amount > 0) {
+                qrImage.src = `https://promptpay.io/${encodeURIComponent(window.tenantPromptpayNumber)}/${amount}.png`;
+                qrAmountText.textContent = `(ยอด ${amount.toLocaleString()} บาท)`;
+                qrAmountText.style.display = 'inline';
+            } else {
+                qrImage.src = `https://promptpay.io/${encodeURIComponent(window.tenantPromptpayNumber)}.png`;
+                qrAmountText.style.display = 'none';
+            }
+        }
     }
 
     function updatePaymentAmount() {

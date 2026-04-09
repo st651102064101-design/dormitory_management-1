@@ -195,6 +195,48 @@ try {
 
     $pdo->commit();
 
+    // ==========================================
+    // ส่งแจ้งเตือนการเข้าพัก + ลิงก์ระบบผู้เช่าผ่าน LINE
+    // ==========================================
+    try {
+        require_once __DIR__ . '/../LineHelper.php';
+        
+        $stmtLine = $pdo->prepare("
+            SELECT c.tnt_id, c.room_id, c.access_token, t.tnt_name, r.room_number 
+            FROM contract c 
+            JOIN tenant t ON c.tnt_id = t.tnt_id 
+            JOIN room r ON c.room_id = r.room_id 
+            WHERE c.ctr_id = ?
+        ");
+        $stmtLine->execute([$ctr_id]);
+        $lineInfo = $stmtLine->fetch(PDO::FETCH_ASSOC);
+        
+        if ($lineInfo) {
+            $accessToken = $lineInfo['access_token'];
+            
+            // กรณีไม่มี token ให้สร้างใหม่
+            if (empty($accessToken)) {
+                $accessToken = md5($lineInfo['tnt_id'] . '-' . $lineInfo['room_id'] . '-' . time() . '-' . bin2hex(random_bytes(8)));
+                $updateTokenStmt = $pdo->prepare("UPDATE contract SET access_token = ? WHERE ctr_id = ?");
+                $updateTokenStmt->execute([$accessToken, $ctr_id]);
+            }
+            
+            $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' || isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+            $domainName = $_SERVER['HTTP_HOST'];
+            $scriptDir = dirname(dirname($_SERVER['SCRIPT_NAME']));
+            $url = rtrim($protocol . $domainName . $scriptDir, '/') . "/Tenant/report_bills.php?token=" . urlencode($accessToken);
+            
+            $msg = "🎉 แจ้งเตือนการทำสัญญาและเข้าพักสำเร็จ!\n";
+            $msg .= "คุณ " . $lineInfo['tnt_name'] . " ได้ทำการเช็คอินเข้าห้อง [" . $lineInfo['room_number'] . "] เรียบร้อยแล้ว\n\n";
+            $msg .= "คุณสามารถเข้าสู่ระบบผู้เช่าเพื่อดูรายละเอียดสัญญา, ตรวจสอบบิล, และแจ้งซ่อมได้ที่ลิงก์ด้านล่างนี้:\n";
+            $msg .= $url;
+            
+            sendLineBroadcast($pdo, $msg);
+        }
+    } catch (Exception $e) {
+        error_log("Line Notification Error (Checkin): " . $e->getMessage());
+    }
+
     $successMsg = "บันทึกเช็คอินเรียบร้อยแล้ว กรุณาดำเนินการขั้นตอนที่ 5 เพื่อจดมิเตอร์และออกบิล";
     if ($isAjax) {
         header('Content-Type: application/json; charset=utf-8');
