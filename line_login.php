@@ -12,22 +12,7 @@ function buildLineRedirectUri(): string {
     if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
         $protocol = 'https';
     }
-    $serverName = trim((string)($_SERVER['SERVER_NAME'] ?? ''));
-
-    if ($serverName === '' || $serverName === '_') {
-        $httpHost = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
-        $serverName = explode(':', $httpHost)[0];
-    }
-
-    if ($serverName === '') {
-        $serverName = 'localhost';
-    }
-
-    $serverPort = (int)($_SERVER['SERVER_PORT'] ?? 0);
-    $portPart = '';
-    if (($protocol === 'http' && $serverPort > 0 && $serverPort !== 80) || ($protocol === 'https' && $serverPort > 0 && $serverPort !== 443)) {
-        $portPart = ':' . $serverPort;
-    }
+    $httpHost = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
 
     // Path base for the redirect URI
     $basePath = dirname($_SERVER['PHP_SELF']);
@@ -35,7 +20,7 @@ function buildLineRedirectUri(): string {
         $basePath = '';
     }
 
-    return $protocol . '://' . $serverName . $portPart . $basePath . '/line_callback.php';
+    return $protocol . '://' . $httpHost . $basePath . '/line_callback.php';
 }
 
 try {

@@ -134,28 +134,28 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
 
     <!-- LINE Login Channel ID -->
     <div class="apple-settings-row" data-sheet="sheet-line-login-channel-id">
-      <div class="apple-row-icon line-oa-icon" style="background:#f1f5f9; color:#06c755;">
+      <div class="apple-row-icon line-oa-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
           <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline>
         </svg>
       </div>
       <div class="apple-row-content">
         <p class="apple-row-label">LINE Login Channel ID</p>
-        <p class="apple-row-sublabel"><?php echo !empty($lineLoginChannelId) ? 'ตั้งค่าแล้ว' : 'ยังไม่ได้ตั้งค่า'; ?></p>
+        <p class="apple-row-sublabel" id="lbl-line-login-channel-id"><?php echo !empty($lineLoginChannelId) ? 'ตั้งค่าแล้ว' : 'ยังไม่ได้ตั้งค่า'; ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
 
     <!-- LINE Login Channel Secret -->
     <div class="apple-settings-row" data-sheet="sheet-line-login-channel-secret">
-      <div class="apple-row-icon line-oa-icon" style="background:#f1f5f9; color:#06c755;">
+      <div class="apple-row-icon line-oa-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-animated">
           <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
       </div>
       <div class="apple-row-content">
         <p class="apple-row-label">LINE Login Channel Secret</p>
-        <p class="apple-row-sublabel"><?php echo !empty($lineLoginChannelSecret) ? 'ตั้งค่าแล้ว (ซ่อนเพื่อความปลอดภัย)' : 'ยังไม่ได้ตั้งค่า'; ?></p>
+        <p class="apple-row-sublabel" id="lbl-line-login-channel-secret"><?php echo !empty($lineLoginChannelSecret) ? 'ตั้งค่าแล้ว (ซ่อนเพื่อความปลอดภัย)' : 'ยังไม่ได้ตั้งค่า'; ?></p>
       </div>
       <span class="apple-row-chevron">›</span>
     </div>
@@ -305,46 +305,46 @@ $lineReady = $lineTokenLooksValid && ($lineSecretTrim !== '');
       </form>
     </div>
   </div>
+</div>
 
-  <!-- Sheet: LINE Login Channel ID -->
-  <div class="apple-sheet-overlay" id="sheet-line-login-channel-id">
-    <div class="apple-sheet">
-      <div class="apple-sheet-handle"></div>
-      <div class="apple-sheet-header">
-        <button class="apple-sheet-action" data-close-sheet="sheet-line-login-channel-id">ยกเลิก</button>
-        <h3 class="apple-sheet-title">LINE Login Channel ID</h3>
-        <div style="width: 50px;"></div>
-      </div>
-      <div class="apple-sheet-body">
-        <form id="lineLoginChannelIdForm">
-          <div class="apple-input-group">
-            <label class="apple-input-label">ตั้งค่าสำหรับปุ่มผูกบัญชี LINE Login 1-Click</label>
-            <input type="text" id="lineLoginChannelIdInput" name="line_login_channel_id" class="apple-input" value="<?php echo htmlspecialchars($lineLoginChannelId); ?>" placeholder="ตัวอย่าง: 165xxxxxxxx">
-          </div>
-          <button type="submit" class="apple-button primary">บันทึก</button>
-        </form>
-      </div>
+<!-- Sheet: LINE Login Channel ID -->
+<div class="apple-sheet-overlay" id="sheet-line-login-channel-id">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-line-login-channel-id">ยกเลิก</button>
+      <h3 class="apple-sheet-title">LINE Login Channel ID</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <form id="lineLoginChannelIdForm" onsubmit="submitLineLoginChannelIdForm(event)">
+        <div class="apple-input-group">
+          <label class="apple-input-label">ตั้งค่าสำหรับปุ่มผูกบัญชี LINE Login 1-Click</label>
+          <input type="text" id="lineLoginChannelIdInput" name="line_login_channel_id" class="apple-input" value="<?php echo htmlspecialchars($lineLoginChannelId); ?>" placeholder="ตัวอย่าง: 165xxxxxxxx">
+        </div>
+        <button type="submit" class="apple-button primary">บันทึก</button>
+      </form>
     </div>
   </div>
+</div>
 
-  <!-- Sheet: LINE Login Channel Secret -->
-  <div class="apple-sheet-overlay" id="sheet-line-login-channel-secret">
-    <div class="apple-sheet">
-      <div class="apple-sheet-handle"></div>
-      <div class="apple-sheet-header">
-        <button class="apple-sheet-action" data-close-sheet="sheet-line-login-channel-secret">ยกเลิก</button>
-        <h3 class="apple-sheet-title">LINE Login Secret</h3>
-        <div style="width: 50px;"></div>
-      </div>
-      <div class="apple-sheet-body">
-        <form id="lineLoginChannelSecretForm">
-          <div class="apple-input-group">
-            <label class="apple-input-label">ซ่อนตัวอักษรเพื่อความปลอดภัย</label>
-            <input type="password" id="lineLoginChannelSecretInput" name="line_login_channel_secret" class="apple-input" value="<?php echo !empty($lineLoginChannelSecret) ? '********' : ''; ?>" placeholder="Channel Secret สำหรับ LINE Login">
-          </div>
-          <button type="submit" class="apple-button primary">บันทึก</button>
-        </form>
-      </div>
+<!-- Sheet: LINE Login Channel Secret -->
+<div class="apple-sheet-overlay" id="sheet-line-login-channel-secret">
+  <div class="apple-sheet">
+    <div class="apple-sheet-handle"></div>
+    <div class="apple-sheet-header">
+      <button class="apple-sheet-action" data-close-sheet="sheet-line-login-channel-secret">ยกเลิก</button>
+      <h3 class="apple-sheet-title">LINE Login Secret</h3>
+      <div style="width: 50px;"></div>
+    </div>
+    <div class="apple-sheet-body">
+      <form id="lineLoginChannelSecretForm" onsubmit="submitLineLoginChannelSecretForm(event)">
+        <div class="apple-input-group">
+          <label class="apple-input-label">ซ่อนตัวอักษรเพื่อความปลอดภัย</label>
+          <input type="password" id="lineLoginChannelSecretInput" name="line_login_channel_secret" class="apple-input" value="<?php echo !empty($lineLoginChannelSecret) ? '********' : ''; ?>" placeholder="Channel Secret สำหรับ LINE Login">
+        </div>
+        <button type="submit" class="apple-button primary">บันทึก</button>
+      </form>
     </div>
   </div>
 </div>
@@ -449,7 +449,7 @@ document.getElementById('lineChannelSecretForm')?.addEventListener('submit', asy
 });
 
 // LINE Login Channel ID
-document.getElementById('lineLoginChannelIdForm')?.addEventListener('submit', async function(e) {
+window.submitLineLoginChannelIdForm = async function(e) {
   e.preventDefault();
   const value = document.getElementById('lineLoginChannelIdInput').value;
   try {
@@ -462,13 +462,14 @@ document.getElementById('lineLoginChannelIdForm')?.addEventListener('submit', as
     if (data.success) {
       showAppleToast('บันทึก LINE Login Channel ID สำเร็จ', 'success');
       closeLineSheet('sheet-line-login-channel-id');
-      setTimeout(() => location.reload(), 1000);
+      const lbl = document.getElementById('lbl-line-login-channel-id');
+      if (lbl) lbl.textContent = value.trim() ? 'ตั้งค่าแล้ว' : 'ยังไม่ได้ตั้งค่า';
     }
   } catch (err) { showAppleToast('เกิดข้อผิดพลาด', 'error'); }
-});
+};
 
 // LINE Login Channel Secret
-document.getElementById('lineLoginChannelSecretForm')?.addEventListener('submit', async function(e) {
+window.submitLineLoginChannelSecretForm = async function(e) {
   e.preventDefault();
   const input = document.getElementById('lineLoginChannelSecretInput');
   const value = input.value;
@@ -486,10 +487,12 @@ document.getElementById('lineLoginChannelSecretForm')?.addEventListener('submit'
     if (data.success) {
       showAppleToast('บันทึก LINE Login Channel Secret สำเร็จ', 'success');
       closeLineSheet('sheet-line-login-channel-secret');
-      setTimeout(() => location.reload(), 1000);
+      const lbl = document.getElementById('lbl-line-login-channel-secret');
+      if (lbl) lbl.textContent = value.trim() ? 'ตั้งค่าแล้ว (ซ่อนเพื่อความปลอดภัย)' : 'ยังไม่ได้ตั้งค่า';
+      input.value = value.trim() ? '********' : '';
     }
   } catch (err) { showAppleToast('เกิดข้อผิดพลาด', 'error'); }
-});
+};
 
 // LINE Add Friend URL Form
 document.getElementById('lineAddFriendUrlForm')?.addEventListener('submit', async function(e) {
