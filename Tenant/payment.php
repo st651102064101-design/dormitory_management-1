@@ -89,25 +89,25 @@ try {
     }
 } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
-// ถ้า exp_id ถูกระบุมาแต่ไม่พบในรายการค้างชำระ ให้ตรวจสอบว่ามี pending payment อยู่หรือไม่
-$pendingExpense = null;
+// ถ้า exp_id ถูกระบุมาแต่ไม่พบในรายการค้างชำระ ให้ตรวจสอบว่าบิลนี้ถูกส่งชำระไปหมดแล้วหรือรอตรวจสอบอยู่
+$completedExpense = null;
 if ($selectedExpId > 0 && $selectedExpense === null) {
     try {
-        $pendStmt = $pdo->prepare("
+        $compStmt = $pdo->prepare("
             SELECT e.exp_id, e.exp_month, e.exp_total, r.room_number,
                    COALESCE(SUM(CASE WHEN p.pay_status = '0' THEN p.pay_amount ELSE 0 END), 0) AS pending_amount,
-                   MAX(CASE WHEN p.pay_status = '0' THEN p.pay_date END) AS pending_date
+                   COALESCE(SUM(CASE WHEN p.pay_status = '1' THEN p.pay_amount ELSE 0 END), 0) AS paid_amount,
+                   MAX(CASE WHEN p.pay_status IN ('0', '1') THEN p.pay_date END) AS last_pay_date,
+                   (SELECT pay_proof FROM payment WHERE exp_id = e.exp_id AND pay_status IN ('0', '1') AND pay_proof IS NOT NULL ORDER BY pay_date DESC LIMIT 1) AS pay_proof
             FROM expense e
             JOIN contract c ON e.ctr_id = c.ctr_id
             JOIN room r ON c.room_id = r.room_id
             LEFT JOIN payment p ON p.exp_id = e.exp_id
-              
             WHERE e.exp_id = ? AND e.ctr_id = ?
             GROUP BY e.exp_id, e.exp_month, e.exp_total, r.room_number
-            HAVING SUM(CASE WHEN p.pay_status = '0' THEN p.pay_amount ELSE 0 END) > 0
         ");
-        $pendStmt->execute([$selectedExpId, $contract['ctr_id']]);
-        $pendingExpense = $pendStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $compStmt->execute([$selectedExpId, $contract['ctr_id']]);
+        $completedExpense = $compStmt->fetch(PDO::FETCH_ASSOC) ?: null;
     } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
@@ -1078,18 +1078,32 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
         </div>
         <?php endif; ?>
         
-        <?php if ($pendingExpense || !empty($unpaidExpenses)): ?>
+        <?php if ($completedExpense || !empty($unpaidExpenses)): ?>
         <div class="form-section">
             <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span> แจ้งชำระเงิน</div>
             
-            <?php if ($pendingExpense): ?>
+            <?php 
+            $isCompletedOrPending = false;
+            if ($completedExpense) {
+                $totalPaidOrPending = (float)($completedExpense['pending_amount'] ?? 0) + (float)($completedExpense['paid_amount'] ?? 0);
+                if ($totalPaidOrPending > 0 && $totalPaidOrPending >= (float)$completedExpense['exp_total']) {
+                    $isCompletedOrPending = true;
+                }
+            }
+            if ($isCompletedOrPending): 
+            ?>
             <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:14px;padding:1.25rem;text-align:center;">
                 <div style="font-size:2rem;margin-bottom:0.5rem;">⏳</div>
-                <div style="color:#fbbf24;font-weight:600;font-size:1rem;margin-bottom:0.4rem;">รออนุมัติการชำระเงิน</div>
+                <div style="color:#fbbf24;font-weight:600;font-size:1rem;margin-bottom:0.4rem;">รออนุมัติการชำระเงิน หรือ ชำระเงินครบแล้ว</div>
                 <div style="color:#fcd34d;font-size:0.88rem;margin-bottom:0.75rem;">
-                    บิล<?php echo thaiMonthYear($pendingExpense['exp_month']); ?> — ยอด <?php echo number_format((float)$pendingExpense['exp_total']); ?> บาท<br>
-                    ส่งสลิปแล้ว <?php echo number_format((float)$pendingExpense['pending_amount']); ?> บาท รอผู้ดูแลตรวจสอบ
+                    บิล<?php echo thaiMonthYear($completedExpense['exp_month']); ?> — ยอด <?php echo number_format((float)$completedExpense['exp_total']); ?> บาท<br>
+                    ส่งสลิปแล้วรวม <?php echo number_format((float)$totalPaidOrPending); ?> บาท
                 </div>
+                <?php if (!empty($completedExpense['pay_proof'])): ?>
+                <div style="margin: 1rem 0;">
+                    <img src="/dormitory_management/Public/Assets/Images/Payments/<?php echo htmlspecialchars($completedExpense['pay_proof']); ?>" alt="หลักฐานการชำระเงิน" style="max-width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); max-height: 300px; object-fit: contain;">
+                </div>
+                <?php endif; ?>
                 <div style="font-size:0.82rem;color:#94a3b8;">หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลหอพัก</div>
             </div>
             <?php else: ?>
