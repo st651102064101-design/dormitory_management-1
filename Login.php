@@ -3018,7 +3018,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         
         try {
-          const response = await fetch('Login.php', {
+          const actionUrl = loginForm.getAttribute('action') || 'Login.php';
+          const response = await fetch(actionUrl, {
             method: 'POST',
             headers: {
               'X-Requested-With': 'XMLHttpRequest'
