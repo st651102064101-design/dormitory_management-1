@@ -27,7 +27,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงสถิติต่างๆ
 $roomCount = safeCount($pdo, "SELECT COUNT(*) FROM room");

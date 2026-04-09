@@ -17,7 +17,7 @@ try {
         if ($row['setting_key'] === 'theme_color') $themeColor = htmlspecialchars($row['setting_value'], ENT_QUOTES, 'UTF-8');
         if ($row['setting_key'] === 'default_view_mode') $defaultViewMode = strtolower($row['setting_value']) === 'list' ? 'list' : 'grid';
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // รับค่าเดือน/ปี ที่เลือก (รูปแบบ YYYY-MM)
 $selectedMonth = isset($_GET['month']) ? $_GET['month'] : '';
@@ -33,7 +33,7 @@ $monthNames = [
 try {
   $monthsStmt = $pdo->query("SELECT DISTINCT DATE_FORMAT(bkg_date, '%Y-%m') as month_key FROM booking WHERE bkg_date IS NOT NULL ORDER BY month_key DESC");
   $availableMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Query booking data - get all records first
 // เชื่อมความสัมพันธ์: booking -> room -> contract -> tenant
@@ -129,7 +129,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // คำนวณสถิติ
 $totalBookings = count($rows);

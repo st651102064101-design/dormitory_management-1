@@ -53,7 +53,7 @@ try {
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ตรวจสอบว่าเป็น light theme หรือไม่
 $isLightTheme = false;

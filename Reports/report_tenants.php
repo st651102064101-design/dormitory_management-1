@@ -22,7 +22,7 @@ try {
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
         if ($row['setting_key'] === 'default_view_mode') $defaultViewMode = strtolower($row['setting_value']) === 'list' ? 'list' : 'grid';
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงข้อมูลผู้เช่าทั้งหมดพร้อมข้อมูลห้องและสัญญา
 $tenants = [];

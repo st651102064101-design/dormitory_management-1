@@ -31,7 +31,7 @@ if (!empty($token)) {
         ");
         $stmt->execute([$token]);
         $contractData = $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
 // ถ้าไม่มี token หรือ token ไม่ถูกต้อง ลองเอาจาก session ของ Google OAuth
@@ -60,7 +60,7 @@ if (!$contractData && !empty($_SESSION['tenant_logged_in'])) {
                 $token = $contractData['access_token'];
             }
         }
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
 if (!$contractData) {
@@ -94,7 +94,7 @@ try {
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงข้อมูลบิลค่าใช้จ่ายล่าสุด
 $latestExpense = null;
@@ -102,7 +102,7 @@ try {
     $expStmt = $pdo->prepare("SELECT * FROM expense WHERE ctr_id = ? ORDER BY exp_month DESC LIMIT 1");
     $expStmt->execute([$contract['ctr_id']]);
     $latestExpense = $expStmt->fetch(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงบิลค้างชำระสำหรับชำระค่าเช่าเดือนแรก
 $firstUnpaidExpense = null;
@@ -132,14 +132,14 @@ try {
     ");
     $unpaidStmt->execute([$contract['ctr_id']]);
     $firstUnpaidExpense = $unpaidStmt->fetch(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงข่าวประชาสัมพันธ์ล่าสุด
 $latestNews = [];
 try {
     $newsStmt = $pdo->query("SELECT * FROM news ORDER BY news_date DESC LIMIT 3");
     $latestNews = $newsStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงสถานะการแจ้งซ่อมล่าสุด
 $latestRepair = null;
@@ -147,7 +147,7 @@ try {
     $repairStmt = $pdo->prepare("SELECT * FROM repair WHERE ctr_id = ? ORDER BY repair_date DESC LIMIT 1");
     $repairStmt->execute([$contract['ctr_id']]);
     $latestRepair = $repairStmt->fetch(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 $repairStatusMap = [
     '0' => ['label' => 'รอซ่อม', 'color' => '#f59e0b'],
@@ -167,7 +167,7 @@ try {
     $sigCheckStmt = $pdo->prepare("SELECT id FROM signature_logs WHERE contract_id = ? AND signer_type = 'tenant' LIMIT 1");
     $sigCheckStmt->execute([$contract['ctr_id']]);
     $tenantSigned = (bool)$sigCheckStmt->fetchColumn();
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงข้อมูลเงินมัดจำคืน (สำหรับผู้เช่าที่สัญญาสิ้นสุดแล้ว)
 $depositRefund = null;
@@ -176,7 +176,7 @@ if (($contract['ctr_status'] ?? '0') === '1') {
         $drStmt = $pdo->prepare("SELECT * FROM deposit_refund WHERE ctr_id = ? ORDER BY refund_id DESC LIMIT 1");
         $drStmt->execute([$contract['ctr_id']]);
         $depositRefund = $drStmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 ?>
 <!DOCTYPE html>
@@ -976,7 +976,7 @@ if (($contract['ctr_status'] ?? '0') === '1') {
         ");
         $repairStmt->execute([$contract['tnt_id']]);
         $repairCount = (int)($repairStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     
     // นับรายการบิลที่ยังไม่ชำระ
     $billCount = 0;
@@ -997,7 +997,7 @@ if (($contract['ctr_status'] ?? '0') === '1') {
         ");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     ?>
     
     <nav class="bottom-nav">

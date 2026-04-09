@@ -233,7 +233,7 @@ try {
       $fpsThreshold = $row['setting_value'];
     }
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 ?>
 
 <!doctype html>

@@ -21,7 +21,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Utility helpers
 function renderCell(mixed $value): string {
@@ -192,7 +192,7 @@ try {
       ];
     }
   }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 $statusLabels = [
   '0' => 'รอตรวจสอบ',
@@ -216,7 +216,7 @@ try {
     $monthsStmt = $pdo->query("SELECT DISTINCT MONTH(pay_date) as month FROM payment WHERE pay_date IS NOT NULL ORDER BY month ASC");
     $availableMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
   }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 ?>
 <!doctype html>
 <html lang="th">

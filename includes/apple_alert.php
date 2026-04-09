@@ -27,7 +27,7 @@ try {
             $appleAlertColor = $colorRow['setting_value'];
         }
     }
-} catch (Exception $e) {}
+} catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 ?>
 
 <div id="appleAlert" class="apple-alert-overlay" data-theme="<?php echo htmlspecialchars($appleAlertTheme, ENT_QUOTES, 'UTF-8'); ?>">

@@ -30,7 +30,7 @@ try {
         try {
             $msg = "📢 อัปเดตข่าวสารหอพัก: {$title}\n\nรายละเอียด: {$details}";
             sendLineBroadcast($pdo, $msg);
-        } catch (Exception $e) {}
+        } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     }
 
     echo json_encode(['success' => $result, 'message' => 'แก้ไขสำเร็จ']);

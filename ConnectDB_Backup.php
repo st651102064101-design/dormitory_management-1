@@ -4,11 +4,11 @@ date_default_timezone_set('Asia/Bangkok');
 
 if (!function_exists('connectDB')) {
     function connectDB(){
-        $host = 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com';
-        $port = '4000';
-        $db   = 'dormitory_management_db';
-        $user = 'utqDEKTsPzQHUm4.root';
-        $pass = 'x5aHcQP0Y9m9gZMZ'; 
+        $host = getenv('DB_HOST') ?: 'gateway01.ap-southeast-1.prod.aws.tidbcloud.com';
+        $port = getenv('DB_PORT') ?: '4000';
+        $db   = getenv('DB_NAME') ?: 'dormitory_management_db';
+        $user = getenv('DB_USER') ?: 'PLEASE_SET_YOUR_USER';
+        $pass = getenv('DB_PASS') ?: 'PLEASE_SET_YOUR_PASSWORD'; 
 
         $dsn  = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
 

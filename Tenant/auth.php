@@ -101,7 +101,7 @@ function getSystemSettings(PDO $pdo): array {
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
             $settings[$row['setting_key']] = $row['setting_value'];
         }
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     
     return $settings;
 }

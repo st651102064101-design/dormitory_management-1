@@ -10,7 +10,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10000;
+  z-index: 999999;
   animation: confirmFadeIn 0.2s ease;
 }
 
@@ -99,6 +99,16 @@
 
 .confirm-btn-warning:hover {
   background: #ea580c;
+  transform: translateY(-1px);
+}
+
+.confirm-btn-success {
+  background: #22c55e;
+  color: white;
+}
+
+.confirm-btn-success:hover {
+  background: #16a34a;
   transform: translateY(-1px);
 }
 

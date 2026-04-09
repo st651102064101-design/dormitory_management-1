@@ -79,7 +79,7 @@ try {
         }
     }
     
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 catch (Exception $e) {}
 
 // ตรวจสอบเดือนปัจจุบัน
@@ -134,7 +134,7 @@ try {
         $waterRate = (int)$rate['rate_water'];
         $electricRate = (int)$rate['rate_elec'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ===== Global auto-fix: แก้บิลเดือนแรกที่มีค่าน้ำ/ค่าไฟสูงเกินจริง =====
 // รันทุกครั้งที่โหลดหน้า — หาบิลเดือนแรกของทุกสัญญาที่ expense มีค่าน้ำ/ไฟ > 0
@@ -802,7 +802,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 

@@ -27,7 +27,7 @@ try {
     ");
     $stmt->execute([$contract['ctr_id'], $contractStartMonth, $contractStartMonth]);
     $utilities = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Get expense data if no utility records
 if (empty($utilities)) {
@@ -41,7 +41,7 @@ if (empty($utilities)) {
         ");
         $stmt->execute([$contract['ctr_id'], $contractStartMonth, $contractStartMonth]);
         $utilities = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 ?>
 <!DOCTYPE html>
@@ -384,13 +384,13 @@ if (empty($utilities)) {
         $repairStmt = $pdo->prepare("SELECT COUNT(*) FROM repair WHERE ctr_id IN (SELECT ctr_id FROM contract WHERE tnt_id = ?) AND repair_status = '0'");
         $repairStmt->execute([$contract['tnt_id']]);
         $repairCount = (int)($repairStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     $billCount = 0;
     try {
         $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN contract c ON e.ctr_id = c.ctr_id WHERE c.tnt_id = ? AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m') AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) < e.exp_total");
         $billStmt->execute([$contract['tnt_id']]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     ?>
     <nav class="bottom-nav">
         <div class="bottom-nav-content">

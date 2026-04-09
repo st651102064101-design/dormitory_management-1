@@ -37,7 +37,7 @@ try {
             case 'contact_email': $contactEmail = $row['setting_value'] ?? ''; break;
         }
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Helper: Thai date formatter
 function thaiDate(?string $dateStr, string $format = 'd M Y') {
@@ -111,7 +111,7 @@ if ($isLoggedIn && $_SERVER['REQUEST_METHOD'] !== 'POST') {
                 $searchMethod = 'auto';
             }
         }
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
 // Handle POST search

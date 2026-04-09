@@ -16,7 +16,7 @@ try {
     if ($viewRow && strtolower($viewRow['setting_value']) === 'list') {
         $defaultViewMode = 'list';
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // รับค่าเดือน/ปี ที่เลือก (รูปแบบ YYYY-MM)
 $selectedMonth = isset($_GET['month']) ? $_GET['month'] : '';
@@ -31,7 +31,7 @@ $monthNames = [
 try {
   $monthsStmt = $pdo->query("SELECT DISTINCT DATE_FORMAT(news_date, '%Y-%m') as month_key FROM news WHERE news_date IS NOT NULL ORDER BY month_key DESC");
   $availableMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Query news data
 $whereClause = '';
@@ -94,7 +94,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // คำนวณสถิติ
 $totalNews = count($rows);

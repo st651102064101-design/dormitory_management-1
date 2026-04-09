@@ -699,8 +699,8 @@ body {
     opacity: 1;
     transform: translateX(0) scaleX(1);
     transform-origin: left;
-    overflow: hidden;
     white-space: nowrap;
+    overflow: visible;
     will-change: opacity, transform;
 }
 .app-nav .subitem {
@@ -714,7 +714,7 @@ body {
     will-change: opacity, transform, padding;
 }
 .app-nav .subitem .app-nav-label { 
-    white-space: normal;
+    white-space: nowrap;
     opacity: 1;
     transform: translateX(0);
     transition: opacity 400ms cubic-bezier(0.4, 0, 0.2, 1) 200ms, 

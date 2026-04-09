@@ -19,7 +19,7 @@ try {
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
         if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงข่าวทั้งหมด (เรียงตามวันที่ล่าสุด)
 $news = [];
@@ -29,7 +29,7 @@ try {
         ORDER BY news_date DESC
     ");
     $news = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 ?>
 <!DOCTYPE html>
 <html lang="th">

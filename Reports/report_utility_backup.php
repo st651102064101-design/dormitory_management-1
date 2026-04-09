@@ -16,7 +16,7 @@ try {
     if ($viewRow && strtolower($viewRow['setting_value']) === 'list') {
         $defaultViewMode = 'list';
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // รับค่า sort จาก query parameter
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
@@ -57,7 +57,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 ?>
 <!doctype html>
 <html lang="th">

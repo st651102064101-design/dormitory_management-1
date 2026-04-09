@@ -134,7 +134,7 @@ try {
   $monthStmt = $pdo->prepare("\n    SELECT DISTINCT DATE_FORMAT(e.exp_month, '%Y-%m') AS month_key\n    FROM expense e\n    LEFT JOIN contract c ON e.ctr_id = c.ctr_id\n    LEFT JOIN tenant_workflow tw ON tw.ctr_id = c.ctr_id\n    WHERE c.ctr_status = '0'\n      AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)\n      AND e.exp_month IS NOT NULL\n      AND DATE_FORMAT(e.exp_month, '%Y-%m') <= :currentMonth\n    ORDER BY month_key DESC\n  ");
   $monthStmt->execute([':currentMonth' => $currentMonth]);
   $availableMonths = $monthStmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Always include the actual calendar month so admin can view/select it even before billing day
 if (!in_array($currentMonth, $availableMonths, true)) {
@@ -314,7 +314,7 @@ try {
       'approved_amount' => (int)($row['approved_amount'] ?? 0),
     ];
   }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงสัญญาที่ใช้งานอยู่สำหรับฟอร์ม
 $activeContracts = $pdo->query("
@@ -515,7 +515,7 @@ try {
     if ($row['setting_key'] === 'bank_name') $settings['bank_name'] = (string)$row['setting_value'];
     if ($row['setting_key'] === 'bank_account_number') $settings['bank_account_number'] = (string)$row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 ?>
 <!doctype html>
 <html lang="th">

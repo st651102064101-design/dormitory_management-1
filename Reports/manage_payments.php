@@ -80,7 +80,7 @@ try {
   if (is_string($viewValue) && strtolower($viewValue) === 'list') {
     $defaultViewMode = 'list';
   }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // รับค่า filter จาก query parameter — default to '' (ทั้งหมด = unverified)
 $filterStatus = isset($_GET['status']) ? $_GET['status'] : '';
@@ -108,7 +108,7 @@ try {
   if ($bgdVal !== false && (int)$bgdVal > 0) {
     $billingGenerateDaySetting = (int)$bgdVal;
   }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 $todayDay = (int)date('j');
 $currentMonth = date('Y-m');
@@ -422,7 +422,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงเดือนที่มีข้อมูล
 $availableMonths = $pdo->query("

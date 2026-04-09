@@ -99,7 +99,7 @@ try {
         $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
         $isLightTheme = ($brightness > 155);
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 $baseUrl = getTenantPortalUrl();
 $totalContracts = count($contracts);

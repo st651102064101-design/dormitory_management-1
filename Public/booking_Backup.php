@@ -93,7 +93,7 @@ try {
         if ($row['setting_key'] === 'promptpay_number') $promptpayNumber = $row['setting_value'];
         if ($row['setting_key'] === 'default_deposit') $defaultDeposit = (int)$row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงห้องว่าง (room_status = '0' คือห้องว่าง)
 // ไม่แสดงห้องที่มีการจองอยู่แล้ว (bkg_status = '1' หรือ '2')
@@ -120,7 +120,7 @@ try {
         try {
                 $stmt = $pdo->query("SELECT r.*, rt.type_name, rt.type_price FROM room r LEFT JOIN roomtype rt ON r.type_id = rt.type_id WHERE r.room_status = '0' ORDER BY CAST(r.room_number AS UNSIGNED) ASC");
                 $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {}
+        } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
 // ถ้ามีการเลือกห้องมา
@@ -148,7 +148,7 @@ try {
         $rateElec = (int)$rateData['rate_elec'];
         $rateWater = (int)$rateData['rate_water'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ฟังก์ชันสำหรับอัพโหลดไฟล์
 function uploadFile($file, $uploadDir, $prefix = 'file') {

@@ -23,7 +23,7 @@ try {
         $waterRate = (int)$rate['rate_water'];
         $electricRate = (int)$rate['rate_elec'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // บันทึกมิเตอร์
 $success = '';

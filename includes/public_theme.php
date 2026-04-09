@@ -14,7 +14,7 @@ try {
         if ($row['setting_key'] === 'use_bg_image') $useBgImage = $row['setting_value'];
         if ($row['setting_key'] === 'bg_filename') $bgFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 $bgStyle = '';
 if (!empty($useBgImage) && $useBgImage === '1' && !empty($bgFilename)) {

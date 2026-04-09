@@ -16,7 +16,7 @@ try {
     if ($viewRow && strtolower($viewRow['setting_value']) === 'list') {
         $defaultViewMode = 'list';
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // รับค่า status filter - Default แสดงผู้ที่แจ้งยกเลิก (สถานะ 2) หรือ ยกเลิกสัญญา (สถานะ 1)
 $selectedStatus = isset($_GET['status']) ? $_GET['status'] : 'all';
@@ -99,7 +99,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // คำนวณสถิติ
 $totalContracts = count($rows);

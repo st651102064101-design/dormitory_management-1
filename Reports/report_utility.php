@@ -23,7 +23,7 @@ try {
         $waterRate = (int)$rate['rate_water'];
         $electricRate = (int)$rate['rate_elec'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // เดือน/ปีที่มีอยู่จริงในฐานข้อมูล (utility) + เดือนปัจจุบัน
 $availableYears = [];
@@ -40,7 +40,7 @@ try {
         }
         $availableMonthsByYear[$periodYear][] = $periodMonth;
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 $currentYear = (int)date('Y');
 $currentMonth = (int)date('n');
@@ -133,7 +133,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
 ?>

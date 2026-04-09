@@ -83,7 +83,7 @@ try {
     // ดึงประวัติทั้งหมด
     $allRatesStmt = $pdo->query("SELECT * FROM rate ORDER BY effective_date DESC, rate_id DESC");
     $allRates = $allRatesStmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // นับสถิติ
 $totalRooms = 0;
@@ -93,7 +93,7 @@ try {
     $totalRooms = (int)$pdo->query("SELECT COUNT(*) FROM room")->fetchColumn();
     $totalTenants = (int)$pdo->query("SELECT COUNT(*) FROM tenant WHERE tenant_status = 'active'")->fetchColumn();
     $totalBookings = (int)$pdo->query("SELECT COUNT(*) FROM booking WHERE status = 'pending'")->fetchColumn();
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 ?>
 <!doctype html>
 <html lang="th">

@@ -46,7 +46,7 @@ $hasScheduleColumns = false;
 try {
     $checkColumn = $pdo->query("SHOW COLUMNS FROM repair LIKE 'scheduled_date'");
     $hasScheduleColumns = $checkColumn->rowCount() > 0;
-} catch (Exception $e) {}
+} catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // รายการการแจ้งซ่อม
 // Ensure all room numbers are retrieved - use subquery to get room number even if contract JOIN fails
@@ -147,7 +147,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Detect if theme is light (white or very light color)
 $isLightTheme = false;

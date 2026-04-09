@@ -124,7 +124,7 @@ try {
     ");
     $stmt->execute([':month_start' => $monthStart, ':month_end' => $monthEnd]);
     $upcomingRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงเดือนที่มีห้องจะว่าง (contract สิ้นสุด)
 $availableMonths = [];
@@ -138,7 +138,7 @@ try {
     ");
     $stmt->execute();
     $availableMonths = $stmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // สร้างรายการเดือนสำหรับ dropdown (เฉพาะเดือนที่มีห้องจะว่าง)
 $monthOptions = [];

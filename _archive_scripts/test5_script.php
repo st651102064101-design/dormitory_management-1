@@ -19,13 +19,17 @@ foreach ($rooms as $row) {
     if ($occupied && !$shouldBe) {
         echo "Room {$row['room_number']} (ID {$row['room_id']}) is OCCUPIED but should be VACANT.\n";
         // Force vacant
-        $pdo->exec("UPDATE contract SET ctr_status = 1 WHERE room_id = {$row['room_id']} AND ctr_status = 0");
-        $pdo->exec("UPDATE booking SET bkg_status = '3' WHERE room_id = {$row['room_id']} AND bkg_status IN ('1','2')");
+        $stmt_contract = $pdo->prepare("UPDATE contract SET ctr_status = 1 WHERE room_id = :room_id AND ctr_status = 0");
+        $stmt_contract->execute([':room_id' => $row['room_id']]);
+        
+        $stmt_booking = $pdo->prepare("UPDATE booking SET bkg_status = '3' WHERE room_id = :room_id AND bkg_status IN ('1','2')");
+        $stmt_booking->execute([':room_id' => $row['room_id']]);
     }
 }
 $pdo->exec("UPDATE room SET room_status = '0'"); // set all to vacant
 // set active to occupied
+$stmt_room = $pdo->prepare("UPDATE room SET room_status = '1' WHERE room_number = :room_number");
 foreach($active_rooms as $r) {
-    $pdo->exec("UPDATE room SET room_status = '1' WHERE room_number = '{$r}'");
+    $stmt_room->execute([':room_number' => $r]);
 }
 echo "Done fixing rooms.\n";

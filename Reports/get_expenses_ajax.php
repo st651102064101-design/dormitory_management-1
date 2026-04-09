@@ -109,7 +109,7 @@ try {
     ");
     $monthStmt->execute([':currentMonth' => $currentMonth]);
     $availableMonths = $monthStmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 if (!in_array($currentMonth, $availableMonths, true)) {
     array_unshift($availableMonths, $currentMonth);
@@ -179,7 +179,7 @@ if ($selectedMonth !== '' && preg_match('/^\d{4}-\d{2}$/', $selectedMonth) === 1
                 ':expTotal' => $expTotal, ':expStatus' => $nextStatus, ':expId' => (int)$row['exp_id'],
             ]);
         }
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
 // Query expenses
@@ -280,7 +280,7 @@ try {
             'approved_amount' => (int)($row['approved_amount'] ?? 0),
         ];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Status map
 $statusMap = [

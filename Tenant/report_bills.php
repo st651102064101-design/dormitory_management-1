@@ -58,7 +58,7 @@ try {
     ");
     $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
     $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 $expenseStatusMap = [
     '0' => ['label' => 'รอชำระ', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
@@ -446,7 +446,7 @@ foreach ($expenses as $exp) {
         ");
         $repairStmt->execute([$contract['tnt_id']]);
         $repairCount = (int)($repairStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     
     // นับรายการบิลที่ยังไม่ชำระ
     $billCount = 0;
@@ -467,7 +467,7 @@ foreach ($expenses as $exp) {
         ");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     ?>
     
     <nav class="bottom-nav">

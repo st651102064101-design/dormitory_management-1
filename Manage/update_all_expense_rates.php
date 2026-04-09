@@ -55,7 +55,8 @@ try {
     $pdo->beginTransaction();
 
     // Get all expenses that need updating
-    $expStmt = $pdo->query("SELECT exp_id, exp_water_unit, exp_elec_unit, room_price, rate_water, rate_elec FROM expense WHERE rate_water != {$newRateWater} OR rate_elec != {$newRateElec}");
+    $expStmt = $pdo->prepare("SELECT exp_id, exp_water_unit, exp_elec_unit, room_price, rate_water, rate_elec FROM expense WHERE rate_water != :water OR rate_elec != :elec");
+    $expStmt->execute([':water' => $newRateWater, ':elec' => $newRateElec]);
     $expenses = $expStmt->fetchAll(PDO::FETCH_ASSOC);
 
     $updateStmt = $pdo->prepare("UPDATE expense SET rate_water = ?, rate_elec = ?, exp_water = ?, exp_elec_chg = ?, exp_total = ? WHERE exp_id = ?");

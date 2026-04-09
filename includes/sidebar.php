@@ -373,7 +373,7 @@ try {
                 )
             )
         ");
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
     $sidebarDataLoadedFromDb = true;
 } catch (Exception $e) {

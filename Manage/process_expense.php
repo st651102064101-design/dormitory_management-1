@@ -114,7 +114,7 @@ try {
                 $msg .= "\nดูรายละเอียด/ชำระเงิน:\n" . str_replace('/Manage/Tenant', '/Tenant', $url);
             }
             sendLineBroadcast($pdo, $msg);
-        } catch (Exception $e) {}
+        } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     }
 
     echo json_encode([

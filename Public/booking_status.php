@@ -47,7 +47,7 @@ try {
     if (empty($contactPhone) && !empty($promptpayNumber)) {
         $contactPhone = $promptpayNumber;
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Thai date formatter
 function thaiDateFormat($dateStr) {

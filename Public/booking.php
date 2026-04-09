@@ -36,7 +36,7 @@ try {
         if ($row['setting_key'] === 'promptpay_number') $promptpayNumber = $row['setting_value'];
         if ($row['setting_key'] === 'default_deposit') $defaultDeposit = (int)$row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงข้อมูล Tenant ที่ล็อกอินแล้ว (ถ้ามี)
 $loggedInTenant = null;
@@ -45,7 +45,7 @@ if (!empty($_SESSION['tenant_logged_in']) && !empty($_SESSION['tenant_id'])) {
         $stmt = $pdo->prepare('SELECT tnt_name, tnt_phone FROM tenant WHERE tnt_id = ?');
         $stmt->execute([$_SESSION['tenant_id']]);
         $loggedInTenant = $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
     if (!$loggedInTenant) {
         $loggedInTenant = [
@@ -81,7 +81,7 @@ if (!empty($_GET['room'])) {
         ");
         $stmt->execute([$roomId]);
         $selectedRoom = $stmt->fetch(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 } elseif (!empty($_SESSION['last_selected_room'])) {
     // ถ้าไม่มี ?room= parameter แต่มีห้องที่เคยเลือกไว้ใน session
     // ให้ redirect กลับไปที่ห้องนั้น
@@ -140,7 +140,7 @@ try {
             ORDER BY CAST(r.room_number AS UNSIGNED) ASC
         ");
         $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (PDOException $e) {}
+    } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
 $success = false;
@@ -156,7 +156,7 @@ try {
         $rateElec = (int)$rateData['rate_elec'];
         $rateWater = (int)$rateData['rate_water'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ฟังก์ชันสำหรับอัพโหลดไฟล์
 function uploadFile($file, $uploadDir, $prefix = 'file') {

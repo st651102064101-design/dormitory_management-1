@@ -28,7 +28,7 @@ try {
         if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
         if ($row['setting_key'] === 'google_client_id') $googleClientId = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 if (!in_array($publicTheme, ['dark', 'light', 'auto'], true)) {
   $publicTheme = 'dark';
@@ -74,20 +74,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
   
+  $redirectUrl = 'Reports/todo_tasks.php#wizard';
+  if (isset($_GET['redirect']) && !empty($_GET['redirect'])) {
+      $parsedUrl = filter_var($_GET['redirect'], FILTER_SANITIZE_URL);
+      if (strpos($parsedUrl, '/') === 0 || strpos($parsedUrl, 'Reports/') === 0 || strpos($parsedUrl, 'Manage/') === 0) {
+          $redirectUrl = $parsedUrl;
+      }
+  }
+
   // If AJAX request, return JSON response
   if ($isAjax) {
     header('Content-Type: application/json');
     echo json_encode([
       'success' => $login_success,
       'error' => $login_error,
-      'redirect' => $login_success ? 'Reports/todo_tasks.php#wizard' : ''
+      'redirect' => $login_success ? $redirectUrl : ''
     ]);
     exit;
   }
   
   // If login success and not AJAX, redirect
   if ($login_success) {
-    header('Location: Reports/todo_tasks.php#wizard');
+    header('Location: ' . $redirectUrl);
     exit;
   }
   // If not AJAX and login failed, show error without reload (page stays as is)
@@ -2435,7 +2443,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
         <?php endif; ?>
         
-        <form id="loginForm" action="" method="post">
+        <form id="loginForm" action="?<?php echo htmlspecialchars($_SERVER['QUERY_STRING'] ?? '', ENT_QUOTES, 'UTF-8'); ?>" method="post">
           <div class="form-group">
             <label for="username">Username</label>
             <div class="input-wrapper">

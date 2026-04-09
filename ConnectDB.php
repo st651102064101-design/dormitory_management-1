@@ -56,6 +56,12 @@ if (!function_exists('connectDB')) {
                                   : '/';
                     $scriptDepth = count(array_filter(explode('/', dirname($scriptUrl)))) - 1;
                     $loginUrl    = str_repeat('../', max(0, $scriptDepth)) . 'Login.php?reason=timeout';
+                    
+                    // Append current URL to return to after login
+                    $currentUri = $_SERVER['REQUEST_URI'] ?? '';
+                    if (!empty($currentUri)) {
+                        $loginUrl .= '&redirect=' . urlencode($currentUri);
+                    }
 
                     session_unset();
                     session_destroy();

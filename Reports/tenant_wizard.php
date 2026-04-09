@@ -537,6 +537,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/Logo.jpg">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css">
     <style>
         /* ============================================================
            🎨 FUTURISTIC WIZARD UI — Bright Indigo-Purple Theme
@@ -4455,8 +4456,15 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                     <button onclick="closeRefundModal()" style="padding:0.65rem 1rem;border-radius:12px;border:1px solid #e2e8f0;background:none;color:#64748b;cursor:pointer;">ยกเลิก</button>
                 </div>
                 <div id="_rfConfirmArea" style="display:none;margin-top:1rem;">
-                    <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว กด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อโอนเงินคืนผู้เช่าเรียบร้อย</p>
-                    <button onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">✓ ยืนยันโอนเงินแล้ว</button>
+                    <!-- เพิ่มส่วนอัพโหลดสลิปตรงนี้ -->
+                    <div style="margin-bottom:0.9rem;">
+                        <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">อัพโหลดหลักฐานการโอนเงิน (สลิป) <span style="color:#ef4444;">*</span></label>
+                        <input type="file" id="_rfProofFile" accept="image/*,.pdf" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
+                    </div>
+                    
+                    <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและกด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อเรียบร้อย</p>
+                    <button onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.2);">✓ ยืนยันโอนเงินแล้ว</button>
+                    <div id="_rfProofProgress" style="display:none; text-align:center; font-size:0.85rem; color:#0369a1; margin-top:0.5rem; font-weight:600;">กำลังอัพโหลดสลิป...</div>
                 </div>
             </div>`;
         document.body.appendChild(modalEl);
@@ -4522,25 +4530,65 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
     }
 
     async function doConfirmRefund() {
+        const fileInput = document.getElementById('_rfProofFile');
+        
+        // เช็คก่อนว่าได้เลือกไฟล์หรือยัง
+        if (fileInput && fileInput.files.length === 0) {
+            if (typeof showErrorToast === 'function') showErrorToast('❌ กรุณาแนบไฟล์สลิปหลักฐานการโอนเงินครับ');
+            else alert('กรุณาแนบไฟล์สลิปหลักฐานการโอนเงิน');
+            return;
+        }
+
         const ok = typeof showConfirmDialog === 'function'
-            ? await showConfirmDialog('ยืนยันการคืนเงิน', 'ยืนยันว่าโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'success')
-            : confirm('ยืนยันว่าโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
+            ? await showConfirmDialog('ยืนยันการคืนเงิน', 'ยืนยันว่าแนบสลิปและโอนคืนเงินเรียบร้อยแล้ว?', 'success')
+            : confirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
+            
         if (!ok) return;
+
+        document.getElementById('_rfProofProgress').style.display = 'block';
+
+        // 1. อัพโหลดสลิปก่อน
+        try {
+            const uploadFd = new FormData();
+            uploadFd.append('action', 'upload');
+            uploadFd.append('ctr_id', _rfCtrId);
+            uploadFd.append('refund_proof', fileInput.files[0]);
+            
+            const upRes = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: uploadFd });
+            const upData = await upRes.json();
+            if (!upData.success) {
+                document.getElementById('_rfProofProgress').style.display = 'none';
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (upData.error || 'ไฟล์อัพโหลดล้มเหลว'));
+                else alert(upData.error || 'ไฟล์อัพโหลดล้มเหลว');
+                return;
+            }
+        } catch(e) {
+            document.getElementById('_rfProofProgress').style.display = 'none';
+            if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่ายขณะอัพโหลดสลิป');
+            return;
+        }
+
+        // 2. ถ้าอัพโหลดผ่าน จึงส่งคำสั่งยืนยัน (Confirm) การคืนเงิน
         const fd = new FormData();
         fd.append('action', 'confirm');
         fd.append('ctr_id', _rfCtrId);
         try {
             const res = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd });
             const data = await res.json();
+            
+            document.getElementById('_rfProofProgress').style.display = 'none';
             if (data.success) {
                 if (typeof showSuccessToast === 'function') showSuccessToast('✅ ยืนยันคืนเงินมัดจำเรียบร้อย');
                 closeRefundModal();
-                refreshWizardTable();
+                if (typeof refreshWizardTable === 'function') refreshWizardTable();
             } else {
                 if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
                 else alert(data.error || 'เกิดข้อผิดพลาด');
             }
-        } catch(e) { if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); }
+        } catch(e) { 
+            document.getElementById('_rfProofProgress').style.display = 'none';
+            if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); 
+        }
     }
 
     // Add tooltip to all buttons in wizard scope (clickable + disabled-like).
@@ -4865,6 +4913,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 </script>
 
 <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
+<script src="/dormitory_management/Public/Assets/Javascript/confirm-modal.js"></script>
 <script src="/dormitory_management/Public/Assets/Javascript/toast-notification.js"></script>
 <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js"></script>
 </body>

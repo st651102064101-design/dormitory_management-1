@@ -694,7 +694,7 @@ $repairStatusMap = [
         ");
         $repairStmt->execute([$contract['tnt_id']]);
         $repairCount = (int)($repairStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     
     // นับรายการบิลที่ยังไม่ชำระ
     $billCount = 0;
@@ -715,7 +715,7 @@ $repairStatusMap = [
         ");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     ?>
     
     <nav class="bottom-nav">

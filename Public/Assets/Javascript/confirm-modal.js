@@ -22,11 +22,27 @@ function showConfirmDialog(title, message, type = 'delete') {
       return div.innerHTML;
     }
     
-    const buttonClass = type === 'warning' ? 'confirm-btn-warning' : 'confirm-btn-delete';
-    const iconBg = type === 'warning' ? 'linear-gradient(135deg, #f97316, #ea580c)' : 'linear-gradient(135deg, #dc2626, #991b1b)';
-    const titleColor = type === 'warning' ? '#fb923c' : '#f87171';
-    const borderColor = type === 'warning' ? 'rgba(249, 115, 22, 0.3)' : 'rgba(248, 113, 113, 0.3)';
-    const strongColor = type === 'warning' ? '#fdba74' : '#fca5a5';
+    let buttonClass = 'confirm-btn-delete';
+    let iconBg = 'linear-gradient(135deg, #dc2626, #991b1b)';
+    let titleColor = '#f87171';
+    let borderColor = 'rgba(248, 113, 113, 0.3)';
+    let strongColor = '#fca5a5';
+    let iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+
+    if (type === 'warning') {
+      buttonClass = 'confirm-btn-warning';
+      iconBg = 'linear-gradient(135deg, #f97316, #ea580c)';
+      titleColor = '#fb923c';
+      borderColor = 'rgba(249, 115, 22, 0.3)';
+      strongColor = '#fdba74';
+    } else if (type === 'success') {
+      buttonClass = 'confirm-btn-success';
+      iconBg = 'linear-gradient(135deg, #22c55e, #16a34a)';
+      titleColor = '#4ade80';
+      borderColor = 'rgba(34, 197, 94, 0.3)';
+      strongColor = '#86efac';
+      iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>`;
+    }
     
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
@@ -34,11 +50,7 @@ function showConfirmDialog(title, message, type = 'delete') {
       <div class="confirm-modal" style="border-color: ${borderColor};">
         <div class="confirm-header">
           <div class="confirm-icon" style="background: ${iconBg};">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="10"/>
-              <line x1="12" y1="8" x2="12" y2="12"/>
-              <line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
+            ${iconSvg}
           </div>
           <h3 class="confirm-title" style="color: ${titleColor};">${escapeHtml(title)}</h3>
         </div>

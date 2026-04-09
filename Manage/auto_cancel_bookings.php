@@ -15,7 +15,7 @@ try {
     if ($val !== false && is_numeric($val)) {
         $graceDays = max(0, (int)$val);
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Define status codes (per user's schema)
 $BKG_STATUS_CONFIRMED = '1'; // booking: จองแล้ว

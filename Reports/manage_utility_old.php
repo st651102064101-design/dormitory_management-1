@@ -50,7 +50,7 @@ try {
         $waterRate = (int)$rate['rate_water'];
         $electricRate = (int)$rate['rate_elec'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงเดือน/ปีปัจจุบัน
 $currentMonth = date('m');
@@ -73,7 +73,7 @@ try {
     while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
         $latestReadings[$row['room_id']] = $row;
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // คำนวณสถิติสำหรับภาพรวม
 $totalOccupiedRooms = 0;
@@ -96,7 +96,7 @@ try {
     
     // รอบันทึก = ห้องมีผู้เช่า - บันทึกแล้ว
     $totalPending = $totalOccupiedRooms - $totalRecorded;
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงค่าตั้งค่าระบบ
 $siteName = 'Sangthian Dormitory';
@@ -109,7 +109,7 @@ try {
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
         if ($row['setting_key'] === 'theme_color') $themeColor = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ตรวจสอบว่าเป็น light theme หรือไม่
 $isLightTheme = false;

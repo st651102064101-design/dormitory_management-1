@@ -65,7 +65,7 @@ try {
         if ($row['setting_key'] === 'public_theme') $publicTheme = $row['setting_value'];
         if ($row['setting_key'] === 'use_bg_image') $useBgImage = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงข้อมูลห้องว่างจากสถานะจริงแบบเดียวกับหน้า Public/rooms
 $availableRooms = [];
@@ -90,7 +90,7 @@ try {
         LIMIT 6
     ");
     $availableRooms = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงข่าวประชาสัมพันธ์ (ดึงทั้งหมดเรียงตามวันที่)
 $news = [];
@@ -130,7 +130,7 @@ try {
     $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     $roomStats['total'] = (int)($row['total'] ?? 0);
     $roomStats['available'] = (int)($row['available'] ?? 0);
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 ?>
 <!DOCTYPE html>
 <html lang="th">

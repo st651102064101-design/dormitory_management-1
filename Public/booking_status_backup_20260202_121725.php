@@ -22,7 +22,7 @@ try {
         if ($row['setting_key'] === 'public_theme' && !empty($row['setting_value'])) $publicTheme = $row['setting_value'];
         if ($row['setting_key'] === 'use_bg_image' && $row['setting_value'] !== null) $useBgImage = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Derive lighter/darker tones for backgrounds
 function adjustColor($hex, $percent) {

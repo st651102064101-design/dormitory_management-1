@@ -30,7 +30,7 @@ try {
     if ($viewRow && strtolower((string)$viewRow['setting_value']) === 'list') {
         $defaultViewMode = 'list';
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // NEW: Allow access if coming from contract.php with valid token
 if (!empty($_GET['ctr_id']) && !$isTenantAccess && empty($_SESSION['admin_username'])) {

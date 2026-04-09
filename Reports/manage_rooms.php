@@ -136,7 +136,7 @@ try {
         if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
         if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 ?>
 <!doctype html>
 <html lang="th">
@@ -1103,7 +1103,7 @@ try {
 
           <!-- Toggle button for room form -->
           <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleRoomFormBtn" style="white-space:nowrap;padding:0.85rem 1.5rem;cursor:pointer;font-size:0.95rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;transition:all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;" onclick="toggleRoomForm()" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='#f8fafc'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='#94a3b8'">
+            <button type="button" id="toggleRoomFormBtn" style="position: relative; z-index: 50; white-space:nowrap;padding:0.85rem 1.5rem;cursor:pointer;font-size:0.95rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;transition:all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;" onclick="toggleRoomForm()" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='#f8fafc'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='#94a3b8'">
               <span id="toggleRoomFormIcon">▼</span> <span id="toggleRoomFormText">ซ่อนฟอร์ม</span>
             </button>
           </div>
@@ -1430,21 +1430,26 @@ try {
     <script>
       // Toggle room form visibility
       function toggleRoomForm() {
-        const section = document.getElementById('addRoomSection');
-        const icon = document.getElementById('toggleRoomFormIcon');
-        const text = document.getElementById('toggleRoomFormText');
-        const isHidden = section.style.display === 'none';
-        
-        if (isHidden) {
-          section.style.display = '';
-          icon.textContent = '▼';
-          text.textContent = 'ซ่อนฟอร์ม';
-          localStorage.setItem('roomFormVisible', 'true');
-        } else {
-          section.style.display = 'none';
-          icon.textContent = '▶';
-          text.textContent = 'แสดงฟอร์ม';
-          localStorage.setItem('roomFormVisible', 'false');
+        try {
+          const section = document.getElementById('addRoomSection');
+          const icon = document.getElementById('toggleRoomFormIcon');
+          const text = document.getElementById('toggleRoomFormText');
+          if (!section || !icon || !text) return;
+          const isHidden = section.style.display === 'none';
+          
+          if (isHidden) {
+            section.style.display = '';
+            icon.textContent = '▼';
+            text.textContent = 'ซ่อนฟอร์ม';
+            localStorage.setItem('roomFormVisible', 'true');
+          } else {
+            section.style.display = 'none';
+            icon.textContent = '▶';
+            text.textContent = 'แสดงฟอร์ม';
+            localStorage.setItem('roomFormVisible', 'false');
+          }
+        } catch (e) {
+          console.error('Error toggling form:', e);
         }
       }
 

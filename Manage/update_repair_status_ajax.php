@@ -67,7 +67,7 @@ try {
                 $msg = "🔧 อัปเดตสถานะแจ้งซ่อมห้อง {$row['room_number']}\nรายการ: {$row['repair_desc']}\nสถานะใหม่: " . ($statusMessages[$repair_status] ?? 'อัปเดตแล้ว');
                 sendLineBroadcast($pdo, $msg);
             }
-        } catch (Exception $e) {}
+        } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
         echo json_encode(['success' => true, 'message' => $message]);
     } else {

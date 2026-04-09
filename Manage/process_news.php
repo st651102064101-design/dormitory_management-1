@@ -68,7 +68,7 @@ try {
         try {
             $msg = "📢 ข่าวสารใหม่จากหอพัก: {$news_title}\n\nรายละเอียด: {$news_details}";
             sendLineBroadcast($pdo, $msg);
-        } catch (Exception $e) {}
+        } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
         if ($isAjax) {
             header('Content-Type: application/json');

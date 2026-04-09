@@ -25,7 +25,7 @@ try {
     if ($termination) {
         $hasTermination = true;
     }
-} catch (PDOException $e) {}
+} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cancel_termination' && $hasTermination) {
@@ -119,7 +119,7 @@ try {
     $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_name VARCHAR(100) DEFAULT NULL AFTER term_date");
     $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_account_name VARCHAR(100) DEFAULT NULL AFTER bank_name");
     $pdo->exec("ALTER TABLE termination ADD COLUMN IF NOT EXISTS bank_account_number VARCHAR(20) DEFAULT NULL AFTER bank_account_name");
-} catch (Exception $e) {}
+} catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // Calculate minimum date (1 month from now)
 $minDate = date('Y-m-d', strtotime('+1 month'));
@@ -139,7 +139,7 @@ try {
     $lpStmt->execute([$contract['ctr_id']]);
     $lpRow = $lpStmt->fetchColumn();
     if ($lpRow) { $lastPaidBillDate = $lpRow; }
-} catch (Exception $e) {}
+} catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // minTermDate = max(minDate, lastPaidBillDate + 1 day)
 $minTermDate = $minDate;
@@ -160,7 +160,7 @@ try {
     $rfStmt = $pdo->prepare("SELECT * FROM deposit_refund WHERE ctr_id = ? ORDER BY refund_id DESC LIMIT 1");
     $rfStmt->execute([$contract['ctr_id']]);
     $depositRefund = $rfStmt->fetch(PDO::FETCH_ASSOC);
-} catch (Exception $e) {}
+} catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // --- update_bank: ผู้เช่าอัปเดตบัญชีรับคืนเงินมัดจำ ---
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_bank') {
@@ -214,7 +214,7 @@ try {
     ");
     $ubStmt->execute([$contract['ctr_id'], $contract['ctr_id']]);
     $unpaidBillCount = (int)$ubStmt->fetchColumn();
-} catch (Exception $e) {}
+} catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 function _bankFormFields(?array $term): string {
     $banks = ['ธนาคารกสิกรไทย (KBank)','ธนาคารไทยพาณิชย์ (SCB)','ธนาคารกรุงเทพ (BBL)','ธนาคารกรุงไทย (KTB)','ธนาคารกรุงศรีอยุธยา (BAY)','ธนาคารทหารไทยธนชาต (TTB)','ธนาคารออมสิน (GSB)','ธนาคาร ธ.ก.ส.','ธนาคารอาคารสงเคราะห์ (GHB)','พร้อมเพย์ (PromptPay)'];
@@ -806,13 +806,13 @@ function _bankFormFields(?array $term): string {
         $repairStmt = $pdo->prepare("SELECT COUNT(*) FROM repair WHERE ctr_id IN (SELECT ctr_id FROM contract WHERE tnt_id = ?) AND repair_status = '0'");
         $repairStmt->execute([$contract['tnt_id']]);
         $repairCount = (int)($repairStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     $billCount = 0;
     try {
         $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN (SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month) latest ON e.exp_id = latest.exp_id WHERE e.ctr_id = ? AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m') AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1') AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) < e.exp_total");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
-    } catch (Exception $e) {}
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     ?>
     <nav class="bottom-nav">
         <div class="bottom-nav-content">
