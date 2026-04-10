@@ -2238,8 +2238,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                     }
                                 }
 
-                                // ถ้าผู้เช่าแจ้งยกเลิกสัญญา — override step5 เสมอเพื่อให้แสดงสัญลักษณ์ยกเลิก
-                                if ($isCancelPending) {
+                                // ถ้าผู้เช่าแจ้งยกเลิกสัญญา — override step5 เฉพาะกรณีที่ผ่านขั้นตอนเช็คอิน (step 4) ไปแล้ว
+                                if ($isCancelPending && $step4 == 1) {
                                     $step5CircleClass = 'cancel-pending';
                                     $step5CircleLabel = '<svg class="cancel-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
                                         . '<circle class="ca-ring" cx="12" cy="12" r="9" stroke="#f87171" stroke-width="2.5" stroke-dasharray="14 42" stroke-linecap="round"/>'
