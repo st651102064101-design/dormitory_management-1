@@ -4197,6 +4197,11 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         // รีเซ็ต bill sections — ซ่อนไว้ก่อนจนกว่าจะรู้ว่าจดมิเตอร์แล้วหรือไม่
         document.getElementById('billSectionsWrapper').style.display = 'none';
         document.getElementById('meterNoticeBlock').style.display = 'none';
+        
+        // Reset meter section visibility when modal opens
+        const meterBody = document.getElementById('meterBody');
+        if (meterBody) meterBody.style.display = '';
+        
         document.getElementById('firstBillPaymentsSection').innerHTML = '';
         document.getElementById('latestBillPaymentsSection').innerHTML = '';
 
