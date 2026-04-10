@@ -732,22 +732,28 @@ function nameWithoutNickname($fullName) {
         
         /* Editable fields styling */
         .editable-field {
-            display: inline-flex;
-            align-items: flex-end;
-            justify-content: center;
-            vertical-align: baseline;
-            min-width: 40px;
+            display: inline-block;
+            vertical-align: bottom;
+            min-width: 60px;
+            min-height: 18px;
             border-bottom: 1px dotted #000;
-            padding: 0 4px 0;
+            padding: 0 6px;
             text-align: center;
-            line-height: 1;
+            line-height: normal;
             color: #0066cc;
-            font-family: 'Cordia New', Tahoma, serif;
-            font-weight: normal;
+            font-family: inherit;
             cursor: text;
             outline: none;
             transition: all 0.2s ease;
             position: relative;
+            -webkit-user-select: text !important;
+            -moz-user-select: text !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+            -webkit-user-modify: read-write-plaintext-onlytext !important;
+            -ms-user-select: text !important;
+            user-select: text !important;
+            -webkit-user-modify: read-write-plaintext-only;
         }
         
         .editable-field:empty::before,
