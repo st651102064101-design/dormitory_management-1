@@ -2184,7 +2184,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                     } elseif ($firstBillPaid && $latestBillPaid) {
                                         // ชำระครบทุกบิลแล้ว — ✓ เฉพาะเมื่อบิลล่าสุดชำระแล้วด้วย
                                         $step5CircleClass = 'completed';
-                                        $step5CircleLabel = '<span class="step-arrow">&#10003;</span>';
+                                        $step5CircleLabel = '✓';
                                         $step5Tooltip = '5. ชำระแล้ว (' . $latestMonthDisplay . ')';
                                     } elseif ($latestBillOverdue || $firstBillOverdue) {
                                         $step5CircleClass = 'overdue';
@@ -2229,8 +2229,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                         $step5Tooltip = '5. บิลค้างชำระ';
                                     } elseif ($meterBillDone && $firstBillPaid && $latestBillPaid) {
                                         // บิลชำระครบแล้ว แม้ step_5_confirmed = 0
-                                        $step5CircleClass = 'current';
-                                        $step5CircleLabel = "<svg class=\"bill-anim\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect class=\"b-doc\" x=\"5\" y=\"2\" width=\"14\" height=\"18\" rx=\"2\" stroke=\"rgba(255,255,255,0.85)\" stroke-width=\"1.8\" fill=\"rgba(255,255,255,0.1)\"/><line class=\"b-line1\" x1=\"8\" y1=\"7\" x2=\"16\" y2=\"7\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line2\" x1=\"8\" y1=\"11\" x2=\"16\" y2=\"11\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line3\" x1=\"8\" y1=\"15\" x2=\"13\" y2=\"15\" stroke=\"rgba(255,255,255,0.7)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/></svg>";
+                                        $step5CircleClass = 'completed';
+                                        $step5CircleLabel = '✓';
                                         $displayMonth = $latestMonthDisplay !== '-' ? $latestMonthDisplay : $firstBillMonthDisplay;
                                         $step5Tooltip = '5. ชำระแล้ว (' . $displayMonth . ')';
                                     }
@@ -3549,7 +3549,9 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 const billToCheck = allBills.length > 0 ? allBills[lastBillIdx] : firstBill;
                 const billTotal = Number(billToCheck?.expense_total || 0);
                 const billApproved = Number(billToCheck?.approved_amount || 0);
-                const isFirstBillFullyPaid = billTotal > 0 && billApproved >= billTotal;
+                const billSubmitted = Number(billToCheck?.submitted_amount || 0); // Include pending amount
+                // ซ่อนฟอร์มมิเตอร์เมื่อชำระบิลแล้ว ไม่ว่าจะแค่อนุมัติแล้วหรือเพิ่งส่งสลิปรอตรวจสอบก็ตาม
+                const isFirstBillFullyPaid = billTotal > 0 && (billApproved >= billTotal || billSubmitted >= billTotal);
 
                 // Disable update meter button if latest bill is fully paid
                 const moSaveBtn = document.getElementById('moSaveBtn');

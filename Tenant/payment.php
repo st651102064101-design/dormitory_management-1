@@ -1147,9 +1147,14 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 </div>
                 
                 <?php if (count($unpaidExpenses) == 1): ?>
-                <div class="form-group">
+                <div class="form-group" id="single-expense-group">
                     <label>บิลที่ต้องการชำระ</label>
-                    <div style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; color: #000; font-weight: 500;">
+                    <div id="single-expense-info" 
+                         data-expid="<?php echo $unpaidExpenses[0]['exp_id']; ?>" 
+                         data-total="<?php echo $singleTotal; ?>" 
+                         data-paid="<?php echo $singlePaid; ?>" 
+                         data-remaining="<?php echo $singleRemain; ?>"
+                         style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; color: #000; font-weight: 500;">
                         <?php 
                             $singleExp = $unpaidExpenses[0];
                             $singlePaid = (float)($singleExp['paid_amount'] ?? 0);
@@ -1382,6 +1387,102 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
     </div>
     
     <script>
+    function syncUnpaidUI(result) {
+        if (!result.exp_id || result.remaining_amount === undefined) return;
+        const expId = parseInt(result.exp_id, 10);
+        const remaining = parseFloat(result.remaining_amount) || 0;
+        const paidAmount = parseFloat(result.pay_amount) || 0;
+        
+        // 1. Update Select Dropdown
+        const select = document.getElementById('exp_id');
+        if (select) {
+            const option = Array.from(select.options).find(opt => parseInt(opt.value, 10) === expId);
+            if (option) {
+                if (remaining <= 0) {
+                    option.remove();
+                    if (select.options.length <= 1) { // Only "-- เลือกบิล --" left
+                        const formGroup = select.closest('.form-group');
+                        if (formGroup) formGroup.style.display = 'none';
+                        const payAmt = document.getElementById('pay_amount');
+                        if (payAmt) payAmt.value = '';
+                        const paySummary = document.getElementById('payment-summary');
+                        if (paySummary) paySummary.style.display = 'none';
+                    } else {
+                        select.selectedIndex = 0; // reset
+                    }
+                } else {
+                    const total = parseFloat(option.dataset.total) || 0;
+                    const prevPaid = parseFloat(option.dataset.paid) || 0;
+                    const newPaid = prevPaid + paidAmount;
+                    option.dataset.paid = newPaid;
+                    option.dataset.remaining = remaining;
+                    
+                    const expMonthText = result.exp_month ? new Date(result.exp_month).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' }) : '';
+                    option.text = `${expMonthText ? expMonthText + ' - ' : ''}ยอดรวม ${total.toLocaleString()} บาท (ส่งแล้ว ${newPaid.toLocaleString()} / คงเหลือ ${remaining.toLocaleString()})`;
+                }
+            }
+        }
+        
+        // 2. Update Single Expense Info Display
+        const singleInfo = document.getElementById('single-expense-info');
+        if (singleInfo && parseInt(singleInfo.dataset.expid, 10) === expId) {
+            if (remaining <= 0) {
+                const group = document.getElementById('single-expense-group');
+                if (group) group.style.display = 'none';
+                const payAmt = document.getElementById('pay_amount');
+                if (payAmt) payAmt.value = '';
+                const paySummary = document.getElementById('payment-summary');
+                if (paySummary) paySummary.style.display = 'none';
+            } else {
+                const total = parseFloat(singleInfo.dataset.total) || 0;
+                const prevPaid = parseFloat(singleInfo.dataset.paid) || 0;
+                const newPaid = prevPaid + paidAmount;
+                singleInfo.dataset.paid = newPaid;
+                singleInfo.dataset.remaining = remaining;
+                const expMonthText = result.exp_month ? new Date(result.exp_month).toLocaleDateString('th-TH', { month: 'long', year: 'numeric' }) : '';
+                singleInfo.innerHTML = `${expMonthText ? expMonthText + ' - ' : ''}ยอดรวม ${total.toLocaleString()} บาท (ส่งแล้ว ${newPaid.toLocaleString()} / คงเหลือ ${remaining.toLocaleString()})`;
+            }
+        }
+
+        // 3. Update Report Cards
+        const cards = document.querySelectorAll('.unpaid-report-card');
+        cards.forEach(card => {
+            const btnPay = card.querySelector('a.btn-pay');
+            if (btnPay && btnPay.href.includes(`exp_id=${expId}`)) {
+                if (remaining <= 0) {
+                    card.remove();
+                } else {
+                    const rows = card.querySelectorAll('.unpaid-report-row');
+                    if (rows.length >= 3) {
+                        const currentSentText = rows[1].children[1].textContent.replace(/[^0-9]/g, '');
+                        const newSent = (parseFloat(currentSentText) || 0) + paidAmount;
+                        rows[1].children[1].textContent = `${newSent.toLocaleString()} บาท`;
+                        rows[2].children[1].innerHTML = `<strong>${remaining.toLocaleString()} บาท</strong>`;
+                    }
+                }
+            }
+        });
+
+        // Update Total Unpaid Amount
+        const reportTotalElem = document.querySelector('.unpaid-report-total');
+        if (reportTotalElem) {
+            const currentTotalText = reportTotalElem.textContent.replace(/[^0-9]/g, '');
+            let currentTotalTextNum = parseFloat(currentTotalText) || 0;
+            const newTotalTextNum = Math.max(0, currentTotalTextNum - paidAmount);
+            if (newTotalTextNum <= 0) {
+                reportTotalElem.remove();
+                const reportContainer = document.querySelector('.unpaid-report');
+                if (reportContainer && !reportContainer.querySelector('.empty-state')) {
+                    const html = `<div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></span> รายงานรอชำระ</div>
+                <div class="empty-state" style="padding:1rem 0;color:#34d399;">ไม่มียอดค้างชำระ</div>`;
+                    reportContainer.innerHTML = html;
+                }
+            } else {
+                reportTotalElem.textContent = `ยอดค้างรวม ${newTotalTextNum.toLocaleString()} บาท`;
+            }
+        }
+    }
+
     function updateSubmitState() {
         const select = document.getElementById('exp_id');
         const payAmount = document.getElementById('pay_amount');
@@ -2013,6 +2114,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 if (result && result.success) {
                     showFormAlert(result.message || 'แจ้งชำระเงินเรียบร้อยแล้ว', 'success');
                     prependPaymentHistoryItem(result);
+                    syncUnpaidUI(result);
                     form.reset();
                     if (typeof updatePaymentAmount === 'function') {
                         updatePaymentAmount();
