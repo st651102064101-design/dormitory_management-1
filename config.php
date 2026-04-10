@@ -11,13 +11,13 @@
 // ตัวอย่าง: 'project.3bbddns.com:36140/' หรือ 'yourdomain.com'
 // ถ้าเว้นว่าง '' จะใช้ค่าอัตโนมัติ
 
-define('SITE_HOST', '');
+define('SITE_HOST', 'project.3bbddns.com:36140');
 
 // ===========================================
 // ตั้งค่า Protocol (http หรือ https)
 // ===========================================
 // ใส่ '' เพื่อให้ระบบตรวจจาก request อัตโนมัติ
-define('SITE_PROTOCOL', '');
+define('SITE_PROTOCOL', 'https');
 
 // ===========================================
 // ฟังก์ชันสร้าง Base URL

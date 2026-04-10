@@ -6,20 +6,10 @@
 declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/ConnectDB.php';
+require_once __DIR__ . '/config.php';
 
 function buildLineRedirectUri(): string {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
-        $protocol = 'https';
-    }
-    $httpHost = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
-
-    $basePath = dirname($_SERVER['PHP_SELF']);
-    if ($basePath === '/' || $basePath === '\\') {
-        $basePath = '';
-    }
-
-    return $protocol . '://' . $httpHost . $basePath . '/line_callback.php';
+    return getBaseUrl('/line_callback.php');
 }
 
 $error = $_GET['error'] ?? '';
@@ -145,8 +135,7 @@ try {
                     if ($billCount > 0) { $msg .= "⚠️ คุณมียอดค้างชำระ: {$billCount} รายการ\n"; } else { $msg .= "✅ คุณไม่มียอดค้างชำระ\n"; }
                     if ($homeBadgeCount > 0) { $msg .= "📝 แจ้งเตือนสำคัญ:\nคุณมีสัญญาเช่าที่ยังไม่ได้เซ็นชื่อ โปรดเข้าสู่ระบบเพื่อดำเนินการเซ็นสัญญา\n"; }
                     
-                    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-                    $dashUrl = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . dirname($_SERVER['PHP_SELF'] ?? '/line_callback.php') . '/Tenant/index.php?token=' . urlencode($contract['access_token']);
+                    $dashUrl = getTenantPortalUrl((string)$contract['access_token']);
                     $msg .= "\n📱 เข้าสู่ระบบจัดการผู้เช่า (Dashboard):\n{$dashUrl}";
                     
                     if (function_exists('sendLineMulticast')) { sendLineMulticast($pdo, [$lineUserId], $msg); }

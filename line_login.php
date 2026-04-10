@@ -6,21 +6,10 @@
 declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/ConnectDB.php';
+require_once __DIR__ . '/config.php';
 
 function buildLineRedirectUri(): string {
-    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-    if (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
-        $protocol = 'https';
-    }
-    $httpHost = (string)($_SERVER['HTTP_HOST'] ?? 'localhost');
-
-    // Path base for the redirect URI
-    $basePath = dirname($_SERVER['PHP_SELF']);
-    if ($basePath === '/' || $basePath === '\\') {
-        $basePath = '';
-    }
-
-    return $protocol . '://' . $httpHost . $basePath . '/line_callback.php';
+    return getBaseUrl('/line_callback.php');
 }
 
 try {
