@@ -319,6 +319,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'exp_month' => isset($expense['exp_month']) ? (string)$expense['exp_month'] : null,
             'pay_proof' => isset($filename) ? (string)$filename : null,
             'pay_proof_url' => isset($filename) ? '/dormitory_management/Public/Assets/Images/Payments/' . rawurlencode((string)$filename) : null,
+            'pay_remark' => '',
             'pay_status' => isset($recordAmount) ? '0' : null,
             'pay_status_label' => 'รอตรวจสอบ',
         ], JSON_UNESCAPED_UNICODE);
@@ -1252,7 +1253,8 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                  data-pay-amount="<?php echo (int)($payment['pay_amount'] ?? 0); ?>"
                  data-pay-status="<?php echo htmlspecialchars($statusKey, ENT_QUOTES, 'UTF-8'); ?>"
                  data-pay-status-label="<?php echo htmlspecialchars($statusInfo['label'], ENT_QUOTES, 'UTF-8'); ?>"
-                 data-pay-proof-url="<?php echo htmlspecialchars($payProofUrl, ENT_QUOTES, 'UTF-8'); ?>">
+                 data-pay-proof-url="<?php echo htmlspecialchars($payProofUrl, ENT_QUOTES, 'UTF-8'); ?>"
+                 data-pay-remark="<?php echo htmlspecialchars((string)($payment['pay_remark'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="payment-header">
                     <span class="payment-date"><span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <?php echo $payment['pay_date'] ?? '-'; ?></span>
                     <span class="payment-status" style="background: <?php echo htmlspecialchars($statusInfo['bg']); ?>; color: <?php echo htmlspecialchars($statusInfo['color']); ?>;">
@@ -1260,7 +1262,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                     </span>
                 </div>
                 <div class="payment-amount"><span class="amount-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> <?php echo number_format($payment['pay_amount'] ?? 0); ?> บาท</div>
-                <div class="bill-details">บิลเดือน <?php echo thaiMonthYearLong($payment['exp_month']); ?></div>
+                <div class="bill-details">บิลเดือน <?php echo thaiMonthYearLong($payment['exp_month']); ?><?php echo (!empty(trim((string)($payment['pay_remark'] ?? '')))) ? ' <span style="font-size: 0.8rem; color: #d97706; background: rgba(245, 158, 11, 0.1); padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.4rem;">' . htmlspecialchars(trim((string)$payment['pay_remark'])) . '</span>' : ''; ?></div>
                 <div class="payment-status-detail">สถานะล่าสุด: <?php echo htmlspecialchars($statusInfo['label']); ?></div>
             </div>
             <?php endforeach; ?>
@@ -1361,6 +1363,10 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 <div class="history-sheet-row">
                     <span class="history-sheet-label">จำนวนเงิน</span>
                     <span class="history-sheet-value" id="historySheetPayAmount">-</span>
+                </div>
+                <div class="history-sheet-row" id="historySheetPayRemarkRow" style="display:none; color: #d97706; font-weight: 500;">
+                    <span class="history-sheet-label">ประเภท</span>
+                    <span class="history-sheet-value" id="historySheetPayRemark">-</span>
                 </div>
             </div>
             <div class="history-sheet-status">
@@ -1672,6 +1678,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
         item.dataset.payStatus = result.pay_status != null ? String(result.pay_status) : '0';
         item.dataset.payStatusLabel = statusInfo.label;
         item.dataset.payProofUrl = payProofUrl;
+        item.dataset.payRemark = typeof result.pay_remark === 'string' ? result.pay_remark : '';
 
         item.innerHTML = `
             <div class="payment-header">
@@ -1679,7 +1686,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 <span class="payment-status" style="background: ${statusInfo.bg}; color: ${statusInfo.color};">${statusInfo.label}</span>
             </div>
             <div class="payment-amount"><span class="amount-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ${amount.toLocaleString()} บาท</div>
-            <div class="bill-details">บิลเดือน ${billMonthText}</div>
+            <div class="bill-details">บิลเดือน ${billMonthText}${item.dataset.payRemark ? ' <span style="font-size: 0.8rem; color: #d97706; background: rgba(245, 158, 11, 0.1); padding: 0.1rem 0.4rem; border-radius: 4px; margin-left: 0.4rem;">' + item.dataset.payRemark.replace(/</g, "&lt;").replace(/>/g, "&gt;") + '</span>' : ''}</div>
             <div class="payment-status-detail">สถานะล่าสุด: ${statusInfo.label}</div>
         `;
 
@@ -1729,10 +1736,25 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
         const billMonthEl = document.getElementById('historySheetBillMonth');
         const payAmountEl = document.getElementById('historySheetPayAmount');
         const statusBadge = document.getElementById('historySheetStatusBadge');
+        
+        const payRemark = (item.dataset.payRemark || '').trim();
+        const payRemarkRowEl = document.getElementById('historySheetPayRemarkRow');
+        const payRemarkEl = document.getElementById('historySheetPayRemark');
 
         if (payDateEl) payDateEl.textContent = payDate;
         if (billMonthEl) billMonthEl.textContent = billMonth;
         if (payAmountEl) payAmountEl.textContent = payAmount;
+        
+        if (payRemarkRowEl && payRemarkEl) {
+            if (payRemark !== '') {
+                payRemarkEl.textContent = payRemark;
+                payRemarkRowEl.style.display = 'flex';
+            } else {
+                payRemarkRowEl.style.display = 'none';
+                payRemarkEl.textContent = '-';
+            }
+        }
+        
         if (statusBadge) {
             statusBadge.textContent = statusInfo.label;
             statusBadge.style.background = statusInfo.bg;
