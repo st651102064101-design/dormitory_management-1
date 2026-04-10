@@ -1021,8 +1021,6 @@ function nameWithoutNickname($fullName) {
                         </svg>
                         คลิกเพื่อลงลายมือชื่อ
                     </button>
-                    <?php else: ?>
-                    <span class="signature-line no-print" style="margin-left: 5rem; margin-right: 3rem;"></span>
                     <?php endif; ?>
                     <span class="signature-line print-only"></span>
                     <?php endif; ?>
