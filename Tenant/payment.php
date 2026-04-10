@@ -1991,7 +1991,14 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 if (result && result.success) {
                     showFormAlert(result.message || 'แจ้งชำระเงินเรียบร้อยแล้ว', 'success');
                     prependPaymentHistoryItem(result);
-                    setTimeout(() => location.reload(), 1500);
+                    form.reset();
+                    if (typeof updatePaymentAmount === 'function') {
+                        updatePaymentAmount();
+                    }
+                    const previewContainer = document.getElementById('preview-container');
+                    const preview = document.getElementById('preview-image');
+                    if (previewContainer) previewContainer.style.display = 'none';
+                    if (preview) preview.src = '';
                 } else {
                     showFormAlert((result && result.message) ? result.message : 'ไม่สามารถบันทึกข้อมูลได้', 'error');
                     updateSubmitState();
