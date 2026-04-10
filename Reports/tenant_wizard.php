@@ -178,11 +178,11 @@ try {
                                 SELECT
                                     CASE
                                         WHEN e.exp_total > 0
-                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= e.exp_total - 0.00001
+                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1'), 0) >= e.exp_total - 0.00001
                                             THEN '1'
-                                        WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                        WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1'), 0) > 0
                                             THEN '3'
-                                        WHEN COALESCE((SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND p.pay_proof IS NOT NULL AND p.pay_proof <> '' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                        WHEN COALESCE((SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND p.pay_proof IS NOT NULL AND p.pay_proof <> ''), 0) > 0
                                             THEN '2'
                                         WHEN e.exp_status = '4' THEN '4'
                                         ELSE '0'
@@ -200,11 +200,11 @@ try {
                                 SELECT
                                     CASE
                                         WHEN e.exp_total > 0
-                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= e.exp_total - 0.00001
+                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1'), 0) >= e.exp_total - 0.00001
                                             THEN '1'
-                                        WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                        WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1'), 0) > 0
                                             THEN '3'
-                                        WHEN COALESCE((SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND p.pay_proof IS NOT NULL AND p.pay_proof <> '' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                        WHEN COALESCE((SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND p.pay_proof IS NOT NULL AND p.pay_proof <> ''), 0) > 0
                                             THEN '2'
                                         WHEN e.exp_status = '4' THEN '4'
                                         ELSE '0'
@@ -230,11 +230,11 @@ try {
                                 SELECT
                                     CASE
                                         WHEN e.exp_total > 0
-                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= e.exp_total - 0.00001
+                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1'), 0) >= e.exp_total - 0.00001
                                             THEN '1'
-                                        WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                        WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1'), 0) > 0
                                             THEN '3'
-                                        WHEN COALESCE((SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND p.pay_proof IS NOT NULL AND p.pay_proof <> '' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
+                                        WHEN COALESCE((SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND p.pay_proof IS NOT NULL AND p.pay_proof <> ''), 0) > 0
                                             THEN '2'
                                         WHEN e.exp_status = '4' THEN '4'
                                         ELSE '0'
