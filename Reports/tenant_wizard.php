@@ -1979,17 +1979,25 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                 $currentStep = ($tenant['workflow_id'] === null) ? 1 : (int)$tenant['current_step'];
                                 // workflow_id = NULL → step1 ยังไม่สมบูรณ์ ต้องกด "ยืนยันการจอง" ก่อน
                                 $step1 = ($tenant['workflow_id'] === null) ? 0 : (int)$tenant['step_1_confirmed'];
-                                $step2 = $tenant['step_2_confirmed'];
-                                $step3 = $tenant['step_3_confirmed'];
+                                $step2 = ((int)$tenant['step_2_confirmed'] === 1 && $step1 === 1) ? 1 : 0;
+                                $tenantSigned = ((int)($tenant['has_tenant_signature'] ?? 0) > 0);
+                                $step3 = (($tenant['step_3_confirmed'] == 1) && $tenantSigned && $step2 === 1) ? 1 : 0;
 
                                 $hasCheckinDate = !empty($tenant['checkin_date']) && $tenant['checkin_date'] !== '0000-00-00';
                                 // หมายเหตุ: ไม่ต้องตรวจสอบค่ามิเตอร์ในขั้นตอน 4 (เช็คอิน) เพราะจะจดมิเตอร์ในขั้นตอน 5
                                 // checkinDataComplete เพียงแค่ต้องมีวันเช็คอิน
                                 $checkinDataComplete = $hasCheckinDate;
 
-                                $step4 = ((int)$tenant['step_4_confirmed'] === 1 && $checkinDataComplete) ? 1 : 0;
+                                $step4 = ((int)$tenant['step_4_confirmed'] === 1 && $checkinDataComplete && $step3 === 1) ? 1 : 0;
                                 // step 5 ต้องรอให้ step 4 (เช็คอิน) เสร็จเรียบร้อยก่อน
                                 $step5 = ((int)$tenant['step_5_confirmed'] === 1 && $step4 === 1) ? 1 : 0;
+
+                                // บังคับไม่ให้ currentStep ข้ามขั้นตอนที่ยังไม่เสร็จ (ป้องกันกรณีแก้ไขข้อมูลหรือบัคข้าม step)
+                                if ($step1 === 0) $currentStep = 1;
+                                elseif ($step2 === 0) $currentStep = 2;
+                                elseif ($step3 === 0) $currentStep = 3;
+                                elseif ($step4 === 0) $currentStep = 4;
+                                elseif ($step5 === 0) $currentStep = 5;
 
                                 $contractStartRaw = (string)($tenant['ctr_start'] ?? '');
                                 $expectedFirstBillMonthRaw = '';

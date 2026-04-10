@@ -42,6 +42,14 @@ try {
         throw new Exception('ข้อมูลไม่ครบถ้วน');
     }
 
+    // ตรวจสอบว่าผู้เช่าเซ็นสัญญาหรือยัง (step 3)
+    $stmtSig = $pdo->prepare("SELECT COUNT(*) FROM signature_logs WHERE contract_id = ? AND signer_type = 'tenant'");
+    $stmtSig->execute([$ctr_id]);
+    $tenantSigned = (int)$stmtSig->fetchColumn() > 0;
+    if (!$tenantSigned) {
+        throw new Exception('ผู้เช่ายังไม่ได้เซ็นสัญญาออนไลน์ ข้อมูลสัญญายังไม่เสร็จสมบูรณ์');
+    }
+
     // ดึง ctr_start เพื่อสร้างบิลในเดือนที่เริ่มสัญญา (ไม่ใช่เดือนถัดไปจากวันนี้)
     $ctrStartStmt = $pdo->prepare('SELECT ctr_start FROM contract WHERE ctr_id = ? LIMIT 1');
     $ctrStartStmt->execute([$ctr_id]);

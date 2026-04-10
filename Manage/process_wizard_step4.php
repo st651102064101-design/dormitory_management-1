@@ -42,6 +42,14 @@ try {
         throw new Exception('ข้อมูลไม่ครบถ้วน');
     }
 
+    // ตรวจสอบว่าผู้เช่าเซ็นสัญญาหรือยัง (step 3)
+    $stmtSig = $pdo->prepare("SELECT COUNT(*) FROM signature_logs WHERE contract_id = ? AND signer_type = 'tenant'");
+    $stmtSig->execute([$ctr_id]);
+    $tenantSigned = (int)$stmtSig->fetchColumn() > 0;
+    if (!$tenantSigned) {
+        throw new Exception('ผู้เช่ายังไม่ได้เซ็นสัญญาออนไลน์ ทำให้ไม่สามารถดำเนินการเช็คอินเพื่อเข้าพักได้');
+    }
+
     // หมายเหตุ: ไม่ต้องตรวจสอบค่ามิเตอร์ในขั้นตอน 4 (เช็คอิน) เพราะจะจดมิเตอร์ในขั้นตอน 5
     // ปล่อยให้ค่ามิเตอร์เป็น 0 ได้
 
