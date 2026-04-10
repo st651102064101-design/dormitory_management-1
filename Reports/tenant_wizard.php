@@ -111,15 +111,9 @@ try {
         AND $latestBillPaidCondition
         AND $meterRecordedCondition
     ";
-    if ($completedFilter === 1) {
-        $completionCondition = "
-            AND ($allStepsDoneCondition)
-        ";
-    } else {
-        $completionCondition = "
-            AND NOT ($allStepsDoneCondition)
-        ";
-    }
+    
+    // ดึงข้อมูลทั้งหมดมาไว้ก่อน แล้วค่อยให้ JS แยกแสดงผลที่หน้าจอ
+    $completionCondition = "";
     
     $sql = "
         SELECT
@@ -1952,7 +1946,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 <!-- Completion Status Filter Buttons -->
                 <div class="wiz-filter-bar">
                     <button type="button" id="wizBtn0" onclick="wizFilter(0)" class="wiz-filter-btn pending-filter <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'active' : ''; ?>">⏳ ยังไม่ครบ 5 ขั้นตอน</button>
-                    <button type="button" id="wizBtn1" onclick="wizFilter(1)" class="wiz-filter-btn complete-filter <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'active' : ''; ?>"<?php echo $hasCompletedTenants ? '' : ' style="display:none;"'; ?>>✅ ครบ 5 ขั้นตอนแล้ว</button>
+                    <button type="button" id="wizBtn1" onclick="wizFilter(1)" class="wiz-filter-btn complete-filter <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'active' : ''; ?>">✅ ครบ 5 ขั้นตอนแล้ว</button>
                     <?php if ($meterPendingBadgeCount > 0): ?>
                     <a href="manage_utility.php" class="wiz-meter-alert" title="ไปจดมิเตอร์">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
@@ -2236,8 +2230,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                     }
                                 }
 
-                                // ถ้าผู้เช่าแจ้งยกเลิกสัญญา — override step5 เฉพาะตอนบิลยังไม่ครบ
-                                if ($isCancelPending && $step5CircleClass !== 'completed') {
+                                // ถ้าผู้เช่าแจ้งยกเลิกสัญญา — override step5 เสมอเพื่อให้แสดงสัญลักษณ์ยกเลิก
+                                if ($isCancelPending) {
                                     $step5CircleClass = 'cancel-pending';
                                     $step5CircleLabel = '<svg class="cancel-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
                                         . '<circle class="ca-ring" cx="12" cy="12" r="9" stroke="#f87171" stroke-width="2.5" stroke-dasharray="14 42" stroke-linecap="round"/>'
@@ -4912,13 +4906,15 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         });
         var emptyEl = document.getElementById('wizFilterEmptyState');
         if (emptyEl) emptyEl.style.display = visible === 0 ? '' : 'none';
+        
+        // update URL without reloading
+        var url = new URL(window.location);
+        url.searchParams.set('completed', group);
+        window.history.pushState({}, '', url);
     }
 
     function wizFilter(group) {
-        if (group !== _wizCurrentGroup) {
-            window.location.href = 'tenant_wizard.php?completed=' + group;
-            return;
-        }
+        _wizCurrentGroup = group;
         var btn0 = document.getElementById('wizBtn0');
         var btn1 = document.getElementById('wizBtn1');
         if (btn0) { btn0.classList.toggle('active', group === 0); }
