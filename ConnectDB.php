@@ -30,7 +30,10 @@ if (!function_exists('connectDB')) {
 
             // ── Session timeout enforcement (runs once per PHP request) ──────────
             static $sessionChecked = false;
+            $currentScript = strtolower((string)basename($_SERVER['SCRIPT_NAME'] ?? ''));
+            $skipTimeoutCheck = ($currentScript === 'login.php');
             if (!$sessionChecked
+                && !$skipTimeoutCheck
                 && session_status() === PHP_SESSION_ACTIVE
                 && !empty($_SESSION['admin_username'])
             ) {
