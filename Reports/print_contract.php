@@ -54,8 +54,6 @@ if (!empty($_GET['ctr_id']) && !$isTenantAccess && empty($_SESSION['admin_userna
 
 $isAdminOrOwnerAccess = !empty($_SESSION['admin_username']);
 $canEditTenantFields = $isTenantAccess && !$isAdminOrOwnerAccess;
-// Admin/owner may assist signing in tenant slot from wizard flow.
-$canSignTenantSlot = $isTenantAccess || $isAdminOrOwnerAccess;
 
 $ctr_id = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
 
@@ -1010,7 +1008,7 @@ function nameWithoutNickname($fullName) {
                         </div>
                     </div>
                     <?php else: ?>
-                    <?php if ($canSignTenantSlot): ?>
+                    <?php if ($isTenantAccess): ?>
                     <button type="button" class="sign-btn no-print" onclick="openSignatureModal({
                         contractId: <?php echo $ctr_id; ?>,
                         signerType: 'tenant',
