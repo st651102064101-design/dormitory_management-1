@@ -4514,32 +4514,40 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                     <div id="_rfBankAccName" style="font-size:0.88rem;color:#0c4a6e;margin-bottom:0.2rem;"></div>
                     <div id="_rfBankAccNum" style="font-size:1rem;font-weight:700;color:#0369a1;letter-spacing:0.04em;"></div>
                 </div>
-                <div id="_rfDepositRow" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:0.65rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;">
-                    <span style="font-size:0.85rem;color:#854d0e;font-weight:600;">💎 ยอดเงินมัดจำ</span>
-                    <span id="_rfDepositAmt" style="font-size:1.05rem;font-weight:700;color:#b45309;"></span>
+                
+                <div id="_rfNoBankMsg" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:0.85rem 1rem;margin-bottom:1rem;color:#991b1b;font-size:0.9rem;text-align:center;">
+                    ⚠️ ผู้เช่ายังไม่ได้ระบุข้อมูลบัญชีธนาคารสำหรับรับเงินคืน<br>
+                    <span style="font-size:0.8rem;color:#b91c1c;">ไม่สามารถดำเนินการคืนเงินได้ กรุณาติดต่อผู้เช่าเพื่อขอข้อมูล</span>
                 </div>
-                <div style="margin-bottom:0.9rem;">
-                    <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">ยอดหักค่าเสียหาย (บาท)</label>
-                    <input type="number" id="_rfDeduct" min="0" value="0" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
-                </div>
-                <div style="margin-bottom:0.9rem;">
-                    <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">เหตุผลหัก (ถ้ามี)</label>
-                    <input type="text" id="_rfReason" placeholder="-" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
-                </div>
-                <div id="_rfSaveArea" style="display:flex;gap:0.6rem;margin-top:1.1rem;">
-                    <button id="_rfSaveBtn" onclick="doSaveRefund()" style="flex:1;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">บันทึกข้อมูลคืนเงิน</button>
-                    <button onclick="closeRefundModal()" style="padding:0.65rem 1rem;border-radius:12px;border:1px solid #e2e8f0;background:none;color:#64748b;cursor:pointer;">ยกเลิก</button>
-                </div>
-                <div id="_rfConfirmArea" style="display:none;margin-top:1rem;">
-                    <!-- เพิ่มส่วนอัพโหลดสลิปตรงนี้ -->
-                    <div style="margin-bottom:0.9rem;">
-                        <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">อัพโหลดหลักฐานการโอนเงิน (สลิป) <span style="color:#ef4444;">*</span></label>
-                        <input type="file" id="_rfProofFile" accept="image/*,.pdf" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
+
+                <div id="_rfActionContainer">
+                    <div id="_rfDepositRow" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:0.65rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:0.85rem;color:#854d0e;font-weight:600;">💎 ยอดเงินมัดจำ</span>
+                        <span id="_rfDepositAmt" style="font-size:1.05rem;font-weight:700;color:#b45309;"></span>
                     </div>
-                    
-                    <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและกด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อเรียบร้อย</p>
-                    <button onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.2);">✓ ยืนยันโอนเงินแล้ว</button>
-                    <div id="_rfProofProgress" style="display:none; text-align:center; font-size:0.85rem; color:#0369a1; margin-top:0.5rem; font-weight:600;">กำลังอัพโหลดสลิป...</div>
+                    <div style="margin-bottom:0.9rem;">
+                        <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">ยอดหักค่าเสียหาย (บาท)</label>
+                        <input type="number" id="_rfDeduct" min="0" value="0" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:0.9rem;">
+                        <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">เหตุผลหัก (ถ้ามี)</label>
+                        <input type="text" id="_rfReason" placeholder="-" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
+                    </div>
+                    <div id="_rfSaveArea" style="display:flex;gap:0.6rem;margin-top:1.1rem;">
+                        <button id="_rfSaveBtn" onclick="doSaveRefund()" style="flex:1;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">บันทึกข้อมูลคืนเงิน</button>
+                        <button onclick="closeRefundModal()" style="padding:0.65rem 1rem;border-radius:12px;border:1px solid #e2e8f0;background:none;color:#64748b;cursor:pointer;">ยกเลิก</button>
+                    </div>
+                    <div id="_rfConfirmArea" style="display:none;margin-top:1rem;">
+                        <!-- เพิ่มส่วนอัพโหลดสลิปตรงนี้ -->
+                        <div style="margin-bottom:0.9rem;">
+                            <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">อัพโหลดหลักฐานการโอนเงิน (สลิป) <span style="color:#ef4444;">*</span></label>
+                            <input type="file" id="_rfProofFile" accept="image/*,.pdf" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
+                        </div>
+                        
+                        <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและกด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อเรียบร้อย</p>
+                        <button onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.2);">✓ ยืนยันโอนเงินแล้ว</button>
+                        <div id="_rfProofProgress" style="display:none; text-align:center; font-size:0.85rem; color:#0369a1; margin-top:0.5rem; font-weight:600;">กำลังอัพโหลดสลิป...</div>
+                    </div>
                 </div>
             </div>`;
         document.body.appendChild(modalEl);
@@ -4558,10 +4566,22 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         document.getElementById('_rfConfirmArea').style.display = 'none';
         // Bank info — แสดงเสมอ ถ้าไม่มีข้อมูลแสดง "ไม่ระบุบัญชี"
         const bankInfoEl = document.getElementById('_rfBankInfo');
+        const noBankMsgEl = document.getElementById('_rfNoBankMsg');
+        const actionContainerEl = document.getElementById('_rfActionContainer');
+        
         document.getElementById('_rfBankName').textContent = bankName || '—';
         document.getElementById('_rfBankAccName').textContent = bankAccName || '—';
         document.getElementById('_rfBankAccNum').textContent = bankAccNum || '—';
         bankInfoEl.style.display = 'block';
+
+        if (!bankAccNum || bankAccNum.trim() === '' || bankAccNum.trim() === '-') {
+            noBankMsgEl.style.display = 'block';
+            actionContainerEl.style.display = 'none';
+        } else {
+            noBankMsgEl.style.display = 'none';
+            actionContainerEl.style.display = 'block';
+        }
+
         // Deposit amount
         const depositRow = document.getElementById('_rfDepositRow');
         if (depositAmt && depositAmt > 0) {
