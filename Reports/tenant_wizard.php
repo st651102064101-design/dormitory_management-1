@@ -346,6 +346,7 @@ try {
                                           )
                                           AND COALESCE(c3.tnt_id, '') <> COALESCE(b.tnt_id, '')
                                     )
+                                    " . $completionCondition . "
         ORDER BY CAST(r.room_number AS UNSIGNED) ASC";
     
     $stmt = $conn->query($sql);
@@ -362,18 +363,13 @@ try {
                 continue;
             }
             $cur = $deduped[$roomKey];
-            $curStep = (int)($cur['current_step'] ?? 1);
-            $newStep = (int)($t['current_step'] ?? 1);
-            if ($newStep > $curStep) {
+            $curBkgId = (int)($cur['bkg_id'] ?? 0);
+            $newBkgId = (int)($t['bkg_id'] ?? 0);
+            
+            // Prefer the newest booking
+            if ($newBkgId > $curBkgId) {
                 $deduped[$roomKey] = $t;
                 continue;
-            }
-            if ($newStep === $curStep) {
-                $curDate = strtotime($cur['bkg_date'] ?? '1970-01-01');
-                $newDate = strtotime($t['bkg_date'] ?? '1970-01-01');
-                if ($newDate > $curDate) {
-                    $deduped[$roomKey] = $t;
-                }
             }
         }
         $wizardTenants = array_values($deduped);

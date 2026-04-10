@@ -28,10 +28,11 @@ $expenses = [];
 try {
     $stmt = $pdo->prepare("
         SELECT e.*, 
-               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1') as paid_amount,
-               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0') as pending_amount,
-               (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id) as payment_count,
-               (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as paid_amount,
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as pending_amount,
+               (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as payment_count,
+               (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status,
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') as deposit_paid_amount
         FROM expense e
         JOIN (
             SELECT MAX(exp_id) AS exp_id
@@ -354,6 +355,7 @@ foreach ($expenses as $exp) {
         <?php 
             $paidAmount = (float)($exp['paid_amount'] ?? 0);
             $pendingAmount = (float)($exp['pending_amount'] ?? 0);
+            $depositPaidAmount = (float)($exp['deposit_paid_amount'] ?? 0);
             $expTotal = (float)$exp['exp_total'];
             $remaining = max(0, $expTotal - $paidAmount);
             
@@ -424,6 +426,12 @@ foreach ($expenses as $exp) {
                 <div class="bill-row" style="color: #10b981; font-size: 0.85rem; margin-top: 0.5rem;">
                     <span class="bill-label" style="color: #10b981;">ชำระแล้ว</span>
                     <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount); ?> บาท</span>
+                </div>
+                <?php endif; ?>
+                <?php if ($depositPaidAmount > 0): ?>
+                <div class="bill-row" style="color: #6366f1; font-size: 0.85rem; margin-top: 0.25rem;">
+                    <span class="bill-label" style="color: #6366f1;">ชำระมัดจำ</span>
+                    <span class="bill-value" style="color: #6366f1;"><?php echo number_format($depositPaidAmount); ?> บาท</span>
                 </div>
                 <?php endif; ?>
                 <?php if ($pendingAmount > 0): ?>
@@ -511,7 +519,7 @@ foreach ($expenses as $exp) {
             )
             AND COALESCE((
                 SELECT SUM(p.pay_amount) FROM payment p
-                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
+                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1') AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
             ), 0) < e.exp_total
         ");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);

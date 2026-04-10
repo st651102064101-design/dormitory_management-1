@@ -141,6 +141,7 @@ try {
             SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
             FROM payment
             WHERE pay_status IN ('0', '1')
+              AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
             GROUP BY exp_id
         ) ps ON ps.exp_id = e.exp_id
         WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
@@ -1157,7 +1158,7 @@ if (($contract['ctr_status'] ?? '0') === '1') {
             )
             AND COALESCE((
                 SELECT SUM(p.pay_amount) FROM payment p
-                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
+                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1') AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
             ), 0) < e.exp_total
         ");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);

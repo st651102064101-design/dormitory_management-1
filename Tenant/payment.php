@@ -67,7 +67,7 @@ try {
             SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
             FROM payment
             WHERE pay_status IN ('0', '1')
-              
+              AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
             GROUP BY exp_id
         ) ps ON ps.exp_id = e.exp_id
         JOIN contract c ON e.ctr_id = c.ctr_id
@@ -95,10 +95,10 @@ if ($selectedExpId > 0 && $selectedExpense === null) {
     try {
         $compStmt = $pdo->prepare("
             SELECT e.exp_id, e.exp_month, e.exp_total, r.room_number,
-                   COALESCE(SUM(CASE WHEN p.pay_status = '0' THEN p.pay_amount ELSE 0 END), 0) AS pending_amount,
-                   COALESCE(SUM(CASE WHEN p.pay_status = '1' THEN p.pay_amount ELSE 0 END), 0) AS paid_amount,
-                   MAX(CASE WHEN p.pay_status IN ('0', '1') THEN p.pay_date END) AS last_pay_date,
-                   (SELECT pay_proof FROM payment WHERE exp_id = e.exp_id AND pay_status IN ('0', '1') AND pay_proof IS NOT NULL ORDER BY pay_date DESC LIMIT 1) AS pay_proof
+                   COALESCE(SUM(CASE WHEN p.pay_status = '0' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' THEN p.pay_amount ELSE 0 END), 0) AS pending_amount,
+                   COALESCE(SUM(CASE WHEN p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' THEN p.pay_amount ELSE 0 END), 0) AS paid_amount,
+                   MAX(CASE WHEN p.pay_status IN ('0', '1') AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' THEN p.pay_date END) AS last_pay_date,
+                   (SELECT pay_proof FROM payment WHERE exp_id = e.exp_id AND pay_status IN ('0', '1') AND pay_proof IS NOT NULL AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' ORDER BY pay_date DESC LIMIT 1) AS pay_proof
             FROM expense e
             JOIN contract c ON e.ctr_id = c.ctr_id
             JOIN room r ON c.room_id = r.room_id
@@ -194,7 +194,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1')  FOR UPDATE");
+            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' FOR UPDATE");
             $sumRowsStmt->execute([$exp_id]);
             $submittedAmount = 0;
             foreach ($sumRowsStmt->fetchAll(PDO::FETCH_ASSOC) as $payRow) {
@@ -202,7 +202,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             // ปกป้องการส่งซ้ำ: ตรวจสอบว่ามีการแจ้งชำระเงินที่ยังรอตรวจสอบอยู่สำหรับบิลนี้หรือไม่ (ไม่นับมัดจำ)
-            $checkPendingStmt = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' ");
+            $checkPendingStmt = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'");
             $checkPendingStmt->execute([$exp_id]);
             if ($checkPendingStmt->fetchColumn() > 0) {
                 throw new Exception('มีการแจ้งชำระเงินที่รอการตรวจสอบอยู่แล้ว กรุณารอผู้ดูแลตรวจสอบก่อนส่งใหม่');
@@ -283,7 +283,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
                     FROM payment
                     WHERE pay_status IN ('0', '1')
-                      
+                      AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
                     GROUP BY exp_id
                 ) ps ON ps.exp_id = e.exp_id
                 JOIN contract c ON e.ctr_id = c.ctr_id
