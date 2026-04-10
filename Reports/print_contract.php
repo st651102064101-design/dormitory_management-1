@@ -572,7 +572,10 @@ $datePartsStart = array_merge(['day' => '', 'month' => '', 'year' => ''], $dateP
 $datePartsEnd = array_merge(['day' => '', 'month' => '', 'year' => ''], $datePartsEnd ?? []);
 
 function h($value) {
-    if ($value === null || $value === '') return '-';
+    global $canEditTenantFields;
+    if ($value === null || $value === '' || $value === '-') {
+        return !empty($canEditTenantFields) ? '' : '-';
+    }
     return htmlspecialchars((string)$value);
 }
 
