@@ -122,6 +122,36 @@ try {
             $_SESSION['tenant_id'] = $targetTenantId;
             $_SESSION['tenant_name'] = $tntData['tnt_name'];
             $_SESSION['tenant_phone'] = $tntData['tnt_phone'];
+            
+            try {
+                require_once __DIR__ . '/LineHelper.php';
+                
+                $stmtC = $pdo->prepare("SELECT ctr_id, ctr_status, access_token, ctr_start FROM contract WHERE tnt_id = ? AND ctr_status != '1' ORDER BY ctr_id DESC LIMIT 1");
+                $stmtC->execute([$targetTenantId]);
+                $contract = $stmtC->fetch(PDO::FETCH_ASSOC);
+                
+                if ($contract) {
+                    $billCount = 0;
+                    $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN ( SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month ) latest ON e.exp_id = latest.exp_id WHERE e.ctr_id = ? AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m') AND ( e.exp_month = (SELECT MIN(e2.exp_month) FROM expense e2 WHERE e2.ctr_id = e.ctr_id) OR EXISTS ( SELECT 1 FROM utility u WHERE u.ctr_id = e.ctr_id AND YEAR(u.utl_date) = YEAR(e.exp_month) AND MONTH(u.utl_date) = MONTH(e.exp_month) AND u.utl_water_end IS NOT NULL AND u.utl_elec_end IS NOT NULL ) ) AND COALESCE(( SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1') ), 0) < e.exp_total");
+                    $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
+                    $billCount = (int)($billStmt->fetchColumn() ?? 0);
+
+                    $homeBadgeCount = 0;
+                    $homeBadgeStmt = $pdo->prepare("SELECT 1 FROM contract c LEFT JOIN signature_logs sl ON c.ctr_id = sl.contract_id AND sl.signer_type = 'tenant' LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id WHERE c.ctr_id = ? AND c.ctr_status != '1' AND tw.current_step >= 3 AND sl.id IS NULL LIMIT 1");
+                    $homeBadgeStmt->execute([$contract['ctr_id']]);
+                    if ($homeBadgeStmt->fetchColumn()) { $homeBadgeCount = 1; }
+                    
+                    $msg = "🎉 ยินดีต้อนรับคุณ {$tntData['tnt_name']}!\nบัญชี LINE ของคุณเชื่อมต่อกับระบบหอพักสำเร็จแล้ว\n\n";
+                    if ($billCount > 0) { $msg .= "⚠️ คุณมียอดค้างชำระ: {$billCount} รายการ\n"; } else { $msg .= "✅ คุณไม่มียอดค้างชำระ\n"; }
+                    if ($homeBadgeCount > 0) { $msg .= "📝 แจ้งเตือนสำคัญ:\nคุณมีสัญญาเช่าที่ยังไม่ได้เซ็นชื่อ โปรดเข้าสู่ระบบเพื่อดำเนินการเซ็นสัญญา\n"; }
+                    
+                    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+                    $dashUrl = $protocol . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost') . dirname($_SERVER['PHP_SELF'] ?? '/line_callback.php') . '/Tenant/index.php?token=' . urlencode($contract['access_token']);
+                    $msg .= "\n📱 เข้าสู่ระบบจัดการผู้เช่า (Dashboard):\n{$dashUrl}";
+                    
+                    if (function_exists('sendLineMulticast')) { sendLineMulticast($pdo, [$lineUserId], $msg); }
+                }
+            } catch (Exception $e) { error_log("LINE MultiCast Error: " . $e->getMessage()); }
         }
         
         // ล้างค่า
