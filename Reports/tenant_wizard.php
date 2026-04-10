@@ -2241,14 +2241,31 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                     $step5Tooltip = '5. แจ้งยกเลิกสัญญาแล้ว';
                                 }
 
-                                $openBillingModalJsRaw = 'openBillingModal('
-                                    . (int)$tenant['ctr_id'] . ', '
-                                    . json_encode($tenant['tnt_id'], JSON_UNESCAPED_UNICODE) . ', '
-                                    . json_encode($tenant['tnt_name'], JSON_UNESCAPED_UNICODE) . ', '
-                                    . json_encode($tenant['room_number'], JSON_UNESCAPED_UNICODE) . ', '
-                                    . json_encode($tenant['type_name'], JSON_UNESCAPED_UNICODE) . ', '
-                                    . (int)$tenant['type_price']
-                                    . ')';
+                                if ($isCancelPending) {
+                                    $ctrIdCancelBtn = (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0);
+                                    $bankNameBtn = $tenant['bank_name'] ?? '';
+                                    $bankAccNameBtn = $tenant['bank_account_name'] ?? '';
+                                    $bankAccNumBtn = $tenant['bank_account_number'] ?? '';
+                                    $depositAmtBtn = (int)($tenant['ctr_deposit'] ?? 0);
+                                    $openBillingModalJsRaw = 'openRefundModal('
+                                        . $ctrIdCancelBtn . ', '
+                                        . json_encode($tenant['tnt_name'], JSON_UNESCAPED_UNICODE) . ', '
+                                        . json_encode($tenant['room_number'] ?? '-', JSON_UNESCAPED_UNICODE) . ', '
+                                        . json_encode($bankNameBtn, JSON_UNESCAPED_UNICODE) . ', '
+                                        . json_encode($bankAccNameBtn, JSON_UNESCAPED_UNICODE) . ', '
+                                        . json_encode($bankAccNumBtn, JSON_UNESCAPED_UNICODE) . ', '
+                                        . $depositAmtBtn
+                                        . ')';
+                                } else {
+                                    $openBillingModalJsRaw = 'openBillingModal('
+                                        . (int)$tenant['ctr_id'] . ', '
+                                        . json_encode($tenant['tnt_id'], JSON_UNESCAPED_UNICODE) . ', '
+                                        . json_encode($tenant['tnt_name'], JSON_UNESCAPED_UNICODE) . ', '
+                                        . json_encode($tenant['room_number'], JSON_UNESCAPED_UNICODE) . ', '
+                                        . json_encode($tenant['type_name'], JSON_UNESCAPED_UNICODE) . ', '
+                                        . (int)$tenant['type_price']
+                                        . ')';
+                                }
                                 $openBillingModalJsEscaped = htmlspecialchars($openBillingModalJsRaw, ENT_QUOTES, 'UTF-8');
                                 $openBillingModalKeydownEscaped = htmlspecialchars(
                                     "if(event.key==='Enter'||event.key===' '){event.preventDefault();" . $openBillingModalJsRaw . ';}',
