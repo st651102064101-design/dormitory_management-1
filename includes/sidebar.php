@@ -310,17 +310,52 @@ try {
     ";
 
     $wizardCountStmt = $pdo->query("
-        SELECT COUNT(*) as incomplete_count 
+        SELECT b.bkg_id, r.room_id 
         FROM booking b
-        LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id
-        LEFT JOIN contract c ON COALESCE(c.ctr_id, tw.ctr_id) = c.ctr_id
-        LEFT JOIN checkin_records cr ON COALESCE(c.ctr_id, tw.ctr_id) = cr.ctr_id
+        INNER JOIN tenant t ON b.tnt_id = t.tnt_id
+        LEFT JOIN (
+            SELECT tw1.* FROM tenant_workflow tw1 INNER JOIN (SELECT bkg_id, MAX(id) AS latest_workflow_id FROM tenant_workflow GROUP BY bkg_id) tw2 ON tw1.id = tw2.latest_workflow_id
+        ) tw ON b.bkg_id = tw.bkg_id
+        LEFT JOIN room r ON b.room_id = r.room_id
+        LEFT JOIN contract c ON tw.ctr_id = c.ctr_id
+        LEFT JOIN (
+            SELECT cr1.*
+            FROM checkin_record cr1
+            INNER JOIN (
+                SELECT ctr_id, MAX(checkin_id) AS latest_checkin_id
+                FROM checkin_record
+                GROUP BY ctr_id
+            ) cr2 ON cr1.checkin_id = cr2.latest_checkin_id
+        ) cr ON c.ctr_id = cr.ctr_id
         WHERE b.bkg_status != '0' 
           AND COALESCE(b.bkg_status, '') <> '5'
+          AND (c.ctr_id IS NULL OR c.ctr_status <> '1')
+          AND NOT EXISTS (
+              SELECT 1 FROM contract c3
+              LEFT JOIN termination t3 ON c3.ctr_id = t3.ctr_id
+              WHERE c3.room_id = b.room_id
+                AND (
+                    (c3.ctr_status = '0' AND (c3.ctr_end IS NULL OR c3.ctr_end >= CURDATE()))
+                    OR (c3.ctr_status = '2' AND (t3.term_date IS NULL OR t3.term_date >= CURDATE()))
+                )
+                AND COALESCE(c3.tnt_id, '') <> COALESCE(b.tnt_id, '')
+          )
           AND NOT ($allStepsDoneCondition)
     ");
-    $wizardCountResult = $wizardCountStmt->fetch(PDO::FETCH_ASSOC);
-    $wizardIncompleteCount = (int)($wizardCountResult['incomplete_count'] ?? 0);
+    $wizardCountResult = $wizardCountStmt->fetchAll(PDO::FETCH_ASSOC);
+    $wizardDeduped = [];
+    foreach ($wizardCountResult as $row) {
+        if (!isset($row['bkg_id'])) continue;
+        $roomKey = isset($row['room_id']) && $row['room_id'] !== null ? 'r' . (int)$row['room_id'] : 'b' . (int)($row['bkg_id'] ?? 0);
+        if (!isset($wizardDeduped[$roomKey])) {
+            $wizardDeduped[$roomKey] = $row;
+            continue;
+        }
+        if ((int)$row['bkg_id'] > (int)$wizardDeduped[$roomKey]['bkg_id']) {
+            $wizardDeduped[$roomKey] = $row;
+        }
+    }
+    $wizardIncompleteCount = count($wizardDeduped);
 
     // ดึงจำนวนรายการชำระเงินที่ "รอตรวจสอบ"
     // รวมทั้งรายการจาก payment และ booking_payment (มัดจำจากขั้นตอนจอง)
