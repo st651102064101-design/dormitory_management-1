@@ -2336,7 +2336,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                         </div>
                                     </td>
                                     <td data-label="ขั้นตอนถัดไป">
-                                        <?php if ($isCancelPending):
+                                        <?php if ($isCancelPending && $step4 == 1):
                                               $ctrIdCancel = (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0);
                                               $termDateDisplay = !empty($tenant['term_date']) ? thaiDate($tenant['term_date']) : '-';
                                               $refundDone = (int)($tenant['refund_confirmed'] ?? 0) === 1;
