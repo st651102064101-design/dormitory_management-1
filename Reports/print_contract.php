@@ -1008,7 +1008,7 @@ function nameWithoutNickname($fullName) {
                         </div>
                     </div>
                     <?php else: ?>
-                    <?php if ($isTenantAccess): ?>
+                    <?php if ($isTenantAccess && !$isAdminOrOwnerAccess): ?>
                     <button type="button" class="sign-btn no-print" onclick="openSignatureModal({
                         contractId: <?php echo $ctr_id; ?>,
                         signerType: 'tenant',
