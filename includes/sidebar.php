@@ -484,7 +484,7 @@ try {
   $bookingStatusBadgeTotal = array_sum($bookingStatusBadgeCounts);
   $bookingActionBadgeTotal = (int)$bookingStatusBadgeCounts['reserved'];
   $utilityActionBadgeTotal = (int)$utilityStatusBadgeCounts['water'] + (int)$utilityStatusBadgeCounts['electric'];
-  $expenseActionBadgeTotal = (int)($expenseStatusBadgeCounts['unpaid'] ?? 0);
+  $expenseActionBadgeTotal = (int)($expenseStatusBadgeCounts['pending'] ?? 0);
   $paymentActionBadgeTotal = (int)$paymentStatusBadgeCounts['pending'];
   $repairActionBadgeTotal = (int)$repairStatusBadgeCounts['pending'] + (int)$repairStatusBadgeCounts['inprogress'];
   $contractActionBadgeTotal = (int)$contractStatusBadgeCounts['termination_requested'] + (int)$contractStatusBadgeCounts['refund_pending'];
@@ -492,7 +492,7 @@ try {
   $expenseActionFilterMonth = date('Y-m');
   $expenseActionUrl = 'manage_expenses.php';
   if ($expenseActionBadgeTotal > 0) {
-    $expenseActionUrl .= '?filter_status=4&filter_month=' . rawurlencode($expenseActionFilterMonth) . '&sort=newest';
+    $expenseActionUrl .= '?filter_status=2&filter_month=' . rawurlencode($expenseActionFilterMonth) . '&sort=newest';
   }
 
 if ($sidebarDataLoadedFromDb) {

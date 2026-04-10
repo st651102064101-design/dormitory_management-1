@@ -117,7 +117,7 @@ return [
     'booking_status_pending' => 'สถานะการจองค้าง',
     'utility_needs_action' => 'ต้องจัดการ: ห้องที่ยังไม่จดมิเตอร์',
     'utility_status_pending' => 'สถานะจดมิเตอร์น้ำไฟค้าง',
-    'expense_needs_action' => 'ต้องจัดการ: รอชำระ',
+    'expense_needs_action' => 'ต้องจัดการ: รอตรวจสอบ',
     'expense_status_label' => 'สถานะค่าใช้จ่าย',
     'payment_needs_action' => 'ต้องจัดการ: รอชำระ/รอตรวจสอบ',
     'payment_status_label' => 'สถานะการชำระเงิน',
