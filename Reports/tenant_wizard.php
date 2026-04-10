@@ -4904,23 +4904,20 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
     }
 
     function wizFilter(group) {
-        window._wizCurrentGroup = group;
+        if (group !== _wizCurrentGroup) {
+            window.location.href = 'tenant_wizard.php?completed=' + group;
+            return;
+        }
         var btn0 = document.getElementById('wizBtn0');
         var btn1 = document.getElementById('wizBtn1');
         if (btn0) { btn0.classList.toggle('active', group === 0); }
-        if (btn1) {
-            var hasCompleted = document.querySelectorAll('#wizardTableWrapper tr[data-wiz-group="1"]').length > 0;
-            btn1.style.display = hasCompleted ? '' : 'none';
-            btn1.classList.toggle('active', group === 1);
-        }
+        if (btn1) { btn1.classList.toggle('active', group === 1); }
+
         var emptyTitle = document.getElementById('wizFilterEmptyTitle');
         var emptyMsg   = document.getElementById('wizFilterEmptyMsg');
         if (emptyTitle) emptyTitle.textContent = group === 1 ? 'ยังไม่มีผู้เช่าที่ครบ 5 ขั้นตอน' : 'ไม่มีรายการที่รอดำเนินการ';
         if (emptyMsg)   emptyMsg.textContent   = group === 1 ? 'ผู้เช่าที่ผ่านครบ 5 ขั้นตอนแล้วจะแสดงที่นี่' : 'ผู้เช่าทุกคนผ่านครบ 5 ขั้นตอนแล้ว';
         wizFilterApply(group);
-        var url = new URL(window.location.href);
-        url.searchParams.set('completed', group);
-        history.replaceState(null, '', url.toString());
     }
 
     document.addEventListener('DOMContentLoaded', function() {
