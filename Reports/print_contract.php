@@ -1245,12 +1245,13 @@ function nameWithoutNickname($fullName) {
         
         // Setup editable fields
         editableFields.forEach(el => {
+            // Pre-clear "-" on load so we don't disrupt Safari's focus behavior
+            if (el.textContent.trim() === '-') {
+                el.textContent = '';
+            }
+            
             // Clear placeholder text or "-" on focus
             el.addEventListener('focus', function() {
-                const currentText = this.textContent.trim();
-                if (currentText === '-' || currentText === '') {
-                    this.textContent = '';
-                }
                 showHint(this, '✏️ พิมพ์ข้อมูลแล้วคลิกที่อื่นเพื่อบันทึก');
             });
             
@@ -1404,16 +1405,7 @@ function nameWithoutNickname($fullName) {
         // === SPECIFIC VALIDATION FOR ID CARD FIELD (max 13 digits) ===
         const idcardField = document.getElementById('idcard-primary');
         if (idcardField) {
-            // Clear "-" and limit to 13 digits on focus
             idcardField.addEventListener('focus', function(e) {
-                // Remove "-" or any non-digit
-                let text = this.textContent.replace(/[^0-9]/g, '');
-                if (text.length > 13) {
-                    text = text.substring(0, 13);
-                }
-                if (this.textContent !== text) {
-                    this.textContent = text;
-                }
                 showHint(this, '✏️ พิมพ์ข้อมูลแล้วคลิกที่อื่นเพื่อบันทึก');
             }, true); // capture phase
             
