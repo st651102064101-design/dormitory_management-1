@@ -3554,9 +3554,11 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 // Disable update meter button if latest bill is fully paid
                 const moSaveBtn = document.getElementById('moSaveBtn');
                 const saveMeterBtn = document.getElementById('saveMeterBtn');
+                const meterBody = document.getElementById('meterBody');
                 if (isFirstBillFullyPaid) {
                     if (moSaveBtn) { moSaveBtn.style.display = 'none'; moSaveBtn.disabled = true; }
                     if (saveMeterBtn) { saveMeterBtn.style.display = 'none'; saveMeterBtn.disabled = true; }
+                    if (meterBody) { meterBody.style.display = 'none'; }
                     const meterNoticeBlock = document.getElementById('meterNoticeBlock');
                     if (meterNoticeBlock) {
                         meterNoticeBlock.innerHTML = '<span class="billing-inline-icon" style="color:#4ade80;"><svg class="billing-svg-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14M1 4.5L8.5 12 15 5.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/></svg><span>ชำระแล้ว — ไม่สามารถอัปเดตมิเตอร์ได้</span></span>';
@@ -3565,6 +3567,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                         meterNoticeBlock.style.color = '#4ade80';
                         meterNoticeBlock.style.display = '';
                     }
+                } else {
+                    if (meterBody) { meterBody.style.display = ''; }
                 }
 
                 // แสดงบิลทุกเดือนจาก all_bills
