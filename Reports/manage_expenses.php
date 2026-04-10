@@ -2264,31 +2264,21 @@ try {
               <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === 'all' ? ' active' : ''; ?>" data-status="all">
                 ทั้งหมด <span class="tab-count"><?php echo $totalExpenseCount; ?></span>
               </button>
-              <?php if ($stats['unpaid'] > 0): ?>
               <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '0' ? ' active' : ''; ?>" data-status="0">
                 รอชำระ <span class="tab-count"><?php echo $stats['unpaid']; ?></span>
               </button>
-              <?php endif; ?>
-              <?php if ($stats['pending'] > 0): ?>
               <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '2' ? ' active' : ''; ?>" data-status="2">
                 รอตรวจสอบ <span class="tab-count"><?php echo $stats['pending']; ?></span>
               </button>
-              <?php endif; ?>
-              <?php if ($stats['partial'] > 0): ?>
               <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '3' ? ' active' : ''; ?>" data-status="3">
                 ชำระยังไม่ครบ <span class="tab-count"><?php echo $stats['partial']; ?></span>
               </button>
-              <?php endif; ?>
-              <?php if ($stats['overdue'] > 0): ?>
               <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '4' ? ' active' : ''; ?>" data-status="4">
                 ค้างชำระ <span class="tab-count"><?php echo $stats['overdue']; ?></span>
               </button>
-              <?php endif; ?>
-              <?php if ($stats['paid'] > 0): ?>
               <button type="button" class="expense-filter-tab<?php echo $selectedStatusFilter === '1' ? ' active' : ''; ?>" data-status="1">
                 ชำระแล้ว <span class="tab-count"><?php echo $stats['paid']; ?></span>
               </button>
-              <?php endif; ?>
             </div>
 
             <!-- Unified Toolbar -->
@@ -2989,11 +2979,11 @@ try {
         const activeTab = tabsWrap.querySelector('.expense-filter-tab.active');
         const currentFilter = activeTab ? activeTab.dataset.status : 'all';
         let html = '<button type="button" class="expense-filter-tab' + (currentFilter === 'all' ? ' active' : '') + '" data-status="all">ทั้งหมด <span class="tab-count">' + data.totalExpenseCount + '</span></button>';
-        if (s.unpaid > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '0' ? ' active' : '') + '" data-status="0">รอชำระ <span class="tab-count">' + s.unpaid + '</span></button>';
-        if (s.pending > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '2' ? ' active' : '') + '" data-status="2">รอตรวจสอบ <span class="tab-count">' + s.pending + '</span></button>';
-        if (s.partial > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '3' ? ' active' : '') + '" data-status="3">ชำระยังไม่ครบ <span class="tab-count">' + s.partial + '</span></button>';
-        if (s.overdue > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '4' ? ' active' : '') + '" data-status="4">ค้างชำระ <span class="tab-count">' + s.overdue + '</span></button>';
-        if (s.paid > 0) html += '<button type="button" class="expense-filter-tab' + (currentFilter === '1' ? ' active' : '') + '" data-status="1">ชำระแล้ว <span class="tab-count">' + s.paid + '</span></button>';
+        html += '<button type="button" class="expense-filter-tab' + (currentFilter === '0' ? ' active' : '') + '" data-status="0">รอชำระ <span class="tab-count">' + s.unpaid + '</span></button>';
+        html += '<button type="button" class="expense-filter-tab' + (currentFilter === '2' ? ' active' : '') + '" data-status="2">รอตรวจสอบ <span class="tab-count">' + s.pending + '</span></button>';
+        html += '<button type="button" class="expense-filter-tab' + (currentFilter === '3' ? ' active' : '') + '" data-status="3">ชำระยังไม่ครบ <span class="tab-count">' + s.partial + '</span></button>';
+        html += '<button type="button" class="expense-filter-tab' + (currentFilter === '4' ? ' active' : '') + '" data-status="4">ค้างชำระ <span class="tab-count">' + s.overdue + '</span></button>';
+        html += '<button type="button" class="expense-filter-tab' + (currentFilter === '1' ? ' active' : '') + '" data-status="1">ชำระแล้ว <span class="tab-count">' + s.paid + '</span></button>';
         tabsWrap.innerHTML = html;
         // Re-bind click handlers
         tabsWrap.querySelectorAll('.expense-filter-tab').forEach(function(tab) {
