@@ -8,8 +8,15 @@ $pdo = connectDB();
 // Handle LINE linking success from URL parameter (convert to session variable for security)
 if (!empty($_GET['line_linked']) && $_GET['line_linked'] == '1' && empty($_SESSION['line_link_success'])) {
     $_SESSION['line_link_success'] = true;
-    // Remove the parameter from URL to prevent repeated display on refresh
-    unset($_GET['line_linked']);
+    $redirectUrl = strtok($_SERVER["REQUEST_URI"], '?');
+    if (!empty($_GET['room'])) {
+        $redirectUrl .= '?room=' . urlencode($_GET['room']);
+    }
+    if (!empty($_GET['success'])) {
+        $redirectUrl .= (strpos($redirectUrl, '?') !== false ? '&' : '?') . 'success=' . urlencode($_GET['success']);
+    }
+    header("Location: $redirectUrl");
+    exit;
 }
 
 // Apply shared public background and scrollbar styles
@@ -1923,7 +1930,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 });
             </script>
-            <?php unset($_SESSION['line_link_success']); // Clear after displaying ?>
         <?php endif; ?>
         <?php if ($success): ?>
         <?php
@@ -2014,7 +2020,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </p>
                 <a href="../Tenant/index.php" class="btn btn-primary" style="display:inline-block;padding:12px 24px;background:#10b981;color:#fff;text-decoration:none;border-radius:8px;font-weight:500;">เข้าสู่ระบบจัดการผู้เช่า</a>
             </div>
-            <?php unset($_SESSION['line_link_success']); // Clear after displaying ?>
             <?php
             elseif ($lineLoginChannelId):
                 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
