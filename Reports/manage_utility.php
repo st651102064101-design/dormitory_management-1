@@ -526,7 +526,12 @@ if ($showMode === 'occupied') {
         ) lc ON r.room_id = lc.room_id
         JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
+        LEFT JOIN (
+            SELECT tnt_id, MAX(id) as max_tw_id
+            FROM tenant_workflow
+            GROUP BY tnt_id
+        ) latest_tw ON t.tnt_id = latest_tw.tnt_id
+        LEFT JOIN tenant_workflow tw ON latest_tw.max_tw_id = tw.id
         WHERE c.ctr_start <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
         AND c.ctr_end >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
         AND EXISTS (SELECT 1 FROM checkin_record cr WHERE cr.ctr_id = c.ctr_id
@@ -559,7 +564,12 @@ if ($showMode === 'occupied') {
         ) lc ON r.room_id = lc.room_id
         LEFT JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
+        LEFT JOIN (
+            SELECT tnt_id, MAX(id) as max_tw_id
+            FROM tenant_workflow
+            GROUP BY tnt_id
+        ) latest_tw ON t.tnt_id = latest_tw.tnt_id
+        LEFT JOIN tenant_workflow tw ON latest_tw.max_tw_id = tw.id
     ";
 
     $allParams = [$year, $month, $year];
