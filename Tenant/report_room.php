@@ -266,7 +266,7 @@ $hasRoomImage = $roomImageFilename !== '' && is_file($roomImageFilePath);
             FROM contract c
             LEFT JOIN signature_logs sl ON c.ctr_id = sl.contract_id AND sl.signer_type = 'tenant'
             LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
-            WHERE c.ctr_id = ? AND c.ctr_status != '1' AND tw.current_step >= 3 AND sl.id IS NULL
+            WHERE c.ctr_id = ? AND c.ctr_status != '1' AND tw.step_3_confirmed = 1 AND sl.id IS NULL
             LIMIT 1
         ");
         $homeBadgeStmt->execute([$contract['ctr_id'] ?? 0]);

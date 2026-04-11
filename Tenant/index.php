@@ -71,7 +71,7 @@ if (!empty($token)) {
                    t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age, t.line_user_id, t.is_weather_alert_enabled,
                    r.room_id, r.room_number, r.room_image,
                    rt.type_name, rt.type_price,
-                   tw.current_step
+                   tw.current_step, tw.step_3_confirmed
             FROM contract c
             JOIN tenant t ON c.tnt_id = t.tnt_id
             JOIN room r ON c.room_id = r.room_id
@@ -96,7 +96,7 @@ if (!$contractData && !empty($_SESSION['tenant_logged_in'])) {
                        t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age, t.line_user_id, t.is_weather_alert_enabled,
                        r.room_id, r.room_number, r.room_image,
                        rt.type_name, rt.type_price,
-                       tw.current_step
+                       tw.current_step, tw.step_3_confirmed
                 FROM contract c
                 JOIN tenant t ON c.tnt_id = t.tnt_id
                 JOIN room r ON c.room_id = r.room_id
@@ -871,7 +871,7 @@ try {
         </div>
         
         <!-- Sign Contract Banner (Only show if at least in step 3: create contract) -->
-        <?php if (!$tenantSigned && ($contract['ctr_status'] ?? '0') !== '1' && ($contract['current_step'] ?? 1) >= 3): ?>
+        <?php if (!$tenantSigned && ($contract['ctr_status'] ?? '0') !== '1' && (int)($contract['step_3_confirmed'] ?? 0) === 1): ?>
         <div class="sign-alert">
             <div class="sign-alert-icon">
                 <svg viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round">
@@ -1201,7 +1201,7 @@ try {
             FROM contract c
             LEFT JOIN signature_logs sl ON c.ctr_id = sl.contract_id AND sl.signer_type = 'tenant'
             LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
-            WHERE c.ctr_id = ? AND c.ctr_status != '1' AND tw.current_step >= 3 AND sl.id IS NULL
+            WHERE c.ctr_id = ? AND c.ctr_status != '1' AND tw.step_3_confirmed = 1 AND sl.id IS NULL
             LIMIT 1
         ");
         $homeBadgeStmt->execute([$contract['ctr_id'] ?? 0]);
