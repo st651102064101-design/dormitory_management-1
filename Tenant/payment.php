@@ -81,7 +81,7 @@ try {
         ) p_dep ON p_dep.exp_id = e.exp_id
         JOIN contract c ON e.ctr_id = c.ctr_id
         JOIN room r ON c.room_id = r.room_id
-        WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
+        WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0) - COALESCE(p_dep.deposit_paid, 0)) > 0.00001
         ORDER BY e.exp_month DESC
     ");
     $stmt->execute([$contract['ctr_id'], $firstBillMonth, $firstBillMonth, $currentBillMonth]);
@@ -100,6 +100,13 @@ try {
         
         if ($isDepositOnly) {
             $exp['paid_amount'] = (float)$exp['paid_amount'] + (float)$exp['deposit_paid_amount'];
+        } else {
+            $depositPaid = (float)($exp['deposit_paid_amount'] ?? 0);
+            if ($depositPaid > 0) {
+                // Deduct the deposit paid from the displayed bill total
+                $expTotal -= $depositPaid;
+                $exp['exp_total'] = $expTotal;
+            }
         }
         
         if (($expTotal - (float)$exp['paid_amount']) > 0) {
@@ -315,7 +322,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Refresh unpaid expenses
             $stmt = $pdo->prepare("
                 SELECT e.*, r.room_number,
-                       COALESCE(ps.submitted_amount, 0) AS paid_amount
+                       COALESCE(ps.submitted_amount, 0) AS paid_amount,
+                       COALESCE(p_dep.deposit_paid, 0) AS deposit_paid
                 FROM expense e
                 JOIN (
                     SELECT MAX(exp_id) AS exp_id
@@ -344,13 +352,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                       AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
                     GROUP BY exp_id
                 ) ps ON ps.exp_id = e.exp_id
+                LEFT JOIN (
+                    SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS deposit_paid
+                    FROM payment
+                    WHERE pay_status IN ('0', '1')
+                      AND TRIM(COALESCE(pay_remark, '')) = 'มัดจำ'
+                    GROUP BY exp_id
+                ) p_dep ON p_dep.exp_id = e.exp_id
                 JOIN contract c ON e.ctr_id = c.ctr_id
                 JOIN room r ON c.room_id = r.room_id
-                WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
+                WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0) - COALESCE(p_dep.deposit_paid, 0)) > 0.00001
                 ORDER BY e.exp_month DESC
             ");
             $stmt->execute([$contract['ctr_id'], $firstBillMonth, $firstBillMonth, $currentBillMonth]);
-            $unpaidExpenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $unpaidExpensesRaw2 = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $unpaidExpenses = [];
+            foreach ($unpaidExpensesRaw2 as $exp) {
+                $expTotal = (float)$exp['exp_total'];
+                $depositPaid = (float)($exp['deposit_paid'] ?? 0);
+                if ($depositPaid > 0 && !($expTotal > 0 && $expTotal == $ctrDeposit && (float)($exp['exp_elec_chg']??0) == 0 && (float)($exp['exp_water']??0) == 0)) {
+                    $expTotal -= $depositPaid;
+                    $exp['exp_total'] = $expTotal;
+                }
+                if (($expTotal - (float)($exp['paid_amount']??0)) > 0) {
+                    $unpaidExpenses[] = $exp;
+                }
+            }
         }
         
     } catch (Exception $e) {

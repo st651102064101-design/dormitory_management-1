@@ -66,7 +66,7 @@ try {
                                 WHERE p.exp_id = e_first.exp_id
                                   AND p.pay_status = '1'
                                   AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
-                            ), 0) >= e_first.exp_total - 0.00001
+                            ), 0) >= (e_first.exp_total - COALESCE((SELECT SUM(pr.pay_amount) FROM payment pr WHERE pr.exp_id = e_first.exp_id AND pr.pay_status = '1' AND TRIM(COALESCE(pr.pay_remark, '')) = 'มัดจำ'), 0)) - 0.00001
                 )
         ";
 
@@ -97,7 +97,7 @@ try {
                     WHERE p.exp_id = e_latest.exp_id
                       AND p.pay_status = '1'
                       AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
-                ), 0) >= e_latest.exp_total - 0.00001
+                ), 0) >= (e_latest.exp_total - COALESCE((SELECT SUM(pr.pay_amount) FROM payment pr WHERE pr.exp_id = e_latest.exp_id AND pr.pay_status = '1' AND TRIM(COALESCE(pr.pay_remark, '')) = 'มัดจำ'), 0)) - 0.00001
         )
     ";
 
@@ -172,7 +172,7 @@ try {
                                 SELECT
                                     CASE
                                         WHEN e.exp_total > 0
-                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= e.exp_total - 0.00001
+                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= (e.exp_total - COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'), 0)) - 0.00001
                                             THEN '1'
                                         WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
                                             THEN '3'
@@ -187,6 +187,9 @@ try {
                                         c.ctr_start IS NULL
                                         OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
                                     )
+                                    AND NOT EXISTS (
+                                        SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'
+                                    )
                                 ORDER BY e.exp_month ASC, e.exp_id DESC
                                 LIMIT 1
                         ) AS first_exp_status,
@@ -194,7 +197,7 @@ try {
                                 SELECT
                                     CASE
                                         WHEN e.exp_total > 0
-                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= e.exp_total - 0.00001
+                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= (e.exp_total - COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'), 0)) - 0.00001
                                             THEN '1'
                                         WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
                                             THEN '3'
@@ -206,6 +209,9 @@ try {
                                 FROM expense e
                                 WHERE e.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
                                     AND DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+                                    AND NOT EXISTS (
+                                        SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'
+                                    )
                                 ORDER BY e.exp_id DESC
                                 LIMIT 1
                         ) AS current_exp_status,
@@ -217,6 +223,9 @@ try {
                                         c.ctr_start IS NULL
                                         OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
                                     )
+                                    AND NOT EXISTS (
+                                        SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'
+                                    )
                                 ORDER BY e.exp_month DESC, e.exp_id DESC
                                 LIMIT 1
                         ) AS latest_exp_month,
@@ -224,7 +233,7 @@ try {
                                 SELECT
                                     CASE
                                         WHEN e.exp_total > 0
-                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= e.exp_total - 0.00001
+                                             AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) >= (e.exp_total - COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'), 0)) - 0.00001
                                             THEN '1'
                                         WHEN COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark,'')) <> 'มัดจำ'), 0) > 0
                                             THEN '3'
@@ -238,6 +247,9 @@ try {
                                     AND (
                                         c.ctr_start IS NULL
                                         OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                    )
+                                    AND NOT EXISTS (
+                                        SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'
                                     )
                                 ORDER BY e.exp_month DESC, e.exp_id DESC
                                 LIMIT 1

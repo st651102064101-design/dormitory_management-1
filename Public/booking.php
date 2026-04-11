@@ -399,7 +399,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             INSERT INTO expense (exp_id, exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id)
                             VALUES (?, ?, 0, 0, ?, ?, ?, 0, 0, ?, '2', ?)
                         ");
-                        $stmtExpense->execute([$expenseId, date('Y-m-01'), $rateElec, $rateWater, $roomPrice, $deposit, $contractId]);
+                        $expTotal = $roomPrice + $deposit;
+                        $stmtExpense->execute([$expenseId, date('Y-m-01'), $rateElec, $rateWater, $roomPrice, $expTotal, $contractId]);
                         
                         // อัพโหลดหลักฐานการชำระมัดจำ
                         $paymentDir = __DIR__ . '/Assets/Images/Payments';
@@ -408,9 +409,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $payProof = uploadFile($_FILES['pay_proof'], $paymentDir, 'payment');
                         }
                         
-                        // บันทึก payment record (ค่ามัดจำ 2000 บาท) - บันทึกทุกครั้งแม้ยังไม่มีสลิป
+                        // บันทึก payment record (ค่ามัดจำ) - บันทึกทุกครั้งแม้ยังไม่มีสลิป
                         $paymentId = (int)substr((string)time(), -9) + 3;
-                        $depositAmount = 2000; // ค่ามัดจำคงที่
+                        $depositAmount = $deposit; // ใช้ค่า $deposit ที่ส่งมาจากฟอร์ม (ไม่ใช่ 2000 ตายตัว)
                         $payStatus = $payProof ? '0' : '0'; // 0 = รอตรวจสอบ (ไม่ว่าจะมีสลิปหรือไม่)
 
                         $stmtPayment = $pdo->prepare("

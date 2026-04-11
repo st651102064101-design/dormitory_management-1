@@ -53,7 +53,6 @@ function buildExpensePayload(PDO $pdo, array $expense, bool $hasPayRemark): arra
             SELECT pay_id, pay_date, pay_amount, pay_status, pay_remark, pay_proof
             FROM payment
             WHERE exp_id = :exp_id
-              AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
             ORDER BY pay_date ASC, pay_id ASC
         ";
     } else {
@@ -71,10 +70,17 @@ function buildExpensePayload(PDO $pdo, array $expense, bool $hasPayRemark): arra
     $payments = [];
     $approvedAmount = 0.0;
     $pendingAmount = 0.0;
+    $depositPaidAmount = 0.0;
 
     while ($pay = $paymentStmt->fetch(PDO::FETCH_ASSOC)) {
         $payAmount = (float)($pay['pay_amount'] ?? 0);
         $payStatus = (string)($pay['pay_status'] ?? '0');
+        $payRemark = trim((string)($pay['pay_remark'] ?? ''));
+
+        if ($payRemark === 'มัดจำ' && in_array($payStatus, ['0', '1'], true)) {
+             $depositPaidAmount += $payAmount;
+             continue; // Do not list deposit payments in regular RENT history for the wizard
+        }
 
         if ($payStatus === '1') {
             $approvedAmount += $payAmount;
@@ -100,7 +106,10 @@ function buildExpensePayload(PDO $pdo, array $expense, bool $hasPayRemark): arra
     }
 
     // Derive display status from actual payment totals to avoid stale exp_status values.
-    if ($expenseTotal > 0 && $approvedAmount >= ($expenseTotal - 0.00001)) {
+    // หักเงินมัดจำออกจากยอดรวมของบิลก่อนโชว์สถานะบิลของเงินค่าห้อง
+    $actualRentDue = max(0, $expenseTotal - $depositPaidAmount);
+
+    if ($actualRentDue > 0 && $approvedAmount >= ($actualRentDue - 0.00001)) {
         $effectiveExpenseStatus = '1';
     } elseif ($approvedAmount > 0) {
         $effectiveExpenseStatus = '3';
@@ -116,7 +125,8 @@ function buildExpensePayload(PDO $pdo, array $expense, bool $hasPayRemark): arra
         'has_expense' => true,
         'expense_id' => $expenseId,
         'bill_month' => (string)($expense['exp_month'] ?? ''),
-        'expense_total' => $expenseTotal,
+        'expense_total' => $actualRentDue, // Send only the rent due
+        'expense_raw_total' => $expenseTotal,
         'expense_status' => $effectiveExpenseStatus,
         'expense_status_text' => $statusTextMap[$effectiveExpenseStatus] ?? 'ไม่ทราบสถานะ',
         'approved_amount' => $approvedAmount,

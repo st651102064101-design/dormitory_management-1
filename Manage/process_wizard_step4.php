@@ -153,8 +153,16 @@ try {
     updateWorkflowStep($pdo, $tnt_id, 4, $_SESSION['admin_username']);
     
     // สร้างบิลเดือนแรกอัตโนมัติ
-    // ตรวจสอบว่ามีบิลสำหรับเดือนนี้แล้วหรือไม่
-    $checkExpStmt = $pdo->prepare("SELECT COUNT(*) FROM expense WHERE ctr_id = ? AND DATE_FORMAT(exp_month, '%Y-%m') = ?");
+    // ตรวจสอบว่ามีบิลสำหรับเดือนนี้แล้วหรือไม่ (ไม่รวมบิลมัดจำ)
+    $checkExpStmt = $pdo->prepare("
+        SELECT COUNT(*) 
+        FROM expense e 
+        WHERE e.ctr_id = ? 
+          AND DATE_FORMAT(e.exp_month, '%Y-%m') = ?
+          AND NOT EXISTS (
+              SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+          )
+    ");
     $checkExpStmt->execute([$ctr_id, $targetMonth]);
     
         $isFirstBillCreated = false;

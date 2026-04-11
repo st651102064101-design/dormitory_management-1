@@ -60,8 +60,17 @@ try {
 
     $pdo->beginTransaction();
 
-        // สร้างบิลรายเดือนแรกแบบ idempotent (ไม่ให้ซ้ำเดือน ctr_start)
-        $checkStmt = $pdo->prepare("SELECT exp_id FROM expense WHERE ctr_id = ? AND DATE_FORMAT(exp_month, '%Y-%m') = DATE_FORMAT(?, '%Y-%m') LIMIT 1");
+        // สร้างบิลรายเดือนแรกแบบ idempotent (ไม่ให้ซ้ำเดือน ctr_start แต่ต้องไม่นับบิลมัดจำ)
+        $checkStmt = $pdo->prepare("
+            SELECT e.exp_id 
+            FROM expense e
+            WHERE e.ctr_id = ? 
+              AND DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
+              AND NOT EXISTS (
+                  SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+              )
+            LIMIT 1
+        ");
         $checkStmt->execute([$ctr_id, $firstBillMonth]);
         $existingExpenseId = $checkStmt->fetchColumn();
 
