@@ -1164,7 +1164,14 @@ try {
             signal: editIdCardAbortController.signal,
           });
 
-          const result = await response.json();
+          const rawText = await response.text();
+          let result;
+          try {
+            result = JSON.parse(rawText);
+          } catch (_) {
+            throw new Error('รูปแบบข้อมูลตอบกลับไม่ถูกต้องจากระบบตรวจสอบเลขบัตร');
+          }
+
           if (!response.ok || !result.success) {
             throw new Error(result.message || 'ตรวจสอบเลขบัตรไม่สำเร็จ');
           }
@@ -1199,7 +1206,10 @@ try {
             isDuplicate: false,
             isChecking: false,
           };
-          setEditIdCardStatus('error', 'ตรวจสอบเลขบัตรไม่สำเร็จ กรุณาลองอีกครั้ง');
+          const errorMessage = (error && typeof error.message === 'string' && error.message.trim() !== '')
+            ? error.message
+            : 'ตรวจสอบเลขบัตรไม่สำเร็จ กรุณาลองอีกครั้ง';
+          setEditIdCardStatus('error', errorMessage);
           setEditSubmitDisabled(true);
         }
       }

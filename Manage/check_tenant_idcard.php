@@ -39,8 +39,7 @@ try {
         exit;
     }
 
-    $stmt = $pdo->prepare(
-        "SELECT
+    $baseSql = "SELECT
             t.tnt_id,
             COALESCE(NULLIF(TRIM(t.tnt_name), ''), '-') AS tnt_name,
             (
@@ -52,15 +51,18 @@ try {
                 LIMIT 1
             ) AS room_number
         FROM tenant t
-        WHERE t.tnt_idcard = :tnt_idcard
-          AND (:tnt_id_original = '' OR t.tnt_id <> :tnt_id_original)
-        LIMIT 1"
-    );
+        WHERE t.tnt_idcard = :tnt_idcard";
 
-    $stmt->execute([
-        ':tnt_idcard' => $tntIdCard,
-        ':tnt_id_original' => $tntIdOriginal,
-    ]);
+    $params = [':tnt_idcard' => $tntIdCard];
+    if ($tntIdOriginal !== '') {
+        $baseSql .= " AND t.tnt_id <> :tnt_id_original";
+        $params[':tnt_id_original'] = $tntIdOriginal;
+    }
+
+    $baseSql .= " LIMIT 1";
+
+    $stmt = $pdo->prepare($baseSql);
+    $stmt->execute($params);
 
     $duplicate = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -81,6 +83,7 @@ try {
         'message' => 'เลขบัตรประชาชนนี้ใช้งานได้'
     ]);
 } catch (Throwable $e) {
+    error_log('check_tenant_idcard.php error: ' . $e->getMessage());
     http_response_code(500);
     echo json_encode([
         'success' => false,
