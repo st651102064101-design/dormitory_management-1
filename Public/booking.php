@@ -5,6 +5,13 @@ require_once __DIR__ . '/../ConnectDB.php';
 
 $pdo = connectDB();
 
+// Handle LINE linking success from URL parameter (convert to session variable for security)
+if (!empty($_GET['line_linked']) && $_GET['line_linked'] == '1' && empty($_SESSION['line_link_success'])) {
+    $_SESSION['line_link_success'] = true;
+    // Remove the parameter from URL to prevent repeated display on refresh
+    unset($_GET['line_linked']);
+}
+
 // Apply shared public background and scrollbar styles
 include_once __DIR__ . '/../includes/public_theme.php';
 
@@ -1906,7 +1913,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </header>
 
     <div class="main-container">
-        <?php if (!empty($_GET['line_linked']) && $_GET['line_linked'] == '1'): ?>
+        <?php if (!empty($_SESSION['line_link_success']) && $_SESSION['line_link_success'] === true): ?>
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
                     if (typeof showAppleAlert === 'function') {
@@ -1916,6 +1923,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 });
             </script>
+            <?php unset($_SESSION['line_link_success']); // Clear after displaying ?>
         <?php endif; ?>
         <?php if ($success): ?>
         <?php
@@ -1994,7 +2002,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $lineLoginChannelId = '';
             }
             
-            if (!empty($_GET['line_linked']) && $_GET['line_linked'] == '1'):
+            if (!empty($_SESSION['line_link_success']) && $_SESSION['line_link_success'] === true):
             ?>
             <div style="background:var(--bg-secondary);border:1px solid #10b981;border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);text-align:center;">
                 <div style="width:60px;height:60px;background:rgba(16,185,129,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
@@ -2006,6 +2014,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </p>
                 <a href="../Tenant/index.php" class="btn btn-primary" style="display:inline-block;padding:12px 24px;background:#10b981;color:#fff;text-decoration:none;border-radius:8px;font-weight:500;">เข้าสู่ระบบจัดการผู้เช่า</a>
             </div>
+            <?php unset($_SESSION['line_link_success']); // Clear after displaying ?>
             <?php
             elseif ($lineLoginChannelId):
                 $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
