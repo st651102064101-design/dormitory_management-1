@@ -13,7 +13,7 @@
 // ถ้าเว้นว่าง '' จะใช้ค่าอัตโนมัติจาก $_SERVER['HTTP_HOST']
 // ⚠️ สำคัญ: ต้องตรงกับที่ลงทะเบียนใน LINE/Google Developers Console พอดี!
 
-define('SITE_HOST', 'project.3bbddns.com');
+define('SITE_HOST', 'project.3bbddns.com:36140');
 
 // ===========================================
 // ตั้งค่า Protocol (http หรือ https)
