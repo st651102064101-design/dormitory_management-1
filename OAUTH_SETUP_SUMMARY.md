@@ -1,12 +1,12 @@
 # ✅ LINE OAuth Configuration - Summary
 
 ## 🎯 Current Status
-✅ System is now configured to work with `project.3bbddns.com:36140`
+✅ System is now configured to work with `project.3bbddns.com` over HTTPS (port 443)
 
 ### Configuration Applied:
 ```php
-define('SITE_HOST', 'project.3bbddns.com:36140');
-define('SITE_PROTOCOL', 'http');
+define('SITE_HOST', 'project.3bbddns.com');
+define('SITE_PROTOCOL', 'https');
 ```
 
 ---
@@ -16,7 +16,7 @@ define('SITE_PROTOCOL', 'http');
 ### Step 1️⃣: Access Debug Page (Verify Configuration)
 Open this URL in your browser:
 ```
-http://project.3bbddns.com:36140/dormitory_management/debug_oauth.php
+https://project.3bbddns.com/dormitory_management/debug_oauth.php
 ```
 
 ✅ You should see:
@@ -35,7 +35,7 @@ http://project.3bbddns.com:36140/dormitory_management/debug_oauth.php
 4. Find **Redirect URI** field
 5. Add the URI from debug_oauth.php:
    ```
-   http://project.3bbddns.com:36140/dormitory_management/line_callback.php
+   https://project.3bbddns.com/dormitory_management/line_callback.php
    ```
 6. **Save**
 
@@ -49,14 +49,14 @@ http://project.3bbddns.com:36140/dormitory_management/debug_oauth.php
 4. Click **Edit**
 5. Add to **Authorized redirect URIs**:
    ```
-   http://project.3bbddns.com:36140/dormitory_management/google_callback.php
+   https://project.3bbddns.com/dormitory_management/google_callback.php
    ```
 6. **Save**
 
 ---
 
 ### Step 4️⃣: Test LINE Login
-1. Go to: `http://project.3bbddns.com:36140/dormitory_management/Public/booking.php`
+1. Go to: `https://project.3bbddns.com/dormitory_management/Public/booking.php`
 2. Click "ผูกบัญชี LINE" button
 3. Should redirect to LINE OAuth without errors ✅
 
@@ -65,15 +65,14 @@ http://project.3bbddns.com:36140/dormitory_management/debug_oauth.php
 ## 📋 Important Notes
 
 ### HTTP vs HTTPS
-- **Currently using:** HTTP (due to SSL/TLS issues on port 36140)
-- **For Production:** You should use HTTPS
-  - See [SSL_TROUBLESHOOTING.md](SSL_TROUBLESHOOTING.md) for options
-  - Options: Install SSL cert, Use reverse proxy, or fix self-signed cert
+- **Currently using:** HTTPS on port 443 (standard HTTPS port)
+- **Certificate:** XAMPP has valid SSL certificate for project.3bbddns.com
+- **For Custom Ports:** If you need HTTPS on a custom port, see [SSL_TROUBLESHOOTING.md](SSL_TROUBLESHOOTING.md)
 
 ### URL Must Match Exactly
-- ⚠️ Protocol must match: `http://` vs `https://`
+- ⚠️ Protocol must match: `https://` (not `http://`)
 - ⚠️ Domain must match: `project.3bbddns.com`
-- ⚠️ Port must match: `:36140`
+- ⚠️ Port is automatic: 443 (no need to specify)
 - ⚠️ Path must match: `/dormitory_management/line_callback.php`
 
 If any part is different → **400 Bad Request Error**
