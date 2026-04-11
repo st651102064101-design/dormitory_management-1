@@ -17,7 +17,7 @@ define('SITE_HOST', 'project.3bbddns.com:36140');
 // ตั้งค่า Protocol (http หรือ https)
 // ===========================================
 // ใส่ '' เพื่อให้ระบบตรวจจาก request อัตโนมัติ
-define('SITE_PROTOCOL', 'https');
+define('SITE_PROTOCOL', '');
 
 // ===========================================
 // ฟังก์ชันสร้าง Base URL
