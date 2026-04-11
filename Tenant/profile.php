@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tnt_address = trim($_POST['tnt_address'] ?? '');
         $tnt_vehicle = trim($_POST['tnt_vehicle'] ?? '');
         $tnt_parent = trim($_POST['tnt_parent'] ?? '');
-        $tnt_parentsphone = trim($_POST['tnt_parentsphone'] ?? '');
+        $tnt_parentsphone = preg_replace('/\D+/', '', trim($_POST['tnt_parentsphone'] ?? ''));
 
         if ($tnt_idcard !== '' && !preg_match('/^\d{13}$/', $tnt_idcard)) {
             throw new RuntimeException('เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก');
@@ -35,6 +35,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($tnt_name === '') {
             throw new RuntimeException('กรุณากรอกชื่อ-นามสกุล');
+        }
+
+        if (strlen($tnt_parentsphone) > 10) {
+            throw new RuntimeException('เบอร์โทรผู้ปกครองต้องไม่เกิน 10 หลัก');
         }
 
         $tnt_age = null;
@@ -458,7 +462,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <div class="form-group">
                     <label>เบอร์โทรผู้ปกครอง</label>
-                    <input type="tel" name="tnt_parentsphone" value="<?php echo htmlspecialchars($contract['tnt_parentsphone'] ?? ''); ?>" placeholder="0812345678">
+                    <input type="tel" name="tnt_parentsphone" value="<?php echo htmlspecialchars($contract['tnt_parentsphone'] ?? ''); ?>" placeholder="0812345678" maxlength="10" inputmode="numeric" pattern="[0-9]{0,10}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10);">
                 </div>
             </div>
             

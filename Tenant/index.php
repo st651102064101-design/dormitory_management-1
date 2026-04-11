@@ -10,8 +10,57 @@ require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/thai_date_helper.php';
 $pdo = connectDB();
 
-// รับ token จาก URL
-$token = $_GET['token'] ?? '';
+function getTenantTokenCookiePath(): string {
+    $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $dir = rtrim(dirname($scriptName), '/');
+
+    if ($dir === '' || $dir === '.') {
+        return '/';
+    }
+
+    return $dir;
+}
+
+function persistTenantPortalToken(string $token): void {
+    if ($token === '' || headers_sent()) {
+        return;
+    }
+
+    setcookie('tenant_portal_token', $token, [
+        'expires' => time() + (180 * 24 * 60 * 60),
+        'path' => getTenantTokenCookiePath(),
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+}
+
+function clearTenantPortalToken(): void {
+    if (headers_sent()) {
+        return;
+    }
+
+    setcookie('tenant_portal_token', '', [
+        'expires' => time() - 3600,
+        'path' => getTenantTokenCookiePath(),
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+}
+
+// รับ token จาก URL ก่อน แล้วค่อย fallback ไปที่ session/cookie
+$tokenFromQuery = trim((string)($_GET['token'] ?? ''));
+$tokenFromSession = trim((string)($_SESSION['tenant_token'] ?? ''));
+$tokenFromCookie = trim((string)($_COOKIE['tenant_portal_token'] ?? ''));
+$token = $tokenFromQuery !== ''
+    ? $tokenFromQuery
+    : ($tokenFromSession !== '' ? $tokenFromSession : $tokenFromCookie);
+
+if ($tokenFromQuery !== '') {
+    persistTenantPortalToken($tokenFromQuery);
+}
+
 $contractData = null;
 
 // ก่อนอื่นตรวจสอบ token (QR Code / Token)
@@ -69,6 +118,10 @@ if (!$contractData && !empty($_SESSION['tenant_logged_in'])) {
 }
 
 if (!$contractData) {
+    if ($tokenFromCookie !== '' && $token === $tokenFromCookie) {
+        clearTenantPortalToken();
+    }
+
     if (!empty($token)) {
         http_response_code(403);
         die('<div style="text-align:center;padding:50px;font-family:sans-serif;"><h1>⚠️ Token ไม่ถูกต้องหรือหมดอายุ</h1><p>กรุณาติดต่อผู้ดูแลหอพัก</p></div>');
@@ -79,6 +132,10 @@ if (!$contractData) {
 }
 
 $contract = $contractData;
+$token = trim((string)($contract['access_token'] ?? $token));
+if ($token !== '') {
+    persistTenantPortalToken($token);
+}
 
 // จัดการการยกเลิกผูก LINE
 if (isset($_GET['action']) && $_GET['action'] === 'unlink_line' && !empty($contract['tnt_id'])) {

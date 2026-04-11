@@ -4,6 +4,45 @@
  */
 declare(strict_types=1);
 
+function getTenantTokenCookiePath(): string {
+    $scriptName = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? ''));
+    $dir = rtrim(dirname($scriptName), '/');
+
+    if ($dir === '' || $dir === '.') {
+        return '/';
+    }
+
+    return $dir;
+}
+
+function persistTenantPortalToken(string $token): void {
+    if ($token === '' || headers_sent()) {
+        return;
+    }
+
+    setcookie('tenant_portal_token', $token, [
+        'expires' => time() + (180 * 24 * 60 * 60),
+        'path' => getTenantTokenCookiePath(),
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+}
+
+function clearTenantPortalToken(): void {
+    if (headers_sent()) {
+        return;
+    }
+
+    setcookie('tenant_portal_token', '', [
+        'expires' => time() - 3600,
+        'path' => getTenantTokenCookiePath(),
+        'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+}
+
 function checkTenantAuth(): array {
     if (session_status() === PHP_SESSION_NONE) {
         session_start();
@@ -12,8 +51,12 @@ function checkTenantAuth(): array {
     require_once __DIR__ . '/../ConnectDB.php';
     $pdo = connectDB();
     
-    // รับ token จาก URL หรือ session
-    $token = $_GET['token'] ?? $_SESSION['tenant_token'] ?? '';
+    // รับ token จาก URL, session หรือ cookie สำรอง (กรณี session หมดอายุ)
+    $token = trim((string)($_GET['token'] ?? $_SESSION['tenant_token'] ?? $_COOKIE['tenant_portal_token'] ?? ''));
+
+    if (isset($_GET['token']) && $token !== '') {
+        persistTenantPortalToken($token);
+    }
     
     if (empty($token)) {
         header('Location: ../index.php');
@@ -38,6 +81,7 @@ function checkTenantAuth(): array {
         $contract = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if (!$contract) {
+            clearTenantPortalToken();
             header('Location: ../index.php');
             exit;
         }
@@ -65,17 +109,20 @@ function checkTenantAuth(): array {
             }
         }
         
+        $resolvedToken = !empty($contract['access_token']) ? (string)$contract['access_token'] : $token;
+
         // อัพเดท session
-        $_SESSION['tenant_token'] = $token;
+        $_SESSION['tenant_token'] = $resolvedToken;
         $_SESSION['tenant_ctr_id'] = $contract['ctr_id'];
         $_SESSION['tenant_tnt_id'] = $contract['tnt_id'];
         $_SESSION['tenant_room_id'] = $contract['room_id'];
         $_SESSION['tenant_room_number'] = $contract['room_number'];
         $_SESSION['tenant_name'] = $contract['tnt_name'];
+        persistTenantPortalToken($resolvedToken);
         
         return [
             'pdo' => $pdo,
-            'token' => $token,
+            'token' => $resolvedToken,
             'contract' => $contract
         ];
         
