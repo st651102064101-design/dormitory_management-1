@@ -33,7 +33,7 @@ try {
     $termCheckStmt = $pdo->prepare("
         SELECT 
            (
-              SELECT step_5_confirmed
+              SELECT CASE WHEN COALESCE(step_5_confirmed, 0) = 1 OR COALESCE(current_step, 0) >= 5 THEN 1 ELSE 0 END
               FROM tenant_workflow
               WHERE tnt_id = c.tnt_id
               ORDER BY id DESC LIMIT 1
