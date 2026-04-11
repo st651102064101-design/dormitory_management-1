@@ -195,13 +195,19 @@ try {
             GROUP BY DATE_FORMAT(exp_month, '%Y-%m')
         ) latest ON latest.exp_id = e.exp_id
         LEFT JOIN (
-            SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
+            SELECT 
+                exp_id, 
+                COALESCE(SUM(CASE WHEN TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN pay_amount ELSE 0 END), 0) AS submitted_rent_amount,
+                COALESCE(SUM(CASE WHEN TRIM(COALESCE(pay_remark, '')) = 'มัดจำ' THEN pay_amount ELSE 0 END), 0) AS submitted_deposit_amount
             FROM payment
             WHERE pay_status IN ('0', '1')
-              AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
             GROUP BY exp_id
         ) ps ON ps.exp_id = e.exp_id
-        WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
+        WHERE (
+            GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE(ps.submitted_rent_amount, 0))
+            +
+            GREATEST(0, (e.exp_total - (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0))) - COALESCE(ps.submitted_deposit_amount, 0))
+        ) > 0
         ORDER BY e.exp_month ASC
         LIMIT 1
     ");
@@ -276,11 +282,19 @@ try {
               SELECT COUNT(*)
               FROM expense e
               WHERE e.ctr_id = c.ctr_id
-                AND e.exp_total > COALESCE((
-                    SELECT SUM(p.pay_amount) 
-                    FROM payment p 
-                    WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
-                ), 0)
+                AND (
+                    GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE((
+                        SELECT SUM(p.pay_amount) FROM payment p
+                        WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
+                        AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                    ), 0))
+                    +
+                    GREATEST(0, (e.exp_total - (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0))) - COALESCE((
+                        SELECT SUM(p.pay_amount) FROM payment p
+                        WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
+                        AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+                    ), 0))
+                ) > 0
            ) AS unpaid_bills_count,
            (
               SELECT COUNT(*)
@@ -1279,10 +1293,19 @@ try {
                         AND u.utl_elec_end IS NOT NULL
                 )
             )
-            AND COALESCE((
-                SELECT SUM(p.pay_amount) FROM payment p
-                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
-            ), 0) < e.exp_total
+            AND (
+                GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE((
+                    SELECT SUM(p.pay_amount) FROM payment p
+                    WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
+                    AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                ), 0))
+                +
+                GREATEST(0, (e.exp_total - (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0))) - COALESCE((
+                    SELECT SUM(p.pay_amount) FROM payment p
+                    WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
+                    AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+                ), 0))
+            ) > 0
         ");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
