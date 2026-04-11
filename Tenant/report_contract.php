@@ -25,6 +25,21 @@ $now = new DateTime();
 $remainingDays = $now->diff($endDate)->days;
 $isExpired = $now > $endDate;
 $totalMonths = $startDate->diff($endDate)->m + ($startDate->diff($endDate)->y * 12);
+
+$unpaidCountForTermination = 0;
+try {
+    $unpaidCheckStmt = $pdo->prepare("
+        SELECT COUNT(*) FROM expense e
+        WHERE e.ctr_id = ?
+          AND e.exp_total > COALESCE((
+              SELECT SUM(p.pay_amount) FROM payment p
+              WHERE p.exp_id = e.exp_id
+                AND p.pay_status = '1'
+          ), 0)
+    ");
+    $unpaidCheckStmt->execute([$contract['ctr_id']]);
+    $unpaidCountForTermination = (int)$unpaidCheckStmt->fetchColumn();
+} catch (PDOException $e) { error_log("PDOException checking unpaid in report_contract.php: " . $e->getMessage()); }
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -311,7 +326,11 @@ $totalMonths = $startDate->diff($endDate)->m + ($startDate->diff($endDate)->y * 
         </div>
         
         <?php if ($contract['ctr_status'] === '0'): ?>
-        <a href="termination.php?token=<?php echo urlencode($token); ?>" class="btn-terminate"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span> แจ้งยกเลิกสัญญา</a>
+            <?php if ($unpaidCountForTermination > 0): ?>
+            <a href="#" onclick="alert('ไม่สามารถแจ้งยกเลิกสัญญาได้ เนื่องจากยังมีบิลค้างชำระ <?php echo $unpaidCountForTermination; ?> รายการ กรุณาชำระค่าห้องให้ครบก่อน'); return false;" class="btn-terminate" style="opacity: 0.5;"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span> แจ้งยกเลิกสัญญา</a>
+            <?php else: ?>
+            <a href="termination.php?token=<?php echo urlencode($token); ?>" class="btn-terminate"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span> แจ้งยกเลิกสัญญา</a>
+            <?php endif; ?>
         <?php endif; ?>
     </div>
     
@@ -375,7 +394,7 @@ $totalMonths = $startDate->diff($endDate)->m + ($startDate->diff($endDate)->y * 
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                                 หน้าหลัก<?php if ($homeBadgeCount > 0): ?><span class="nav-badge">1</span><?php endif; ?>
             </a>
-            <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="nav-item">
+            <a href="report_bills.php?token=<?php echo urlencode($token); ?>&_ts=<?php echo time(); ?>" class="nav-item">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
                 บิล<?php if ($billCount > 0): ?><span class="nav-badge"><?php echo $billCount > 99 ? '99+' : $billCount; ?></span><?php endif; ?>
             </a>

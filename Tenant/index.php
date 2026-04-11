@@ -253,6 +253,21 @@ if (($contract['ctr_status'] ?? '0') === '1') {
         $depositRefund = $drStmt->fetch(PDO::FETCH_ASSOC);
     } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
+
+$unpaidCountForTermination = 0;
+try {
+    $unpaidCheckStmt = $pdo->prepare("
+        SELECT COUNT(*) FROM expense e
+        WHERE e.ctr_id = ?
+          AND e.exp_total > COALESCE((
+              SELECT SUM(p.pay_amount) FROM payment p
+              WHERE p.exp_id = e.exp_id
+                AND p.pay_status = '1'
+          ), 0)
+    ");
+    $unpaidCheckStmt->execute([$contract['ctr_id']]);
+    $unpaidCountForTermination = (int)$unpaidCheckStmt->fetchColumn();
+} catch (PDOException $e) { error_log("PDOException checking unpaid for termination in " . __FILE__ . ": " . $e->getMessage()); }
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -971,7 +986,11 @@ if (($contract['ctr_status'] ?? '0') === '1') {
                 <div class="menu-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
                 <div class="menu-label">แจ้งชำระเงิน</div>
             </a>
+            <?php if (($contract['ctr_status'] ?? '0') !== '1' && $unpaidCountForTermination > 0): ?>
+            <a href="#" onclick="alert('ไม่สามารถแจ้งยกเลิกสัญญาได้ เนื่องจากยังมีบิลค้างชำระ <?php echo $unpaidCountForTermination; ?> รายการ กรุณาชำระค่าห้องให้ครบก่อน'); return false;" class="menu-item" style="opacity: 0.5;">
+            <?php else: ?>
             <a href="termination.php?token=<?php echo urlencode($token); ?>" class="menu-item">
+            <?php endif; ?>
                 <?php if (($contract['ctr_status'] ?? '0') === '1'): ?>
                 <div class="menu-icon teal-dark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
                 <div class="menu-label">สถานะคืนเงินมัดจำ</div>
@@ -993,7 +1012,7 @@ if (($contract['ctr_status'] ?? '0') === '1') {
                 <div class="menu-icon teal"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><line x1="10" y1="6" x2="18" y2="6"/><line x1="10" y1="10" x2="18" y2="10"/><line x1="10" y1="14" x2="18" y2="14"/></svg></div>
                 <div class="menu-label">ข่าวประชาสัมพันธ์</div>
             </a>
-            <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="menu-item">
+            <a href="report_bills.php?token=<?php echo urlencode($token); ?>&_ts=<?php echo time(); ?>" class="menu-item">
                 <div class="menu-icon green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
                 <div class="menu-label">บิลค่าใช้จ่าย</div>
             </a>
@@ -1229,7 +1248,7 @@ if (($contract['ctr_status'] ?? '0') === '1') {
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                                 หน้าหลัก<?php if ($homeBadgeCount > 0): ?><span class="nav-badge">1</span><?php endif; ?>
             </a>
-            <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="nav-item">
+            <a href="report_bills.php?token=<?php echo urlencode($token); ?>&_ts=<?php echo time(); ?>" class="nav-item">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
                 บิล<?php if ($billCount > 0): ?><span class="nav-badge"><?php echo $billCount > 99 ? '99+' : $billCount; ?></span><?php endif; ?>
             </a>
