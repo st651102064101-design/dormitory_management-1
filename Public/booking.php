@@ -1931,6 +1931,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $lastTenantId = '';
             $lastPhoneNumber = '';
         }
+
+        // Display tenant code as ID card number when available.
+        $lastTenantDisplayId = $lastTenantId;
+        if (!empty($lastTenantId)) {
+            try {
+                $stmtTenantIdCard = $pdo->prepare("SELECT NULLIF(TRIM(tnt_idcard), '') AS tnt_idcard FROM tenant WHERE tnt_id = ? LIMIT 1");
+                $stmtTenantIdCard->execute([$lastTenantId]);
+                $tenantIdCardRow = $stmtTenantIdCard->fetch(PDO::FETCH_ASSOC);
+                if (!empty($tenantIdCardRow['tnt_idcard'])) {
+                    $lastTenantDisplayId = (string)$tenantIdCardRow['tnt_idcard'];
+                }
+            } catch (PDOException $e) {
+                error_log('Load tenant id card for booking success failed: ' . $e->getMessage());
+            }
+        }
         
         $statusLink = "/dormitory_management/Public/booking_status.php?ref=" . urlencode((string)$lastBookingId) . "&phone=" . urlencode((string)$lastPhoneNumber) . "&auto=1";
         ?>
@@ -1956,10 +1971,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     คัดลอกหมายเลข
                 </button>
                 
-                <?php if ($lastTenantId): ?>
+                <?php if ($lastTenantDisplayId): ?>
                 <div style="margin-top:20px;padding-top:16px;border-top:1px dashed var(--border-color);display:flex;justify-content:space-between;color:var(--text-secondary);font-size:14px;">
                     <span>รหัสผู้เช่า:</span>
-                    <strong style="color:var(--text-primary);"><?php echo htmlspecialchars($lastTenantId); ?></strong>
+                    <strong id="tenantIdText" style="color:var(--text-primary);"><?php echo htmlspecialchars($lastTenantDisplayId); ?></strong>
                 </div>
                 <?php endif; ?>
             </div>
