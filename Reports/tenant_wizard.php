@@ -1947,6 +1947,10 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 <div class="wiz-filter-bar">
                     <button type="button" id="wizBtn0" onclick="wizFilter(0)" class="wiz-filter-btn pending-filter <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'active' : ''; ?>">⏳ ยังไม่ครบ 5 ขั้นตอน</button>
                     <button type="button" id="wizBtn1" onclick="wizFilter(1)" class="wiz-filter-btn complete-filter <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'active' : ''; ?>">✅ ครบ 5 ขั้นตอนแล้ว</button>
+                    <button type="button" id="wizRefreshBtn" onclick="refreshWizardTable()" class="wiz-filter-btn" style="margin-left: auto; background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);" title="รีเฟรชข้อมูล">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"><path d="M1 4v6h6"></path><path d="M23 20v-6h-6"></path><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
+                        รีเฟรช
+                    </button>
                     <?php if ($meterPendingBadgeCount > 0): ?>
                     <a href="manage_utility.php" class="wiz-meter-alert" title="ไปจดมิเตอร์">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
@@ -4988,6 +4992,19 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
     document.addEventListener('DOMContentLoaded', function() {
         wizFilter(_wizCurrentGroup);
+        
+        // Auto-refresh the wizard table every 30 seconds to reflect status changes in real-time
+        var wizRefreshInterval = setInterval(function() {
+            if (document.hidden) return; // Don't refresh if tab is not active
+            if (typeof refreshWizardTable === 'function') {
+                refreshWizardTable();
+            }
+        }, 30000); // 30 seconds
+        
+        // Clear interval if page is unloaded
+        window.addEventListener('beforeunload', function() {
+            clearInterval(wizRefreshInterval);
+        });
         applyWizardButtonTooltips(document);
         startWizardTooltipObserver();
 
