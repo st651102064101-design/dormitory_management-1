@@ -11,8 +11,11 @@
 
 เปิด URL นี้ในเบราว์เซอร์:
 ```
-https://project.3bbddns.com:36140/dormitory_management/debug_oauth.php
+http://project.3bbddns.com:36140/dormitory_management/debug_oauth.php
 ```
+
+**หมายเหตุ:** ใช้ `http://` (ไม่ใช่ `https://`) เรื่องนี้เริ่มต้น เนื่องจากปัญหา SSL/TLS บนพอร์ต 36140
+- ถ้ายังคงมีปัญหา → ดู [SSL_TROUBLESHOOTING.md](SSL_TROUBLESHOOTING.md)
 
 **คุณจะเห็น:**
 - ✅ Configuration Settings (ค่าที่ตั้งในระบบ)
@@ -42,6 +45,19 @@ define('SITE_PROTOCOL', 'https');
 
 5. เปิดเว็บใหม่ และ refresh `debug_oauth.php`
    - ตรวจสอบว่า LINE Login Callback URI ถูกต้อง
+
+---
+
+### 📍 ขั้นที่ 2B: หรือใช้ HTTP (ถ้า HTTPS มีปัญหา)
+
+ถ้าเจอ `ERR_SSL_PROTOCOL_ERROR` ให้ใช้ HTTP แทน:
+
+```php
+define('SITE_HOST', 'project.3bbddns.com:36140');
+define('SITE_PROTOCOL', 'http');  // ← ใช้ HTTP แทน
+```
+
+ดู [SSL_TROUBLESHOOTING.md](SSL_TROUBLESHOOTING.md) สำหรับข้อมูลเพิ่มเติม
 
 ---
 
