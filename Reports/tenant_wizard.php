@@ -187,9 +187,6 @@ try {
                                         c.ctr_start IS NULL
                                         OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
                                     )
-                                    AND NOT EXISTS (
-                                        SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'
-                                    )
                                 ORDER BY e.exp_month ASC, e.exp_id DESC
                                 LIMIT 1
                         ) AS first_exp_status,
@@ -209,9 +206,6 @@ try {
                                 FROM expense e
                                 WHERE e.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
                                     AND DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
-                                    AND NOT EXISTS (
-                                        SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'
-                                    )
                                 ORDER BY e.exp_id DESC
                                 LIMIT 1
                         ) AS current_exp_status,
@@ -222,9 +216,6 @@ try {
                                     AND (
                                         c.ctr_start IS NULL
                                         OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
-                                    )
-                                    AND NOT EXISTS (
-                                        SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'
                                     )
                                 ORDER BY e.exp_month DESC, e.exp_id DESC
                                 LIMIT 1
@@ -247,9 +238,6 @@ try {
                                     AND (
                                         c.ctr_start IS NULL
                                         OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
-                                    )
-                                    AND NOT EXISTS (
-                                        SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark,'')) = 'มัดจำ'
                                     )
                                 ORDER BY e.exp_month DESC, e.exp_id DESC
                                 LIMIT 1
