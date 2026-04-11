@@ -422,8 +422,9 @@ foreach ($expenses as $exp) {
             <p>ยังไม่มีบิลค่าใช้จ่าย</p>
         </div>
         <?php else: ?>
-        <?php foreach ($expenses as $exp): ?>
+        <?php foreach ($expenses as $expIndex => $exp): ?>
         <?php 
+            $isFirstBill = ($expIndex === count($expenses) - 1);
             $paidAmount = (float)($exp['paid_amount'] ?? 0);
             $pendingAmount = (float)($exp['pending_amount'] ?? 0);
             $depositPaidAmount = (float)($exp['deposit_paid_amount'] ?? 0);
@@ -508,7 +509,7 @@ foreach ($expenses as $exp) {
                     <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount); ?> บาท</span>
                 </div>
                 <?php endif; ?>
-                <?php if ($depositPaidAmount > 0): ?>
+                <?php if ($depositPaidAmount > 0 && $isFirstBill): ?>
                 <div class="bill-row" style="color: #6366f1; font-size: 0.85rem; margin-top: 0.25rem;">
                     <span class="bill-label" style="color: #6366f1;">ชำระมัดจำ</span>
                     <span class="bill-value" style="color: #6366f1;"><?php echo number_format($depositPaidAmount); ?> บาท</span>
