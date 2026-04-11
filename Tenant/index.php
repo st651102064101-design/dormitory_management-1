@@ -1275,9 +1275,6 @@ try {
     try {
         $billStmt = $pdo->prepare("
             SELECT COUNT(*) FROM expense e
-            INNER JOIN (
-                SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month
-            ) latest ON e.exp_id = latest.exp_id
             WHERE e.ctr_id = ?
             AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m')
             AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
@@ -1307,7 +1304,7 @@ try {
                 ), 0))
             ) > 0
         ");
-        $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
+        $billStmt->execute([$contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
     } catch (Exception $e) { error_log("Exception calculating bill count in " . __FILE__ . ": " . $e->getMessage()); }
     ?>

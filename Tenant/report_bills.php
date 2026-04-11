@@ -39,31 +39,27 @@ try {
                (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as pending_amount,
                (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as payment_count,
                (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status,
+               (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') as deposit_payment_count,
                (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') as deposit_paid_amount,
                (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') as deposit_pending_amount
         FROM expense e
-        JOIN (
-            SELECT MAX(exp_id) AS exp_id
-            FROM expense
-            WHERE ctr_id = ?
-              AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
-              AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
-                            AND (
-                                    -- บิลเดือนแรก = เดือนที่มี expense น้อยสุดของสัญญานี้ (ไม่ต้องมี utility record)
-                                    expense.exp_month = (SELECT MIN(e2.exp_month) FROM expense e2 WHERE e2.ctr_id = expense.ctr_id)
-                                    OR EXISTS (
-                                        SELECT 1
-                                        FROM utility u
-                                        WHERE u.ctr_id = expense.ctr_id
-                                            AND YEAR(u.utl_date) = YEAR(expense.exp_month)
-                                            AND MONTH(u.utl_date) = MONTH(expense.exp_month)
-                                            AND u.utl_water_end IS NOT NULL
-                                            AND u.utl_elec_end IS NOT NULL
-                                    )
-                            )
-            GROUP BY exp_month
-        ) latest ON e.exp_id = latest.exp_id
-        ORDER BY e.exp_month DESC
+        WHERE e.ctr_id = ?
+          AND DATE_FORMAT(e.exp_month, '%Y-%m') >= ?
+          AND DATE_FORMAT(e.exp_month, '%Y-%m') <= ?
+          AND (
+                  -- บิลเดือนแรก = เดือนที่มี expense น้อยสุดของสัญญานี้ (ไม่ต้องมี utility record)
+                  e.exp_month = (SELECT MIN(e2.exp_month) FROM expense e2 WHERE e2.ctr_id = e.ctr_id)
+                  OR EXISTS (
+                      SELECT 1
+                      FROM utility u
+                      WHERE u.ctr_id = e.ctr_id
+                          AND YEAR(u.utl_date) = YEAR(e.exp_month)
+                          AND MONTH(u.utl_date) = MONTH(e.exp_month)
+                          AND u.utl_water_end IS NOT NULL
+                          AND u.utl_elec_end IS NOT NULL
+                  )
+          )
+        ORDER BY e.exp_month DESC, e.exp_id DESC
     ");
     $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
     $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -438,7 +434,11 @@ foreach ($expenses as $exp) {
             $calculatedTotal = $roomPrice + $elecChg + $waterChg;
             $otherFee = $expTotal - $calculatedTotal;
             $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
-            $isDepositOnly = ($expTotal > 0 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $otherFee > 0);
+            $depositPaymentCount = (int)($exp['deposit_payment_count'] ?? 0);
+            
+            // บิลแจ้งชำระมัดจำ (สร้างจาก Booking/Wizard) จะมีประวัติหรือมีเจตนาให้เป็นบิลมัดจำ
+            $isDepositOnly = ($depositPaymentCount > 0) 
+                || ($expIndex === count($expenses) - 1 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $roomPrice > 0 && $expTotal != $calculatedTotal);
 
             if ($isDepositOnly) {
                 // สำหรับบิลมัดจำเพียวๆ ให้รวมยอดทั้งหมด (ทั้งที่ระบุมัดจำและไม่ได้ระบุ)
@@ -554,8 +554,7 @@ foreach ($expenses as $exp) {
                 
                 <?php foreach($exp['payments'] as $p): 
                     $isDeposit = (trim($p['pay_remark'] ?? '') === 'มัดจำ');
-                    if ($isDeposit) continue;
-                    $payTypeName = 'ชำระค่าห้อง/บิลปกติ';
+                    $payTypeName = $isDeposit ? 'ชำระเงินมัดจำ/ล่วงหน้า' : 'ชำระค่าห้อง/บิลปกติ';
                     
                     $stBadgeMap = [
                         '0' => ['label' => 'รอตรวจสอบ', 'bg' => '#fbbf24', 'color' => '#fff'],
