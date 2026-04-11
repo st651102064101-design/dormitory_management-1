@@ -174,6 +174,11 @@ try {
       .tenant-form-group input, .tenant-form-group select, .tenant-form-group textarea { width:100%; padding:0.75rem 0.85rem; border-radius:10px; border:1px solid rgba(255,255,255,0.15); background:rgba(8,12,24,0.85); color:#f5f8ff; font-size:0.95rem; }
       .tenant-form-group textarea { min-height:82px; resize:vertical; }
       .tenant-form-group input:focus, .tenant-form-group select:focus, .tenant-form-group textarea:focus { outline:none; border-color:#60a5fa; box-shadow:0 0 0 3px rgba(96,165,250,0.25); }
+      .idcard-check-status { margin-top:0.4rem; font-size:0.82rem; line-height:1.35; min-height:1.1rem; color:#94a3b8 !important; }
+      .idcard-check-status.is-loading { color:#cbd5e1 !important; }
+      .idcard-check-status.is-ok { color:#22c55e !important; }
+      .idcard-check-status.is-duplicate { color:#f87171 !important; }
+      .idcard-check-status.is-error { color:#f59e0b !important; }
       .tenant-form-actions { grid-column:1 / -1; display:flex; gap:0.75rem; margin-top:1rem; }
       .status-badge { display:inline-flex; align-items:center; justify-content:center; min-width:80px; padding:0.25rem 0.75rem; border-radius:999px; font-size:0.85rem; font-weight:600; color:#fff; }
       .status-active { background:rgba(34,197,94,0.25); color:#34d399; }
@@ -208,6 +213,12 @@ try {
       }
       .modal-actions .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 12px 24px rgba(37,99,235,0.45); }
       .modal-actions .btn-submit:active { transform: translateY(0); opacity: 0.92; }
+      .modal-actions .btn-submit:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+        transform: none;
+        box-shadow: none;
+      }
       .modal-actions .btn-cancel {
         padding: 0.7rem 1.1rem;
         border-radius: 10px;
@@ -782,6 +793,7 @@ try {
             <div class="tenant-form-group">
               <label for="edit_tnt_id">เลขบัตรประชาชน</label>
               <input type="text" id="edit_tnt_id" name="tnt_idcard" maxlength="13" minlength="13" inputmode="numeric" pattern="\d{13}" placeholder="เช่น 1103701234567" />
+              <div id="edit_tnt_id_status" class="idcard-check-status" aria-live="polite"></div>
             </div>
             <div class="tenant-form-group">
               <label for="edit_tnt_name">ชื่อ-สกุล <span style="color:#f87171;">*</span></label>
@@ -882,7 +894,7 @@ try {
             </div>
           </div>
           <div class="modal-actions">
-            <button type="button" class="btn-submit" onclick="submitTenantEditForm()">บันทึกการแก้ไข</button>
+            <button type="button" class="btn-submit" id="editTenantSubmitBtn" onclick="submitTenantEditForm()">บันทึกการแก้ไข</button>
             <button type="button" class="btn-cancel" onclick="closeTenantModal()">ยกเลิก</button>
           </div>
         </form>
@@ -1090,6 +1102,130 @@ try {
         });
       }
 
+      let editIdCardCheckTimer = null;
+      let editIdCardAbortController = null;
+      let editIdCardState = {
+        checkedValue: '',
+        isDuplicate: false,
+        isChecking: false,
+      };
+
+      function setEditIdCardStatus(type = '', message = '') {
+        const statusEl = document.getElementById('edit_tnt_id_status');
+        if (!statusEl) return;
+
+        statusEl.className = 'idcard-check-status';
+        if (type) statusEl.classList.add('is-' + type);
+        statusEl.textContent = message;
+      }
+
+      function setEditSubmitDisabled(disabled) {
+        const btn = document.getElementById('editTenantSubmitBtn');
+        if (!btn) return;
+
+        btn.disabled = disabled;
+        btn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
+      }
+
+      async function checkEditTenantIdCardDuplicate(idCardValue, tntIdOriginal) {
+        const normalized = String(idCardValue || '').replace(/[^\d]/g, '').slice(0, 13);
+
+        if (normalized.length === 0) {
+          editIdCardState = { checkedValue: '', isDuplicate: false, isChecking: false };
+          setEditIdCardStatus('', '');
+          setEditSubmitDisabled(false);
+          return;
+        }
+
+        if (normalized.length < 13) {
+          editIdCardState = { checkedValue: normalized, isDuplicate: false, isChecking: false };
+          setEditIdCardStatus('', 'กรอกเลขบัตรให้ครบ 13 หลักเพื่อเช็คข้อมูลซ้ำ');
+          setEditSubmitDisabled(false);
+          return;
+        }
+
+        if (editIdCardAbortController) {
+          editIdCardAbortController.abort();
+        }
+        editIdCardAbortController = new AbortController();
+
+        editIdCardState = { checkedValue: normalized, isDuplicate: false, isChecking: true };
+        setEditIdCardStatus('loading', 'กำลังตรวจสอบข้อมูลซ้ำ...');
+        setEditSubmitDisabled(true);
+
+        try {
+          const formData = new FormData();
+          formData.append('tnt_idcard', normalized);
+          formData.append('tnt_id_original', String(tntIdOriginal || '').trim());
+
+          const response = await fetch('../Manage/check_tenant_idcard.php', {
+            method: 'POST',
+            body: formData,
+            signal: editIdCardAbortController.signal,
+          });
+
+          const result = await response.json();
+          if (!response.ok || !result.success) {
+            throw new Error(result.message || 'ตรวจสอบเลขบัตรไม่สำเร็จ');
+          }
+
+          const currentInput = document.getElementById('edit_tnt_id');
+          const currentValue = String(currentInput?.value || '').replace(/[^\d]/g, '').slice(0, 13);
+          if (currentValue !== normalized) {
+            return;
+          }
+
+          editIdCardState = {
+            checkedValue: normalized,
+            isDuplicate: !!result.isDuplicate,
+            isChecking: false,
+          };
+
+          if (result.isDuplicate) {
+            setEditIdCardStatus('duplicate', result.message || 'เลขบัตรประชาชนนี้ถูกใช้งานแล้ว');
+            setEditSubmitDisabled(true);
+            return;
+          }
+
+          setEditIdCardStatus('ok', result.message || 'เลขบัตรประชาชนนี้ใช้งานได้');
+          setEditSubmitDisabled(false);
+        } catch (error) {
+          if (error?.name === 'AbortError') {
+            return;
+          }
+
+          editIdCardState = {
+            checkedValue: normalized,
+            isDuplicate: false,
+            isChecking: false,
+          };
+          setEditIdCardStatus('error', 'ตรวจสอบเลขบัตรไม่สำเร็จ กรุณาลองอีกครั้ง');
+          setEditSubmitDisabled(true);
+        }
+      }
+
+      function queueEditTenantIdCardCheck(immediate = false) {
+        const input = document.getElementById('edit_tnt_id');
+        const originalId = document.getElementById('edit_tnt_id_original')?.value || '';
+        if (!input) return;
+
+        const normalized = String(input.value || '').replace(/[^\d]/g, '').slice(0, 13);
+        input.value = normalized;
+
+        if (editIdCardCheckTimer) {
+          clearTimeout(editIdCardCheckTimer);
+        }
+
+        if (immediate) {
+          checkEditTenantIdCardDuplicate(normalized, originalId);
+          return;
+        }
+
+        editIdCardCheckTimer = setTimeout(() => {
+          checkEditTenantIdCardDuplicate(normalized, originalId);
+        }, 280);
+      }
+
       function openTenantModal(data) {
         console.log('openTenantModal called with data:', data);
         document.getElementById('tenantEditModal').classList.add('active');
@@ -1107,6 +1243,9 @@ try {
         setVal('edit_tnt_vehicle', data.tntVehicle || '');
         setVal('edit_tnt_parent', data.tntParent || '');
         setVal('edit_tnt_parentsphone', data.tntParentsPhone || '');
+        setEditSubmitDisabled(false);
+        setEditIdCardStatus('', '');
+        queueEditTenantIdCardCheck(true);
         console.log('Modal opened successfully');
       }
 
@@ -1116,9 +1255,20 @@ try {
         document.body.classList.remove('modal-open');
         const form = document.getElementById('tenantEditForm');
         if (form) form.reset();
+        if (editIdCardAbortController) {
+          editIdCardAbortController.abort();
+          editIdCardAbortController = null;
+        }
+        if (editIdCardCheckTimer) {
+          clearTimeout(editIdCardCheckTimer);
+          editIdCardCheckTimer = null;
+        }
+        editIdCardState = { checkedValue: '', isDuplicate: false, isChecking: false };
+        setEditIdCardStatus('', '');
+        setEditSubmitDisabled(false);
       }
 
-      function submitTenantEditForm() {
+      async function submitTenantEditForm() {
         console.log('submitTenantEditForm called');
         const form = document.getElementById('tenantEditForm');
         if (!form) {
@@ -1138,6 +1288,26 @@ try {
         const idCardValue = (idCardInput?.value || '').trim();
         if (idCardValue !== '' && !/^\d{13}$/.test(idCardValue)) {
           alert('เลขบัตรประชาชนต้องมี 13 หลัก');
+          idCardInput?.focus();
+          return;
+        }
+
+        if (idCardValue.length === 13) {
+          const originalId = document.getElementById('edit_tnt_id_original')?.value || '';
+          if (editIdCardState.isChecking || editIdCardState.checkedValue !== idCardValue) {
+            await checkEditTenantIdCardDuplicate(idCardValue, originalId);
+          }
+
+          if (editIdCardState.isDuplicate) {
+            alert('เลขบัตรประชาชนนี้ซ้ำกับผู้เช่าคนอื่น กรุณาตรวจสอบอีกครั้ง');
+            idCardInput?.focus();
+            return;
+          }
+        }
+
+        const submitBtn = document.getElementById('editTenantSubmitBtn');
+        if (submitBtn?.disabled) {
+          alert('ยังไม่สามารถบันทึกได้ กรุณาตรวจสอบเลขบัตรประชาชนอีกครั้ง');
           idCardInput?.focus();
           return;
         }
@@ -1239,7 +1409,9 @@ try {
         if (editTntIdInput) {
           editTntIdInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.replace(/[^\d]/g, '').slice(0, 13);
+            queueEditTenantIdCardCheck(false);
           });
+          editTntIdInput.addEventListener('blur', () => queueEditTenantIdCardCheck(true));
         }
 
         setupAgeSync('tnt_age_select', 'tnt_age', 'tnt_age_wrap');
