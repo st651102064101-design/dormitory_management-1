@@ -183,8 +183,8 @@ $firstUnpaidExpense = null;
 try {
     $unpaidStmt = $pdo->prepare("\n        SELECT
             e.*,
-            COALESCE(ps.submitted_amount, 0) AS submitted_amount,
-            (e.exp_total - COALESCE(ps.submitted_amount, 0)) AS remaining_amount
+            (COALESCE(ps.submitted_rent_amount, 0) + COALESCE(ps.submitted_deposit_amount, 0)) AS submitted_amount,
+            (e.exp_total - (COALESCE(ps.submitted_rent_amount, 0) + COALESCE(ps.submitted_deposit_amount, 0))) AS remaining_amount
         FROM expense e
         JOIN (
             SELECT MAX(exp_id) AS exp_id

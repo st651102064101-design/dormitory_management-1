@@ -551,10 +551,10 @@ foreach ($expenses as $exp) {
                 </div>
                 
                 <?php foreach($exp['payments'] as $p): 
-                    $isDeposit = (trim($p['pay_remark']) === 'มัดจำ');
+                    $isDeposit = (trim($p['pay_remark'] ?? '') === 'มัดจำ');
                     $bgColor = $isDeposit ? 'rgba(99, 102, 241, 0.15)' : 'rgba(0,0,0,0.2)';
                     $borderColor = $isDeposit ? 'rgba(99, 102, 241, 0.4)' : 'rgba(255,255,255,0.05)';
-                    $payTypeName = $isDeposit ? 'ชำระค่ามัดจำ' : 'ชำระค่าห้อง/บิลปกต';
+                    $payTypeName = $isDeposit ? 'ชำระค่ามัดจำ' : 'ชำระค่าห้อง/บิลปกติ';
                     
                     $stBadgeMap = [
                         '0' => ['label' => 'รอตรวจสอบ', 'bg' => '#fbbf24', 'color' => '#fff'],
