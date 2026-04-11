@@ -75,16 +75,19 @@ try {
         FROM room r 
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id 
                 WHERE NOT EXISTS (
-                        SELECT 1
-                        FROM contract c
-                        WHERE c.room_id = r.room_id
-                            AND c.ctr_status = '0'
+                        SELECT 1 FROM contract c WHERE c.room_id = r.room_id AND c.ctr_status = '0'
                 )
-                    AND NOT EXISTS (
-                        SELECT 1
-                        FROM booking b
-                        WHERE b.room_id = r.room_id
-                            AND b.bkg_status = '1'
+                AND NOT EXISTS (
+                        SELECT 1 FROM contract c 
+                        LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+                        WHERE c.room_id = r.room_id AND c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())
+                )
+                AND NOT EXISTS (
+                        SELECT 1 FROM booking b 
+                        WHERE b.room_id = r.room_id AND b.bkg_status = '1'
+                        AND NOT EXISTS (
+                            SELECT 1 FROM contract c2 WHERE c2.room_id = b.room_id AND c2.tnt_id = b.tnt_id
+                        )
                 )
         ORDER BY CAST(r.room_number AS UNSIGNED) ASC
         LIMIT 6
@@ -110,16 +113,19 @@ try {
             SUM(
                 CASE
                     WHEN NOT EXISTS (
-                        SELECT 1
-                        FROM contract c
-                        WHERE c.room_id = r.room_id
-                          AND c.ctr_status = '0'
+                        SELECT 1 FROM contract c WHERE c.room_id = r.room_id AND c.ctr_status = '0'
                     )
                     AND NOT EXISTS (
-                        SELECT 1
-                        FROM booking b
-                        WHERE b.room_id = r.room_id
-                          AND b.bkg_status = '1'
+                        SELECT 1 FROM contract c 
+                        LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+                        WHERE c.room_id = r.room_id AND c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())
+                    )
+                    AND NOT EXISTS (
+                        SELECT 1 FROM booking b 
+                        WHERE b.room_id = r.room_id AND b.bkg_status = '1'
+                        AND NOT EXISTS (
+                            SELECT 1 FROM contract c2 WHERE c2.room_id = b.room_id AND c2.tnt_id = b.tnt_id
+                        )
                     )
                     THEN 1
                     ELSE 0
