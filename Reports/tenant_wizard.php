@@ -2955,7 +2955,10 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.85rem;margin-bottom:0.75rem;">
                     <div>
                         <div style="font-size:0.8rem;font-weight:600;color:#60a5fa;margin-bottom:0.3rem;">💧 มิเตอร์น้ำ</div>
-                        <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;">ค่าก่อน: <span id="moPrevWater" style="color:#f8fafc;font-weight:600;">...</span></div>
+                        <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:center;">
+                            <span>ค่าก่อน: <span id="moPrevWater" style="color:#f8fafc;font-weight:600;">...</span></span>
+                            <button type="button" onclick="if(document.getElementById('moPrevWater').textContent !== '...' && document.getElementById('moPrevWater').textContent !== '0000000') { document.getElementById('moWaterInput').value = document.getElementById('moPrevWater').textContent; updateMoPreview(); }" style="background:transparent;border:1px solid rgba(96,165,250,0.5);color:#60a5fa;font-size:0.65rem;border-radius:4px;padding:0.1rem 0.4rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(96,165,250,0.1)'" onmouseout="this.style.background='transparent'">+ ใช้ค่าเดิม</button>
+                        </div>
                         <input type="number" id="moWaterInput" min="0" max="9999999" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(96,165,250,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
                             oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); updateMoPreview();"
@@ -2963,7 +2966,10 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                     </div>
                     <div>
                         <div style="font-size:0.8rem;font-weight:600;color:#fbbf24;margin-bottom:0.3rem;">⚡ มิเตอร์ไฟ</div>
-                        <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;">ค่าก่อน: <span id="moPrevElec" style="color:#f8fafc;font-weight:600;">...</span></div>
+                        <div style="font-size:0.72rem;color:rgba(148,163,184,0.8);margin-bottom:0.4rem;display:flex;justify-content:space-between;align-items:center;">
+                            <span>ค่าก่อน: <span id="moPrevElec" style="color:#f8fafc;font-weight:600;">...</span></span>
+                            <button type="button" onclick="if(document.getElementById('moPrevElec').textContent !== '...' && document.getElementById('moPrevElec').textContent !== '00000') { document.getElementById('moElecInput').value = document.getElementById('moPrevElec').textContent; updateMoPreview(); }" style="background:transparent;border:1px solid rgba(251,191,36,0.5);color:#fbbf24;font-size:0.65rem;border-radius:4px;padding:0.1rem 0.4rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(251,191,36,0.1)'" onmouseout="this.style.background='transparent'">+ ใช้ค่าเดิม</button>
+                        </div>
                         <input type="number" id="moElecInput" min="0" max="99999" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(251,191,36,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
                             oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); updateMoPreview();"
