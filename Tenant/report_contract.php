@@ -326,8 +326,8 @@ try {
         </div>
         
         <?php if ($contract['ctr_status'] === '0'): ?>
-            <?php if ($unpaidCountForTermination > 0): ?>
-            <a href="#" onclick="alert('ไม่สามารถแจ้งยกเลิกสัญญาได้ เนื่องจากยังมีบิลค้างชำระ <?php echo $unpaidCountForTermination; ?> รายการ กรุณาชำระค่าห้องให้ครบก่อน'); return false;" class="btn-terminate" style="opacity: 0.5;"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span> แจ้งยกเลิกสัญญา</a>
+            <?php if (!$terminationAllowed): ?>
+            <a href="#" onclick="alert('<?= htmlspecialchars($terminationReason, ENT_QUOTES, \'UTF-8\') ?>'); return false;" class="btn-terminate" style="opacity: 0.5;"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span> แจ้งยกเลิกสัญญา</a>
             <?php else: ?>
             <a href="termination.php?token=<?php echo urlencode($token); ?>" class="btn-terminate"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></span> แจ้งยกเลิกสัญญา</a>
             <?php endif; ?>

@@ -70,20 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $error = 'กรุณาระบุข้อมูลบัญชีธนาคารสำหรับรับคืนเงินมัดจำให้ครบถ้วน';
         } else {
             // ตรวจสอบบิลค้างชำระก่อนอนุญาตให้แจ้งยกเลิก
-            $unpaidCheckStmt = $pdo->prepare("
-                SELECT COUNT(*) FROM expense e
-                WHERE e.ctr_id = ?
-                  AND e.exp_total > COALESCE((
-                      SELECT SUM(p.pay_amount) FROM payment p
-                      WHERE p.exp_id = e.exp_id
-                        AND p.pay_status = '1'
-                        
-                  ), 0)
-            ");
-            $unpaidCheckStmt->execute([$contract['ctr_id']]);
-            $unpaidCount = (int)$unpaidCheckStmt->fetchColumn();
-            if ($unpaidCount > 0) {
-                $error = 'ไม่สามารถแจ้งยกเลิกสัญญาได้ เนื่องจากยังมีบิลค้างชำระ ' . $unpaidCount . ' รายการ กรุณาชำระค่าเช่าให้ครบก่อน';
+            if (!$terminationAllowed) {
+                $error = $terminationReason;
             } else {
             // Insert termination request
             $stmt = $pdo->prepare("INSERT INTO termination (ctr_id, term_date, bank_name, bank_account_name, bank_account_number) VALUES (?, ?, ?, ?, ?)");

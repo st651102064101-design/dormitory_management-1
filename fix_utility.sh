@@ -1,0 +1,2 @@
+sed -i.bak 's/LEFT JOIN tenant t ON c\.tnt_id = t\.tnt_id/LEFT JOIN tenant t ON c.tnt_id = t.tnt_id/g' Reports/manage_utility.php
+sed -i.bak 's/LEFT JOIN tenant_workflow tw ON c\.tnt_id = tw\.tnt_id/LEFT JOIN (\n            SELECT tnt_id, MAX(id) as max_tw_id\n            FROM tenant_workflow\n            GROUP BY tnt_id\n        ) latest_tw ON t.tnt_id = latest_tw.tnt_id\n        LEFT JOIN tenant_workflow tw ON latest_tw.max_tw_id = tw.id/g' Reports/manage_utility.php
