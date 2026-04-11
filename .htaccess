@@ -1,13 +1,6 @@
 AddDefaultCharset UTF-8
 AddType text/javascript .js
 
-<IfModule mod_rewrite.c>
-	RewriteEngine On
-	RewriteCond %{HTTPS} !=on
-	RewriteCond %{HTTP:X-Forwarded-Proto} !https [NC]
-	RewriteRule ^ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
-</IfModule>
-
 <IfModule mod_headers.c>
 	<FilesMatch "\\.js$">
 		Header set Content-Type "text/javascript; charset=utf-8"
