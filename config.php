@@ -5,18 +5,23 @@
  */
 
 // ===========================================
-// ตั้งค่า IP / Domain สำหรับ QR Code
+// ตั้งค่า IP / Domain สำหรับ QR Code และ OAuth Callback
 // ===========================================
 // ใส่ IP Address หรือ Domain ของเซิร์ฟเวอร์
-// ตัวอย่าง: 'yourdomain.com' (ไม่ต้องใส่พอร์ตถ้าใช้ 80/443)
-// ถ้าเว้นว่าง '' จะใช้ค่าอัตโนมัติ
+// ตัวอย่าง: 'yourdomain.com:36140' (รวม port ถ้ามี) 
+// ตัวอย่าง: 'project.3bbddns.com:36140' 
+// ถ้าเว้นว่าง '' จะใช้ค่าอัตโนมัติจาก $_SERVER['HTTP_HOST']
+// ⚠️ สำคัญ: ต้องตรงกับที่ลงทะเบียนใน LINE/Google Developers Console พอดี!
 
 define('SITE_HOST', '');
 
 // ===========================================
 // ตั้งค่า Protocol (http หรือ https)
 // ===========================================
-// ใส่ '' เพื่อให้ระบบตรวจจาก request อัตโนมัติ
+// ใส่ 'https' หรือ 'http' เพื่อบังคับใช้ค่าที่กำหนด
+// ใส่ '' เพื่อให้ระบบตรวจจากการส่งข้อมูลอัตโนมัติ (ตรวจ HTTPS, SERVER_PORT, X_FORWARDED_PROTO)
+// ⚠️ ถ้าโปรแกรมอยู่หลัง Reverse Proxy ที่เป็น HTTPS ต้องกำหนดเป็น 'https'
+
 define('SITE_PROTOCOL', '');
 
 // ===========================================
@@ -27,13 +32,28 @@ function getBaseUrl($path = '') {
 
     // Auto-detect protocol when SITE_PROTOCOL is empty
     if (empty($protocol)) {
-        $isHttps = (
-            (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ||
-            (isset($_SERVER['SERVER_PORT']) && (string)$_SERVER['SERVER_PORT'] === '443') ||
-            (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https')
-        );
+        $isHttps = false;
+        
+        // ตรวจสอบ #1: จากตัวแปร HTTPS
+        if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') {
+            $isHttps = true;
+        }
+        // ตรวจสอบ #2: จากพอร์ต (443 = HTTPS)
+        elseif (isset($_SERVER['SERVER_PORT']) && (string)$_SERVER['SERVER_PORT'] === '443') {
+            $isHttps = true;
+        }
+        // ตรวจสอบ #3: จาก X_FORWARDED_PROTO header (สำคัญ: Reverse Proxy/Load Balancer)
+        elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && strtolower((string)$_SERVER['HTTP_X_FORWARDED_PROTO']) === 'https') {
+            $isHttps = true;
+        }
+        // ตรวจสอบ #4: จาก HTTP_CF_VISITOR (Cloudflare)
+        elseif (isset($_SERVER['HTTP_CF_VISITOR']) && strpos($_SERVER['HTTP_CF_VISITOR'], '"scheme":"https"') !== false) {
+            $isHttps = true;
+        }
+        
         $protocol = $isHttps ? 'https' : 'http';
     }
+    
     $host = SITE_HOST;
     
     // ถ้าไม่ได้กำหนด host ให้ใช้ค่าอัตโนมัติ
