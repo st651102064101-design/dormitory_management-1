@@ -11,11 +11,8 @@
 
 เปิด URL นี้ในเบราว์เซอร์:
 ```
-http://project.3bbddns.com:36140/dormitory_management/debug_oauth.php
+https://project.3bbddns.com/dormitory_management/debug_oauth.php
 ```
-
-**หมายเหตุ:** ใช้ `http://` (ไม่ใช่ `https://`) เรื่องนี้เริ่มต้น เนื่องจากปัญหา SSL/TLS บนพอร์ต 36140
-- ถ้ายังคงมีปัญหา → ดู [SSL_TROUBLESHOOTING.md](SSL_TROUBLESHOOTING.md)
 
 **คุณจะเห็น:**
 - ✅ Configuration Settings (ค่าที่ตั้งในระบบ)
@@ -33,7 +30,7 @@ http://project.3bbddns.com:36140/dormitory_management/debug_oauth.php
 
 2. แก้ไขเป็น:
 ```php
-define('SITE_HOST', 'project.3bbddns.com:36140');
+define('SITE_HOST', 'project.3bbddns.com');
 define('SITE_PROTOCOL', 'https');
 ```
 
@@ -53,7 +50,7 @@ define('SITE_PROTOCOL', 'https');
 ถ้าเจอ `ERR_SSL_PROTOCOL_ERROR` ให้ใช้ HTTP แทน:
 
 ```php
-define('SITE_HOST', 'project.3bbddns.com:36140');
+define('SITE_HOST', 'project.3bbddns.com');
 define('SITE_PROTOCOL', 'http');  // ← ใช้ HTTP แทน
 ```
 
@@ -75,7 +72,7 @@ define('SITE_PROTOCOL', 'http');  // ← ใช้ HTTP แทน
    
 5. ใส่ LINE Login Callback URI จาก debug_oauth.php ลงไป:
    ```
-   https://project.3bbddns.com:36140/dormitory_management/line_callback.php
+   https://project.3bbddns.com/dormitory_management/line_callback.php
    ```
    
 6. **บันทึก/Save**
@@ -110,7 +107,7 @@ define('SITE_PROTOCOL', 'http');  // ← ใช้ HTTP แทน
 
 ทำเดียวกันแต่ไปลงทะเบียนใน **Google Cloud Console**:
 ```
-https://project.3bbddns.com:36140/dormitory_management/google_callback.php
+https://project.3bbddns.com/dormitory_management/google_callback.php
 ```
 
 ---
@@ -119,7 +116,7 @@ https://project.3bbddns.com:36140/dormitory_management/google_callback.php
 
 ```bash
 # ตรวจสอบว่า PHP สร้าง URL ถูกไหม
-curl https://project.3bbddns.com:36140/dormitory_management/debug_oauth.php
+curl https://project.3bbddns.com/dormitory_management/debug_oauth.php
 ```
 
 ---
