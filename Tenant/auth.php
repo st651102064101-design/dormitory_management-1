@@ -24,7 +24,7 @@ function checkTenantAuth(): array {
     try {
         $stmt = $pdo->prepare("
             SELECT c.*, 
-                   t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
+                 t.tnt_id, t.tnt_idcard, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
                    r.room_id, r.room_number, r.room_image,
                    rt.type_name, rt.type_price
             FROM contract c
@@ -47,7 +47,7 @@ function checkTenantAuth(): array {
         if ($contract['ctr_status'] !== '0') {
             $activeStmt = $pdo->prepare("
                 SELECT c.*,
-                       t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
+                      t.tnt_id, t.tnt_idcard, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age,
                        r.room_id, r.room_number, r.room_image,
                        rt.type_name, rt.type_price
                 FROM contract c

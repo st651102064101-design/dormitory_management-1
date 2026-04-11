@@ -17,14 +17,46 @@ $error = '';
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     try {
+        $tnt_idcard = preg_replace('/\D+/', '', trim($_POST['tnt_idcard'] ?? ''));
+        $tnt_name = trim($_POST['tnt_name'] ?? '');
+        $tnt_age_raw = trim($_POST['tnt_age'] ?? '');
+        $tnt_education = trim($_POST['tnt_education'] ?? '');
+        $tnt_faculty = trim($_POST['tnt_faculty'] ?? '');
+        $tnt_year = trim($_POST['tnt_year'] ?? '');
         $tnt_phone = trim($_POST['tnt_phone'] ?? '');
         $tnt_address = trim($_POST['tnt_address'] ?? '');
         $tnt_vehicle = trim($_POST['tnt_vehicle'] ?? '');
         $tnt_parent = trim($_POST['tnt_parent'] ?? '');
         $tnt_parentsphone = trim($_POST['tnt_parentsphone'] ?? '');
+
+        if ($tnt_idcard !== '' && !preg_match('/^\d{13}$/', $tnt_idcard)) {
+            throw new RuntimeException('เลขบัตรประชาชนต้องเป็นตัวเลข 13 หลัก');
+        }
+
+        if ($tnt_name === '') {
+            throw new RuntimeException('กรุณากรอกชื่อ-นามสกุล');
+        }
+
+        $tnt_age = null;
+        if ($tnt_age_raw !== '') {
+            if (!preg_match('/^\d+$/', $tnt_age_raw)) {
+                throw new RuntimeException('อายุต้องเป็นตัวเลข');
+            }
+            $ageNum = (int)$tnt_age_raw;
+            if ($ageNum < 0 || $ageNum > 120) {
+                throw new RuntimeException('อายุต้องอยู่ระหว่าง 0 - 120 ปี');
+            }
+            $tnt_age = $ageNum;
+        }
         
         $stmt = $pdo->prepare("
             UPDATE tenant SET 
+                tnt_idcard = ?,
+                tnt_name = ?,
+                tnt_age = ?,
+                tnt_education = ?,
+                tnt_faculty = ?,
+                tnt_year = ?,
                 tnt_phone = ?,
                 tnt_address = ?,
                 tnt_vehicle = ?,
@@ -33,6 +65,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             WHERE tnt_id = ?
         ");
         $stmt->execute([
+            $tnt_idcard === '' ? null : $tnt_idcard,
+            $tnt_name,
+            $tnt_age,
+            $tnt_education,
+            $tnt_faculty,
+            $tnt_year,
             $tnt_phone,
             $tnt_address,
             $tnt_vehicle,
@@ -47,6 +85,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $auth = checkTenantAuth();
         $contract = $auth['contract'];
         
+    } catch (RuntimeException $e) {
+        $error = $e->getMessage();
     } catch (PDOException $e) {
         $error = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
     }
@@ -367,30 +407,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <form method="POST">
             <div class="form-section">
-                <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> ข้อมูลพื้นฐาน (แก้ไขไม่ได้)</div>
+                <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> ข้อมูลพื้นฐาน</div>
                 <div class="form-group">
                     <label>เลขบัตรประชาชน</label>
-                    <input type="text" value="<?php echo htmlspecialchars($contract['tnt_id']); ?>" disabled>
+                    <input type="text" name="tnt_idcard" value="<?php echo htmlspecialchars((string)($contract['tnt_idcard'] ?? '')); ?>" placeholder="เลขบัตรประชาชน 13 หลัก" maxlength="13" inputmode="numeric" pattern="[0-9]{13}">
                 </div>
                 <div class="form-group">
                     <label>ชื่อ-นามสกุล</label>
-                    <input type="text" value="<?php echo htmlspecialchars($contract['tnt_name']); ?>" disabled>
+                    <input type="text" name="tnt_name" value="<?php echo htmlspecialchars((string)($contract['tnt_name'] ?? '')); ?>" placeholder="ชื่อ-นามสกุล">
                 </div>
                 <div class="form-group">
                     <label>อายุ</label>
-                    <input type="text" value="<?php echo htmlspecialchars((string)($contract['tnt_age'] ?? '-')); ?>" disabled>
+                    <input type="number" name="tnt_age" value="<?php echo htmlspecialchars(isset($contract['tnt_age']) && $contract['tnt_age'] !== null ? (string)$contract['tnt_age'] : ''); ?>" placeholder="อายุ" min="0" max="120">
                 </div>
                 <div class="form-group">
                     <label>สถานศึกษา</label>
-                    <input type="text" value="<?php echo htmlspecialchars($contract['tnt_education'] ?? '-'); ?>" disabled>
+                    <input type="text" name="tnt_education" value="<?php echo htmlspecialchars((string)($contract['tnt_education'] ?? '')); ?>" placeholder="สถานศึกษา">
                 </div>
                 <div class="form-group">
                     <label>คณะ/สาขา</label>
-                    <input type="text" value="<?php echo htmlspecialchars($contract['tnt_faculty'] ?? '-'); ?>" disabled>
+                    <input type="text" name="tnt_faculty" value="<?php echo htmlspecialchars((string)($contract['tnt_faculty'] ?? '')); ?>" placeholder="คณะ/สาขา">
                 </div>
                 <div class="form-group">
                     <label>ชั้นปี</label>
-                    <input type="text" value="<?php echo htmlspecialchars($contract['tnt_year'] ?? '-'); ?>" disabled>
+                    <input type="text" name="tnt_year" value="<?php echo htmlspecialchars((string)($contract['tnt_year'] ?? '')); ?>" placeholder="ชั้นปี">
                 </div>
             </div>
             
