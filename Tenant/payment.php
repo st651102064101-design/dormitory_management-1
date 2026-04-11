@@ -5,6 +5,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/auth.php';
+require_once __DIR__ . '/../config.php';
 
 $auth = checkTenantAuth();
 $pdo = $auth['pdo'];
@@ -246,7 +247,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg .= "ยอดโอน: ฿" . number_format((float)$recordAmount, 2) . "\n";
                 $msg .= "------------------------\n";
                 $msg .= "กรุณาตรวจสอบหลักฐานในระบบ\n";
-                $msg .= "http://project.3bbddns.com:36140/dormitory_management/Manage/index.php"; // เปลี่ยน URL เป็นหน้า Admin จริงของคุณ
+                $msg .= getBaseUrl('/Manage/index.php');
                 sendLineBroadcast($pdo, $msg);
             }
 
