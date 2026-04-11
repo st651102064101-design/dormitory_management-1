@@ -13,7 +13,7 @@
 // ถ้าเว้นว่าง '' จะใช้ค่าอัตโนมัติจาก $_SERVER['HTTP_HOST']
 // ⚠️ สำคัญ: ต้องตรงกับที่ลงทะเบียนใน LINE/Google Developers Console พอดี!
 
-define('SITE_HOST', '');
+define('SITE_HOST', 'project.3bbddns.com:36140');
 
 // ===========================================
 // ตั้งค่า Protocol (http หรือ https)
@@ -21,8 +21,9 @@ define('SITE_HOST', '');
 // ใส่ 'https' หรือ 'http' เพื่อบังคับใช้ค่าที่กำหนด
 // ใส่ '' เพื่อให้ระบบตรวจจากการส่งข้อมูลอัตโนมัติ (ตรวจ HTTPS, SERVER_PORT, X_FORWARDED_PROTO)
 // ⚠️ ถ้าโปรแกรมอยู่หลัง Reverse Proxy ที่เป็น HTTPS ต้องกำหนดเป็น 'https'
+// 📌 ปัจจุบันใช้ HTTP เพราะ port 36140 มี SSL/TLS issue - ตัวเลือก: ใช้ HTTP หรือแก้ Certificate
 
-define('SITE_PROTOCOL', '');
+define('SITE_PROTOCOL', 'http');
 
 // ===========================================
 // ฟังก์ชันสร้าง Base URL
