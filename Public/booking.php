@@ -2044,6 +2044,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
             </div>
             
+            <?php if (empty($_SESSION['line_link_success'])): ?>
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
                     const tntId = "<?php echo addslashes((string)$lastTenantId); ?>";
@@ -2063,6 +2064,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     }
                 });
             </script>
+            <?php endif; ?>
             <?php elseif ($lineAddFriendUrl): ?>
             <div style="background:var(--bg-secondary);border:1px solid var(--border-color);border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);text-align:center;">
                 <div style="margin-bottom:10px;">
