@@ -8,22 +8,21 @@
 // ตั้งค่า IP / Domain สำหรับ QR Code และ OAuth Callback
 // ===========================================
 // ใส่ IP Address หรือ Domain ของเซิร์ฟเวอร์
-// ตัวอย่าง: 'yourdomain.com:36140' (รวม port ถ้ามี) 
-// ตัวอย่าง: 'project.3bbddns.com:36140' 
+// ตัวอย่าง: 'yourdomain.com' (ไม่ต้องใส่พอร์ตถ้าใช้ 80/443)
+// ตัวอย่าง: 'project.3bbddns.com' 
 // ถ้าเว้นว่าง '' จะใช้ค่าอัตโนมัติจาก $_SERVER['HTTP_HOST']
 // ⚠️ สำคัญ: ต้องตรงกับที่ลงทะเบียนใน LINE/Google Developers Console พอดี!
 
-define('SITE_HOST', 'project.3bbddns.com:36140');
+define('SITE_HOST', 'project.3bbddns.com');
 
 // ===========================================
 // ตั้งค่า Protocol (http หรือ https)
 // ===========================================
 // ใส่ 'https' หรือ 'http' เพื่อบังคับใช้ค่าที่กำหนด
 // ใส่ '' เพื่อให้ระบบตรวจจากการส่งข้อมูลอัตโนมัติ (ตรวจ HTTPS, SERVER_PORT, X_FORWARDED_PROTO)
-// ⚠️ ถ้าโปรแกรมอยู่หลัง Reverse Proxy ที่เป็น HTTPS ต้องกำหนดเป็น 'https'
-// 📌 ปัจจุบันใช้ HTTP เพราะ port 36140 มี SSL/TLS issue - ตัวเลือก: ใช้ HTTP หรือแก้ Certificate
+// ⚠️ ใช้ HTTPS เพราะ XAMPP มี SSL certificate สำหรับ project.3bbddns.com บน port 443
 
-define('SITE_PROTOCOL', 'http');
+define('SITE_PROTOCOL', 'https');
 
 // ===========================================
 // ฟังก์ชันสร้าง Base URL
