@@ -181,7 +181,7 @@ try {
 // ดึงบิลค้างชำระสำหรับชำระค่าเช่าเดือนแรก
 $firstUnpaidExpense = null;
 try {
-    $unpaidStmt = $pdo->prepare("\n+        SELECT
+    $unpaidStmt = $pdo->prepare("\n        SELECT
             e.*,
             COALESCE(ps.submitted_amount, 0) AS submitted_amount,
             (e.exp_total - COALESCE(ps.submitted_amount, 0)) AS remaining_amount
@@ -254,20 +254,62 @@ if (($contract['ctr_status'] ?? '0') === '1') {
     } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
-$unpaidCountForTermination = 0;
+$terminationAllowed = false;
+$terminationReason = '';
+
 try {
-    $unpaidCheckStmt = $pdo->prepare("
-        SELECT COUNT(*) FROM expense e
-        WHERE e.ctr_id = ?
-          AND e.exp_total > COALESCE((
-              SELECT SUM(p.pay_amount) FROM payment p
-              WHERE p.exp_id = e.exp_id
-                AND p.pay_status = '1'
-          ), 0)
+    $termCheckStmt = $pdo->prepare("
+        SELECT 
+           (
+              SELECT step_5_confirmed
+              FROM tenant_workflow
+              WHERE tnt_id = c.tnt_id
+              ORDER BY id DESC LIMIT 1
+           ) AS is_step5_complete,
+           (
+              SELECT COUNT(*)
+              FROM expense e
+              WHERE e.ctr_id = c.ctr_id
+                AND DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(CURDATE(), '%Y-%m')
+           ) AS has_current_month_bill,
+           (
+              SELECT COUNT(*)
+              FROM expense e
+              WHERE e.ctr_id = c.ctr_id
+                AND e.exp_total > COALESCE((
+                    SELECT SUM(p.pay_amount) 
+                    FROM payment p 
+                    WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
+                ), 0)
+           ) AS unpaid_bills_count,
+           (
+              SELECT COUNT(*)
+              FROM payment p
+              JOIN expense e ON p.exp_id = e.exp_id
+              WHERE e.ctr_id = c.ctr_id AND p.pay_status = '0'
+           ) AS unverified_payments_count
+        FROM contract c
+        WHERE c.ctr_id = ?
     ");
-    $unpaidCheckStmt->execute([$contract['ctr_id']]);
-    $unpaidCountForTermination = (int)$unpaidCheckStmt->fetchColumn();
-} catch (PDOException $e) { error_log("PDOException checking unpaid for termination in " . __FILE__ . ": " . $e->getMessage()); }
+    $termCheckStmt->execute([$contract['ctr_id']]);
+    $termData = $termCheckStmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($termData) {
+        if ((int)$termData['is_step5_complete'] !== 1) {
+            $terminationReason = 'รอให้เจ้าหน้าที่ดำเนินการข้อมูลการเข้าพักของคุณให้เสร็จสิ้น (ขั้นตอนที่ 5)';
+        } elseif ((int)$termData['has_current_month_bill'] === 0) {
+            $terminationReason = 'กรุณารอให้เจ้าหน้าที่จดมิเตอร์และออกบิลค่าใช้จ่ายของเดือนล่าสุดให้เรียบร้อยก่อนแจ้งยกเลิกสัญญา';
+        } elseif ((int)$termData['unpaid_bills_count'] > 0) {
+            $terminationReason = 'ไม่สามารถแจ้งยกเลิกสัญญาได้ เนื่องจากมียอดค้างชำระจำนวน ' . $termData['unpaid_bills_count'] . ' รายการ หรือมีบิลใหม่ที่เพิ่งออก กรุณาชำระค่าห้องให้ครบก่อน';
+        } elseif ((int)$termData['unverified_payments_count'] > 0) {
+            $terminationReason = 'มีสลิปการชำระเงินที่รอให้เจ้าหน้าที่ตรวจสอบ กรุณารอเจ้าหน้าที่ตรวจสอบความถูกต้องก่อนจึงจะสามารถแจ้งยกเลิกสัญญาได้';
+        } else {
+            $terminationAllowed = true;
+        }
+    }
+} catch (PDOException $e) { 
+    error_log("PDOException checking termination eligibility: " . $e->getMessage()); 
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -987,7 +1029,7 @@ try {
                 <div class="menu-label">แจ้งชำระเงิน</div>
             </a>
             <?php if (($contract['ctr_status'] ?? '0') !== '1' && !$terminationAllowed): ?>
-            <a href="#" onclick="alert('<?= htmlspecialchars($terminationReason, ENT_QUOTES, \'UTF-8\') ?>'); return false;" class="menu-item" style="opacity: 0.5;">
+            <a href="#" onclick="alert('<?= htmlspecialchars($terminationReason, ENT_QUOTES, 'UTF-8') ?>'); return false;" class="menu-item" style="opacity: 0.5;">
             <?php else: ?>
             <a href="termination.php?token=<?php echo urlencode($token); ?>" class="menu-item">
             <?php endif; ?>
