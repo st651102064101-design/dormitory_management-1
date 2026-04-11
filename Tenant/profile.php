@@ -13,9 +13,13 @@ $settings = getSystemSettings($pdo);
 
 $success = '';
 $error = '';
+$profileReadOnly = true;
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if ($profileReadOnly) {
+        $error = 'หน้านี้ปิดการแก้ไขข้อมูลชั่วคราว';
+    } else {
     try {
         $tnt_idcard = preg_replace('/\D+/', '', trim($_POST['tnt_idcard'] ?? ''));
         $tnt_name = trim($_POST['tnt_name'] ?? '');
@@ -93,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = $e->getMessage();
     } catch (PDOException $e) {
         $error = 'เกิดข้อผิดพลาดในการบันทึกข้อมูล';
+    }
     }
 }
 ?>
@@ -210,6 +215,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             border-color: #3b82f6;
         }
         .form-group input:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .form-group textarea:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
@@ -417,6 +426,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
         
         <form method="POST">
+            <fieldset <?php echo $profileReadOnly ? 'disabled' : ''; ?> style="border:0; padding:0; margin:0; min-inline-size:auto;">
             <div class="form-section">
                 <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> ข้อมูลพื้นฐาน</div>
                 <div class="form-group">
@@ -472,8 +482,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <input type="tel" name="tnt_parentsphone" value="<?php echo htmlspecialchars($contract['tnt_parentsphone'] ?? ''); ?>" placeholder="0812345678" maxlength="10" inputmode="numeric" pattern="[0-9]{0,10}" oninput="this.value=this.value.replace(/\D/g,'').slice(0,10);">
                 </div>
             </div>
-            
-            <button type="submit" class="btn-save" disabled aria-disabled="true"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span> บันทึกการแก้ไข</button>
+            </fieldset>
+
+            <?php if (!$profileReadOnly): ?>
+            <button type="submit" class="btn-save"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span> บันทึกการแก้ไข</button>
+            <?php endif; ?>
         </form>
     </div>
     
