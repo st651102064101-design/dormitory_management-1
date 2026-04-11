@@ -1234,7 +1234,7 @@ try {
             )
             AND COALESCE((
                 SELECT SUM(p.pay_amount) FROM payment p
-                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1') AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
             ), 0) < e.exp_total
         ");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);

@@ -12,6 +12,13 @@ $token = $auth['token'];
 $contract = $auth['contract'];
 $settings = getSystemSettings($pdo);
 
+if (!headers_sent()) {
+    // Force dynamic bill data to bypass browser/proxy caching.
+    header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+}
+
 $currentBillMonth = (new DateTime('first day of this month'))->format('Y-m');
 $firstBillMonth = $currentBillMonth;
 if (!empty($contract['ctr_start'])) {
@@ -32,7 +39,8 @@ try {
                (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as pending_amount,
                (SELECT COUNT(*) FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') as payment_count,
                (SELECT p.pay_status FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' ORDER BY p.pay_date DESC LIMIT 1) as last_payment_status,
-               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') as deposit_paid_amount
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') as deposit_paid_amount,
+               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') as deposit_pending_amount
         FROM expense e
         JOIN (
             SELECT MAX(exp_id) AS exp_id
@@ -75,7 +83,23 @@ $totalUnpaid = 0;
 foreach ($expenses as $exp) {
     $paidAmount = (float)($exp['paid_amount'] ?? 0);
     $pendingAmount = (float)($exp['pending_amount'] ?? 0);
+    $depositPaidAmount = (float)($exp['deposit_paid_amount'] ?? 0);
+    $depositPendingAmount = (float)($exp['deposit_pending_amount'] ?? 0);
     $expTotal = (float)$exp['exp_total'];
+    
+    $roomPrice = (float)($exp['room_price'] ?? 0);
+    $elecChg = (float)($exp['exp_elec_chg'] ?? 0);
+    $waterChg = (float)($exp['exp_water'] ?? 0);
+    $calculatedTotal = $roomPrice + $elecChg + $waterChg;
+    $otherFee = $expTotal - $calculatedTotal;
+    $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
+    $isDepositOnly = ($expTotal > 0 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $otherFee > 0);
+
+    if ($isDepositOnly) {
+        $paidAmount = $paidAmount + $depositPaidAmount;
+        $pendingAmount = $pendingAmount + $depositPendingAmount;
+    }
+    
     $remaining = max(0, $expTotal - $paidAmount);
     
     if ($paidAmount >= $expTotal && $expTotal > 0) {
@@ -356,6 +380,7 @@ foreach ($expenses as $exp) {
             $paidAmount = (float)($exp['paid_amount'] ?? 0);
             $pendingAmount = (float)($exp['pending_amount'] ?? 0);
             $depositPaidAmount = (float)($exp['deposit_paid_amount'] ?? 0);
+            $depositPendingAmount = (float)($exp['deposit_pending_amount'] ?? 0);
             $expTotal = (float)$exp['exp_total'];
             $remaining = max(0, $expTotal - $paidAmount);
             
@@ -366,6 +391,14 @@ foreach ($expenses as $exp) {
             $otherFee = $expTotal - $calculatedTotal;
             $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
             $isDepositOnly = ($expTotal > 0 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $otherFee > 0);
+
+            if ($isDepositOnly) {
+                // สำหรับบิลมัดจำเพียวๆ ให้รวมยอดทั้งหมด (ทั้งที่ระบุมัดจำและไม่ได้ระบุ)
+                // เพื่อป้องกันบั๊กเวลา tenant จ่ายผ่านหน้าแจ้งชำระเงินปกติแล้วไม่ได้ระบุ remark
+                $paidAmount = $paidAmount + $depositPaidAmount;
+                $pendingAmount = $pendingAmount + $depositPendingAmount;
+                $remaining = max(0, $expTotal - $paidAmount);
+            }
 
             $statusKey = '0';
             if ($paidAmount >= $expTotal && $expTotal > 0) {
@@ -422,7 +455,7 @@ foreach ($expenses as $exp) {
                     <span class="bill-label">ยอดรวม</span>
                     <span class="bill-value"><?php echo number_format($expTotal); ?> บาท</span>
                 </div>
-                <?php if ($paidAmount > 0): ?>
+                <?php if ($paidAmount > 0 && !$isDepositOnly): ?>
                 <div class="bill-row" style="color: #10b981; font-size: 0.85rem; margin-top: 0.5rem;">
                     <span class="bill-label" style="color: #10b981;">ชำระแล้ว</span>
                     <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount); ?> บาท</span>
@@ -451,7 +484,7 @@ foreach ($expenses as $exp) {
                 <?php endif; ?>
             </div>
             <?php
-            $hasPending = ((float)($exp['pending_amount'] ?? 0)) > 0;
+            $hasPending = $pendingAmount > 0;
             if ($hasPending): ?>
             <a href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo $exp['exp_id']; ?>" class="btn-pay" style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;cursor:default;">
                 <span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
@@ -519,7 +552,7 @@ foreach ($expenses as $exp) {
             )
             AND COALESCE((
                 SELECT SUM(p.pay_amount) FROM payment p
-                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1') AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
             ), 0) < e.exp_total
         ");
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
@@ -533,7 +566,7 @@ foreach ($expenses as $exp) {
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                                 หน้าหลัก<?php if ($homeBadgeCount > 0): ?><span class="nav-badge">1</span><?php endif; ?>
             </a>
-            <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="nav-item active">
+            <a href="report_bills.php?token=<?php echo urlencode($token); ?>&_ts=<?php echo time(); ?>" class="nav-item active">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
                 บิล<?php if ($billCount > 0): ?><span class="nav-badge"><?php echo $billCount > 99 ? '99+' : $billCount; ?></span><?php endif; ?>
             </a>
@@ -546,5 +579,36 @@ foreach ($expenses as $exp) {
             </a>
         </div>
     </nav>
+    <script>
+    (function () {
+        function buildFreshUrl() {
+            var url = new URL(window.location.href);
+            url.searchParams.set('_ts', Date.now().toString());
+            return url.toString();
+        }
+
+        window.addEventListener('pageshow', function (event) {
+            var navEntry = (window.performance && window.performance.getEntriesByType)
+                ? window.performance.getEntriesByType('navigation')[0]
+                : null;
+
+            if (event.persisted || (navEntry && navEntry.type === 'back_forward')) {
+                window.location.replace(buildFreshUrl());
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var activeBillLink = document.querySelector('.bottom-nav .nav-item.active[href*="report_bills.php"]');
+            if (!activeBillLink) {
+                return;
+            }
+
+            activeBillLink.addEventListener('click', function (event) {
+                event.preventDefault();
+                window.location.href = buildFreshUrl();
+            });
+        });
+    })();
+    </script>
 </body>
 </html>

@@ -42,7 +42,8 @@ $selectedExpId = isset($_GET['exp_id']) ? (int)$_GET['exp_id'] : 0;
 try {
     $stmt = $pdo->prepare("
         SELECT e.*, r.room_number,
-               COALESCE(ps.submitted_amount, 0) AS paid_amount
+               COALESCE(ps.submitted_amount, 0) AS paid_amount,
+               COALESCE(p_dep.deposit_paid, 0) AS deposit_paid_amount
         FROM expense e
         JOIN (
             SELECT MAX(exp_id) AS exp_id
@@ -71,13 +72,40 @@ try {
               AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'
             GROUP BY exp_id
         ) ps ON ps.exp_id = e.exp_id
+        LEFT JOIN (
+            SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS deposit_paid
+            FROM payment
+            WHERE pay_status IN ('0', '1')
+              AND TRIM(COALESCE(pay_remark, '')) = 'มัดจำ'
+            GROUP BY exp_id
+        ) p_dep ON p_dep.exp_id = e.exp_id
         JOIN contract c ON e.ctr_id = c.ctr_id
         JOIN room r ON c.room_id = r.room_id
         WHERE (e.exp_total - COALESCE(ps.submitted_amount, 0)) > 0
         ORDER BY e.exp_month DESC
     ");
     $stmt->execute([$contract['ctr_id'], $firstBillMonth, $firstBillMonth, $currentBillMonth]);
-    $unpaidExpenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $unpaidExpensesRaw = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    
+    $unpaidExpenses = [];
+    $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
+    foreach ($unpaidExpensesRaw as $exp) {
+        $expTotal = (float)$exp['exp_total'];
+        $roomPrice = (float)($exp['room_price'] ?? 0);
+        $elecChg = (float)($exp['exp_elec_chg'] ?? 0);
+        $waterChg = (float)($exp['exp_water'] ?? 0);
+        $otherFee = $expTotal - ($roomPrice + $elecChg + $waterChg);
+        
+        $isDepositOnly = ($expTotal > 0 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $otherFee > 0);
+        
+        if ($isDepositOnly) {
+            $exp['paid_amount'] = (float)$exp['paid_amount'] + (float)$exp['deposit_paid_amount'];
+        }
+        
+        if (($expTotal - (float)$exp['paid_amount']) > 0) {
+            $unpaidExpenses[] = $exp;
+        }
+    }
     
     // หา expense ที่เลือก
     if ($selectedExpId > 0) {
@@ -95,20 +123,49 @@ $completedExpense = null;
 if ($selectedExpId > 0 && $selectedExpense === null) {
     try {
         $compStmt = $pdo->prepare("
-            SELECT e.exp_id, e.exp_month, e.exp_total, r.room_number,
+            SELECT e.exp_id, e.exp_month, e.exp_total, r.room_number, e.exp_elec_chg, e.exp_water, e.room_price,
                    COALESCE(SUM(CASE WHEN p.pay_status = '0' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' THEN p.pay_amount ELSE 0 END), 0) AS pending_amount,
                    COALESCE(SUM(CASE WHEN p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' THEN p.pay_amount ELSE 0 END), 0) AS paid_amount,
-                   MAX(CASE WHEN p.pay_status IN ('0', '1') AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' THEN p.pay_date END) AS last_pay_date,
-                   (SELECT pay_proof FROM payment WHERE exp_id = e.exp_id AND pay_status IN ('0', '1') AND pay_proof IS NOT NULL AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' ORDER BY pay_date DESC LIMIT 1) AS pay_proof
+                   COALESCE(SUM(CASE WHEN p.pay_status = '0' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ' THEN p.pay_amount ELSE 0 END), 0) AS deposit_pending_amount,
+                   COALESCE(SUM(CASE WHEN p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ' THEN p.pay_amount ELSE 0 END), 0) AS deposit_paid_amount,
+                   MAX(CASE WHEN p.pay_status IN ('0', '1') AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ' THEN p.pay_date END) AS last_pay_date_normal,
+                   MAX(CASE WHEN p.pay_status IN ('0', '1') AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ' THEN p.pay_date END) AS last_pay_date_deposit,
+                   (SELECT pay_proof FROM payment WHERE exp_id = e.exp_id AND pay_status IN ('0', '1') AND pay_proof IS NOT NULL AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' ORDER BY pay_date DESC LIMIT 1) AS pay_proof_normal,
+                   (SELECT pay_proof FROM payment WHERE exp_id = e.exp_id AND pay_status IN ('0', '1') AND pay_proof IS NOT NULL AND TRIM(COALESCE(pay_remark, '')) = 'มัดจำ' ORDER BY pay_date DESC LIMIT 1) AS pay_proof_deposit
             FROM expense e
             JOIN contract c ON e.ctr_id = c.ctr_id
             JOIN room r ON c.room_id = r.room_id
             LEFT JOIN payment p ON p.exp_id = e.exp_id
             WHERE e.exp_id = ? AND e.ctr_id = ?
-            GROUP BY e.exp_id, e.exp_month, e.exp_total, r.room_number
+            GROUP BY e.exp_id, e.exp_month, e.exp_total, r.room_number, e.exp_elec_chg, e.exp_water, e.room_price
         ");
         $compStmt->execute([$selectedExpId, $contract['ctr_id']]);
         $completedExpense = $compStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        
+        if ($completedExpense) {
+            $eTotal = (float)$completedExpense['exp_total'];
+            $rPrice = (float)($completedExpense['room_price'] ?? 0);
+            $eChg = (float)($completedExpense['exp_elec_chg'] ?? 0);
+            $wChg = (float)($completedExpense['exp_water'] ?? 0);
+            $oFee = $eTotal - ($rPrice + $eChg + $wChg);
+            $cDep = (float)($contract['ctr_deposit'] ?? 2000);
+            
+            $isDeposit = ($eTotal > 0 && $eTotal == $cDep && $eChg == 0 && $wChg == 0 && $oFee > 0);
+            if ($isDeposit) {
+                $completedExpense['pending_amount'] += $completedExpense['deposit_pending_amount'];
+                $completedExpense['paid_amount'] += $completedExpense['deposit_paid_amount'];
+                $completedExpense['last_pay_date'] = max($completedExpense['last_pay_date_normal'], $completedExpense['last_pay_date_deposit']);
+                // Use whichever proof is available/newer
+                if (empty($completedExpense['pay_proof_normal'])) {
+                    $completedExpense['pay_proof'] = $completedExpense['pay_proof_deposit'];
+                } else {
+                    $completedExpense['pay_proof'] = $completedExpense['pay_proof_normal'];
+                }
+            } else {
+                $completedExpense['last_pay_date'] = $completedExpense['last_pay_date_normal'];
+                $completedExpense['pay_proof'] = $completedExpense['pay_proof_normal'];
+            }
+        }
     } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
@@ -1336,7 +1393,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
                                 หน้าหลัก<?php if ($homeBadgeCount > 0): ?><span class="nav-badge">1</span><?php endif; ?>
             </a>
-            <a href="report_bills.php?token=<?php echo urlencode($token); ?>" class="nav-item">
+            <a href="report_bills.php?token=<?php echo urlencode($token); ?>&_ts=<?php echo time(); ?>" class="nav-item">
                 <div class="nav-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1-2-1z"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="12" y2="14"/></svg></div>
                 บิล<?php if ($billCount > 0): ?><span class="nav-badge"><?php echo $billCount > 99 ? '99+' : $billCount; ?></span><?php endif; ?>
             </a>
