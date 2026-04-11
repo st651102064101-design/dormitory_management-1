@@ -2,46 +2,46 @@
 
 ## 🎯 Your Setup
 ```
-Domain      : project.3bbddns.com:36140
-Protocol    : HTTP (not HTTPS - due to SSL issues)
+Domain      : project.3bbddns.com
+Protocol    : HTTPS (port 443 - standard)
 Project Path: /dormitory_management
 ```
 
 ## 📍 Callback URLs
 ```
-LINE   → http://project.3bbddns.com:36140/dormitory_management/line_callback.php
-Google → http://project.3bbddns.com:36140/dormitory_management/google_callback.php
+LINE   → https://project.3bbddns.com/dormitory_management/line_callback.php
+Google → https://project.3bbddns.com/dormitory_management/google_callback.php
 ```
 
 ## ✅ Verification Checklist
 
 ### 1. Browser Access
-- [ ] Open debug page: `http://project.3bbddns.com:36140/dormitory_management/debug_oauth.php`
+- [ ] Open debug page: `https://project.3bbddns.com/dormitory_management/debug_oauth.php`
 - [ ] Page loads without errors
 - [ ] Shows "Configuration Settings" section
 
 ### 2. Configuration Values
-- [ ] SITE_HOST shows: `project.3bbddns.com:36140`
-- [ ] SITE_PROTOCOL shows: `http`
+- [ ] SITE_HOST shows: `project.3bbddns.com`
+- [ ] SITE_PROTOCOL shows: `https`
 - [ ] LINE Login Callback URI matches above
 
 ### 3. LINE Developers Console
 - [ ] Logged into [LINE Developers](https://developers.line.biz/console/)
 - [ ] Selected correct Channel
 - [ ] Went to OAuth Settings
-- [ ] Added redirect URI: `http://project.3bbddns.com:36140/dormitory_management/line_callback.php`
+- [ ] Added redirect URI: `https://project.3bbddns.com/dormitory_management/line_callback.php`
 - [ ] Clicked Save/Refresh
 
 ### 4. Test LINE Login
-- [ ] Open: `http://project.3bbddns.com:36140/dormitory_management/Public/booking.php`
+- [ ] Open: `https://project.3bbddns.com/dormitory_management/Public/booking.php`
 - [ ] Click "ผูกบัญชี LINE"
-- [ ] Redirects to LINE OAuth (no 400 error)
+- [ ] Redirects to LINE OAuth (no errors)
 - [ ] Can complete LINE linking
 
 ### 5. Google Console (if used)
 - [ ] Logged into [Google Cloud Console](https://console.cloud.google.com/)
 - [ ] Selected your OAuth 2.0 Client
-- [ ] Added to redirect URIs: `http://project.3bbddns.com:36140/dormitory_management/google_callback.php`
+- [ ] Added to redirect URIs: `https://project.3bbddns.com/dormitory_management/google_callback.php`
 - [ ] Clicked Save
 
 ---
@@ -67,19 +67,15 @@ Google → http://project.3bbddns.com:36140/dormitory_management/google_callback
 
 ## 🚀 Next: Production HTTPS
 
-When ready for production:
-1. Get SSL certificate (Let's Encrypt, AWS, etc.)
-2. Configure HTTPS on port 36140 or reverse proxy
-3. Change `config.php`:
-   ```php
-   define('SITE_PROTOCOL', 'https');
-   ```
-4. Update URIs in LINE/Google Developers Console
-5. Re-test everything
+Already using HTTPS on port 443 with valid SSL certificate! 
 
-See [SSL_TROUBLESHOOTING.md](SSL_TROUBLESHOOTING.md) for details.
+If you need to use a custom port with HTTPS:
+1. Get SSL certificate for that port
+2. Configure XAMPP/Apache for custom HTTPS port
+3. Update config.php with the custom domain:port
+4. Re-test everything
 
 ---
 
 **Last Updated:** 12 April 2025  
-**Status:** ✅ HTTP Setup Complete
+**Status:** ✅ HTTPS Setup Complete (port 443)
