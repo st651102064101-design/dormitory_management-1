@@ -30,7 +30,7 @@ switch ($sortBy) {
     $orderBy = '(tnt_status = \'1\') DESC, (tnt_status = \'2\') DESC, (tnt_status = \'3\') DESC, (tnt_status = \'4\') DESC, tnt_name ASC';
 }
 
-$tenants = $pdo->query("SELECT tnt_id, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status,
+$tenants = $pdo->query("SELECT tnt_id, tnt_idcard, tnt_name, tnt_age, tnt_address, tnt_phone, tnt_education, tnt_faculty, tnt_year, tnt_vehicle, tnt_parent, tnt_parentsphone, tnt_status,
                    (SELECT COUNT(*) FROM contract c WHERE c.tnt_id = tenant.tnt_id AND c.ctr_status IN ('0','2')) AS has_active_contract
                    FROM tenant ORDER BY $orderBy")
                 ->fetchAll(PDO::FETCH_ASSOC);
@@ -718,7 +718,7 @@ try {
                       ?>
                       <tr data-status="<?php echo htmlspecialchars($statusKey); ?>">
                         <td>
-                          <div>เลขบัตรประชาชน: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars($t['tnt_id'] ?? '-'); ?></span></div>
+                          <div>เลขบัตรประชาชน: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars(($t['tnt_idcard'] ?? '') !== '' ? $t['tnt_idcard'] : ($t['tnt_id'] ?? '-')); ?></span></div>
                           <div>ชื่อ-สกุล: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars($t['tnt_name'] ?? '-'); ?></span></div>
                           <div>อายุ: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars((string)($t['tnt_age'] ?? '-')); ?></span></div>
                           <div>เบอร์โทร: <span class="expense-meta" style="color:#94a3b8;"><?php echo htmlspecialchars($t['tnt_phone'] ?? '-'); ?></span></div>
@@ -741,6 +741,7 @@ try {
                         <td class="crud-column">
                           <button type="button" class="animate-ui-action-btn edit btn-edit-tenant"
                             data-tnt-id="<?php echo htmlspecialchars($t['tnt_id']); ?>"
+                            data-tnt-idcard="<?php echo htmlspecialchars((string)($t['tnt_idcard'] ?? '')); ?>"
                             data-tnt-name="<?php echo htmlspecialchars($t['tnt_name'] ?? ''); ?>"
                             data-tnt-age="<?php echo htmlspecialchars((string)($t['tnt_age'] ?? '')); ?>"
                             data-tnt-phone="<?php echo htmlspecialchars($t['tnt_phone'] ?? ''); ?>"
@@ -780,7 +781,7 @@ try {
           <div class="modal-grid">
             <div class="tenant-form-group">
               <label for="edit_tnt_id">เลขบัตรประชาชน</label>
-              <input type="text" id="edit_tnt_id" name="tnt_id" readonly />
+              <input type="text" id="edit_tnt_id" name="tnt_idcard" maxlength="13" minlength="13" inputmode="numeric" pattern="\d{13}" placeholder="เช่น 1103701234567" />
             </div>
             <div class="tenant-form-group">
               <label for="edit_tnt_name">ชื่อ-สกุล <span style="color:#f87171;">*</span></label>
@@ -1094,7 +1095,7 @@ try {
         document.getElementById('tenantEditModal').classList.add('active');
         document.body.classList.add('modal-open');
         const setVal = (id, val = '') => { const el = document.getElementById(id); if (el) el.value = val; };
-        setVal('edit_tnt_id', data.tntId || '');
+        setVal('edit_tnt_id', data.tntIdCard || data.tntId || '');
         setVal('edit_tnt_id_original', data.tntId || '');
         setVal('edit_tnt_name', data.tntName || '');
         applyAgeSelection('edit_tnt_age_select', 'edit_tnt_age', 'edit_tnt_age_wrap', data.tntAge || '');
@@ -1130,6 +1131,14 @@ try {
         if (!tntName || !tntName.value.trim()) {
           alert('กรุณากรอกชื่อ-สกุล');
           tntName?.focus();
+          return;
+        }
+
+        const idCardInput = document.getElementById('edit_tnt_id');
+        const idCardValue = (idCardInput?.value || '').trim();
+        if (idCardValue !== '' && !/^\d{13}$/.test(idCardValue)) {
+          alert('เลขบัตรประชาชนต้องมี 13 หลัก');
+          idCardInput?.focus();
           return;
         }
         
@@ -1226,6 +1235,13 @@ try {
           });
         }
 
+        const editTntIdInput = document.getElementById('edit_tnt_id');
+        if (editTntIdInput) {
+          editTntIdInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.replace(/[^\d]/g, '').slice(0, 13);
+          });
+        }
+
         setupAgeSync('tnt_age_select', 'tnt_age', 'tnt_age_wrap');
         applyAgeSelection('tnt_age_select', 'tnt_age', 'tnt_age_wrap', '');
 
@@ -1297,6 +1313,7 @@ try {
             console.log('Edit button clicked (delegated), data:', editBtn.dataset);
             openTenantModal({
               tntId: editBtn.dataset.tntId,
+              tntIdCard: editBtn.dataset.tntIdcard,
               tntName: editBtn.dataset.tntName,
               tntAge: editBtn.dataset.tntAge,
               tntPhone: editBtn.dataset.tntPhone,

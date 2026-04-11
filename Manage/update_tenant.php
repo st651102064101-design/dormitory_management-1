@@ -18,7 +18,7 @@ try {
     $pdo = connectDB();
 
     $tnt_id_original = trim($_POST['tnt_id_original'] ?? '');
-    $tnt_id = trim($_POST['tnt_id'] ?? '');
+    $tnt_idcard = preg_replace('/\D+/', '', trim($_POST['tnt_idcard'] ?? ''));
     $tnt_name = trim($_POST['tnt_name'] ?? '');
     $tnt_age = isset($_POST['tnt_age']) && $_POST['tnt_age'] !== '' ? (int)$_POST['tnt_age'] : null;
     $tnt_address = trim($_POST['tnt_address'] ?? '') ?: null;
@@ -30,8 +30,14 @@ try {
     $tnt_parent = trim($_POST['tnt_parent'] ?? '') ?: null;
     $tnt_parentsphone = trim($_POST['tnt_parentsphone'] ?? '') ?: null;
 
-    if ($tnt_id_original === '' || $tnt_id === '' || !preg_match('/^\d{13}$/', $tnt_id) || $tnt_name === '') {
-        $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วนและระบุเลขบัตร 13 หลัก';
+    if ($tnt_id_original === '' || $tnt_name === '') {
+        $_SESSION['error'] = 'กรุณากรอกข้อมูลให้ครบถ้วน';
+        header('Location: ../Reports/manage_tenants.php');
+        exit;
+    }
+
+    if ($tnt_idcard !== '' && !preg_match('/^\d{13}$/', $tnt_idcard)) {
+        $_SESSION['error'] = 'เลขบัตรประชาชนต้องมี 13 หลัก';
         header('Location: ../Reports/manage_tenants.php');
         exit;
     }
@@ -39,8 +45,9 @@ try {
     // (เอาเรื่องตรวจสอบเบอร์โทรซ้ำออก)
     
     try {
-        $update = $pdo->prepare('UPDATE tenant SET tnt_name = ?, tnt_age = ?, tnt_address = ?, tnt_phone = ?, tnt_education = ?, tnt_faculty = ?, tnt_year = ?, tnt_vehicle = ?, tnt_parent = ?, tnt_parentsphone = ? WHERE tnt_id = ?');
+        $update = $pdo->prepare('UPDATE tenant SET tnt_idcard = ?, tnt_name = ?, tnt_age = ?, tnt_address = ?, tnt_phone = ?, tnt_education = ?, tnt_faculty = ?, tnt_year = ?, tnt_vehicle = ?, tnt_parent = ?, tnt_parentsphone = ? WHERE tnt_id = ?');
         $update->execute([
+            $tnt_idcard === '' ? null : $tnt_idcard,
             $tnt_name,
             $tnt_age,
             $tnt_address,
@@ -54,7 +61,10 @@ try {
             $tnt_id_original,
         ]);
     } catch (PDOException $updateException) {
-        if (strpos($updateException->getMessage(), 'Duplicate entry') !== false && strpos($updateException->getMessage(), 'tnt_phone') !== false) {
+        if (strpos($updateException->getMessage(), 'Duplicate entry') !== false && strpos($updateException->getMessage(), 'tnt_idcard') !== false) {
+            $_SESSION['error'] = 'เลขบัตรประชาชนนี้มีผู้ใช้งานอยู่แล้ว (' . htmlspecialchars($tnt_idcard) . ')';
+            error_log("ERROR: Duplicate ID card caught in update: " . $updateException->getMessage());
+        } elseif (strpos($updateException->getMessage(), 'Duplicate entry') !== false && strpos($updateException->getMessage(), 'tnt_phone') !== false) {
             $_SESSION['error'] = 'เบอร์โทรศัพท์นี้มีผู้ใช้งานอยู่แล้ว (' . htmlspecialchars($tnt_phone) . ')';
             error_log("ERROR: Duplicate phone caught in update: " . $updateException->getMessage());
         } else {
