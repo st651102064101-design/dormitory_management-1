@@ -607,6 +607,28 @@ try {
             fill: none;
             margin-right: 4px;
         }
+        /* Confirm modal override for this page: light card + stronger blurred backdrop */
+        .confirm-overlay {
+            background: rgba(15, 23, 42, 0.28) !important;
+            backdrop-filter: blur(10px) saturate(120%);
+            -webkit-backdrop-filter: blur(10px) saturate(120%);
+        }
+        .confirm-modal {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.97), rgba(241, 245, 249, 0.95)) !important;
+            border: 1px solid rgba(148, 163, 184, 0.35) !important;
+            box-shadow: 0 20px 45px rgba(2, 6, 23, 0.25) !important;
+        }
+        .confirm-message {
+            color: #334155 !important;
+        }
+        .confirm-btn-cancel {
+            background: rgba(148, 163, 184, 0.14) !important;
+            color: #334155 !important;
+            border: 1px solid rgba(148, 163, 184, 0.35) !important;
+        }
+        .confirm-btn-cancel:hover {
+            background: rgba(148, 163, 184, 0.24) !important;
+        }
         #preview-container { display: none; margin-top: 0.5rem; }
         #preview-container img { max-width: 100%; max-height: 150px; border-radius: 8px; }
         
