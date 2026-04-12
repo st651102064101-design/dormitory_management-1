@@ -96,7 +96,7 @@ $expenseStatusMap = [
 // Calculate totals
 $totalPaid = 0;
 $totalUnpaid = 0;
-foreach ($expenses as $exp) {
+foreach ($expenses as $expIndex => $exp) {
     $paidAmount = (float)($exp['paid_amount'] ?? 0);
     $pendingAmount = (float)($exp['pending_amount'] ?? 0);
     $depositPaidAmount = (float)($exp['deposit_paid_amount'] ?? 0);
@@ -109,7 +109,10 @@ foreach ($expenses as $exp) {
     $calculatedTotal = $roomPrice + $elecChg + $waterChg;
     $otherFee = $expTotal - $calculatedTotal;
     $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
-    $isDepositOnly = ($expTotal > 0 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $otherFee > 0);
+    
+    $depositPaymentCount = (int)($exp['deposit_payment_count'] ?? 0);
+    $isDepositOnly = ($depositPaymentCount > 0) 
+        || ($expIndex === count($expenses) - 1 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $roomPrice > 0 && $expTotal != $calculatedTotal);
 
     if ($isDepositOnly) {
         $paidAmount = $paidAmount + $depositPaidAmount;
@@ -443,19 +446,11 @@ foreach ($expenses as $exp) {
                 </span>
             </div>
             <div class="bill-details">
-                <?php 
-                    // ตรวจสอบว่าบิลนี้เจตนาให้เป็นบิลมัดจำเพียวๆ หรือไม่
-                    if ($isDepositOnly): 
-                ?>
-                <div class="bill-row">
-                    <span class="bill-label" style="font-weight: 600; color: #f59e0b;">เงินมัดจำสถานที่</span>
-                    <span class="bill-value" style="font-weight: 600; color: #f59e0b;"><?php echo number_format($ctrDeposit); ?> บาท</span>
-                </div>
-                <?php else: ?>
                 <div class="bill-row">
                     <span class="bill-label">ค่าห้อง</span>
                     <span class="bill-value"><?php echo number_format($roomPrice); ?> บาท</span>
                 </div>
+                <?php if ($elecChg > 0 || $waterChg > 0 || $expIndex !== count($expenses) - 1): ?>
                 <div class="bill-row">
                     <span class="bill-label">ค่าไฟ (<?php echo $exp['exp_elec_unit'] ?? 0; ?> หน่วย × <?php echo $exp['rate_elec'] ?? 0; ?> บาท)</span>
                     <span class="bill-value"><?php echo number_format($elecChg); ?> บาท</span>
@@ -464,28 +459,28 @@ foreach ($expenses as $exp) {
                     <span class="bill-label">ค่าน้ำ (<?php echo $exp['exp_water_unit'] ?? 0; ?> หน่วย × <?php echo $exp['rate_water'] ?? 0; ?> บาท)</span>
                     <span class="bill-value"><?php echo number_format($waterChg); ?> บาท</span>
                 </div>
+                <?php endif; ?>
                 <?php if ($otherFee > 0): ?>
                 <div class="bill-row">
                     <span class="bill-label" style="color: #f59e0b;">ค่าใช้จ่ายอื่นๆ</span>
                     <span class="bill-value" style="color: #f59e0b;"><?php echo number_format($otherFee); ?> บาท</span>
                 </div>
                 <?php endif; ?>
+                <?php if ($isDepositOnly || $depositPaidAmount > 0 || $depositPendingAmount > 0): ?>
+                <div class="bill-row">
+                    <span class="bill-label" style="font-weight: 600; color: #f59e0b;">เงินมัดจำสถานที่</span>
+                    <span class="bill-value" style="font-weight: 600; color: #f59e0b;"><?php echo number_format($ctrDeposit); ?> บาท</span>
+                </div>
                 <?php endif; ?>
+                
                 <div class="bill-total">
                     <span class="bill-label">ยอดรวม</span>
-                    <span class="bill-value"><?php 
-                        if ($isDepositOnly) {
-                            $actualRemaining = max(0, $expTotal - $paidAmount - $pendingAmount);
-                            echo number_format($actualRemaining > 0 ? $actualRemaining : $pendingAmount); 
-                        } else {
-                            echo number_format($expTotal); 
-                        }
-                    ?> บาท</span>
+                    <span class="bill-value"><?php echo number_format($expTotal); ?> บาท</span>
                 </div>
-                <?php if ($paidAmount > 0 && !$isDepositOnly): ?>
+                <?php if (($paidAmount - $depositPaidAmount) > 0): ?>
                 <div class="bill-row" style="color: #10b981; font-size: 0.85rem; margin-top: 0.5rem;">
-                    <span class="bill-label" style="color: #10b981;">ชำระแล้ว</span>
-                    <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount); ?> บาท</span>
+                    <span class="bill-label" style="color: #10b981;">ชำระแล้ว (ค่าห้อง/บิลปกติ)</span>
+                    <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount - $depositPaidAmount); ?> บาท</span>
                 </div>
                 <?php endif; ?>
                 <?php if ($depositPaidAmount > 0 && $isFirstBill): ?>
