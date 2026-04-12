@@ -71,7 +71,7 @@ if (!empty($token)) {
                    t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age, t.line_user_id, t.is_weather_alert_enabled,
                    r.room_id, r.room_number, r.room_image,
                    rt.type_name, rt.type_price,
-                   tw.current_step, tw.step_3_confirmed, tw.checkin_date, tw.water_meter_start, tw.elec_meter_start
+                   tw.current_step, tw.step_3_confirmed
             FROM contract c
             JOIN tenant t ON c.tnt_id = t.tnt_id
             JOIN room r ON c.room_id = r.room_id
@@ -96,7 +96,7 @@ if (!$contractData && !empty($_SESSION['tenant_logged_in'])) {
                        t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age, t.line_user_id, t.is_weather_alert_enabled,
                        r.room_id, r.room_number, r.room_image,
                        rt.type_name, rt.type_price,
-                       tw.current_step, tw.step_3_confirmed, tw.checkin_date, tw.water_meter_start, tw.elec_meter_start
+                       tw.current_step, tw.step_3_confirmed
                 FROM contract c
                 JOIN tenant t ON c.tnt_id = t.tnt_id
                 JOIN room r ON c.room_id = r.room_id
