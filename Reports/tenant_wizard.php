@@ -3633,7 +3633,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                     const seenMonths = new Set();
 
                     billsReversed.forEach((bill) => {
-                        const monthKey = String(bill?.bill_month || '').slice(0, 7);
+                        const monthKey = String(bill?.bill_month || '');
                         if (!monthKey || seenMonths.has(monthKey)) {
                             return;
                         }
