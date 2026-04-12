@@ -99,6 +99,15 @@ try {
     // 3. จัดการผูกบัญชี (ผูก LINE เข้ากับ Tenant)
     if (($_SESSION['line_login_action'] ?? '') === 'link' && !empty($_SESSION['line_login_target_tenant'])) {
         $targetTenantId = $_SESSION['line_login_target_tenant'];
+        $bookingRef = trim((string)($_SESSION['line_login_booking_ref'] ?? ($_SESSION['last_booking_id'] ?? '')));
+        $bookingPhone = trim((string)($_SESSION['line_login_booking_phone'] ?? ($_SESSION['last_phone_number'] ?? '')));
+        $bookingStatusUrl = '';
+        if ($bookingRef !== '' && $bookingPhone !== '') {
+            $bookingStatusUrl = getBaseUrl('/Public/booking_status.php')
+                . '?ref=' . urlencode($bookingRef)
+                . '&phone=' . urlencode($bookingPhone)
+                . '&auto=1';
+        }
 
         // หนึ่ง LINE ควรผูกกับผู้เช่าเดียว: ล้างการผูกเดิมก่อน
         $stmtClearDuplicate = $pdo->prepare("UPDATE tenant SET line_user_id = NULL WHERE line_user_id = ? AND tnt_id <> ?");
@@ -123,8 +132,20 @@ try {
                 $stmtC = $pdo->prepare("SELECT ctr_id, ctr_status, access_token, ctr_start FROM contract WHERE tnt_id = ? AND ctr_status != '1' ORDER BY ctr_id DESC LIMIT 1");
                 $stmtC->execute([$targetTenantId]);
                 $contract = $stmtC->fetch(PDO::FETCH_ASSOC);
-                
-                if ($contract) {
+
+                if ($bookingStatusUrl !== '') {
+                    $msg = "🎉 ยินดีต้อนรับคุณ {$tntData['tnt_name']}!\n";
+                    $msg .= "บัญชี LINE ของคุณเชื่อมต่อกับระบบหอพักสำเร็จแล้ว\n\n";
+                    $msg .= "✅ ระบบได้รับหลักฐานการชำระค่ามัดจำแล้ว\n";
+                    $msg .= "สถานะ: รอเจ้าของหอพักตรวจสอบ\n\n";
+                    $msg .= "🔍 ตรวจสอบสถานะการจองที่นี่:\n{$bookingStatusUrl}";
+
+                    if (function_exists('sendLinePushToUserId')) {
+                        sendLinePushToUserId($pdo, (string)$lineUserId, $msg);
+                    } elseif (function_exists('sendLineMulticast')) {
+                        sendLineMulticast($pdo, [$lineUserId], $msg);
+                    }
+                } elseif ($contract) {
                     $billCount = 0;
                     $billStmt = $pdo->prepare("SELECT COUNT(*) FROM expense e INNER JOIN ( SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month ) latest ON e.exp_id = latest.exp_id WHERE e.ctr_id = ? AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m') AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m') AND ( e.exp_month = (SELECT MIN(e2.exp_month) FROM expense e2 WHERE e2.ctr_id = e.ctr_id) OR EXISTS ( SELECT 1 FROM utility u WHERE u.ctr_id = e.ctr_id AND YEAR(u.utl_date) = YEAR(e.exp_month) AND MONTH(u.utl_date) = MONTH(e.exp_month) AND u.utl_water_end IS NOT NULL AND u.utl_elec_end IS NOT NULL ) ) AND COALESCE(( SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1') ), 0) < e.exp_total");
                     $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
@@ -142,14 +163,29 @@ try {
                     $dashUrl = getTenantPortalUrl((string)$contract['access_token']);
                     $msg .= "\n📱 เข้าสู่ระบบจัดการผู้เช่า (Dashboard):\n{$dashUrl}";
                     
-                    if (function_exists('sendLineMulticast')) { sendLineMulticast($pdo, [$lineUserId], $msg); }
+                    if (function_exists('sendLinePushToUserId')) {
+                        sendLinePushToUserId($pdo, (string)$lineUserId, $msg);
+                    } elseif (function_exists('sendLineMulticast')) {
+                        sendLineMulticast($pdo, [$lineUserId], $msg);
+                    }
                 }
             } catch (Exception $e) { error_log("LINE MultiCast Error: " . $e->getMessage()); }
         }
         
         // ล้างค่า
         $linkedRoom = $_SESSION['line_login_room_back'] ?? '';
-        unset($_SESSION['line_login_action'], $_SESSION['line_login_target_tenant'], $_SESSION['line_login_room_back']);
+        unset(
+            $_SESSION['line_login_action'],
+            $_SESSION['line_login_target_tenant'],
+            $_SESSION['line_login_room_back'],
+            $_SESSION['line_login_booking_ref'],
+            $_SESSION['line_login_booking_phone']
+        );
+
+        if ($bookingRef !== '' && $bookingPhone !== '') {
+            header('Location: Public/booking_status.php?ref=' . urlencode($bookingRef) . '&phone=' . urlencode($bookingPhone) . '&auto=1');
+            exit;
+        }
 
         if (!empty($linkedRoom)) {
             header('Location: Public/booking.php?room=' . urlencode((string)$linkedRoom) . '&success=1&line_linked=1');

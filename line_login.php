@@ -37,8 +37,15 @@ try {
         if (!empty($_GET['room'])) {
             $_SESSION['line_login_room_back'] = $_GET['room'];
         }
+        if (!empty($_GET['ref'])) {
+            $_SESSION['line_login_booking_ref'] = (string)$_GET['ref'];
+        }
+        if (!empty($_GET['phone'])) {
+            $_SESSION['line_login_booking_phone'] = (string)$_GET['phone'];
+        }
     } else {
         $_SESSION['line_login_action'] = 'login';
+        unset($_SESSION['line_login_booking_ref'], $_SESSION['line_login_booking_phone']);
     }
     
     // สร้าง state token
