@@ -347,33 +347,6 @@ foreach ($expenses as $exp) {
             stroke-width: 2;
             fill: none;
         }
-        
-        /* Modal for Payment Details */
-        .modal-overlay {
-            position: fixed; inset: 0; z-index: 9999;
-            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-            display: none; align-items: center; justify-content: center; padding: 1rem;
-            opacity: 0; transition: opacity 0.3s;
-        }
-        .modal-overlay.show { opacity: 1; display: flex; }
-        .modal-container {
-            background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-            border: 2px solid #e2e8f0; border-radius: 16px;
-            width: 100%; max-width: 400px;
-            max-height: 85vh; overflow-y: auto; padding: 1.5rem;
-            transform: translateY(20px); transition: transform 0.3s; box-shadow: 0 10px 40px rgba(0,0,0,0.15);
-        }
-        .modal-overlay.show .modal-container { transform: translateY(0); }
-        .modal-header { font-size: 1.15rem; font-weight: 600; color: #0f172a; margin-bottom: 1rem; display: flex; justify-content: space-between; align-items: center; }
-        .modal-header small { color: #64748b; }
-        .modal-close { background: none; border: none; color: #64748b; font-size: 1.5rem; cursor: pointer; line-height: 1; }
-        .modal-close:hover { color: #0f172a; }
-        .pay-item { background: rgba(148, 163, 184, 0.08); padding: 0.85rem; border-radius: 10px; margin-bottom: 0.75rem; border: 1px solid rgba(226, 232, 240, 0.8); }
-        .pay-item:last-child { margin-bottom: 0; }
-        .pay-item-header { display: flex; justify-content: space-between; margin-bottom: 0.4rem; font-size: 0.85rem; color: #475569; align-items: center; }
-        .pay-item-amount { font-size: 1.1rem; font-weight: 600; color: #0f172a; }
-        .pay-status-badge { padding: 0.15rem 0.5rem; border-radius: 20px; font-size: 0.75rem; font-weight: 500; display: inline-flex; align-items: center; gap: 4px; }
-        .pay-proof-img { margin-top: 0.75rem; max-width: 100%; max-height: 150px; border-radius: 8px; border: 1px solid #e2e8f0; object-fit: contain; cursor: pointer; }
     </style>
     <?php if (($settings['public_theme'] ?? '') === 'light'): ?>
     <link rel="stylesheet" href="tenant-light-theme.css">
@@ -462,7 +435,7 @@ foreach ($expenses as $exp) {
                 $displayLabel = 'รอยืนยันการจอง';
             }
         ?>
-        <div class="bill-card" <?php if(!empty($exp['payments'])): ?>onclick="openPayModal('modal-exp-<?php echo $exp['exp_id']; ?>')" style="cursor:pointer;"<?php endif; ?>>
+        <div class="bill-card">
             <div class="bill-header">
                 <span class="bill-month"><span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <?php echo thaiMonthYearLong($exp['exp_month']); ?></span>
                 <span class="bill-status" style="background: <?php echo $expenseStatusMap[$statusKey]['bg']; ?>; color: <?php echo $expenseStatusMap[$statusKey]['color']; ?>">
@@ -542,53 +515,6 @@ foreach ($expenses as $exp) {
             <a href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo $exp['exp_id']; ?>" class="btn-pay" onclick="event.stopPropagation();"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ชำระเงิน</a>
             <?php endif; ?>
         </div>
-        
-        <?php if(!empty($exp['payments'])): ?>
-        <!-- Payment Modal for Exp ID <?php echo $exp['exp_id']; ?> -->
-        <div id="modal-exp-<?php echo $exp['exp_id']; ?>" class="modal-overlay" onclick="closePayModal(event, this)">
-            <div class="modal-container" onclick="event.stopPropagation()">
-                <div class="modal-header">
-                    <span>ประวัติการชำระเงิน<br><small style="font-size:0.85rem;font-weight:400;color:#94a3b8;">บิลเดือน <?php echo thaiMonthYearLong($exp['exp_month']); ?></small></span>
-                    <button type="button" class="modal-close" onclick="closePayModal(null, document.getElementById('modal-exp-<?php echo $exp['exp_id']; ?>'))">&times;</button>
-                </div>
-                
-                <?php foreach($exp['payments'] as $p): 
-                    $isDeposit = (trim($p['pay_remark'] ?? '') === 'มัดจำ');
-                    $payTypeName = $isDeposit ? 'ชำระเงินมัดจำ/ล่วงหน้า' : 'ชำระค่าห้อง/บิลปกติ';
-                    
-                    $stBadgeMap = [
-                        '0' => ['label' => 'รอตรวจสอบ', 'bg' => '#fbbf24', 'color' => '#fff'],
-                        '1' => ['label' => 'อนุมัติแล้ว', 'bg' => '#10b981', 'color' => '#fff'],
-                        '2' => ['label' => 'ถูกปฏิเสธ', 'bg' => '#ef4444', 'color' => '#fff'],
-                    ];
-                    $pStatus = $p['pay_status'] ?? '0';
-                    $badgeCfg = $stBadgeMap[$pStatus] ?? $stBadgeMap['0'];
-                ?>
-                <div class="pay-item">
-                    <div class="pay-item-header">
-                        <div style="display:flex; flex-direction:column; gap:2px;">
-                            <span style="color: #0f172a; font-weight: 500; font-size: 0.9rem;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;color:#475569;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-                                <?php echo $payTypeName; ?>
-                            </span>
-                            <span style="color: #64748b;"><?php echo date('d/m/Y H:i', strtotime($p['pay_date'] ?? $p['created_at'] ?? '')); ?></span>
-                        </div>
-                        <span class="pay-status-badge" style="background: <?php echo $badgeCfg['bg']; ?>; color: <?php echo $badgeCfg['color']; ?>;">
-                            <?php echo $badgeCfg['label']; ?>
-                        </span>
-                    </div>
-                    <div class="pay-item-amount"><?php echo number_format($p['pay_amount']); ?> บาท</div>
-                    
-                    <?php if(!empty($p['pay_proof'])): ?>
-                    <a href="/dormitory_management/Public/Assets/Images/Payments/<?php echo htmlspecialchars($p['pay_proof']); ?>" target="_blank">
-                        <img src="/dormitory_management/Public/Assets/Images/Payments/<?php echo htmlspecialchars($p['pay_proof']); ?>" class="pay-proof-img" alt="Slip">
-                    </a>
-                    <?php endif; ?>
-                </div>
-                <?php endforeach; ?>
-            </div>
-        </div>
-        <?php endif; ?>
         
         <?php endforeach; ?>
         <?php endif; ?>
@@ -717,19 +643,6 @@ foreach ($expenses as $exp) {
             }
         });
     })();
-    
-    function openPayModal(id) {
-        var m = document.getElementById(id);
-        if(m) {
-            m.classList.add('show');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-    function closePayModal(e, el) {
-        if(e && e.target !== el) return;
-        el.classList.remove('show');
-        document.body.style.overflow = '';
-    }
     </script>
 </body>
 </html>
