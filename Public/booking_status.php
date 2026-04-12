@@ -409,6 +409,9 @@ if (!$hasFirstBillingCycle && !empty($bookingInfo['ctr_id'])) {
 }
 
 $step5Started = $hasFirstBillingCycle || $currentStepForStatus >= 5 || intval($bookingInfo['workflow_completed'] ?? 0) === 1;
+$tenantPortalUrl = !empty($bookingInfo['access_token'])
+    ? '../Tenant/index.php?token=' . urlencode((string)$bookingInfo['access_token'])
+    : '';
 $statusDetail = '';
 
 if ($currentStatus === '1') {
@@ -1321,6 +1324,28 @@ if ($currentStatus === '1') {
                     </div>
                     <a href="../Tenant/payment.php?token=<?php echo urlencode($bookingInfo['access_token']); ?>" target="_blank" class="cta-link payment-link">
                         เข้าสู่หน้าชำระเงิน →
+                    </a>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Tenant Portal Link (show when tenant reached step 5) -->
+        <?php if (!empty($tenantPortalUrl) && $step5Started): ?>
+        <div class="card cta-card payment-cta" style="border-color:#22c55e; background:linear-gradient(135deg, rgba(34,197,94,0.16), rgba(15,23,42,0.04));">
+            <div class="payment-cta-wrap">
+                <div class="payment-cta-icon" style="background:#16a34a; box-shadow:0 8px 20px rgba(22,163,74,0.28);">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
+                    </svg>
+                </div>
+                <div class="payment-cta-body">
+                    <div class="payment-cta-title">เข้าสู่หน้าจัดการผู้เช่า</div>
+                    <div class="payment-cta-subtitle">
+                        คุณผ่านขั้นตอนที่ 5 แล้ว สามารถไปที่แดชบอร์ดผู้เช่าเพื่อจัดการข้อมูลทั้งหมดได้
+                    </div>
+                    <a href="<?php echo htmlspecialchars($tenantPortalUrl); ?>" target="_blank" class="cta-link" style="color:#15803d;">
+                        ไปหน้าจัดการผู้เช่า →
                     </a>
                 </div>
             </div>
