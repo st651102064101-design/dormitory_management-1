@@ -3629,17 +3629,49 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 } else {
                     // สร้าง container สำหรับทุกบิลใน latestBillPaymentsSection (เดือนล่าสุดขึ้นก่อน)
                     const billsReversed = [...allBills].reverse();
-                    const uniqueBills = [];
-                    const seenMonths = new Set();
+                    const normalizeBillMonthKey = (monthValue) => {
+                        const rawMonth = String(monthValue || '').trim();
+                        if (!rawMonth) return '';
 
+                        const ymMatch = rawMonth.match(/^(\d{4})[-/](\d{1,2})/);
+                        if (ymMatch) {
+                            const year = ymMatch[1];
+                            const month = String(Math.max(1, Math.min(12, Number(ymMatch[2]) || 1))).padStart(2, '0');
+                            return `${year}-${month}`;
+                        }
+
+                        const parsed = new Date(rawMonth);
+                        if (!Number.isNaN(parsed.getTime())) {
+                            const month = String(parsed.getMonth() + 1).padStart(2, '0');
+                            return `${parsed.getFullYear()}-${month}`;
+                        }
+
+                        return formatMonthDisplay(rawMonth);
+                    };
+
+                    const getBillPriorityScore = (bill) => {
+                        const hasExpense = bill?.has_expense ? 1 : 0;
+                        const expenseTotal = Number(bill?.expense_total || 0);
+                        const approved = Number(bill?.approved_amount || 0);
+                        const pending = Number(bill?.pending_amount || bill?.submitted_amount || 0);
+                        const paymentCount = Array.isArray(bill?.payments) ? bill.payments.length : 0;
+                        return (hasExpense * 1000000) + ((expenseTotal + approved + pending) * 10) + paymentCount;
+                    };
+
+                    const uniqueByMonth = new Map();
                     billsReversed.forEach((bill) => {
-                        const monthKey = String(bill?.bill_month || '');
-                        if (!monthKey || seenMonths.has(monthKey)) {
+                        const monthKey = normalizeBillMonthKey(bill?.bill_month);
+                        if (!monthKey) {
                             return;
                         }
-                        seenMonths.add(monthKey);
-                        uniqueBills.push(bill);
+
+                        const selectedBill = uniqueByMonth.get(monthKey);
+                        if (!selectedBill || getBillPriorityScore(bill) > getBillPriorityScore(selectedBill)) {
+                            uniqueByMonth.set(monthKey, bill);
+                        }
                     });
+
+                    const uniqueBills = Array.from(uniqueByMonth.values());
 
                     uniqueBills.forEach((bill, idx) => {
                         const isLast = idx === 0; // isLast = bill ล่าสุด (ซึ่งอยู่ index 0 หลัง reverse)
