@@ -155,3 +155,112 @@ function getSystemSettings(PDO $pdo): array {
     
     return $settings;
 }
+
+function getTenantBillBadgeCount(PDO $pdo, array $contract): int {
+    $ctrId = (int)($contract['ctr_id'] ?? 0);
+    if ($ctrId <= 0) {
+        return 0;
+    }
+
+    $contractStart = (string)($contract['ctr_start'] ?? date('Y-m-d'));
+    $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
+
+    try {
+        $stmt = $pdo->prepare(
+            "
+            SELECT e.exp_id,
+                   e.exp_total,
+                   e.exp_month,
+                   e.room_price,
+                   e.exp_elec_chg,
+                   e.exp_water,
+                   (SELECT COALESCE(SUM(p.pay_amount), 0)
+                    FROM payment p
+                    WHERE p.exp_id = e.exp_id
+                      AND p.pay_status = '1'
+                      AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') AS paid_amount,
+                   (SELECT COALESCE(SUM(p.pay_amount), 0)
+                    FROM payment p
+                    WHERE p.exp_id = e.exp_id
+                      AND p.pay_status = '0'
+                      AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ') AS pending_amount,
+                   (SELECT COUNT(*)
+                    FROM payment p
+                    WHERE p.exp_id = e.exp_id
+                      AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') AS deposit_payment_count,
+                   (SELECT COALESCE(SUM(p.pay_amount), 0)
+                    FROM payment p
+                    WHERE p.exp_id = e.exp_id
+                      AND p.pay_status = '1'
+                      AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') AS deposit_paid_amount,
+                   (SELECT COALESCE(SUM(p.pay_amount), 0)
+                    FROM payment p
+                    WHERE p.exp_id = e.exp_id
+                      AND p.pay_status = '0'
+                      AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ') AS deposit_pending_amount
+            FROM expense e
+            INNER JOIN (
+                SELECT MAX(exp_id) AS exp_id
+                FROM expense
+                WHERE ctr_id = ?
+                  AND DATE_FORMAT(exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m')
+                  AND DATE_FORMAT(exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+                GROUP BY DATE_FORMAT(exp_month, '%Y-%m')
+            ) latest ON e.exp_id = latest.exp_id
+            WHERE e.ctr_id = ?
+              AND EXISTS (
+                    SELECT 1
+                    FROM utility u
+                    WHERE u.ctr_id = e.ctr_id
+                      AND YEAR(u.utl_date) = YEAR(e.exp_month)
+                      AND MONTH(u.utl_date) = MONTH(e.exp_month)
+                      AND u.utl_water_end IS NOT NULL
+                      AND u.utl_elec_end IS NOT NULL
+              )
+            ORDER BY e.exp_month DESC, e.exp_id DESC
+            "
+        );
+        $stmt->execute([$ctrId, $contractStart, $ctrId]);
+        $expenses = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $billCount = 0;
+        $expenseCount = count($expenses);
+        foreach ($expenses as $expIndex => $exp) {
+            $paidAmount = (float)($exp['paid_amount'] ?? 0);
+            $pendingAmount = (float)($exp['pending_amount'] ?? 0);
+            $depositPaidAmount = (float)($exp['deposit_paid_amount'] ?? 0);
+            $depositPendingAmount = (float)($exp['deposit_pending_amount'] ?? 0);
+            $expTotal = (float)($exp['exp_total'] ?? 0);
+
+            $roomPrice = (float)($exp['room_price'] ?? 0);
+            $elecChg = (float)($exp['exp_elec_chg'] ?? 0);
+            $waterChg = (float)($exp['exp_water'] ?? 0);
+            $calculatedTotal = $roomPrice + $elecChg + $waterChg;
+            $depositPaymentCount = (int)($exp['deposit_payment_count'] ?? 0);
+
+            $isDepositOnly = ($depositPaymentCount > 0)
+                || ($expIndex === $expenseCount - 1
+                    && $expTotal == $ctrDeposit
+                    && $elecChg == 0
+                    && $waterChg == 0
+                    && $roomPrice > 0
+                    && $expTotal != $calculatedTotal);
+
+            if ($isDepositOnly) {
+                $paidAmount += $depositPaidAmount;
+                $pendingAmount += $depositPendingAmount;
+            }
+
+            $actualRemaining = max(0, $expTotal - $paidAmount - $pendingAmount);
+            if ($actualRemaining > 0) {
+                $billCount++;
+            }
+        }
+
+        return max(0, $billCount);
+    } catch (Throwable $e) {
+        error_log('Exception calculating tenant bill badge count in ' . __FILE__ . ': ' . $e->getMessage());
+    }
+
+    return 0;
+}
