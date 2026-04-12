@@ -1224,7 +1224,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span> แจ้งชำระเงิน</div>
             
             <?php if ($isCompletedOrPending && !$isFullyApproved): ?>
-            <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:14px;padding:1.25rem;text-align:center;">
+            <div id="paymentStatusCard" data-state="pending" style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:14px;padding:1.25rem;text-align:center;">
                 <div style="font-size:2rem;margin-bottom:0.5rem;">⏳</div>
                 <div style="color:#fbbf24;font-weight:600;font-size:1rem;margin-bottom:0.4rem;">รออนุมัติการชำระเงิน</div>
                 <div style="color:#fcd34d;font-size:0.88rem;margin-bottom:0.75rem;">
@@ -1239,7 +1239,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 <div style="font-size:0.82rem;color:#94a3b8;">หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลหอพัก</div>
             </div>
             <?php else: ?>
-            <form method="POST" enctype="multipart/form-data" id="paymentForm">
+            <form method="POST" enctype="multipart/form-data" id="paymentForm" data-state="form">
                 <div id="paymentFormResponse" class="payment-form-response" style="display:none; margin-bottom: 1rem; padding: 0.9rem 1rem; border-radius: 12px; font-size: 0.92rem; line-height: 1.45;"></div>
                 <div class="form-group" style="<?php echo (count($unpaidExpenses) == 1) ? 'display:none;' : ''; ?>">
                     <label>เลือกบิลที่ต้องการชำระ *</label>
@@ -1619,6 +1619,33 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
         response.className = `payment-form-response ${type === 'success' ? 'success' : 'error'}`;
         response.textContent = message;
         response.style.display = 'block';
+    }
+
+    function replacePaymentFormWithPendingCard(result) {
+        const form = document.getElementById('paymentForm');
+        if (!form) return;
+
+        const formSection = form.closest('.form-section');
+        if (!formSection) return;
+
+        const billMonthText = result.exp_month ? formatBillMonth(result.exp_month) : '-';
+        const expTotal = Number(result.exp_total || result.pay_amount || 0);
+        const totalPaidOrPending = Number(result.submitted_amount || result.pay_amount || 0);
+        const proofUrl = typeof result.pay_proof_url === 'string' ? result.pay_proof_url : '';
+
+        formSection.innerHTML = `
+            <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></span> แจ้งชำระเงิน</div>
+            <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:14px;padding:1.25rem;text-align:center;">
+                <div style="font-size:2rem;margin-bottom:0.5rem;">⏳</div>
+                <div style="color:#fbbf24;font-weight:600;font-size:1rem;margin-bottom:0.4rem;">รออนุมัติการชำระเงิน</div>
+                <div style="color:#fcd34d;font-size:0.88rem;margin-bottom:0.75rem;">
+                    บิล${billMonthText} — ยอด ${expTotal.toLocaleString()} บาท<br>
+                    ส่งสลิปแล้วรวม ${totalPaidOrPending.toLocaleString()} บาท
+                </div>
+                ${proofUrl ? `<div style="margin: 1rem 0;"><img src="${proofUrl}" alt="หลักฐานการชำระเงิน" style="max-width: 100%; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1); max-height: 300px; object-fit: contain;"></div>` : ''}
+                <div style="font-size:0.82rem;color:#94a3b8;">หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลหอพัก</div>
+            </div>
+        `;
     }
 
     function updateSubmitState() {
@@ -2259,17 +2286,22 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                     showFormAlert(result.message || 'แจ้งชำระเงินเรียบร้อยแล้ว', 'success');
                     prependPaymentHistoryItem(result);
                     syncUnpaidUI(result);
-                    form.reset();
-                    if (typeof updatePaymentAmount === 'function') {
-                        updatePaymentAmount();
-                    }
-                    const previewContainer = document.getElementById('preview-container');
-                    const previewImage = document.getElementById('preview-image');
-                    if (previewContainer) {
-                        previewContainer.style.display = 'none';
-                    }
-                    if (previewImage) {
-                        previewImage.src = '';
+                    const hasUnpaidCards = !!document.querySelector('.unpaid-report-card');
+                    if (!hasUnpaidCards) {
+                        replacePaymentFormWithPendingCard(result);
+                    } else {
+                        form.reset();
+                        if (typeof updatePaymentAmount === 'function') {
+                            updatePaymentAmount();
+                        }
+                        const previewContainer = document.getElementById('preview-container');
+                        const previewImage = document.getElementById('preview-image');
+                        if (previewContainer) {
+                            previewContainer.style.display = 'none';
+                        }
+                        if (previewImage) {
+                            previewImage.src = '';
+                        }
                     }
                 } else {
                     throw new Error((result && result.message) ? result.message : 'ไม่สามารถบันทึกข้อมูลได้');
