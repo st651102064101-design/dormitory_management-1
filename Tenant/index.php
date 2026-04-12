@@ -1284,7 +1284,11 @@ try {
         }
     } catch (Exception $e) { error_log("Exception calculating home badge count in " . __FILE__ . ": " . $e->getMessage()); }
 
-    $billCount = getTenantBillBadgeCount($pdo, $contract);
+    if (function_exists('getTenantBillBadgeCount')) {
+        $billCount = getTenantBillBadgeCount($pdo, $contract);
+    } else {
+        $billCount = 0;
+    }
     ?>
     
     <nav class="bottom-nav">
