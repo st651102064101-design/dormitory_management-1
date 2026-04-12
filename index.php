@@ -2737,7 +2737,7 @@ if ($publicTheme === 'light') {
                         <!-- Room Image Container -->
                         <div class="room-image-container">
                             <?php if (!empty($room['room_image'])): ?>
-                            <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>">
+                            <img src="/dormitory_management/Public/Assets/Images/Rooms/<?php echo htmlspecialchars($room['room_image']); ?>" alt="รูปห้อง <?php echo $room['room_number']; ?>" class="js-fullscreen-image-preview">
                             <?php else: ?>
                             <div class="room-image-placeholder" aria-label="ไม่มีรูปห้อง">
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -3084,6 +3084,100 @@ if ($publicTheme === 'light') {
         // ===== CARD FLIP ON HOVER WITH DELAY =====
         const flipDelay = 400;
         const flipTimers = new WeakMap();
+        let fullscreenImageOverlay = null;
+        let fullscreenImageEl = null;
+        let fullscreenPreviewMode = 'click';
+
+        function ensureFullscreenImageOverlay() {
+            if (fullscreenImageOverlay) return;
+
+            const overlay = document.createElement('div');
+            Object.assign(overlay.style, {
+                position: 'fixed',
+                inset: '0',
+                zIndex: '9999999',
+                display: 'none',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '10px',
+                background: 'transparent',
+                cursor: 'zoom-out'
+            });
+
+            const image = document.createElement('img');
+            Object.assign(image.style, {
+                maxWidth: 'calc(100vw - 20px)',
+                maxHeight: 'calc(100vh - 20px)',
+                width: 'auto',
+                height: 'auto',
+                objectFit: 'contain',
+                borderRadius: '0',
+                boxShadow: 'none',
+                pointerEvents: 'none',
+                userSelect: 'none',
+                WebkitUserDrag: 'none'
+            });
+
+            overlay.appendChild(image);
+            overlay.addEventListener('click', closeFullscreenImagePreview);
+
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') {
+                    closeFullscreenImagePreview();
+                }
+            });
+
+            document.body.appendChild(overlay);
+            fullscreenImageOverlay = overlay;
+            fullscreenImageEl = image;
+        }
+
+        function openFullscreenImagePreview(src, mode = 'click') {
+            if (!src) return;
+            ensureFullscreenImageOverlay();
+
+            fullscreenPreviewMode = mode === 'hover' ? 'hover' : 'click';
+            fullscreenImageEl.src = src;
+            fullscreenImageOverlay.style.display = 'flex';
+            fullscreenImageOverlay.style.pointerEvents = fullscreenPreviewMode === 'hover' ? 'none' : 'auto';
+        }
+
+        function closeFullscreenImagePreview() {
+            if (!fullscreenImageOverlay) return;
+            fullscreenImageOverlay.style.display = 'none';
+            fullscreenImageOverlay.style.pointerEvents = 'auto';
+            fullscreenPreviewMode = 'click';
+        }
+
+        function bindFullscreenImagePreview(root) {
+            const host = root || document;
+            const canHoverPreview = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+            const images = host.querySelectorAll('img.js-fullscreen-image-preview');
+
+            images.forEach((img) => {
+                if (img.dataset.fullscreenPreviewBound === '1') return;
+                img.dataset.fullscreenPreviewBound = '1';
+                img.style.cursor = 'zoom-in';
+
+                img.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    openFullscreenImagePreview(img.src, 'click');
+                });
+
+                if (canHoverPreview) {
+                    img.addEventListener('mouseenter', () => {
+                        openFullscreenImagePreview(img.src, 'hover');
+                    });
+
+                    img.addEventListener('mouseleave', () => {
+                        if (fullscreenPreviewMode === 'hover') {
+                            closeFullscreenImagePreview();
+                        }
+                    });
+                }
+            });
+        }
         
         function setupCardFlip() {
             document.querySelectorAll('.room-card').forEach(card => {
@@ -3118,6 +3212,7 @@ if ($publicTheme === 'light') {
         
         // Initialize card flip
         setupCardFlip();
+        bindFullscreenImagePreview(document);
     </script>
 
     <!-- Leaflet Map (Open-source, no API key required) -->

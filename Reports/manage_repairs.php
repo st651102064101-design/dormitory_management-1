@@ -2542,6 +2542,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
                             <?php if (!empty($r['repair_image'])): ?>
                               <img src="/dormitory_management/Public/Assets/Images/Repairs/<?php echo htmlspecialchars(basename($r['repair_image'])); ?>" 
                                    alt="รูปการซ่อม" 
+                                   class="js-fullscreen-image-preview"
                                    style="max-width:60px; max-height:60px; border-radius:10px; object-fit:cover; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: transform 0.3s ease;" 
                                    onmouseover="this.style.transform='scale(1.1)'" 
                                    onmouseout="this.style.transform='scale(1)'" />
@@ -2844,6 +2845,101 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
       function getServerTime() {
         return new Date(new Date().getTime() + timeDiffMs);
       }
+
+      let _fullscreenImageOverlay = null;
+      let _fullscreenImageEl = null;
+      let _fullscreenPreviewMode = 'click';
+
+      function ensureFullscreenImageOverlay() {
+        if (_fullscreenImageOverlay) return;
+
+        const overlay = document.createElement('div');
+        Object.assign(overlay.style, {
+          position: 'fixed',
+          inset: '0',
+          zIndex: '9999999',
+          display: 'none',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '10px',
+          background: 'transparent',
+          cursor: 'zoom-out'
+        });
+
+        const image = document.createElement('img');
+        Object.assign(image.style, {
+          maxWidth: 'calc(100vw - 20px)',
+          maxHeight: 'calc(100vh - 20px)',
+          width: 'auto',
+          height: 'auto',
+          objectFit: 'contain',
+          borderRadius: '0',
+          boxShadow: 'none',
+          pointerEvents: 'none',
+          userSelect: 'none',
+          WebkitUserDrag: 'none'
+        });
+
+        overlay.appendChild(image);
+        overlay.addEventListener('click', closeFullscreenImagePreview);
+
+        document.addEventListener('keydown', (event) => {
+          if (event.key === 'Escape') {
+            closeFullscreenImagePreview();
+          }
+        });
+
+        document.body.appendChild(overlay);
+        _fullscreenImageOverlay = overlay;
+        _fullscreenImageEl = image;
+      }
+
+      function openFullscreenImagePreview(src, mode = 'click') {
+        if (!src) return;
+        ensureFullscreenImageOverlay();
+
+        _fullscreenPreviewMode = mode === 'hover' ? 'hover' : 'click';
+        _fullscreenImageEl.src = src;
+        _fullscreenImageOverlay.style.display = 'flex';
+        _fullscreenImageOverlay.style.pointerEvents = _fullscreenPreviewMode === 'hover' ? 'none' : 'auto';
+      }
+
+      function closeFullscreenImagePreview() {
+        if (!_fullscreenImageOverlay) return;
+        _fullscreenImageOverlay.style.display = 'none';
+        _fullscreenImageOverlay.style.pointerEvents = 'auto';
+        _fullscreenPreviewMode = 'click';
+      }
+
+      function bindFullscreenImagePreview(root) {
+        const host = root || document;
+        const canHoverPreview = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        const images = host.querySelectorAll('img.js-fullscreen-image-preview');
+
+        images.forEach((img) => {
+          if (img.dataset.fullscreenPreviewBound === '1') return;
+          img.dataset.fullscreenPreviewBound = '1';
+          img.style.cursor = 'zoom-in';
+
+          img.addEventListener('click', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            openFullscreenImagePreview(img.src, 'click');
+          });
+
+          if (canHoverPreview) {
+            img.addEventListener('mouseenter', () => {
+              openFullscreenImagePreview(img.src, 'hover');
+            });
+
+            img.addEventListener('mouseleave', () => {
+              if (_fullscreenPreviewMode === 'hover') {
+                closeFullscreenImagePreview();
+              }
+            });
+          }
+        });
+      }
       
       // Update relative time in real-time
       function updateRelativeTime() {
@@ -2924,6 +3020,7 @@ $lightThemeClass = $isLightTheme ? 'light-theme' : '';
       document.addEventListener('DOMContentLoaded', () => {
         updateCurrentTime();
         updateRelativeTime();
+        bindFullscreenImagePreview(document);
       });
       
       function getStatusFromBadge(badge) {
