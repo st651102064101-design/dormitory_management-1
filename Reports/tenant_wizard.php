@@ -3629,11 +3629,23 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 } else {
                     // สร้าง container สำหรับทุกบิลใน latestBillPaymentsSection (เดือนล่าสุดขึ้นก่อน)
                     const billsReversed = [...allBills].reverse();
-                    billsReversed.forEach((bill, idx) => {
+                    const uniqueBills = [];
+                    const seenMonths = new Set();
+
+                    billsReversed.forEach((bill) => {
+                        const monthKey = String(bill?.bill_month || '');
+                        if (!monthKey || seenMonths.has(monthKey)) {
+                            return;
+                        }
+                        seenMonths.add(monthKey);
+                        uniqueBills.push(bill);
+                    });
+
+                    uniqueBills.forEach((bill, idx) => {
                         const isLast = idx === 0; // isLast = bill ล่าสุด (ซึ่งอยู่ index 0 หลัง reverse)
-                        const isFirst = idx === billsReversed.length - 1;
+                        const isFirst = idx === uniqueBills.length - 1;
                         let title = '';
-                        if (billsReversed.length === 1) {
+                        if (uniqueBills.length === 1) {
                             title = 'รายการชำระเดือนแรก (บิลปัจจุบัน)';
                         } else if (isFirst) {
                             title = 'รายการชำระเดือนแรก';
