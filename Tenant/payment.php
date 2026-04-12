@@ -607,6 +607,16 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             opacity: 0.5;
             cursor: not-allowed;
         }
+            .payment-form-response.success {
+                background: rgba(16, 185, 129, 0.14);
+                border: 1px solid rgba(16, 185, 129, 0.35);
+                color: #34d399;
+            }
+            .payment-form-response.error {
+                background: rgba(239, 68, 68, 0.14);
+                border: 1px solid rgba(239, 68, 68, 0.35);
+                color: #fca5a5;
+            }
         .alert {
             padding: 1rem;
             border-radius: 12px;
@@ -1230,6 +1240,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             </div>
             <?php else: ?>
             <form method="POST" enctype="multipart/form-data" id="paymentForm">
+                <div id="paymentFormResponse" class="payment-form-response" style="display:none; margin-bottom: 1rem; padding: 0.9rem 1rem; border-radius: 12px; font-size: 0.92rem; line-height: 1.45;"></div>
                 <div class="form-group" style="<?php echo (count($unpaidExpenses) == 1) ? 'display:none;' : ''; ?>">
                     <label>เลือกบิลที่ต้องการชำระ *</label>
                     <select name="exp_id" id="exp_id" <?php echo (count($unpaidExpenses) != 1) ? 'required' : ''; ?> onchange="updatePaymentAmount()">
@@ -1524,7 +1535,11 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 if (remaining <= 0) {
                     option.remove();
                     if (select.options.length === 0 || (select.options.length === 1 && select.options[0].value === '')) {
-                        setTimeout(() => window.location.reload(), 1500);
+                        select.selectedIndex = 0;
+                        const selectGroup = select.closest('.form-group');
+                        if (selectGroup) {
+                            selectGroup.style.display = 'none';
+                        }
                     } else {
                         select.selectedIndex = 0; // reset
                     }
@@ -1547,7 +1562,6 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             if (remaining <= 0) {
                 const group = document.getElementById('single-expense-group');
                 if (group) group.style.display = 'none';
-                setTimeout(() => window.location.reload(), 1500);
             } else {
                 const total = parseFloat(singleInfo.dataset.total) || 0;
                 const prevPaid = parseFloat(singleInfo.dataset.paid) || 0;
@@ -1596,6 +1610,15 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 reportTotalElem.textContent = `ยอดค้างรวม ${newTotalTextNum.toLocaleString()} บาท`;
             }
         }
+    }
+
+    function showPaymentFormResponse(message, type) {
+        const response = document.getElementById('paymentFormResponse');
+        if (!response) return;
+
+        response.className = `payment-form-response ${type === 'success' ? 'success' : 'error'}`;
+        response.textContent = message;
+        response.style.display = 'block';
     }
 
     function updateSubmitState() {
@@ -1757,18 +1780,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
     }
 
     function showFormAlert(message, type) {
-        const container = document.querySelector('.container');
-        if (!container) return;
-
-        const oldAlert = container.querySelector('.alert.alert-success, .alert.alert-error');
-        if (oldAlert) {
-            oldAlert.remove();
-        }
-
-        const alert = document.createElement('div');
-        alert.className = type === 'success' ? 'alert alert-success' : 'alert alert-error';
-        alert.innerHTML = `<span>${message}</span>`;
-        container.insertBefore(alert, container.firstChild);
+        showPaymentFormResponse(message, type);
     }
 
     function formatPayDate(isoDate) {
