@@ -108,8 +108,10 @@ try {
         $msg .= "📞 เบอร์ติดต่อ: {$tPhone}\n";
         $msg .= "🏠 ห้องที่จอง: {$roomName}\n";
         $msg .= "📅 วันที่เข้าพัก: " . date('d/m/Y', strtotime($bkg_checkin_date)) . "\n";
-        
-        sendLineBroadcast($pdo, $msg);
+
+        if (function_exists('sendLineToTenant')) {
+            sendLineToTenant($pdo, (string)$tnt_id, $msg);
+        }
     } catch (Exception $e) {
         error_log("Line Notification Error: " . $e->getMessage());
     }

@@ -60,8 +60,10 @@ try {
             $msg .= "ยอดคงเหลือที่ต้องชำระ: ฿{$amount}\n";
             $msg .= "❗️ เลยกำหนดชำระแล้ว กรุณาชำระเงินเพื่อหลีกเลี่ยงค่าปรับ\n";
             $msg .= "\nสามารถตรวจสอบและชำระเงินได้ที่:\n{$url}";
-            
-            sendLineBroadcast($pdo, $msg);
+
+            if (function_exists('sendLineToExpense')) {
+                sendLineToExpense($pdo, (int)($row['exp_id'] ?? 0), $msg);
+            }
         }
     }
     

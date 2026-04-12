@@ -84,7 +84,7 @@ try {
     ]);
 
     require_once __DIR__ . '/../LineHelper.php';
-    if (function_exists('sendLineBroadcast')) {
+    if (function_exists('sendLineToContract')) {
         try {
             $stmtRoom = $pdo->prepare("SELECT r.room_number FROM room r JOIN contract c ON r.room_id = c.room_id WHERE c.ctr_id = ?");
             $stmtRoom->execute([$ctr_id]);
@@ -113,7 +113,7 @@ try {
             if ($url) {
                 $msg .= "\nดูรายละเอียด/ชำระเงิน:\n" . str_replace('/Manage/Tenant', '/Tenant', $url);
             }
-            sendLineBroadcast($pdo, $msg);
+            sendLineToContract($pdo, (int)$ctr_id, $msg);
         } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
     }
 

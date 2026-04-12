@@ -112,8 +112,10 @@ try {
         $msg .= "📞 เบอร์ติดต่อ: {$tPhone}\n";
         $msg .= "🏠 ห้อง: {$roomName}\n";
         $msg .= "สถานะ: รอผู้เช่าชำระเงินมัดจำ/จอง";
-        
-        sendLineBroadcast($pdo, $msg);
+
+        if (function_exists('sendLineToTenant')) {
+            sendLineToTenant($pdo, (string)$tnt_id, $msg);
+        }
     } catch (Exception $e) {
         error_log("Line Notification Error (Step 1): " . $e->getMessage());
     }

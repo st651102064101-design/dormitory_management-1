@@ -65,7 +65,9 @@ try {
             $stmtInfo->execute([$repair_id]);
             if ($row = $stmtInfo->fetch()) {
                 $msg = "🔧 อัปเดตสถานะแจ้งซ่อมห้อง {$row['room_number']}\nรายการ: {$row['repair_desc']}\nสถานะใหม่: " . ($statusMessages[$repair_status] ?? 'อัปเดตแล้ว');
-                sendLineBroadcast($pdo, $msg);
+                if (function_exists('sendLineToRepair')) {
+                    sendLineToRepair($pdo, (int)$repair_id, $msg);
+                }
             }
         } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 

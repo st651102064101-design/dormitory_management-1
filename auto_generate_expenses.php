@@ -175,7 +175,7 @@ try {
         $generated++;
 
         // ส่งแจ้งเตือน LINE สำหรับบิลเริ่มต้นที่ประกอบด้วยแค่ค่าห้อง (ยังไม่มีค่าน้ำค่าไฟ)
-        if (function_exists('sendLineBroadcast')) {
+        if (function_exists('sendLineToContract')) {
             $monthTxt = date('m/Y', strtotime($currentMonth . '-01'));
             $roomNum = (string)($room['room_number'] ?? $room['room_id']);
             $msg = "🧾 บิลค่าห้องใหม่ ห้อง {$roomNum}\n";
@@ -185,7 +185,7 @@ try {
             $msg .= "------------------------\n";
             $msg .= "รวมยอดที่ต้องชำระ: ฿" . number_format($exp_total, 2) . "\n";
             $msg .= "\nหมายเหตุ: ข้อมูลนี้ยังไม่รวมค่าน้ำ/ค่าไฟ";
-            sendLineBroadcast($pdo, $msg);
+            sendLineToContract($pdo, (int)$ctr_id, $msg);
         }
     }
     

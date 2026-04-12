@@ -327,7 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->commit();
 
             require_once __DIR__ . '/../LineHelper.php';
-            if (function_exists('sendLineBroadcast')) {
+            if (function_exists('sendLineToContract')) {
                 $tenantName = $contract['tnt_name'] ?? 'ผู้เช่า';
                 $roomNumberText = $contract['room_number'] ?? 'ไม่ทราบห้อง';
                 $monthStr = isset($expense['exp_month']) ? date('m/Y', strtotime((string)$expense['exp_month'])) : '';
@@ -342,7 +342,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg .= "------------------------\n";
                 $msg .= "กรุณาตรวจสอบหลักฐานในระบบ\n";
                 $msg .= getBaseUrl('/Manage/index.php');
-                sendLineBroadcast($pdo, $msg);
+                sendLineToContract($pdo, (int)$contract['ctr_id'], $msg);
             }
 
             $remainingAfterSubmit = max(0, $remainingAmount - $recordAmount);

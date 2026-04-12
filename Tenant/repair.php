@@ -342,7 +342,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
                 }
                 $msg .= "สถานะ: รอคนรับเรื่อง";
                 
-                sendLineBroadcast($pdo, $msg);
+                if (function_exists('sendLineToContract')) {
+                    sendLineToContract($pdo, (int)$contract['ctr_id'], $msg);
+                }
             } catch (Exception $e) {
                 // Ignore LINE error
             }

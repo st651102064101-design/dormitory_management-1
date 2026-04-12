@@ -137,7 +137,7 @@ try {
     ];
 
     require_once __DIR__ . '/../LineHelper.php';
-    if ($payStatus === '1' && function_exists('sendLineBroadcast')) {
+    if ($payStatus === '1' && function_exists('sendLineToTenant')) {
         try {
             // ดึงข้อมูลห้องและบิล
             // ดึง room_id และเลขห้องก่อน
@@ -170,7 +170,7 @@ try {
                 $msg .= "ยอดที่อนุมัติ: ฿" . number_format($payAmount, 2) . "\n";
                 $msg .= "------------------------\n";
                 $msg .= "ขอบคุณที่ใช้บริการ Sangthian Dormitory 😊\n";
-                sendLineBroadcast($pdo, $msg);
+                sendLineToTenant($pdo, (string)($info['tnt_id'] ?? ''), $msg);
             }
         } catch (Exception $e) {
             error_log("Line Notification Error (Payment Approval): " . $e->getMessage());

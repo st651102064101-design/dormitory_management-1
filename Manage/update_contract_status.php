@@ -227,9 +227,13 @@ try {
         $roomName = $stmtRoom->fetchColumn() ?: $room_id;
 
         if ($ctr_status === '1') {
-            sendLineBroadcast($pdo, "⚠️ แจ้งเตือน: สัญญาสำหรับห้อง {$roomName} ถูกยกเลิกเรียบร้อยแล้ว");
+            if (function_exists('sendLineToContract')) {
+                sendLineToContract($pdo, (int)$ctr_id, "⚠️ แจ้งเตือน: สัญญาสำหรับห้อง {$roomName} ถูกยกเลิกเรียบร้อยแล้ว");
+            }
         } elseif ($ctr_status === '2') {
-            sendLineBroadcast($pdo, "📝 แจ้งเตือน: ผู้เช่าห้อง {$roomName} แจ้งความประสงค์ขอยกเลิกสัญญา ล่วงหน้า");
+            if (function_exists('sendLineToContract')) {
+                sendLineToContract($pdo, (int)$ctr_id, "📝 แจ้งเตือน: ผู้เช่าห้อง {$roomName} แจ้งความประสงค์ขอยกเลิกสัญญา ล่วงหน้า");
+            }
         }
     } catch (Exception $e) {
         error_log("Line Notification Error (Contract Cancel): " . $e->getMessage());

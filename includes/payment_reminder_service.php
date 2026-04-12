@@ -512,7 +512,9 @@ function dispatchPaymentReminder(PDO $pdo, int $expenseId, array $options = []):
     if (!$dryRun) {
         require_once dirname(__DIR__) . '/LineHelper.php';
         try {
-            sendLineBroadcast($pdo, "⚠️ " . $messageBody);
+            if (function_exists('sendLineToTenant')) {
+                sendLineToTenant($pdo, (string)$tenantId, "⚠️ " . $messageBody);
+            }
         } catch (Exception $e) {
             error_log("Line Notification Error (Payment Reminder): " . $e->getMessage());
         }

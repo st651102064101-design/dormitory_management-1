@@ -38,7 +38,7 @@ try {
     
     // 1. ดึงข้อมูลที่เกี่ยวข้องจาก booking
     $stmtBooking = $pdo->prepare("
-        SELECT b.room_id, b.tnt_id, r.room_number, t.tnt_name 
+        SELECT b.room_id, b.tnt_id, r.room_number, t.tnt_name, t.line_user_id 
         FROM booking b 
         LEFT JOIN room r ON b.room_id = r.room_id 
         LEFT JOIN tenant t ON b.tnt_id = t.tnt_id 
@@ -56,6 +56,7 @@ try {
     $tnt_id = $tnt_id ?: $booking['tnt_id']; // ใช้จาก booking ถ้าไม่ได้ส่งมา
     $roomName = $booking['room_number'] ?? '-';
     $tntName = $booking['tnt_name'] ?? '-';
+    $tenantLineUserId = trim((string)($booking['line_user_id'] ?? ''));
     
     // 2. ดึง contract_id จาก tenant_workflow (ถ้ามี)
     $ctr_ids = [];
@@ -203,7 +204,12 @@ try {
         if (!empty($_SESSION['admin_username'])) {
             $msg .= "ผู้ปฏิบัติงาน: Admin (" . $_SESSION['admin_username'] . ")";
         }
-        sendLineBroadcast($pdo, $msg);
+
+        if ($tenantLineUserId !== '' && function_exists('sendLinePushToUserId')) {
+            sendLinePushToUserId($pdo, $tenantLineUserId, $msg);
+        } elseif (!empty($tnt_id) && function_exists('sendLineToTenant')) {
+            sendLineToTenant($pdo, (string)$tnt_id, $msg);
+        }
     } catch (Exception $e) {
         error_log("Line Notification Error (Cancel Booking): " . $e->getMessage());
     }

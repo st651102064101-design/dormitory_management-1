@@ -269,7 +269,9 @@ try {
             $msg .= "คุณสามารถเข้าสู่ระบบผู้เช่าเพื่อดูรายละเอียดสัญญา, ตรวจสอบบิล, และแจ้งซ่อมได้ที่ลิงก์ด้านล่างนี้:\n";
             $msg .= $url;
             
-            sendLineBroadcast($pdo, $msg);
+            if (function_exists('sendLineToContract')) {
+                sendLineToContract($pdo, (int)$ctr_id, $msg);
+            }
 
             // แจ้งเตือนบิลแรกเข้าถ้ามีการสร้างใหม่
             if ($isFirstBillCreated) {
@@ -286,7 +288,9 @@ try {
                 $msgBill .= "ตรวจสอบรายละเอียดและแนบสลิปได้ที่:\n";
                 $msgBill .= $url;
 
-                sendLineBroadcast($pdo, $msgBill);
+                if (function_exists('sendLineToContract')) {
+                    sendLineToContract($pdo, (int)$ctr_id, $msgBill);
+                }
             }
         }
     } catch (Exception $e) {

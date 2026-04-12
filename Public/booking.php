@@ -475,8 +475,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             $statusUrl = $protocol . $domainName . $scriptDir . "/booking_status.php?ref=" . urlencode((string)$bookingId) . "&phone=" . urlencode((string)$phone) . "&auto=1";
                             
                             $msg .= "🔍 ตรวจสอบการจองทึ่นี่เลย:\n" . $statusUrl;
-                            
-                            sendLineBroadcast($pdo, $msg);
+
+                            if (function_exists('sendLineToTenant')) {
+                                sendLineToTenant($pdo, (string)$tenantId, $msg);
+                            }
                         } catch (Exception $e) {
                             error_log("Line Notification Error: " . $e->getMessage());
                         }

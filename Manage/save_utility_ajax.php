@@ -256,7 +256,9 @@ try {
                 $msg .= "\nสามารถตรวจสอบรายละเอียดบิล ชำระเงิน และแนบสลิป ได้ที่ระบบผู้เช่า:\n" . $url;
             }
             
-            sendLineBroadcast($pdo, $msg);
+            if (function_exists('sendLineToContract')) {
+                sendLineToContract($pdo, (int)$ctrId, $msg);
+            }
         } catch (Exception $e) {
             error_log("Line Notification Error (Utility Save): " . $e->getMessage());
         }
