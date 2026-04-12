@@ -115,17 +115,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
     try {
         $repair_desc = trim($_POST['repair_desc'] ?? '');
         $scheduled_date = trim((string)($_POST['scheduled_date'] ?? ''));
-
-        if ($scheduled_date !== '') {
-            $scheduledDateObj = DateTime::createFromFormat('Y-m-d', $scheduled_date);
-            if (!$scheduledDateObj || $scheduledDateObj->format('Y-m-d') !== $scheduled_date) {
-                throw new Exception('รูปแบบวันที่นัดหมายไม่ถูกต้อง');
-            }
-        }
+        $scheduled_time_start = trim((string)($_POST['scheduled_time_start'] ?? ''));
+        $scheduled_time_end = trim((string)($_POST['scheduled_time_end'] ?? ''));
+        $technician_name = trim((string)($_POST['technician_name'] ?? ''));
+        $technician_phone = trim((string)($_POST['technician_phone'] ?? ''));
         
         if (empty($repair_desc)) {
             $error = 'กรุณาระบุรายละเอียดการแจ้งซ่อม';
         } else {
+            if (!$hasScheduleColumns) {
+                throw new Exception('ระบบยังไม่รองรับการบันทึกนัดหมาย กรุณาแจ้งผู้ดูแลระบบ');
+            }
+
+            if ($scheduled_date === '' || $scheduled_time_start === '' || $scheduled_time_end === '' || $technician_name === '' || $technician_phone === '') {
+                throw new Exception('กรุณากรอกข้อมูลนัดหมายให้ครบ: วันที่ เวลา ชื่อช่าง และเบอร์โทร');
+            }
+
+            $scheduledDateObj = DateTime::createFromFormat('Y-m-d', $scheduled_date);
+            if (!$scheduledDateObj || $scheduledDateObj->format('Y-m-d') !== $scheduled_date) {
+                throw new Exception('รูปแบบวันที่นัดหมายไม่ถูกต้อง');
+            }
+
+            $startTimeObj = DateTime::createFromFormat('H:i', $scheduled_time_start);
+            $endTimeObj = DateTime::createFromFormat('H:i', $scheduled_time_end);
+            if (!$startTimeObj || $startTimeObj->format('H:i') !== $scheduled_time_start || !$endTimeObj || $endTimeObj->format('H:i') !== $scheduled_time_end) {
+                throw new Exception('รูปแบบเวลานัดหมายไม่ถูกต้อง');
+            }
+            if ((int)$startTimeObj->format('Hi') >= (int)$endTimeObj->format('Hi')) {
+                throw new Exception('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น');
+            }
+
+            $technicianPhoneDigits = preg_replace('/\D+/', '', $technician_phone);
+            if (strlen((string)$technicianPhoneDigits) < 8) {
+                throw new Exception('กรุณาระบุเบอร์โทรช่างให้ถูกต้อง');
+            }
+
             // AI spam check — server-side gate
             $aiResult = scoreRepairText($repair_desc);
             if ($aiResult['label'] === 'spam') {
@@ -222,14 +246,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
             $stmt->execute([$repair_desc, $repair_image, $contract['ctr_id']]);
 
             $repairId = (int)$pdo->lastInsertId();
-            if ($hasScheduleColumns && $scheduled_date !== '') {
-                $scheduleStmt = $pdo->prepare("UPDATE repair SET scheduled_date = ? WHERE repair_id = ? LIMIT 1");
-                $scheduleStmt->execute([$scheduled_date, $repairId]);
+            if ($hasScheduleColumns) {
+                $scheduleStmt = $pdo->prepare(" 
+                    UPDATE repair
+                    SET scheduled_date = ?,
+                        scheduled_time_start = ?,
+                        scheduled_time_end = ?,
+                        technician_name = ?,
+                        technician_phone = ?
+                    WHERE repair_id = ?
+                    LIMIT 1
+                ");
+                $scheduleStmt->execute([$scheduled_date, $scheduled_time_start, $scheduled_time_end, $technician_name, $technician_phone, $repairId]);
             }
 
             $selectFields = "repair_id, repair_date, repair_time, repair_desc, repair_status, repair_image";
             if ($hasScheduleColumns) {
-                $selectFields .= ", scheduled_date";
+                $selectFields .= ", scheduled_date, scheduled_time_start, scheduled_time_end, technician_name, technician_phone, schedule_note";
             }
 
             $rowStmt = $pdo->prepare("SELECT {$selectFields} FROM repair WHERE repair_id = ? LIMIT 1");
@@ -239,10 +272,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
             $statusInfo = $repairStatusMap[$statusCode] ?? $repairStatusMap['0'];
             $scheduledDateValue = '';
             $scheduledDateDisplay = '';
+            $scheduledTimeStartValue = '';
+            $scheduledTimeEndValue = '';
+            $scheduledTimeRange = '';
+            $technicianNameValue = '';
+            $technicianPhoneValue = '';
+            $scheduleNoteValue = '';
             if ($hasScheduleColumns) {
                 $scheduledDateValue = (string)($insertedRepair['scheduled_date'] ?? $scheduled_date);
+                $scheduledTimeStartValue = substr((string)($insertedRepair['scheduled_time_start'] ?? $scheduled_time_start), 0, 5);
+                $scheduledTimeEndValue = substr((string)($insertedRepair['scheduled_time_end'] ?? $scheduled_time_end), 0, 5);
+                $technicianNameValue = trim((string)($insertedRepair['technician_name'] ?? $technician_name));
+                $technicianPhoneValue = trim((string)($insertedRepair['technician_phone'] ?? $technician_phone));
+                $scheduleNoteValue = trim((string)($insertedRepair['schedule_note'] ?? ''));
                 if ($scheduledDateValue !== '') {
                     $scheduledDateDisplay = thaiDate($scheduledDateValue);
+                }
+                if ($scheduledTimeStartValue !== '' && $scheduledTimeEndValue !== '') {
+                    $scheduledTimeRange = $scheduledTimeStartValue . ' - ' . $scheduledTimeEndValue . ' น.';
+                } elseif ($scheduledTimeStartValue !== '') {
+                    $scheduledTimeRange = $scheduledTimeStartValue . ' น.';
                 }
             }
             $newRepairData = [
@@ -257,6 +306,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
                 'repair_image' => basename((string)($insertedRepair['repair_image'] ?? $repair_image ?? '')),
                 'scheduled_date' => $scheduledDateValue,
                 'scheduled_date_display' => $scheduledDateDisplay,
+                'scheduled_time_start' => $scheduledTimeStartValue,
+                'scheduled_time_end' => $scheduledTimeEndValue,
+                'scheduled_time_range' => $scheduledTimeRange,
+                'technician_name' => $technicianNameValue,
+                'technician_phone' => $technicianPhoneValue,
+                'schedule_note' => $scheduleNoteValue,
             ];
             
             $success = 'แจ้งซ่อมเรียบร้อยแล้ว';
@@ -274,7 +329,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
                 $msg .= "👤 ผู้แจ้ง: {$tenantName}\n";
                 $msg .= "รายการ: " . mb_substr($repair_desc, 0, 50) . (mb_strlen($repair_desc) > 50 ? '...' : '') . "\n";
                 if ($scheduledDateDisplay !== '') {
-                    $msg .= "📅 วันที่สะดวก: {$scheduledDateDisplay}\n";
+                    $msg .= "📅 วันที่นัด: {$scheduledDateDisplay}\n";
+                }
+                if ($scheduledTimeRange !== '') {
+                    $msg .= "⏰ เวลา: {$scheduledTimeRange}\n";
+                }
+                if ($technicianNameValue !== '') {
+                    $msg .= "🔧 ช่าง: {$technicianNameValue}\n";
+                }
+                if ($technicianPhoneValue !== '') {
+                    $msg .= "📞 โทร: {$technicianPhoneValue}\n";
                 }
                 $msg .= "สถานะ: รอคนรับเรื่อง";
                 
@@ -451,6 +515,20 @@ try {
         .repair-schedule-input:focus {
             outline: none;
             border-color: #3b82f6;
+        }
+        .repair-schedule-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+        }
+        .repair-schedule-row .form-group {
+            margin-bottom: 1rem;
+        }
+        @media (max-width: 520px) {
+            .repair-schedule-row {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
         }
         .file-upload {
             position: relative;
@@ -890,9 +968,41 @@ try {
                 <div class="form-group">
                     <label for="scheduled_date_input" class="repair-schedule-label">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        วันที่สะดวกให้นัดหมาย (ถ้ามี)
+                        วันที่นัดหมาย *
                     </label>
-                    <input type="date" name="scheduled_date" id="scheduled_date_input" class="repair-schedule-input">
+                    <input type="date" name="scheduled_date" id="scheduled_date_input" class="repair-schedule-input" required>
+                </div>
+                <div class="repair-schedule-row">
+                    <div class="form-group">
+                        <label for="scheduled_time_start_input" class="repair-schedule-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            เวลาเริ่ม *
+                        </label>
+                        <input type="time" name="scheduled_time_start" id="scheduled_time_start_input" class="repair-schedule-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="scheduled_time_end_input" class="repair-schedule-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            เวลาสิ้นสุด *
+                        </label>
+                        <input type="time" name="scheduled_time_end" id="scheduled_time_end_input" class="repair-schedule-input" required>
+                    </div>
+                </div>
+                <div class="repair-schedule-row">
+                    <div class="form-group">
+                        <label for="technician_name_input" class="repair-schedule-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                            ชื่อช่าง *
+                        </label>
+                        <input type="text" name="technician_name" id="technician_name_input" class="repair-schedule-input" placeholder="เช่น ช่างเอก" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="technician_phone_input" class="repair-schedule-label">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                            เบอร์โทรช่าง *
+                        </label>
+                        <input type="tel" name="technician_phone" id="technician_phone_input" class="repair-schedule-input" placeholder="0xx-xxx-xxxx" required>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>รูปภาพประกอบ (ถ้ามี)</label>
@@ -1208,17 +1318,57 @@ try {
             ? '<span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> ' + escapeHtml(item.repair_time)
             : '';
         const scheduledDateDisplay = item.scheduled_date_display || item.scheduled_date || '';
-        const scheduleHtml = scheduledDateDisplay
+        const scheduledTimeRange = item.scheduled_time_range
+            || ((item.scheduled_time_start && item.scheduled_time_end)
+                ? String(item.scheduled_time_start).substring(0, 5) + ' - ' + String(item.scheduled_time_end).substring(0, 5) + ' น.'
+                : (item.scheduled_time_start ? String(item.scheduled_time_start).substring(0, 5) + ' น.' : ''));
+        const technicianName = item.technician_name || '';
+        const technicianPhone = item.technician_phone || '';
+        const technicianPhoneTel = String(technicianPhone).replace(/[^0-9+]/g, '');
+        const scheduleNote = item.schedule_note || '';
+
+        let scheduleRowsHtml = '';
+        if (scheduledDateDisplay) {
+            scheduleRowsHtml += '<div class="schedule-row">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
+                '<span class="schedule-label">วันที่</span>' +
+                '<span class="schedule-value">' + escapeHtml(scheduledDateDisplay) + '</span>' +
+            '</div>';
+        }
+        if (scheduledTimeRange) {
+            scheduleRowsHtml += '<div class="schedule-row">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>' +
+                '<span class="schedule-label">เวลา</span>' +
+                '<span class="schedule-value">' + escapeHtml(scheduledTimeRange) + '</span>' +
+            '</div>';
+        }
+        if (technicianName) {
+            scheduleRowsHtml += '<div class="schedule-row">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' +
+                '<span class="schedule-label">ช่าง</span>' +
+                '<span class="schedule-value">' + escapeHtml(technicianName) + '</span>' +
+            '</div>';
+        }
+        if (technicianPhone) {
+            scheduleRowsHtml += '<div class="schedule-row">' +
+                '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>' +
+                '<span class="schedule-label">โทร</span>' +
+                '<span class="schedule-value"><a href="tel:' + escapeHtml(technicianPhoneTel || technicianPhone) + '">' + escapeHtml(technicianPhone) + '</a></span>' +
+            '</div>';
+        }
+
+        const scheduleNoteHtml = scheduleNote
+            ? '<div class="schedule-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;width:1.2em;height:1.2em;margin-right:0.5em;vertical-align:-0.15em;"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>' + escapeHtml(scheduleNote) + '</div>'
+            : '';
+
+        const scheduleHtml = scheduleRowsHtml
             ? '<div class="schedule-info">' +
                 '<div class="schedule-header">' +
                     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
                     'นัดหมายซ่อม' +
                 '</div>' +
-                '<div class="schedule-row">' +
-                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
-                    '<span class="schedule-label">วันที่</span>' +
-                    '<span class="schedule-value">' + escapeHtml(scheduledDateDisplay) + '</span>' +
-                '</div>' +
+                scheduleRowsHtml +
+                scheduleNoteHtml +
               '</div>'
             : '';
 
@@ -1239,6 +1389,8 @@ try {
 
     function initScheduledDateInput() {
         const scheduledDateInput = document.getElementById('scheduled_date_input');
+        const startTimeInput = document.getElementById('scheduled_time_start_input');
+        const endTimeInput = document.getElementById('scheduled_time_end_input');
         if (!scheduledDateInput) return;
 
         const today = new Date();
@@ -1246,6 +1398,13 @@ try {
         const m = String(today.getMonth() + 1).padStart(2, '0');
         const d = String(today.getDate()).padStart(2, '0');
         scheduledDateInput.min = y + '-' + m + '-' + d;
+
+        if (startTimeInput && !startTimeInput.value) {
+            startTimeInput.value = '09:00';
+        }
+        if (endTimeInput && !endTimeInput.value) {
+            endTimeInput.value = '12:00';
+        }
     }
 
     function renderEmptyStateHtml() {
@@ -1437,6 +1596,33 @@ try {
             const submitBtn = document.getElementById('repair_submit_btn');
             if (!submitBtn) return;
 
+            const scheduledDateInput = document.getElementById('scheduled_date_input');
+            const startTimeInput = document.getElementById('scheduled_time_start_input');
+            const endTimeInput = document.getElementById('scheduled_time_end_input');
+            const technicianNameInput = document.getElementById('technician_name_input');
+            const technicianPhoneInput = document.getElementById('technician_phone_input');
+
+            if (!scheduledDateInput || !startTimeInput || !endTimeInput || !technicianNameInput || !technicianPhoneInput) {
+                showRepairAlert('ไม่พบช่องข้อมูลนัดหมายที่จำเป็น', 'error');
+                return;
+            }
+
+            if (!scheduledDateInput.value || !startTimeInput.value || !endTimeInput.value || !technicianNameInput.value.trim() || !technicianPhoneInput.value.trim()) {
+                showRepairAlert('กรุณากรอกข้อมูลนัดหมายให้ครบ: วันที่ เวลา ชื่อช่าง และเบอร์โทร', 'error');
+                return;
+            }
+
+            if (startTimeInput.value >= endTimeInput.value) {
+                showRepairAlert('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น', 'error');
+                return;
+            }
+
+            const phoneDigits = technicianPhoneInput.value.replace(/\D+/g, '');
+            if (phoneDigits.length < 8) {
+                showRepairAlert('กรุณาระบุเบอร์โทรช่างให้ถูกต้อง', 'error');
+                return;
+            }
+
             if (_aiBlocked) {
                 showRepairAlert('กรุณาปรับรายละเอียดการแจ้งซ่อมก่อนส่ง', 'error');
                 return;
@@ -1473,6 +1659,7 @@ try {
                 syncPendingRepairBadge();
                 repairForm.reset();
                 clearRepairFormUi();
+                initScheduledDateInput();
                 _aiBlocked = false;
             } catch (err) {
                 showRepairAlert((err && err.message) ? err.message : 'เกิดข้อผิดพลาดในการส่งข้อมูล', 'error');
