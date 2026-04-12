@@ -1600,20 +1600,26 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
 
     function updateSubmitState() {
         const select = document.getElementById('exp_id');
+        const singleInfo = document.getElementById('single-expense-info');
         const payAmount = document.getElementById('pay_amount');
         const payProofInput = document.getElementById('pay_proof');
         const submitBtn = document.getElementById('submitBtn');
 
-        if (!submitBtn || !select || !payAmount || !payProofInput) {
+        if (!submitBtn || !payAmount || !payProofInput) {
             return;
         }
 
-        const selectedOption = select.options[select.selectedIndex];
-        const remaining = selectedOption && selectedOption.value ? (parseFloat(selectedOption.dataset.remaining) || 0) : 0;
+        const selectedOption = select && select.options ? select.options[select.selectedIndex] : null;
+        const hasSelectExpense = !!(selectedOption && selectedOption.value);
+        const singleExpenseId = singleInfo ? parseInt(singleInfo.dataset.expid || '0', 10) : 0;
+        const singleRemaining = singleInfo ? (parseFloat(singleInfo.dataset.remaining) || 0) : 0;
+        const remaining = hasSelectExpense
+            ? (parseFloat(selectedOption.dataset.remaining) || 0)
+            : singleRemaining;
         const amount = parseFloat(payAmount.value) || 0;
-        const hasExpense = !!(selectedOption && selectedOption.value);
         const hasProof = !!(payProofInput.files && payProofInput.files.length > 0);
         const validAmount = amount > 0 && (remaining <= 0 || amount <= remaining);
+        const hasExpense = hasSelectExpense || singleExpenseId > 0;
 
         submitBtn.disabled = !(hasExpense && validAmount && hasProof);
         
@@ -1634,13 +1640,17 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
 
     function updatePaymentAmount() {
         const select = document.getElementById('exp_id');
-        const option = select.options[select.selectedIndex];
+        const option = select && select.options ? select.options[select.selectedIndex] : null;
         const summary = document.getElementById('payment-summary');
         
         const payAmountGroup = document.getElementById('pay-amount-group');
         const payProofGroup = document.getElementById('pay-proof-group');
         const previewContainer = document.getElementById('preview-container');
         const payProofInput = document.getElementById('pay_proof');
+
+        if (!option) {
+            return;
+        }
         
         if (option.value) {
             const total = parseFloat(option.dataset.total) || 0;
