@@ -458,6 +458,38 @@ try {
             width: 100%;
             max-height: 200px;
             object-fit: cover;
+            cursor: zoom-in;
+        }
+        .repair-image-viewer {
+            position: fixed;
+            inset: 0;
+            z-index: 1000000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            background: transparent;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.15s ease;
+        }
+        .repair-image-viewer.is-visible {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .repair-image-viewer.hover-mode {
+            pointer-events: none;
+        }
+        .repair-image-viewer img {
+            max-width: calc(100vw - 2rem);
+            max-height: calc(100vh - 2rem);
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            border-radius: 0;
+            box-shadow: none;
+            user-select: none;
+            -webkit-user-drag: none;
         }
         .repair-actions {
             margin-top: 0.75rem;
@@ -952,6 +984,77 @@ try {
         }
     }
 
+    let repairImageViewer = null;
+    let repairImageViewerImg = null;
+    let repairImageViewerMode = 'click';
+
+    function ensureRepairImageViewer() {
+        if (repairImageViewer) return;
+
+        repairImageViewer = document.createElement('div');
+        repairImageViewer.className = 'repair-image-viewer';
+        repairImageViewer.setAttribute('aria-hidden', 'true');
+        repairImageViewer.innerHTML = '<img alt="Repair Fullscreen" draggable="false">';
+        repairImageViewerImg = repairImageViewer.querySelector('img');
+
+        repairImageViewer.addEventListener('click', function() {
+            closeRepairImageViewer();
+        });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeRepairImageViewer();
+            }
+        });
+
+        document.body.appendChild(repairImageViewer);
+    }
+
+    function openRepairImageViewer(src, mode) {
+        if (!src) return;
+        ensureRepairImageViewer();
+
+        repairImageViewerMode = mode === 'hover' ? 'hover' : 'click';
+        repairImageViewerImg.src = src;
+        repairImageViewer.classList.toggle('hover-mode', repairImageViewerMode === 'hover');
+        repairImageViewer.classList.add('is-visible');
+    }
+
+    function closeRepairImageViewer() {
+        if (!repairImageViewer) return;
+        repairImageViewer.classList.remove('is-visible');
+        repairImageViewer.classList.remove('hover-mode');
+        repairImageViewerMode = 'click';
+    }
+
+    function bindRepairImageInteractions(rootElement) {
+        const root = rootElement || document;
+        const images = root.querySelectorAll('#repair-history-list .repair-image img');
+
+        images.forEach(function(img) {
+            if (img.dataset.viewerBound === '1') return;
+            img.dataset.viewerBound = '1';
+
+            img.addEventListener('click', function(event) {
+                event.preventDefault();
+                event.stopPropagation();
+                openRepairImageViewer(img.src, 'click');
+            });
+
+            if (window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+                img.addEventListener('mouseenter', function() {
+                    openRepairImageViewer(img.src, 'hover');
+                });
+
+                img.addEventListener('mouseleave', function() {
+                    if (repairImageViewerMode === 'hover') {
+                        closeRepairImageViewer();
+                    }
+                });
+            }
+        });
+    }
+
     function escapeHtml(value) {
         return String(value ?? '').replace(/[&<>"']/g, function(ch) {
             return ({
@@ -1051,7 +1154,9 @@ try {
         const wrapper = document.createElement('div');
         wrapper.innerHTML = renderRepairItemHtml(item);
         if (wrapper.firstElementChild) {
-            list.prepend(wrapper.firstElementChild);
+            const insertedNode = wrapper.firstElementChild;
+            list.prepend(insertedNode);
+            bindRepairImageInteractions(insertedNode);
         }
     }
 
@@ -1258,6 +1363,7 @@ try {
         });
     }
 
+    bindRepairImageInteractions(document);
     syncPendingRepairBadge();
     </script>
 </body>
