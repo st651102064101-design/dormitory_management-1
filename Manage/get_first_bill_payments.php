@@ -53,14 +53,14 @@ function buildExpensePayload(PDO $pdo, array $expense, bool $hasPayRemark): arra
             SELECT pay_id, pay_date, pay_amount, pay_status, pay_remark, pay_proof
             FROM payment
             WHERE exp_id = :exp_id
-            ORDER BY pay_date ASC, pay_id ASC
+            ORDER BY pay_date DESC, pay_id DESC
         ";
     } else {
         $paymentSql = "
             SELECT pay_id, pay_date, pay_amount, pay_status, '' AS pay_remark, pay_proof
             FROM payment
             WHERE exp_id = :exp_id
-            ORDER BY pay_date ASC, pay_id ASC
+            ORDER BY pay_date DESC, pay_id DESC
         ";
     }
 
