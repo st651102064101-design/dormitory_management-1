@@ -1230,17 +1230,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 <div style="font-size:0.82rem;color:#94a3b8;">หากมีข้อสงสัยกรุณาติดต่อผู้ดูแลหอพัก</div>
             </div>
             <?php else: ?>
-            <form method="POST" enctype="multipart/form-data" id="paymentForm" onsubmit="preventDoubleSubmit(this)">
-                <script>
-                    function preventDoubleSubmit(form) {
-                        var btn = form.querySelector('.submit-btn');
-                        if (btn) {
-                            btn.innerHTML = '<span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> กำลังส่ง...';
-                            btn.style.pointerEvents = 'none';
-                            btn.style.opacity = '0.7';
-                        }
-                    }
-                </script>
+            <form method="POST" enctype="multipart/form-data" id="paymentForm">
                 <div class="form-group" style="<?php echo (count($unpaidExpenses) == 1) ? 'display:none;' : ''; ?>">
                     <label>เลือกบิลที่ต้องการชำระ *</label>
                     <select name="exp_id" id="exp_id" <?php echo (count($unpaidExpenses) != 1) ? 'required' : ''; ?> onchange="updatePaymentAmount()">
@@ -2199,69 +2189,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
     });
 
     document.addEventListener('DOMContentLoaded', function() {
-        const form = document.getElementById('paymentForm');
-        const submitBtn = document.getElementById('submitBtn');
-
-        if (!form || !submitBtn) {
-            return;
-        }
-
-        form.addEventListener('submit', async function(e) {
-            e.preventDefault();
-            updateSubmitState();
-            if (submitBtn.disabled) {
-                return;
-            }
-
-            const originalText = submitBtn.innerHTML;
-            submitBtn.disabled = true;
-            submitBtn.textContent = 'กำลังส่งข้อมูล...';
-
-            try {
-                const formData = new FormData(form);
-                const response = await fetch(window.location.href, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json'
-                    }
-                });
-
-                const rawText = await response.text();
-                let result;
-                try {
-                    // Strip any PHP notices/warnings before the JSON
-                    const jsonStart = rawText.indexOf('{');
-                    result = JSON.parse(jsonStart >= 0 ? rawText.slice(jsonStart) : rawText);
-                } catch (parseErr) {
-                    throw new Error('ตอบกลับไม่ถูกต้อง: ' + rawText.slice(0, 200));
-                }
-                if (result && result.success) {
-                    showFormAlert(result.message || 'แจ้งชำระเงินเรียบร้อยแล้ว', 'success');
-                    prependPaymentHistoryItem(result);
-                    syncUnpaidUI(result);
-                    form.reset();
-                    if (typeof updatePaymentAmount === 'function') {
-                        updatePaymentAmount();
-                    }
-                    const previewContainer = document.getElementById('preview-container');
-                    const preview = document.getElementById('preview-image');
-                    if (previewContainer) previewContainer.style.display = 'none';
-                    if (preview) preview.src = '';
-                } else {
-                    showFormAlert((result && result.message) ? result.message : 'ไม่สามารถบันทึกข้อมูลได้', 'error');
-                    updateSubmitState();
-                }
-            } catch (err) {
-                console.error('Payment submit error:', err);
-                showFormAlert(err.message || 'ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่', 'error');
-                updateSubmitState();
-            } finally {
-                submitBtn.innerHTML = originalText;
-                updateSubmitState();
-            }
-        });
+        updateSubmitState();
     });
     </script>
 </body>
