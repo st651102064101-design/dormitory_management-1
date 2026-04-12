@@ -2160,6 +2160,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                 // ---------------------------------------------------
 
                                 $isCancelPending = ((string)($tenant['ctr_status'] ?? '') === '2');
+                                $isBookingCancelled = ((string)($tenant['bkg_status'] ?? '') === '5');
 
                                 $step5CircleClass = $step5 ? 'current' : (($currentStep == 5) ? 'current' : 'pending');
                                 $step5CircleLabel = ($step5 || $currentStep == 5) ? "<svg class=\"bill-anim\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect class=\"b-doc\" x=\"5\" y=\"2\" width=\"14\" height=\"18\" rx=\"2\" stroke=\"rgba(255,255,255,0.85)\" stroke-width=\"1.8\" fill=\"rgba(255,255,255,0.1)\"/><line class=\"b-line1\" x1=\"8\" y1=\"7\" x2=\"16\" y2=\"7\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line2\" x1=\"8\" y1=\"11\" x2=\"16\" y2=\"11\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line3\" x1=\"8\" y1=\"15\" x2=\"13\" y2=\"15\" stroke=\"rgba(255,255,255,0.7)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/></svg>" : '5';
@@ -2300,9 +2301,9 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                     // Only go to step 4 if step 3 (contract) is actually completed
                                     $currentStep = max($currentStep, 4);
                                 }
-                                $isRowCompleted = !$isCancelPending && $step4 && $meterBillDone && $firstBillPaid && $latestBillPaid;
+                                $isRowCompleted = $isBookingCancelled || (!$isCancelPending && $step4 && $meterBillDone && $firstBillPaid && $latestBillPaid);
                                 ?>
-                                <tr data-wiz-group="<?php echo $isRowCompleted ? 1 : 0; ?>"<?php if ($isCancelPending): ?> style="background:rgba(239,68,68,0.05)!important;border-left:3px solid rgba(239,68,68,0.45);"<?php endif; ?>>
+                                <tr data-wiz-group="<?php echo $isRowCompleted ? 1 : 0; ?>"<?php if ($isCancelPending || $isBookingCancelled): ?> style="background:rgba(239,68,68,0.05)!important;border-left:3px solid rgba(239,68,68,0.45);"<?php endif; ?>>
                                     <td data-label="ผู้เช่า">
                                         <div class="tenant-info">
                                             <span class="tenant-name"><?php echo htmlspecialchars($tenant['tnt_name'], ENT_QUOTES, 'UTF-8'); ?></span>
