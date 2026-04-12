@@ -392,7 +392,7 @@ try {
         WHERE r.ctr_id IN (
             SELECT ctr_id FROM contract WHERE tnt_id = ?
         )
-        ORDER BY r.repair_date DESC, r.repair_time DESC
+        ORDER BY r.repair_id DESC, r.repair_date DESC, r.repair_time DESC
     ");
     $stmt->execute([$contract['tnt_id']]);
     $repairs = $stmt->fetchAll(PDO::FETCH_ASSOC);
