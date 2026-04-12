@@ -149,6 +149,8 @@ if ($selectedMonth !== '' && !in_array($selectedMonth, $availableMonths, true)) 
   $selectedMonth = !empty($availableMonths) ? (string)$availableMonths[0] : '';
 }
 
+$focusExpenseId = isset($_GET['focus_exp_id']) ? max(0, (int)$_GET['focus_exp_id']) : 0;
+
 // Sync utility readings -> expense (for month being viewed) so amounts match manage_utility
 if ($selectedMonth !== '' && preg_match('/^\d{4}-\d{2}$/', $selectedMonth) === 1) {
   [$syncYear, $syncMonth] = explode('-', $selectedMonth);
@@ -232,6 +234,10 @@ $expenseParams = [];
 if ($selectedMonth !== '') {
   $expenseSql .= "\n  AND DATE_FORMAT(e.exp_month, '%Y-%m') = :selectedMonth";
   $expenseParams[':selectedMonth'] = $selectedMonth;
+}
+if ($focusExpenseId > 0) {
+  $expenseSql .= "\n  AND e.exp_id = :focusExpenseId";
+  $expenseParams[':focusExpenseId'] = $focusExpenseId;
 }
 
 $expenseSql .= "
@@ -489,6 +495,9 @@ $reminderEligibleCount = $stats['unpaid'] + $stats['partial'] + $stats['overdue'
 $selectedStatusFilter = isset($_GET['filter_status']) ? trim((string)$_GET['filter_status']) : 'all';
 $allowedStatusFilters = ['all', '0', '1', '2', '3', '4'];
 if (!in_array($selectedStatusFilter, $allowedStatusFilters, true)) {
+  $selectedStatusFilter = 'all';
+}
+if ($focusExpenseId > 0) {
   $selectedStatusFilter = 'all';
 }
 
@@ -2545,6 +2554,7 @@ try {
       // Current filter state (managed via AJAX, no page reloads)
       let _ajaxSort = '<?php echo htmlspecialchars($sortBy, ENT_QUOTES, "UTF-8"); ?>';
       let _ajaxMonth = '<?php echo htmlspecialchars($selectedMonth, ENT_QUOTES, "UTF-8"); ?>';
+      const _focusExpenseId = <?php echo (int)$focusExpenseId; ?>;
       const PAYMENT_REMINDER_CSRF = '<?php echo htmlspecialchars($csrfToken, ENT_QUOTES, "UTF-8"); ?>';
       const REMINDER_STATUSES = new Set(['0', '3', '4']);
 
@@ -2561,6 +2571,7 @@ try {
 
         if (_ajaxMonth) nextUrl.searchParams.set('filter_month', _ajaxMonth);
         if (_ajaxSort) nextUrl.searchParams.set('sort', _ajaxSort);
+        if (_focusExpenseId > 0) nextUrl.searchParams.set('focus_exp_id', String(_focusExpenseId));
 
         window.location.href = nextUrl.pathname + (nextUrl.searchParams.toString() ? '?' + nextUrl.searchParams.toString() : '');
       }
@@ -2716,6 +2727,7 @@ try {
         if (_ajaxMonth) params.set('filter_month', _ajaxMonth);
         if (_ajaxSort) params.set('sort', _ajaxSort);
         if (_activeFilterStatus && _activeFilterStatus !== 'all') params.set('filter_status', _activeFilterStatus);
+        if (_focusExpenseId > 0) params.set('focus_exp_id', String(_focusExpenseId));
 
         fetch('/dormitory_management/Reports/get_expenses_ajax.php?' + params.toString(), {
           credentials: 'include'

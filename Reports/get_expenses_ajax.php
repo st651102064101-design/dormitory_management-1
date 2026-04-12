@@ -76,8 +76,12 @@ include __DIR__ . '/../Manage/auto_update_overdue.php';
 // รับค่า sort
 $sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
 $filterStatus = isset($_GET['filter_status']) ? trim((string)$_GET['filter_status']) : 'all';
+$focusExpenseId = isset($_GET['focus_exp_id']) ? max(0, (int)$_GET['focus_exp_id']) : 0;
 $allowedStatuses = ['all', '0', '1', '2', '3', '4'];
 if (!in_array($filterStatus, $allowedStatuses, true)) {
+    $filterStatus = 'all';
+}
+if ($focusExpenseId > 0) {
     $filterStatus = 'all';
 }
 $orderBy = 'e.exp_id DESC';
@@ -202,6 +206,10 @@ $expenseParams = [];
 if ($selectedMonth !== '') {
     $expenseSql .= " AND DATE_FORMAT(e.exp_month, '%Y-%m') = :selectedMonth";
     $expenseParams[':selectedMonth'] = $selectedMonth;
+}
+if ($focusExpenseId > 0) {
+    $expenseSql .= " AND e.exp_id = :focusExpenseId";
+    $expenseParams[':focusExpenseId'] = $focusExpenseId;
 }
 $expenseSql .= " GROUP BY e.exp_id ORDER BY $orderBy";
 

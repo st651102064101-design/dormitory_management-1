@@ -934,6 +934,18 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                             $hasCompleteMeter = intval($exp['has_complete_meter'] ?? 0) === 1;
                                             $meterCtrId = (int)($exp['ctr_id'] ?? 0);
                                             $meterManageHref = ($meterCtrId > 0) ? ('manage_utility.php?todo_only=1&ctr_id=' . $meterCtrId) : 'manage_utility.php';
+                                            $focusExpenseId = (int)($exp['exp_id'] ?? 0);
+                                            $focusMonthKey = '';
+                                            if (!empty($exp['exp_month'])) {
+                                                $focusMonthTs = strtotime((string)$exp['exp_month']);
+                                                if ($focusMonthTs !== false) {
+                                                    $focusMonthKey = date('Y-m', $focusMonthTs);
+                                                }
+                                            }
+                                            $expenseManageHref = 'manage_expenses.php?focus_exp_id=' . $focusExpenseId;
+                                            if ($focusMonthKey !== '') {
+                                                $expenseManageHref .= '&filter_month=' . rawurlencode($focusMonthKey);
+                                            }
                                             if (!$hasCompleteMeter) { $statusClass = 'unpaid'; $statusText = 'ยังไม่ได้จดมิเตอร์'; $remainingExp = 'จดมิเตอร์'; }
                                             elseif ($hasPending) { $statusClass = 'pending'; $statusText = 'รอตรวจสอบ'; $remainingExp = 'ตรวจสอบใบสลิป'; }
                                             elseif ($paid >= $total && $total > 0) { $statusClass = 'paid'; $statusText = 'ชำระแล้ว'; $remainingExp = '-'; }
@@ -955,7 +967,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
                                                 <?php endif; ?>
                                             </td>
                                             <td data-label="เหลือทำ" style="color: #fbbf24; font-weight: 500;"><?php echo htmlspecialchars($remainingExp); ?></td>
-                                            <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="manage_expenses.php">จัดการ</a></td>
+                                            <td data-label="จัดการ"><a class="btn-action primary todo-manage-link" href="<?php echo htmlspecialchars($expenseManageHref, ENT_QUOTES, 'UTF-8'); ?>">จัดการ</a></td>
                                         </tr>
                                         <?php endforeach; ?>
                                     </tbody>
