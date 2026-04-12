@@ -43,6 +43,10 @@ foreach ($events['events'] as $event) {
         $tenant = $stmtCheck->fetch();
 
         if ($tenant) {
+            // หนึ่ง LINE ควรผูกกับผู้เช่าเดียว: ล้างการผูกเดิมก่อน
+            $stmtClearDuplicate = $pdo->prepare("UPDATE tenant SET line_user_id = NULL WHERE line_user_id = ? AND tnt_id <> ?");
+            $stmtClearDuplicate->execute([$userId, $tenant['tnt_id']]);
+
             // ผูก LINE ID
             $stmtUpdate = $pdo->prepare("UPDATE tenant SET line_user_id = ?, is_weather_alert_enabled = 1 WHERE tnt_id = ?");
             $stmtUpdate->execute([$userId, $tenant['tnt_id']]);

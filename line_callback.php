@@ -99,6 +99,10 @@ try {
     // 3. จัดการผูกบัญชี (ผูก LINE เข้ากับ Tenant)
     if (($_SESSION['line_login_action'] ?? '') === 'link' && !empty($_SESSION['line_login_target_tenant'])) {
         $targetTenantId = $_SESSION['line_login_target_tenant'];
+
+        // หนึ่ง LINE ควรผูกกับผู้เช่าเดียว: ล้างการผูกเดิมก่อน
+        $stmtClearDuplicate = $pdo->prepare("UPDATE tenant SET line_user_id = NULL WHERE line_user_id = ? AND tnt_id <> ?");
+        $stmtClearDuplicate->execute([$lineUserId, $targetTenantId]);
         
         $stmtUpdate = $pdo->prepare("UPDATE tenant SET line_user_id = ?, is_weather_alert_enabled = 1 WHERE tnt_id = ?");
         $stmtUpdate->execute([$lineUserId, $targetTenantId]);
