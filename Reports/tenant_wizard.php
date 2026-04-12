@@ -65,8 +65,8 @@ try {
                                 FROM payment p
                                 WHERE p.exp_id = e_first.exp_id
                                   AND p.pay_status = '1'
-                                  AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
-                            ), 0) >= (e_first.exp_total - COALESCE((SELECT SUM(pr.pay_amount) FROM payment pr WHERE pr.exp_id = e_first.exp_id AND pr.pay_status = '1' AND TRIM(COALESCE(pr.pay_remark, '')) = 'มัดจำ'), 0)) - 0.00001
+                                  
+                            ), 0) >= e_first.exp_total - 0.00001
                 )
         ";
 
@@ -96,8 +96,8 @@ try {
                     FROM payment p
                     WHERE p.exp_id = e_latest.exp_id
                       AND p.pay_status = '1'
-                      AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
-                ), 0) >= (e_latest.exp_total - COALESCE((SELECT SUM(pr.pay_amount) FROM payment pr WHERE pr.exp_id = e_latest.exp_id AND pr.pay_status = '1' AND TRIM(COALESCE(pr.pay_remark, '')) = 'มัดจำ'), 0)) - 0.00001
+                      
+                ), 0) >= e_latest.exp_total - 0.00001
         )
     ";
 
@@ -3200,56 +3200,43 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
         }
     });
 
-    // Functions สำหรับ Booking Modal    function openBookingModal(bkgId, tntId, roomId, tntName, tntPhone, roomNumber, typeName, typePrice, bkgDate, readOnly = false) {
-        try {
-            document.getElementById('modal_bkg_id').value = bkgId;
-            document.getElementById('modal_booking_tnt_id').value = tntId || '';
-            document.getElementById('modal_room_id').value = roomId || '';
+    // Functions สำหรับ Booking Modal
+    function openBookingModal(bkgId, tntId, roomId, tntName, tntPhone, roomNumber, typeName, typePrice, bkgDate, readOnly = false) {
+        document.getElementById('modal_bkg_id').value = bkgId;
+        document.getElementById('modal_booking_tnt_id').value = tntId;
+        document.getElementById('modal_room_id').value = roomId;
 
-            const bookingSubmitBtn = document.getElementById('bookingSubmitBtn');
-            const bookingCloseBtn = document.getElementById('bookingCloseBtn');
-            if (bookingSubmitBtn) bookingSubmitBtn.style.display = readOnly ? 'none' : 'inline-block';
-            if (bookingCloseBtn) bookingCloseBtn.textContent = readOnly ? 'ปิด' : 'ยกเลิก';
-            
-            const bookingInfo = document.getElementById('bookingInfo');
-            if (bookingInfo) {
-                bookingInfo.innerHTML = `
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                        <div>
-                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ผู้เช่า</div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${tntName || '-'}</div>
-                            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${tntPhone || '-'}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ห้องพัก</div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${roomNumber || '-'}</div>
-                            <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${typeName || '-'}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ราคา</div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: #3b82f6;">฿${Number(typePrice||0).toLocaleString()}/เดือน</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">วันที่จอง</div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${bkgDate || '-'}</div>
-                        </div>
-                    </div>
-                `;
-            }
-            
-            const modal = document.getElementById('bookingModal');
-            if (modal) {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                document.body.classList.add('modal-open');
-            } else {
-                console.error("bookingModal element not found!");
-                alert("เกิดข้อผิดพลาด: ไม่พบหน้าต่างข้อมูลการจองในระบบ");
-            }
-        } catch (e) {
-            console.error("Exception in openBookingModal", e);
-            alert("เกิดข้อผิดพลาดในระบบ: " + e.message);
-        }
+        const bookingSubmitBtn = document.getElementById('bookingSubmitBtn');
+        const bookingCloseBtn = document.getElementById('bookingCloseBtn');
+        bookingSubmitBtn.style.display = readOnly ? 'none' : 'inline-block';
+        bookingCloseBtn.textContent = readOnly ? 'ปิด' : 'ยกเลิก';
+        
+        document.getElementById('bookingInfo').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ผู้เช่า</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${tntName}</div>
+                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${tntPhone}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ห้องพัก</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${roomNumber}</div>
+                    <div style="font-size: 0.9rem; color: rgba(255,255,255,0.7);">${typeName}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">ราคา</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #3b82f6;">฿${Number(typePrice).toLocaleString()}/เดือน</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6);">วันที่จอง</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #fff;">${bkgDate}</div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('bookingModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
     }
 
     function closeBookingModal() {
@@ -4304,74 +4291,72 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             introBox.style.display = 'none';
             localStorage.setItem('wizardIntroHidden', '1');
         }
-    }    // Functions สำหรับ Payment Modal (Step 2)
-    function openPaymentModal(bpId, bkgId, tntId, tntName, roomNumber, bpAmount, bpProof, readOnly = false) {
-        try {
-            document.getElementById('modal_payment_bp_id').value = bpId || '';
-            document.getElementById('modal_payment_bkg_id').value = bkgId || '';
-            document.getElementById('modal_payment_tnt_id').value = tntId || '';
+    }
 
-            const paymentSubmitBtn = document.getElementById('paymentSubmitBtn');
-            const paymentCloseBtn = document.getElementById('paymentCloseBtn');
-            if (paymentSubmitBtn) paymentSubmitBtn.style.display = readOnly ? 'none' : 'inline-block';
-            if (paymentCloseBtn) paymentCloseBtn.textContent = readOnly ? 'ปิด' : 'ยกเลิก';
+    // Functions สำหรับ Payment Modal (Step 2)
+    function openPaymentModal(bpId, bkgId, tntId, tntName, roomNumber, bpAmount, bpProof, readOnly = false) {
+        document.getElementById('modal_payment_bp_id').value = bpId;
+        document.getElementById('modal_payment_bkg_id').value = bkgId;
+        document.getElementById('modal_payment_tnt_id').value = tntId;
+
+        const paymentSubmitBtn = document.getElementById('paymentSubmitBtn');
+        const paymentCloseBtn = document.getElementById('paymentCloseBtn');
+        paymentSubmitBtn.style.display = readOnly ? 'none' : 'inline-block';
+        paymentCloseBtn.textContent = readOnly ? 'ปิด' : 'ยกเลิก';
+        
+        document.getElementById('paymentInfo').innerHTML = `
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
+                <div>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">ผู้เช่า</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #0f172a;">${tntName}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">ห้องพัก</div>
+                    <div style="font-size: 1.1rem; font-weight: 600; color: #0f172a;">${roomNumber}</div>
+                </div>
+                <div>
+                    <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">จำนวนเงินจอง</div>
+                    <div style="font-size: 1.1rem; font-weight: 700; color: #059669;">฿${Number(bpAmount).toLocaleString()}</div>
+                </div>
+            </div>
+        `;
+        
+        const proofContainer = document.getElementById('paymentProofContainer');
+        if (bpProof) {
+            // Check if bpProof already contains the path or just filename
+            // Typically in DB it's stored relative to project root or full path?
+            // In wizard_step2.php: href="..."
+            // The path in DB seems to be relative to web root or include 'dormitory_management'?
+            // Usually DB stores 'Public/Assets/Images/Payments/filename.jpg'.
+            // So '/dormitory_management/' + bpProof might be safer if running in subdir.
             
-            const paymentInfo = document.getElementById('paymentInfo');
-            if (paymentInfo) {
-                paymentInfo.innerHTML = `
-                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1.5rem; background: #f8fafc; border: 1px solid #e2e8f0; padding: 1.5rem; border-radius: 12px; margin-bottom: 1.5rem;">
-                        <div>
-                            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">ผู้เช่า</div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: #0f172a;">${tntName || '-'}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">ห้องพัก</div>
-                            <div style="font-size: 1.1rem; font-weight: 600; color: #0f172a;">${roomNumber || '-'}</div>
-                        </div>
-                        <div>
-                            <div style="font-size: 0.85rem; color: #64748b; margin-bottom: 4px;">จำนวนเงินจอง</div>
-                            <div style="font-size: 1.1rem; font-weight: 700; color: #059669;">฿${Number(bpAmount||0).toLocaleString()}</div>
-                        </div>
-                    </div>
-                `;
-            }
+            // If proof is just filename, we might need to prepend path.
+            // Let's assume it's the stored path.
+            // But we need to make sure the image URL is correct.
+            // If stored path starts with 'Public/...', we need '/dormitory_management/Public/...' or just '/Public/...' depending on setup.
+            // From wizard_step2.php: href="..." implies absolute path from root.
             
-            const proofContainer = document.getElementById('paymentProofContainer');
-            if (proofContainer) {
-                if (bpProof) {
-                    let proofUrl = bpProof;
-                    // Fix path
-                    if (!proofUrl.startsWith('/')) {
-                        proofUrl = '/' + proofUrl;
-                    }
-                    if (!proofUrl.includes('dormitory_management')) {
-                        proofUrl = '/dormitory_management/Public/Assets/Images/Payments' + proofUrl;
-                    }
-                    const paymentProofImg = document.getElementById('paymentProofImg');
-                    if (paymentProofImg) paymentProofImg.src = proofUrl;
-                    
-                    const paymentProofLink = document.getElementById('paymentProofLink');
-                    if (paymentProofLink) paymentProofLink.href = proofUrl;
-                    
-                    proofContainer.style.display = 'block';
-                } else {
-                    proofContainer.style.display = 'none';
-                }
+            // Let's try adding /dormitory_management/ if it doesn't start with /
+            let proofUrl = bpProof;
+            if (!proofUrl.startsWith('/')) {
+                proofUrl = '/' + proofUrl;
             }
+             // Actually, let's just use what's passed and let the caller handle format or assume relative to domain root if starting with /
+             // Or relative to current page if not.
+             // bpProof is just filename (e.g., 'payment_1770004240_d69375905c6f0f51.png')
+             // Build full path: /dormitory_management/Public/Assets/Images/Payments/filename
+             proofUrl = '/dormitory_management/Public/Assets/Images/Payments/' + bpProof;
             
-            const modal = document.getElementById('paymentModal');
-            if (modal) {
-                modal.classList.add('active');
-                document.body.style.overflow = 'hidden';
-                document.body.classList.add('modal-open');
-            } else {
-                console.error("paymentModal element not found!");
-                alert("เกิดข้อผิดพลาด: ไม่พบหน้าต่างข้อมูลการชำระเงินในระบบ");
-            }
-        } catch (e) {
-            console.error("Exception in openPaymentModal", e);
-            alert("เกิดข้อผิดพลาดในระบบ: " + e.message);
+            document.getElementById('paymentProofImg').src = proofUrl;
+            document.getElementById('paymentProofLink').href = proofUrl;
+            proofContainer.style.display = 'block';
+        } else {
+            proofContainer.style.display = 'none';
         }
+        
+        document.getElementById('paymentModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
     }
 
     function closePaymentModal() {
@@ -4439,32 +4424,22 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             btnElement.disabled = false;
         }
     }
+
     // Function สำหรับยกเลิกการจอง
     async function cancelBooking(bkgId, tntId, tntName) {
-        try {
-            let confirmed = false;
-            // Support sweetalert if exists, fallback to window.confirm
-            if (typeof showConfirmDialog === 'function') {
-                try {
-                    confirmed = await showConfirmDialog(
-                        'ยืนยันการยกเลิกการจอง',
-                        `คุณต้องการยกเลิกการจองของ "${tntName}" หรือไม่?\n\n⚠️ ข้อมูลที่จะถูกลบ:\n• ข้อมูลการจอง\n• ข้อมูลการชำระเงินมัดจำ\n• ข้อมูลสัญญา (ถ้ามี)\n• ข้อมูลค่าใช้จ่าย (ถ้ามี)\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้!`,
-                        'delete'
-                    );
-                } catch(e) {
-                    console.error("showConfirmDialog throw error", e);
-                    confirmed = confirm(`คุณต้องการยกเลิกการจองของ "${tntName}" หรือไม่?\n\nข้อมูลทั้งหมดที่เกี่ยวข้องจะถูกลบ!`);
-                }
-            } else {
-                confirmed = confirm(`คุณต้องการยกเลิกการจองของ "${tntName}" หรือไม่?\n\nข้อมูลทั้งหมดที่เกี่ยวข้องจะถูกลบ!`);
-            }
-
-            if (confirmed) {
-                await doCancelBooking(bkgId, tntId);
-            }
-        } catch (err) {
-            console.error("Exception in cancelBooking", err);
-            alert("เกิดข้อผิดพลาดการยกเลิก: " + err.message);
+        let confirmed = false;
+        if (typeof showConfirmDialog === 'function') {
+            confirmed = await showConfirmDialog(
+                'ยืนยันการยกเลิกการจอง',
+                `คุณต้องการยกเลิกการจองของ "${tntName}" หรือไม่?\n\n⚠️ ข้อมูลที่จะถูกลบ:\n• ข้อมูลการจอง\n• ข้อมูลการชำระเงินมัดจำ\n• ข้อมูลสัญญา (ถ้ามี)\n• ข้อมูลค่าใช้จ่าย (ถ้ามี)\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้!`,
+                'delete'
+            );
+        } else {
+            confirmed = confirm(`คุณต้องการยกเลิกการจองของ "${tntName}" หรือไม่?\n\nข้อมูลทั้งหมดที่เกี่ยวข้องจะถูกลบ!`);
+        }
+        
+        if (confirmed) {
+            await doCancelBooking(bkgId, tntId);
         }
     }
 
@@ -4480,47 +4455,505 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 body: formData
             });
 
-            // ตรวจสอบข้อมูลก่อนเพื่อป้องกัน JSON Parse Error ถ้าระบบส่ง HTML Error กลับมา
-            let textData = await response.text();
-            let data;
-            try {
-                data = JSON.parse(textData);
-            } catch(e) {
-                console.error("Not a valid json response from cancel_booking.php:", textData);
-                alert("ดำเนินการสำเร็จ แต่ระบบไม่สามารถรีโหลดข้อมูลอัตโนมัติได้ กรุณารีเฟรชหน้าเว็บ");
-                location.reload();
-                return;
-            }
+            const data = await response.json();
 
             if (data.success) {
                 if (typeof showSuccessToast === 'function') {
                     showSuccessToast(data.message || 'ยกเลิกการจองเรียบร้อยแล้ว');
-                } else {
-                    alert(data.message || 'ยกเลิกการจองเรียบร้อยแล้ว');
                 }
-                
-                try {
-                    refreshWizardTable();
-                } catch(e) {
-                    location.reload();
-                }
+                refreshWizardTable();
             } else {
                 if (typeof showErrorToast === 'function') {
-                    showErrorToast(data.error || 'เกิดข้อผิดพลาดในการยกเลิก');
+                    showErrorToast(data.error || 'เกิดข้อผิดพลาด');
                 } else {
-                    alert(data.error || 'เกิดข้อผิดพลาดในการยกเลิก');
+                    alert(data.error || 'เกิดข้อผิดพลาด');
                 }
             }
-        } catch (error) {
-            console.error('Error cancelling booking:', error);
+        } catch (err) {
+            console.error(err);
             if (typeof showErrorToast === 'function') {
-                showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์');
+                showErrorToast('เกิดข้อผิดพลาดในการเชื่อมต่อ');
             } else {
-                alert('เกิดข้อผิดพลาดในการเชื่อมต่อเซิร์ฟเวอร์\n' + error.message);
+                alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
             }
         }
     }
 
+    // === ยืนยันยกเลิกสัญญา (ctr_status → 1) ===
+    async function confirmCancelContract(ctrId, tntName, btn) {
+        let confirmed = false;
+        const msg = `ยืนยันการยกเลิกสัญญาของ "${tntName}" หรือไม่?\n\nการดำเนินการนี้จะเปลี่ยนสถานะสัญญาเป็น "ยกเลิกแล้ว" และไม่สามารถย้อนกลับได้`;
+        if (typeof showConfirmDialog === 'function') {
+            confirmed = await showConfirmDialog('ยืนยันยกเลิกสัญญา', msg, 'delete');
+        } else {
+            confirmed = confirm(msg);
+        }
+        if (!confirmed) return;
+
+        if (btn) { btn.disabled = true; btn.textContent = 'กำลังดำเนินการ...'; }
+
+        try {
+            const fd = new FormData();
+            fd.append('ctr_id', ctrId);
+            fd.append('ctr_status', '1');
+
+            const res = await fetch('../Manage/update_contract_status.php', {
+                method: 'POST',
+                headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                body: fd
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                if (typeof showSuccessToast === 'function') showSuccessToast('✅ ยกเลิกสัญญาเรียบร้อยแล้ว');
+                else alert('ยกเลิกสัญญาเรียบร้อยแล้ว');
+                refreshWizardTable();
+            } else if (data.need_refund) {
+                if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันยกเลิกสัญญา'; }
+                if (typeof showErrorToast === 'function') showErrorToast('⚠️ ' + data.error);
+                else alert(data.error);
+            } else {
+                if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันยกเลิกสัญญา'; }
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'ไม่สามารถยกเลิกสัญญาได้'));
+                else alert(data.error || 'ไม่สามารถยกเลิกสัญญาได้');
+            }
+        } catch (err) {
+            console.error(err);
+            if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันยกเลิกสัญญา'; }
+            if (typeof showErrorToast === 'function') showErrorToast('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ');
+        }
+    }
+
+    // === Modal คืนเงินมัดจำ ===
+    (function() {
+        // สร้าง modal ครั้งเดียว
+        const modalEl = document.createElement('div');
+        modalEl.id = '_refundModal';
+        modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;';
+        modalEl.innerHTML = `
+            <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:1.75rem;width:min(460px,92vw);position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+                <button onclick="closeRefundModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+                <h3 id="_rfTitle" style="margin:0 0 1rem;font-size:1.1rem;color:#0f172a;">💰 คืนเงินมัดจำ</h3>
+                <div id="_rfBankInfo" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:0.85rem 1rem;margin-bottom:1rem;">
+                    <div style="font-size:0.8rem;font-weight:700;color:#0369a1;margin-bottom:0.5rem;">🏦 บัญชีรับคืนเงินมัดจำที่ระบุไว้</div>
+                    <div id="_rfBankName" style="font-size:0.88rem;color:#0c4a6e;margin-bottom:0.2rem;"></div>
+                    <div id="_rfBankAccName" style="font-size:0.88rem;color:#0c4a6e;margin-bottom:0.2rem;"></div>
+                    <div id="_rfBankAccNum" style="font-size:1rem;font-weight:700;color:#0369a1;letter-spacing:0.04em;"></div>
+                </div>
+                
+                <div id="_rfNoBankMsg" style="display:none;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:0.85rem 1rem;margin-bottom:1rem;color:#991b1b;font-size:0.9rem;text-align:center;">
+                    ⚠️ ผู้เช่ายังไม่ได้ระบุข้อมูลบัญชีธนาคารสำหรับรับเงินคืน<br>
+                    <span style="font-size:0.8rem;color:#b91c1c;">ไม่สามารถดำเนินการคืนเงินได้ กรุณาติดต่อผู้เช่าเพื่อขอข้อมูล</span>
+                </div>
+
+                <div id="_rfActionContainer">
+                    <div id="_rfDepositRow" style="display:none;background:#fefce8;border:1px solid #fde68a;border-radius:10px;padding:0.65rem 1rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;">
+                        <span style="font-size:0.85rem;color:#854d0e;font-weight:600;">💎 ยอดเงินมัดจำ</span>
+                        <span id="_rfDepositAmt" style="font-size:1.05rem;font-weight:700;color:#b45309;"></span>
+                    </div>
+                    <div style="margin-bottom:0.9rem;">
+                        <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">ยอดหักค่าเสียหาย (บาท)</label>
+                        <input type="number" id="_rfDeduct" min="0" value="0" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:0.9rem;">
+                        <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">เหตุผลหัก (ถ้ามี)</label>
+                        <input type="text" id="_rfReason" placeholder="-" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
+                    </div>
+                    <div id="_rfSaveArea" style="display:flex;gap:0.6rem;margin-top:1.1rem;">
+                        <button id="_rfSaveBtn" onclick="doSaveRefund()" style="flex:1;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">บันทึกข้อมูลคืนเงิน</button>
+                        <button onclick="closeRefundModal()" style="padding:0.65rem 1rem;border-radius:12px;border:1px solid #e2e8f0;background:none;color:#64748b;cursor:pointer;">ยกเลิก</button>
+                    </div>
+                    <div id="_rfConfirmArea" style="display:none;margin-top:1rem;">
+                        <!-- เพิ่มส่วนอัพโหลดสลิปตรงนี้ -->
+                        <div style="margin-bottom:0.9rem;">
+                            <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">อัพโหลดหลักฐานการโอนเงิน (สลิป) <span style="color:#ef4444;">*</span></label>
+                            <input type="file" id="_rfProofFile" accept="image/*,.pdf" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
+                        </div>
+                        
+                        <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและกด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อเรียบร้อย</p>
+                        <button onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.2);">✓ ยืนยันโอนเงินแล้ว</button>
+                        <div id="_rfProofProgress" style="display:none; text-align:center; font-size:0.85rem; color:#0369a1; margin-top:0.5rem; font-weight:600;">กำลังอัพโหลดสลิป...</div>
+                    </div>
+                </div>
+            </div>`;
+        document.body.appendChild(modalEl);
+
+        modalEl.addEventListener('click', function(e) { if (e.target === modalEl) closeRefundModal(); });
+    })();
+
+    var _rfCtrId = 0;
+
+    function openRefundModal(ctrId, tntName, roomNumber, bankName, bankAccName, bankAccNum, depositAmt) {
+        _rfCtrId = ctrId;
+        document.getElementById('_rfTitle').textContent = '💰 คืนเงินมัดจำ — ห้อง ' + (roomNumber || '') + ' (' + (tntName || '') + ')';
+        document.getElementById('_rfDeduct').value = '0';
+        document.getElementById('_rfReason').value = '';
+        document.getElementById('_rfSaveArea').style.display = 'flex';
+        document.getElementById('_rfConfirmArea').style.display = 'none';
+        // Bank info — แสดงเสมอ ถ้าไม่มีข้อมูลแสดง "ไม่ระบุบัญชี"
+        const bankInfoEl = document.getElementById('_rfBankInfo');
+        const noBankMsgEl = document.getElementById('_rfNoBankMsg');
+        const actionContainerEl = document.getElementById('_rfActionContainer');
+        
+        document.getElementById('_rfBankName').textContent = bankName || '—';
+        document.getElementById('_rfBankAccName').textContent = bankAccName || '—';
+        document.getElementById('_rfBankAccNum').textContent = bankAccNum || '—';
+        bankInfoEl.style.display = 'block';
+
+        if (!bankAccNum || bankAccNum.trim() === '' || bankAccNum.trim() === '-') {
+            noBankMsgEl.style.display = 'block';
+            actionContainerEl.style.display = 'none';
+        } else {
+            noBankMsgEl.style.display = 'none';
+            actionContainerEl.style.display = 'block';
+        }
+
+        // Deposit amount
+        const depositRow = document.getElementById('_rfDepositRow');
+        if (depositAmt && depositAmt > 0) {
+            document.getElementById('_rfDepositAmt').textContent = Number(depositAmt).toLocaleString('th-TH') + ' บาท';
+            depositRow.style.display = 'flex';
+        } else {
+            depositRow.style.display = 'none';
+        }
+        const modal = document.getElementById('_refundModal');
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeRefundModal() {
+        document.getElementById('_refundModal').style.display = 'none';
+        document.body.style.overflow = '';
+    }
+
+    async function doSaveRefund() {
+        const btn = document.getElementById('_rfSaveBtn');
+        const orig = btn.textContent;
+        btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
+        const fd = new FormData();
+        fd.append('action', 'create');
+        fd.append('ctr_id', _rfCtrId);
+        fd.append('deduction_amount', document.getElementById('_rfDeduct').value || '0');
+        fd.append('deduction_reason', document.getElementById('_rfReason').value || '');
+        try {
+            const res = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd });
+            const data = await res.json();
+            if (data.success) {
+                if (typeof showSuccessToast === 'function') showSuccessToast('✅ บันทึกข้อมูลคืนเงินแล้ว');
+                document.getElementById('_rfSaveArea').style.display = 'none';
+                document.getElementById('_rfConfirmArea').style.display = 'block';
+            } else {
+                btn.disabled = false; btn.textContent = orig;
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
+                else alert(data.error || 'เกิดข้อผิดพลาด');
+            }
+        } catch(e) { btn.disabled = false; btn.textContent = orig; if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); }
+    }
+
+    async function doConfirmRefund() {
+        const fileInput = document.getElementById('_rfProofFile');
+        
+        // เช็คก่อนว่าได้เลือกไฟล์หรือยัง
+        if (fileInput && fileInput.files.length === 0) {
+            if (typeof showErrorToast === 'function') showErrorToast('❌ กรุณาแนบไฟล์สลิปหลักฐานการโอนเงินครับ');
+            else alert('กรุณาแนบไฟล์สลิปหลักฐานการโอนเงิน');
+            return;
+        }
+
+        const ok = typeof showConfirmDialog === 'function'
+            ? await showConfirmDialog('ยืนยันการคืนเงิน', 'ยืนยันว่าแนบสลิปและโอนคืนเงินเรียบร้อยแล้ว?', 'success')
+            : confirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
+            
+        if (!ok) return;
+
+        document.getElementById('_rfProofProgress').style.display = 'block';
+
+        // 1. อัพโหลดสลิปก่อน
+        try {
+            const uploadFd = new FormData();
+            uploadFd.append('action', 'upload');
+            uploadFd.append('ctr_id', _rfCtrId);
+            uploadFd.append('refund_proof', fileInput.files[0]);
+            
+            const upRes = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: uploadFd });
+            const upData = await upRes.json();
+            if (!upData.success) {
+                document.getElementById('_rfProofProgress').style.display = 'none';
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (upData.error || 'ไฟล์อัพโหลดล้มเหลว'));
+                else alert(upData.error || 'ไฟล์อัพโหลดล้มเหลว');
+                return;
+            }
+        } catch(e) {
+            document.getElementById('_rfProofProgress').style.display = 'none';
+            if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่ายขณะอัพโหลดสลิป');
+            return;
+        }
+
+        // 2. ถ้าอัพโหลดผ่าน จึงส่งคำสั่งยืนยัน (Confirm) การคืนเงิน
+        const fd = new FormData();
+        fd.append('action', 'confirm');
+        fd.append('ctr_id', _rfCtrId);
+        try {
+            const res = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd });
+            const data = await res.json();
+            
+            document.getElementById('_rfProofProgress').style.display = 'none';
+            if (data.success) {
+                if (typeof showSuccessToast === 'function') showSuccessToast('✅ ยืนยันคืนเงินมัดจำเรียบร้อย');
+                closeRefundModal();
+                if (typeof refreshWizardTable === 'function') refreshWizardTable();
+            } else {
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
+                else alert(data.error || 'เกิดข้อผิดพลาด');
+            }
+        } catch(e) { 
+            document.getElementById('_rfProofProgress').style.display = 'none';
+            if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); 
+        }
+    }
+
+    // Add tooltip to all buttons in wizard scope (clickable + disabled-like).
+    let _wizTooltipObserver = null;
+
+    function normalizeTooltipText(value) {
+        return String(value || '').replace(/\s+/g, ' ').trim();
+    }
+
+    function isDisabledLikeButton(el) {
+        if (!el || !(el instanceof HTMLElement)) return false;
+        const cursorStyle = (el.style && el.style.cursor ? el.style.cursor : '').toLowerCase();
+        return el.disabled === true
+            || el.getAttribute('aria-disabled') === 'true'
+            || el.classList.contains('btn-disabled')
+            || cursorStyle.includes('not-allowed');
+    }
+
+    function deriveWizardButtonTooltip(el) {
+        const bsTitle = normalizeTooltipText(el.getAttribute('data-bs-title'));
+        if (bsTitle) return bsTitle;
+
+        const title = normalizeTooltipText(el.getAttribute('title'));
+        if (title) return title;
+
+        const ariaLabel = normalizeTooltipText(el.getAttribute('aria-label'));
+        if (ariaLabel) return ariaLabel;
+
+        const dataTooltip = normalizeTooltipText(el.getAttribute('data-tooltip'));
+        if (dataTooltip) return dataTooltip;
+
+        const text = normalizeTooltipText(el.textContent);
+        if (text && text !== '×' && text !== '✕') return text;
+
+        if (text === '×' || text === '✕' || el.classList.contains('modal-close')) {
+            return 'ปิดหน้าต่าง';
+        }
+
+        if (isDisabledLikeButton(el)) {
+            return 'ปุ่มนี้ยังไม่พร้อมใช้งาน';
+        }
+
+        return 'กดเพื่อดำเนินการ';
+    }
+
+    function isInWizardTooltipScope(el) {
+        if (!el || !(el instanceof HTMLElement)) return false;
+        return !!el.closest('.wizard-panel, .modal-overlay, #billingModal, #meterOnlyModal, #slipReviewModal, #_refundModal');
+    }
+
+    function applyWizardButtonTooltips(root) {
+        const scope = root || document;
+        const targets = scope.querySelectorAll('button, a.action-btn, a.wiz-meter-alert, [role="button"]');
+
+        targets.forEach(function(el) {
+            if (!isInWizardTooltipScope(el)) return;
+
+            const tooltipText = deriveWizardButtonTooltip(el);
+            if (!tooltipText) return;
+
+            // Keep native tooltip and bootstrap tooltip in sync.
+            el.setAttribute('title', tooltipText);
+            el.setAttribute('data-bs-toggle', 'tooltip');
+            if (!el.hasAttribute('data-bs-placement')) {
+                el.setAttribute('data-bs-placement', 'top');
+            }
+            el.setAttribute('data-bs-title', tooltipText);
+
+            if (window.bootstrap && window.bootstrap.Tooltip) {
+                const existing = window.bootstrap.Tooltip.getInstance(el);
+                if (existing) {
+                    existing.dispose();
+                }
+                new window.bootstrap.Tooltip(el, { container: 'body' });
+            }
+        });
+    }
+
+    function startWizardTooltipObserver() {
+        if (_wizTooltipObserver || !window.MutationObserver) return;
+
+        _wizTooltipObserver = new MutationObserver(function(mutations) {
+            for (const mutation of mutations) {
+                if (mutation.addedNodes && mutation.addedNodes.length > 0) {
+                    applyWizardButtonTooltips(document);
+                    break;
+                }
+            }
+        });
+
+        _wizTooltipObserver.observe(document.body, {
+            childList: true,
+            subtree: true,
+        });
+    }
+
+    // === AJAX Wizard Step Submission ===
+    function submitWizardStep(formId, closeModalFn) {
+        const form = document.getElementById(formId);
+        if (!form) return;
+        const formData = new FormData(form);
+        const actionUrl = form.getAttribute('action');
+        
+        // Find and disable the submit button
+        const modal = form.closest('.modal-overlay') || form.closest('.modal-container');
+        let submitBtn = null;
+        if (modal) {
+            submitBtn = modal.querySelector('.btn-modal-primary') || modal.querySelector('[id$="SubmitBtn"]');
+        }
+        let origBtnText = '';
+        if (submitBtn) {
+            origBtnText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'กำลังบันทึก...';
+        }
+
+        fetch(actionUrl, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: formData
+        })
+        .then(r => r.text().then(txt => {
+            try { return JSON.parse(txt); }
+            catch(e) { return { success: false, error: 'เซิร์ฟเวอร์ตอบกลับข้อมูลไม่ถูกต้อง' }; }
+        }))
+        .then(data => {
+            if (data.success) {
+                if (typeof closeModalFn === 'function') closeModalFn();
+                if (typeof showSuccessToast === 'function') {
+                    showSuccessToast(data.message || 'บันทึกเรียบร้อย');
+                }
+                refreshWizardTable();
+            } else {
+                if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origBtnText; }
+                if (typeof showErrorToast === 'function') {
+                    showErrorToast(data.error || 'เกิดข้อผิดพลาด');
+                } else {
+                    alert(data.error || 'เกิดข้อผิดพลาด');
+                }
+            }
+        })
+        .catch(err => {
+            if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = origBtnText; }
+            if (typeof showErrorToast === 'function') {
+                showErrorToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
+            } else {
+                alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้: ' + err.message);
+            }
+        });
+    }
+
+    // Soft-refresh: fetch page and replace table content without full reload
+    function refreshWizardTable() {
+        const wrapper = document.getElementById('wizardTableWrapper');
+        if (!wrapper) { location.reload(); return; }
+        // Add cache-busting timestamp to prevent stale browser cache
+        const sep = location.href.includes('?') ? '&' : '?';
+        const freshUrl = location.href + sep + '_t=' + Date.now();
+        fetch(freshUrl, { credentials: 'same-origin' })
+        .then(r => r.text())
+        .then(html => {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newWrapper = doc.getElementById('wizardTableWrapper');
+            if (newWrapper) {
+                wrapper.innerHTML = newWrapper.innerHTML;
+                if (typeof wizFilterApply === 'function') wizFilterApply(window._wizCurrentGroup || 0);
+                applyWizardButtonTooltips(wrapper);
+            } else {
+                // Table might have been replaced by empty state
+                const newPanelBody = doc.querySelector('.wizard-panel-body');
+                if (newPanelBody) {
+                    const panelBody = document.querySelector('.wizard-panel-body');
+                    if (panelBody) {
+                        panelBody.innerHTML = newPanelBody.innerHTML;
+                        applyWizardButtonTooltips(panelBody);
+                    }
+                }
+            }
+        })
+        .catch(() => {
+            // Fallback: full reload if soft refresh fails
+            location.reload();
+        });
+    }
+
+    async function softNavigateWizard(targetUrl) {
+        const panelBody = document.querySelector('.wizard-panel-body');
+        if (!panelBody || !targetUrl) {
+            return false;
+        }
+
+        const cleanUrl = new URL(targetUrl, window.location.href);
+        const fetchUrl = new URL(cleanUrl.toString());
+        fetchUrl.searchParams.set('_t', Date.now().toString());
+
+        if (window._wizSoftNavigating === true) {
+            return false;
+        }
+        window._wizSoftNavigating = true;
+
+        try {
+            const response = await fetch(fetchUrl.toString(), { credentials: 'same-origin' });
+            if (!response.ok) {
+                throw new Error('โหลดข้อมูลตัวกรองไม่สำเร็จ');
+            }
+
+            const html = await response.text();
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const newPanelBody = doc.querySelector('.wizard-panel-body');
+            if (!newPanelBody) {
+                throw new Error('ไม่พบข้อมูลตารางตัวช่วยผู้เช่า');
+            }
+
+            panelBody.innerHTML = newPanelBody.innerHTML;
+
+            const groupParam = parseInt(cleanUrl.searchParams.get('completed') || '0', 10);
+            const nextGroup = groupParam === 1 ? 1 : 0;
+            window._wizCurrentGroup = nextGroup;
+
+            if (typeof wizFilter === 'function') {
+                wizFilter(nextGroup);
+            } else if (typeof wizFilterApply === 'function') {
+                wizFilterApply(nextGroup);
+            }
+
+            if (typeof applyWizardButtonTooltips === 'function') {
+                applyWizardButtonTooltips(panelBody);
+            }
+
+            history.replaceState(null, '', cleanUrl.toString());
+            return true;
+        } catch (error) {
+            if (typeof showToast === 'function') {
+                showToast(error.message || 'ไม่สามารถล้างตัวกรองได้', 'error');
+            } else {
+                console.error(error);
+            }
+            return false;
+        } finally {
+            window._wizSoftNavigating = false;
+        }
+    }
 
     // --- Wizard group filter (no page reload) ---
     var _wizCurrentGroup = <?php echo (isset($_GET['completed']) && (int)$_GET['completed'] === 1) ? 1 : 0; ?>;

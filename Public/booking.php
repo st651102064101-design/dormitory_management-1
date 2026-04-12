@@ -2019,7 +2019,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <p style="color:var(--text-secondary);font-size:0.95rem;margin-bottom:20px;">
                     คุณจะได้รับการแจ้งเตือนสถานะการจอง ใบแจ้งหนี้ และข่าวสารต่างๆ ผ่านทาง LINE อัตโนมัติ
                 </p>
-                <a href="../Tenant/index.php" class="btn btn-primary" style="display:inline-block;padding:12px 24px;background:#10b981;color:#fff;text-decoration:none;border-radius:8px;font-weight:500;">เข้าสู่ระบบจัดการผู้เช่า</a>
+                <a href="<?php echo htmlspecialchars($statusLink); ?>" class="btn btn-primary" style="display:inline-block;padding:12px 24px;background:#10b981;color:#fff;text-decoration:none;border-radius:8px;font-weight:500;">ตรวจสอบสถานะการจองห้อง</a>
             </div>
             <?php
             elseif ($lineLoginChannelId):

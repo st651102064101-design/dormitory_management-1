@@ -92,20 +92,6 @@ $expenseStatusMap = [
 // Calculate totals
 $totalPaid = 0;
 $totalUnpaid = 0;
-
-$allPaymentsHistory = [];
-try {
-    $apStmt = $pdo->prepare("SELECT p.*, e.exp_month FROM payment p JOIN expense e ON p.exp_id = e.exp_id WHERE e.ctr_id = ? ORDER BY p.pay_date DESC, p.pay_id DESC");
-    $apStmt->execute([$contract['ctr_id']]);
-    $allPaymentsHistory = $apStmt->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach ($allPaymentsHistory as $ap) {
-        if ($ap['pay_status'] === '1') {
-            $totalPaid += (float)$ap['pay_amount'];
-        }
-    }
-} catch (Exception $e) { error_log("Exception getting all payments: " . $e->getMessage()); }
-
 foreach ($expenses as $expIndex => $exp) {
     $paidAmount = (float)($exp['paid_amount'] ?? 0);
     $pendingAmount = (float)($exp['pending_amount'] ?? 0);
@@ -132,7 +118,7 @@ foreach ($expenses as $expIndex => $exp) {
     $remaining = max(0, $expTotal - $paidAmount);
     
     if ($paidAmount >= $expTotal && $expTotal > 0) {
-        // $totalPaid += $expTotal; // Moved to global query
+        $totalPaid += $expTotal;
     } elseif ($pendingAmount >= $expTotal) {
         // ถ้ารอตรวจสอบเต็มจำนวน ไม่นับว่าค้างชำระ แต่จะถือว่ากำลังดำเนินการ (ไม่ควรโชว์ค้างชำระในยอดรวมด้านบน)
         // หรือนำไปแสดงแยกถ้ามีพื้นที่ แต่ตอนนี้หักจาก totalUnpaid ออกไปก่อนเพื่อนไม่ให้สับสน
@@ -403,12 +389,7 @@ foreach ($expenses as $expIndex => $exp) {
         <?php if (empty($expenses)): ?>
         <div class="empty-state">
             <div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 12H16c-.7 2-2 3-4 3s-3.3-1-4-3H2.5"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.4-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.8 1.1z"/></svg></div>
-            <p style="margin-bottom: <?php echo !empty($allPaymentsHistory) ? '1rem' : '0'; ?>;">ยังไม่มีบิลค่าใช้จ่าย</p>
-            <?php if (!empty($allPaymentsHistory)): ?>
-            <button type="button" class="btn-pay" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;cursor:pointer;width:auto;margin:0 auto;font-family:inherit;border-radius:8px;padding:0.5rem 1rem;" onclick="openDetailModal('<?php echo htmlspecialchars(json_encode($allPaymentsHistory), ENT_QUOTES, 'UTF-8'); ?>'); event.stopPropagation();">
-                <span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span> ดูประวัติการชำระเงิน
-            </button>
-            <?php endif; ?>
+            <p>ยังไม่มีบิลค่าใช้จ่าย</p>
         </div>
         <?php else: ?>
         <?php foreach ($expenses as $expIndex => $exp): ?>

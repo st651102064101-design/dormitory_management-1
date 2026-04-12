@@ -166,11 +166,11 @@ if ($isTenantLoggedIn) {
             SELECT DISTINCT b.bkg_id, b.bkg_date, b.bkg_checkin_date, b.bkg_status
             FROM booking b
             JOIN tenant t ON b.tnt_id = t.tnt_id
-            WHERE (b.tnt_id = ? OR t.tnt_phone = ?) AND b.bkg_status IN ('1','2')
+            WHERE b.tnt_id = ? AND b.bkg_status IN ('1','2')
             ORDER BY b.bkg_id DESC
         ");
         error_log("SQL: SELECT bkg_id FROM booking WHERE tnt_id = '$tenantId' OR phone = '$tenantPhone'");
-        $stmtBookings->execute([$tenantId, $tenantPhone]);
+        $stmtBookings->execute([$tenantId]);
         $tenantBookings = $stmtBookings->fetchAll(PDO::FETCH_ASSOC) ?: [];
         
         error_log("Found " . count($tenantBookings) . " bookings for tenant: $tenantId");
@@ -1058,16 +1058,6 @@ if ($currentStatus === '1') {
             <?php if ($statusDetail !== ''): ?>
             <div style="margin-top: -6px; margin-bottom: 14px; color: var(--text-muted); font-size: 0.86rem; line-height: 1.5;">
                 <?php echo htmlspecialchars($statusDetail); ?>
-            </div>
-            <?php endif; ?>
-            
-            <!-- Booking Details Alert -->
-            <?php if ($isTenantLoggedIn): ?>
-            <div style="background: var(--bg); padding: 14px; border-radius: 10px; margin-bottom: 16px; border-left: 4px solid var(--primary);">
-                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;">🎫 เลขที่การจองของคุณ</div>
-                <div style="font-size: 1.1rem; font-weight: 700; color: var(--text); font-family: 'Courier New', monospace; letter-spacing: 2px;">
-                    <?php echo htmlspecialchars($bookingInfo['bkg_id']); ?>
-                </div>
             </div>
             <?php endif; ?>
             

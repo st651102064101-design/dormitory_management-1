@@ -31,7 +31,7 @@ try {
         JOIN room r ON c.room_id = r.room_id
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id
         LEFT JOIN checkin_record cr ON c.ctr_id = cr.ctr_id
-        WHERE c.access_token = ? AND c.ctr_status IN ('0', '2')
+        WHERE c.access_token = ? AND c.ctr_status != '1'
         LIMIT 1
     ");
     $stmt->execute([$token]);

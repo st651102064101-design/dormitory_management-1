@@ -15,7 +15,7 @@ if (!$token) {
 
 try {
     // Find contract by access token
-    $stmt = $pdo->prepare("SELECT ctr_id FROM contract WHERE access_token = ? LIMIT 1");
+    $stmt = $pdo->prepare("SELECT ctr_id FROM contract WHERE access_token = ? AND ctr_status != '1' LIMIT 1");
     $stmt->execute([$token]);
     $ctrId = $stmt->fetchColumn();
     if (!$ctrId) {
