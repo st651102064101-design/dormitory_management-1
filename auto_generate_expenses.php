@@ -17,13 +17,75 @@ if (php_sapi_name() !== 'cli') {
 require_once __DIR__ . '/ConnectDB.php';
 require_once __DIR__ . '/LineHelper.php';
 
+/**
+ * @return array{dry_run:bool,simulate_date:?string,month:?string}
+ */
+function parseCliOptions(array $argv): array
+{
+    $options = [
+        'dry_run' => false,
+        'simulate_date' => null,
+        'month' => null,
+    ];
+
+    foreach ($argv as $arg) {
+        if ($arg === '--dry-run') {
+            $options['dry_run'] = true;
+            continue;
+        }
+
+        if (strpos($arg, '--simulate-date=') === 0) {
+            $options['simulate_date'] = trim(substr($arg, 16));
+            continue;
+        }
+
+        if (strpos($arg, '--month=') === 0) {
+            $options['month'] = trim(substr($arg, 8));
+        }
+    }
+
+    return $options;
+}
+
+function parseReferenceDate(?string $simulateDate, ?string $month): DateTime
+{
+    if ($month !== null && $month !== '') {
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            throw new InvalidArgumentException("Invalid month format '$month'. Use YYYY-MM");
+        }
+
+        return new DateTime($month . '-01');
+    }
+
+    if ($simulateDate !== null && $simulateDate !== '') {
+        $date = DateTime::createFromFormat('Y-m-d', $simulateDate);
+        $errors = DateTime::getLastErrors();
+        if (!$date || !is_array($errors) || $errors['warning_count'] > 0 || $errors['error_count'] > 0) {
+            throw new InvalidArgumentException("Invalid simulate_date format '$simulateDate'. Use YYYY-MM-DD");
+        }
+
+        $date->setTime(0, 0, 0);
+        return $date;
+    }
+
+    return new DateTime();
+}
+
 try {
     $pdo = connectDB();
+
+    $cliOptions = parseCliOptions($argv ?? []);
+    $today = parseReferenceDate($cliOptions['simulate_date'], $cliOptions['month']);
+    $isDryRun = $cliOptions['dry_run'];
     
-    $today = new DateTime();
     $currentMonth = $today->format('Y-m');
     
-    echo "[" . date('Y-m-d H:i:s') . "] Starting automated expense generation for month: $currentMonth\n";
+    echo "[" . date('Y-m-d H:i:s') . "] Starting automated expense generation for month: $currentMonth";
+    echo " (reference date: " . $today->format('Y-m-d') . ")";
+    if ($isDryRun) {
+        echo " [DRY RUN]";
+    }
+    echo "\n";
     
     // Get all active contracts
     $contractsStmt = $pdo->query("SELECT ctr_id, ctr_start, ctr_end FROM contract WHERE ctr_status = '0'");
@@ -32,6 +94,7 @@ try {
     echo "Found " . count($contracts) . " active contracts\n";
     
     $generated = 0;
+    $wouldGenerate = 0;
     $skipped = 0;
     
     foreach ($contracts as $contract) {
@@ -74,8 +137,16 @@ try {
         $rate_elec = (int)($rateRow['rate_elec'] ?? 8);
         $rate_water = (int)($rateRow['rate_water'] ?? 18);
         
+        $exp_total = $room_price;
+
+        if ($isDryRun) {
+            echo "  [DRY-RUN] Contract $ctr_id: Would generate expense for $currentMonth (Room: ฿$room_price, Rates: Elec ฿$rate_elec/unit, Water ฿$rate_water/unit)\n";
+            $wouldGenerate++;
+            continue;
+        }
+
         // Create new expense record with 0 units (to be filled in later)
-        $insertStmt = $pdo->prepare("
+        $insertStmt = $pdo->prepare(" 
             INSERT INTO expense (
                 exp_month, 
                 exp_elec_unit, 
@@ -90,9 +161,7 @@ try {
                 ctr_id
             ) VALUES (?, 0, 0, ?, ?, ?, 0, 0, ?, '0', ?)
         ");
-        
-        $exp_total = $room_price;
-        
+
         $insertStmt->execute([
             $currentMonth . '-01',
             $rate_elec,
@@ -101,7 +170,7 @@ try {
             $exp_total,
             $ctr_id
         ]);
-        
+
         echo "  [OK] Contract $ctr_id: Generated expense for $currentMonth (Room: ฿$room_price, Rates: Elec ฿$rate_elec/unit, Water ฿$rate_water/unit)\n";
         $generated++;
 
@@ -121,7 +190,11 @@ try {
     }
     
     echo "\n[" . date('Y-m-d H:i:s') . "] Expense generation complete!\n";
-    echo "Summary: Generated $generated | Skipped $skipped\n";
+    if ($isDryRun) {
+        echo "Summary (DRY RUN): Would generate $wouldGenerate | Skipped $skipped\n";
+    } else {
+        echo "Summary: Generated $generated | Skipped $skipped\n";
+    }
     
     exit(0);
     

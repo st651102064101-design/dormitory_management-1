@@ -10,6 +10,72 @@ session_start();
 
 require_once __DIR__ . '/ConnectDB.php';
 
+/**
+ * @return array{force:bool,dry_run:bool,simulate_date:?string,month:?string}
+ */
+function parseCliOptions(array $argv): array
+{
+    $options = [
+        'force' => false,
+        'dry_run' => false,
+        'simulate_date' => null,
+        'month' => null,
+    ];
+
+    foreach ($argv as $arg) {
+        if ($arg === '--force') {
+            $options['force'] = true;
+            continue;
+        }
+
+        if ($arg === '--dry-run') {
+            $options['dry_run'] = true;
+            continue;
+        }
+
+        if (strpos($arg, '--simulate-date=') === 0) {
+            $options['simulate_date'] = trim(substr($arg, 16));
+            continue;
+        }
+
+        if (strpos($arg, '--month=') === 0) {
+            $options['month'] = trim(substr($arg, 8));
+        }
+    }
+
+    return $options;
+}
+
+function parseReferenceDate(?string $simulateDate, ?string $month): DateTime
+{
+    if ($month !== null && $month !== '') {
+        if (!preg_match('/^\d{4}-(0[1-9]|1[0-2])$/', $month)) {
+            throw new InvalidArgumentException("Invalid month format '$month'. Use YYYY-MM");
+        }
+
+        return new DateTime($month . '-01');
+    }
+
+    if ($simulateDate !== null && $simulateDate !== '') {
+        $date = DateTime::createFromFormat('Y-m-d', $simulateDate);
+        $errors = DateTime::getLastErrors();
+        if (!$date || !is_array($errors) || $errors['warning_count'] > 0 || $errors['error_count'] > 0) {
+            throw new InvalidArgumentException("Invalid simulate_date format '$simulateDate'. Use YYYY-MM-DD");
+        }
+
+        $date->setTime(0, 0, 0);
+        return $date;
+    }
+
+    return new DateTime();
+}
+
+function isTruthy($value): bool
+{
+    $normalized = strtolower(trim((string)$value));
+    return in_array($normalized, ['1', 'true', 'yes', 'on'], true);
+}
+
 // Check if user is admin (for web access)
 $isWebAccess = php_sapi_name() !== 'cli';
 if ($isWebAccess && empty($_SESSION['admin_username'])) {
@@ -19,13 +85,32 @@ if ($isWebAccess && empty($_SESSION['admin_username'])) {
 
 try {
     $pdo = connectDB();
+
+    $cliOptions = !$isWebAccess ? parseCliOptions($argv ?? []) : [
+        'force' => false,
+        'dry_run' => false,
+        'simulate_date' => null,
+        'month' => null,
+    ];
+
+    $simulateDateInput = $isWebAccess
+        ? (isset($_GET['simulate_date']) ? trim((string)$_GET['simulate_date']) : null)
+        : $cliOptions['simulate_date'];
+    $monthInput = $isWebAccess
+        ? (isset($_GET['month']) ? trim((string)$_GET['month']) : null)
+        : $cliOptions['month'];
+
+    $today = parseReferenceDate($simulateDateInput, $monthInput);
+
+    $isManualTrigger = $isWebAccess
+        ? (isset($_GET['force']) && isTruthy($_GET['force']))
+        : $cliOptions['force'];
+    $isDryRun = $isWebAccess
+        ? (isset($_GET['dry_run']) && isTruthy($_GET['dry_run']))
+        : $cliOptions['dry_run'];
     
     // Check if today is the 1st of the month
-    $today = new DateTime();
     $isDayOne = $today->format('d') === '01';
-    
-    // Check for manual trigger via GET parameter
-    $isManualTrigger = isset($_GET['force']) && $_GET['force'] === 'true';
     
     if (!$isDayOne && !$isManualTrigger) {
         $message = "⏭️ Automatic expense generation only runs on the 1st of each month. Current date: " . $today->format('Y-m-d');
@@ -42,9 +127,18 @@ try {
     if ($isWebAccess) {
         echo "<h2>Automated Expense Generation</h2>";
         echo "<p>Processing month: <strong>$currentMonth</strong></p>";
+        echo "<p>Reference date: <strong>" . $today->format('Y-m-d') . "</strong></p>";
+        if ($isDryRun) {
+            echo "<p style='color:#d97706;'><strong>DRY RUN:</strong> Preview mode only, no data written.</p>";
+        }
         echo "<pre style='background: #f5f5f5; padding: 15px; border-radius: 5px; font-family: monospace;'>";
     } else {
-        echo "[" . date('Y-m-d H:i:s') . "] Starting automated expense generation for month: $currentMonth\n";
+        echo "[" . date('Y-m-d H:i:s') . "] Starting automated expense generation for month: $currentMonth";
+        echo " (reference date: " . $today->format('Y-m-d') . ")";
+        if ($isDryRun) {
+            echo " [DRY RUN]";
+        }
+        echo "\n";
     }
     
     // Get all active contracts
@@ -54,6 +148,7 @@ try {
     echo "📋 Found " . count($contracts) . " active contracts\n";
     
     $generated = 0;
+    $wouldGenerate = 0;
     $skipped = 0;
     $errors = [];
     
@@ -102,8 +197,16 @@ try {
             $rate_elec = (int)($rateRow['rate_elec'] ?? 8);
             $rate_water = (int)($rateRow['rate_water'] ?? 18);
             
+            $exp_total = $room_price;
+
+            if ($isDryRun) {
+                echo "🧪 Contract $ctr_id: ห้อง $room_number - $tenant_name (จะสร้างบิล ฿$room_price)\n";
+                $wouldGenerate++;
+                continue;
+            }
+
             // Create new expense record with 0 units
-            $insertStmt = $pdo->prepare("
+            $insertStmt = $pdo->prepare(" 
                 INSERT INTO expense (
                     exp_month, 
                     exp_elec_unit, 
@@ -118,9 +221,7 @@ try {
                     ctr_id
                 ) VALUES (?, 0, 0, ?, ?, ?, 0, 0, ?, '0', ?)
             ");
-            
-            $exp_total = $room_price;
-            
+
             $insertStmt->execute([
                 $currentMonth . '-01',
                 $rate_elec,
@@ -129,7 +230,7 @@ try {
                 $exp_total,
                 $ctr_id
             ]);
-            
+
             echo "✅ Contract $ctr_id: ห้อง $room_number - $tenant_name (ค่าห้อง ฿$room_price)\n";
             $generated++;
         } catch (Exception $e) {
@@ -139,7 +240,11 @@ try {
     }
     
     echo "\n" . str_repeat("=", 50) . "\n";
-    echo "✅ สรุป: สร้างสำเร็จ $generated | ข้ามไป $skipped\n";
+    if ($isDryRun) {
+        echo "🧪 สรุป (DRY RUN): จะสร้าง $wouldGenerate | ข้ามไป $skipped\n";
+    } else {
+        echo "✅ สรุป: สร้างสำเร็จ $generated | ข้ามไป $skipped\n";
+    }
     
     if (!empty($errors)) {
         echo "\n⚠️ Errors (" . count($errors) . "):\n";
