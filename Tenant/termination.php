@@ -12,6 +12,12 @@ $token = $auth['token'];
 $contract = $auth['contract'];
 $settings = getSystemSettings($pdo);
 
+// ใช้ตัวนับบิลค้างชุดเดียวกับหน้า report_bills เพื่อให้ผลตรงกันทุกหน้า
+$sharedUnpaidBillCount = null;
+if (function_exists('getTenantBillBadgeCount')) {
+    $sharedUnpaidBillCount = (int)getTenantBillBadgeCount($pdo, $contract);
+}
+
 $terminationAllowed = false;
 $terminationReason = '';
 
@@ -52,12 +58,16 @@ try {
     $termData = $termCheckStmt->fetch(PDO::FETCH_ASSOC);
 
     if ($termData) {
+        $effectiveUnpaidCount = $sharedUnpaidBillCount !== null
+            ? (int)$sharedUnpaidBillCount
+            : (int)($termData['unpaid_bills_count'] ?? 0);
+
         if ((int)$termData['is_step5_complete'] !== 1) {
             $terminationReason = 'รอเจ้าหน้าที่ตรวจสอบการเข้าพักและสร้างรอบบิลเดือนแรกให้เรียบร้อย จึงจะสามารถใช้งานระบบนี้ได้';
         } elseif ((int)$termData['has_current_month_bill'] === 0) {
             $terminationReason = 'กรุณารอให้เจ้าหน้าที่จดมิเตอร์และออกบิลค่าใช้จ่ายของเดือนล่าสุดให้เรียบร้อยก่อนแจ้งยกเลิกสัญญา';
-        } elseif ((int)$termData['unpaid_bills_count'] > 0) {
-            $terminationReason = 'ไม่สามารถแจ้งยกเลิกสัญญาได้ เนื่องจากมียอดค้างชำระจำนวน ' . $termData['unpaid_bills_count'] . ' รายการ หรือมีบิลใหม่ที่เพิ่งออก กรุณาชำระค่าห้องให้ครบก่อน';
+        } elseif ($effectiveUnpaidCount > 0) {
+            $terminationReason = 'ไม่สามารถแจ้งยกเลิกสัญญาได้ เนื่องจากมียอดค้างชำระจำนวน ' . $effectiveUnpaidCount . ' รายการ หรือมีบิลใหม่ที่เพิ่งออก กรุณาชำระค่าห้องให้ครบก่อน';
         } elseif ((int)$termData['unverified_payments_count'] > 0) {
             $terminationReason = 'มีสลิปการชำระเงินที่รอให้เจ้าหน้าที่ตรวจสอบ กรุณารอเจ้าหน้าที่ตรวจสอบความถูกต้องก่อนจึงจะสามารถแจ้งยกเลิกสัญญาได้';
         } else {
@@ -243,30 +253,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
 
 // ดึงจำนวนบิลค้างชำระ
 $unpaidBillCount = 0;
-try {
-    $ubStmt = $pdo->prepare("
-        SELECT COUNT(*) FROM expense e
-        INNER JOIN (
-            SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month
-        ) latest ON e.exp_id = latest.exp_id
-        WHERE e.ctr_id = ?
-          AND (
-                GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE((
-                    SELECT SUM(p.pay_amount) FROM payment p
-                    WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
-                    AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
-                ), 0))
-                +
-                GREATEST(0, (e.exp_total - (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0))) - COALESCE((
-                    SELECT SUM(p.pay_amount) FROM payment p
-                    WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
-                    AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
-                ), 0))
-            ) > 0
-    ");
-    $ubStmt->execute([$contract['ctr_id'], $contract['ctr_id']]);
-    $unpaidBillCount = (int)$ubStmt->fetchColumn();
-} catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
+if ($sharedUnpaidBillCount !== null) {
+    $unpaidBillCount = (int)$sharedUnpaidBillCount;
+} else {
+    try {
+        $ubStmt = $pdo->prepare("
+            SELECT COUNT(*) FROM expense e
+            INNER JOIN (
+                SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month
+            ) latest ON e.exp_id = latest.exp_id
+            WHERE e.ctr_id = ?
+              AND (
+                    GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE((
+                        SELECT SUM(p.pay_amount) FROM payment p
+                        WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
+                        AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                    ), 0))
+                    +
+                    GREATEST(0, (e.exp_total - (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0))) - COALESCE((
+                        SELECT SUM(p.pay_amount) FROM payment p
+                        WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
+                        AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+                    ), 0))
+                ) > 0
+        ");
+        $ubStmt->execute([$contract['ctr_id'], $contract['ctr_id']]);
+        $unpaidBillCount = (int)$ubStmt->fetchColumn();
+    } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
+}
 
 function _bankFormFields(?array $term): string {
     $banks = ['ธนาคารกสิกรไทย (KBank)','ธนาคารไทยพาณิชย์ (SCB)','ธนาคารกรุงเทพ (BBL)','ธนาคารกรุงไทย (KTB)','ธนาคารกรุงศรีอยุธยา (BAY)','ธนาคารทหารไทยธนชาต (TTB)','ธนาคารออมสิน (GSB)','ธนาคาร ธ.ก.ส.','ธนาคารอาคารสงเคราะห์ (GHB)','พร้อมเพย์ (PromptPay)'];
