@@ -4622,10 +4622,19 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             const data = await response.json();
 
             if (data.success) {
+                const removed = removeWizardRowByBookingId(bkgId);
                 if (typeof showSuccessToast === 'function') {
                     showSuccessToast(data.message || 'ยกเลิกการจองเรียบร้อยแล้ว');
                 }
                 refreshWizardTable();
+
+                // Fallback: if stale row is still visible after refresh, hard-reload once.
+                setTimeout(() => {
+                    const staleBtn = findCancelButtonByBookingId(bkgId);
+                    if (staleBtn) {
+                        location.reload();
+                    }
+                }, removed ? 900 : 1300);
             } else {
                 if (typeof showErrorToast === 'function') {
                     showErrorToast(data.error || 'เกิดข้อผิดพลาด');
@@ -4641,6 +4650,33 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 alert('เกิดข้อผิดพลาดในการเชื่อมต่อ');
             }
         }
+    }
+
+    function findCancelButtonByBookingId(bkgId) {
+        if (!bkgId) return null;
+        const target = String(bkgId);
+        const buttons = document.querySelectorAll('#wizardTableWrapper button[onclick*="cancelBooking("]');
+        for (const btn of buttons) {
+            const onclickValue = btn.getAttribute('onclick') || '';
+            if (onclickValue.includes(`cancelBooking(${target},`)) {
+                return btn;
+            }
+        }
+        return null;
+    }
+
+    function removeWizardRowByBookingId(bkgId) {
+        const btn = findCancelButtonByBookingId(bkgId);
+        const row = btn ? btn.closest('tr[data-wiz-group]') : null;
+        if (!row) {
+            return false;
+        }
+
+        row.remove();
+        if (typeof wizFilterApply === 'function') {
+            wizFilterApply(window._wizCurrentGroup || 0);
+        }
+        return true;
     }
 
     // === ยืนยันยกเลิกสัญญา (ctr_status → 1) ===
@@ -5051,6 +5087,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                         panelBody.innerHTML = newPanelBody.innerHTML;
                         applyWizardButtonTooltips(panelBody);
                     }
+                } else {
+                    location.reload();
                 }
             }
         })

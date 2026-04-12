@@ -161,6 +161,13 @@ $success = false;
 if (isset($_GET['success']) && $_GET['success'] == '1') {
     $success = true;
 }
+
+// Flash-style flag: show LINE linked state once, then clear to prevent repeated popups/notices.
+$showLineLinkedNotice = !empty($_SESSION['line_link_success']) && $_SESSION['line_link_success'] === true;
+if ($showLineLinkedNotice) {
+    unset($_SESSION['line_link_success']);
+}
+
 $error = '';
 
 // ดึงอัตราค่าน้ำค่าไฟปัจจุบัน
@@ -1923,17 +1930,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </header>
 
     <div class="main-container">
-        <?php if (!empty($_SESSION['line_link_success']) && $_SESSION['line_link_success'] === true): ?>
-            <script>
-                document.addEventListener('DOMContentLoaded', () => {
-                    if (typeof showAppleAlert === 'function') {
-                        showAppleAlert('ผูกบัญชี LINE กับผู้เช่าเรียบร้อยแล้ว หากจองสำเร็จจะได้รับการแจ้งเตือนผ่าน LINE', 'ผูกบัญชีสำเร็จ');
-                    } else {
-                        alert('ผูกบัญชี LINE สำเร็จแล้ว');
-                    }
-                });
-            </script>
-        <?php endif; ?>
         <?php if ($success): ?>
         <?php
         $lastBookingId = $_SESSION['last_booking_id'] ?? '';
@@ -2011,7 +2007,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $lineLoginChannelId = '';
             }
             
-            if (!empty($_SESSION['line_link_success']) && $_SESSION['line_link_success'] === true):
+            if ($showLineLinkedNotice):
             ?>
             <div style="background:var(--bg-secondary);border:1px solid #10b981;border-radius:16px;padding:24px;margin-bottom:32px;box-shadow:0 4px 20px rgba(0,0,0,0.05);text-align:center;">
                 <div style="width:60px;height:60px;background:rgba(16,185,129,0.1);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
@@ -2052,7 +2048,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </a>
             </div>
             
-            <?php if (empty($_SESSION['line_link_success'])): ?>
+            <?php if (!$showLineLinkedNotice): ?>
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
                     const tntId = "<?php echo addslashes((string)$lastTenantId); ?>";
