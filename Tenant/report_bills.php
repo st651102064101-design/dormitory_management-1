@@ -117,7 +117,9 @@ foreach ($expenses as $expIndex => $exp) {
     
     $remaining = max(0, $expTotal - $paidAmount);
     
-    if ($paidAmount >= $expTotal && $expTotal > 0) {
+    if ($isDepositOnly) {
+        $totalPaid += max(0, $paidAmount);
+    } elseif ($paidAmount >= $expTotal && $expTotal > 0) {
         $totalPaid += $expTotal;
     } elseif ($pendingAmount >= $expTotal) {
         // ถ้ารอตรวจสอบเต็มจำนวน ไม่นับว่าค้างชำระ แต่จะถือว่ากำลังดำเนินการ (ไม่ควรโชว์ค้างชำระในยอดรวมด้านบน)
