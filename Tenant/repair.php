@@ -27,8 +27,69 @@ $isAjaxRequest = $_SERVER['REQUEST_METHOD'] === 'POST'
     && !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
     && strtolower((string)$_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') === 'cancel_repair') {
+    try {
+        $repairId = (int)($_POST['repair_id'] ?? 0);
+        if ($repairId <= 0) {
+            throw new Exception('ไม่พบรายการที่ต้องการยกเลิก');
+        }
+
+        $checkStmt = $pdo->prepare(" 
+            SELECT r.repair_id, r.repair_image, r.repair_status
+            FROM repair r
+            INNER JOIN contract c ON c.ctr_id = r.ctr_id
+            WHERE r.repair_id = ? AND c.tnt_id = ?
+            LIMIT 1
+        ");
+        $checkStmt->execute([$repairId, $contract['tnt_id']]);
+        $targetRepair = $checkStmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$targetRepair) {
+            throw new Exception('ไม่พบรายการแจ้งซ่อมนี้ในสิทธิ์ของคุณ');
+        }
+
+        if ((string)($targetRepair['repair_status'] ?? '') !== '0') {
+            throw new Exception('ยกเลิกได้เฉพาะรายการที่รอซ่อมเท่านั้น');
+        }
+
+        $deleteStmt = $pdo->prepare('DELETE FROM repair WHERE repair_id = ? LIMIT 1');
+        $deleteStmt->execute([$repairId]);
+
+        $repairImage = basename((string)($targetRepair['repair_image'] ?? ''));
+        if ($repairImage !== '') {
+            $imagePath = dirname(__DIR__) . '/Public/Assets/Images/Repairs/' . $repairImage;
+            if (is_file($imagePath)) {
+                @unlink($imagePath);
+            }
+        }
+
+        if ($isAjaxRequest) {
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'success' => true,
+                'message' => 'ยกเลิกรายการแจ้งซ่อมเรียบร้อยแล้ว',
+                'repair_id' => $repairId,
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $success = 'ยกเลิกรายการแจ้งซ่อมเรียบร้อยแล้ว';
+    } catch (Exception $e) {
+        if ($isAjaxRequest) {
+            header('Content-Type: application/json; charset=UTF-8');
+            echo json_encode([
+                'success' => false,
+                'message' => $e->getMessage(),
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        $error = $e->getMessage();
+    }
+}
+
 // Handle form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !== 'cancel_repair') {
     try {
         $repair_desc = trim($_POST['repair_desc'] ?? '');
         
@@ -397,6 +458,32 @@ try {
             max-height: 200px;
             object-fit: cover;
         }
+        .repair-actions {
+            margin-top: 0.75rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .btn-cancel-repair {
+            border: 1px solid rgba(239, 68, 68, 0.45);
+            background: rgba(239, 68, 68, 0.16);
+            color: #fca5a5;
+            border-radius: 999px;
+            padding: 0.45rem 0.95rem;
+            font-size: 0.78rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .btn-cancel-repair:hover {
+            background: rgba(239, 68, 68, 0.24);
+            color: #fecaca;
+            transform: translateY(-1px);
+        }
+        .btn-cancel-repair:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
         .empty-state {
             text-align: center;
             padding: 2rem;
@@ -693,7 +780,7 @@ try {
                     $timeRange = substr($scheduledTimeStart, 0, 5) . ' น.';
                 }
             ?>
-            <div class="repair-item">
+            <div class="repair-item" data-repair-id="<?php echo (int)($repair['repair_id'] ?? 0); ?>" data-repair-status="<?php echo htmlspecialchars((string)($repair['repair_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>">
                 <div class="repair-header">
                     <div class="repair-date">
                         <span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> <?php echo $repair['repair_date'] ?? '-'; ?>
@@ -709,6 +796,12 @@ try {
                 <?php if (!empty($repair['repair_image'])): ?>
                 <div class="repair-image">
                     <img src="/dormitory_management/Public/Assets/Images/Repairs/<?php echo htmlspecialchars(basename((string)$repair['repair_image']), ENT_QUOTES, 'UTF-8'); ?>" alt="Repair Image">
+                </div>
+                <?php endif; ?>
+
+                <?php if (($repair['repair_status'] ?? '') === '0'): ?>
+                <div class="repair-actions">
+                    <button type="button" class="btn-cancel-repair" data-repair-id="<?php echo (int)($repair['repair_id'] ?? 0); ?>">ยกเลิก</button>
                 </div>
                 <?php endif; ?>
                 
@@ -869,15 +962,19 @@ try {
             '2': { label: 'ซ่อมเสร็จ', color: '#10b981', bg: 'rgba(16, 185, 129, 0.2)' }
         };
 
-        const status = statusStyles[item.repair_status] || statusStyles['0'];
+        const itemStatus = String(item.repair_status || '0');
+        const status = statusStyles[itemStatus] || statusStyles['0'];
         const imageHtml = item.repair_image
             ? '<div class="repair-image"><img src="/dormitory_management/Public/Assets/Images/Repairs/' + encodeURIComponent(item.repair_image) + '" alt="Repair Image"></div>'
+            : '';
+        const cancelButtonHtml = itemStatus === '0'
+            ? '<div class="repair-actions"><button type="button" class="btn-cancel-repair" data-repair-id="' + Number(item.repair_id || 0) + '">ยกเลิก</button></div>'
             : '';
         const timeHtml = item.repair_time
             ? '<span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> ' + escapeHtml(item.repair_time)
             : '';
 
-        return '<div class="repair-item">' +
+        return '<div class="repair-item" data-repair-id="' + Number(item.repair_id || 0) + '" data-repair-status="' + escapeHtml(itemStatus) + '">' +
             '<div class="repair-header">' +
                 '<div class="repair-date">' +
                     '<span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> ' + escapeHtml(item.repair_date || '-') +
@@ -887,7 +984,35 @@ try {
             '</div>' +
             '<div class="repair-desc">' + escapeHtml(item.repair_desc || '-') + '</div>' +
             imageHtml +
+            cancelButtonHtml +
         '</div>';
+    }
+
+    function renderEmptyStateHtml() {
+        return '<div class="empty-state">' +
+            '<div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 12H16c-.7 2-2 3-4 3s-3.3-1-4-3H2.5"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.4-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.8 1.1z"/></svg></div>' +
+            '<p>ยังไม่มีประวัติการแจ้งซ่อม</p>' +
+        '</div>';
+    }
+
+    function syncPendingRepairBadge() {
+        const navItem = document.querySelector('.bottom-nav .nav-item.active');
+        if (!navItem) return;
+
+        const pendingCount = document.querySelectorAll('#repair-history-list .repair-item[data-repair-status="0"]').length;
+        let badge = navItem.querySelector('.nav-badge');
+
+        if (pendingCount <= 0) {
+            if (badge) badge.remove();
+            return;
+        }
+
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'nav-badge';
+            navItem.appendChild(badge);
+        }
+        badge.textContent = pendingCount > 99 ? '99+' : String(pendingCount);
     }
 
     function prependRepairItem(item) {
@@ -920,6 +1045,52 @@ try {
         if (feedback) {
             feedback.style.display = 'none';
             feedback.innerHTML = '';
+        }
+    }
+
+    async function requestCancelRepair(repairId, buttonEl) {
+        const confirmed = window.confirm('ยืนยันยกเลิกรายการแจ้งซ่อมนี้?');
+        if (!confirmed) return;
+
+        if (buttonEl) {
+            buttonEl.disabled = true;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append('action', 'cancel_repair');
+            formData.append('repair_id', String(repairId));
+
+            const response = await fetch(window.location.href, {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data || data.success !== true) {
+                throw new Error((data && data.message) ? data.message : 'ไม่สามารถยกเลิกรายการได้');
+            }
+
+            const row = document.querySelector('#repair-history-list .repair-item[data-repair-id="' + Number(repairId) + '"]');
+            if (row) {
+                row.remove();
+            }
+
+            const historyList = document.getElementById('repair-history-list');
+            if (historyList && !historyList.querySelector('.repair-item')) {
+                historyList.innerHTML = renderEmptyStateHtml();
+            }
+
+            syncPendingRepairBadge();
+            showRepairAlert(data.message || 'ยกเลิกรายการแจ้งซ่อมเรียบร้อยแล้ว', 'success');
+        } catch (err) {
+            showRepairAlert((err && err.message) ? err.message : 'เกิดข้อผิดพลาดในการยกเลิกรายการ', 'error');
+            if (buttonEl) {
+                buttonEl.disabled = false;
+            }
         }
     }
 
@@ -1035,6 +1206,7 @@ try {
                 if (data.repair) {
                     prependRepairItem(data.repair);
                 }
+                syncPendingRepairBadge();
                 repairForm.reset();
                 clearRepairFormUi();
                 _aiBlocked = false;
@@ -1046,6 +1218,21 @@ try {
             }
         });
     }
+
+    const repairHistoryList = document.getElementById('repair-history-list');
+    if (repairHistoryList) {
+        repairHistoryList.addEventListener('click', function(event) {
+            const button = event.target.closest('.btn-cancel-repair');
+            if (!button) return;
+
+            const repairId = Number(button.getAttribute('data-repair-id') || '0');
+            if (!repairId) return;
+
+            requestCancelRepair(repairId, button);
+        });
+    }
+
+    syncPendingRepairBadge();
     </script>
 </body>
 </html>
