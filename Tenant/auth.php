@@ -208,15 +208,6 @@ function getTenantBillBadgeCount(PDO $pdo, array $contract): int {
                 GROUP BY DATE_FORMAT(exp_month, '%Y-%m')
             ) latest ON e.exp_id = latest.exp_id
             WHERE e.ctr_id = ?
-              AND EXISTS (
-                    SELECT 1
-                    FROM utility u
-                    WHERE u.ctr_id = e.ctr_id
-                      AND YEAR(u.utl_date) = YEAR(e.exp_month)
-                      AND MONTH(u.utl_date) = MONTH(e.exp_month)
-                      AND u.utl_water_end IS NOT NULL
-                      AND u.utl_elec_end IS NOT NULL
-              )
             ORDER BY e.exp_month DESC, e.exp_id DESC
             "
         );
