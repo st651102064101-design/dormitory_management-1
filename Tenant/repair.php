@@ -33,6 +33,14 @@ $repairStatusMap = [
     '2' => ['label' => 'ซ่อมเสร็จ', 'color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.2)']
 ];
 
+$hasScheduleColumns = false;
+try {
+    $checkScheduleColumn = $pdo->query("SHOW COLUMNS FROM repair LIKE 'scheduled_date'");
+    $hasScheduleColumns = $checkScheduleColumn && $checkScheduleColumn->rowCount() > 0;
+} catch (Throwable $e) {
+    $hasScheduleColumns = false;
+}
+
 $isAjaxRequest = $_SERVER['REQUEST_METHOD'] === 'POST'
     && !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
     && strtolower((string)$_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
@@ -106,6 +114,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !== 'cancel_repair') {
     try {
         $repair_desc = trim($_POST['repair_desc'] ?? '');
+        $scheduled_date = trim((string)($_POST['scheduled_date'] ?? ''));
+
+        if ($scheduled_date !== '') {
+            $scheduledDateObj = DateTime::createFromFormat('Y-m-d', $scheduled_date);
+            if (!$scheduledDateObj || $scheduledDateObj->format('Y-m-d') !== $scheduled_date) {
+                throw new Exception('รูปแบบวันที่นัดหมายไม่ถูกต้อง');
+            }
+        }
         
         if (empty($repair_desc)) {
             $error = 'กรุณาระบุรายละเอียดการแจ้งซ่อม';
@@ -206,11 +222,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
             $stmt->execute([$repair_desc, $repair_image, $contract['ctr_id']]);
 
             $repairId = (int)$pdo->lastInsertId();
-            $rowStmt = $pdo->prepare("SELECT repair_id, repair_date, repair_time, repair_desc, repair_status, repair_image FROM repair WHERE repair_id = ? LIMIT 1");
+            if ($hasScheduleColumns && $scheduled_date !== '') {
+                $scheduleStmt = $pdo->prepare("UPDATE repair SET scheduled_date = ? WHERE repair_id = ? LIMIT 1");
+                $scheduleStmt->execute([$scheduled_date, $repairId]);
+            }
+
+            $selectFields = "repair_id, repair_date, repair_time, repair_desc, repair_status, repair_image";
+            if ($hasScheduleColumns) {
+                $selectFields .= ", scheduled_date";
+            }
+
+            $rowStmt = $pdo->prepare("SELECT {$selectFields} FROM repair WHERE repair_id = ? LIMIT 1");
             $rowStmt->execute([$repairId]);
             $insertedRepair = $rowStmt->fetch(PDO::FETCH_ASSOC) ?: [];
             $statusCode = (string)($insertedRepair['repair_status'] ?? '0');
             $statusInfo = $repairStatusMap[$statusCode] ?? $repairStatusMap['0'];
+            $scheduledDateValue = '';
+            $scheduledDateDisplay = '';
+            if ($hasScheduleColumns) {
+                $scheduledDateValue = (string)($insertedRepair['scheduled_date'] ?? $scheduled_date);
+                if ($scheduledDateValue !== '') {
+                    $scheduledDateDisplay = thaiDate($scheduledDateValue);
+                }
+            }
             $newRepairData = [
                 'repair_id' => (int)($insertedRepair['repair_id'] ?? $repairId),
                 'repair_date' => (string)($insertedRepair['repair_date'] ?? ''),
@@ -221,6 +255,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
                 'status_color' => (string)$statusInfo['color'],
                 'status_bg' => (string)$statusInfo['bg'],
                 'repair_image' => basename((string)($insertedRepair['repair_image'] ?? $repair_image ?? '')),
+                'scheduled_date' => $scheduledDateValue,
+                'scheduled_date_display' => $scheduledDateDisplay,
             ];
             
             $success = 'แจ้งซ่อมเรียบร้อยแล้ว';
@@ -237,6 +273,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
                 $msg = "🛠️ มีการแจ้งซ่อมใหม่จากห้อง {$roomName}\n";
                 $msg .= "👤 ผู้แจ้ง: {$tenantName}\n";
                 $msg .= "รายการ: " . mb_substr($repair_desc, 0, 50) . (mb_strlen($repair_desc) > 50 ? '...' : '') . "\n";
+                if ($scheduledDateDisplay !== '') {
+                    $msg .= "📅 วันที่สะดวก: {$scheduledDateDisplay}\n";
+                }
                 $msg .= "สถานะ: รอคนรับเรื่อง";
                 
                 sendLineBroadcast($pdo, $msg);
@@ -280,12 +319,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
 
 // Get repair history
 $repairs = [];
-$hasScheduleColumns = false;
 try {
-    // Check if schedule columns exist
-    $checkCol = $pdo->query("SHOW COLUMNS FROM repair LIKE 'scheduled_date'");
-    $hasScheduleColumns = $checkCol->rowCount() > 0;
-
     // ค้นหาประวัติซ่อมจาก ctr_id ปัจจุบัน รวมถึงสัญญาเดิมทั้งหมดของผู้เช่าคนนี้
     // (ป้องกันกรณีต่อสัญญาใหม่ แต่ repair ผูกกับสัญญาเดิม)
     $stmt = $pdo->prepare("
@@ -388,6 +422,33 @@ try {
             min-height: 120px;
         }
         .form-group textarea:focus {
+            outline: none;
+            border-color: #3b82f6;
+        }
+        .repair-schedule-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            color: #cbd5e1;
+        }
+        .repair-schedule-label svg {
+            width: 16px;
+            height: 16px;
+            stroke: currentColor;
+            fill: none;
+            flex-shrink: 0;
+        }
+        .repair-schedule-input {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: #f8fafc;
+            font-size: 0.95rem;
+            font-family: inherit;
+        }
+        .repair-schedule-input:focus {
             outline: none;
             border-color: #3b82f6;
         }
@@ -827,6 +888,13 @@ try {
                     <div id="ai_feedback" style="display:none;margin-top:0.5rem;padding:0.6rem 0.85rem;border-radius:8px;font-size:0.82rem;display:flex;align-items:center;gap:0.5rem;transition:all 0.3s;"></div>
                 </div>
                 <div class="form-group">
+                    <label for="scheduled_date_input" class="repair-schedule-label">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                        วันที่สะดวกให้นัดหมาย (ถ้ามี)
+                    </label>
+                    <input type="date" name="scheduled_date" id="scheduled_date_input" class="repair-schedule-input">
+                </div>
+                <div class="form-group">
                     <label>รูปภาพประกอบ (ถ้ามี)</label>
                     <div class="file-upload">
                         <input type="file" name="repair_image" id="repair_image" accept="image/jpeg,image/png,image/webp" onchange="previewImage(this)">
@@ -1139,6 +1207,20 @@ try {
         const timeHtml = item.repair_time
             ? '<span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> ' + escapeHtml(item.repair_time)
             : '';
+        const scheduledDateDisplay = item.scheduled_date_display || item.scheduled_date || '';
+        const scheduleHtml = scheduledDateDisplay
+            ? '<div class="schedule-info">' +
+                '<div class="schedule-header">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
+                    'นัดหมายซ่อม' +
+                '</div>' +
+                '<div class="schedule-row">' +
+                    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>' +
+                    '<span class="schedule-label">วันที่</span>' +
+                    '<span class="schedule-value">' + escapeHtml(scheduledDateDisplay) + '</span>' +
+                '</div>' +
+              '</div>'
+            : '';
 
         return '<div class="repair-item" data-repair-id="' + Number(item.repair_id || 0) + '" data-repair-status="' + escapeHtml(itemStatus) + '">' +
             '<div class="repair-header">' +
@@ -1151,7 +1233,19 @@ try {
             '<div class="repair-desc">' + escapeHtml(item.repair_desc || '-') + '</div>' +
             imageHtml +
             cancelButtonHtml +
+            scheduleHtml +
         '</div>';
+    }
+
+    function initScheduledDateInput() {
+        const scheduledDateInput = document.getElementById('scheduled_date_input');
+        if (!scheduledDateInput) return;
+
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        scheduledDateInput.min = y + '-' + m + '-' + d;
     }
 
     function renderEmptyStateHtml() {
@@ -1404,6 +1498,7 @@ try {
 
     bindRepairImageInteractions(document);
     syncPendingRepairBadge();
+    initScheduledDateInput();
     </script>
 </body>
 </html>
