@@ -170,6 +170,18 @@ try {
     $firstBillMonth = $targetMonth;
 
     if ((int)$checkExpStmt->fetchColumn() === 0) {
+        // หา exp_month ที่ไม่ซ้ำ (เลี่ยง unique key dup)
+        $targetMonthDate = $targetMonth . '-01';
+        $dayCounter = 1;
+        while (true) {
+            $checkUniq = $pdo->prepare("SELECT 1 FROM expense WHERE ctr_id = ? AND exp_month = ?");
+            $checkUniq->execute([$ctr_id, $targetMonthDate]);
+            if (!$checkUniq->fetchColumn()) break;
+            $dayCounter++;
+            $targetMonthDate = $targetMonth . '-' . str_pad((string)$dayCounter, 2, '0', STR_PAD_LEFT);
+            if ($dayCounter > 28) break;
+        }
+
         // ดึงข้อมูลห้องและค่าเช่า
         $roomStmt = $pdo->prepare("
             SELECT rt.type_price 

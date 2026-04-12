@@ -941,17 +941,17 @@ try {
 
         <!-- Checkin Banner (Only show if at least in step 4: checkin) -->
         <?php if ($tenantSigned && ($contract['ctr_status'] ?? '0') !== '1' && (int)($contract['current_step'] ?? 0) === 4): ?>
-        <div class="sign-alert" style="background-color: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6;">
-            <div class="sign-alert-icon" style="color: #3b82f6; background-color: rgba(59, 130, 246, 0.2);">
+        <div class="sign-alert">
+            <div class="sign-alert-icon">
                 <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                     <polyline points="9 12 11 14 15 10"/>
                 </svg>
             </div>
             <div class="sign-alert-body">
-                <h3 style="color: #1e3a8a;">🏠 สถานะ: รอตรวจสอบสภาพห้องและเช็คอิน</h3>
-                <p style="color: #334155;">คุณได้เซ็นสัญญาเรียบร้อยแล้ว ในขั้นตอนต่อไป กรุณาทำการเช็คอิน ยืนยันการเข้าพัก และบันทึกมิเตอร์น้ำไฟเริ่มต้น</p>
-                <a class="sign-alert-btn" style="background-color: #3b82f6; border-color: #2563eb;" href="checkin.php?token=<?php echo urlencode($token); ?>">
+                <h3>🏠 สถานะ: รอตรวจสอบสภาพห้องและเช็คอิน</h3>
+                <p>คุณได้เซ็นสัญญาเรียบร้อยแล้ว ในขั้นตอนต่อไป กรุณาทำการเช็คอิน ยืนยันการเข้าพัก และบันทึกมิเตอร์น้ำไฟเริ่มต้น</p>
+                <a class="sign-alert-btn" href="checkin.php?token=<?php echo urlencode($token); ?>">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
                     กดเพื่อเช็คอินเข้าพัก
                 </a>

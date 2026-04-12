@@ -75,6 +75,19 @@ try {
         $existingExpenseId = $checkStmt->fetchColumn();
 
         if (!$existingExpenseId) {
+            // หา exp_month ที่ไม่ซ้ำ (เลี่ยง unique key dup)
+            $dayCounter = 1;
+            $targetMonth = date('Y-m', strtotime($firstBillMonth));
+            $firstBillMonth = $targetMonth . '-01';
+            while (true) {
+                $checkUniq = $pdo->prepare("SELECT 1 FROM expense WHERE ctr_id = ? AND exp_month = ?");
+                $checkUniq->execute([$ctr_id, $firstBillMonth]);
+                if (!$checkUniq->fetchColumn()) break;
+                $dayCounter++;
+                $firstBillMonth = $targetMonth . '-' . str_pad((string)$dayCounter, 2, '0', STR_PAD_LEFT);
+                if ($dayCounter > 28) break;
+            }
+
             $stmt = $pdo->prepare("
                 INSERT INTO expense
                 (exp_month, exp_elec_unit, exp_water_unit, rate_elec, rate_water, room_price, exp_elec_chg, exp_water, exp_total, exp_status, ctr_id)
