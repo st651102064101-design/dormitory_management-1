@@ -1227,7 +1227,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             <div id="paymentStatusCard" data-state="pending" style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:14px;padding:1.25rem;text-align:center;">
                 <div style="font-size:2rem;margin-bottom:0.5rem;">⏳</div>
                 <div style="color:#fbbf24;font-weight:600;font-size:1rem;margin-bottom:0.4rem;">รออนุมัติการชำระเงิน</div>
-                <div style="color:#fcd34d;font-size:0.88rem;margin-bottom:0.75rem;">
+                <div style="color:#92400e;font-size:0.88rem;font-weight:600;margin-bottom:0.75rem;">
                     บิล<?php echo thaiMonthYear($completedExpense['exp_month']); ?> — ยอด <?php echo number_format((float)$completedExpense['exp_total']); ?> บาท<br>
                     ส่งสลิปแล้วรวม <?php echo number_format((float)$totalPaidOrPending); ?> บาท
                 </div>
@@ -1607,7 +1607,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             <div style="background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.35);border-radius:14px;padding:1.25rem;text-align:center;">
                 <div style="font-size:2rem;margin-bottom:0.5rem;">⏳</div>
                 <div style="color:#fbbf24;font-weight:600;font-size:1rem;margin-bottom:0.4rem;">รออนุมัติการชำระเงิน</div>
-                <div style="color:#fcd34d;font-size:0.88rem;margin-bottom:0.75rem;">
+                <div style="color:#92400e;font-size:0.88rem;font-weight:600;margin-bottom:0.75rem;">
                     บิล${billMonthText} — ยอด ${expTotal.toLocaleString()} บาท<br>
                     ส่งสลิปแล้วรวม ${totalPaidOrPending.toLocaleString()} บาท
                 </div>
