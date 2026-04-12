@@ -142,7 +142,21 @@ if (isset($_GET['action']) && $_GET['action'] === 'unlink_line' && !empty($contr
     try {
         $undoStmt = $pdo->prepare("UPDATE tenant SET line_user_id = NULL, is_weather_alert_enabled = 0 WHERE tnt_id = ?");
         $undoStmt->execute([$contract['tnt_id']]);
-        header("Location: index.php" . (!empty($token) ? "?token=" . urlencode($token) : ""));
+
+        // ป้องกันหน้าแรก redirect กลับ tenant ทันทีหลังยกเลิกผูก LINE
+        clearTenantPortalToken();
+        unset(
+            $_SESSION['tenant_logged_in'],
+            $_SESSION['tenant_id'],
+            $_SESSION['tenant_name'],
+            $_SESSION['tenant_token'],
+            $_SESSION['tenant_ctr_id'],
+            $_SESSION['tenant_tnt_id'],
+            $_SESSION['tenant_room_id'],
+            $_SESSION['tenant_room_number']
+        );
+
+        header('Location: /dormitory_management/');
         exit;
     } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
