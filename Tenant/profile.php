@@ -378,7 +378,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <polyline points="9 22 9 12 15 12 15 22"/>
                     </svg>
                                     หน้าหลัก<?php if ($homeBadgeCount > 0): ?><span class="nav-badge">1</span><?php endif; ?>
-            </a>            <a href="../tenant_logout.php" style="padding: 0.5rem 1rem; background: rgba(239, 68, 68, 0.2); color: #f87171; border-radius: 8px; text-decoration: none; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
+            </a>            <?php if (!empty($contract['line_user_id'])): ?>
+                <a href="../tenant_logout.php" style="padding: 0.5rem 1rem; background: rgba(239, 68, 68, 0.2); color: #f87171; border-radius: 8px; text-decoration: none; font-size: 0.875rem; display: flex; align-items: center; gap: 0.5rem;">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
                         <polyline points="16 17 21 12 16 7"/>
@@ -386,6 +387,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </svg>
                     ออกจากระบบ
                 </a>
+                <?php endif; ?>
             </div>
             <?php endif; ?>
         </div>
