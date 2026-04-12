@@ -2190,6 +2190,77 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
     document.addEventListener('DOMContentLoaded', function() {
         updateSubmitState();
     });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('paymentForm');
+        const submitBtn = document.getElementById('submitBtn');
+
+        if (!form || !submitBtn) {
+            return;
+        }
+
+        form.addEventListener('submit', async function(event) {
+            event.preventDefault();
+            updateSubmitState();
+
+            if (submitBtn.disabled) {
+                return;
+            }
+
+            const originalContent = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg></span> กำลังส่ง...';
+
+            try {
+                const formData = new FormData(form);
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                });
+
+                const rawText = await response.text();
+                let result = null;
+
+                try {
+                    const jsonStart = rawText.indexOf('{');
+                    const jsonText = jsonStart >= 0 ? rawText.slice(jsonStart) : rawText;
+                    result = JSON.parse(jsonText);
+                } catch (parseError) {
+                    throw new Error('ไม่สามารถอ่านผลลัพธ์จากเซิร์ฟเวอร์ได้');
+                }
+
+                if (response.ok && result && result.success) {
+                    showFormAlert(result.message || 'แจ้งชำระเงินเรียบร้อยแล้ว', 'success');
+                    prependPaymentHistoryItem(result);
+                    syncUnpaidUI(result);
+                    form.reset();
+                    if (typeof updatePaymentAmount === 'function') {
+                        updatePaymentAmount();
+                    }
+                    const previewContainer = document.getElementById('preview-container');
+                    const previewImage = document.getElementById('preview-image');
+                    if (previewContainer) {
+                        previewContainer.style.display = 'none';
+                    }
+                    if (previewImage) {
+                        previewImage.src = '';
+                    }
+                } else {
+                    throw new Error((result && result.message) ? result.message : 'ไม่สามารถบันทึกข้อมูลได้');
+                }
+            } catch (error) {
+                console.error('Payment submit error:', error);
+                showFormAlert(error.message || 'ไม่สามารถส่งข้อมูลได้ กรุณาลองใหม่', 'error');
+            } finally {
+                submitBtn.innerHTML = originalContent;
+                updateSubmitState();
+            }
+        });
+    });
     </script>
 </body>
 </html>
