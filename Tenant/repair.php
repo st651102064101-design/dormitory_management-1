@@ -271,6 +271,7 @@ try {
     <title>แจ้งซ่อม - <?php echo htmlspecialchars($settings['site_name']); ?></title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($settings['logo_filename']); ?>">
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -912,6 +913,7 @@ try {
             </a>
         </div>
     </nav>
+    <script src="/dormitory_management/Public/Assets/Javascript/confirm-modal.js"></script>
     
     <script>
     function previewImage(input) {
@@ -1049,7 +1051,9 @@ try {
     }
 
     async function requestCancelRepair(repairId, buttonEl) {
-        const confirmed = window.confirm('ยืนยันยกเลิกรายการแจ้งซ่อมนี้?');
+        const confirmed = (typeof showConfirmDialog === 'function')
+            ? await showConfirmDialog('ยืนยันการยกเลิก', 'คุณยืนยันยกเลิกรายการแจ้งซ่อมนี้?', 'warning')
+            : window.confirm('ยืนยันยกเลิกรายการแจ้งซ่อมนี้?');
         if (!confirmed) return;
 
         if (buttonEl) {
