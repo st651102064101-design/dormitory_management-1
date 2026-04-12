@@ -15,6 +15,17 @@ $settings = getSystemSettings($pdo);
 
 $success = '';
 $error = '';
+$newRepairData = null;
+
+$repairStatusMap = [
+    '0' => ['label' => 'รอซ่อม', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
+    '1' => ['label' => 'กำลังซ่อม', 'color' => '#3b82f6', 'bg' => 'rgba(59, 130, 246, 0.2)'],
+    '2' => ['label' => 'ซ่อมเสร็จ', 'color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.2)']
+];
+
+$isAjaxRequest = $_SERVER['REQUEST_METHOD'] === 'POST'
+    && !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+    && strtolower((string)$_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -102,6 +113,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 VALUES (?, NOW(), CURTIME(), '0', ?, ?)
             ");
             $stmt->execute([$repair_desc, $repair_image, $contract['ctr_id']]);
+
+            $repairId = (int)$pdo->lastInsertId();
+            $rowStmt = $pdo->prepare("SELECT repair_id, repair_date, repair_time, repair_desc, repair_status, repair_image FROM repair WHERE repair_id = ? LIMIT 1");
+            $rowStmt->execute([$repairId]);
+            $insertedRepair = $rowStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+            $statusCode = (string)($insertedRepair['repair_status'] ?? '0');
+            $statusInfo = $repairStatusMap[$statusCode] ?? $repairStatusMap['0'];
+            $newRepairData = [
+                'repair_id' => (int)($insertedRepair['repair_id'] ?? $repairId),
+                'repair_date' => (string)($insertedRepair['repair_date'] ?? ''),
+                'repair_time' => substr((string)($insertedRepair['repair_time'] ?? ''), 0, 5),
+                'repair_desc' => (string)($insertedRepair['repair_desc'] ?? $repair_desc),
+                'repair_status' => $statusCode,
+                'status_label' => (string)$statusInfo['label'],
+                'status_color' => (string)$statusInfo['color'],
+                'status_bg' => (string)$statusInfo['bg'],
+                'repair_image' => basename((string)($insertedRepair['repair_image'] ?? $repair_image ?? '')),
+            ];
             
             $success = 'แจ้งซ่อมเรียบร้อยแล้ว';
 
@@ -129,6 +158,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         $error = $e->getMessage();
     }
+
+    if ($isAjaxRequest) {
+        header('Content-Type: application/json; charset=UTF-8');
+        if ($error !== '') {
+            echo json_encode([
+                'success' => false,
+                'message' => $error,
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => $success,
+            'repair' => $newRepairData,
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 }
 
 // Get repair history
@@ -154,12 +201,6 @@ try {
 } catch (PDOException $e) {
     error_log('[repair.php] PDO Error: ' . $e->getMessage());
 }
-
-$repairStatusMap = [
-    '0' => ['label' => 'รอซ่อม', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
-    '1' => ['label' => 'กำลังซ่อม', 'color' => '#3b82f6', 'bg' => 'rgba(59, 130, 246, 0.2)'],
-    '2' => ['label' => 'ซ่อมเสร็จ', 'color' => '#10b981', 'bg' => 'rgba(16, 185, 129, 0.2)']
-];
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -579,23 +620,25 @@ $repairStatusMap = [
     </header>
     
     <div class="container">
-        <?php if ($success): ?>
-        <div class="alert alert-success">
-            <span class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
-            <span><?php echo htmlspecialchars($success); ?></span>
+        <div id="repair-alert-container">
+            <?php if ($success): ?>
+            <div class="alert alert-success">
+                <span class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></span>
+                <span><?php echo htmlspecialchars($success); ?></span>
+            </div>
+            <?php endif; ?>
+            
+            <?php if ($error): ?>
+            <div class="alert alert-error">
+                <span class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
+                <span><?php echo htmlspecialchars($error); ?></span>
+            </div>
+            <?php endif; ?>
         </div>
-        <?php endif; ?>
-        
-        <?php if ($error): ?>
-        <div class="alert alert-error">
-            <span class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg></span>
-            <span><?php echo htmlspecialchars($error); ?></span>
-        </div>
-        <?php endif; ?>
         
         <div class="form-section">
             <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg></span> แจ้งซ่อมใหม่</div>
-            <form method="POST" enctype="multipart/form-data">
+            <form id="repair-form" method="POST" enctype="multipart/form-data">
                 <div class="form-group">
                     <label>รายละเอียดอุปกรณ์ที่ต้องการซ่อม *</label>
                     <textarea name="repair_desc" id="repair_desc_input" placeholder="เช่น พัดลมเพดานไม่หมุน, ก๊อกน้ำรั่ว, หลอดไฟเสีย ฯลฯ" required oninput="scheduleAiCheck()"></textarea>
@@ -619,7 +662,7 @@ $repairStatusMap = [
         
         <div class="repair-history">
             <div class="section-title"><span class="section-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></span> ประวัติการแจ้งซ่อม</div>
-            
+            <div id="repair-history-list">
             <?php if (empty($repairs)): ?>
             <div class="empty-state">
                 <div class="empty-state-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 12H16c-.7 2-2 3-4 3s-3.3-1-4-3H2.5"/><path d="M5.5 5.1L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.4-6.9A2 2 0 0 0 16.8 4H7.2a2 2 0 0 0-1.8 1.1z"/></svg></div>
@@ -711,6 +754,7 @@ $repairStatusMap = [
             </div>
             <?php endforeach; ?>
             <?php endif; ?>
+            </div>
         </div>
     </div>
 
@@ -791,6 +835,94 @@ $repairStatusMap = [
         }
     }
 
+    function escapeHtml(value) {
+        return String(value ?? '').replace(/[&<>"']/g, function(ch) {
+            return ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#39;'
+            })[ch] || ch;
+        });
+    }
+
+    function showRepairAlert(message, type) {
+        const alertContainer = document.getElementById('repair-alert-container');
+        if (!alertContainer) return;
+
+        const isSuccess = type === 'success';
+        const icon = isSuccess
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>';
+
+        alertContainer.innerHTML = '<div class="alert ' + (isSuccess ? 'alert-success' : 'alert-error') + '">' +
+            '<span class="alert-icon">' + icon + '</span>' +
+            '<span>' + escapeHtml(message) + '</span>' +
+        '</div>';
+    }
+
+    function renderRepairItemHtml(item) {
+        const statusStyles = {
+            '0': { label: 'รอซ่อม', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.2)' },
+            '1': { label: 'กำลังซ่อม', color: '#3b82f6', bg: 'rgba(59, 130, 246, 0.2)' },
+            '2': { label: 'ซ่อมเสร็จ', color: '#10b981', bg: 'rgba(16, 185, 129, 0.2)' }
+        };
+
+        const status = statusStyles[item.repair_status] || statusStyles['0'];
+        const imageHtml = item.repair_image
+            ? '<div class="repair-image"><img src="/dormitory_management/Public/Assets/Images/Repairs/' + encodeURIComponent(item.repair_image) + '" alt="Repair Image"></div>'
+            : '';
+        const timeHtml = item.repair_time
+            ? '<span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span> ' + escapeHtml(item.repair_time)
+            : '';
+
+        return '<div class="repair-item">' +
+            '<div class="repair-header">' +
+                '<div class="repair-date">' +
+                    '<span class="date-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></span> ' + escapeHtml(item.repair_date || '-') +
+                    (timeHtml ? ' ' + timeHtml : '') +
+                '</div>' +
+                '<span class="repair-status" style="background: ' + status.bg + '; color: ' + status.color + '">' + status.label + '</span>' +
+            '</div>' +
+            '<div class="repair-desc">' + escapeHtml(item.repair_desc || '-') + '</div>' +
+            imageHtml +
+        '</div>';
+    }
+
+    function prependRepairItem(item) {
+        const list = document.getElementById('repair-history-list');
+        if (!list) return;
+
+        const emptyState = list.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = renderRepairItemHtml(item);
+        if (wrapper.firstElementChild) {
+            list.prepend(wrapper.firstElementChild);
+        }
+    }
+
+    function clearRepairFormUi() {
+        const previewContainer = document.getElementById('preview-container');
+        const previewImageEl = document.getElementById('preview-image');
+        const feedback = document.getElementById('ai_feedback');
+
+        if (previewImageEl) {
+            previewImageEl.src = '';
+        }
+        if (previewContainer) {
+            previewContainer.style.display = 'none';
+        }
+        if (feedback) {
+            feedback.style.display = 'none';
+            feedback.innerHTML = '';
+        }
+    }
+
     // ── AI Repair Quality Checker ──────────────────────────────
     let _aiTimer = null;
     let _aiBlocked = false;
@@ -860,6 +992,59 @@ $repairStatusMap = [
             submitBtn.disabled = true;
             submitBtn.style.opacity = '0.45';
         }
+    }
+
+    const repairForm = document.getElementById('repair-form');
+    if (repairForm) {
+        repairForm.addEventListener('submit', async function(event) {
+            event.preventDefault();
+
+            const submitBtn = document.getElementById('repair_submit_btn');
+            if (!submitBtn) return;
+
+            if (_aiBlocked) {
+                showRepairAlert('กรุณาปรับรายละเอียดการแจ้งซ่อมก่อนส่ง', 'error');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.style.opacity = '0.55';
+
+            try {
+                const formData = new FormData(repairForm);
+                const response = await fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                let data = null;
+                try {
+                    data = await response.json();
+                } catch (parseErr) {
+                    throw new Error('รูปแบบข้อมูลตอบกลับไม่ถูกต้อง');
+                }
+
+                if (!response.ok || !data || data.success !== true) {
+                    throw new Error((data && data.message) ? data.message : 'ไม่สามารถส่งแจ้งซ่อมได้');
+                }
+
+                showRepairAlert(data.message || 'แจ้งซ่อมเรียบร้อยแล้ว', 'success');
+                if (data.repair) {
+                    prependRepairItem(data.repair);
+                }
+                repairForm.reset();
+                clearRepairFormUi();
+                _aiBlocked = false;
+            } catch (err) {
+                showRepairAlert((err && err.message) ? err.message : 'เกิดข้อผิดพลาดในการส่งข้อมูล', 'error');
+            } finally {
+                submitBtn.disabled = _aiBlocked;
+                submitBtn.style.opacity = _aiBlocked ? '0.45' : '';
+            }
+        });
     }
     </script>
 </body>
