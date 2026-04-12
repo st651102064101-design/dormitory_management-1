@@ -2406,7 +2406,15 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                                             <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
                                                 <button type="button" class="action-btn btn-primary" style="opacity:0.55;cursor:not-allowed;" title="ผู้เช่ายังไม่ได้เซ็นสัญญา" onclick="showNotSignedToast()">🔒 รอผู้เช่าเซ็นสัญญา</button>
                                                 <?php if (!empty($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'])): ?>
-                                                <a href="print_contract.php?ctr_id=<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id']); ?>" target="_blank" class="action-btn" style="background:rgba(139,92,246,0.18);border:1px solid rgba(139,92,246,0.4);color:#8b5cf6;font-size:0.8rem;" title="เปิดสัญญาเพื่อให้ผู้เช่าเซ็น">📄 ดูสัญญา (รอเซ็น)</a>
+                                                <a href="print_contract.php?ctr_id=<?php echo (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id']); ?>&from_tenant=1" target="_blank" style="display: inline-flex; align-items: center; padding: 0.5rem 1.25rem; background: rgb(255, 255, 255); border: 1px solid rgba(59, 130, 246, 0.5); border-radius: 50px; color: rgb(59, 130, 246); text-decoration: none; font-size: 0.85rem; font-weight: 600; box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 15px; transition: 0.3s; transform: translateY(0px);" onmouseover="this.style.transform='translateY(-2px)'; this.style.boxShadow='0 6px 20px rgba(0, 0, 0, 0.2)';" onmouseout="this.style.transform='translateY(0)'; this.style.boxShadow='0 4px 15px rgba(0, 0, 0, 0.15)';">
+                                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:middle;margin-right:6px;">
+                                                        <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                                        <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                                        <line x1="12" y1="11" x2="12" y2="17"></line>
+                                                        <line x1="9" y1="14" x2="15" y2="14"></line>
+                                                    </svg>
+                                                    เปิดดูลายละเอียดใบสัญญา
+                                                </a>
                                                 <?php endif; ?>
                                                 <button type="button" class="action-btn btn-danger" onclick="cancelBooking(<?php echo (int)$tenant['bkg_id']; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_id']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>)">ยกเลิก</button>
                                             </div>
