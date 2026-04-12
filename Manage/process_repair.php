@@ -92,9 +92,12 @@ try {
         }
         
         // สร้างชื่อไฟล์ใหม่
-        $uploadsDir = __DIR__ . '//dormitory_management/Public/Assets/Images/Repairs';
-        if (!is_dir($uploadsDir)) {
-            mkdir($uploadsDir, 0755, true);
+        $uploadsDir = dirname(__DIR__) . '/Public/Assets/Images/Repairs';
+        if (!is_dir($uploadsDir) && !mkdir($uploadsDir, 0755, true) && !is_dir($uploadsDir)) {
+            $_SESSION['error'] = 'ไม่สามารถสร้างโฟลเดอร์เก็บรูปภาพได้';
+            error_log("DEBUG repair: Failed creating uploads dir: $uploadsDir");
+            header('Location: ../Reports/manage_repairs.php');
+            exit;
         }
         
         $filename = 'repair_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
