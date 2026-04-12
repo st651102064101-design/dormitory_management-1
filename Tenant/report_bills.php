@@ -653,8 +653,9 @@ foreach ($expenses as $expIndex => $exp) {
     body.light-theme .modal-empty { color: #64748b; }
     </style>
     <!-- Detail Modal -->
-    <div id="detailModal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity 0.2s;" onclick="closeDetailModal()">
-        <div class="modal-content" onclick="event.stopPropagation()" style="width: 100%; max-width: 600px; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 1.5rem; max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));">
+    <div id="detailModal" class="modal-overlay" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity 0.2s;" onclick="closeDetailModal()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="width: 100%; max-width: 600px; border-top-left-radius: 24px; border-top-right-radius: 24px; padding-top: 0.5rem; padding-right: 1.5rem; padding-left: 1.5rem; max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1); padding-bottom: calc(1.5rem + env(safe-area-inset-bottom)); box-shadow: 0 -24px 60px rgba(0,0,0,0.25); touch-action: pan-y;">
+            <div class="modal-drag-handle" aria-hidden="true" style="width: 44px; height: 5px; margin: 0 auto 0.9rem; border-radius: 999px; background: rgba(148,163,184,0.65); cursor: grab;"></div>
             <div class="modal-header-border" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem;">
                 <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">ประวัติการชำระเงิน</h3>
                 <button type="button" onclick="closeDetailModal()" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 0.5rem;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
@@ -708,17 +709,107 @@ foreach ($expenses as $expIndex => $exp) {
         document.getElementById('modalPaymentsList').innerHTML = html;
         const modal = document.getElementById('detailModal');
         const content = modal.querySelector('.modal-content');
+        const handle = modal.querySelector('.modal-drag-handle');
         modal.style.display = 'flex';
+        modal.dataset.dragging = '0';
+        modal.dataset.dragStartY = '';
+        modal.dataset.dragDistance = '0';
         
         // Trigger reflow for transition
         void modal.offsetWidth;
         modal.style.opacity = '1';
         content.style.transform = 'translateY(0)';
+
+        if (!modal.dataset.dragBound && handle) {
+            modal.dataset.dragBound = '1';
+
+            const startDrag = function(startY) {
+                modal.dataset.dragging = '1';
+                modal.dataset.dragStartY = String(startY);
+                modal.dataset.dragDistance = '0';
+                content.style.transition = 'none';
+                content.style.willChange = 'transform';
+            };
+
+            const updateDrag = function(currentY) {
+                if (modal.dataset.dragging !== '1') return;
+                const startY = parseFloat(modal.dataset.dragStartY || '0') || 0;
+                const delta = Math.max(0, currentY - startY);
+                modal.dataset.dragDistance = String(delta);
+                content.style.transform = `translateY(${delta}px)`;
+            };
+
+            const endDrag = function() {
+                if (modal.dataset.dragging !== '1') return;
+                const delta = parseFloat(modal.dataset.dragDistance || '0') || 0;
+                const threshold = Math.max(180, Math.round(content.getBoundingClientRect().height * 0.5));
+                modal.dataset.dragging = '0';
+                modal.dataset.dragStartY = '';
+                modal.dataset.dragDistance = '0';
+                content.style.willChange = '';
+                content.style.transition = 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)';
+
+                if (delta >= threshold) {
+                    closeDetailModal();
+                } else {
+                    content.style.transform = 'translateY(0)';
+                }
+            };
+
+            if (window.PointerEvent) {
+                handle.addEventListener('pointerdown', function(event) {
+                    if (event.button !== 0) return;
+                    startDrag(event.clientY);
+                    event.preventDefault();
+                    try { handle.setPointerCapture(event.pointerId); } catch (e) {}
+                });
+                handle.addEventListener('pointermove', function(event) {
+                    updateDrag(event.clientY);
+                });
+                handle.addEventListener('pointerup', function() {
+                    endDrag();
+                });
+                handle.addEventListener('pointercancel', function() {
+                    endDrag();
+                });
+            } else {
+                let onMouseMove = null;
+                let onMouseUp = null;
+                handle.addEventListener('mousedown', function(event) {
+                    if (event.button !== 0) return;
+                    startDrag(event.clientY);
+                    event.preventDefault();
+                    onMouseMove = function(moveEvent) { updateDrag(moveEvent.clientY); };
+                    onMouseUp = function() {
+                        document.removeEventListener('mousemove', onMouseMove);
+                        document.removeEventListener('mouseup', onMouseUp);
+                        endDrag();
+                    };
+                    document.addEventListener('mousemove', onMouseMove);
+                    document.addEventListener('mouseup', onMouseUp);
+                });
+                handle.addEventListener('touchstart', function(event) {
+                    if (!event.touches || !event.touches.length) return;
+                    startDrag(event.touches[0].clientY);
+                }, { passive: true });
+                handle.addEventListener('touchmove', function(event) {
+                    if (!event.touches || !event.touches.length) return;
+                    updateDrag(event.touches[0].clientY);
+                }, { passive: true });
+                handle.addEventListener('touchend', function() {
+                    endDrag();
+                });
+                handle.addEventListener('touchcancel', function() {
+                    endDrag();
+                });
+            }
+        }
     }
 
     function closeDetailModal() {
         const modal = document.getElementById('detailModal');
         const content = modal.querySelector('.modal-content');
+        if (!modal || !content) return;
         modal.style.opacity = '0';
         content.style.transform = 'translateY(100%)';
         setTimeout(() => {
