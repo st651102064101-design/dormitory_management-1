@@ -416,6 +416,13 @@ foreach ($expenses as $expIndex => $exp) {
             $isDepositOnly = ($depositPaymentCount > 0) 
                 || ($expIndex === count($expenses) - 1 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $roomPrice > 0 && $expTotal != $calculatedTotal);
 
+            if ($isDepositOnly || $depositPaidAmount > 0 || $depositPendingAmount > 0) {
+                // Remove deposit from other fee if it was lumped in
+                if ($otherFee >= $ctrDeposit) {
+                    $otherFee -= $ctrDeposit;
+                }
+            }
+
             if ($isDepositOnly) {
                 // สำหรับบิลมัดจำเพียวๆ ให้รวมยอดทั้งหมด (ทั้งที่ระบุมัดจำและไม่ได้ระบุ)
                 // เพื่อป้องกันบั๊กเวลา tenant จ่ายผ่านหน้าแจ้งชำระเงินปกติแล้วไม่ได้ระบุ remark
@@ -514,6 +521,12 @@ foreach ($expenses as $expIndex => $exp) {
             </a>
             <?php elseif (in_array($statusKey, ['0', '3', '4'], true)): ?>
             <a href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo $exp['exp_id']; ?>" class="btn-pay" onclick="event.stopPropagation();"><span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></span> ชำระเงิน</a>
+            <?php endif; ?>
+            
+            <?php if (!empty($exp['payments'])): ?>
+            <button type="button" class="btn-pay" style="background:rgba(59,130,246,0.15);border:1px solid rgba(59,130,246,0.35);color:#60a5fa;cursor:pointer;width:100%;margin-top:0.5rem;font-family:inherit;border-radius:8px;" onclick="openDetailModal('<?php echo htmlspecialchars(json_encode($exp['payments']), ENT_QUOTES, 'UTF-8'); ?>'); event.stopPropagation();">
+                <span class="btn-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg></span> ดูประวัติการชำระ
+            </button>
             <?php endif; ?>
         </div>
         
@@ -616,6 +629,75 @@ foreach ($expenses as $expIndex => $exp) {
             </a>
         </div>
     </nav>
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity 0.2s;" onclick="closeDetailModal()">
+        <div class="modal-content" onclick="event.stopPropagation()" style="background: #1e293b; width: 100%; max-width: 600px; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 1.5rem; max-height: 80vh; overflow-y: auto; color: #f8fafc; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem;">
+                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">ประวัติการชำระเงิน</h3>
+                <button type="button" onclick="closeDetailModal()" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 0.5rem;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+            </div>
+            <div id="modalPaymentsList"></div>
+        </div>
+    </div>
+
+    <script>
+    function openDetailModal(paymentsStr) {
+        let payments = [];
+        try {
+            payments = JSON.parse(paymentsStr);
+        } catch(e) {}
+        
+        let html = '';
+        if (!payments || payments.length === 0) {
+            html = '<div style="text-align:center; padding: 1.5rem; color: #94a3b8;">ไม่มีประวัติการชำระเงิน</div>';
+        } else {
+            payments.forEach(p => {
+                let statusText = '';
+                let statusColor = '';
+                if (p.pay_status === '1') { statusText = 'อนุมัติแล้ว'; statusColor = '#10b981'; }
+                else if (p.pay_status === '0') { statusText = 'รอตรวจสอบ'; statusColor = '#f59e0b'; }
+                else { statusText = 'ปฏิเสธ/ยกเลิก'; statusColor = '#ef4444'; }
+                
+                let remark = (p.pay_remark || '').trim();
+                let remarkDisplay = remark ? `<span style="font-size:0.75rem; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; margin-left:8px;">${remark}</span>` : '';
+                
+                let dateObj = new Date(p.pay_date);
+                let formattedDate = !isNaN(dateObj) ? dateObj.toLocaleDateString('th-TH') : p.pay_date;
+
+                html += `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding: 12px 0;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom: 6px; align-items: center;">
+                        <span style="font-size:0.85rem; color:#cbd5e1;">วันที่: ${formattedDate} ${remarkDisplay}</span>
+                        <span style="font-size:0.8rem; font-weight:600; color:${statusColor}; background:${statusColor}15; padding: 2px 8px; border-radius: 12px;">${statusText}</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; font-weight: 500;">
+                        <span>ยอดชำระ</span>
+                        <span style="font-size:1.05rem;">${parseFloat(p.pay_amount).toLocaleString()} ฿</span>
+                    </div>
+                </div>`;
+            });
+        }
+        
+        document.getElementById('modalPaymentsList').innerHTML = html;
+        const modal = document.getElementById('detailModal');
+        const content = modal.querySelector('.modal-content');
+        modal.style.display = 'flex';
+        
+        // Trigger reflow for transition
+        void modal.offsetWidth;
+        modal.style.opacity = '1';
+        content.style.transform = 'translateY(0)';
+    }
+
+    function closeDetailModal() {
+        const modal = document.getElementById('detailModal');
+        const content = modal.querySelector('.modal-content');
+        modal.style.opacity = '0';
+        content.style.transform = 'translateY(100%)';
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+    }
+    </script>
     <script>
     (function () {
         function buildFreshUrl() {
