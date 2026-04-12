@@ -3028,7 +3028,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 <div id="paymentProofContainer" style="margin: 1.5rem 0; text-align: center; display: none;">
                     <p style="color: #475569; margin-bottom: 0.75rem; font-weight: 500; font-size: 0.95rem;">หลักฐานการโอนเงิน:</p>
                     <a id="paymentProofLink" href="#" target="_blank" style="display: inline-block; padding: 4px; background: #fff; border: 1px solid #e2e8f0; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); transition: transform 0.2s;">
-                        <img id="paymentProofImg" src="" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 8px;">
+                        <img id="paymentProofImg" src="" style="max-width: 100%; max-height: 280px; object-fit: contain; border-radius: 8px; cursor: zoom-in;">
                     </a>
                 </div>
 
@@ -3431,6 +3431,114 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             .replaceAll("'", '&#039;');
     }
 
+    let _slipFullscreenViewer = null;
+    let _slipFullscreenViewerImg = null;
+    let _slipFullscreenMode = 'click';
+
+    function ensureSlipFullscreenViewer() {
+        if (_slipFullscreenViewer) return;
+
+        const overlay = document.createElement('div');
+        overlay.id = 'slipFullscreenViewer';
+        Object.assign(overlay.style, {
+            position: 'fixed',
+            inset: '0',
+            zIndex: '9999999',
+            display: 'none',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+            background: 'transparent',
+            cursor: 'zoom-out'
+        });
+
+        const img = document.createElement('img');
+        img.alt = 'Slip Fullscreen';
+        Object.assign(img.style, {
+            maxWidth: 'calc(100vw - 2rem)',
+            maxHeight: 'calc(100vh - 2rem)',
+            width: 'auto',
+            height: 'auto',
+            objectFit: 'contain',
+            borderRadius: '0',
+            boxShadow: 'none',
+            pointerEvents: 'none',
+            userSelect: 'none',
+            WebkitUserDrag: 'none'
+        });
+
+        overlay.appendChild(img);
+        overlay.addEventListener('click', closeSlipFullscreenViewer);
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape') {
+                closeSlipFullscreenViewer();
+            }
+        });
+
+        document.body.appendChild(overlay);
+        _slipFullscreenViewer = overlay;
+        _slipFullscreenViewerImg = img;
+    }
+
+    function openSlipFullscreenViewer(src, mode = 'click') {
+        if (!src) return;
+        ensureSlipFullscreenViewer();
+
+        _slipFullscreenMode = mode === 'hover' ? 'hover' : 'click';
+        _slipFullscreenViewerImg.src = src;
+        _slipFullscreenViewer.style.display = 'flex';
+        _slipFullscreenViewer.style.pointerEvents = _slipFullscreenMode === 'hover' ? 'none' : 'auto';
+    }
+
+    function closeSlipFullscreenViewer() {
+        if (!_slipFullscreenViewer) return;
+        _slipFullscreenViewer.style.display = 'none';
+        _slipFullscreenViewer.style.pointerEvents = 'auto';
+        _slipFullscreenMode = 'click';
+    }
+
+    function bindSlipPreviewInteractions(rootElement) {
+        const root = rootElement || document;
+        const canHoverPreview = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+
+        const imgs = root.querySelectorAll('.js-payment-slip-preview, #paymentProofImg');
+        imgs.forEach((img) => {
+            if (img.dataset.slipViewerBound === '1') return;
+            img.dataset.slipViewerBound = '1';
+            img.style.cursor = 'zoom-in';
+
+            img.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                openSlipFullscreenViewer(img.src, 'click');
+            });
+
+            if (canHoverPreview) {
+                img.addEventListener('mouseenter', () => {
+                    openSlipFullscreenViewer(img.src, 'hover');
+                });
+                img.addEventListener('mouseleave', () => {
+                    if (_slipFullscreenMode === 'hover') {
+                        closeSlipFullscreenViewer();
+                    }
+                });
+            }
+        });
+
+        const links = root.querySelectorAll('.js-payment-slip-link');
+        links.forEach((link) => {
+            if (link.dataset.slipViewerBound === '1') return;
+            link.dataset.slipViewerBound = '1';
+
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                const previewUrl = link.getAttribute('data-slip-url') || link.getAttribute('href') || '';
+                openSlipFullscreenViewer(previewUrl, 'click');
+            });
+        });
+    }
+
     function formatMonthDisplay(dateValue) {
         if (!dateValue) return '-';
         const date = new Date(dateValue);
@@ -3502,8 +3610,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 const slipThumb = proofFilename
                     ? (() => {
                         const url = '/dormitory_management/Public/Assets/Images/Payments/' + encodeURIComponent(proofFilename);
-                        return `<a href="${url}" target="_blank" title="ดูสลิป" style="flex-shrink:0;">
-                            <img src="${url}" alt="สลิป" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.15);cursor:pointer;transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'" onerror="this.parentElement.style.display='none'">
+                        return `<a href="${url}" target="_blank" title="ดูสลิป" class="js-payment-slip-link" data-slip-url="${url}" style="flex-shrink:0;">
+                            <img src="${url}" alt="สลิป" class="js-payment-slip-preview" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid rgba(255,255,255,0.15);cursor:pointer;transition:transform 0.15s;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'" onerror="this.parentElement.style.display='none'">
                         </a>`;
                     })()
                     : `<div style="width:44px;height:44px;border-radius:6px;border:1px dashed rgba(255,255,255,0.12);display:flex;align-items:center;justify-content:center;flex-shrink:0;" title="ไม่มีสลิป"><span style="font-size:1.1rem;opacity:0.3;">🖼</span></div>`;
@@ -3548,6 +3656,8 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 <!-- payments -->
                 ${paymentRows}
             </div>`;
+
+            bindSlipPreviewInteractions(container);
     }
 
     function safeShowSuccessToast(message) {
@@ -4403,6 +4513,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             document.getElementById('paymentProofImg').src = proofUrl;
             document.getElementById('paymentProofLink').href = proofUrl;
             proofContainer.style.display = 'block';
+            bindSlipPreviewInteractions(proofContainer);
         } else {
             proofContainer.style.display = 'none';
         }
@@ -5045,6 +5156,7 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
 
     document.addEventListener('DOMContentLoaded', function() {
         wizFilter(_wizCurrentGroup);
+        bindSlipPreviewInteractions(document);
         
         // Auto-refresh the wizard table every 30 seconds to reflect status changes in real-time
         var wizRefreshInterval = setInterval(function() {
