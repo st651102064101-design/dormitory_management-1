@@ -92,7 +92,16 @@ $expenseStatusMap = [
 // Calculate totals
 $totalPaid = 0;
 $totalUnpaid = 0;
+$billCount = 0;
+$latestExpenseByMonth = [];
+$expenseCount = count($expenses);
 foreach ($expenses as $expIndex => $exp) {
+    $monthTimestamp = strtotime((string)($exp['exp_month'] ?? ''));
+    $monthKey = $monthTimestamp !== false ? date('Y-m', $monthTimestamp) : substr((string)($exp['exp_month'] ?? ''), 0, 7);
+    if ($monthKey !== '' && !isset($latestExpenseByMonth[$monthKey])) {
+        $latestExpenseByMonth[$monthKey] = ['expense' => $exp, 'index' => $expIndex];
+    }
+
     $paidAmount = (float)($exp['paid_amount'] ?? 0);
     $pendingAmount = (float)($exp['pending_amount'] ?? 0);
     $depositPaidAmount = (float)($exp['deposit_paid_amount'] ?? 0);
@@ -129,6 +138,39 @@ foreach ($expenses as $expIndex => $exp) {
         $totalUnpaid += max(0, $remaining - $pendingAmount);
     }
 }
+
+foreach ($latestExpenseByMonth as $monthEntry) {
+    $exp = $monthEntry['expense'];
+    $expIndex = (int)$monthEntry['index'];
+
+    $paidAmount = (float)($exp['paid_amount'] ?? 0);
+    $pendingAmount = (float)($exp['pending_amount'] ?? 0);
+    $depositPaidAmount = (float)($exp['deposit_paid_amount'] ?? 0);
+    $depositPendingAmount = (float)($exp['deposit_pending_amount'] ?? 0);
+    $expTotal = (float)($exp['exp_total'] ?? 0);
+
+    $roomPrice = (float)($exp['room_price'] ?? 0);
+    $elecChg = (float)($exp['exp_elec_chg'] ?? 0);
+    $waterChg = (float)($exp['exp_water'] ?? 0);
+    $calculatedTotal = $roomPrice + $elecChg + $waterChg;
+    $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
+    $depositPaymentCount = (int)($exp['deposit_payment_count'] ?? 0);
+
+    $isDepositOnly = ($depositPaymentCount > 0)
+        || ($expIndex === $expenseCount - 1 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $roomPrice > 0 && $expTotal != $calculatedTotal);
+
+    if ($isDepositOnly) {
+        $paidAmount += $depositPaidAmount;
+        $pendingAmount += $depositPendingAmount;
+    }
+
+    $actualRemaining = max(0, $expTotal - $paidAmount - $pendingAmount);
+    if ($actualRemaining > 0) {
+        $billCount++;
+    }
+}
+
+$precomputedBillCount = $billCount;
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -608,6 +650,7 @@ foreach ($expenses as $expIndex => $exp) {
         $billStmt->execute([$contract['ctr_id'], $contract['ctr_id'], $contract['ctr_start'] ?? date('Y-m-d')]);
         $billCount = (int)($billStmt->fetchColumn() ?? 0);
     } catch (Exception $e) { error_log("Exception calculating bill count in " . __FILE__ . ": " . $e->getMessage()); }
+    $billCount = max(0, (int)($precomputedBillCount ?? $billCount));
     ?>
     
     <nav class="bottom-nav">
