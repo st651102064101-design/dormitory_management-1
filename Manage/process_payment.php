@@ -91,9 +91,9 @@ try {
     // รับค่าหมายเหตุ
     $pay_remark = trim($_POST['pay_remark'] ?? '');
 
-    // ป้องกันการบันทึกซ้ำ (หากมีรายการชำระสถานะรอตรวจสอบอยู่แล้ว จะไม่ให้ทำรายการใหม่เว้นแต่จะเป็นข้อมูลอื่น)
-    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ'");
-    $checkStmt->execute([$exp_id]);
+    // ป้องกันการบันทึกซ้ำ
+    $checkStmt = $pdo->prepare("SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' AND TRIM(COALESCE(pay_remark, '')) = ?");
+    $checkStmt->execute([$exp_id, $pay_remark]);
     if ($checkStmt->fetchColumn() > 0) {
         die(json_encode(['success' => false, 'error' => 'มีการแจ้งชำระเงินที่รอตรวจสอบอยู่แล้ว ไม่สามารถส่งซ้ำได้']));
     }

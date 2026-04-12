@@ -49,9 +49,9 @@ function recalculateExpenseStatus(PDO $pdo, int $expId): void
     $existingStatus = (string)($expense['exp_status'] ?? '0');
     $hasPayRemark = hasPayRemarkColumn($pdo);
 
-    if ($hasPayRemark) {
-        $approvedSql = "SELECT COALESCE(SUM(pay_amount), 0) FROM payment WHERE exp_id = ? AND pay_status = '1' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')";
-        $pendingSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' AND (pay_remark IS NULL OR pay_remark != 'มัดจำ')";
+    if (true) {
+        $approvedSql = "SELECT COALESCE(SUM(pay_amount), 0) FROM payment WHERE exp_id = ? AND pay_status = '1'";
+        $pendingSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0'";
     } else {
         $approvedSql = "SELECT COALESCE(SUM(pay_amount), 0) FROM payment WHERE exp_id = ? AND pay_status = '1'";
         $pendingSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0'";

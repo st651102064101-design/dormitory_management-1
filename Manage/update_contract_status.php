@@ -98,7 +98,6 @@ try {
                        FROM payment p
                        WHERE p.exp_id = e.exp_id
                          AND p.pay_status = '1'
-                         AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
                    ), 0) AS paid_amount
             FROM expense e
             WHERE e.ctr_id = ?

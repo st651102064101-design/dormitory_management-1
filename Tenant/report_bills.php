@@ -346,7 +346,7 @@ foreach ($expenses as $expIndex => $exp) {
         .btn-icon svg {
             width: 16px;
             height: 16px;
-            stroke: white;
+            stroke: currentColor;
             stroke-width: 2;
             fill: none;
         }
@@ -629,10 +629,35 @@ foreach ($expenses as $expIndex => $exp) {
             </a>
         </div>
     </nav>
+    <style>
+    .modal-content {
+        background: #1e293b;
+        color: #f8fafc;
+    }
+    .modal-header-border {
+        border-bottom: 1px solid rgba(255,255,255,0.1);
+    }
+    .modal-text-muted { color: #cbd5e1; }
+    .modal-border-bottom { border-bottom: 1px solid rgba(255,255,255,0.05); }
+    .modal-remark { background: rgba(255,255,255,0.1); }
+    .modal-empty { color: #94a3b8; }
+    
+    body.light-theme .modal-content {
+        background: #ffffff;
+        color: #1e293b;
+    }
+    body.light-theme .modal-header-border {
+        border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+    body.light-theme .modal-text-muted { color: #64748b; }
+    body.light-theme .modal-border-bottom { border-bottom: 1px solid rgba(0,0,0,0.05); }
+    body.light-theme .modal-remark { background: rgba(0,0,0,0.05); }
+    body.light-theme .modal-empty { color: #64748b; }
+    </style>
     <!-- Detail Modal -->
     <div id="detailModal" class="modal-overlay" style="display:none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.6); z-index: 1000; align-items: flex-end; justify-content: center; opacity: 0; transition: opacity 0.2s;" onclick="closeDetailModal()">
-        <div class="modal-content" onclick="event.stopPropagation()" style="background: #1e293b; width: 100%; max-width: 600px; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 1.5rem; max-height: 80vh; overflow-y: auto; color: #f8fafc; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 0.75rem;">
+        <div class="modal-content" onclick="event.stopPropagation()" style="width: 100%; max-width: 600px; border-top-left-radius: 16px; border-top-right-radius: 16px; padding: 1.5rem; max-height: 80vh; overflow-y: auto; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));">
+            <div class="modal-header-border" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.75rem;">
                 <h3 style="margin: 0; font-size: 1.1rem; font-weight: 600;">ประวัติการชำระเงิน</h3>
                 <button type="button" onclick="closeDetailModal()" style="background: transparent; border: none; color: #94a3b8; cursor: pointer; padding: 0.5rem;"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
@@ -649,7 +674,7 @@ foreach ($expenses as $expIndex => $exp) {
         
         let html = '';
         if (!payments || payments.length === 0) {
-            html = '<div style="text-align:center; padding: 1.5rem; color: #94a3b8;">ไม่มีประวัติการชำระเงิน</div>';
+            html = '<div class="modal-empty" style="text-align:center; padding: 1.5rem;">ไม่มีประวัติการชำระเงิน</div>';
         } else {
             payments.forEach(p => {
                 let statusText = '';
@@ -659,18 +684,23 @@ foreach ($expenses as $expIndex => $exp) {
                 else { statusText = 'ปฏิเสธ/ยกเลิก'; statusColor = '#ef4444'; }
                 
                 let remark = (p.pay_remark || '').trim();
-                let remarkDisplay = remark ? `<span style="font-size:0.75rem; background:rgba(255,255,255,0.1); padding:2px 6px; border-radius:4px; margin-left:8px;">${remark}</span>` : '';
+                let remarkDisplay = remark ? `<span class="modal-remark" style="font-size:0.75rem; padding:2px 6px; border-radius:4px; margin-left:8px;">${remark}</span>` : '';
                 
                 let dateObj = new Date(p.pay_date);
                 let formattedDate = !isNaN(dateObj) ? dateObj.toLocaleDateString('th-TH') : p.pay_date;
 
-                html += `<div style="border-bottom:1px solid rgba(255,255,255,0.05); padding: 12px 0;">
+                let proofBtn = p.pay_proof ? `<a href="../Public/Assets/Images/Payments/${encodeURIComponent(p.pay_proof)}" target="_blank" style="font-size:0.75rem; background:rgba(59,130,246,0.1); color:#3b82f6; text-decoration:none; padding:4px 8px; border-radius:6px; display:inline-flex; align-items:center; gap:4px; font-weight:500;"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>ดูหลักฐาน</a>` : '';
+
+                html += `<div class="modal-border-bottom" style="padding: 12px 0;">
                     <div style="display:flex; justify-content:space-between; margin-bottom: 6px; align-items: center;">
-                        <span style="font-size:0.85rem; color:#cbd5e1;">วันที่: ${formattedDate} ${remarkDisplay}</span>
+                        <span class="modal-text-muted" style="font-size:0.85rem;">วันที่: ${formattedDate} ${remarkDisplay}</span>
                         <span style="font-size:0.8rem; font-weight:600; color:${statusColor}; background:${statusColor}15; padding: 2px 8px; border-radius: 12px;">${statusText}</span>
                     </div>
-                    <div style="display:flex; justify-content:space-between; font-weight: 500;">
-                        <span>ยอดชำระ</span>
+                    <div style="display:flex; justify-content:space-between; align-items: center; font-weight: 500;">
+                        <div style="display:flex; align-items: center; gap: 0.75rem;">
+                            <span>ยอดชำระ</span>
+                            ${proofBtn}
+                        </div>
                         <span style="font-size:1.05rem;">${parseFloat(p.pay_amount).toLocaleString()} ฿</span>
                     </div>
                 </div>`;
