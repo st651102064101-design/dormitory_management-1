@@ -233,10 +233,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $pdo->beginTransaction();
 
             $checkStmt = $pdo->prepare("
-                SELECT e.*, c.ctr_deposit, r.room_price 
+                SELECT e.*, c.ctr_deposit 
                 FROM expense e 
                 JOIN contract c ON e.ctr_id = c.ctr_id 
-                JOIN room r ON c.room_id = r.room_id 
                 WHERE e.exp_id = ? AND e.ctr_id = ? 
                 FOR UPDATE
             ");
