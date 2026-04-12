@@ -71,7 +71,7 @@ if (!empty($token)) {
                    t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age, t.line_user_id, t.is_weather_alert_enabled,
                    r.room_id, r.room_number, r.room_image,
                    rt.type_name, rt.type_price,
-                   tw.current_step, tw.step_3_confirmed
+                   tw.current_step, tw.step_3_confirmed, tw.checkin_date, tw.water_meter_start, tw.elec_meter_start
             FROM contract c
             JOIN tenant t ON c.tnt_id = t.tnt_id
             JOIN room r ON c.room_id = r.room_id
@@ -96,7 +96,7 @@ if (!$contractData && !empty($_SESSION['tenant_logged_in'])) {
                        t.tnt_id, t.tnt_name, t.tnt_phone, t.tnt_address, t.tnt_education, t.tnt_faculty, t.tnt_year, t.tnt_vehicle, t.tnt_parent, t.tnt_parentsphone, t.tnt_age, t.line_user_id, t.is_weather_alert_enabled,
                        r.room_id, r.room_number, r.room_image,
                        rt.type_name, rt.type_price,
-                       tw.current_step, tw.step_3_confirmed
+                       tw.current_step, tw.step_3_confirmed, tw.checkin_date, tw.water_meter_start, tw.elec_meter_start
                 FROM contract c
                 JOIN tenant t ON c.tnt_id = t.tnt_id
                 JOIN room r ON c.room_id = r.room_id
@@ -301,7 +301,7 @@ try {
 
     if ($termData) {
         if ((int)$termData['is_step5_complete'] !== 1) {
-            $terminationReason = 'รอให้เจ้าหน้าที่ดำเนินการข้อมูลการเข้าพักของคุณให้เสร็จสิ้น (ขั้นตอนที่ 5)';
+            $terminationReason = 'รอเจ้าหน้าที่ตรวจสอบการเข้าพักและสร้างรอบบิลเดือนแรกให้เรียบร้อย จึงจะสามารถใช้งานเมนูอื่นได้';
         } elseif ((int)$termData['has_current_month_bill'] === 0) {
             $terminationReason = 'กรุณารอให้เจ้าหน้าที่จดมิเตอร์และออกบิลค่าใช้จ่ายของเดือนล่าสุดให้เรียบร้อยก่อนแจ้งยกเลิกสัญญา';
         } elseif ((int)$termData['unpaid_bills_count'] > 0) {
@@ -934,6 +934,26 @@ try {
                 <a class="sign-alert-btn" href="../Reports/print_contract.php?ctr_id=<?php echo (int)$contract['ctr_id']; ?>&from_tenant=1" target="_blank">
                     <svg viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
                     เซ็นสัญญาเลย
+                </a>
+            </div>
+        </div>
+        <?php endif; ?>
+
+        <!-- Checkin Banner (Only show if at least in step 4: checkin) -->
+        <?php if ($tenantSigned && ($contract['ctr_status'] ?? '0') !== '1' && (int)($contract['current_step'] ?? 0) === 4): ?>
+        <div class="sign-alert" style="background-color: rgba(59, 130, 246, 0.1); border-left: 4px solid #3b82f6;">
+            <div class="sign-alert-icon" style="color: #3b82f6; background-color: rgba(59, 130, 246, 0.2);">
+                <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                    <polyline points="9 12 11 14 15 10"/>
+                </svg>
+            </div>
+            <div class="sign-alert-body">
+                <h3 style="color: #1e3a8a;">🏠 สถานะ: รอตรวจสอบสภาพห้องและเช็คอิน</h3>
+                <p style="color: #334155;">คุณได้เซ็นสัญญาเรียบร้อยแล้ว ในขั้นตอนต่อไป กรุณาทำการเช็คอิน ยืนยันการเข้าพัก และบันทึกมิเตอร์น้ำไฟเริ่มต้น</p>
+                <a class="sign-alert-btn" style="background-color: #3b82f6; border-color: #2563eb;" href="checkin.php?token=<?php echo urlencode($token); ?>">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>
+                    กดเพื่อเช็คอินเข้าพัก
                 </a>
             </div>
         </div>

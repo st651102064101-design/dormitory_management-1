@@ -67,7 +67,7 @@ try {
 
     if ($termData) {
         if ((int)$termData['is_step5_complete'] !== 1) {
-            $terminationReason = 'รอให้เจ้าหน้าที่ดำเนินการข้อมูลการเข้าพักของคุณให้เสร็จสิ้น (ขั้นตอนที่ 5)';
+            $terminationReason = 'รอเจ้าหน้าที่ตรวจสอบการเข้าพักและสร้างรอบบิลเดือนแรกให้เรียบร้อย จึงจะสามารถใช้งานระบบนี้ได้';
         } elseif ((int)$termData['has_current_month_bill'] === 0) {
             $terminationReason = 'กรุณารอให้เจ้าหน้าที่จดมิเตอร์และออกบิลค่าใช้จ่ายของเดือนล่าสุดให้เรียบร้อยก่อนแจ้งยกเลิกสัญญา';
         } elseif ((int)$termData['unpaid_bills_count'] > 0) {
