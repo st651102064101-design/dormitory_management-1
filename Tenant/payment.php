@@ -232,7 +232,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Lock expense row + related payments to prevent duplicate submissions after refresh or rapid retries.
             $pdo->beginTransaction();
 
-            $checkStmt = $pdo->prepare("SELECT * FROM expense WHERE exp_id = ? AND ctr_id = ? FOR UPDATE");
+            $checkStmt = $pdo->prepare("
+                SELECT e.*, c.ctr_deposit, r.room_price 
+                FROM expense e 
+                JOIN contract c ON e.ctr_id = c.ctr_id 
+                JOIN room r ON c.room_id = r.room_id 
+                WHERE e.exp_id = ? AND e.ctr_id = ? 
+                FOR UPDATE
+            ");
             $checkStmt->execute([$exp_id, $contract['ctr_id']]);
             $expense = $checkStmt->fetch(PDO::FETCH_ASSOC);
             if (!$expense) {
@@ -259,11 +266,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
 
-            $sumRowsStmt = $pdo->prepare("SELECT pay_amount FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' FOR UPDATE");
+            $sumRowsStmt = $pdo->prepare("SELECT pay_amount, pay_remark FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') FOR UPDATE");
             $sumRowsStmt->execute([$exp_id]);
             $submittedAmount = 0;
+            $depositPaidAmount = 0;
             foreach ($sumRowsStmt->fetchAll(PDO::FETCH_ASSOC) as $payRow) {
-                $submittedAmount += (int)($payRow['pay_amount'] ?? 0);
+                if (trim((string)($payRow['pay_remark'] ?? '')) === 'มัดจำ') {
+                    $depositPaidAmount += (float)($payRow['pay_amount'] ?? 0);
+                } else {
+                    $submittedAmount += (float)($payRow['pay_amount'] ?? 0);
+                }
+            }
+
+            $ctrDeposit = (float)($expense['ctr_deposit'] ?? 2000);
+            $expTotalRaw = (float)($expense['exp_total'] ?? 0);
+            $roomPrice = (float)($expense['room_price'] ?? 0);
+            $elecChg = (float)($expense['exp_elec_chg'] ?? 0);
+            $waterChg = (float)($expense['exp_water'] ?? 0);
+            $otherFee = $expTotalRaw - ($roomPrice + $elecChg + $waterChg);
+            
+            $isDepositOnly = ($expTotalRaw > 0 && $expTotalRaw == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $otherFee > 0);
+            
+            $expTotal = $expTotalRaw;
+            if ($isDepositOnly) {
+                // If it is deposit only, count deposit payment as normal payment
+                $submittedAmount += $depositPaidAmount;
+            } else {
+                // Deduct the deposit paid from the bill total
+                if ($depositPaidAmount > 0) {
+                    $expTotal -= $depositPaidAmount;
+                }
             }
 
             // ปกป้องการส่งซ้ำ: ตรวจสอบว่ามีการแจ้งชำระเงินที่ยังรอตรวจสอบอยู่สำหรับบิลนี้หรือไม่ (ไม่นับมัดจำ)
@@ -273,7 +305,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('มีการแจ้งชำระเงินที่รอการตรวจสอบอยู่แล้ว กรุณารอผู้ดูแลตรวจสอบก่อนส่งใหม่');
             }
 
-            $expTotal = (int)($expense['exp_total'] ?? 0);
             $remainingAmount = max(0, $expTotal - $submittedAmount);
             if ($remainingAmount <= 0) {
                 throw new Exception('บิลนี้ถูกส่งชำระครบแล้ว ไม่สามารถส่งซ้ำได้');
@@ -1238,6 +1269,12 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                 </div>
                 
                 <?php if (count($unpaidExpenses) == 1): ?>
+                <?php 
+                    $singleExp = $unpaidExpenses[0];
+                    $singlePaid = (float)($singleExp['paid_amount'] ?? 0);
+                    $singleTotal = (float)$singleExp['exp_total'];
+                    $singleRemain = $singleTotal - $singlePaid;
+                ?>
                 <div class="form-group" id="single-expense-group">
                     <label>บิลที่ต้องการชำระ</label>
                     <div id="single-expense-info" 
@@ -1247,11 +1284,6 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
                          data-remaining="<?php echo $singleRemain; ?>"
                          style="background: #f8fafc; padding: 1rem; border-radius: 8px; border: 1px solid #e2e8f0; color: #000; font-weight: 500;">
                         <?php 
-                            $singleExp = $unpaidExpenses[0];
-                            $singlePaid = (float)($singleExp['paid_amount'] ?? 0);
-                            $singleTotal = (float)$singleExp['exp_total'];
-                            $singleRemain = $singleTotal - $singlePaid;
-                            
                             echo thaiMonthYear($singleExp['exp_month']) . " - ยอดรวม " . number_format($singleTotal) . " บาท";
                             if ($singlePaid > 0) {
                                 echo " (ส่งแล้ว " . number_format($singlePaid) . " / คงเหลือ " . number_format($singleRemain) . ")";
@@ -1505,13 +1537,8 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             if (option) {
                 if (remaining <= 0) {
                     option.remove();
-                    if (select.options.length <= 1) { // Only "-- เลือกบิล --" left
-                        const formGroup = select.closest('.form-group');
-                        if (formGroup) formGroup.style.display = 'none';
-                        const payAmt = document.getElementById('pay_amount');
-                        if (payAmt) payAmt.value = '';
-                        const paySummary = document.getElementById('payment-summary');
-                        if (paySummary) paySummary.style.display = 'none';
+                    if (select.options.length === 0 || (select.options.length === 1 && select.options[0].value === '')) {
+                        setTimeout(() => window.location.reload(), 1500);
                     } else {
                         select.selectedIndex = 0; // reset
                     }
@@ -1534,10 +1561,7 @@ $paymentProofBaseUrl = '/dormitory_management/Public/Assets/Images/Payments/';
             if (remaining <= 0) {
                 const group = document.getElementById('single-expense-group');
                 if (group) group.style.display = 'none';
-                const payAmt = document.getElementById('pay_amount');
-                if (payAmt) payAmt.value = '';
-                const paySummary = document.getElementById('payment-summary');
-                if (paySummary) paySummary.style.display = 'none';
+                setTimeout(() => window.location.reload(), 1500);
             } else {
                 const total = parseFloat(singleInfo.dataset.total) || 0;
                 const prevPaid = parseFloat(singleInfo.dataset.paid) || 0;
