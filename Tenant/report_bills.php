@@ -46,10 +46,7 @@ try {
         WHERE e.ctr_id = ?
           AND DATE_FORMAT(e.exp_month, '%Y-%m') >= ?
           AND DATE_FORMAT(e.exp_month, '%Y-%m') <= ?
-          AND (
-                  -- บิลเดือนแรก = เดือนที่มี expense น้อยสุดของสัญญานี้ (ไม่ต้องมี utility record)
-                  e.exp_month = (SELECT MIN(e2.exp_month) FROM expense e2 WHERE e2.ctr_id = e.ctr_id)
-                  OR EXISTS (
+          AND EXISTS (
                       SELECT 1
                       FROM utility u
                       WHERE u.ctr_id = e.ctr_id
@@ -58,7 +55,6 @@ try {
                           AND u.utl_water_end IS NOT NULL
                           AND u.utl_elec_end IS NOT NULL
                   )
-          )
         ORDER BY e.exp_month DESC, e.exp_id DESC
     ");
     $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
@@ -579,9 +575,7 @@ foreach ($expenses as $expIndex => $exp) {
             WHERE e.ctr_id = ?
             AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m')
             AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
-            AND (
-                e.exp_month = (SELECT MIN(e2.exp_month) FROM expense e2 WHERE e2.ctr_id = e.ctr_id)
-                OR EXISTS (
+            AND EXISTS (
                     SELECT 1
                     FROM utility u
                     WHERE u.ctr_id = e.ctr_id
@@ -590,7 +584,6 @@ foreach ($expenses as $expIndex => $exp) {
                         AND u.utl_water_end IS NOT NULL
                         AND u.utl_elec_end IS NOT NULL
                 )
-            )
             AND (
                 GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE((
                     SELECT SUM(p.pay_amount) FROM payment p

@@ -290,9 +290,7 @@ $hasRoomImage = $roomImageFilename !== '' && is_file($roomImageFilePath);
             WHERE e.ctr_id = ?
             AND DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(?, '%Y-%m')
             AND DATE_FORMAT(e.exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
-            AND (
-                e.exp_month = (SELECT MIN(e2.exp_month) FROM expense e2 WHERE e2.ctr_id = e.ctr_id)
-                OR EXISTS (
+            AND EXISTS (
                     SELECT 1
                     FROM utility u
                     WHERE u.ctr_id = e.ctr_id
@@ -301,7 +299,6 @@ $hasRoomImage = $roomImageFilename !== '' && is_file($roomImageFilePath);
                         AND u.utl_water_end IS NOT NULL
                         AND u.utl_elec_end IS NOT NULL
                 )
-            )
             AND COALESCE((
                 SELECT SUM(p.pay_amount) FROM payment p
                 WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
