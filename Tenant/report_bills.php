@@ -445,12 +445,11 @@ foreach ($expenses as $exp) {
             <div class="bill-details">
                 <?php 
                     // ตรวจสอบว่าบิลนี้เจตนาให้เป็นบิลมัดจำเพียวๆ หรือไม่
-                    // เช่น หาก exp_total ตรงกับค่ามัดจำ (2,000) แล้วมันไม่ได้มาจากค่าห้องรวมกับน้ำไฟ
                     if ($isDepositOnly): 
                 ?>
                 <div class="bill-row">
                     <span class="bill-label" style="font-weight: 600; color: #f59e0b;">เงินมัดจำสถานที่</span>
-                    <span class="bill-value" style="font-weight: 600; color: #f59e0b;"><?php echo number_format($expTotal); ?> บาท</span>
+                    <span class="bill-value" style="font-weight: 600; color: #f59e0b;"><?php echo number_format($ctrDeposit); ?> บาท</span>
                 </div>
                 <?php else: ?>
                 <div class="bill-row">
@@ -474,7 +473,14 @@ foreach ($expenses as $exp) {
                 <?php endif; ?>
                 <div class="bill-total">
                     <span class="bill-label">ยอดรวม</span>
-                    <span class="bill-value"><?php echo number_format($expTotal); ?> บาท</span>
+                    <span class="bill-value"><?php 
+                        if ($isDepositOnly) {
+                            $actualRemaining = max(0, $expTotal - $paidAmount - $pendingAmount);
+                            echo number_format($actualRemaining > 0 ? $actualRemaining : $pendingAmount); 
+                        } else {
+                            echo number_format($expTotal); 
+                        }
+                    ?> บาท</span>
                 </div>
                 <?php if ($paidAmount > 0 && !$isDepositOnly): ?>
                 <div class="bill-row" style="color: #10b981; font-size: 0.85rem; margin-top: 0.5rem;">
