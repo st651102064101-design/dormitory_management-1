@@ -442,6 +442,8 @@ foreach ($expenses as $expIndex => $exp) {
             if ($statusKey === '5' && $isDepositOnly) {
                 $displayLabel = 'รอยืนยันการจอง';
             }
+
+            $showDepositOnlyCard = $isDepositOnly || $depositPaidAmount > 0 || $depositPendingAmount > 0;
         ?>
         <div class="bill-card">
             <div class="bill-header">
@@ -451,6 +453,12 @@ foreach ($expenses as $expIndex => $exp) {
                 </span>
             </div>
             <div class="bill-details">
+                <?php if ($showDepositOnlyCard): ?>
+                <div class="bill-row">
+                    <span class="bill-label" style="font-weight: 600; color: #f59e0b;">เงินมัดจำสถานที่</span>
+                    <span class="bill-value" style="font-weight: 600; color: #f59e0b;"><?php echo number_format($ctrDeposit); ?> บาท</span>
+                </div>
+                <?php else: ?>
                 <div class="bill-row">
                     <span class="bill-label">ค่าห้อง</span>
                     <span class="bill-value"><?php echo number_format($roomPrice); ?> บาท</span>
@@ -471,18 +479,13 @@ foreach ($expenses as $expIndex => $exp) {
                     <span class="bill-value" style="color: #f59e0b;"><?php echo number_format($otherFee); ?> บาท</span>
                 </div>
                 <?php endif; ?>
-                <?php if ($isDepositOnly || $depositPaidAmount > 0 || $depositPendingAmount > 0): ?>
-                <div class="bill-row">
-                    <span class="bill-label" style="font-weight: 600; color: #f59e0b;">เงินมัดจำสถานที่</span>
-                    <span class="bill-value" style="font-weight: 600; color: #f59e0b;"><?php echo number_format($ctrDeposit); ?> บาท</span>
-                </div>
                 <?php endif; ?>
                 
                 <div class="bill-total">
-                    <span class="bill-label">ยอดรวม</span>
-                    <span class="bill-value"><?php echo number_format($expTotal); ?> บาท</span>
+                    <span class="bill-label"><?php echo $showDepositOnlyCard ? 'ยอดมัดจำ' : 'ยอดรวม'; ?></span>
+                    <span class="bill-value"><?php echo number_format($showDepositOnlyCard ? $ctrDeposit : $expTotal); ?> บาท</span>
                 </div>
-                <?php if (($paidAmount - $depositPaidAmount) > 0): ?>
+                <?php if (!$showDepositOnlyCard && ($paidAmount - $depositPaidAmount) > 0): ?>
                 <div class="bill-row" style="color: #10b981; font-size: 0.85rem; margin-top: 0.5rem;">
                     <span class="bill-label" style="color: #10b981;">ชำระแล้ว (ค่าห้อง/บิลปกติ)</span>
                     <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount - $depositPaidAmount); ?> บาท</span>
@@ -494,7 +497,7 @@ foreach ($expenses as $expIndex => $exp) {
                     <span class="bill-value" style="color: #6366f1;"><?php echo number_format($depositPaidAmount); ?> บาท</span>
                 </div>
                 <?php endif; ?>
-                <?php if ($pendingAmount > 0): ?>
+                <?php if (!$showDepositOnlyCard && $pendingAmount > 0): ?>
                 <div class="bill-row" style="color: #8b5cf6; font-size: 0.85rem; margin-top: 0.25rem;">
                     <span class="bill-label" style="color: #8b5cf6;">รอตรวจสอบ</span>
                     <span class="bill-value" style="color: #8b5cf6;"><?php echo number_format($pendingAmount); ?> บาท</span>
@@ -502,7 +505,7 @@ foreach ($expenses as $expIndex => $exp) {
                 <?php endif; ?>
                 <?php 
                     $actualRemaining = max(0, $remaining - $pendingAmount);
-                    if ($actualRemaining > 0): 
+                    if (!$showDepositOnlyCard && $actualRemaining > 0): 
                 ?>
                 <div class="bill-row" style="color: #ef4444; font-size: 0.85rem;">
                     <span class="bill-label" style="color: #ef4444;">ค้างชำระ</span>
