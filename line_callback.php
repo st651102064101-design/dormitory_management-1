@@ -161,8 +161,16 @@ try {
             header('Location: Public/booking_status.php?ref=' . urlencode((string)$lastBookingId) . '&phone=' . urlencode((string)$lastPhoneNumber) . '&auto=1');
             exit;
         } else {
-            // ถ้าย้อนกลับจาก Tenant/index.php
-            header('Location: Tenant/index.php');
+            // เช็คว่าการจองสถานะ 5 หรือไม่
+            $stmtRedir = $pdo->prepare("SELECT b.bkg_status, c.access_token FROM booking b LEFT JOIN contract c ON b.tnt_id = c.tnt_id AND c.ctr_status != '1' WHERE b.tnt_id = ? ORDER BY b.bkg_id DESC LIMIT 1");
+            $stmtRedir->execute([$targetTenantId]);
+            $redirData = $stmtRedir->fetch(PDO::FETCH_ASSOC);
+
+            if ($redirData && ((string)$redirData['bkg_status'] === '5') && !empty($redirData['access_token'])) {
+                header('Location: Tenant/index.php?token=' . urlencode($redirData['access_token']));
+            } else {
+                header('Location: Public/booking_status.php');
+            }
             exit;
         }
     } 
@@ -178,7 +186,17 @@ try {
         $_SESSION['tenant_id'] = $tenantData['tnt_id'];
         $_SESSION['tenant_name'] = $tenantData['tnt_name'];
         $_SESSION['tenant_phone'] = $tenantData['tnt_phone'];
-        header('Location: Tenant/index.php');
+        
+        // เช็คว่าการจองสถานะ 5 หรือไม่
+        $stmtRedir = $pdo->prepare("SELECT b.bkg_status, c.access_token FROM booking b LEFT JOIN contract c ON b.tnt_id = c.tnt_id AND c.ctr_status != '1' WHERE b.tnt_id = ? ORDER BY b.bkg_id DESC LIMIT 1");
+        $stmtRedir->execute([$tenantData['tnt_id']]);
+        $redirData = $stmtRedir->fetch(PDO::FETCH_ASSOC);
+
+        if ($redirData && ((string)$redirData['bkg_status'] === '5') && !empty($redirData['access_token'])) {
+            header('Location: Tenant/index.php?token=' . urlencode($redirData['access_token']));
+        } else {
+            header('Location: Public/booking_status.php');
+        }
         exit;
     } else {
         // หาไม่เจอ ให้เด้งไปหน้าลงทะเบียนผูกบัญชี/สร้างบัญชีใหม่
