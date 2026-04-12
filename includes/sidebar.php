@@ -265,7 +265,6 @@ try {
                         FROM payment p
                         WHERE p.exp_id = e_first.exp_id
                           AND p.pay_status = '1'
-                          AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
                     ), 0) >= e_first.exp_total - 0.00001
         )
     ";
@@ -295,7 +294,6 @@ try {
                     FROM payment p
                     WHERE p.exp_id = e_latest.exp_id
                       AND p.pay_status = '1'
-                      AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
                 ), 0) >= e_latest.exp_total - 0.00001
         )
     ";

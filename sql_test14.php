@@ -17,8 +17,7 @@ $sql = "
                 )
                 AND e_first.exp_total > 0
                 AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p 
-                              WHERE p.exp_id = e_first.exp_id AND p.pay_status = '1' 
-                                AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) >= e_first.exp_total - 0.00001
+                              WHERE p.exp_id = e_first.exp_id AND p.pay_status = '1'), 0) >= e_first.exp_total - 0.00001
         )) as first_bill_paid,
         (EXISTS (
             SELECT 1 FROM utility u_meter
@@ -31,8 +30,7 @@ $sql = "
                 AND e_latest.exp_month = (SELECT MAX(e_max.exp_month) FROM expense e_max WHERE e_max.ctr_id = COALESCE(c.ctr_id, tw.ctr_id))
                 AND e_latest.exp_total > 0
                 AND COALESCE((SELECT SUM(p.pay_amount) FROM payment p 
-                              WHERE p.exp_id = e_latest.exp_id AND p.pay_status = '1'
-                                AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) >= e_latest.exp_total - 0.00001
+                              WHERE p.exp_id = e_latest.exp_id AND p.pay_status = '1'), 0) >= e_latest.exp_total - 0.00001
         )) as latest_bill_paid
     FROM booking b
     LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id

@@ -1,5 +1,5 @@
 <?php
-error_reporting(E_ALL); ini_set('display_errors', 1);
-require_once 'ConnectDB.php';
+require 'ConnectDB.php';
 $pdo = connectDB();
-print_r($pdo->query("SELECT (SELECT COUNT(*) FROM contract WHERE ctr_status = '2') AS term_req, (SELECT COUNT(*) FROM deposit_refund WHERE refund_status = '0') as ref_pend")->fetch(PDO::FETCH_ASSOC));
+$stmt = $pdo->query("SELECT b.bkg_id, b.tnt_id, t.tnt_phone, b.bkg_status, tw.completed FROM booking b JOIN tenant t ON b.tnt_id = t.tnt_id LEFT JOIN tenant_workflow tw ON b.bkg_id = tw.bkg_id WHERE b.bkg_id IN (775954892, 775697436)");
+print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
