@@ -60,6 +60,22 @@ try {
         $maxFileSize = 5 * 1024 * 1024; // 5MB
         $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
         $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+
+        $uploadError = (int)($file['error'] ?? UPLOAD_ERR_OK);
+        if ($uploadError !== UPLOAD_ERR_OK) {
+            $uploadErrorMap = [
+                UPLOAD_ERR_INI_SIZE => 'ไฟล์รูปภาพใหญ่เกินค่าที่ระบบรองรับ',
+                UPLOAD_ERR_FORM_SIZE => 'ไฟล์รูปภาพใหญ่เกินค่าที่ฟอร์มกำหนด',
+                UPLOAD_ERR_PARTIAL => 'ไฟล์รูปภาพถูกอัปโหลดไม่สมบูรณ์',
+                UPLOAD_ERR_NO_TMP_DIR => 'ไม่พบโฟลเดอร์ชั่วคราวของระบบ',
+                UPLOAD_ERR_CANT_WRITE => 'ระบบไม่สามารถเขียนไฟล์ชั่วคราวได้',
+                UPLOAD_ERR_EXTENSION => 'อัปโหลดรูปภาพถูกยกเลิกโดยส่วนเสริมของ PHP',
+            ];
+            $_SESSION['error'] = $uploadErrorMap[$uploadError] ?? ('ไม่สามารถอัปโหลดรูปภาพได้ (code: ' . $uploadError . ')');
+            error_log("DEBUG repair: Upload error code=$uploadError");
+            header('Location: ../Reports/manage_repairs.php');
+            exit;
+        }
         
         // ตรวจสอบขนาดไฟล์
         if ($file['size'] > $maxFileSize) {
@@ -99,6 +115,25 @@ try {
             header('Location: ../Reports/manage_repairs.php');
             exit;
         }
+
+        if (!is_writable($uploadsDir)) {
+            @chmod($uploadsDir, 0777);
+            clearstatcache(true, $uploadsDir);
+        }
+
+        if (!is_writable($uploadsDir)) {
+            $_SESSION['error'] = 'โฟลเดอร์เก็บรูปภาพไม่มีสิทธิ์เขียน (Public/Assets/Images/Repairs)';
+            error_log("DEBUG repair: Upload dir not writable: $uploadsDir");
+            header('Location: ../Reports/manage_repairs.php');
+            exit;
+        }
+
+        if (!is_uploaded_file((string)$file['tmp_name'])) {
+            $_SESSION['error'] = 'ไม่พบไฟล์อัปโหลดชั่วคราว';
+            error_log("DEBUG repair: tmp file is not an uploaded file");
+            header('Location: ../Reports/manage_repairs.php');
+            exit;
+        }
         
         $filename = 'repair_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
         $filepath = $uploadsDir . '/' . $filename;
@@ -107,7 +142,9 @@ try {
         // อัปโหลดไฟล์
         if (!move_uploaded_file($file['tmp_name'], $filepath)) {
             $_SESSION['error'] = 'ไม่สามารถอัปโหลดรูปภาพได้';
-            error_log("DEBUG repair: move_uploaded_file FAILED");
+            $lastErr = error_get_last();
+            $detail = is_array($lastErr) ? ($lastErr['message'] ?? 'unknown error') : 'unknown error';
+            error_log("DEBUG repair: move_uploaded_file FAILED ($detail)");
             header('Location: ../Reports/manage_repairs.php');
             exit;
         }

@@ -37,6 +37,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $maxFileSize = 5 * 1024 * 1024; // 5MB
                 $allowedMimes = ['image/jpeg', 'image/png', 'image/webp'];
                 $allowedExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+
+                $uploadError = (int)($file['error'] ?? UPLOAD_ERR_OK);
+                if ($uploadError !== UPLOAD_ERR_OK) {
+                    $uploadErrorMap = [
+                        UPLOAD_ERR_INI_SIZE => 'ไฟล์รูปภาพใหญ่เกินค่าที่ระบบรองรับ',
+                        UPLOAD_ERR_FORM_SIZE => 'ไฟล์รูปภาพใหญ่เกินค่าที่ฟอร์มกำหนด',
+                        UPLOAD_ERR_PARTIAL => 'ไฟล์รูปภาพถูกอัปโหลดไม่สมบูรณ์',
+                        UPLOAD_ERR_NO_TMP_DIR => 'ไม่พบโฟลเดอร์ชั่วคราวของระบบ',
+                        UPLOAD_ERR_CANT_WRITE => 'ระบบไม่สามารถเขียนไฟล์ชั่วคราวได้',
+                        UPLOAD_ERR_EXTENSION => 'อัปโหลดรูปภาพถูกยกเลิกโดยส่วนเสริมของ PHP',
+                    ];
+                    throw new Exception($uploadErrorMap[$uploadError] ?? 'ไม่สามารถอัปโหลดรูปภาพได้ (code: ' . $uploadError . ')');
+                }
                 
                 if ($file['size'] > $maxFileSize) {
                     throw new Exception('ไฟล์รูปภาพใหญ่เกินไป (ไม่เกิน 5MB)');
@@ -59,12 +72,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!is_dir($uploadsDir) && !mkdir($uploadsDir, 0755, true) && !is_dir($uploadsDir)) {
                     throw new Exception('ไม่สามารถสร้างโฟลเดอร์เก็บรูปภาพได้');
                 }
+
+                if (!is_writable($uploadsDir)) {
+                    @chmod($uploadsDir, 0777);
+                    clearstatcache(true, $uploadsDir);
+                }
+
+                if (!is_writable($uploadsDir)) {
+                    throw new Exception('โฟลเดอร์เก็บรูปภาพไม่มีสิทธิ์เขียน (Public/Assets/Images/Repairs)');
+                }
+
+                if (!is_uploaded_file((string)$file['tmp_name'])) {
+                    throw new Exception('ไม่พบไฟล์อัปโหลดชั่วคราว');
+                }
                 
                 $filename = 'repair_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
                 $targetPath = $uploadsDir . '/' . $filename;
                 
                 if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
-                    throw new Exception('ไม่สามารถอัปโหลดรูปภาพได้');
+                    $lastErr = error_get_last();
+                    $detail = $lastErr['message'] ?? 'unknown error';
+                    throw new Exception('ไม่สามารถอัปโหลดรูปภาพได้ (' . $detail . ')');
                 }
                 $repair_image = $filename;
             }
