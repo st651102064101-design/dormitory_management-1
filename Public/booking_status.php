@@ -944,7 +944,7 @@ if ($currentStatus === '1') {
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <a href="../index.php" class="back-btn">
+            <a href="/dormitory_management/Public/booking_status.php" class="back-btn">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <path d="M19 12H5M12 19l-7-7 7-7"/>
                 </svg>
