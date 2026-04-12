@@ -395,6 +395,20 @@ $statusLabels = [
 $currentStatus = $bookingInfo['bkg_status'] ?? '1';
 $expStatus = $bookingInfo['exp_status'] ?? '0';
 $currentStepForStatus = intval($bookingInfo['current_step'] ?? 1);
+$hasFirstBillingCycle = isset($bookingInfo['exp_status']) && $bookingInfo['exp_status'] !== null && $bookingInfo['exp_status'] !== '';
+
+// Fallback: in some joins exp_status may be empty even though first bill already exists.
+if (!$hasFirstBillingCycle && !empty($bookingInfo['ctr_id'])) {
+    try {
+        $stmtHasFirstBilling = $pdo->prepare("SELECT 1 FROM expense WHERE ctr_id = ? LIMIT 1");
+        $stmtHasFirstBilling->execute([$bookingInfo['ctr_id']]);
+        $hasFirstBillingCycle = (bool)$stmtHasFirstBilling->fetchColumn();
+    } catch (PDOException $e) {
+        error_log('Booking status first billing detection error: ' . $e->getMessage());
+    }
+}
+
+$step5Started = $hasFirstBillingCycle || $currentStepForStatus >= 5 || intval($bookingInfo['workflow_completed'] ?? 0) === 1;
 $statusDetail = '';
 
 if ($currentStatus === '1') {
@@ -1071,13 +1085,22 @@ if ($currentStatus === '1') {
             if ($workflowCompleted === 1 && $currentStep > 5) {
                 $currentStep = 5;
             }
+            $effectiveStep = $currentStep;
+            if ($step5Started && $effectiveStep < 5) {
+                $effectiveStep = 5;
+            }
             ?>
             <div class="progress-steps">
                 <?php foreach ($steps as $idx => $step): 
                     $stepNum = $idx + 1;
-                    // Step เป็น completed เมื่อ: stepNum น้อยกว่า currentStep หรือ workflow completed และ stepNum <= currentStep
-                    $isCompleted = $stepNum < $currentStep || ($workflowCompleted === 1 && $stepNum <= $currentStep);
-                    $isActive = $stepNum === $currentStep && $workflowCompleted !== 1;
+                    // Step 5 should be completed once the first monthly bill is created, even if still waiting payment.
+                    if ($stepNum === 5 && $step5Started) {
+                        $isCompleted = true;
+                        $isActive = false;
+                    } else {
+                        $isCompleted = $stepNum < $effectiveStep || ($workflowCompleted === 1 && $stepNum <= $effectiveStep);
+                        $isActive = !$isCompleted && $stepNum === $effectiveStep && $workflowCompleted !== 1;
+                    }
                 ?>
                 <div class="step <?php echo $isCompleted ? 'completed' : ($isActive ? 'current' : ''); ?>">
                     <div class="step-dot">
@@ -1282,8 +1305,7 @@ if ($currentStatus === '1') {
         <?php endif; ?>
         
         <!-- Payment Link (แสดงเมื่อเริ่มบิลเดือนแรกแล้วเท่านั้น) -->
-        <?php $hasFirstBillingCycle = isset($bookingInfo['exp_status']) && $bookingInfo['exp_status'] !== null && $bookingInfo['exp_status'] !== ''; ?>
-        <?php if (!empty($bookingInfo['access_token']) && $currentStep >= 5 && $hasFirstBillingCycle): ?>
+        <?php if (!empty($bookingInfo['access_token']) && $step5Started && $hasFirstBillingCycle): ?>
         <div class="card cta-card payment-cta">
             <div class="payment-cta-wrap">
                 <div class="payment-cta-icon">
