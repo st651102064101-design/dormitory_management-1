@@ -12,10 +12,20 @@ $pdo = $auth['pdo'];
 $token = $auth['token'];
 $contract = $auth['contract'];
 $settings = getSystemSettings($pdo);
+$repairPageUrl = 'repair.php?token=' . urlencode((string)$token);
 
 $success = '';
 $error = '';
 $newRepairData = null;
+
+if (!empty($_SESSION['tenant_repair_flash_success'])) {
+    $success = (string)$_SESSION['tenant_repair_flash_success'];
+    unset($_SESSION['tenant_repair_flash_success']);
+}
+if (!empty($_SESSION['tenant_repair_flash_error'])) {
+    $error = (string)$_SESSION['tenant_repair_flash_error'];
+    unset($_SESSION['tenant_repair_flash_error']);
+}
 
 $repairStatusMap = [
     '0' => ['label' => 'รอซ่อม', 'color' => '#f59e0b', 'bg' => 'rgba(245, 158, 11, 0.2)'],
@@ -73,7 +83,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
             exit;
         }
 
-        $success = 'ยกเลิกรายการแจ้งซ่อมเรียบร้อยแล้ว';
+        $_SESSION['tenant_repair_flash_success'] = 'ยกเลิกรายการแจ้งซ่อมเรียบร้อยแล้ว';
+        header('Location: ' . $repairPageUrl);
+        exit;
     } catch (Exception $e) {
         if ($isAjaxRequest) {
             header('Content-Type: application/json; charset=UTF-8');
@@ -84,7 +96,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') ==
             exit;
         }
 
-        $error = $e->getMessage();
+        $_SESSION['tenant_repair_flash_error'] = $e->getMessage();
+        header('Location: ' . $repairPageUrl);
+        exit;
     }
 }
 
@@ -101,6 +115,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
             if ($aiResult['label'] === 'spam') {
                 $error = '⚠️ ' . ($aiResult['message'] ?: 'รายละเอียดไม่สมเหตุสมผล กรุณาอธิบายปัญหาให้ชัดเจน');
             } else {
+            // ป้องกันการส่งซ้ำในช่วงเวลาสั้น ๆ (เช่น รีเฟรช/กดย้ำ)
+            $duplicateStmt = $pdo->prepare(" 
+                SELECT repair_id
+                FROM repair
+                WHERE ctr_id = ?
+                  AND repair_desc = ?
+                  AND repair_status = '0'
+                  AND repair_date >= DATE_SUB(NOW(), INTERVAL 60 SECOND)
+                ORDER BY repair_id DESC
+                LIMIT 1
+            ");
+            $duplicateStmt->execute([(int)$contract['ctr_id'], $repair_desc]);
+            if ($duplicateStmt->fetchColumn()) {
+                throw new Exception('ระบบตรวจพบการส่งแจ้งซ่อมซ้ำในช่วงเวลาสั้น ๆ กรุณารอสักครู่');
+            }
+
             $repair_image = null;
             
             // Handle image upload
@@ -237,6 +267,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
         ], JSON_UNESCAPED_UNICODE);
         exit;
     }
+
+    // กัน browser refresh แล้วยิง POST ซ้ำด้วย Post/Redirect/Get
+    if ($error !== '') {
+        $_SESSION['tenant_repair_flash_error'] = $error;
+    } elseif ($success !== '') {
+        $_SESSION['tenant_repair_flash_success'] = $success;
+    }
+    header('Location: ' . $repairPageUrl);
+    exit;
 }
 
 // Get repair history
