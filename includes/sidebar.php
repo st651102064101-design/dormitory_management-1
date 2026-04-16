@@ -2639,20 +2639,17 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     text-align: center !important;
   }
   
-  /* Desktop: Collapsed sidebar shows as narrow rail (for screens > 1024px) */
+  /* Desktop: Collapsed sidebar hidden entirely (for screens > 1024px) */
   aside.app-sidebar.collapsed,
   aside.sidebar-collapsed {
-    width: 80px !important;
-    min-width: 80px !important;
-    max-width: 80px !important;
-    display: flex !important;
-    flex-direction: column !important;
-    visibility: visible !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    flex-shrink: 0 !important;
+    display: none !important;
+    visibility: hidden !important;
+    opacity: 0 !important;
     transform: none !important;
-    position: relative !important;
-    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                min-width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
-                max-width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   
   /* Mobile: Override collapsed to full sidebar when open */
@@ -4646,12 +4643,22 @@ async function handleGoogleUnlink(e) {
       }
     });
     
-    // Close on outside click (mobile)
+    // ซ่อนตามเงื่อนไข (คลิกนอก Sidebar รูปแบบ Desktop/Mobile หรือคลิกลิงก์เมนู)
     document.addEventListener('click', function(e) {
+      const isNavLink = e.target.closest('.app-nav a') !== null;
+      
       if (window.innerWidth <= 1024 && sidebar.classList.contains('mobile-open')) {
-        if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        if ((!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) || isNavLink) {
           sidebar.classList.remove('mobile-open');
           document.body.classList.remove('sidebar-open');
+        }
+      } else if (window.innerWidth > 1024 && !sidebar.classList.contains('collapsed')) {
+        // Desktop: ปิดเมื่อคลิกนอกบริเวณ Sidebar (ยกเว้นปุ่ม Toggle)
+        if ((!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) || isNavLink) {
+          sidebar.classList.add('collapsed');
+          try {
+            localStorage.setItem('sidebarCollapsed', 'true');
+          } catch(err) {}
         }
       }
     });
