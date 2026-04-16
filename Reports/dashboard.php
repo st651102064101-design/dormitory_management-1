@@ -232,6 +232,7 @@ try {
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - <?php echo __('dashboard'); ?></title>
     <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -253,14 +254,23 @@ try {
 <body class="reports-page live-light text-slate-800 antialiased">
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-        <main class="app-main p-4 sm:p-8 lg:p-10 w-full overflow-y-auto">
+        <main class="app-main flex-1 p-4 sm:p-8 lg:p-10 w-full overflow-y-auto">
             <div class="max-w-7xl mx-auto space-y-8 pb-12">
                 
                 <!-- Header -->
                 <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
-                    <div>
-                        <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Overview</h1>
-                        <p class="text-slate-500 mt-1.5 text-base">Welcome back, <?php echo htmlspecialchars($admin_name); ?>! Here's what's happening today.</p>
+                    <div class="flex items-center gap-3">
+                        <button id="sidebar-toggle" data-sidebar-toggle="" aria-label="Toggle sidebar" aria-expanded="false" class="p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition text-slate-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <line x1="3" y1="12" x2="21" y2="12"></line>
+                                <line x1="3" y1="18" x2="21" y2="18"></line>
+                            </svg>
+                        </button>
+                        <div>
+                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Overview</h1>
+                            <p class="text-slate-500 mt-1.5 text-base">Welcome back, <?php echo htmlspecialchars($admin_name); ?>! Here's what's happening today.</p>
+                        </div>
                     </div>
                     <div class="flex items-center gap-3 bg-white px-4 py-2 border border-slate-200 rounded-full shadow-sm">
                         <span class="flex h-3 w-3 relative">
@@ -456,6 +466,7 @@ try {
 
     <!-- Scripting -->
     <script src="/dormitory_management/Public/Assets/Javascript/main.js" defer></script>
+    <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Options for charts
