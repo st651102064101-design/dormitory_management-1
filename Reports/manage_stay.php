@@ -117,601 +117,333 @@ try {
   $contractsActive = $contractsCancelled = $contractsPendingCancel = 0;
 }
 ?>
-<!doctype html>
+<!DOCTYPE html>
 <html lang="th">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo htmlspecialchars($siteName, ENT_QUOTES, 'UTF-8'); ?> - รายงานข้อมูลการเข้าพัก</title>
     <?php include __DIR__ . '/../includes/sidebar_toggle.php'; ?>
     <link rel="icon" type="image/jpeg" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename, ENT_QUOTES, 'UTF-8'); ?>" />
-    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
-    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
-    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/particle-effects.css">
-    <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
-    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/lottie-icons.css" />
+    
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
+
     <style>
-      .reports-container { width: 100%; max-width: 100%; padding: 0; }
-      .reports-container .container { max-width: 100%; width: 100%; padding: 1.5rem; }
-      .stay-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-      .stat-card { background: linear-gradient(135deg, rgba(18,24,40,0.85), rgba(7,13,26,0.95)); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 16px; padding: 1.5rem; box-shadow: 0 15px 35px rgba(3,7,18,0.4); transition: transform 0.3s cubic-bezier(0.2, 0.55, 0.45, 0.8), box-shadow 0.3s; }
-      .stat-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(3,7,18,0.5); }
-      .stat-icon { font-size: 2.5rem; margin-bottom: 0.5rem; }
-      .stat-label { font-size: 0.85rem; color: rgba(255,255,255,0.7); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 600; }
-      .stat-value { font-size: 2.2rem; font-weight: 700; color: #f8fafc; margin: 0.5rem 0; }
-      .view-toggle { display: flex; gap: 0.5rem; margin-bottom: 2rem; }
-      .view-toggle-btn { padding: 0.75rem 1.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; color: #94a3b8; cursor: pointer; transition: all 0.3s cubic-bezier(0.2, 0.55, 0.45, 0.8); font-weight: 600; }
-      .view-toggle-btn.active { background: linear-gradient(135deg, #3b82f6, #60a5fa); border-color: transparent; color: #fff; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
-      .view-toggle-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.1); color: #e2e8f0; transform: translateY(-2px); }
-      .status-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 2rem; }
-      .status-btn { padding: 0.75rem 1.5rem; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 10px; color: #94a3b8; cursor: pointer; transition: all 0.3s cubic-bezier(0.2, 0.55, 0.45, 0.8); font-weight: 600; text-decoration: none; display: inline-block; }
-      .status-btn.active { background: linear-gradient(135deg, #3b82f6, #60a5fa); border-color: transparent; color: #fff; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4); }
-      .status-btn:hover:not(.active) { background: rgba(255, 255, 255, 0.1); color: #e2e8f0; transform: translateY(-2px); }
-      .stay-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-      .stay-card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 1.5rem; box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08); transition: all 0.3s cubic-bezier(0.2, 0.55, 0.45, 0.8); }
-      .stay-card:hover { transform: translateY(-4px); box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12); border-color: #cbd5e1; }
-      .stay-time-badge { display: inline-block; background: linear-gradient(135deg, #10b981, #34d399); color: #fff; padding: 6px 14px; border-radius: 20px; font-size: 0.85rem; font-weight: 600; margin-bottom: 10px; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3); }
-      .stay-date { color: #64748b; font-size: 0.8rem; margin-bottom: 15px; }
-      .stay-info { color: #1f2937; font-size: 0.95rem; line-height: 1.8; margin: 15px 0; }
-      .stay-status { padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.85rem; font-weight: 600; display: inline-block; margin-top: 10px; }
-      .status-pending { background: rgba(251, 191, 36, 0.15); color: #fbbf24; border: 1px solid rgba(251, 191, 36, 0.3); }
-      .status-active { background: rgba(34, 197, 94, 0.15); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.3); }
-      .status-cancelled { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); }
-
-      /* Modern DataTable Styles */
-      .stay-table { 
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 16px; 
-        overflow: hidden; 
-        padding: 1.5rem;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-      }
-      
-      /* DataTable Wrapper */
-      .datatable-wrapper {
-        background: transparent !important;
-      }
-      .datatable-wrapper .datatable-top,
-      .datatable-wrapper .datatable-bottom {
-        padding: 1rem 0;
-      }
-      
-      /* Search Input */
-      .datatable-wrapper .datatable-input {
-        padding: 0.75rem 1rem;
-        background: #ffffff !important;
-        border: 1px solid #d1d5db !important;
-        border-radius: 12px !important;
-        color: #1f2937 !important;
-        font-size: 0.95rem;
-        transition: all 0.3s ease;
-        min-width: 250px;
-      }
-      .datatable-wrapper .datatable-input:focus {
-        border-color: #60a5fa !important;
-        box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.2) !important;
-        outline: none !important;
-      }
-      .datatable-wrapper .datatable-input::placeholder {
-        color: #64748b;
-      }
-      
-      /* Per Page Select */
-      .datatable-wrapper .datatable-selector {
-        padding: 0.6rem 2rem 0.6rem 1rem;
-        background: #ffffff !important;
-        border: 1px solid #d1d5db !important;
-        border-radius: 10px !important;
-        color: #1f2937 !important;
-        font-size: 0.9rem;
-        cursor: pointer;
-        appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E") !important;
-        background-repeat: no-repeat !important;
-        background-position: right 0.5rem center !important;
-        background-size: 1.2rem !important;
-      }
-      .datatable-wrapper .datatable-selector:focus {
-        border-color: #60a5fa !important;
-        outline: none !important;
-      }
-      
-      /* Info Text */
-      .datatable-wrapper .datatable-info {
-        color: #64748b !important;
-        font-size: 0.9rem;
-      }
-      
-      /* Table */
-      .datatable-wrapper table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-      }
-      .datatable-wrapper table thead {
-        background: #f3f4f6 !important;
-      }
-      .datatable-wrapper table thead th {
-        padding: 1rem 1.25rem !important;
-        color: #334155 !important;
-        font-weight: 600 !important;
-        font-size: 0.85rem !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.05em !important;
-        border-bottom: 1px solid #e5e7eb !important;
-        background: transparent !important;
-        white-space: nowrap;
-        cursor: pointer;
-        transition: all 0.2s;
-      }
-      .datatable-wrapper table thead th:hover {
-        color: #0f172a !important;
-      }
-      .datatable-wrapper table thead th.datatable-ascending::after,
-      .datatable-wrapper table thead th.datatable-descending::after {
-        border-color: #60a5fa transparent !important;
-      }
-      
-      /* Table Body */
-      .datatable-wrapper table tbody tr {
-        transition: all 0.2s ease;
-        border-bottom: 1px solid #eef2f7;
-      }
-      .datatable-wrapper table tbody tr:hover {
-        background: #f8fafc !important;
-      }
-      .datatable-wrapper table tbody td {
-        padding: 1rem 1.25rem !important;
-        color: #111827 !important;
-        font-size: 0.95rem !important;
-        border-bottom: 1px solid #eef2f7 !important;
-        vertical-align: middle;
-      }
-      
-      /* Pagination */
-      .datatable-wrapper .datatable-pagination {
-        margin-top: 1rem;
-      }
-      .datatable-wrapper .datatable-pagination-list {
-        display: flex;
-        gap: 0.5rem;
-        align-items: center;
-        justify-content: center;
-        list-style: none;
-        padding: 0;
-        margin: 0;
-      }
-      .datatable-wrapper .datatable-pagination-list-item {
-        margin: 0;
-      }
-      .datatable-wrapper .datatable-pagination-list-item a,
-      .datatable-wrapper .datatable-pagination-list-item button,
-      .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 40px;
-        height: 40px;
-        padding: 0 0.75rem;
-        background: #ffffff !important;
-        border: 1px solid #d1d5db !important;
-        border-radius: 10px !important;
-        color: #475569 !important;
-        font-weight: 500;
-        text-decoration: none;
-        transition: all 0.2s ease;
-        cursor: pointer;
-      }
-      .datatable-wrapper .datatable-pagination-list-item a:hover,
-      .datatable-wrapper .datatable-pagination-list-item button:hover,
-      .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link:hover {
-        background: #f8fafc !important;
-        border-color: #cbd5e1 !important;
-        color: #1e293b !important;
-        transform: translateY(-2px);
-      }
-      .datatable-wrapper .datatable-pagination-list-item.datatable-active a,
-      .datatable-wrapper .datatable-pagination-list-item.datatable-active button,
-      .datatable-wrapper .datatable-pagination-list-item.datatable-active .datatable-pagination-list-item-link {
-        background: linear-gradient(135deg, #3b82f6, #60a5fa) !important;
-        border-color: transparent !important;
-        color: #fff !important;
-        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
-      }
-      .datatable-wrapper .datatable-pagination-list-item.datatable-disabled a,
-      .datatable-wrapper .datatable-pagination-list-item.datatable-disabled button,
-      .datatable-wrapper .datatable-pagination-list-item.datatable-disabled .datatable-pagination-list-item-link {
-        opacity: 0.4;
-        cursor: not-allowed;
-        pointer-events: none;
-      }
-
-      /* mobile-responsive rules for stayTable */
-      @media (max-width:768px) {
-          #stayTable {
-              display: block;
-              overflow-x: auto;
-              -webkit-overflow-scrolling: touch;
-          }
-          #stayTable thead { display: none; }
-          #stayTable tbody { display: block; }
-          #stayTable tbody tr {
-              display: block;
-              background: linear-gradient(160deg, rgba(30,41,59,0.9), rgba(15,23,42,0.95));
-              border: 1px solid var(--glass-border);
-              border-radius: 12px;
-              margin-bottom: 1rem;
-              padding: 1rem;
-          }
-          #stayTable tbody tr:hover {
-              background: linear-gradient(160deg, rgba(30,41,59,0.95), rgba(15,23,42,1));
-          }
-          #stayTable tbody td {
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              padding: 0.75rem 0;
-              border-bottom: 1px solid rgba(255,255,255,0.05);
-          }
-          #stayTable tbody td:last-child { border-bottom: none; }
-          #stayTable tbody td::before {
-              content: attr(data-label);
-              font-weight: 600;
-              color: var(--text-secondary);
-              font-size: 0.85rem;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-              flex-shrink: 0;
-              margin-right: 1rem;
-          }
-          #stayTable tbody td:first-child {
-              margin-bottom: 0.5rem;
-              padding-bottom: 1rem;
-              border-bottom: 2px solid var(--glass-border);
-          }
-          #stayTable tbody td:first-child::before { display: none; }
-      }
-      @media (max-width:480px) {
-          #stayTable tbody tr { padding: 0.875rem; }
-          #stayTable tbody td { padding: 0.625rem 0; font-size: 0.9rem; }
-          #stayTable tbody td::before { font-size: 0.75rem; }
-      }
-
-      .empty-state { text-align: center; padding: 3rem 1rem; color: #94a3b8; }
-      .empty-icon { font-size: 4rem; margin-bottom: 1rem; opacity: 0.5; }
-      .empty-text { font-size: 1.1rem; font-weight: 600; margin-bottom: 0.5rem; }
-
-      /* Force quick-actions in this page to blue theme (avoid white/gray) */
-      .page-header-bar .quick-action-link {
-        background: rgba(59, 130, 246, 0.16) !important;
-        border-color: rgba(59, 130, 246, 0.55) !important;
-        color: #1d4ed8 !important;
-      }
-      .page-header-bar .quick-action-link::after {
-        color: #1d4ed8 !important;
-        border-color: rgba(59, 130, 246, 0.5) !important;
-        background: rgba(59, 130, 246, 0.15) !important;
-      }
-      .page-header-bar .quick-action-link:hover,
-      .page-header-bar .quick-action-link.active {
-        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-        border-color: #1d4ed8 !important;
-        color: #ffffff !important;
-      }
-      .page-header-bar .quick-action-link:hover::after,
-      .page-header-bar .quick-action-link.active::after {
-        color: #ffffff !important;
-        border-color: rgba(255, 255, 255, 0.7) !important;
-        background: rgba(15, 23, 42, 0.5) !important;
-      }
-
-      /* Light theme support (white background) */
-      body.live-light .stat-card,
-      html.light-theme .stat-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 8px 22px rgba(15, 23, 42, 0.08);
-      }
-      body.live-light .stat-label,
-      html.light-theme .stat-label { color: #64748b; }
-      body.live-light .stat-value,
-      html.light-theme .stat-value { color: #0f172a; }
-
-      body.live-light .view-toggle-btn,
-      body.live-light .status-btn,
-      html.light-theme .view-toggle-btn,
-      html.light-theme .status-btn {
-        background: #ffffff;
-        border-color: #d1d5db;
-        color: #475569;
-      }
-      body.live-light .view-toggle-btn:hover:not(.active),
-      body.live-light .status-btn:hover:not(.active),
-      html.light-theme .view-toggle-btn:hover:not(.active),
-      html.light-theme .status-btn:hover:not(.active) {
-        background: #f8fafc;
-        color: #1e293b;
-      }
-
-      body.live-light .stay-card,
-      html.light-theme .stay-card {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-      }
-      body.live-light .stay-card:hover,
-      html.light-theme .stay-card:hover {
-        border-color: #cbd5e1;
-        box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
-      }
-      body.live-light .stay-date,
-      html.light-theme .stay-date { color: #64748b; }
-      body.live-light .stay-info,
-      html.light-theme .stay-info { color: #1f2937; }
-
-      body.live-light .stay-table,
-      html.light-theme .stay-table {
-        background: #ffffff;
-        border: 1px solid #e5e7eb;
-        box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
-      }
-      body.live-light .datatable-wrapper .datatable-input,
-      body.live-light .datatable-wrapper .datatable-selector,
-      html.light-theme .datatable-wrapper .datatable-input,
-      html.light-theme .datatable-wrapper .datatable-selector {
-        background: #ffffff !important;
-        border-color: #d1d5db !important;
-        color: #1f2937 !important;
-      }
-      body.live-light .datatable-wrapper .datatable-input::placeholder,
-      html.light-theme .datatable-wrapper .datatable-input::placeholder {
-        color: #9ca3af;
-      }
-      body.live-light .datatable-wrapper .datatable-info,
-      html.light-theme .datatable-wrapper .datatable-info {
-        color: #64748b !important;
-      }
-      body.live-light .datatable-wrapper table thead,
-      html.light-theme .datatable-wrapper table thead {
-        background: #f3f4f6 !important;
-      }
-      body.live-light .datatable-wrapper table thead th,
-      html.light-theme .datatable-wrapper table thead th {
-        color: #334155 !important;
-        border-bottom: 1px solid #e5e7eb !important;
-      }
-      body.live-light .datatable-wrapper table thead th:hover,
-      html.light-theme .datatable-wrapper table thead th:hover {
-        color: #0f172a !important;
-      }
-      body.live-light .datatable-wrapper table tbody tr,
-      html.light-theme .datatable-wrapper table tbody tr {
-        border-bottom: 1px solid #eef2f7;
-      }
-      body.live-light .datatable-wrapper table tbody tr:hover,
-      html.light-theme .datatable-wrapper table tbody tr:hover {
-        background: #f8fafc !important;
-      }
-      body.live-light .datatable-wrapper table tbody td,
-      html.light-theme .datatable-wrapper table tbody td {
-        color: #111827 !important;
-        border-bottom: 1px solid #eef2f7 !important;
-      }
-      body.live-light .datatable-wrapper .datatable-pagination-list-item a,
-      body.live-light .datatable-wrapper .datatable-pagination-list-item button,
-      body.live-light .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link,
-      html.light-theme .datatable-wrapper .datatable-pagination-list-item a,
-      html.light-theme .datatable-wrapper .datatable-pagination-list-item button,
-      html.light-theme .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link {
-        background: #ffffff !important;
-        border-color: #d1d5db !important;
-        color: #475569 !important;
-      }
-      body.live-light .datatable-wrapper .datatable-pagination-list-item a:hover,
-      body.live-light .datatable-wrapper .datatable-pagination-list-item button:hover,
-      body.live-light .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link:hover,
-      html.light-theme .datatable-wrapper .datatable-pagination-list-item a:hover,
-      html.light-theme .datatable-wrapper .datatable-pagination-list-item button:hover,
-      html.light-theme .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link:hover {
-        background: #f8fafc !important;
-        border-color: #cbd5e1 !important;
-        color: #1e293b !important;
-      }
+        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+        .saas-card { background: #ffffff; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid rgba(226, 232, 240, 0.8); transition: all 0.2s ease; cursor: pointer; }
+        .saas-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border-color: rgba(203, 213, 225, 1); }
+        .saas-card.no-hover { cursor: default; }
+        .saas-card.no-hover:hover { transform: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border-color: rgba(226, 232, 240, 0.8); }
+        .app-main { background: #f8fafc !important; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        
+        /* View transitions */
+        .view-content { transition: opacity 0.3s ease; }
+        .hidden-view { display: none !important; }
     </style>
-  </head>
-  <body class="reports-page">
+</head>
+<body class="reports-page live-light text-slate-800 antialiased">
     <div class="app-shell">
-      <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-      <main class="app-main">
-        <div class="reports-container">
-          <?php include __DIR__ . '/../includes/page_header.php'; ?>
-          <div class="container">
-            <h1 style="font-size:2rem;font-weight:700;margin-bottom:2rem;color:#0f172a;display:flex;align-items:center;"><span style="display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg, #3b82f6, #1d4ed8);margin-right:12px;"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:22px;height:22px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></span>รายงานข้อมูลการเข้าพัก</h1>
-            
-            <!-- Stat Cards -->
-            <div class="stay-stats-grid">
-              <div class="stat-card particle-wrapper">
-                <div class="particle-container" data-particles="3"></div>
-                <div class="lottie-icon blue">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        <?php include __DIR__ . '/../includes/sidebar.php'; ?>
+        <main class="app-main flex-1 p-4 sm:p-8 lg:p-10 w-full overflow-y-auto">
+            <div class="max-w-7xl mx-auto space-y-8 pb-12">
+                
+                <!-- Layout Header -->
+                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mt-2">
+                    <div class="flex items-center gap-4">
+                        <button id="sidebar-toggle" data-sidebar-toggle aria-label="Toggle sidebar" class="sidebar-toggle-btn p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition text-slate-600 flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <line x1="3" y1="12" x2="21" y2="12"></line>
+                                <line x1="3" y1="18" x2="21" y2="18"></line>
+                            </svg>
+                        </button>
+                        <div>
+                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight flex items-center gap-3">
+                                <span class="p-2 bg-indigo-100 text-indigo-600 rounded-xl">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-6 h-6"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                                </span>
+                                รายงานข้อมูลการเข้าพัก
+                            </h1>
+                            <p class="text-slate-500 mt-2 text-base">ตรวจสอบข้อมูลผู้เช่า สิทธิ์การใช้ห้องพัก และสถานะสัญญา</p>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-label">กำลังเข้าพัก</div>
-                <div class="stat-value"><?php echo $contractsActive; ?></div>
-              </div>
-              <div class="stat-card particle-wrapper">
-                <div class="particle-container" data-particles="3"></div>
-                <div class="lottie-icon red">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+
+                <!-- Mini Stats Overview -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <div class="saas-card no-hover p-6 border-l-4 border-l-emerald-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">กำลังเข้าพัก</h3>
+                                <div class="text-3xl font-extrabold text-slate-900 mt-2"><?php echo number_format($contractsActive); ?></div>
+                            </div>
+                            <div class="h-12 w-12 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="saas-card no-hover p-6 border-l-4 border-l-red-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">ยกเลิกสัญญา</h3>
+                                <div class="text-3xl font-extrabold text-slate-900 mt-2"><?php echo number_format($contractsCancelled); ?></div>
+                            </div>
+                            <div class="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center text-red-500">
+                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="saas-card no-hover p-6 border-l-4 border-l-amber-500">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">แจ้งยกเลิก</h3>
+                                <div class="text-3xl font-extrabold text-slate-900 mt-2"><?php echo number_format($contractsPendingCancel); ?></div>
+                            </div>
+                            <div class="h-12 w-12 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+                                <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-label">ยกเลิกสัญญา</div>
-                <div class="stat-value"><?php echo $contractsCancelled; ?></div>
-              </div>
-              <div class="stat-card particle-wrapper">
-                <div class="particle-container" data-particles="3"></div>
-                <div class="lottie-icon yellow">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+
+                <!-- Filters & Controls -->
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm saas-card no-hover">
+                    <div class="flex gap-2 p-1 w-full sm:w-auto overflow-x-auto">
+                        <a href="manage_stay.php?status=all" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo $selectedStatus === 'all' ? 'bg-blue-500 border border-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'; ?>">ทั้งหมด</a>
+                        <a href="manage_stay.php?status=1" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo $selectedStatus === '1' ? 'bg-blue-500 border border-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'; ?>">ยกเลิกสัญญาแล้ว</a>
+                        <a href="manage_stay.php?status=2" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo $selectedStatus === '2' ? 'bg-blue-500 border border-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'; ?>">รายการที่แจ้งยกเลิก</a>
+                    </div>
+                    <div class="flex gap-2 p-2 sm:p-1 items-center bg-slate-50 rounded-xl mr-1 w-full sm:w-auto border border-slate-200">
+                        <button type="button" class="view-toggle-btn px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" data-view="card" onclick="switchView('card')">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+                            การ์ด
+                        </button>
+                        <button type="button" class="view-toggle-btn px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" data-view="table" onclick="switchView('table')">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+                            ตาราง
+                        </button>
+                    </div>
                 </div>
-                <div class="stat-label">แจ้งยกเลิก</div>
-                <div class="stat-value"><?php echo $contractsPendingCancel; ?></div>
-              </div>
-            </div>
 
-            <!-- ปุ่มสถานะ -->
-            <div class="status-buttons">
-              <a href="manage_stay.php?status=all" class="status-btn <?php echo !isset($_GET['status']) || $_GET['status'] === 'all' ? 'active' : ''; ?>">ทั้งหมด</a>
-              <a href="manage_stay.php?status=1" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '1' ? 'active' : ''; ?>">ยกเลิกสัญญา</a>
-              <a href="manage_stay.php?status=2" class="status-btn <?php echo isset($_GET['status']) && $_GET['status'] === '2' ? 'active' : ''; ?>">แจ้งยกเลิก</a>
-            </div>
+                <!-- Main Content Area -->
+                <div class="relative">
+                    
+                    <!-- Empty State Helper -->
+                    <?php if (count($rows) === 0): ?>
+                    <div class="saas-card no-hover p-16 text-center">
+                        <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-slate-50 mb-6">
+                            <svg class="w-12 h-12 text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-slate-800 mb-2">ไม่มีข้อมูลการเข้าพัก</h3>
+                        <p class="text-slate-500">ยังไม่มีข้อมูลในระบบ หรือจากการกรองข้อมูล</p>
+                    </div>
+                    <?php else: ?>
 
-            <!-- ปุ่มเปลี่ยนมุมมอง -->
-            <div class="view-toggle">
-              <button type="button" class="view-toggle-btn active" onclick="switchView('card')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>มุมมองการ์ด</button>
-              <button type="button" class="view-toggle-btn" onclick="switchView('table')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>มุมมองตาราง</button>
-            </div>
+                    <!-- Card View -->
+                    <div id="card-view" class="view-content grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        <?php foreach ($rows as $r): 
+                            $statusLabel = $statusLabels[(string)$r['ctr_status']] ?? 'ไม่ทราบ';
+                            $bgStatusIcon = match((string)$r['ctr_status']) {
+                                '0' => 'bg-emerald-100 text-emerald-700',
+                                '1' => 'bg-red-100 text-red-700',
+                                '2' => 'bg-amber-100 text-amber-700',
+                                default => 'bg-slate-100 text-slate-700'
+                            };
+                            $badgeStatus = match((string)$r['ctr_status']) {
+                                '0' => 'bg-emerald-50 text-emerald-600 border border-emerald-200',
+                                '1' => 'bg-red-50 text-red-600 border border-red-200',
+                                '2' => 'bg-amber-50 text-amber-600 border border-amber-200',
+                                default => 'bg-slate-50 text-slate-600 border border-slate-200'
+                            };
+                        ?>
+                        <div class="saas-card no-hover flex flex-col h-full overflow-hidden group">
+                            <!-- Top Decorator -->
+                            <div class="h-2 w-full <?php echo match((string)$r['ctr_status']) { '0' => 'bg-emerald-500', '1' => 'bg-red-500', '2' => 'bg-amber-500', default => 'bg-slate-500' }; ?>"></div>
+                            
+                            <div class="p-6 flex-grow flex flex-col">
+                                <div class="flex justify-between items-start mb-6">
+                                    <div class="inline-flex items-center justify-center p-3 rounded-2xl <?php echo $bgStatusIcon; ?>">
+                                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <?php if((string)$r['ctr_status'] === '1'): ?>
+                                            <path d="M18 6L6 18M6 6l12 12"/>
+                                            <?php elseif((string)$r['ctr_status'] === '2'): ?>
+                                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+                                            <?php else: ?>
+                                            <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+                                            <?php endif; ?>
+                                        </svg>
+                                    </div>
+                                    <span class="px-3 py-1 rounded-full text-xs font-bold whitespace-nowrap <?php echo $badgeStatus; ?>"><?php echo $statusLabel; ?></span>
+                                </div>
+                                
+                                <div class="space-y-4 flex-grow">
+                                    <div>
+                                        <div class="flex justify-between items-center mb-1">
+                                            <p class="text-xs uppercase tracking-widest text-slate-400 font-bold">หมายเลขห้อง</p>
+                                            <span class="text-[10px] text-slate-400 uppercase font-medium">สัญญา #<?php echo renderField((string)$r['ctr_id'], '—'); ?></span>
+                                        </div>
+                                        <h4 class="text-2xl font-extrabold text-slate-800"><?php echo renderField($r['room_number'], 'ไม่ระบุ'); ?></h4>
+                                    </div>
+                                    
+                                    <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 flex flex-col gap-2">
+                                        <p class="text-[10px] uppercase font-bold text-slate-400">ผู้เช่า</p>
+                                        <p class="font-bold text-slate-700 truncate" title="<?php echo renderField($r['tnt_name'], '—'); ?>"><?php echo renderField($r['tnt_name'], '—'); ?></p>
+                                    </div>
+                                    
+                                    <div class="pt-2">
+                                        <div class="flex flex-col gap-2">
+                                            <div class="flex justify-between items-center pb-2 border-b border-slate-100">
+                                                <span class="text-xs font-semibold text-slate-500">ช่วงเข้าพัก</span>
+                                                <span class="text-[11px] font-semibold text-slate-800 text-right">
+                                                    <?php echo renderField($r['ctr_start'], '—'); ?> <br/>
+                                                    <span class="text-slate-400">ถึง</span> <?php echo renderField($r['ctr_end'], '—'); ?>
+                                                </span>
+                                            </div>
+                                            <div class="flex justify-between items-center pb-1">
+                                                <span class="text-xs font-semibold text-slate-500">มัดจำ (฿)</span>
+                                                <span class="text-sm font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-md"><?php echo number_format((float)($r['ctr_deposit'] ?? 0)); ?></span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
 
-            <!-- Card View -->
-            <div id="card-view" class="stay-cards">
-<?php if (count($rows) > 0): ?>
-<?php foreach ($rows as $r): 
-  $statusClass = match($r['ctr_status']) {
-    '0' => 'status-active',
-    '1' => 'status-cancelled',
-    '2' => 'status-pending',
-    default => 'status-active'
-  };
-  $statusLabel = $statusLabels[$r['ctr_status']] ?? 'ไม่ทราบ';
-?>
-              <div class="stay-card">
-                <div class="stay-time-badge"><?php echo getRelativeTime($r['ctr_start']); ?></div>
-                <div class="stay-date"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:4px;"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>เริ่ม: <?php echo getRelativeTime($r['ctr_start']); ?></div>
-                <div class="stay-info">
-                  <div><strong>ผู้เช่า:</strong> <?php echo renderField($r['tnt_name'], 'ไม่ระบุ'); ?></div>
-                  <div><strong>ห้องพัก:</strong> <?php echo renderField($r['room_number'], 'ไม่ระบุ'); ?></div>
-                  <div><strong>สิ้นสุด:</strong> <?php echo getRelativeTime($r['ctr_end']); ?></div>
-                  <div><strong>มัดจำ:</strong> <?php echo number_format((int)($r['ctr_deposit'] ?? 0)); ?> บาท</div>
-                  <div><strong>รหัส:</strong> #<?php echo renderField((string)$r['ctr_id'], 'ไม่ระบุ'); ?></div>
+                    <!-- Table View -->
+                    <div id="table-view" class="view-content hidden-view">
+                        <div class="saas-card no-hover overflow-hidden border border-slate-200">
+                            <table class="datatable-modern">
+                                <thead>
+                                    <tr>
+                                        <th>รหัสสัญญา</th>
+                                        <th>ผู้เช่า</th>
+                                        <th>ห้อง</th>
+                                        <th>ช่วงเข้าพัก</th>
+                                        <th>มัดจำ (บาท)</th>
+                                        <th>สถานะ</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($rows as $r): 
+                                        $badgeStatus = match((string)$r['ctr_status']) {
+                                            '0' => 'bg-emerald-50 text-emerald-600 border border-emerald-200',
+                                            '1' => 'bg-red-50 text-red-600 border border-red-200',
+                                            '2' => 'bg-amber-50 text-amber-600 border border-amber-200',
+                                            default => 'bg-slate-50 text-slate-600 border border-slate-200'
+                                        };
+                                        $statusLabel = $statusLabels[(string)$r['ctr_status']] ?? 'ไม่ทราบ';
+                                    ?>
+                                    <tr>
+                                        <td class="font-medium text-slate-500">
+                                            #<?php echo renderField((string)$r['ctr_id'], '—'); ?>
+                                        </td>
+                                        <td>
+                                            <div class="flex items-center gap-2">
+                                                <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs uppercase shadow-sm border border-slate-200">
+                                                    <?php echo mb_substr(renderField($r['tnt_name'], 'U'), 0, 2); ?>
+                                                </div>
+                                                <span class="truncate max-w-[200px] font-semibold text-slate-700"><?php echo renderField($r['tnt_name'], '—'); ?></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="font-bold px-3 py-1 bg-slate-100 text-slate-700 rounded-lg text-lg"><?php echo renderField($r['room_number'], '—'); ?></span>
+                                        </td>
+                                        <td>
+                                            <div class="flex flex-col">
+                                                <span class="text-sm font-semibold text-slate-700"><?php echo renderField($r['ctr_start'], '—'); ?></span>
+                                                <span class="text-xs text-slate-400">ถึง <?php echo renderField($r['ctr_end'], '—'); ?></span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="text-sm font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded-md"><?php echo number_format((float)($r['ctr_deposit'] ?? 0)); ?></span>
+                                        </td>
+                                        <td>
+                                            <span class="px-2.5 py-1 rounded-full text-xs font-bold <?php echo $badgeStatus; ?>"><?php echo $statusLabel; ?></span>
+                                        </td>
+                                    </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <?php endif; ?>
                 </div>
-                <span class="stay-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span>
-              </div>
-<?php endforeach; ?>
-<?php else: ?>
-              <div class="empty-state">
-                <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
-                <div class="empty-text">ไม่มีข้อมูลการเข้าพัก</div>
-              </div>
-<?php endif; ?>
-            </div>
 
-            <!-- Table View -->
-            <div id="table-view" class="stay-table" style="display:none;">
-<?php if (count($rows) > 0): ?>
-              <div class="table-responsive">
-              <table id="stayTable">
-                <thead>
-                  <tr>
-                    <th>รหัสสัญญา</th>
-                    <th>ผู้เช่า</th>
-                    <th>ห้อง</th>
-                    <th>ช่วงเข้าพัก</th>
-                    <th>มัดจำ</th>
-                    <th>สถานะ</th>
-                  </tr>
-                </thead>
-                <tbody>
-<?php foreach ($rows as $r): 
-  $statusClass = match($r['ctr_status']) {
-    '0' => 'status-active',
-    '1' => 'status-cancelled',
-    '2' => 'status-pending',
-    default => 'status-active'
-  };
-  $statusLabel = $statusLabels[$r['ctr_status']] ?? 'ไม่ทราบ';
-?>
-                      <tr>
-                    <td data-label="รหัสสัญญา">#<?php echo renderField((string)$r['ctr_id'], '—'); ?></td>
-                    <td data-label="ผู้เช่า"><?php echo renderField($r['tnt_name'], '—'); ?></td>
-                    <td data-label="ห้อง"><?php echo renderField($r['room_number'], '—'); ?></td>
-                    <td data-label="ช่วงเข้าพัก"><?php echo renderField($r['ctr_start'], '—'); ?> → <?php echo renderField($r['ctr_end'], '—'); ?></td>
-                    <td data-label="มัดจำ"><?php echo number_format((int)($r['ctr_deposit'] ?? 0)); ?></td>
-                    <td data-label="สถานะ"><span class="stay-status <?php echo $statusClass; ?>"><?php echo $statusLabel; ?></span></td>
-                  </tr>
-<?php endforeach; ?>
-                </tbody>
-              </table>
-              </div>
-<?php else: ?>
-              <div class="empty-state">
-                <div class="empty-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:48px;height:48px;opacity:0.5;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg></div>
-                <div class="empty-text">ไม่มีข้อมูลการเข้าพัก</div>
-              </div>
-<?php endif; ?>
             </div>
-          </div>
-        </div>
-      </main>
+        </main>
     </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4"></script>
     <script src="/dormitory_management/Public/Assets/Javascript/animate-ui.js" defer></script>
     <script src="/dormitory_management/Public/Assets/Javascript/main.js" defer></script>
-    <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" type="text/javascript"></script>
     <script>
-      const safeGet = (key) => {
-        try { return localStorage.getItem(key); } catch (e) { return null; }
-      };
-
-      let dataTable = null;
-
-      function switchView(view) {
-        const cardView = document.getElementById('card-view');
-        const tableView = document.getElementById('table-view');
-        const buttons = document.querySelectorAll('.view-toggle-btn');
-        
-        if (!cardView || !tableView) return;
-        
-        // Remove active class from all buttons
-        buttons.forEach(btn => btn.classList.remove('active'));
-        
-        if (view === 'card') {
-          cardView.style.display = 'grid';
-          tableView.style.display = 'none';
-          buttons[0].classList.add('active');
-          localStorage.setItem('stayViewMode', 'card');
-        } else {
-          cardView.style.display = 'none';
-          tableView.style.display = 'block';
-          buttons[1].classList.add('active');
-          localStorage.setItem('stayViewMode', 'table');
-          
-          // Initialize DataTable when switching to table view
-          if (!dataTable) {
-            const stayTable = document.getElementById('stayTable');
-            if (stayTable) {
-              dataTable = new simpleDatatables.DataTable(stayTable, {
-                searchable: true,
-                fixedHeight: false,
-                perPage: 10,
-                perPageSelect: [5, 10, 25, 50, 100],
-                labels: {
-                  placeholder: 'ค้นหา...',
-                  perPage: 'รายการต่อหน้า',
-                  noRows: 'ไม่พบข้อมูล',
-                  info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
-                }
-              });
+        function switchView(view) {
+            const cardView = document.getElementById('card-view');
+            const tableView = document.getElementById('table-view');
+            const buttons = document.querySelectorAll('.view-toggle-btn');
+            
+            if (!cardView || !tableView) return;
+            
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-blue-600', 'text-white', 'shadow-md');
+                btn.classList.add('bg-transparent', 'text-slate-600', 'hover:bg-slate-100');
+            });
+            
+            const activeBtn = document.querySelector(`.view-toggle-btn[data-view="${view}"]`);
+            if (activeBtn) {
+                activeBtn.classList.remove('bg-transparent', 'text-slate-600', 'hover:bg-slate-100');
+                activeBtn.classList.add('bg-blue-600', 'text-white', 'shadow-md');
             }
-          }
+            
+            if (view === 'card') {
+                cardView.classList.remove('hidden-view');
+                tableView.classList.add('hidden-view');
+                localStorage.setItem('stayViewMode', 'card');
+            } else {
+                cardView.classList.add('hidden-view');
+                tableView.classList.remove('hidden-view');
+                localStorage.setItem('stayViewMode', 'table');
+            }
         }
-      }
 
-      window.addEventListener('load', function() {
-        console.log('Window Load: dbDefaultView =', '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>');
-        // Get default view mode from database (list -> table, grid -> card)
-        const dbDefaultView = '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>';
-        console.log('Window Load: Calling switchView with:', dbDefaultView);
-        switchView(dbDefaultView);
-      });
+        window.addEventListener('DOMContentLoaded', () => {
+            const dbDefaultView = '<?php echo $defaultViewMode === "list" ? "table" : "card"; ?>';
+            const savedView = localStorage.getItem('stayViewMode') || dbDefaultView;
+            switchView(savedView);
+            
+            const tableEls = document.querySelectorAll('.datatable-modern');
+            tableEls.forEach(tableEl => {
+                if (typeof simpleDatatables !== 'undefined') {
+                    new simpleDatatables.DataTable(tableEl, {
+                        searchable: true,
+                        fixedHeight: false,
+                        perPageSelect: [10, 25, 50, 100],
+                        labels: {
+                            placeholder: "ค้นหาข้อมูล...",
+                            perPage: "รายการต่อหน้า",
+                            noRows: "ไม่พบข้อมูล",
+                            info: "แสดง {start} ถึง {end} จากทั้งหมด {rows} รายการ"
+                        }
+                    });
+                }
+            });
+        });
     </script>
-  </body>
+</body>
 </html>
