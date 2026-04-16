@@ -277,7 +277,9 @@ try {
                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                           <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                         </span>
-                        <span class="text-sm font-semibold text-slate-700"><?php echo date('d M Y'); ?></span>
+                        <span class="text-sm font-semibold text-slate-700">
+                            <?php echo getLang() === 'th' ? formatDate(date('Y-m-d'), 'short') : date('d M Y'); ?>
+                        </span>
                     </div>
                 </div>
 
