@@ -1,0 +1,23 @@
+{
+  "name": "dormitory_management",
+  "version": "1.0.0",
+  "description": "To make it easy for you to get started with GitLab, here's a list of recommended next steps.",
+  "main": "check_script.js",
+  "scripts": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/phatphimon2244-jpg/dormitory_management-1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/phatphimon2244-jpg/dormitory_management-1/issues"
+  },
+  "homepage": "https://github.com/phatphimon2244-jpg/dormitory_management-1#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.59.1",
+    "@types/node": "^25.6.0"
+  }
+}

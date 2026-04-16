@@ -14,6 +14,14 @@ require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/lang.php';
 $pdo = connectDB();
 
+// ซ่อมแซมข้อมูลการจองที่ค้างอยู่ (ถ้ามีการทำสัญญาแล้ว ให้สถานะการจองเป็นเข้าพักแล้ว)
+$pdo->exec("
+    UPDATE booking b
+    JOIN contract c ON b.tnt_id = c.tnt_id AND b.room_id = c.room_id
+    SET b.bkg_status = '2'
+    WHERE b.bkg_status = '1'
+");
+
 // อัพเดทสถานะห้องให้ถูกต้อง
 $pdo->exec("UPDATE room SET room_status = '0'");
 // อัพเดทสถานะห้องเป็น "ไม่ว่าง" สำหรับห้องที่มีสัญญาใช้งานอยู่ หรือมีการจองที่ได้รับการยืนยัน

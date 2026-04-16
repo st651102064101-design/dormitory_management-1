@@ -60,6 +60,20 @@ try {
     $stmt = $pdo->query("SELECT SUM(pay_amount) as total FROM payment WHERE pay_status = '1'");
     $total_payment = $stmt->fetch()['total'] ?? 0;
     
+    // ซ่อมแซมข้อมูลห้องให้ถูกต้องแบบอัตโนมัติเมื่อดู Dashboard
+    $pdo->exec("
+        UPDATE booking b
+        JOIN contract c ON b.tnt_id = c.tnt_id AND b.room_id = c.room_id
+        SET b.bkg_status = '2'
+        WHERE b.bkg_status = '1'
+    ");
+    $pdo->exec("UPDATE room SET room_status = '0'");
+    $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (
+        SELECT 1 FROM contract c WHERE c.room_id = room.room_id AND c.ctr_status = '0'
+    ) OR EXISTS (
+        SELECT 1 FROM booking b WHERE b.room_id = room.room_id AND b.bkg_status = '1'
+    )");
+
     // 6. __('room_info_report')
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM room WHERE room_status = 0");
     $room_available = $stmt->fetch()['total'] ?? 0;
@@ -1213,7 +1227,7 @@ try {
                     <div class="stat-icon blue">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                     </div>
-                    <h3><?php echo __('total_tenants'); ?></h3>
+                    <h3>ผู้เช่าทั้งหมด/พักอยู่</h3>
                     <div class="number"><?php echo $tenant_active; ?></div>
                 </div>
                 <div class="stat-card success particle-wrapper dashboard-link-card" data-link="report_rooms.php">
