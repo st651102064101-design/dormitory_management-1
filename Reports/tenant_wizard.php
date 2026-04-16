@@ -3513,17 +3513,6 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
                 event.stopPropagation();
                 openSlipFullscreenViewer(img.src, 'click');
             });
-
-            if (canHoverPreview) {
-                img.addEventListener('mouseenter', () => {
-                    openSlipFullscreenViewer(img.src, 'hover');
-                });
-                img.addEventListener('mouseleave', () => {
-                    if (_slipFullscreenMode === 'hover') {
-                        closeSlipFullscreenViewer();
-                    }
-                });
-            }
         });
 
         const links = root.querySelectorAll('.js-payment-slip-link');
