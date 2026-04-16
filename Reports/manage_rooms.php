@@ -1053,7 +1053,32 @@ try {
         margin-top: 1rem !important;
       }
     </style>
-  </head>
+  
+
+
+
+<style>
+/* Fix margins all report pages v2 */
+main > div:first-of-type,
+.app-main > div:first-of-type, 
+.main-content > div:first-of-type, 
+.reports-container > div:first-of-type {
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    box-sizing: border-box;
+}
+@media (max-width: 768px) {
+    main > div:first-of-type,
+    .app-main > div:first-of-type, 
+    .main-content > div:first-of-type, 
+    .reports-container > div:first-of-type {
+        padding: 10px !important;
+    }
+}
+</style>
+
+</head>
   <body class="reports-page" data-disable-edit-modal="true">
     <div class="app-shell">
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>

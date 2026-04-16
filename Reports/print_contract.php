@@ -316,6 +316,31 @@ if ($ctr_id === 0) {
             }
         }
     </style>
+
+
+
+
+<style>
+/* Fix margins all report pages v2 */
+main > div:first-of-type,
+.app-main > div:first-of-type, 
+.main-content > div:first-of-type, 
+.reports-container > div:first-of-type {
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    box-sizing: border-box;
+}
+@media (max-width: 768px) {
+    main > div:first-of-type,
+    .app-main > div:first-of-type, 
+    .main-content > div:first-of-type, 
+    .reports-container > div:first-of-type {
+        padding: 10px !important;
+    }
+}
+</style>
+
 </head>
 <body class="reports-page">
     <div class="app-shell">
@@ -876,6 +901,31 @@ function nameWithoutNickname($fullName) {
         .underline-address { display: inline-flex; align-items: flex-end; justify-content: flex-start; vertical-align: baseline; min-width: 320px; border-bottom: 1px dotted #000; padding: 0 4px 0; text-align: left; line-height: 1.2; color: #0066cc; white-space: pre-line; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
         @media print { body { background: white; padding: 0; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; } .print-container { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 20mm 12.7mm 20mm 20.32mm; box-shadow: none; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; } }
     </style>
+
+
+
+
+<style>
+/* Fix margins all report pages v2 */
+main > div:first-of-type,
+.app-main > div:first-of-type, 
+.main-content > div:first-of-type, 
+.reports-container > div:first-of-type {
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    box-sizing: border-box;
+}
+@media (max-width: 768px) {
+    main > div:first-of-type,
+    .app-main > div:first-of-type, 
+    .main-content > div:first-of-type, 
+    .reports-container > div:first-of-type {
+        padding: 10px !important;
+    }
+}
+</style>
+
 </head>
 <body class="<?php echo $canEditTenantFields ? 'tenant-editable-contract' : 'read-only-contract-fields'; ?>">
     <div class="print-container">

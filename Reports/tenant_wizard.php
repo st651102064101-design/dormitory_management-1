@@ -1905,6 +1905,31 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             }
         }
     </style>
+
+
+
+
+<style>
+/* Fix margins all report pages v2 */
+main > div:first-of-type,
+.app-main > div:first-of-type, 
+.main-content > div:first-of-type, 
+.reports-container > div:first-of-type {
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+    padding: 20px !important;
+    box-sizing: border-box;
+}
+@media (max-width: 768px) {
+    main > div:first-of-type,
+    .app-main > div:first-of-type, 
+    .main-content > div:first-of-type, 
+    .reports-container > div:first-of-type {
+        padding: 10px !important;
+    }
+}
+</style>
+
 </head>
 <body>
     <div style="display: flex;">
