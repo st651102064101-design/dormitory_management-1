@@ -658,7 +658,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         <main class="app-main">
-            <div>
+            <div class="container" style="max-width: 1400px; padding: 2rem;">
                 <?php $pageTitle = 'งานที่ต้องทำ'; include __DIR__ . '/../includes/page_header.php'; ?>
 
                 <style>
