@@ -443,18 +443,18 @@ try {
                             </h3>
                             
                             <div class="space-y-4 flex-grow flex flex-col justify-center">
-                                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between border border-white/20 hover:bg-white/15 transition cursor-default">
+                                <a href="manage_booking.php" class="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between border border-white/20 hover:bg-white/20 transition cursor-pointer">
                                     <div class="font-medium text-indigo-50">จองห้องใหม่</div>
                                     <div class="text-3xl font-extrabold text-white tracking-tight"><?php echo $today_bookings; ?></div>
-                                </div>
-                                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between border border-white/20 hover:bg-white/15 transition cursor-default">
+                                </a>
+                                <a href="manage_repairs.php" class="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between border border-white/20 hover:bg-white/20 transition cursor-pointer">
                                     <div class="font-medium text-indigo-50">แจ้งซ่อมใหม่</div>
                                     <div class="text-3xl font-extrabold text-white tracking-tight"><?php echo $today_repairs; ?></div>
-                                </div>
-                                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between border border-white/20 hover:bg-white/15 transition cursor-default">
+                                </a>
+                                <a href="report_payments.php" class="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between border border-white/20 hover:bg-white/20 transition cursor-pointer">
                                     <div class="font-medium text-indigo-50">ได้ชำระเงินแล้ว</div>
                                     <div class="text-3xl font-extrabold text-emerald-300 tracking-tight">฿<?php echo number_format($today_payments, 0); ?></div>
-                                </div>
+                                </a>
                             </div>
                         </div>
                     </div>
