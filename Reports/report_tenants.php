@@ -921,7 +921,7 @@ $statusMap = [
         
         <main class="main-content">
             <?php $pageTitle = 'รายงานผู้เช่า'; include __DIR__ . '/../includes/page_header.php'; ?>
-            <div style="margin: 1.5rem; margin-top: 0rem; padding-top: 0rem;">
+            <div class="container" style="max-width: 1280px; margin: 0 auto; padding: 20px; padding-top: 0;">
                 
                 <!-- Page Header -->
                 <div class="page-header">
