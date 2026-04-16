@@ -162,7 +162,7 @@ try {
         $repair_status_dist[$row['repair_status']] = $row['count'];
     }
     
-    // <?php echo __('occupancy_rate'); ?>
+    // occupancy_rate
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM room");
     $total_rooms = $stmt->fetch()['total'] ?? 0;
     $occupancy_rate = $total_rooms > 0 ? round(($room_occupied / $total_rooms) * 100, 1) : 0;
