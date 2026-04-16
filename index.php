@@ -3164,18 +3164,6 @@ if ($publicTheme === 'light') {
                     event.stopPropagation();
                     openFullscreenImagePreview(img.src, 'click');
                 });
-
-                if (canHoverPreview) {
-                    img.addEventListener('mouseenter', () => {
-                        openFullscreenImagePreview(img.src, 'hover');
-                    });
-
-                    img.addEventListener('mouseleave', () => {
-                        if (fullscreenPreviewMode === 'hover') {
-                            closeFullscreenImagePreview();
-                        }
-                    });
-                }
             });
         }
         

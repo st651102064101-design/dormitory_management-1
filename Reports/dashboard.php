@@ -162,7 +162,7 @@ try {
         $repair_status_dist[$row['repair_status']] = $row['count'];
     }
     
-    // Occupancy Rate
+    // <?php echo __('occupancy_rate'); ?>
     $stmt = $pdo->query("SELECT COUNT(*) as total FROM room");
     $total_rooms = $stmt->fetch()['total'] ?? 0;
     $occupancy_rate = $total_rooms > 0 ? round(($room_occupied / $total_rooms) * 100, 1) : 0;
@@ -258,9 +258,9 @@ try {
             <div class="max-w-7xl mx-auto space-y-8 pb-12">
                 
                 <!-- Header -->
-                <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 mt-2">
-                    <div class="flex items-center gap-3">
-                        <button id="sidebar-toggle" data-sidebar-toggle="" aria-label="Toggle sidebar" aria-expanded="false" class="p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition text-slate-600">
+                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mt-2">
+                    <div class="flex items-center gap-4">
+                        <button id="sidebar-toggle" data-sidebar-toggle="" aria-label="Toggle sidebar" aria-expanded="false" class="sidebar-toggle-btn p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition text-slate-600 flex-shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="3" y1="6" x2="21" y2="6"></line>
                                 <line x1="3" y1="12" x2="21" y2="12"></line>
@@ -268,8 +268,8 @@ try {
                             </svg>
                         </button>
                         <div>
-                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight">Overview</h1>
-                            <p class="text-slate-500 mt-1.5 text-base">Welcome back, <?php echo htmlspecialchars($admin_name); ?>! Here's what's happening today.</p>
+                            <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight"><?php echo __('dashboard'); ?></h1>
+                            <p class="text-slate-500 mt-1.5 text-base">ยินดีต้อนรับกลับมา, <?php echo htmlspecialchars($admin_name); ?>! นี่คือภาพรวมข้อมูลของวันนี้</p>
                         </div>
                     </div>
                     <div class="flex items-center gap-3 bg-white px-4 py-2 border border-slate-200 rounded-full shadow-sm">
@@ -297,7 +297,7 @@ try {
                     <!-- Revenue -->
                     <div class="saas-card p-6" onclick="window.location.href='report_payments.php'">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Revenue</h3>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest"><?php echo __('total_revenue'); ?></h3>
                             <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                             </div>
@@ -305,49 +305,49 @@ try {
                         <div class="text-3xl font-bold text-slate-900 mb-1">฿<?php echo number_format($total_revenue, 0); ?></div>
                         <div class="text-xs font-medium text-emerald-600 flex items-center mt-2">
                             <svg class="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"></path></svg>
-                            From verified payments
+                            <?php echo __('from_paid_expenses'); ?>
                         </div>
                     </div>
 
                     <!-- Occupancy -->
                     <div class="saas-card p-6" onclick="window.location.href='report_rooms.php'">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Occupancy Rate</h3>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest"><?php echo __('occupancy_rate'); ?></h3>
                             <div class="p-2 bg-sky-50 text-sky-600 rounded-lg">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m-1 4h1m-1 4h1m4-12h1m-1 4h1m-1 4h1m-1 4h1"></path></svg>
                             </div>
                         </div>
                         <div class="text-3xl font-bold text-slate-900 mb-1"><?php echo $occupancy_rate; ?>%</div>
                         <div class="text-xs font-medium text-slate-500 mt-2">
-                            <?php echo $room_occupied; ?> / <?php echo $total_rooms; ?> rooms used
+                            <?php echo $room_occupied; ?> / <?php echo $total_rooms; ?> <?php echo __('not_vacant'); ?>
                         </div>
                     </div>
 
                     <!-- Tenants -->
                     <div class="saas-card p-6" onclick="window.location.href='report_tenants.php'">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Active Tenants</h3>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest"> ผู้เช่าปัจจุบัน</h3>
                             <div class="p-2 bg-purple-50 text-purple-600 rounded-lg">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                             </div>
                         </div>
                         <div class="text-3xl font-bold text-slate-900 mb-1"><?php echo $tenant_active; ?></div>
                         <div class="text-xs font-medium text-slate-500 mt-2">
-                            <?php echo $contract_active; ?> active contracts
+                            <?php echo $contract_active; ?> <?php echo __('active_contracts'); ?>งาน
                         </div>
                     </div>
 
                     <!-- Pending Repairs -->
                     <div class="saas-card p-6" onclick="window.location.href='report_repairs.php'">
                         <div class="flex items-center justify-between mb-4">
-                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest">Pending Repairs</h3>
+                            <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest"> <?php echo __('pending_repairs'); ?></h3>
                             <div class="p-2 bg-amber-50 text-amber-600 rounded-lg">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                             </div>
                         </div>
                         <div class="text-3xl font-bold text-slate-900 mb-1"><?php echo $repair_waiting; ?></div>
                         <div class="text-xs font-medium <?php echo $repair_processing > 0 ? 'text-amber-600' : 'text-slate-500'; ?> mt-2">
-                            <?php echo $repair_processing; ?> currently in progress
+                            <?php echo $repair_processing; ?> กำลังดำเนินการ
                         </div>
                     </div>
                 </div>
@@ -357,8 +357,8 @@ try {
                     <!-- Chart 1: Revenue -->
                     <div class="saas-card no-hover p-6 lg:col-span-2">
                         <div class="flex items-center justify-between mb-6">
-                            <h3 class="text-lg font-bold text-slate-900 leading-none">Revenue Trajectory</h3>
-                            <a href="report_payments.php" class="text-sm text-indigo-600 font-semibold hover:text-indigo-800 transition">View Full Report &rarr;</a>
+                            <h3 class="text-lg font-bold text-slate-900 leading-none"><?php echo __('monthly_revenue'); ?></h3>
+                            <a href="report_payments.php" class="text-sm text-indigo-600 font-semibold hover:text-indigo-800 transition"><?php echo __('view_details_arrow'); ?></a>
                         </div>
                         <div class="relative h-72 w-full">
                             <canvas id="monthlyRevenueChart"></canvas>
@@ -368,18 +368,18 @@ try {
                     <!-- Chart 2: Room Status -->
                     <div class="saas-card no-hover p-6 lg:col-span-1 flex flex-col">
                         <div class="flex items-center justify-between mb-2">
-                            <h3 class="text-lg font-bold text-slate-900 leading-none">Room Status</h3>
+                            <h3 class="text-lg font-bold text-slate-900 leading-none"> <?php echo __('room_status'); ?></h3>
                         </div>
                         <div class="relative flex-grow min-h-[220px] w-full flex items-center justify-center -mt-2">
                             <canvas id="roomStatusChart"></canvas>
                         </div>
                         <div class="mt-4 grid grid-cols-2 gap-3 text-center">
                             <div class="p-3 bg-emerald-50 rounded-xl border border-emerald-100">
-                                <div class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Vacant</div>
+                                <div class="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1"> <?php echo __('vacant'); ?></div>
                                 <div class="text-xl font-extrabold text-emerald-700 leading-none"><?php echo $room_available; ?></div>
                             </div>
                             <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Occupied</div>
+                                <div class="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1"> <?php echo __('not_vacant'); ?></div>
                                 <div class="text-xl font-extrabold text-slate-700 leading-none"><?php echo $room_occupied; ?></div>
                             </div>
                         </div>
@@ -391,8 +391,8 @@ try {
                     <!-- Action Required List -->
                     <div class="saas-card no-hover flex flex-col h-full overflow-hidden p-0">
                         <div class="p-6 border-b border-slate-100 flex items-center justify-between">
-                            <h3 class="text-lg font-bold text-slate-900 leading-none">Requires Attention</h3>
-                            <span class="text-xs font-bold bg-rose-100 text-rose-700 px-3 py-1 rounded-full"><?php echo ($payment_pending + $repair_waiting); ?> Items</span>
+                            <h3 class="text-lg font-bold text-slate-900 leading-none">รายการต้องดำเนินการ</h3>
+                            <span class="text-xs font-bold bg-rose-100 text-rose-700 px-3 py-1 rounded-full"><?php echo ($payment_pending + $repair_waiting); ?> รายการ</span>
                         </div>
                         <div class="flex-grow divide-y divide-slate-100">
                             <!-- Pending Invoices -->
@@ -402,8 +402,8 @@ try {
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
                                     </div>
                                     <div>
-                                        <p class="font-bold text-slate-900 leading-tight">Unverified Payments</p>
-                                        <p class="text-sm text-slate-500 mt-1">Transactions that need manual review</p>
+                                        <p class="font-bold text-slate-900 leading-tight">รอตรวจสอบชำระเงิน</p>
+                                        <p class="text-sm text-slate-500 mt-1">รายการที่ต้องตรวจสอบด้วยตนเอง</p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-3">
@@ -418,8 +418,8 @@ try {
                                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"></path></svg>
                                     </div>
                                     <div>
-                                        <p class="font-bold text-slate-900 leading-tight">Pending Repair Tickets</p>
-                                        <p class="text-sm text-slate-500 mt-1">Maintenance issues awaiting action</p>
+                                        <p class="font-bold text-slate-900 leading-tight">รอรับงานแจ้งซ่อม</p>
+                                        <p class="text-sm text-slate-500 mt-1">คำร้องที่รอการตอบรับ</p>
                                     </div>
                                 </div>
                                 <div class="flex items-center gap-3">
@@ -430,7 +430,7 @@ try {
                         </div>
                     </div>
 
-                    <!-- Today's Activity Spotlight -->
+                    <!-- Today's <?php echo __('today_activity'); ?> -->
                     <div class="saas-card no-hover relative overflow-hidden bg-gradient-to-br from-indigo-500 via-indigo-600 to-blue-600 border-none">
                         <!-- Decorative bg -->
                         <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white opacity-5"></div>
@@ -439,20 +439,20 @@ try {
                         <div class="relative p-6 sm:p-8 h-full flex flex-col text-white">
                             <h3 class="text-xl font-bold mb-8 flex items-center gap-3 text-white leading-none">
                                 <span class="p-2 bg-white/20 backdrop-blur-sm rounded-lg"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg></span>
-                                Activity Spotlight
+                                <?php echo __('today_activity'); ?>
                             </h3>
                             
                             <div class="space-y-4 flex-grow flex flex-col justify-center">
                                 <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between border border-white/20 hover:bg-white/15 transition cursor-default">
-                                    <div class="font-medium text-indigo-50">New Bookings Today</div>
+                                    <div class="font-medium text-indigo-50">จองห้องใหม่</div>
                                     <div class="text-3xl font-extrabold text-white tracking-tight"><?php echo $today_bookings; ?></div>
                                 </div>
                                 <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between border border-white/20 hover:bg-white/15 transition cursor-default">
-                                    <div class="font-medium text-indigo-50">New Repair Tickets</div>
+                                    <div class="font-medium text-indigo-50">แจ้งซ่อมใหม่</div>
                                     <div class="text-3xl font-extrabold text-white tracking-tight"><?php echo $today_repairs; ?></div>
                                 </div>
                                 <div class="bg-white/10 backdrop-blur-md rounded-2xl p-5 flex items-center justify-between border border-white/20 hover:bg-white/15 transition cursor-default">
-                                    <div class="font-medium text-indigo-50">Payments Received</div>
+                                    <div class="font-medium text-indigo-50">ได้ชำระเงินแล้ว</div>
                                     <div class="text-3xl font-extrabold text-emerald-300 tracking-tight">฿<?php echo number_format($today_payments, 0); ?></div>
                                 </div>
                             </div>
@@ -489,7 +489,7 @@ try {
                     data: {
                         labels: [<?php foreach ($monthly_revenue as $data) { echo "'" . thaiMonthYear($data['month']) . "',"; } ?>],
                         datasets: [{
-                            label: 'Revenue (THB)',
+                            label: '<?php echo __('revenue_baht'); ?>',
                             data: [<?php foreach ($monthly_revenue as $data) { echo $data['total'] . ","; } ?>],
                             borderColor: '#6366f1',
                             backgroundColor: 'rgba(99, 102, 241, 0.08)',
@@ -513,7 +513,7 @@ try {
                 new Chart(roomCtx, {
                     type: 'doughnut',
                     data: {
-                        labels: ['Vacant', 'Occupied'],
+                        labels: ['<?php echo __('vacant'); ?>', '<?php echo __('not_vacant'); ?>'],
                         datasets: [{
                             data: [<?php echo $room_available; ?>, <?php echo $room_occupied; ?>],
                             backgroundColor: ['#10b981', '#f1f5f9'],
