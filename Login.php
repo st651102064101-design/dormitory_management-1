@@ -2670,10 +2670,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <script>
         document.addEventListener('DOMContentLoaded', function() {
           const card = document.getElementById('loginCard');
-          const btn = document.getElementById('submitBtn');
+          
+          // ซ่อน element อื่นๆ ปล่อยไว้แค่ successOverlay เพื่อให้กล่องหดลงพอดี
+          Array.from(card.children).forEach(child => {
+            if (child.id !== 'successOverlay') {
+              child.style.display = 'none';
+            }
+          });
+          
+          const overlay = document.getElementById('successOverlay');
+          overlay.style.position = 'relative';
+          card.style.minHeight = '300px';
+          card.style.display = 'flex';
+          card.style.alignItems = 'center';
+          card.style.justifyContent = 'center';
+          
+          overlay.style.display = 'flex';
           card.classList.add('success');
-          btn.textContent = '✓ สำเร็จ! กำลังเข้าสู่ระบบ...';
-          btn.style.background = 'linear-gradient(135deg, #22c55e 0%, #10b981 100%)';
+          
           setTimeout(function() {
             window.location.href = 'Reports/dashboard.php';
           }, 1500);
@@ -3069,7 +3083,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           const result = await response.json();
           
           if (result.success) {
+            // Hide other elements to shrink the card naturally
+            Array.from(loginCard.children).forEach(child => {
+              if (child.id !== 'successOverlay') {
+                child.style.display = 'none';
+              }
+            });
             // Show success overlay
+            successOverlay.style.position = 'relative';
+            loginCard.style.minHeight = '300px';
+            loginCard.style.display = 'flex';
+            loginCard.style.alignItems = 'center';
+            loginCard.style.justifyContent = 'center';
+            
             successOverlay.style.display = 'flex';
             loginCard.classList.add('success');
             
