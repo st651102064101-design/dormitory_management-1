@@ -178,13 +178,13 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
 
         .report-page {
             width: 100%;
-            max-width: none;
-            margin: 0;
-            padding: 0 !important;
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 20px !important;
+            padding-top: 0 !important;
         }
         .app-main > .report-page {
-            padding-left: 0 !important;
-            padding-right: 1rem !important;
+            /* padding overrides removed to allow centering */
         }
         .report-card {
             background: #fff;
