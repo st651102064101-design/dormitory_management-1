@@ -1069,7 +1069,7 @@ $statusMap = [
                                         <?php echo $statusInfo['label']; ?>
                                     </span>
                                     <?php if ($tenant['room_number']): ?>
-                                        <span class="room-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><?php echo htmlspecialchars($tenant['room_number']); ?></span>
+                                        <span class="room-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><g><animateTransform attributeName="transform" type="translate" values="0,0; 0,-2.5; 0,0" dur="3s" repeatCount="indefinite" /><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></g></svg><?php echo htmlspecialchars($tenant['room_number']); ?></span>
                                     <?php endif; ?>
                                 </div>
                             </div>
@@ -1111,7 +1111,7 @@ $statusMap = [
                                     <td data-label="อายุ"><?php echo $tenant['tnt_age'] ? $tenant['tnt_age'] . ' ปี' : '-'; ?></td>
                                     <td data-label="ห้อง">
                                         <?php if ($tenant['room_number']): ?>
-                                            <span class="room-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg><?php echo htmlspecialchars($tenant['room_number']); ?></span>
+                                            <span class="room-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;vertical-align:middle;margin-right:2px;"><g><animateTransform attributeName="transform" type="translate" values="0,0; 0,-2.5; 0,0" dur="3s" repeatCount="indefinite" /><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></g></svg><?php echo htmlspecialchars($tenant['room_number']); ?></span>
                                         <?php else: ?>
                                             <span style="color: var(--text-secondary);">-</span>
                                         <?php endif; ?>

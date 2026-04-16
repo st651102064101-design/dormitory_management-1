@@ -1,155 +1,22 @@
-<?php
-declare(strict_types=1);
-session_start();
-if (empty($_SESSION['admin_username'])) {
-    header('Location: ../Login.php');
-    exit;
-}
-require_once __DIR__ . '/../ConnectDB.php';
-$pdo = connectDB();
+import sys
 
-// ดึง theme color จากการตั้งค่าระบบ
-$themeColor = '#0f172a'; // ค่า default (dark mode)
-$defaultViewMode = 'grid';
-try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('theme_color', 'default_view_mode')");
-    while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
-        if ($row['setting_key'] === 'theme_color') $themeColor = htmlspecialchars($row['setting_value'], ENT_QUOTES, 'UTF-8');
-        if ($row['setting_key'] === 'default_view_mode') $defaultViewMode = strtolower($row['setting_value']) === 'list' ? 'list' : 'grid';
-    }
-} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
+file_path = "/Applications/XAMPP/xamppfiles/htdocs/dormitory_management/Reports/report_reservations.php"
 
-// รับค่าเดือน/ปี ที่เลือก (รูปแบบ YYYY-MM)
-$selectedMonth = isset($_GET['month']) ? $_GET['month'] : '';
-$selectedStatus = isset($_GET['status']) ? $_GET['status'] : '';
+with open(file_path, "r", encoding="utf-8") as f:
+    content = f.read()
 
-// ดึงรายการเดือนที่มีในระบบ (format เป็น YYYY-MM)
-$availableMonths = [];
-$monthNames = [
-  '01' => 'มกราคม', '02' => 'กุมภาพันธ์', '03' => 'มีนาคม', '04' => 'เมษายน',
-  '05' => 'พฤษภาคม', '06' => 'มิถุนายน', '07' => 'กรกฎาคม', '08' => 'สิงหาคม',
-  '09' => 'กันยายน', '10' => 'ตุลาคม', '11' => 'พฤศจิกายน', '12' => 'ธันวาคม'
-];
-try {
-  $monthsStmt = $pdo->query("SELECT DISTINCT DATE_FORMAT(bkg_date, '%Y-%m') as month_key FROM booking WHERE bkg_date IS NOT NULL ORDER BY month_key DESC");
-  $availableMonths = $monthsStmt->fetchAll(PDO::FETCH_COLUMN);
-} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
+# Find the end of the PHP section
+end_php_idx = content.find("?>\n<!doctype html>")
+if end_php_idx == -1:
+    end_php_idx = content.find("?>\n<!DOCTYPE html>")
 
-// Query booking data - get all records first
-// เชื่อมความสัมพันธ์: booking -> room -> contract -> tenant
-try {
-  $query = "SELECT b.*, rm.room_number, 
-            COALESCE(t.tnt_name, 'ยังไม่มีผู้เช่า') as tnt_name,
-            COALESCE(t.tnt_status, '') as tnt_status
-            FROM booking b 
-            LEFT JOIN room rm ON b.room_id = rm.room_id 
-            LEFT JOIN tenant t ON b.tnt_id = t.tnt_id
-            ORDER BY b.bkg_date DESC";
-  $stmt = $pdo->query($query);
-  $allRows = $stmt->fetchAll(PDO::FETCH_ASSOC);
-} catch (PDOException $e) {
-  error_log('Booking query error: ' . $e->getMessage());
-  $allRows = [];
-}
+if end_php_idx == -1:
+    print("Could not find the end of PHP block")
+    sys.exit(1)
 
-// Filter results based on selections
-$rows = [];
-foreach ($allRows as $row) {
-  $includeRow = true;
-  
-  if (!empty($selectedMonth)) {
-    $bookingMonth = date('Y-m', strtotime($row['bkg_date']));
-    if ($bookingMonth !== $selectedMonth) {
-      $includeRow = false;
-    }
-  }
-  
-  if ($includeRow && !empty($selectedStatus)) {
-    if ((string)$row['bkg_status'] !== $selectedStatus) {
-      $includeRow = false;
-    }
-  }
-  
-  if ($includeRow) {
-    $rows[] = $row;
-  }
-}
+php_part = content[:end_php_idx + 3]
 
-$statusLabels = [
-  '0' => 'ยกเลิก',
-  '1' => 'จองแล้ว',
-  '2' => 'เข้าพักแล้ว',
-];
-
-function renderField(?string $value, string $fallback = '—'): string
-{
-  return htmlspecialchars(($value === null || $value === '') ? $fallback : $value, ENT_QUOTES, 'UTF-8');
-}
-
-// ฟังก์ชันแสดงเวลาที่ผ่านมา (relative time)
-function getRelativeTime(?string $datetime): string
-{
-  if (!$datetime) return 'ยังไม่ระบุ';
-  
-  try {
-    $date = new DateTime($datetime);
-    $now = new DateTime();
-    $interval = $now->diff($date);
-    
-    if ($interval->y > 0) {
-      return $interval->y . ' ปีที่แล้ว';
-    }
-    if ($interval->m > 0) {
-      return $interval->m . ' เดือนที่แล้ว';
-    }
-    if ($interval->d > 0) {
-      return $interval->d . ' วันที่แล้ว';
-    }
-    if ($interval->h > 0) {
-      return $interval->h . ' ชั่วโมงที่แล้ว';
-    }
-    if ($interval->i > 0) {
-      return $interval->i . ' นาทีที่แล้ว';
-    }
-    if ($interval->s > 0) {
-      return $interval->s . ' วินาทีที่แล้ว';
-    }
-    return 'เพิ่งเดี๋ยวนี้';
-  } catch (Exception $e) {
-    return 'เวลาไม่ถูกต้อง';
-  }
-}
-
-// ดึงค่าตั้งค่าระบบ
-$siteName = 'Sangthian Dormitory';
-$logoFilename = 'Logo.jpg';
-try {
-    $settingsStmt = $pdo->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('site_name', 'logo_filename')");
-    while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
-        if ($row['setting_key'] === 'site_name') $siteName = $row['setting_value'];
-        if ($row['setting_key'] === 'logo_filename') $logoFilename = $row['setting_value'];
-    }
-} catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
-
-// คำนวณสถิติ
-$totalBookings = count($rows);
-try {
-  // ยกเลิก
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = '0'");
-  $bookingCancelled = $stmt->fetch()['total'] ?? 0;
-  
-  // จองแล้ว
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = '1'");
-  $bookingConfirmed = $stmt->fetch()['total'] ?? 0;
-  
-  // เข้าพักแล้ว
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = '2'");
-  $bookingCompleted = $stmt->fetch()['total'] ?? 0;
-} catch (PDOException $e) {
-  $bookingCancelled = $bookingConfirmed = $bookingCompleted = 0;
-}
-?>
-<!DOCTYPE html>
+html_part = """<!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
@@ -161,11 +28,11 @@ try {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
 
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
         .saas-card { background: #ffffff; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid rgba(226, 232, 240, 0.8); transition: all 0.2s ease; cursor: pointer; }
         .saas-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border-color: rgba(203, 213, 225, 1); }
         .saas-card.no-hover { cursor: default; }
@@ -485,3 +352,9 @@ try {
     </script>
 </body>
 </html>
+"""
+
+with open(file_path, "w", encoding="utf-8") as f:
+    f.write(php_part + html_part)
+
+print("Patch applied successfully.")

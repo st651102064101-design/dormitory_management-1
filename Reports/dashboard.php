@@ -235,10 +235,10 @@ try {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="/dormitory_management/Public/Assets/Javascript/chart.umd.min.js"></script>
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
+        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
         .saas-card { background: #ffffff; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid rgba(226, 232, 240, 0.8); transition: all 0.2s ease; cursor: pointer; }
         .saas-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border-color: rgba(203, 213, 225, 1); }
         .saas-card.no-hover:hover { transform: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); cursor: default; border-color: auto; }
