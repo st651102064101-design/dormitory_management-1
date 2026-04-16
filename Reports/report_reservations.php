@@ -2,8 +2,8 @@
 declare(strict_types=1);
 session_start();
 if (empty($_SESSION['admin_username'])) {
-    header('Location: ../Login.php');
-    exit;
+    // header(.Location: ../Login.php.);
+    // exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
 $pdo = connectDB();
@@ -163,6 +163,7 @@ try {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
+    <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
 
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
@@ -172,13 +173,6 @@ try {
         .saas-card.no-hover:hover { transform: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border-color: rgba(226, 232, 240, 0.8); }
         .app-main { background: #f8fafc !important; }
         
-        /* Table Styles for Light Theme */
-        .saas-table { width: 100%; border-collapse: separate; border-spacing: 0; }
-        .saas-table th { padding: 1rem; text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; color: #64748b; background: rgba(248, 250, 252, 0.8); border-bottom: 2px solid #e2e8f0; }
-        .saas-table td { padding: 1rem; border-bottom: 1px solid #e2e8f0; color: #334155; font-size: 0.9rem; }
-        .saas-table tr:hover td { background: #f8fafc; }
-        .saas-table tbody tr:last-child td { border-bottom: none; }
-
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
@@ -260,10 +254,10 @@ try {
                 <!-- Filters & Controls -->
                 <div class="flex flex-col sm:flex-row justify-between items-center gap-4 bg-white p-2 rounded-2xl border border-slate-200 shadow-sm saas-card no-hover">
                     <div class="flex gap-2 p-1 w-full sm:w-auto overflow-x-auto">
-                        <a href="report_reservations.php" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo !isset($_GET['status']) ? 'bg-slate-800 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'; ?>">ทั้งหมด</a>
-                        <a href="report_reservations.php?status=1" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo isset($_GET['status']) && $_GET['status'] === '1' ? 'bg-blue-500 text-white shadow-md shadow-blue-500/20' : 'text-slate-600 hover:bg-slate-100'; ?>">จองแล้ว</a>
-                        <a href="report_reservations.php?status=2" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo isset($_GET['status']) && $_GET['status'] === '2' ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/20' : 'text-slate-600 hover:bg-slate-100'; ?>">เข้าพักแล้ว</a>
-                        <a href="report_reservations.php?status=0" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo isset($_GET['status']) && $_GET['status'] === '0' ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20' : 'text-slate-600 hover:bg-slate-100'; ?>">ยกเลิก</a>
+                        <a href="report_reservations.php" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo !isset($_GET['status']) ? 'bg-blue-500 border border-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'; ?>">ทั้งหมด</a>
+                        <a href="report_reservations.php?status=1" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo isset($_GET['status']) && $_GET['status'] === '1' ? 'bg-blue-500 border border-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'; ?>">จองแล้ว</a>
+                        <a href="report_reservations.php?status=2" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo isset($_GET['status']) && $_GET['status'] === '2' ? 'bg-blue-500 border border-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'; ?>">เข้าพักแล้ว</a>
+                        <a href="report_reservations.php?status=0" class="px-5 py-2.5 rounded-xl font-medium text-sm transition-all whitespace-nowrap <?php echo isset($_GET['status']) && $_GET['status'] === '0' ? 'bg-blue-500 border border-blue-500 text-white shadow-md shadow-blue-500/20' : 'bg-slate-50 border border-slate-200 text-slate-700 hover:bg-slate-100'; ?>">ยกเลิก</a>
                     </div>
                     <div class="flex gap-2 p-2 sm:p-1 items-center bg-slate-50 rounded-xl mr-1 w-full sm:w-auto border border-slate-200">
                         <button type="button" class="view-toggle-btn px-4 py-2 rounded-lg font-medium text-sm transition-all flex items-center gap-2" data-view="card" onclick="switchView('card')">
@@ -358,7 +352,7 @@ try {
                     <!-- Table View -->
                     <div id="table-view" class="view-content hidden-view">
                         <div class="saas-card no-hover overflow-hidden border border-slate-200">
-                            <table id="table-reservations" class="saas-table">
+                            <table id="table-reservations">
                                 <thead>
                                     <tr>
                                         <th>รหัสพนักงาน</th>
@@ -388,9 +382,9 @@ try {
                                             ? 'bg-purple-50 text-purple-600 border border-purple-200' 
                                             : 'bg-slate-50 text-slate-600 border border-slate-200';
                                     ?>
-                                    <tr class="transition-colors group cursor-pointer hover:bg-slate-50">
-                                        <td class="font-bold text-slate-800">#<?php echo renderField((string)$r['bkg_id'], '—'); ?></td>
-                                        <td class="font-medium text-slate-700">
+                                    <tr>
+                                        <td>#<?php echo renderField((string)$r['bkg_id'], '—'); ?></td>
+                                        <td>
                                             <div class="flex items-center gap-2">
                                                 <div class="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold text-xs uppercase">
                                                     <?php echo mb_substr(renderField($r['tnt_name'] ?? 'U', 'U'), 0, 2); ?>
