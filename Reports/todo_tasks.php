@@ -355,7 +355,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         .todo-table {
             width: 100%;
             border-collapse: separate;
-            border-spacing: 0;
+            border-spacing: 0 12px;
         }
         .todo-table thead th {
             background: rgba(255,255,255,0.05);
@@ -365,18 +365,27 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
             text-transform: uppercase;
             letter-spacing: 0.5px;
             padding: 12px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.08);
+            border-bottom: none;
             text-align: left;
             position: sticky;
             top: 0;
             z-index: 1;
         }
         .todo-table tbody td {
-            padding: 12px 16px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
+            padding: 16px 20px;
+            background: rgba(255,255,255,0.03);
+            border-bottom: none;
             color: rgba(255,255,255,0.85);
             font-size: 14px;
             vertical-align: middle;
+        }
+        .todo-table tbody td:first-child {
+            border-top-left-radius: 8px;
+            border-bottom-left-radius: 8px;
+        }
+        .todo-table tbody td:last-child {
+            border-top-right-radius: 8px;
+            border-bottom-right-radius: 8px;
         }
         .todo-table tbody tr:hover {
             background: rgba(255,255,255,0.03);
@@ -571,7 +580,9 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         body.live-light .todo-tab:hover { background: rgba(0,0,0,0.06); color: rgba(0,0,0,0.8); }
         body.live-light .todo-tab.active { color: #fff !important; border-color: transparent; box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2); }
         body.live-light .todo-table thead th { background: rgba(0,0,0,0.03); color: rgba(0,0,0,0.5); border-bottom-color: rgba(0,0,0,0.08); }
-        body.live-light .todo-table tbody td { color: rgba(0,0,0,0.8); border-bottom-color: rgba(0,0,0,0.06); }
+        body.live-light .todo-table tbody td { color: rgba(0,0,0,0.8); background: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid rgba(0,0,0,0.05); border-bottom-color: transparent; border-right: none; border-left: none; }
+        body.live-light .todo-table tbody td:first-child { border-left: 1px solid rgba(0,0,0,0.05); }
+        body.live-light .todo-table tbody td:last-child { border-right: 1px solid rgba(0,0,0,0.05); }
         body.live-light .todo-table tbody tr:hover { background: rgba(0,0,0,0.02); }
         body.live-light .todo-card { background: white; border-color: rgba(0,0,0,0.1); }
         body.live-light .todo-card-header { border-bottom-color: rgba(0,0,0,0.06); }
