@@ -4562,11 +4562,21 @@ async function handleGoogleUnlink(e) {
     const sidebar = document.querySelector('.app-sidebar');
     if (sidebar && window.innerWidth > 1024) {
       if (!sidebar.classList.contains('collapsed')) {
+        sidebar.style.setProperty('transition', 'none', 'important');
+        const elements = sidebar.querySelectorAll('*');
+        for (let i = 0; i < elements.length; i++) {
+          elements[i].style.setProperty('transition', 'none', 'important');
+        }
         sidebar.classList.add('collapsed');
         try { localStorage.setItem('sidebarCollapsed', 'true'); } catch(err) {}
       }
     } else if (sidebar && window.innerWidth <= 1024) {
       if (sidebar.classList.contains('mobile-open')) {
+        sidebar.style.setProperty('transition', 'none', 'important');
+        const elements = sidebar.querySelectorAll('*');
+        for (let i = 0; i < elements.length; i++) {
+          elements[i].style.setProperty('transition', 'none', 'important');
+        }
         sidebar.classList.remove('mobile-open');
         document.body.classList.remove('sidebar-open');
         // Do not touch localStorage for desktop state
