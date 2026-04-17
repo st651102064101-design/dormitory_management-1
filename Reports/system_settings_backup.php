@@ -1798,7 +1798,7 @@ try {
     <div class="app-shell">
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main">
-        <div>
+        <div style="max-width: 1280px; margin: 0 auto; width: 100%;">
           <?php 
             $pageTitle = 'จัดการระบบ';
             include __DIR__ . '/../includes/page_header.php'; 
