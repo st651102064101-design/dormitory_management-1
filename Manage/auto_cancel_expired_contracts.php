@@ -32,7 +32,7 @@ function autoCancelExpiredContracts(PDO $pdo): array {
                   AND e.exp_total > COALESCE((
                       SELECT SUM(p.pay_amount) FROM payment p
                       WHERE p.exp_id = e.exp_id AND p.pay_status = '1'
-                        AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                        
                   ), 0)
             ");
 

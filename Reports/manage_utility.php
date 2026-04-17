@@ -220,7 +220,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                 $pastBillPaid = false;
                 $pastBillChk = $pdo->prepare("
                     SELECT e.exp_total,
-                           COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) AS approved_paid
+                           COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' ), 0) AS approved_paid
                     FROM expense e WHERE e.ctr_id = ? AND MONTH(e.exp_month) = ? AND YEAR(e.exp_month) = ? LIMIT 1
                 ");
                 $pastBillChk->execute([$ctrIdCheck, $month, $year]);
@@ -284,7 +284,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
                     $editBillPaid = false;
                     $editBillChk = $pdo->prepare("
                         SELECT e.exp_total,
-                               COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) AS approved_paid
+                               COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' ), 0) AS approved_paid
                         FROM expense e
                         WHERE e.ctr_id = ? AND MONTH(e.exp_month) = ? AND YEAR(e.exp_month) = ?
                         LIMIT 1
@@ -760,7 +760,7 @@ foreach ($rooms as $room) {
     if ($room['ctr_id']) {
         $billPaidStmt = $pdo->prepare("
             SELECT e.exp_total,
-                   COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'), 0) AS approved_paid
+                   COALESCE((SELECT SUM(p.pay_amount) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1' ), 0) AS approved_paid
             FROM expense e
             WHERE e.ctr_id = ? AND MONTH(e.exp_month) = ? AND YEAR(e.exp_month) = ?
             LIMIT 1
