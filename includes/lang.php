@@ -65,7 +65,7 @@ if (!defined('LANG_HELPER_LOADED')) {
      * Set language cookie
      */
     function setLanguageCookie(string $lang): void {
-        if (in_array($lang, SUPPORTED_LANGUAGES)) {
+        if (!headers_sent() && in_array($lang, SUPPORTED_LANGUAGES)) {
             setcookie('system_language', $lang, [
                 'expires' => time() + (365 * 24 * 60 * 60), // 1 year
                 'path' => '/',
