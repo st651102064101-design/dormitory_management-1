@@ -1050,12 +1050,13 @@ main > div:first-of-type,
 <body>
     <div style="display: flex; max-width: 100vw; overflow: hidden;">
         <?php include '../includes/sidebar.php'; ?>
-        <main style="flex: 1; min-width: 0; overflow-x: hidden; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem;">
-            <div class="contracts-header-wrap">
-              <?php $pageTitle = 'จัดการสัญญาเช่า'; include '../includes/page_header.php'; ?>
-            </div>
+        <main style="flex: 1; min-width: 0; overflow-x: hidden; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem; display: flex; align-items: flex-start; justify-content: center;" class="app-main">
+            <div style="flex: 1; max-width: 1280px; min-width: 0; padding: 0 1rem; box-sizing: border-box; margin: auto;">
+              <div class="contracts-header-wrap" style="margin: 1.5rem 0 1rem; max-width: 100%; padding: 0;">
+                <?php $pageTitle = 'จัดการสัญญาเช่า'; include '../includes/page_header.php'; ?>
+              </div>
 
-            <div class="manage-panel">
+              <div class="manage-panel" style="margin: 0 0 3rem; max-width: 100%;">
                 <?php if (!empty($_SESSION['error'])): ?>
                   <div style="margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px;">
                     <?php echo htmlspecialchars($_SESSION['error'], ENT_QUOTES, 'UTF-8'); unset($_SESSION['error']); ?>
@@ -1549,6 +1550,7 @@ main > div:first-of-type,
                     </table>
                     </div>
                 </div>
+            </div>
             </div>
         </main>
     </div>

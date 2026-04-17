@@ -2172,9 +2172,10 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
 <body class="reports-page" data-meter-tab="<?php echo htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8'); ?>">
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-        <main class="app-main">
-            <div class="meter-page">
-                <?php $pageTitle = 'จดมิเตอร์'; include __DIR__ . '/../includes/page_header.php'; ?>
+        <main class="app-main" style="display: flex; align-items: flex-start; justify-content: center; width: 100%;">
+            <div style="flex: 1; max-width: 1280px; min-width: 0; padding: 0 1rem; box-sizing: border-box; margin: auto;">
+                <div class="meter-page" style="margin: 1.5rem 0 3rem; max-width: 100%;">
+                    <?php $pageTitle = 'จดมิเตอร์'; include __DIR__ . '/../includes/page_header.php'; ?>
 
                 <?php if (isset($_SESSION['success'])): ?>
                 <div class="toast-msg success" id="toast"><?php echo $_SESSION['success']; unset($_SESSION['success']); ?></div>
@@ -2564,6 +2565,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                     </form>
                     <?php endif; ?>
                 </div>
+            </div>
             </div>
         </main>
     </div>

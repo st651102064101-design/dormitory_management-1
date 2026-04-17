@@ -910,9 +910,12 @@ $statusMap = [
     <div class="app-container">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
         
-        <main class="main-content">
-            <?php $pageTitle = 'รายงานผู้เช่า'; include __DIR__ . '/../includes/page_header.php'; ?>
-            <div class="container" style="max-width: 1280px; margin: 0 auto; width: 100%; padding: 0 1.5rem; box-sizing: border-box; padding-top: 0;">
+        <main class="main-content" style="display: flex; align-items: flex-start; justify-content: center; width: 100%;">
+            <div style="flex: 1; max-width: 1280px; min-width: 0; padding: 0 1rem; box-sizing: border-box; margin: auto;">
+                <div style="margin: 1.5rem 0 1rem; max-width: 100%; padding: 0;">
+                    <?php $pageTitle = 'รายงานผู้เช่า'; include __DIR__ . '/../includes/page_header.php'; ?>
+                </div>
+                <div class="container" style="max-width: 100%; margin: 0 auto; width: 100%; padding: 0; box-sizing: border-box; padding-top: 0;">
                 
                 <!-- Page Header -->
                 <div class="page-header">
@@ -1120,6 +1123,7 @@ $statusMap = [
                     </div>
                 </div>
 
+                </div>
             </div>
         </main>
     </div>

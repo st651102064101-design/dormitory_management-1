@@ -3837,7 +3837,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
   if (window.innerWidth > 1024) {
     try {
       if (localStorage.getItem('sidebarCollapsed') === 'true') {
-        document.write('<style>.app-sidebar { width: var(--sidebar-collapsed-width) !important; }</style>');
+        document.write('<style>aside.app-sidebar.collapsed { width: 0 !important; min-width: 0 !important; padding: 0 !important; overflow: hidden !important; visibility: hidden !important; }</style>');
         // We'll also add the class via a script that runs immediately after the aside tag
       }
     } catch(e) {}
