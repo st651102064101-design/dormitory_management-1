@@ -159,7 +159,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
               $_SESSION['sidebar_account_flash_success'] = 'อัปเดตชื่อผู้ใช้เรียบร้อยแล้ว';
             }
             unset($_SESSION[$sidebarCacheKey]);
-            header('Location: ' . $redirectTo);
+            if (!headers_sent()) {
+              header('Location: ' . $redirectTo);
+            } else {
+              echo '<script>window.location.href = ' . json_encode($redirectTo) . ';</script>';
+            }
             exit;
           }
         }
@@ -172,7 +176,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
   $_SESSION['sidebar_account_flash_error'] = $accountError;
   $_SESSION['sidebar_account_old_username'] = $submittedUsername;
   $_SESSION['sidebar_account_old_recovery_email'] = $submittedRecoveryEmail;
-  header('Location: ' . $redirectTo);
+  if (!headers_sent()) {
+    header('Location: ' . $redirectTo);
+  } else {
+    echo '<script>window.location.href = ' . json_encode($redirectTo) . ';</script>';
+  }
   exit;
 }
 
