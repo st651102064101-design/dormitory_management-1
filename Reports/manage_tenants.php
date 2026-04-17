@@ -234,100 +234,216 @@ try {
       .reports-page .manage-panel { margin-top: 1.4rem; margin-bottom: 1.4rem; background: #0f172a; border: 1px solid rgba(148,163,184,0.2); box-shadow: 0 12px 30px rgba(0,0,0,0.2); }
       .reports-page .manage-panel:first-of-type { margin-top: 0.2rem; }
 
-      /* White theme overrides */
+      /* SaaS Light theme overrides */
       body.reports-page,
       body.reports-page .app-main {
         background: #ffffff !important;
         color: #0f172a !important;
       }
+
       .reports-page .manage-panel {
+        margin-top: 1.5rem;
+        margin-bottom: 1.5rem;
         background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08) !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
       }
-      .reports-page .section-header h1,
+
+      .reports-page .manage-panel:first-of-type {
+        margin-top: 0.2rem;
+      }
+
+      .reports-page .section-header h1 {
+        color: #0f172a !important;
+      }
+
       .reports-page .section-header p,
-      .reports-page .manage-panel p,
-      .reports-page .manage-panel div,
-      .reports-page .manage-panel label {
-        color: #0f172a;
-      }
-
-      .tenant-stat-card {
-        background: #ffffff !important;
-        border: 1px solid #e2e8f0 !important;
-        color: #0f172a !important;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
-      }
-      .tenant-stat-card h3,
-      .tenant-stat-card .stat-meta { color: #64748b !important; }
-
-      #toggleTenantFormBtn {
-        background: #f8fafc !important;
-        border: 1px solid #cbd5e1 !important;
-        color: #334155 !important;
-      }
-      #toggleTenantFormBtn:hover {
-        background: #f1f5f9 !important;
-        border-color: #94a3b8 !important;
-      }
-
-      #addTenantSection {
-        background: #ffffff !important;
-        color: #0f172a !important;
-      }
-      #addTenantSection .section-header p { color: #64748b !important; }
-
-      .tenant-form-group label { color: #334155 !important; }
-      .tenant-form-group input,
-      .tenant-form-group select,
-      .tenant-form-group textarea {
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        color: #0f172a !important;
-      }
-      .tenant-form-group input::placeholder,
-      .tenant-form-group textarea::placeholder { color: #94a3b8 !important; }
-
-      .status-filter-btn {
-        background: #f8fafc !important;
-        border: 1px solid #cbd5e1 !important;
-        color: #334155 !important;
-      }
-      .status-filter-btn:hover {
-        background: #f1f5f9 !important;
-        border-color: #94a3b8 !important;
-      }
-
-      #sortSelect {
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        color: #0f172a !important;
-      }
-
       .table-note,
       .expense-meta,
       .reports-page [style*="color:#94a3b8"] {
         color: #64748b !important;
       }
 
+      .tenant-stats {
+        gap: 1.5rem;
+        margin-top: 0;
+      }
+
+      .tenant-stat-card {
+        background: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px;
+        color: #0f172a !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+
+      .tenant-stat-card:hover {
+        transform: translateY(-2px);
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+      }
+
+      .tenant-stat-card h3 {
+        color: #64748b !important;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .tenant-stat-card .stat-value {
+        color: #0f172a;
+        font-size: 2.25rem;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+      }
+
+      .tenant-stat-card .stat-meta {
+        color: #64748b !important;
+        font-size: 0.85rem;
+      }
+
+      .tenant-form-group label {
+        color: #475569 !important;
+        font-size: 0.85rem;
+      }
+
+      .tenant-form-group input,
+      .tenant-form-group select,
+      .tenant-form-group textarea {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #334155 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+
+      .tenant-form-group input::placeholder,
+      .tenant-form-group textarea::placeholder {
+        color: #94a3b8 !important;
+      }
+
+      .tenant-form-group input:focus,
+      .tenant-form-group select:focus,
+      .tenant-form-group textarea:focus {
+        border-color: #7dd3fc !important;
+        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.3) !important;
+      }
+
+      #toggleTenantFormBtn {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #334155 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+      }
+
+      #toggleTenantFormBtn:hover {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+
+      #addTenantSection {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+
+      #addTenantSection .section-header p {
+        color: #64748b !important;
+      }
+
+      .status-badge {
+        border: 1px solid transparent;
+        min-width: 92px;
+        color: inherit !important;
+      }
+
+      .status-active {
+        background: #ecfdf3;
+        border-color: #bbf7d0;
+        color: #15803d;
+      }
+
+      .status-pending {
+        background: #eff6ff;
+        border-color: #bfdbfe;
+        color: #1d4ed8;
+      }
+
+      .status-booking {
+        background: #fffbeb;
+        border-color: #fde68a;
+        color: #b45309;
+      }
+
+      .status-cancel-booking {
+        background: #fff7ed;
+        border-color: #fdba74;
+        color: #c2410c;
+      }
+
+      .status-inactive {
+        background: #fef2f2;
+        border-color: #fecaca;
+        color: #b91c1c;
+      }
+
+      .status-filter-btn {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #334155 !important;
+        border-radius: 8px;
+      }
+
+      .status-filter-btn:hover {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+      }
+
+      .status-filter-btn.active {
+        background: #e0f2fe !important;
+        color: #0369a1 !important;
+        border-color: #bae6fd !important;
+        box-shadow: none !important;
+      }
+
+      #sortSelect {
+        padding: 0.6rem 2.5rem 0.6rem 1rem !important;
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #f8fafc url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/></svg>") no-repeat right 0.75rem center/16px 16px !important;
+        color: #334155 !important;
+        font-size: 0.95rem !important;
+        font-weight: 500;
+        appearance: none;
+        -webkit-appearance: none;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+
       .report-table .datatable-top,
       .report-table .datatable-bottom {
         background: #ffffff !important;
+        border: none;
       }
-      .report-table .datatable-input {
-        background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        color: #0f172a !important;
-      }
-      .report-table .datatable-input::placeholder { color: #64748b !important; }
+
+      .report-table .datatable-input,
       .report-table .datatable-selector {
         background: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        color: #0f172a !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #334155 !important;
+        border-radius: 8px;
       }
+
+      .report-table .datatable-input::placeholder {
+        color: #64748b !important;
+      }
+
       .report-table .datatable-dropdown label,
-      .report-table .datatable-info { color: #475569 !important; }
+      .report-table .datatable-info {
+        color: #475569 !important;
+      }
+
       .report-table .datatable-table thead th,
       .report-table .datatable-table thead td,
       .report-table .datatable-table th {
@@ -335,69 +451,99 @@ try {
         color: #334155 !important;
         border-color: #e2e8f0 !important;
       }
+
       .report-table .datatable-table tbody tr,
       .report-table .datatable-table tbody td,
       .report-table .datatable-table td {
         background: #ffffff !important;
         color: #1e293b !important;
-        border-color: #e2e8f0 !important;
+        border-color: #f1f5f9 !important;
       }
+
       .report-table .datatable-table tbody tr:hover,
       .report-table .datatable-table tbody tr:hover td {
         background: #f8fafc !important;
       }
+
       .report-table .datatable-pagination a,
       .report-table .datatable-pagination button {
         background: #ffffff !important;
         color: #334155 !important;
-        border: 1px solid #cbd5e1 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px;
       }
+
       .report-table .datatable-pagination .active a,
       .report-table .datatable-pagination .active button {
-        background: #60a5fa !important;
-        color: #ffffff !important;
-        border-color: #60a5fa !important;
+        background: #e0f2fe !important;
+        color: #0369a1 !important;
+        border-color: #7dd3fc !important;
       }
 
       .booking-modal {
-        background: rgba(15,23,42,0.45) !important;
+        background: rgba(15, 23, 42, 0.45) !important;
       }
+
       .booking-modal-content {
         background: #ffffff !important;
         border: 1px solid #e2e8f0 !important;
         color: #0f172a !important;
-        box-shadow: 0 20px 50px rgba(15,23,42,0.2) !important;
+        border-radius: 16px;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16) !important;
       }
-      .booking-modal-content h2 { color: #0f172a !important; }
-      .modal-actions .btn-submit { color: #ffffff !important; }
+
+      .booking-modal-content h2 {
+        color: #0f172a !important;
+      }
+
+      .modal-actions .btn-submit {
+        background: #60a5fa !important;
+        color: #ffffff !important;
+        box-shadow: none;
+      }
+
+      .modal-actions .btn-submit:hover {
+        background: #3b82f6 !important;
+        box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4) !important;
+      }
+
       .modal-actions .btn-cancel {
-        background: #fef2f2 !important;
-        color: #b91c1c !important;
-        border-color: #fecaca !important;
+        background: #ffffff !important;
+        color: #475569 !important;
+        border-color: #e2e8f0 !important;
+      }
+
+      .modal-actions .btn-cancel:hover {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
       }
 
       .reports-page .crud-column .animate-ui-action-btn.edit,
       .reports-page .crud-column .btn-edit-tenant {
-        background: #2563eb !important;
-        border: 1px solid #1d4ed8 !important;
-        color: #ffffff !important;
+        background: #e0f2fe !important;
+        border: 1px solid #bae6fd !important;
+        color: #0369a1 !important;
       }
+
       .reports-page .crud-column .animate-ui-action-btn.edit:hover,
       .reports-page .crud-column .btn-edit-tenant:hover {
-        background: #1d4ed8 !important;
-        border-color: #1e40af !important;
+        background: #bae6fd !important;
+        border-color: #7dd3fc !important;
+        color: #075985 !important;
       }
 
       .reports-page .crud-column .animate-ui-action-btn.delete,
       .reports-page .crud-column .btn-delete-tenant {
-        background: #dc2626 !important;
-        border: 1px solid #b91c1c !important;
-        color: #ffffff !important;
+        background: #fee2e2 !important;
+        border: 1px solid #fecaca !important;
+        color: #b91c1c !important;
       }
+
       .reports-page .crud-column .animate-ui-action-btn.delete:hover,
       .reports-page .crud-column .btn-delete-tenant:hover {
-        background: #b91c1c !important;
-        border-color: #991b1b !important;
+        background: #fecaca !important;
+        border-color: #fca5a5 !important;
+        color: #991b1b !important;
       }
 
       /* ── Mobile responsive ────────────────────────────────── */
@@ -432,10 +578,10 @@ try {
         #table-tenants thead { display: none !important; }
         #table-tenants tbody tr {
           border-radius: 12px !important;
-          border: 1px solid rgba(255,255,255,0.1) !important;
+          border: 1px solid #e2e8f0 !important;
           margin-bottom: 0.75rem !important;
           padding: 0.75rem !important;
-          background: rgba(15,23,42,0.55) !important;
+          background: #f8fafc !important;
         }
         #table-tenants td {
           padding: 0.3rem 0 !important;
@@ -454,21 +600,13 @@ try {
           display: flex !important;
           gap: 0.5rem !important;
           padding-top: 0.6rem !important;
-          border-top: 1px solid rgba(255,255,255,0.08) !important;
+          border-top: 1px solid #e2e8f0 !important;
           margin-top: 0.3rem !important;
         }
         #table-tenants td.crud-column .animate-ui-action-btn {
           flex: 1 !important;
           text-align: center !important;
           justify-content: center !important;
-        }
-        /* Light theme overrides */
-        body.reports-page #table-tenants tbody tr {
-          background: #f8fafc !important;
-          border-color: #e2e8f0 !important;
-        }
-        body.reports-page #table-tenants td.crud-column {
-          border-top-color: #e2e8f0 !important;
         }
         /* Datatable top/bottom controls stack vertically */
         .datatable-top, .datatable-bottom {
@@ -578,16 +716,16 @@ main > div:first-of-type,
 
           <!-- Toggle button for tenant form -->
           <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleTenantFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#1e293b;border:1px solid #334155;color:#cbd5e1;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(0,0,0,0.1);" onclick="toggleTenantForm()" onmouseover="this.style.background='#334155';this.style.borderColor='#475569'" onmouseout="this.style.background='#1e293b';this.style.borderColor='#334155'">
+            <button type="button" id="toggleTenantFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:0.95rem;background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:8px;transition:all 0.2s;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);" onclick="toggleTenantForm()" onmouseover="this.style.background='#f8fafc';this.style.borderColor='#cbd5e1';this.style.color='#0f172a'" onmouseout="this.style.background='#ffffff';this.style.borderColor='#e2e8f0';this.style.color='#334155'">
               <span id="toggleTenantFormIcon">▼</span> <span id="toggleTenantFormText">ซ่อนฟอร์ม</span>
             </button>
           </div>
 
-          <section class="manage-panel" style="background:linear-gradient(135deg, rgba(15,23,42,0.95), rgba(2,6,23,0.95)); color:#f8fafc;" id="addTenantSection">
+          <section class="manage-panel" style="background:#ffffff; color:#0f172a;" id="addTenantSection">
             <div class="section-header">
               <div>
                 <h1>เพิ่มผู้เช่าใหม่</h1>
-                <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">สถานะผู้เช่าจะถูกตั้งค่าและปรับอัตโนมัติตามการจองและการเข้าพัก</p>
+                <p style="margin-top:0.25rem;color:#64748b;">สถานะผู้เช่าจะถูกตั้งค่าและปรับอัตโนมัติตามการจองและการเข้าพัก</p>
               </div>
             </div>
             <form action="../Manage/process_tenant.php" method="post" id="tenantForm">
@@ -710,7 +848,7 @@ main > div:first-of-type,
             <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>ผู้เช่าทั้งหมด</h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">รายการผู้เช่าและสถานะ</p>
+                <p style="color:#64748b;margin-top:0.2rem;">รายการผู้เช่าและสถานะ</p>
               </div>
               <div class="status-filters">
                 <button type="button" class="status-filter-btn active" data-status-filter="all">ทั้งหมด</button>
@@ -720,7 +858,7 @@ main > div:first-of-type,
                 <button type="button" class="status-filter-btn" data-status-filter="4">ยกเลิกจองห้อง</button>
                 <button type="button" class="status-filter-btn" data-status-filter="0">ย้ายออก</button>
               </div>
-              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 2.5rem 0.6rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;font-size:0.95rem;font-weight:500;cursor:pointer;appearance:none;-webkit-appearance:none;">
                 <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>ล่าสุด → เก่าสุด</option>
                 <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เก่าสุด → ล่าสุด</option>
                 <option value="status_name" <?php echo ($sortBy === 'status_name' ? 'selected' : ''); ?>>สถานะ และ ชื่อ</option>
