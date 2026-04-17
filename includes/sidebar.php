@@ -4609,6 +4609,32 @@ async function handleGoogleUnlink(e) {
   });
 })();
 
+// Auto-close sidebar when a navigation link is clicked or clicking outside
+document.addEventListener('DOMContentLoaded', function() {
+  document.addEventListener('click', function(e) {
+    const sidebar = document.querySelector('.app-sidebar');
+    const toggleBtn = document.getElementById('sidebar-toggle');
+    if (!sidebar) return;
+
+    const isNavLink = e.target.closest('.app-nav a') !== null;
+    
+    if (window.innerWidth <= 1024 && sidebar.classList.contains('mobile-open')) {
+      if ((!sidebar.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) || isNavLink) {
+        sidebar.classList.remove('mobile-open');
+        document.body.classList.remove('sidebar-open');
+      }
+    } else if (window.innerWidth > 1024 && !sidebar.classList.contains('collapsed')) {
+      // On desktop, auto-collapse ONLY when clicking outside the sidebar
+      if (!sidebar.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) {
+        sidebar.classList.add('collapsed');
+        try {
+          localStorage.setItem('sidebarCollapsed', 'true');
+        } catch(err) {}
+      }
+    }
+  });
+});
+
 // Legacy sidebar toggle - only runs if sidebar_toggle.php is not loaded
 // This provides backward compatibility for pages that don't include sidebar_toggle.php
 (function() {
@@ -4660,26 +4686,6 @@ async function handleGoogleUnlink(e) {
       } else {
         var isOpen = sidebar.classList.toggle('mobile-open');
         document.body.classList.toggle('sidebar-open', isOpen);
-      }
-    });
-    
-    // ซ่อนตามเงื่อนไข (คลิกนอก Sidebar รูปแบบ Desktop/Mobile หรือคลิกลิงก์เมนู)
-    document.addEventListener('click', function(e) {
-      const isNavLink = e.target.closest('.app-nav a') !== null;
-      
-      if (window.innerWidth <= 1024 && sidebar.classList.contains('mobile-open')) {
-        if ((!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) || isNavLink) {
-          sidebar.classList.remove('mobile-open');
-          document.body.classList.remove('sidebar-open');
-        }
-      } else if (window.innerWidth > 1024 && !sidebar.classList.contains('collapsed')) {
-        // Desktop: ปิดเมื่อคลิกนอกบริเวณ Sidebar (ยกเว้นปุ่ม Toggle)
-        if ((!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) || isNavLink) {
-          sidebar.classList.add('collapsed');
-          try {
-            localStorage.setItem('sidebarCollapsed', 'true');
-          } catch(err) {}
-        }
       }
     });
   }
