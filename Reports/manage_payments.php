@@ -2587,8 +2587,8 @@ main > div:first-of-type,
     <div class="app-shell">
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
-      <main class="app-main">
-        <div style="max-width: 1280px; margin: 0 auto; width: 100%;">
+      <main class="app-main" style="display: flex; align-items: flex-start; justify-content: center; width: 100%;">
+        <div style="flex: 1; max-width: 1280px; min-width: 0; padding: 0 1rem; padding-left: 1rem !important; box-sizing: border-box; margin: auto;">
           <?php
             $pageTitle = 'จัดการการชำระเงิน';
             include __DIR__ . '/../includes/page_header.php';
