@@ -1489,17 +1489,13 @@ main > div:first-of-type,
 
       // Hide animate-ui modal overlays for this page
       document.addEventListener('DOMContentLoaded', () => {
-        try {
-          const overlays = document.querySelectorAll('.animate-ui-modal-overlay');
-          overlays.forEach(el => {
-            el.style.display = 'none !important';
-            el.style.pointerEvents = 'none !important';
-            el.style.visibility = 'hidden !important';
-            el.remove();
-          });
-        } catch (e) {
-          console.error('Error removing overlays:', e);
-        }
+        const overlays = document.querySelectorAll('.animate-ui-modal-overlay');
+        overlays.forEach(el => {
+          el.style.display = 'none';
+          el.style.pointerEvents = 'none';
+          el.style.visibility = 'hidden';
+          el.remove();
+        });
 
         // Restore form visibility from localStorage
         const isFormVisible = localStorage.getItem('roomFormVisible') !== 'false';

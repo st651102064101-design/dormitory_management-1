@@ -4749,14 +4749,12 @@ main > div:first-of-type,
         try {
           const overlays = document.querySelectorAll('.animate-ui-modal-overlay');
           overlays.forEach(el => {
-            el.style.display = 'none !important';
-            el.style.pointerEvents = 'none !important';
-            el.style.visibility = 'hidden !important';
+            el.style.display = 'none';
+            el.style.pointerEvents = 'none';
+            el.style.visibility = 'hidden';
             el.remove();
           });
-        } catch (e) {
-          console.error('Error removing overlays:', e);
-        }
+        } catch (e) {}
 
         const safeGet = (key) => {
           try { return localStorage.getItem(key); } catch (err) { return null; }
