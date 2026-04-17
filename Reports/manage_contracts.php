@@ -963,6 +963,408 @@ $pendingRefundCtrIdSet = array_flip(array_column($refundPendingContracts, 'ctr_i
         #cdrDrawer { width: 100% !important; }
         .cdr-grid { grid-template-columns: 1fr !important; }
       }
+
+      /* =====================================================
+         FINAL SaaS LIGHT OVERRIDES
+         ===================================================== */
+      body.reports-page,
+      body.reports-page main,
+      body.reports-page .app-main {
+        background: #ffffff !important;
+        color: #0f172a !important;
+      }
+
+      .manage-panel {
+        background: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+      }
+
+      .manage-panel h1,
+      .manage-panel h2,
+      .manage-panel h3 {
+        color: #0f172a !important;
+      }
+
+      .contract-stats {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+      }
+
+      .contract-stat-card {
+        background: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+      }
+
+      .contract-stat-card .stat-label {
+        color: #64748b !important;
+      }
+
+      .contract-stat-card .stat-chip {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0;
+        color: #475569 !important;
+      }
+
+      .form-toggle-btn {
+        background: #ffffff !important;
+        color: #334155 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+      }
+
+      .form-toggle-btn:hover {
+        background: #f8fafc !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+      }
+
+      .form-toggle-btn,
+      .form-toggle-btn * {
+        color: inherit !important;
+      }
+
+      .contract-form {
+        background: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+      }
+
+      .form-group label {
+        color: #475569 !important;
+        font-size: 0.85rem;
+      }
+
+      .form-group input,
+      .form-group select {
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        color: #334155 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+
+      .form-group input:focus,
+      .form-group select:focus {
+        border-color: #7dd3fc !important;
+        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.3) !important;
+      }
+
+      .form-group select option {
+        background: #ffffff !important;
+        color: #334155 !important;
+      }
+
+      .form-group select option:checked {
+        background: #e2e8f0 !important;
+        color: #0f172a !important;
+      }
+
+      .btn-submit {
+        background: #60a5fa !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+      }
+
+      .btn-submit:hover {
+        background: #3b82f6 !important;
+      }
+
+      .btn-cancel {
+        background: #ffffff !important;
+        color: #475569 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+      }
+
+      .btn-cancel:hover {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+      }
+
+      .quick-date-btn {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #475569 !important;
+        border-radius: 8px !important;
+      }
+
+      .quick-date-btn:hover {
+        background: #f1f5f9 !important;
+        border-color: #cbd5e1 !important;
+      }
+
+      .report-table {
+        color: #334155 !important;
+      }
+
+      .report-table thead,
+      .report-table th {
+        background: #f8fafc !important;
+        color: #64748b !important;
+      }
+
+      .report-table th,
+      .report-table td {
+        border-bottom: 1px solid #f1f5f9 !important;
+        color: #334155 !important;
+      }
+
+      .report-table tbody tr:hover {
+        background: #f8fafc !important;
+      }
+
+      #table-contracts tbody tr.cdr-clickable:hover {
+        background: #f0f9ff !important;
+      }
+
+      #table-contracts tbody tr[style*="border-bottom: 1px solid rgba(255,255,255,0.1)"] {
+        border-bottom: 1px solid #f1f5f9 !important;
+      }
+
+      #table-contracts td[style*="color: #e2e8f0"] {
+        color: #334155 !important;
+      }
+
+      .datatable-top,
+      .datatable-bottom {
+        background: #ffffff !important;
+        border: none;
+      }
+
+      .datatable-selector,
+      .datatable-input {
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        color: #334155 !important;
+        border-radius: 8px;
+      }
+
+      .datatable-input::placeholder {
+        color: #64748b !important;
+      }
+
+      .datatable-dropdown label,
+      .datatable-info {
+        color: #64748b !important;
+      }
+
+      .datatable-pagination a,
+      .datatable-pagination button {
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        color: #475569 !important;
+        border-radius: 8px;
+      }
+
+      .datatable-pagination .active a,
+      .datatable-pagination .active button {
+        background: #e0f2fe !important;
+        border-color: #7dd3fc !important;
+        color: #0369a1 !important;
+      }
+
+      .ctr-filter-pill {
+        background: #f8fafc !important;
+        color: #475569 !important;
+        border: 1px solid #e2e8f0 !important;
+      }
+
+      .ctr-filter-pill:hover {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+      }
+
+      .ctr-filter-pill .pill-count {
+        background: #e2e8f0 !important;
+        color: #334155 !important;
+      }
+
+      .ctr-filter-pill.pill-all.active {
+        background: #e2e8f0 !important;
+        border-color: #94a3b8 !important;
+        color: #0f172a !important;
+      }
+
+      .ctr-filter-pill.pill-active.active {
+        background: #dcfce7 !important;
+        border-color: #16a34a !important;
+        color: #15803d !important;
+      }
+
+      .ctr-filter-pill.pill-waiting.active {
+        background: #fef3c7 !important;
+        border-color: #d97706 !important;
+        color: #92400e !important;
+      }
+
+      .ctr-filter-pill.pill-notifying.active {
+        background: #ffedd5 !important;
+        border-color: #ea580c !important;
+        color: #9a3412 !important;
+      }
+
+      .ctr-filter-pill.pill-cancelled.active {
+        background: #fee2e2 !important;
+        border-color: #dc2626 !important;
+        color: #991b1b !important;
+      }
+
+      .ctr-filter-pill.pill-expiring.active {
+        background: #fefce8 !important;
+        border-color: #ca8a04 !important;
+        color: #713f12 !important;
+      }
+
+      .info-bar {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #334155 !important;
+      }
+
+      .info-bar span[style*="rgba(255,255,255,0.1)"] {
+        background: #ffffff !important;
+        border-color: #e2e8f0 !important;
+        color: #0f172a !important;
+      }
+
+      .info-bar span[style*="rgba(34,197,94"] {
+        background: #dcfce7 !important;
+        border-color: #16a34a !important;
+        color: #15803d !important;
+      }
+
+      .info-bar span[style*="rgba(245,158,11"] {
+        background: #fef3c7 !important;
+        border-color: #d97706 !important;
+        color: #92400e !important;
+      }
+
+      .info-bar span[style*="rgba(251,146,60"] {
+        background: #ffedd5 !important;
+        border-color: #ea580c !important;
+        color: #9a3412 !important;
+      }
+
+      .info-bar span[style*="rgba(251,191,36"] {
+        background: #fefce8 !important;
+        border-color: #ca8a04 !important;
+        color: #713f12 !important;
+      }
+
+      .info-bar span[style*="rgba(239,68,68"] {
+        background: #fee2e2 !important;
+        border-color: #dc2626 !important;
+        color: #991b1b !important;
+      }
+
+      .info-bar span[style*="rgba(234,179,8"] {
+        background: #fefce8 !important;
+        border-color: #ca8a04 !important;
+        color: #713f12 !important;
+      }
+
+      .info-bar span[style*="rgba(255,255,255,0.2)"] {
+        color: #94a3b8 !important;
+      }
+
+      .cancel-contract-btn {
+        background: #fef3c7 !important;
+        border: 1px solid #fcd34d !important;
+        color: #92400e !important;
+      }
+
+      .cancel-contract-btn:hover {
+        background: #fde68a !important;
+        border-color: #f59e0b !important;
+      }
+
+      .delete-contract-btn,
+      .btn-danger {
+        background: #fee2e2 !important;
+        border: 1px solid #fecaca !important;
+        color: #b91c1c !important;
+      }
+
+      .delete-contract-btn:hover,
+      .btn-danger:hover {
+        background: #fecaca !important;
+        border-color: #fca5a5 !important;
+      }
+
+      #clearFilterBtn {
+        background: #fef2f2 !important;
+        border: 1px solid #fecaca !important;
+        color: #b91c1c !important;
+      }
+
+      #clearFilterBtn:hover {
+        background: #fee2e2 !important;
+      }
+
+      #cdrDrawer {
+        --cdr-bg: #ffffff;
+        --cdr-border: rgba(0,0,0,0.10);
+        --cdr-text-pri: #0f172a;
+        --cdr-text-body: #1e293b;
+        --cdr-text-muted: #64748b;
+        --cdr-text-dim: #94a3b8;
+        --cdr-divider: rgba(0,0,0,0.07);
+        --cdr-card-bg: rgba(0,0,0,0.025);
+        --cdr-card-bdr: rgba(0,0,0,0.09);
+        --cdr-card-hover: rgba(0,0,0,0.06);
+        --cdr-close-bg: rgba(0,0,0,0.05);
+        --cdr-close-bdr: rgba(0,0,0,0.12);
+      }
+
+      #cdrOverlay {
+        background: rgba(15,23,42,0.35) !important;
+      }
+
+      .cdr-tab:hover:not(.active) {
+        background: rgba(0,0,0,0.03);
+      }
+
+      .cdr-tab[data-tab="overview"].active {
+        color: #0284c7;
+        border-bottom-color: #0284c7;
+        background: rgba(2,132,199,0.06);
+      }
+
+      .cdr-tab[data-tab="billing"].active {
+        color: #16a34a;
+        border-bottom-color: #16a34a;
+        background: rgba(22,163,74,0.06);
+      }
+
+      .cdr-tab[data-tab="meter"].active {
+        color: #d97706;
+        border-bottom-color: #d97706;
+        background: rgba(217,119,6,0.06);
+      }
+
+      @media (max-width: 768px) {
+        #table-contracts tbody tr {
+          border: 1px solid #e2e8f0 !important;
+          background: #f8fafc !important;
+        }
+
+        #table-contracts tbody td {
+          border-bottom: 1px solid #e2e8f0 !important;
+          color: #334155 !important;
+        }
+
+        #table-contracts tbody td:first-child {
+          border-bottom: 2px solid #e2e8f0 !important;
+          color: #0f172a !important;
+        }
+      }
     </style>
     <script>
       // Define a global sidebar toggle early so the header button responds immediately
@@ -1216,25 +1618,25 @@ main > div:first-of-type,
                 <?php endif; ?>
 
                 <div class="info-bar" style="margin: 0.5rem 0 1rem; display:flex; flex-wrap:nowrap; align-items:center; gap:0.5rem; overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; scrollbar-width:thin; scrollbar-color:rgba(148,163,184,0.4) transparent; cursor:grab; padding-bottom:2px; min-width:0;">
-                  <span style="font-size:0.8rem; color:rgba(255,255,255,0.45); white-space:nowrap; flex-shrink:0;">สัญญาทั้งหมด</span>
+                  <span style="font-size:0.8rem; color:#94a3b8; white-space:nowrap; flex-shrink:0;">สัญญาทั้งหมด</span>
                   <!-- total -->
-                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#f1f5f9;">
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#0f172a;">
                     📋 <?php echo $filterCounts['all']; ?> รายการ
                   </span>
-                  <span style="color:rgba(255,255,255,0.2);font-size:0.8rem;">|</span>
+                  <span style="color:#94a3b8;font-size:0.8rem;">|</span>
                   <!-- active -->
-                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(34,197,94,0.15);border:1px solid rgba(34,197,94,0.35);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#4ade80;">
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#ecfdf3;border:1px solid #bbf7d0;border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#166534;">
                     ✅ ทำสัญญาอยู่ <?php echo $filterCounts['active']; ?>
                   </span>
                   <?php if ($filterCounts['waiting'] > 0): ?>
                   <!-- waiting -->
-                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.35);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fbbf24;">
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#b45309;">
                     ⏳ รอเข้าพัก <?php echo $filterCounts['waiting']; ?>
                   </span>
                   <?php endif; ?>
                   <?php if ($filterCounts['notifying'] > 0): ?>
                   <!-- notifying -->
-                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(251,146,60,0.15);border:1px solid rgba(251,146,60,0.35);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fdba74;">
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#fff7ed;border:1px solid #fdba74;border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#c2410c;">
                     📢 แจ้งยกเลิก <?php echo $filterCounts['notifying']; ?>
                   </span>
                   <?php endif; ?>
@@ -1244,18 +1646,18 @@ main > div:first-of-type,
                     $purelyDone = $filterCounts['cancelled'] - $pendingRefundCount;
                   ?>
                   <?php if ($pendingRefundCount > 0): ?>
-                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(251,191,36,0.15);border:1px solid rgba(251,191,36,0.4);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fde68a;">
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#fffbeb;border:1px solid #fcd34d;border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#92400e;">
                     💸 รอคืนเงินมัดจำ <?php echo $pendingRefundCount; ?>
                   </span>
                   <?php endif; ?>
                   <?php if ($purelyDone > 0): ?>
-                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.3);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fca5a5;">
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#fef2f2;border:1px solid #fecaca;border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#b91c1c;">
                     ❌ ยกเลิกแล้ว <?php echo $purelyDone; ?>
                   </span>
                   <?php endif; ?>
                   <?php if ($filterCounts['expiring'] > 0): ?>
                   <!-- expiring -->
-                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:rgba(234,179,8,0.15);border:1px solid rgba(234,179,8,0.4);border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#fde047;">
+                  <span style="display:inline-flex;align-items:center;gap:0.35rem;background:#fffbeb;border:1px solid #fde68a;border-radius:999px;padding:0.25rem 0.75rem;font-size:0.85rem;font-weight:700;color:#a16207;">
                     ⏰ ใกล้หมดสัญญา <?php echo $filterCounts['expiring']; ?>
                   </span>
                   <?php endif; ?>
@@ -1293,7 +1695,7 @@ main > div:first-of-type,
                 </div>
 
                 <!-- Add Contract Form Toggle -->
-                <button class="form-toggle-btn" id="toggleFormBtn" type="button" onclick="window.__toggleContractForm(event); return false;" style="color: #ffffff;">
+                <button class="form-toggle-btn" id="toggleFormBtn" type="button" onclick="window.__toggleContractForm(event); return false;" style="color: #334155;">
                   <span id="toggleFormIcon" style="color: inherit;">▶</span>
                   <span id="toggleFormText" style="color: inherit;">แสดงฟอร์ม</span>
                 </button>
@@ -1342,8 +1744,8 @@ main > div:first-of-type,
 
                 <!-- Add Contract Form -->
                 <form class="contract-form hide" id="contractForm" action="../Manage/process_contract.php" method="POST" data-allow-submit>
-                    <h3 style="margin-top: 0;">เพิ่มสัญญาเช่าใหม่</h3>
-                    <p style="color: rgba(255,255,255,0.7); font-size: 0.9rem; margin: 0 0 1rem 0;">
+                  <h3 style="margin-top: 0;">เพิ่มสัญญาเช่าใหม่</h3>
+                  <p style="color: #64748b; font-size: 0.9rem; margin: 0 0 1rem 0;">
                         เลือกเฉพาะผู้เช่าและห้องพัก - วันที่และเงินประกันจะถูกกำหนดอัตโนมัติ
                     </p>
                     <div class="form-grid">
@@ -1407,12 +1809,12 @@ main > div:first-of-type,
                         <div class="form-group" style="display: none;">
                             <input type="number" id="ctr_deposit" name="ctr_deposit" value="2000">
                         </div>
-                        <div class="form-group" style="grid-column: 1 / -1; padding: 1rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 4px;">
+                        <div class="form-group" style="grid-column: 1 / -1; padding: 1rem; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px;">
                             <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;color:#3b82f6;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                                 <strong style="color: #3b82f6;">หมายเหตุ:</strong>
                             </div>
-                            <ul style="margin: 0; padding-left: 1.5rem; color: rgba(255,255,255,0.8);">
+                          <ul style="margin: 0; padding-left: 1.5rem; color: #475569;">
                                 <li>วันเริ่มสัญญา: <strong style="color: #3b82f6;">วันนี้ (<?php echo thaiDate(date('Y-m-d')); ?>)</strong></li>
                                 <li>วันสิ้นสุดสัญญา: <strong style="color: #3b82f6;" id="end_date_display">6 เดือนจากวันนี้</strong></li>
                                 <li>เงินประกัน: <strong style="color: #3b82f6;">2,000 บาท</strong></li>
@@ -1428,7 +1830,7 @@ main > div:first-of-type,
 
                 <!-- Clear Filter button lives OUTSIDE contractsTableArea so it survives AJAX refresh -->
                 <div id="clearFilterBtnWrap" style="display:none; margin: 0 0 0.4rem;">
-                  <button id="clearFilterBtn" onclick="clearContractsFilter()" title="ล้าง Filter และการค้นหา" style="display:inline-flex; align-items:center; gap:0.35rem; background:rgba(239,68,68,0.12); border:1px solid #ef4444; color:#fca5a5; border-radius:20px; padding:0.3rem 0.75rem; font-size:0.82rem; cursor:pointer; white-space:nowrap; transition:background 0.18s;">
+                  <button id="clearFilterBtn" onclick="clearContractsFilter()" title="ล้าง Filter และการค้นหา" style="display:inline-flex; align-items:center; gap:0.35rem; background:#fef2f2; border:1px solid #fecaca; color:#b91c1c; border-radius:20px; padding:0.3rem 0.75rem; font-size:0.82rem; cursor:pointer; white-space:nowrap; transition:background 0.18s;">
                     ✕ ล้าง Filter
                   </button>
                 </div>
@@ -1508,21 +1910,21 @@ main > div:first-of-type,
                                   $cancelDateDisplay = thaiDate($contract['ctr_end']);
                                 }
                           ?>
-                            <tr class="cdr-clickable" style="border-bottom: 1px solid rgba(255,255,255,0.1);" onclick="if(!event.target.closest('[data-ctrid]'))openContractDetail(<?php echo $ctr_id; ?>)">
-                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="เลขที่สัญญา"><?php echo $ctr_id; ?></td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="ผู้เช่า"><?php echo $tnt_name; ?></td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="ห้องพัก"><?php echo $room_number; ?></td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="วันเริ่มสัญญา"><?php echo $ctr_start; ?></td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="วันสิ้นสุด"><?php echo $ctr_end; ?></td>
+                            <tr class="cdr-clickable" style="border-bottom: 1px solid #e2e8f0;" onclick="if(!event.target.closest('[data-ctrid]'))openContractDetail(<?php echo $ctr_id; ?>)">
+                              <td style="padding: 0.75rem; color: #334155;" data-label="เลขที่สัญญา"><?php echo $ctr_id; ?></td>
+                              <td style="padding: 0.75rem; color: #334155;" data-label="ผู้เช่า"><?php echo $tnt_name; ?></td>
+                              <td style="padding: 0.75rem; color: #334155;" data-label="ห้องพัก"><?php echo $room_number; ?></td>
+                              <td style="padding: 0.75rem; color: #334155;" data-label="วันเริ่มสัญญา"><?php echo $ctr_start; ?></td>
+                              <td style="padding: 0.75rem; color: #334155;" data-label="วันสิ้นสุด"><?php echo $ctr_end; ?></td>
                               <td style="padding: 0.75rem;" data-label="สถานะ">
                                 <span class="status-badge" style="background-color: <?php echo $col; ?>; color: white; padding: 0.4rem 0.8rem; border-radius: 4px; font-size: 0.85rem;">
                                   <?php echo $lbl; ?>
                                 </span>
                                 <?php if ($s === '2' && $cancelDateDisplay !== '-'): ?>
-                                  <div style="margin-top:0.35rem;font-size:0.82rem;color:rgba(255,255,255,0.8);">วันที่จะยกเลิก: <?php echo $cancelDateDisplay; ?></div>
+                                  <div style="margin-top:0.35rem;font-size:0.82rem;color:#64748b;">วันที่จะยกเลิก: <?php echo $cancelDateDisplay; ?></div>
                                 <?php endif; ?>
                               </td>
-                              <td style="padding: 0.75rem; color: #e2e8f0;" data-label="จัดการ" class="action-cell">
+                              <td style="padding: 0.75rem; color: #334155;" data-label="จัดการ" class="action-cell">
                                 <?php if ($s === '2'): ?>
                                   <?php $refundDone = !empty($contract['refund_confirmed']); ?>
                                   <button type="button" class="action-btn btn-warning cancel-contract-btn"
@@ -1929,7 +2331,7 @@ main > div:first-of-type,
             row.style.display = 'table-row';
             row.style.visibility = 'visible';
             row.style.opacity = '1';
-            row.style.color = '#e2e8f0';
+            row.style.color = '#334155';
           });
         };
 
@@ -2047,10 +2449,10 @@ main > div:first-of-type,
             row.style.setProperty('display', 'block', 'important');
             row.style.setProperty('width', '100%', 'important');
             row.style.setProperty('margin-bottom', '0.875rem', 'important');
-            row.style.setProperty('border', '1px solid rgba(255,255,255,0.12)', 'important');
+            row.style.setProperty('border', '1px solid #e2e8f0', 'important');
             row.style.setProperty('border-radius', '10px', 'important');
             row.style.setProperty('overflow', 'hidden', 'important');
-            row.style.setProperty('background', 'rgba(255,255,255,0.03)', 'important');
+            row.style.setProperty('background', '#f8fafc', 'important');
 
             const cells = row.querySelectorAll('td');
             cells.forEach((cell, index) => {
@@ -2064,21 +2466,22 @@ main > div:first-of-type,
               cell.style.setProperty('align-items', 'flex-start', 'important');
               cell.style.setProperty('justify-content', 'unset', 'important');
               cell.style.setProperty('padding', '0.55rem 0.875rem', 'important');
-              cell.style.setProperty('border-bottom', '1px solid rgba(255,255,255,0.06)', 'important');
+              cell.style.setProperty('border-bottom', '1px solid #e2e8f0', 'important');
               cell.style.setProperty('width', '100%', 'important');
               cell.style.setProperty('box-sizing', 'border-box', 'important');
               cell.style.setProperty('font-size', '0.9rem', 'important');
               cell.style.setProperty('word-break', 'break-word', 'important');
               cell.style.setProperty('overflow-wrap', 'break-word', 'important');
+              cell.style.setProperty('color', '#334155', 'important');
 
               if (index === cells.length - 1) {
                 cell.style.setProperty('border-bottom', 'none', 'important');
               }
               if (index === 0) {
                 cell.style.setProperty('padding-bottom', '0.75rem', 'important');
-                cell.style.setProperty('border-bottom', '2px solid rgba(255,255,255,0.1)', 'important');
+                cell.style.setProperty('border-bottom', '2px solid #e2e8f0', 'important');
                 cell.style.setProperty('font-weight', '700', 'important');
-                cell.style.setProperty('color', '#e2e8f0', 'important');
+                cell.style.setProperty('color', '#0f172a', 'important');
                 cell.style.setProperty('font-size', '0.975rem', 'important');
               }
             });
@@ -2225,7 +2628,7 @@ main > div:first-of-type,
 
     /* ---- Theme helper: returns color set for current theme ---- */
     function _getCdrTheme() {
-      const light = document.documentElement.classList.contains('light-theme');
+      const light = true;
       return {
         primary: light ? '#0f172a'              : '#f1f5f9',
         body:    light ? '#1e293b'              : '#e2e8f0',
@@ -2427,14 +2830,14 @@ main > div:first-of-type,
             <div>
               <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">หักค่าเสียหาย (บาท)</label>
               <input id="rfDeductAmt" type="number" min="0" max="${depAmount}" value="${dedAmt}"
-                     style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid ${t.divider};
-                            background:rgba(0,0,0,0.15);color:${t.body};font-size:0.9rem;font-family:inherit;">
+                style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #e2e8f0;
+                  background:#ffffff;color:${t.body};font-size:0.9rem;font-family:inherit;">
             </div>
             <div>
               <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">เหตุผลการหัก (ถ้ามี)</label>
               <input id="rfDeductReason" type="text" value="${dedReason}" placeholder="เช่น ค่าซ่อมประตู, ค่าทำความสะอาด"
-                     style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid ${t.divider};
-                            background:rgba(0,0,0,0.15);color:${t.body};font-size:0.9rem;font-family:inherit;">
+                style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #e2e8f0;
+                  background:#ffffff;color:${t.body};font-size:0.9rem;font-family:inherit;">
             </div>
             <div id="rfCalcDisplay" style="font-size:0.9rem;padding:0.5rem;border-radius:6px;
                        background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);">
