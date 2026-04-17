@@ -1633,6 +1633,7 @@ main > div:first-of-type,
 
       window.addCustomFeature = addCustomFeature;
       window.addCustomFeatureLabel = addCustomFeatureLabel;
+      function deleteCurrentImage() {
         document.getElementById('delete_image').value = '1';
         document.getElementById('edit_image_preview').innerHTML = '<div style="color:#f87171; padding:0.75rem; background:rgba(239,68,68,0.1); border-radius:10px; border:1px dashed rgba(239,68,68,0.3);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:0.4rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> รูปภาพจะถูกลบเมื่อกดบันทึก</div>';
         document.getElementById('delete_image_btn_container').style.display = 'none';
