@@ -361,7 +361,7 @@ $buildHeaderAttributes = static function (array $attributes): string {
   display: flex !important;
   align-items: center;
   justify-content: space-between;
-  margin: 0 auto 1.5rem auto !important;
+  margin: 1.5rem auto 1.5rem auto !important;
   width: 100% !important;
   max-width: 1280px !important;
   transform: translateY(0);
