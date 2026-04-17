@@ -1412,18 +1412,52 @@ if ($currentStatus === '1') {
     </script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <?php if ($showResult && !empty($tenantPortalUrl) && $step5Started): ?>
+    <style>
+        /* Apple Style SweetAlert2 */
+        .apple-swal-popup { border-radius: 14px !important; background: rgba(255, 255, 255, 0.85) !important; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important; width: 280px !important; padding: 20px 0 0 0 !important; color: #000; overflow: hidden; }
+        .theme-dark .apple-swal-popup { background: rgba(30, 30, 30, 0.85) !important; color: #fff; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5) !important; }
+        .apple-swal-title { font-size: 17px !important; font-weight: 600 !important; padding: 0 16px !important; margin: 0 0 4px 0 !important; color: inherit; }
+        .apple-swal-html { font-size: 13px !important; margin: 0 !important; padding: 0 16px 16px !important; color: #666; line-height: 1.3 !important; text-align: center; }
+        .theme-dark .apple-swal-html { color: #aaa; }
+        
+        .apple-swal-actions { margin: 0 !important; width: 100% !important; border-top: 1px solid rgba(0, 0, 0, 0.1) !important; display: flex !important; flex-direction: row !important; }
+        .theme-dark .apple-swal-actions { border-top: 1px solid rgba(255, 255, 255, 0.1) !important; }
+        
+        .apple-swal-confirm, .apple-swal-cancel { flex: 1; margin: 0 !important; background: transparent !important; color: #007AFF !important; border: none !important; font-size: 17px !important; padding: 11px 0 !important; text-align: center; cursor: pointer; display: inline-flex; justify-content: center; align-items: center; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important; font-weight: normal; border-radius: 0 !important; outline: none; box-shadow: none !important; transition: background 0.1s; }
+        .apple-swal-confirm { font-weight: 600 !important; }
+        .apple-swal-cancel { font-weight: 400 !important; border-right: 1px solid rgba(0, 0, 0, 0.1) !important; }
+        
+        .theme-dark .apple-swal-confirm, .theme-dark .apple-swal-cancel { color: #0A84FF !important; }
+        .theme-dark .apple-swal-cancel { border-right: 1px solid rgba(255, 255, 255, 0.1) !important; }
+        
+        .apple-swal-confirm:active, .apple-swal-cancel:active { background: rgba(0, 0, 0, 0.05) !important; }
+        .theme-dark .apple-swal-confirm:active, .theme-dark .apple-swal-cancel:active { background: rgba(255, 255, 255, 0.05) !important; }
+        
+        .apple-swal-timer-progress { background: rgba(0, 0, 0, 0.1) !important; height: 3px !important; }
+        .theme-dark .apple-swal-timer-progress { background: rgba(255, 255, 255, 0.1) !important; }
+    </style>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             let timerInterval;
             Swal.fire({
-                title: 'เสร็จสมบูรณ์!',
+                title: 'เสร็จสมบูรณ์',
                 html: 'กำลังพาท่านไปยังหน้าจัดการผู้เช่าใน <b>5</b> วินาที.',
-                icon: 'success',
                 timer: 5000,
                 timerProgressBar: true,
                 showCancelButton: true,
                 cancelButtonText: 'อยู่หน้านี้ก่อน',
                 confirmButtonText: 'ไปเดี๋ยวนี้',
+                buttonsStyling: false,
+                focusConfirm: false,
+                customClass: {
+                    popup: 'apple-swal-popup',
+                    title: 'apple-swal-title',
+                    htmlContainer: 'apple-swal-html',
+                    actions: 'apple-swal-actions',
+                    confirmButton: 'apple-swal-confirm',
+                    cancelButton: 'apple-swal-cancel',
+                    timerProgressBar: 'apple-swal-timer-progress'
+                },
                 didOpen: () => {
                     const b = Swal.getHtmlContainer().querySelector('b');
                     timerInterval = setInterval(() => {
