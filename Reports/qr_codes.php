@@ -248,8 +248,8 @@ $defaultQrView = 'list';
         }
 
         .qr-wrapper {
-            width: min(1600px, calc(100% - 3rem));
-            max-width: min(1600px, calc(100% - 3rem));
+            width: min(80rem, calc(100% - 3rem));
+            max-width: min(80rem, calc(100% - 3rem));
             margin: 1.5rem auto;
             padding: 1.5rem;
             background: var(--card-bg);
