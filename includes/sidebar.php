@@ -4351,6 +4351,19 @@ async function handleGoogleUnlink(e) {
         } catch (err) {}
       }
 
+      // Auto-collapse sidebar loop
+      const sidebarVar = document.querySelector('.app-sidebar');
+      const toggleBtnVar = document.getElementById('sidebar-toggle');
+      if (sidebarVar) {
+        if (window.innerWidth <= 1024 && sidebarVar.classList.contains('mobile-open')) {
+          sidebarVar.classList.remove('mobile-open');
+          document.body.classList.remove('sidebar-open');
+        } else if (window.innerWidth > 1024 && !sidebarVar.classList.contains('collapsed')) {
+          sidebarVar.classList.add('collapsed');
+          try { localStorage.setItem('sidebarCollapsed', 'true'); } catch(err) {}
+        }
+      }
+
       // ให้ลิงก์ทำงานทันที
       window.location.href = link.getAttribute('href');
     });
@@ -4546,6 +4559,20 @@ async function handleGoogleUnlink(e) {
     const summary = link.closest('summary');
     if (!summary) return;
     e.preventDefault(); // stop default details toggle
+
+    // Auto-collapse sidebar loop
+    const sidebarVar2 = document.querySelector('.app-sidebar');
+    const toggleBtnVar2 = document.getElementById('sidebar-toggle');
+    if (sidebarVar2) {
+      if (window.innerWidth <= 1024 && sidebarVar2.classList.contains('mobile-open')) {
+        sidebarVar2.classList.remove('mobile-open');
+        document.body.classList.remove('sidebar-open');
+      } else if (window.innerWidth > 1024 && !sidebarVar2.classList.contains('collapsed')) {
+        sidebarVar2.classList.add('collapsed');
+        try { localStorage.setItem('sidebarCollapsed', 'true'); } catch(err) {}
+      }
+    }
+
     const href = link.getAttribute('href');
     if (href) window.location.href = href;
   }, true);

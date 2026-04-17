@@ -902,16 +902,7 @@ $statusMap = [
             pointer-events: auto !important;
             cursor: pointer !important;
         }
-        .main-content > .page-header-bar {
-            margin: 1.5rem 1.5rem 1rem;
-            width: calc(100% - 3rem);
-            box-sizing: border-box;
-        }
         @media (max-width: 768px) {
-            .main-content > .page-header-bar {
-                margin: 1rem 1rem 0.75rem;
-                width: calc(100% - 2rem);
-            }
         }
     </style>
 </head>
@@ -921,7 +912,7 @@ $statusMap = [
         
         <main class="main-content">
             <?php $pageTitle = 'รายงานผู้เช่า'; include __DIR__ . '/../includes/page_header.php'; ?>
-            <div class="container" style="max-width: 1280px; margin: 0 auto; padding: 20px; padding-top: 0;">
+            <div class="container" style="max-width: 1280px; margin: 0 auto; width: 100%; padding: 0 1.5rem; box-sizing: border-box; padding-top: 0;">
                 
                 <!-- Page Header -->
                 <div class="page-header">
