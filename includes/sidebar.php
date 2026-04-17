@@ -3839,7 +3839,27 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     document.head.appendChild(script);
   });
 </script>
-<aside class="app-sidebar">
+<script>
+  // Apply saved sidebar state immediately to prevent flashing
+  if (window.innerWidth > 1024) {
+    try {
+      if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        document.write('<style>.app-sidebar { width: var(--sidebar-collapsed-width) !important; }</style>');
+        // We'll also add the class via a script that runs immediately after the aside tag
+      }
+    } catch(e) {}
+  }
+</script>
+<aside class="app-sidebar" id="app-side-bar">
+<script>
+  if (window.innerWidth > 1024) {
+    try {
+      if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        document.getElementById('app-side-bar').classList.add('collapsed');
+      }
+    } catch(e) {}
+  }
+</script>
   <!-- Mobile Close Button -->
   <button type="button" id="sidebar-close-btn" class="sidebar-close-btn" aria-label="ปิด Sidebar" onclick="closeSidebarMobile()">
     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
