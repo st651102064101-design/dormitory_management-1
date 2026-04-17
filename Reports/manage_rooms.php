@@ -1127,8 +1127,8 @@ main > div:first-of-type,
           </section>
 
           <!-- Toggle button for room form -->
-          <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleRoomFormBtn" style="position: relative; z-index: 50; white-space:nowrap;padding:0.85rem 1.5rem;cursor:pointer;font-size:0.95rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;transition:all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;" onclick="toggleRoomForm()" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='#f8fafc'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='#94a3b8'">
+          <div style="margin:1.5rem 0; position: relative; z-index: 9999;">
+            <button type="button" id="toggleRoomFormBtn" style="position: relative; z-index: 9999; pointer-events: all; white-space:nowrap;padding:0.85rem 1.5rem;cursor:pointer;font-size:0.95rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;transition:all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;" onclick="toggleRoomForm()" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='#f8fafc'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='#94a3b8'">
               <span id="toggleRoomFormIcon">▼</span> <span id="toggleRoomFormText">ซ่อนฟอร์ม</span>
             </button>
           </div>
