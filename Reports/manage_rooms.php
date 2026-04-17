@@ -1489,24 +1489,24 @@ main > div:first-of-type,
 
       // Hide animate-ui modal overlays for this page
       document.addEventListener('DOMContentLoaded', () => {
-        const overlays = document.querySelectorAll('.animate-ui-modal-overlay');
-        overlays.forEach(el => {
-          el.style.display = 'none !important';
-          el.style.pointerEvents = 'none !important';
-          el.style.visibility = 'hidden !important';
-          el.remove();
-        });
-
-        // Watch for any new overlays and remove them
-        const observer = new MutationObserver(() => {
-          document.querySelectorAll('.animate-ui-modal-overlay').forEach(el => {
-            el.style.display = 'none !important';
-            el.style.pointerEvents = 'none !important';
-            el.style.visibility = 'hidden !important';
-            el.remove();
-          });
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
+        // Remove overlay if it exists and try to prevent it from appearing
+        const removeOverlay = () => {
+          try {
+            document.querySelectorAll('.animate-ui-modal-overlay').forEach(el => {
+              el.style.display = 'none !important';
+              el.style.pointerEvents = 'none !important';
+              el.style.visibility = 'hidden !important';
+              if (el.parentNode) el.parentNode.removeChild(el);
+            });
+          } catch (e) {}
+        };
+        
+        // Remove overlays on load
+        removeOverlay();
+        
+        // Remove overlays after a short delay in case they load dynamically
+        setTimeout(removeOverlay, 100);
+        setTimeout(removeOverlay, 500);
 
         // Restore form visibility from localStorage
         const isFormVisible = localStorage.getItem('roomFormVisible') !== 'false';
