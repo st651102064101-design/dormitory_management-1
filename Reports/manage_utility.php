@@ -516,7 +516,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save'])) {
 // ดึงห้อง
 if ($showMode === 'occupied') {
     $occupiedSql = "
-        SELECT r.room_id, r.room_number, c.ctr_id, c.ctr_start, t.tnt_name, COALESCE(tw.current_step, 1) AS workflow_step
+        SELECT r.room_id, r.room_number, c.ctr_id, c.ctr_start, t.tnt_name,
+               COALESCE((SELECT MAX(tw.current_step) FROM tenant_workflow tw WHERE tw.ctr_id = c.ctr_id), 1) AS workflow_step
         FROM room r
         JOIN (
             SELECT room_id, MAX(ctr_id) AS ctr_id
@@ -526,7 +527,6 @@ if ($showMode === 'occupied') {
         ) lc ON r.room_id = lc.room_id
         JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
         WHERE c.ctr_start <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
         AND c.ctr_end >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d')
         AND EXISTS (SELECT 1 FROM checkin_record cr WHERE cr.ctr_id = c.ctr_id
@@ -545,7 +545,8 @@ if ($showMode === 'occupied') {
     $rooms = $occupiedStmt->fetchAll(PDO::FETCH_ASSOC);
 } else {
     $allSql = "
-        SELECT r.room_id, r.room_number, c.ctr_id, c.ctr_start, COALESCE(t.tnt_name, '') as tnt_name, COALESCE(tw.current_step, 1) AS workflow_step
+        SELECT r.room_id, r.room_number, c.ctr_id, c.ctr_start, COALESCE(t.tnt_name, '') as tnt_name,
+               COALESCE((SELECT MAX(tw.current_step) FROM tenant_workflow tw WHERE tw.ctr_id = c.ctr_id), 1) AS workflow_step
         FROM room r
         LEFT JOIN (
             SELECT room_id, MAX(ctr_id) AS ctr_id
@@ -559,7 +560,6 @@ if ($showMode === 'occupied') {
         ) lc ON r.room_id = lc.room_id
         LEFT JOIN contract c ON c.ctr_id = lc.ctr_id
         LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
-        LEFT JOIN tenant_workflow tw ON c.tnt_id = tw.tnt_id
     ";
 
     $allParams = [$year, $month, $year];
@@ -572,6 +572,32 @@ if ($showMode === 'occupied') {
     $allStmt = $pdo->prepare($allSql);
     $allStmt->execute($allParams);
     $rooms = $allStmt->fetchAll(PDO::FETCH_ASSOC);
+}
+
+// ป้องกันข้อมูลห้องซ้ำจากการ join/ข้อมูลเดิม: คงไว้ 1 แถวต่อ room_id
+if (!empty($rooms)) {
+    $uniqueRooms = [];
+    $seenRoomIndexes = [];
+    foreach ($rooms as $roomRow) {
+        $roomId = (int)($roomRow['room_id'] ?? 0);
+        if ($roomId <= 0) {
+            continue;
+        }
+
+        if (!isset($seenRoomIndexes[$roomId])) {
+            $seenRoomIndexes[$roomId] = count($uniqueRooms);
+            $uniqueRooms[] = $roomRow;
+            continue;
+        }
+
+        $idx = $seenRoomIndexes[$roomId];
+        $existingCtr = (int)($uniqueRooms[$idx]['ctr_id'] ?? 0);
+        $incomingCtr = (int)($roomRow['ctr_id'] ?? 0);
+        if ($incomingCtr > $existingCtr) {
+            $uniqueRooms[$idx] = $roomRow;
+        }
+    }
+    $rooms = $uniqueRooms;
 }
 
 // ดึงค่าเดิม
@@ -2651,6 +2677,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
         var inputs = document.querySelectorAll('.meter-input');
         var rd = {};
         inputs.forEach(function(i) {
+            if (i.disabled) return;
             var rid = i.dataset.room, t = i.dataset.type;
             var oldV = parseInt(i.dataset.old)||0, newV = parseInt(i.value)||0;
             var isFirstReading = i.dataset.firstReading === '1';  // ตรวจสอบว่าเป็นครั้งแรก
