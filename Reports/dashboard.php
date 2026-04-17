@@ -237,6 +237,14 @@ try {
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="/dormitory_management/Public/Assets/Javascript/chart.umd.min.js"></script>
+    <script>
+      document.addEventListener('DOMContentLoaded', function() {
+        if (typeof window.__initSidebarState === 'function' && !window.__sidebarStateInitialized) {
+          window.__sidebarStateInitialized = true;
+          window.__initSidebarState();
+        }
+      });
+    </script>
     <style>
         body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
         .saas-card { background: #ffffff; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid rgba(226, 232, 240, 0.8); transition: all 0.2s ease; cursor: pointer; }

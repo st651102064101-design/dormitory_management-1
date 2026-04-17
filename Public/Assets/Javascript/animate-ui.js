@@ -8,7 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // ===== Helper: Check if mobile =====
     function isMobile() {
-        return window.innerWidth < 768;
+        return window.innerWidth <= 1024;
     }
 
     // ===== Sidebar Toggle (Open/Collapse) with Persistence =====

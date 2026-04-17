@@ -2639,19 +2639,6 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     text-align: center !important;
   }
   
-  /* Desktop: Collapsed sidebar hidden entirely (for screens > 1024px) */
-  aside.app-sidebar.collapsed,
-  aside.sidebar-collapsed {
-    width: 0 !important;
-    min-width: 0 !important;
-    max-width: 0 !important;
-    flex-shrink: 0 !important;
-    display: none !important;
-    visibility: hidden !important;
-    opacity: 0 !important;
-    transform: none !important;
-  }
-  
   /* Mobile: Override collapsed to full sidebar when open */
   @media (max-width: 1024px) {
     aside.app-sidebar.collapsed {
@@ -4552,29 +4539,30 @@ async function handleGoogleUnlink(e) {
     }
   }, true);
   
-  // Prevent details toggle when summary-link clicked — navigate only, chev-toggle handles open/close
+  // Desktop: auto-collapse sidebar when clicking ANY navigation link.
   document.addEventListener('click', function(e) {
-    const link = e.target.closest('.summary-link');
+    const link = e.target.closest('.app-nav a');
     if (!link) return;
-    const summary = link.closest('summary');
-    if (!summary) return;
-    e.preventDefault(); // stop default details toggle
-
-    // Auto-collapse sidebar loop
-    const sidebarVar2 = document.querySelector('.app-sidebar');
-    const toggleBtnVar2 = document.getElementById('sidebar-toggle');
-    if (sidebarVar2) {
-      if (window.innerWidth <= 1024 && sidebarVar2.classList.contains('mobile-open')) {
-        sidebarVar2.classList.remove('mobile-open');
-        document.body.classList.remove('sidebar-open');
-      } else if (window.innerWidth > 1024 && !sidebarVar2.classList.contains('collapsed')) {
-        sidebarVar2.classList.add('collapsed');
+    
+    // If it's a summary-link that acts as a dropdown toggle AND has no href (or href="#"), let it toggle without collapsing
+    const href = link.getAttribute('href');
+    if (!href || href === '#' || href === 'javascript:void(0);') {
+      return;
+    }
+    
+    const sidebar = document.querySelector('.app-sidebar');
+    if (sidebar && window.innerWidth > 1024) {
+      if (!sidebar.classList.contains('collapsed')) {
+        sidebar.classList.add('collapsed');
         try { localStorage.setItem('sidebarCollapsed', 'true'); } catch(err) {}
       }
+    } else if (sidebar && window.innerWidth <= 1024) {
+      if (sidebar.classList.contains('mobile-open')) {
+        sidebar.classList.remove('mobile-open');
+        document.body.classList.remove('sidebar-open');
+        // Do not touch localStorage for desktop state
+      }
     }
-
-    const href = link.getAttribute('href');
-    if (href) window.location.href = href;
   }, true);
 
   // Restore state when DOM is ready
