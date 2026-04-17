@@ -602,3 +602,38 @@ main > div:first-of-type,
   </script>
 </body>
 </html>
+
+<style>
+  body, html, body.live-light, .app-main { 
+    --tw-text-opacity: 1; 
+  }
+  body.live-light .view-toggle-btn, body.live-light .view-toggle-btn *, 
+  html.light-theme .view-toggle-btn, html.light-theme .view-toggle-btn *, 
+  .view-toggle-btn, .view-toggle-btn * { 
+      color: #ffffff !important; 
+  }
+</style>
+
+
+<style>
+  /* Extremely high specificity to overwrite sidebar.php global text dark color */
+  html body, 
+  html body *, 
+  html body.live-light, 
+  html body.light-theme,
+  html body.live-light .app-main,
+  html body.light-theme .app-main {
+      /* Keep normal inherited text but specifically override button */
+  }
+
+  html body.reports-page button.view-toggle-btn.btn-primary,
+  html body.reports-page button.view-toggle-btn,
+  html body.reports-page .view-toggle-btn,
+  html body.reports-page .view-toggle-btn.active,
+  html body.reports-page .view-toggle-btn:hover,
+  html body.reports-page .view-toggle-btn i,
+  html body.reports-page .view-toggle-btn svg,
+  html body.reports-page .view-toggle-btn span {
+      color: #ffffff !important;
+  }
+</style>
