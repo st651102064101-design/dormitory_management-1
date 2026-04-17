@@ -66,9 +66,9 @@ try {
             FROM expense e
             WHERE e.ctr_id = ? 
               AND DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
-              AND NOT EXISTS (
-                  SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
-              )
+              -- AND NOT EXISTS (
+                  -- SELECT 1 FROM payment p WHERE p.exp_id = e.exp_id AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+--              )
             LIMIT 1
         ");
         $checkStmt->execute([$ctr_id, $firstBillMonth]);
