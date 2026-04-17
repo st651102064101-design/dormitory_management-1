@@ -110,109 +110,81 @@ if (!function_exists('formatNewsDateForManageNews')) {
         /* Force-hide animate-ui modal overlays on this page */
         .animate-ui-modal, .animate-ui-modal-overlay { display: none !important; visibility: hidden !important; opacity: 0 !important; }
 
-      /* ===== Light Theme Overrides ===== */
-      html.light-theme .page-title,
-      html.light-theme .page-subtitle,
-      html.light-theme .news-card-title,
-      html.light-theme .news-card-content,
-      html.light-theme .news-card-content p,
-      html.light-theme .news-card h3,
-      html.light-theme .news-card p,
-      html.light-theme .news-meta,
-      html.light-theme .news-date,
-      html.light-theme .news-author,
-      html.light-theme .news-card-meta,
-      html.light-theme .news-card-meta span,
-      html.light-theme label,
-      html.light-theme select {
-        color: #111827 !important;
-      }
-
-      html.light-theme .news-card {
-        background: rgba(255,255,255,0.9) !important;
-        border-color: rgba(0,0,0,0.1) !important;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.08) !important;
-      }
-      html.light-theme .news-card svg {
-        stroke: #374151 !important;
-      }
-
-      html.light-theme .news-stat-card {
-        background: linear-gradient(135deg, rgba(243,244,246,0.95), rgba(229,231,235,0.9)) !important;
-        border-color: rgba(0,0,0,0.08) !important;
-      }
-      html.light-theme .news-stat-card h3 {
-        color: #6b7280 !important;
-      }
-      html.light-theme .news-stat-card .stat-value {
-        color: #2563eb !important;
-      }
-
-      /* Buttons - keep white text on colored backgrounds */
-      html.light-theme .btn-edit,
-      html.light-theme .btn-delete,
-      html.light-theme .news-card-actions button,
-      html.light-theme .news-card button[style*="background"] {
-        color: #ffffff !important;
-      }
-      html.light-theme .news-card-actions button svg,
-      html.light-theme .news-card button svg {
-        stroke: #ffffff !important;
-      }
-
-      /* Sort select */
-      html.light-theme .sort-select,
-      html.light-theme select {
-        background: rgba(0,0,0,0.05) !important;
-        border-color: rgba(0,0,0,0.12) !important;
-        color: #111827 !important;
-      }
-
+            .reports-container { width: 100%; max-width: 100%; padding: 0; }
+      .reports-container .container { max-width: 100%; width: 100%; padding: 0 1.5rem 1.5rem; }
+      
       .news-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1rem;
-        margin-top: 1rem;
+        gap: 1.5rem;
+        margin-bottom: 2rem;
       }
       .news-stat-card {
-        background: linear-gradient(135deg, #ffffff, #f8fafc);
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
         border-radius: 16px;
-        padding: 1.25rem;
-        border: 1px solid rgba(15,23,42,0.08);
+        padding: 1.5rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s, box-shadow 0.2s;
         color: #0f172a;
-        box-shadow: 0 10px 24px rgba(15,23,42,0.08);
+      }
+      .news-stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        border-color: #e2e8f0;
       }
       .news-stat-card h3 {
         margin: 0;
-        font-size: 0.95rem;
-        color: #475569;
+        font-size: 0.85rem;
+        color: #64748b;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 600;
+        margin-bottom: 0.2rem;
       }
       .news-stat-card .stat-value {
-        font-size: 2.5rem;
-        font-weight: 700;
-        margin-top: 0.5rem;
-        color: #60a5fa;
+        font-size: 2.25rem;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0.5rem 0;
+        letter-spacing: -0.025em;
       }
+      
+      .manage-panel {
+        background: #ffffff;
+        border: 1px solid #f1f5f9;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+      }
+      
       .news-form {
         display: grid;
-        gap: 1rem;
+        gap: 1.25rem;
         margin-top: 1.5rem;
       }
       .news-form-group label {
-        color: #334155;
+        color: #475569;
+        font-size: 0.85rem;
         font-weight: 600;
         display: block;
-        margin-bottom: 0.4rem;
+        margin-bottom: 0.5rem;
+        letter-spacing: 0.025em;
       }
       .news-form-group input,
       .news-form-group textarea {
         width: 100%;
-        padding: 0.75rem 0.85rem;
-        border-radius: 10px;
-        border: 1px solid rgba(15,23,42,0.14);
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        border: 1px solid #e2e8f0;
         background: #ffffff;
-        color: #0f172a;
+        color: #334155;
+        font-size: 0.95rem;
+        font-weight: 500;
         font-family: inherit;
+        box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+        transition: border-color 0.2s, box-shadow 0.2s;
       }
       .news-form-group textarea {
         min-height: 120px;
@@ -221,25 +193,28 @@ if (!function_exists('formatNewsDateForManageNews')) {
       .news-form-group input:focus,
       .news-form-group textarea:focus {
         outline: none;
-        border-color: #60a5fa;
-        box-shadow: 0 0 0 3px rgba(96,165,250,0.25);
+        border-color: #7dd3fc;
+        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.3);
       }
       .news-form-actions {
         display: flex;
         gap: 0.75rem;
         margin-top: 1rem;
       }
+      
       .news-card {
-        background: #ffffff;
-        border: 1px solid rgba(15,23,42,0.1);
-        border-radius: 12px;
-        padding: 1.5rem;
-        margin-bottom: 1rem;
-        transition: all 0.3s ease;
+        background: #ffffff; 
+        border: 1px solid #f1f5f9; 
+        border-radius: 16px; 
+        padding: 1.5rem; 
+        margin-bottom: 1.5rem; 
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        transition: all 0.2s; 
       }
-      .news-card:hover {
-        border-color: rgba(96,165,250,0.4);
-        box-shadow: 0 8px 24px rgba(96,165,250,0.15);
+      .news-card:hover { 
+        transform: translateY(-2px); 
+        border-color: #bae6fd; 
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); 
       }
       .news-card-header {
         display: flex;
@@ -248,7 +223,7 @@ if (!function_exists('formatNewsDateForManageNews')) {
         margin-bottom: 0.75rem;
       }
       .news-card-title {
-        font-size: 1.25rem;
+        font-size: 1.15rem;
         font-weight: 700;
         color: #0f172a;
         margin: 0;
@@ -256,46 +231,48 @@ if (!function_exists('formatNewsDateForManageNews')) {
       .news-card-meta {
         display: flex;
         gap: 1rem;
-        font-size: 0.85rem;
-        color: #94a3b8;
-        margin-bottom: 0.75rem;
+        font-size: 0.8rem;
+        color: #64748b;
+        margin-bottom: 1rem;
+        font-weight: 500;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e5e7eb;
       }
       .news-card-meta span {
         display: flex;
         align-items: center;
-        gap: 0.3rem;
+        gap: 0.4rem;
+        background: #f8fafc;
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
       }
       .news-card-content {
         color: #334155;
         line-height: 1.6;
-        margin-bottom: 1rem;
+        margin-bottom: 1.25rem;
+        font-size: 0.95rem;
       }
+      
       .news-card-actions {
         display: flex;
         gap: 0.5rem;
       }
-      .news-card-actions .animate-ui-action-btn.edit,
-      .news-card-actions .animate-ui-action-btn.delete {
-        color: #ffffff !important;
+      .news-card-actions button {
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        font-weight: 600;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: all 0.2s;
+        border: none;
       }
-      .reports-page .news-card-actions .animate-ui-action-btn.edit {
-        background: #007AFF !important;
-        border: 1px solid #007AFF !important;
-        color: #ffffff !important;
-      }
-      .reports-page .news-card-actions .animate-ui-action-btn.delete {
-        background: #FF3B30 !important;
-        border: 1px solid #FF3B30 !important;
-        color: #ffffff !important;
-      }
-      .reports-page .news-card-actions .animate-ui-action-btn.edit:hover {
-        background: #0A66DB !important;
-        border-color: #0A66DB !important;
-      }
-      .reports-page .news-card-actions .animate-ui-action-btn.delete:hover {
-        background: #E63D32 !important;
-        border-color: #E63D32 !important;
-      }
+      
+      .reports-page .news-card-actions .animate-ui-action-btn.edit { background: #e0f2fe !important; color: #0369a1 !important; border: 1px solid #bae6fd !important; }
+      .reports-page .news-card-actions .animate-ui-action-btn.edit:hover { background: #bae6fd !important; }
+      
+      .reports-page .news-card-actions .animate-ui-action-btn.delete { background: #fee2e2 !important; color: #b91c1c !important; border: 1px solid #fecaca !important; }
+      .reports-page .news-card-actions .animate-ui-action-btn.delete:hover { background: #fecaca !important; }
+      
       .news-empty {
         text-align: center;
         padding: 3rem 1rem;
@@ -306,7 +283,13 @@ if (!function_exists('formatNewsDateForManageNews')) {
         margin-bottom: 1rem;
         opacity: 0.5;
       }
-      /* Edit modal layout */
+      
+      /* Buttons inside form */
+      .news-form-actions button[type="submit"] {
+        padding: 0.75rem 1.5rem; background: #60a5fa; color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9rem;
+      }
+      .news-form-actions button[type="submit"]:hover { background: #3b82f6; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4); }
+
       #editModal {
         display: none;
         position: fixed;
@@ -472,7 +455,7 @@ main > div:first-of-type,
 
           <!-- Toggle button for news form -->
           <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleNewsFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;background:#ffffff;border:1px solid rgba(15,23,42,0.16);color:#1e293b;border-radius:8px;transition:all 0.2s;box-shadow:0 2px 4px rgba(15,23,42,0.08);" onclick="toggleNewsForm()" onmouseover="this.style.background='#f8fafc';this.style.borderColor='rgba(15,23,42,0.24)'" onmouseout="this.style.background='#ffffff';this.style.borderColor='rgba(15,23,42,0.16)'">
+            <button type="button" id="toggleNewsFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:0.95rem;font-weight:500;background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:8px;transition:all 0.2s;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);" onclick="toggleNewsForm()" onmouseover="this.style.background='#f8fafc';this.style.borderColor='#cbd5e1'" onmouseout="this.style.background='#ffffff';this.style.borderColor='#e2e8f0'">
               <span id="toggleNewsFormIcon">▼</span> <span id="toggleNewsFormText"><?php echo __('toggle_hide_form'); ?></span>
             </button>
           </div>
@@ -524,7 +507,7 @@ main > div:first-of-type,
                 <h1><?php echo __('news_list_title'); ?></h1>
                 <p style="color:#64748b;margin-top:0.2rem;"><?php echo __('news_list_subtitle'); ?></p>
               </div>
-              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(15,23,42,0.16);background:#ffffff;color:#0f172a;font-size:0.95rem;cursor:pointer;">
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 2.5rem 0.6rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/></svg>') no-repeat right 0.75rem center/16px 16px;color:#334155;font-size:0.95rem;font-weight:500;appearance:none;-webkit-appearance:none;cursor:pointer;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);">
                 <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>><?php echo __('sort_newest'); ?></option>
                 <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>><?php echo __('sort_oldest'); ?></option>
                 <option value="title" <?php echo ($sortBy === 'title' ? 'selected' : ''); ?>><?php echo __('sort_title'); ?></option>
@@ -573,10 +556,10 @@ main > div:first-of-type,
               </div>
               <?php if ($totalNews > $displayLimit): ?>
                 <div style="text-align:center; margin-top:1.5rem;">
-                  <button type="button" id="showMoreBtn" onclick="showMoreNews()" style="background:#007AFF; color:#fff; border:none; border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.3s;">
+                  <button type="button" id="showMoreBtn" onclick="showMoreNews()" style="background:#f8fafc; color:#0ea5e9; border:1px solid #bae6fd; border-radius:8px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#e0f2fe'" onmouseout="this.style.background='#f8fafc'">
                     <?php echo __('show_more_items', ['count' => $totalNews - $displayLimit]); ?>
                   </button>
-                  <button type="button" id="showLessBtn" onclick="showLessNews()" style="display:none; background:#FF9500; color:#fff; border:none; border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.3s;">
+                  <button type="button" id="showLessBtn" onclick="showLessNews()" style="display:none; background:#f8fafc; color:#d97706; border:1px solid #fde68a; border-radius:8px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#fef3c7'" onmouseout="this.style.background='#f8fafc'">
                     <?php echo __('show_less'); ?>
                   </button>
                 </div>
