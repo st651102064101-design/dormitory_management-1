@@ -605,7 +605,32 @@ $readings = [];
 $isPastMonth = sprintf('%04d-%02d', $year, $month) < date('Y-m');
 foreach ($rooms as $room) {
     if (!$room['ctr_id']) {
-        $readings[$room['room_id']] = ['water_old' => 0, 'elec_old' => 0, 'water_new' => '', 'elec_new' => '', 'saved' => false, 'water_saved' => false, 'elec_saved' => false, 'workflow_step' => 1, 'meter_blocked' => false, 'isFirstReading' => false];
+        $roomPrevStmt = $pdo->prepare(
+            "SELECT u.utl_water_end, u.utl_elec_end
+             FROM utility u
+             INNER JOIN contract c ON u.ctr_id = c.ctr_id
+             WHERE c.room_id = ?
+             ORDER BY u.utl_date DESC, u.utl_id DESC
+             LIMIT 1"
+        );
+        $roomPrevStmt->execute([$room['room_id']]);
+        $roomPrev = $roomPrevStmt->fetch(PDO::FETCH_ASSOC);
+        
+        $wOld = $roomPrev ? (int)$roomPrev['utl_water_end'] : 0;
+        $eOld = $roomPrev ? (int)$roomPrev['utl_elec_end'] : 0;
+
+        $readings[$room['room_id']] = [
+            'water_old' => $wOld, 
+            'elec_old' => $eOld, 
+            'water_new' => '', 
+            'elec_new' => '', 
+            'saved' => false, 
+            'water_saved' => false, 
+            'elec_saved' => false, 
+            'workflow_step' => 1, 
+            'meter_blocked' => false, 
+            'isFirstReading' => false
+        ];
         continue;
     }
     
