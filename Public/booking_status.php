@@ -1410,5 +1410,36 @@ if ($currentStatus === '1') {
             }
         });
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <?php if ($showResult && !empty($tenantPortalUrl) && $step5Started): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            let timerInterval;
+            Swal.fire({
+                title: 'เสร็จสมบูรณ์!',
+                html: 'กำลังพาท่านไปยังหน้าจัดการผู้เช่าใน <b>5</b> วินาที.',
+                icon: 'success',
+                timer: 5000,
+                timerProgressBar: true,
+                showCancelButton: true,
+                cancelButtonText: 'อยู่หน้านี้ก่อน',
+                confirmButtonText: 'ไปเดี๋ยวนี้',
+                didOpen: () => {
+                    const b = Swal.getHtmlContainer().querySelector('b');
+                    timerInterval = setInterval(() => {
+                        if (b) b.textContent = Math.ceil(Swal.getTimerLeft() / 1000);
+                    }, 100);
+                },
+                willClose: () => {
+                    clearInterval(timerInterval);
+                }
+            }).then((result) => {
+                if (result.isConfirmed || result.dismiss === Swal.DismissReason.timer) {
+                    window.location.href = '<?php echo $tenantPortalUrl; ?>';
+                }
+            });
+        });
+    </script>
+    <?php endif; ?>
 </body>
 </html>
