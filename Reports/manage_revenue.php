@@ -89,11 +89,13 @@ try {
       #table-view .datatable-wrapper table tbody tr {
         background: #ffffff !important;
         border-bottom: 1px solid #e2e8f0 !important;
+        transition: background-color 0.2s;
       }
 
       #table-view .datatable-wrapper table tbody td {
-        color: #0f172a !important;
+        color: #334155 !important;
         border-bottom: 1px solid #e2e8f0 !important;
+        font-weight: 500;
       }
 
       #table-view .datatable-wrapper table tbody tr:hover {
@@ -360,20 +362,20 @@ main > div:first-of-type,
             <button id="toggle-view" aria-label="Toggle view" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;display:inline-flex;align-items:center;gap:0.4rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>ตาราง</button>
           </div>
 
-          <section style="margin:1rem;padding:1.25rem 1rem;border-radius:1rem;background:linear-gradient(180deg, rgba(20,30,48,0.95), rgba(8,14,28,0.95));color:#f5f8ff">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <section style="margin:1rem;padding:2rem;border-radius:16px;background:#ffffff;box-shadow:0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);color:#1e293b;border:1px solid #f1f5f9;">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1.5rem;flex-wrap:wrap;border-bottom:1px solid #e2e8f0;padding-bottom:1.25rem;">
               <div>
-                <h1>รายงานรายรับประจำเดือน</h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">สรุปยอดการชำระเงินของผู้เช่า</p>
+                <h1 style="font-size:1.5rem;font-weight:700;color:#0f172a;letter-spacing:-0.025em;margin:0;">รายงานรายรับประจำเดือน</h1>
+                <p style="color:#64748b;margin-top:0.4rem;font-size:0.95rem;font-weight:400;">สรุปยอดการชำระเงินของผู้เช่า (SaaS Overview)</p>
               </div>
-              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
-                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เดือนล่าสุด</option>
-                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เดือนเก่าสุด</option>
+              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 2.5rem 0.6rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/></svg>') no-repeat right 0.75rem center/16px 16px;color:#334155;font-size:0.95rem;font-weight:500;cursor:pointer;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);appearance:none;-webkit-appearance:none;">
+                <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เรียง: เดือนล่าสุด</option>
+                <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เรียง: เดือนเก่าสุด</option>
               </select>
             </div>
 
             <!-- Card View -->
-            <div id="card-view" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1.5rem;margin-top:1.5rem;">
+            <div id="card-view" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1.5rem;margin-top:2rem;">
 <?php foreach($rows as $r): ?>
               <?php
                 $monthName = '';
@@ -386,19 +388,19 @@ main > div:first-of-type,
                 }
                 $totalAmount = (int)($r['total_received'] ?? 0);
               ?>
-              <div style="background:#1e293b;border:1px solid #334155;border-radius:8px;padding:1.5rem;display:flex;flex-direction:column;gap:1rem;text-align:center;">
+              <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:12px;padding:1.5rem;display:flex;flex-direction:column;gap:1.25rem;text-align:center;box-shadow:0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);transition:transform 0.2s, box-shadow 0.2s;" onmouseover="this.style.transform='translateY(-2px)';this.style.boxShadow='0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1)'" onmouseout="this.style.transform='translateY(0)';this.style.boxShadow='0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05)'">
                 <div>
-                  <div style="font-size:0.875rem;color:#94a3b8;margin-bottom:0.5rem;">เดือน</div>
-                  <div style="font-size:1.25rem;font-weight:700;color:#fff;"><?php echo $monthName; ?></div>
+                  <div style="font-size:0.75rem;color:#64748b;margin-bottom:0.3rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;">รอบบิลประจำเดือน</div>
+                  <div style="font-size:1.15rem;font-weight:700;color:#0f172a;"><?php echo $monthName; ?></div>
                 </div>
                 
-                <div style="background:linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);padding:1.5rem;border-radius:8px;margin-top:0.5rem;">
-                  <div style="font-size:0.875rem;color:#e0f2fe;margin-bottom:0.5rem;">ยอดรับรวม</div>
-                  <div style="font-size:2.5rem;font-weight:700;color:#fff;">฿<?php echo number_format($totalAmount); ?></div>
+                <div style="background:linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);padding:1.5rem 1rem;border-radius:12px;border:1px solid #bae6fd;">
+                  <div style="font-size:0.875rem;color:#0284c7;margin-bottom:0.4rem;font-weight:600;">ยอดรับชำระสุทธิ</div>
+                  <div style="font-size:2.25rem;font-weight:800;color:#0369a1;letter-spacing:-0.025em;line-height:1;">฿<?php echo number_format($totalAmount); ?></div>
                 </div>
 
-                <div style="padding-top:1rem;border-top:1px solid #475569;">
-                  <div style="font-size:0.75rem;color:#94a3b8;">รวมยอดการชำระเงินทั้งสิ้น</div>
+                <div style="padding-top:1rem;border-top:1px dashed #cbd5e1;">
+                  <div style="font-size:0.8rem;color:#64748b;font-weight:500;">สรุปยอดเงินเข้าจากทุกช่องทาง</div>
                 </div>
               </div>
 <?php endforeach; ?>
