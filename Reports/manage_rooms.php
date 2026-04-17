@@ -1061,6 +1061,466 @@ try {
       .page-header-bar {
         margin-top: 1rem !important;
       }
+
+      /* ===== SaaS Light Theme Overrides ===== */
+      .reports-page .manage-panel {
+        background: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      .rooms-stats {
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1.5rem;
+        margin-top: 0;
+      }
+
+      .room-stat-card {
+        background: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      .room-stat-card::before {
+        display: none;
+      }
+
+      .room-stat-card:hover {
+        transform: translateY(-2px);
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+      }
+
+      .room-stat-card h3 {
+        color: #64748b !important;
+        font-weight: 600;
+        font-size: 0.85rem;
+        margin-bottom: 0.2rem;
+      }
+
+      .room-stat-card .stat-value {
+        background: none !important;
+        -webkit-text-fill-color: initial !important;
+        color: #0f172a !important;
+        font-size: 2.25rem;
+        font-weight: 800;
+        letter-spacing: -0.025em;
+        margin-top: 0.35rem;
+      }
+
+      .room-stat-card:nth-child(2) .stat-value {
+        color: #059669 !important;
+      }
+
+      .room-stat-card:nth-child(3) .stat-value {
+        color: #dc2626 !important;
+      }
+
+      .room-card {
+        background: #ffffff !important;
+        border: 1px solid #f1f5f9 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05) !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+      }
+
+      .room-card::after {
+        display: none;
+      }
+
+      .room-card:hover {
+        transform: translateY(-2px);
+        border-color: #e2e8f0 !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
+      }
+
+      .room-card-image {
+        background: linear-gradient(135deg, #f1f5f9, #e2e8f0) !important;
+        color: #94a3b8 !important;
+      }
+
+      .room-card-image::before {
+        background: linear-gradient(180deg, transparent 50%, rgba(15, 23, 42, 0.08));
+      }
+
+      .image-upload-overlay {
+        background: rgba(15, 23, 42, 0.58);
+      }
+
+      .room-card-number {
+        color: #0f172a !important;
+        font-size: 1.35rem;
+      }
+
+      .room-card-meta {
+        color: #64748b !important;
+      }
+
+      .room-card-meta svg {
+        color: #94a3b8;
+        opacity: 1;
+      }
+
+      .room-card-status {
+        border-radius: 999px;
+        text-transform: none;
+        letter-spacing: 0;
+        font-size: 0.78rem;
+      }
+
+      .room-card-status.vacant {
+        background: #ecfdf3 !important;
+        border: 1px solid #bbf7d0 !important;
+        color: #15803d !important;
+      }
+
+      .room-card-status.occupied {
+        background: #fef2f2 !important;
+        border: 1px solid #fecaca !important;
+        color: #b91c1c !important;
+      }
+
+      .room-card-actions .btn {
+        border-radius: 8px;
+        font-size: 0.83rem;
+        padding: 0.6rem 0.9rem;
+      }
+
+      .room-card-actions .btn-edit,
+      body.live-light .room-card-actions .btn-edit,
+      html.light-theme .room-card-actions .btn-edit,
+      .rooms-grid .room-card-actions button.btn.btn-edit,
+      .rooms-table .room-card-actions button.btn.btn-edit {
+        background: #e0f2fe !important;
+        border: 1px solid #bae6fd !important;
+        color: #0369a1 !important;
+      }
+
+      .room-card-actions .btn-edit svg,
+      body.live-light .room-card-actions .btn-edit svg,
+      html.light-theme .room-card-actions .btn-edit svg {
+        color: #0369a1 !important;
+      }
+
+      .room-card-actions .btn-edit:hover,
+      body.live-light .room-card-actions .btn-edit:hover,
+      html.light-theme .room-card-actions .btn-edit:hover {
+        background: #bae6fd !important;
+        border-color: #7dd3fc !important;
+        color: #075985 !important;
+        transform: translateY(-1px);
+        box-shadow: none !important;
+      }
+
+      .room-card-actions .btn-delete,
+      body.live-light .room-card-actions .btn-delete,
+      html.light-theme .room-card-actions .btn-delete,
+      .rooms-grid .room-card-actions button.btn.btn-delete,
+      .rooms-table .room-card-actions button.btn.btn-delete {
+        background: #fee2e2 !important;
+        border: 1px solid #fecaca !important;
+        color: #b91c1c !important;
+      }
+
+      .room-card-actions .btn-delete svg,
+      body.live-light .room-card-actions .btn-delete svg,
+      html.light-theme .room-card-actions .btn-delete svg {
+        color: #b91c1c !important;
+      }
+
+      .room-card-actions .btn-delete:hover,
+      body.live-light .room-card-actions .btn-delete:hover,
+      html.light-theme .room-card-actions .btn-delete:hover {
+        background: #fecaca !important;
+        border-color: #fca5a5 !important;
+        color: #991b1b !important;
+        transform: translateY(-1px);
+        box-shadow: none !important;
+      }
+
+      .room-empty {
+        color: #64748b !important;
+      }
+
+      .room-empty-icon {
+        opacity: 0.45;
+      }
+
+      .room-form-group label,
+      .booking-form-group label {
+        color: #475569 !important;
+        font-size: 0.85rem;
+        letter-spacing: 0.025em;
+      }
+
+      .room-form-group input,
+      .room-form-group select,
+      .booking-form-group input,
+      .booking-form-group select,
+      .booking-form-group textarea {
+        border: 1px solid #e2e8f0 !important;
+        background: #ffffff !important;
+        color: #334155 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+
+      .room-form-group input:focus,
+      .room-form-group select:focus,
+      .booking-form-group input:focus,
+      .booking-form-group select:focus,
+      .booking-form-group textarea:focus {
+        border-color: #7dd3fc !important;
+        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.3) !important;
+        background: #ffffff !important;
+      }
+
+      .add-type-btn {
+        border: 1px dashed #bae6fd !important;
+        background: #f0f9ff !important;
+        color: #0369a1 !important;
+        border-radius: 8px !important;
+      }
+
+      .add-type-btn:hover {
+        background: #e0f2fe !important;
+        border-color: #7dd3fc !important;
+      }
+
+      .delete-type-btn {
+        border-color: #fecaca !important;
+        color: #b91c1c !important;
+        background: #fef2f2 !important;
+      }
+
+      .delete-type-btn:hover {
+        background: #fee2e2 !important;
+        border-color: #fca5a5 !important;
+      }
+
+      #toggleRoomFormBtn {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #334155 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+      }
+
+      #toggleRoomFormBtn:hover {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+        color: #0f172a !important;
+      }
+
+      .manage-panel .section-header p {
+        color: #64748b !important;
+      }
+
+      #sortSelect {
+        padding: 0.6rem 2.5rem 0.6rem 1rem !important;
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0 !important;
+        background: #f8fafc url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'/></svg>") no-repeat right 0.75rem center/16px 16px !important;
+        color: #334155 !important;
+        font-size: 0.95rem !important;
+        font-weight: 500 !important;
+        appearance: none;
+        -webkit-appearance: none;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      }
+
+      .view-toggle-btn {
+        background: #ffffff !important;
+        color: #334155 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+      }
+
+      .view-toggle-btn:hover {
+        background: #f8fafc !important;
+        color: #0f172a !important;
+        border-color: #cbd5e1 !important;
+      }
+
+      .rooms-table thead {
+        background: #f8fafc !important;
+      }
+
+      .rooms-table th {
+        color: #64748b !important;
+        border-bottom: 1px solid #e2e8f0 !important;
+      }
+
+      .rooms-table td {
+        color: #334155 !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+      }
+
+      .rooms-table tbody tr:hover {
+        background: #f8fafc !important;
+      }
+
+      .room-image-small {
+        background: #f8fafc !important;
+        border: 1px solid #e2e8f0;
+      }
+
+      .booking-modal {
+        background: rgba(15, 23, 42, 0.45) !important;
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
+      }
+
+      .booking-modal-content {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 16px !important;
+        box-shadow: 0 20px 40px rgba(15, 23, 42, 0.16) !important;
+      }
+
+      .booking-modal-content h2 {
+        color: #0f172a !important;
+      }
+
+      .btn-submit {
+        background: #60a5fa !important;
+        color: #ffffff !important;
+        border-radius: 8px !important;
+      }
+
+      .btn-submit:hover {
+        background: #3b82f6 !important;
+        box-shadow: 0 4px 12px rgba(96, 165, 250, 0.4) !important;
+      }
+
+      .btn-cancel {
+        background: #ffffff !important;
+        color: #475569 !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 8px !important;
+      }
+
+      .btn-cancel:hover {
+        background: #f8fafc !important;
+        border-color: #cbd5e1 !important;
+      }
+
+      .load-more-container {
+        border-top: 1px solid #f1f5f9 !important;
+      }
+
+      .load-more-btn,
+      body.live-light .load-more-btn,
+      html.light-theme .load-more-btn {
+        background: #f8fafc !important;
+        color: #0369a1 !important;
+        border: 1px solid #bae6fd !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05) !important;
+      }
+
+      .load-more-btn:hover,
+      body.live-light .load-more-btn:hover,
+      html.light-theme .load-more-btn:hover {
+        background: #e0f2fe !important;
+        color: #075985 !important;
+        border-color: #7dd3fc !important;
+        box-shadow: none !important;
+      }
+
+      .reports-page .datatable-wrapper {
+        margin-top: 1rem;
+      }
+
+      .reports-page .datatable-top,
+      .reports-page .datatable-bottom {
+        border: none;
+        padding: 0;
+        margin-bottom: 0.75rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+      }
+
+      .reports-page .datatable-dropdown label,
+      .reports-page .datatable-search label,
+      .reports-page .datatable-info {
+        color: #64748b;
+        font-size: 0.85rem;
+      }
+
+      .reports-page .datatable-selector,
+      .reports-page .datatable-input {
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        background: #ffffff;
+        color: #334155;
+      }
+
+      .reports-page .datatable-selector {
+        padding: 0.35rem 0.65rem;
+      }
+
+      .reports-page .datatable-input {
+        padding: 0.5rem 0.75rem;
+      }
+
+      .reports-page .datatable-input:focus,
+      .reports-page .datatable-selector:focus {
+        outline: none;
+        border-color: #7dd3fc;
+        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.3);
+      }
+
+      .reports-page .datatable-pagination a {
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        color: #475569;
+        border-radius: 8px;
+      }
+
+      .reports-page .datatable-pagination li.active a {
+        background: #e0f2fe;
+        border-color: #7dd3fc;
+        color: #0369a1;
+      }
+
+      .reports-page .datatable-pagination li.disabled a {
+        opacity: 0.5;
+      }
+
+      @media (max-width: 1024px) {
+        .reports-page .manage-panel {
+          margin-top: 1rem;
+          margin-bottom: 1rem;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .reports-page .manage-panel {
+          border-radius: 16px;
+          padding-right: 0.85rem !important;
+        }
+
+        .rooms-grid {
+          grid-template-columns: 1fr;
+          gap: 1rem;
+          padding-right: 0.1rem;
+        }
+
+        .load-more-btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
     </style>
   
 
@@ -1136,17 +1596,17 @@ main > div:first-of-type,
           </section>
 
           <!-- Toggle button for room form -->
-          <div style="margin:1.5rem 0; position: relative; z-index: 9999;">
-            <button type="button" id="toggleRoomFormBtn" style="position: relative; z-index: 9999; pointer-events: all; white-space:nowrap;padding:0.85rem 1.5rem;cursor:pointer;font-size:0.95rem;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);color:#94a3b8;border-radius:12px;transition:all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;" onclick="toggleRoomForm()" onmouseover="this.style.background='rgba(255,255,255,0.1)';this.style.borderColor='rgba(255,255,255,0.2)';this.style.color='#f8fafc'" onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.1)';this.style.color='#94a3b8'">
+          <div style="margin:1.5rem 0;">
+            <button type="button" id="toggleRoomFormBtn" style="white-space:nowrap;padding:0.85rem 1.5rem;cursor:pointer;font-size:0.95rem;background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:8px;transition:all 0.2s;font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;" onclick="toggleRoomForm()" onmouseover="this.style.background='#f8fafc';this.style.borderColor='#cbd5e1';this.style.color='#0f172a'" onmouseout="this.style.background='#ffffff';this.style.borderColor='#e2e8f0';this.style.color='#334155'">
               <span id="toggleRoomFormIcon">▼</span> <span id="toggleRoomFormText">ซ่อนฟอร์ม</span>
             </button>
           </div>
 
-          <section class="manage-panel" id="addRoomSection" style="position: relative; z-index: 9999; pointer-events: all;">
+          <section class="manage-panel" id="addRoomSection">
             <div class="section-header">
               <div>
                 <h1>เพิ่มห้องพัก</h1>
-                <p style="margin-top:0.25rem;color:rgba(255,255,255,0.7);">สร้างห้องพัก</p>
+                <p style="margin-top:0.25rem;color:#64748b;">สร้างห้องพัก</p>
               </div>
             </div>
             <form id="addRoomForm" enctype="multipart/form-data">
@@ -1172,11 +1632,11 @@ main > div:first-of-type,
                   </div>
                    <div>
                      <label style="display:block;">สถานะห้อง</label>
-                     <div style="padding:0.9rem 0.85rem; border-radius:10px; border:1px dashed rgba(255,255,255,0.25); color:#cbd5e1; font-size:0.9rem; line-height:1.5;">
+                     <div style="padding:0.9rem 0.85rem; border-radius:10px; border:1px dashed #cbd5e1; background:#f8fafc; color:#475569; font-size:0.9rem; line-height:1.5;">
                        <strong>ระบบจะปรับสถานะอัตโนมัติ</strong><br>
                        <span style="display:block; margin-top:0.4rem;">
-                         <span style="color:#22c55e;">✓ ว่าง (0)</span> - ไม่มีใครจอง หรือเช่า<br>
-                         <span style="color:#ef4444;">✗ ไม่ว่าง (1)</span> - มีคนจองอยู่ หรือ มีคนเช่าอยู่
+                         <span style="color:#16a34a;">✓ ว่าง (0)</span> - ไม่มีใครจอง หรือเช่า<br>
+                         <span style="color:#dc2626;">✗ ไม่ว่าง (1)</span> - มีคนจองอยู่ หรือ มีคนเช่าอยู่
                        </span>
                      </div>
                    </div>
@@ -1215,18 +1675,18 @@ main > div:first-of-type,
           </section>
 
           <section class="manage-panel">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;position: relative; z-index: 9999;">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
               <div>
                 <h1>รายการห้องพัก</h1>
-                <p style="color:#94a3b8;margin-top:0.2rem;">ห้องพักและข้อมูลทั้งหมด</p>
+                <p style="color:#64748b;margin-top:0.2rem;">ห้องพักและข้อมูลทั้งหมด</p>
               </div>
-              <div class="room-list-toolbar" style="display:flex;gap:0.75rem;align-items:center;position: relative; z-index: 9999;">
-                <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
+              <div class="room-list-toolbar" style="display:flex;gap:0.75rem;align-items:center;">
+                <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 2.5rem 0.6rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;font-size:0.95rem;cursor:pointer;appearance:none;-webkit-appearance:none;">
                   <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
                   <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
                   <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
                 </select>
-                <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()" style="position: relative; z-index: 9999; pointer-events: all; cursor: pointer;">
+                <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                   <span id="viewToggleText">มุมมองแถว</span>
                 </button>
@@ -1285,7 +1745,7 @@ main > div:first-of-type,
                         <?php endif; ?>
                       </div>
                       <?php if ($room['room_status'] !== '0' && !empty($room['occupation_reason'])): ?>
-                        <div style="font-size: 0.75rem; margin-bottom: 0.75rem; color: #fbbf24; opacity: 0.8;">
+                        <div style="font-size: 0.75rem; margin-bottom: 0.75rem; color: #d97706; opacity: 0.9;">
                           <?php echo htmlspecialchars($room['occupation_reason']); ?>
                         </div>
                       <?php endif; ?>
@@ -1305,8 +1765,8 @@ main > div:first-of-type,
               </div>
 
               <?php if (count($rooms) > 20): ?>
-              <div class="load-more-container" style="position: relative; z-index: 9999;">
-                <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreRooms()" style="position: relative; z-index: 9999; pointer-events: all; cursor: pointer;">
+              <div class="load-more-container">
+                <button type="button" class="load-more-btn" id="loadMoreBtn" onclick="loadMoreRooms()">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
                   <span id="loadMoreText">โหลดเพิ่มเติม (<span id="remainingCount"><?php echo count($rooms) - 20; ?></span> ห้อง)</span>
                 </button>
@@ -1341,9 +1801,9 @@ main > div:first-of-type,
                             <?php endif; ?>
                           </div>
                         </td>
-                        <td style="font-weight:600;color:#f5f8ff;">
+                        <td style="font-weight:600;color:#0f172a;">
                           ห้อง <?php echo htmlspecialchars($room['room_number']); ?><br>
-                          <span style="font-size:0.85rem;color:#cbd5e1;font-weight:normal;">
+                          <span style="font-size:0.85rem;color:#64748b;font-weight:normal;">
                             <?php echo number_format($room['type_price'] ?? 0); ?> บาท<br>
                             ประเภท: <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?>
                           </span>
@@ -1359,7 +1819,7 @@ main > div:first-of-type,
                             <?php endif; ?>
                           </span>
                           <?php if ($room['room_status'] !== '0' && !empty($room['occupation_reason'])): ?>
-                            <div style="font-size: 0.85rem; margin-top: 0.3rem; color: #fbbf24;">
+                            <div style="font-size: 0.85rem; margin-top: 0.3rem; color: #d97706;">
                               <?php echo htmlspecialchars($room['occupation_reason']); ?>
                             </div>
                           <?php endif; ?>
@@ -1441,9 +1901,9 @@ main > div:first-of-type,
             <label>รูปภาพห้อง:</label>
             <input type="file" name="room_image" id="edit_room_image" accept="image/*">
             <input type="hidden" name="delete_image" id="delete_image" value="0">
-            <div id="edit_image_preview" style="margin-top:0.5rem; color:#94a3b8; font-size:0.85rem;"></div>
+            <div id="edit_image_preview" style="margin-top:0.5rem; color:#64748b; font-size:0.85rem;"></div>
             <div id="delete_image_btn_container" style="margin-top:0.75rem; display:none;">
-              <button type="button" id="deleteImageBtn" onclick="deleteCurrentImage()" style="padding:0.6rem 1.2rem; background:rgba(239,68,68,0.15); color:#f87171; border:1px solid rgba(239,68,68,0.3); border-radius:10px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:all 0.25s ease;">
+              <button type="button" id="deleteImageBtn" onclick="deleteCurrentImage()" style="padding:0.6rem 1.2rem; background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; border-radius:8px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:0.4rem; transition:all 0.2s;">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg>
                 ลบรูปภาพนี้
               </button>
@@ -1572,7 +2032,7 @@ main > div:first-of-type,
           </div>`;
           deleteBtn.style.display = 'block';
         } else {
-          preview.innerHTML = '<div style="color:#94a3b8;">ไม่มีรูปภาพ</div>';
+          preview.innerHTML = '<div style="color:#64748b;">ไม่มีรูปภาพ</div>';
           deleteBtn.style.display = 'none';
         }
         
@@ -1635,7 +2095,7 @@ main > div:first-of-type,
       window.addCustomFeatureLabel = addCustomFeatureLabel;
       function deleteCurrentImage() {
         document.getElementById('delete_image').value = '1';
-        document.getElementById('edit_image_preview').innerHTML = '<div style="color:#f87171; padding:0.75rem; background:rgba(239,68,68,0.1); border-radius:10px; border:1px dashed rgba(239,68,68,0.3);"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:0.4rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> รูปภาพจะถูกลบเมื่อกดบันทึก</div>';
+        document.getElementById('edit_image_preview').innerHTML = '<div style="color:#b91c1c; padding:0.75rem; background:#fef2f2; border-radius:8px; border:1px dashed #fecaca;"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display:inline; vertical-align:middle; margin-right:0.4rem;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg> รูปภาพจะถูกลบเมื่อกดบันทึก</div>';
         document.getElementById('delete_image_btn_container').style.display = 'none';
       }
       window.deleteCurrentImage = deleteCurrentImage;
@@ -1771,12 +2231,12 @@ main > div:first-of-type,
           // อัปเดตข้อมูลห้อง (cell 1)
           if (cells[1]) {
             cells[1].innerHTML = `ห้อง ${room.room_number}<br>
-              <span style="font-size:0.85rem;color:#cbd5e1;font-weight:normal;">
+              <span style="font-size:0.85rem;color:#64748b;font-weight:normal;">
                 ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท<br>
                 ประเภท: ${room.type_name || '-'}
               </span>`;
             cells[1].style.fontWeight = '600';
-            cells[1].style.color = '#f5f8ff';
+            cells[1].style.color = '#0f172a';
           }
         }
       }
@@ -2120,9 +2580,9 @@ main > div:first-of-type,
                     }
                   </div>
                 </td>
-                <td style="font-weight:600;color:#f5f8ff;">
+                <td style="font-weight:600;color:#0f172a;">
                   ห้อง ${room.room_number}<br>
-                  <span style="font-size:0.85rem;color:#cbd5e1;font-weight:normal;">
+                  <span style="font-size:0.85rem;color:#64748b;font-weight:normal;">
                     ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท<br>
                     ประเภท: ${room.type_name || '-'}
                   </span>
@@ -2402,7 +2862,7 @@ main > div:first-of-type,
         // Show loading state
         const imageDiv = fileInput.parentElement;
         const originalContent = imageDiv.innerHTML;
-        imageDiv.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #94a3b8;"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2-8.83"/></svg></div>';
+        imageDiv.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; color: #64748b;"><svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="animation: spin 1s linear infinite;"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2-8.83"/></svg></div>';
 
         fetch('../Manage/upload_room_image.php', {
           method: 'POST',
