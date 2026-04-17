@@ -1,0 +1,376 @@
+  <script>
+  // Automatically enable live-light class for CSS rules targeting it
+  document.documentElement.classList.add('live-light');
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('live-light');
+  });
+
+  // Force override inline styles for Light Mode
+  document.addEventListener('DOMContentLoaded', function() {
+    const allElements = document.querySelectorAll('[style*="background"], [style*="linear-gradient"]');
+    allElements.forEach(el => {
+      const style = el.getAttribute('style');
+      if (style && (style.includes('background') || style.includes('linear-gradient'))) {
+        el.style.setProperty('background', '#ffffff', 'important');
+        el.style.setProperty('background-color', '#ffffff', 'important');
+        el.style.setProperty('color', '#111827', 'important');
+      }
+    });
+  });
+  </script>
+  <?php endif; ?>
+  details summary {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    padding: 0.6rem 2.5rem 0.6rem 0.85rem !important;
+    margin: 0 !important;
+    transition: all 0.3s ease;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    cursor: pointer;
+    position: relative;
+    width: 100%;
+    min-height: 2.25rem;
+  }
+  
+  /* ลิงก์ภายใน summary */
+  details summary .summary-link {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.35rem;
+    text-decoration: none;
+    color: inherit;
+    padding: 0;
+    margin: 0;
+    flex: 1;
+  }
+  
+--
+<script>
+  // ====== Global Admin Font Scale Sync ======
+  // โหลด font scale จาก localStorage ทันทีก่อน DOM render
+  (function() {
+    const savedScale = localStorage.getItem('adminFontScale');
+    if (savedScale && !isNaN(parseFloat(savedScale))) {
+      document.documentElement.style.setProperty('--font-scale', savedScale);
+      document.documentElement.style.setProperty('--admin-font-scale', savedScale);
+    }
+    
+    // Listen สำหรับ font scale change จากหน้าอื่น (เช่น Settings)
+    window.addEventListener('storage', function(e) {
+      if (e.key === 'adminFontScale' && e.newValue) {
+        document.documentElement.style.setProperty('--font-scale', e.newValue);
+        document.documentElement.style.setProperty('--admin-font-scale', e.newValue);
+      }
+      // Cross-tab: refresh other pages on data change
+      if (e.key === 'dataChanged' && e.newValue) {
+        try {
+          var currentPage = location.pathname.split('/').pop().split('?')[0];
+          var autoRefreshPages = {
+            'tenant_wizard.php':   'refreshWizardTable',
+            'todo_tasks.php':      '_reload',
+            'manage_expenses.php': 'reloadExpensesAjax',
+            'manage_utility.php':  '_reload',
+            'manage_payments.php': '_reload',
+            'manage_contracts.php':'refreshContractsTable',
+            'manage_tenants.php':  '_reload',
+            'report_rooms.php':    '_reload',
+            'manage.php':          '_reload'
+          };
+          var fn = autoRefreshPages[currentPage];
+          if (fn) {
+            if (fn === '_reload') {
+              location.reload();
+            } else if (typeof window[fn] === 'function') {
+              window[fn]();
+            } else {
+              location.reload();
+            }
+          }
+        } catch(ex) {}
+      }
+    });
+  })();
+  
+  // Force reset collapsed on mobile IMMEDIATELY before CSS applies
+  // Use a safer media-query injection so desktop collapsed styles are not overridden
+  if (window.innerWidth <= 1024) {
+     document.write('<style>@media (max-width:1024px){ .app-sidebar.collapsed { width: 240px !important; } .app-sidebar.collapsed .app-nav-label, .app-sidebar.collapsed .summary-label, .app-sidebar.collapsed .chev { display: revert !important; } .app-sidebar.collapsed .team-avatar { width: 120px !important; height: 120px !important; padding: 0 !important; margin: 0 auto !important; } .app-sidebar.collapsed .team-avatar-img { width: 120px !important; height: 120px !important; object-fit: cover !important; } .app-sidebar.collapsed .team-meta { display: block !important; text-align: center !important; padding-top: 0.75rem !important; } }</style>');
+  }
+--
+<script>
+(function(){
+  try {
+    var mode = <?php echo json_encode(isset($defaultViewMode) ? $defaultViewMode : 'grid'); ?>;
+    if (mode !== 'grid' && mode !== 'list') { mode = 'grid'; }
+    localStorage.setItem('adminDefaultViewMode', mode);
+  } catch (e) {}
+})();
+</script>
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const tooltipSelector = '[data-bs-toggle="tooltip"]';
+
+    function initTooltips() {
+      if (!window.bootstrap || !window.bootstrap.Tooltip) {
+        return;
+      }
+
+      document.querySelectorAll(tooltipSelector).forEach(function(el) {
+        if (!window.bootstrap.Tooltip.getInstance(el)) {
+          new window.bootstrap.Tooltip(el, {
+            container: 'body'
+          });
+        }
+      });
+    }
+
+    if (window.bootstrap && window.bootstrap.Tooltip) {
+      initTooltips();
+      return;
+    }
+
+    const existingBundle = document.querySelector('script[data-bootstrap-tooltip-bundle="true"]');
+    if (existingBundle) {
+      existingBundle.addEventListener('load', initTooltips, { once: true });
+      return;
+    }
+
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js';
+    script.defer = true;
+    script.dataset.bootstrapTooltipBundle = 'true';
+    script.addEventListener('load', initTooltips, { once: true });
+    document.head.appendChild(script);
+  });
+</script>
+<script>
+  // Apply saved sidebar state immediately to prevent flashing
+  if (window.innerWidth > 1024) {
+    try {
+      if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        document.write('<style>aside.app-sidebar.collapsed { width: 0 !important; min-width: 0 !important; padding: 0 !important; overflow: hidden !important; visibility: hidden !important; }</style>');
+        // We'll also add the class via a script that runs immediately after the aside tag
+      }
+    } catch(e) {}
+  }
+</script>
+<aside class="app-sidebar" id="app-side-bar">
+<script>
+  if (window.innerWidth > 1024) {
+    try {
+      if (localStorage.getItem('sidebarCollapsed') === 'true') {
+        document.getElementById('app-side-bar').classList.add('collapsed');
+      }
+    } catch(e) {}
+  }
+</script>
+  <!-- Mobile Close Button -->
+  <button type="button" id="sidebar-close-btn" class="sidebar-close-btn" aria-label="ปิด Sidebar" onclick="closeSidebarMobile()">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18"/>
+      <line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+  <!-- Header: Logo & Name - Fixed at top -->
+  <div class="sidebar-header">
+    <div class="team-avatar" >
+      <!-- Project logo from database -->
+      <img src="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>" alt="Logo" class="team-avatar-img"  />
+    </div>
+    <div class="team-meta">
+      <div class="name"><?php echo htmlspecialchars($siteName); ?></div>
+    </div>
+  </div>
+
+  <!-- Navigation area - Scrollable -->
+  <div class="sidebar-nav-area">
+  <?php
+  $currentPage = basename($_SERVER['PHP_SELF']);
+  $navDashboardOpen = in_array($currentPage, ['dashboard.php','report_tenants.php','report_reservations.php','manage_stay.php','report_utility.php','manage_revenue.php','report_rooms.php','report_payments.php','report_invoice.php','report_repairs.php','report_news.php','print_contract.php']);
+  $navTodoOpen      = in_array($currentPage, ['todo_tasks.php','tenant_wizard.php','manage_booking.php','manage_utility.php','manage_expenses.php','manage_payments.php','manage_repairs.php']);
+  $navTenantsOpen   = in_array($currentPage, ['manage_tenants.php','manage_contracts.php','qr_codes.php']);
+  $navSettingsOpen  = in_array($currentPage, ['system_settings.php','manage_rooms.php','manage_news.php']);
+  ?>
+  <nav class="app-nav" aria-label="Main navigation" >
+    <div class="group" >
+      <details id="nav-dashboard" <?php echo $navDashboardOpen ? 'open' : ''; ?>>
+        <summary>
+          <a href="dashboard.php" class="summary-link<?php echo $currentPage === 'dashboard.php' ? ' active' : ''; ?>">
+            <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg></span>
+            <span class="summary-label"><?php echo __('menu_dashboard'); ?></span>
+          </a>
+          <span class="chev chev-toggle" data-target="nav-dashboard" style="cursor:pointer;font-size: 1.5rem;">›</span>
+        </summary>
+        <a class="<?php echo $currentPage === 'report_tenants.php' ? 'active' : ''; ?>" href="report_tenants.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span><span class="app-nav-label"><?php echo __('report_tenant_list'); ?></span></a>
+        <a class="<?php echo $currentPage === 'report_reservations.php' ? 'active' : ''; ?>" href="report_reservations.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/></svg></span><span class="app-nav-label"><?php echo __('report_booking_list'); ?></span></a>
+        <a class="<?php echo $currentPage === 'manage_stay.php' ? 'active' : ''; ?>" href="manage_stay.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></span><span class="app-nav-label"><?php echo __('report_stay'); ?></span></a>
+        <a class="<?php echo $currentPage === 'report_utility.php' ? 'active' : ''; ?>" href="report_utility.php"><span class="app-nav-icon utility-icon-toggle" aria-hidden="true"><svg class="utility-icon water" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg><svg class="utility-icon electric" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span><span class="app-nav-label" style="font-size: 0.8rem;"><?php echo __('report_utility_list'); ?></span></a>
+        <a class="<?php echo $currentPage === 'manage_revenue.php' ? 'active' : ''; ?>" href="manage_revenue.php"><span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="app-nav-label"><?php echo __('report_revenue'); ?></span></a>
+--
+<script>
+  // Fade-in animation on theme change/page load
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('theme-fade');
+    setTimeout(() => document.body.classList.remove('theme-fade'), 500);
+  });
+</script>
+<script>
+// Apple-style Alert Function (global — must be outside IIFE so onclick handlers can access)
+function appleAlert(message, title = (window.location.host + ' บอกว่า')) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'apple-alert-overlay';
+    overlay.innerHTML = `
+      <div class="apple-alert-dialog">
+        <div class="apple-alert-content">
+          <div class="apple-alert-title">${title}</div>
+          <div class="apple-alert-message">${message}</div>
+        </div>
+        <div class="apple-alert-buttons">
+          <button class="apple-alert-button primary">ตกลง</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const button = overlay.querySelector('.apple-alert-button');
+    button.addEventListener('click', () => {
+      overlay.style.animation = 'fadeOut 0.2s ease forwards';
+      setTimeout(() => { overlay.remove(); resolve(); }, 200);
+    });
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.style.animation = 'fadeOut 0.2s ease forwards';
+        setTimeout(() => { overlay.remove(); resolve(); }, 200);
+      }
+    });
+  });
+}
+
+// Apple-style Confirm Function (global)
+function appleConfirm(message, title = (window.location.host + ' บอกว่า')) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'apple-alert-overlay';
+    overlay.innerHTML = `
+      <div class="apple-alert-dialog">
+        <div class="apple-alert-content">
+          <div class="apple-alert-title">${title}</div>
+          <div class="apple-alert-message">${message}</div>
+        </div>
+        <div class="apple-alert-buttons">
+          <button class="apple-alert-button">ยกเลิก</button>
+          <button class="apple-alert-button destructive">ตกลง</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    const buttons = overlay.querySelectorAll('.apple-alert-button');
+--
+<script>
+(function() {
+  const sidebar = document.querySelector('.app-sidebar');
+  let isFreshLoginSession = false;
+
+  // First page load after a new login session: close all dropdowns.
+  try {
+    const currentLoginSession = <?php echo json_encode((string)session_id()); ?>;
+    const loginSessionKey = 'sidebar_login_session_id';
+    const savedLoginSession = localStorage.getItem(loginSessionKey);
+    if (savedLoginSession !== currentLoginSession) {
+      isFreshLoginSession = true;
+      localStorage.setItem(loginSessionKey, currentLoginSession);
+    }
+  } catch (e) {}
+
+  window.__sidebarFreshLogin = isFreshLoginSession;
+  
+  // Restore sidebar state on page load (desktop only)
+  // Note: Sidebar toggle handler is now managed by animate-ui.js
+  const savedState = localStorage.getItem('sidebarCollapsed');
+  if (savedState === 'true' && window.innerWidth > 1024) {
+    sidebar.classList.add('collapsed');
+    console.log('Sidebar state restored from localStorage');
+  }
+  
+  // Set active menu item based on current page
+  function setActiveMenu() {
+    const currentPage = (window.location.pathname.split('/').pop() || '').split('?')[0];
+    const menuLinks = document.querySelectorAll('.app-nav a');
+    
+    menuLinks.forEach(link => {
+      const href = link.getAttribute('href');
+      if (!href) return;
+
+      const normalizedHref = href.split('#')[0];
+      const hrefFile = (normalizedHref.split('/').pop() || '').split('?')[0];
+      if (hrefFile && hrefFile === currentPage) {
+        link.classList.add('active');
+
+        // Skip auto-open on the very first page after login.
+        // Also skip auto-open when active link is a summary-link itself.
+        const parentDetails = link.closest('details[id]');
+        if (link.classList.contains('summary-link')) {
+          if (parentDetails) {
+            parentDetails.removeAttribute('open');
+            parentDetails.open = false;
+            try {
+              localStorage.setItem('sidebar_details_' + parentDetails.id, 'closed');
+            } catch (e) {}
+          }
+--
+<script>
+(function () {
+  'use strict';
+  var expiresInMs  = <?= (int)$jsExpiresInMs ?>;
+  var warnMs       = <?= (int)$jsWarnMs ?>;
+  var loginUrl     = <?= json_encode($jsLoginUrl) ?>;
+  var warned       = false;
+
+  // ── Warning toast 60 s before expiry ──────────────────────────────────────
+  if (warnMs > 0) {
+    setTimeout(function () {
+      if (warned) return;
+      warned = true;
+      var msg = 'เซสชันจะหมดอายุใน 1 นาที กรุณาบันทึกงานของคุณ';
+      if (typeof AppleAlert !== 'undefined' && AppleAlert.show) {
+        AppleAlert.show({ type: 'warning', title: '⏰ เซสชันใกล้หมดอายุ', message: msg, duration: 10000 });
+      } else if (window.showAppleAlert) {
+        showAppleAlert('warning', '⏰ เซสชันใกล้หมดอายุ', msg);
+      } else {
+        console.warn('[Session]', msg);
+      }
+    }, warnMs);
+  }
+
+  // ── Auto-redirect when expired ─────────────────────────────────────────────
+  setTimeout(function () {
+    window.location.href = loginUrl;
+  }, expiresInMs);
+
+  // ── Refresh last-activity on user interaction (debounced, max once/min) ────
+  var lastPing = Date.now();
+  function pingServer() {
+    var now = Date.now();
+    if (now - lastPing < 55000) return; // throttle to once per 55 s
+    lastPing = now;
+    fetch('<?= htmlspecialchars(str_repeat('../', max(0, $jsDepth)) . 'Manage/ping_session.php', ENT_QUOTES, 'UTF-8') ?>', {
+      method: 'POST', credentials: 'same-origin'
+    }).then(function (r) {
+      return r.ok ? r.json() : null;
+    }).then(function (data) {
+      if (data && data.remaining_ms > 0) {
+        // Reset countdown with fresh expiry from server
+        expiresInMs = data.remaining_ms;
+        warned = false;
+      } else if (data && data.expired) {
+        window.location.href = loginUrl;
+      }
+    }).catch(function () {/* ignore */});
+  }
+  ['click', 'keydown', 'mousemove', 'touchstart'].forEach(function (evt) {
+    document.addEventListener(evt, pingServer, { passive: true });
