@@ -4746,6 +4746,21 @@ main > div:first-of-type,
     <script>
       // Final safety net: explicit bindings after everything loads
       document.addEventListener('DOMContentLoaded', () => {
+        // Remove any animate-ui modal overlays that might block clicks
+        const removeOverlays = () => {
+          document.querySelectorAll('.animate-ui-modal-overlay').forEach(el => {
+            el.style.display = 'none !important';
+            el.style.pointerEvents = 'none !important';
+            el.style.visibility = 'hidden !important';
+            el.remove();
+          });
+        };
+        removeOverlays();
+        
+        // Watch for any new overlays and remove them
+        const observer = new MutationObserver(removeOverlays);
+        observer.observe(document.body, { childList: true, subtree: true });
+
         const safeGet = (key) => {
           try { return localStorage.getItem(key); } catch (err) { return null; }
         };
