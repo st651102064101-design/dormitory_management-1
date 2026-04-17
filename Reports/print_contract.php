@@ -68,7 +68,7 @@ if ($ctr_id === 0) {
         WHERE c.ctr_id IN (
             SELECT MAX(c2.ctr_id) FROM contract c2 GROUP BY c2.tnt_id
         )
-        ORDER BY c.ctr_id DESC
+        ORDER BY CAST(r.room_number AS UNSIGNED) ASC, r.room_number ASC
     ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <?php $pageTitle = 'พิมพ์สัญญา'; ?>
