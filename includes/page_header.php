@@ -349,7 +349,6 @@ $buildHeaderAttributes = static function (array $attributes): string {
 .page-header-bar {
   position: -webkit-sticky !important;
   position: sticky !important;
-  width: 100%;
   top: 1rem !important;
   z-index: 120 !important;
   padding: 1rem 1.5rem;
@@ -358,10 +357,13 @@ $buildHeaderAttributes = static function (array $attributes): string {
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin: 1rem 0 1rem 0;
+  margin: 1rem auto;
+  width: calc(100% - 40px);
+  max-width: 1240px;
   transform: translateY(0);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               background 0.3s cubic-bezier(0.4, 0, 0.2, 1),

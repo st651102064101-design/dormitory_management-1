@@ -289,13 +289,16 @@ $pendingRefundCtrIdSet = array_flip(array_column($refundPendingContracts, 'ctr_i
 
       /* --- Header area --- */
       .contracts-header-wrap {
-        margin: 1.5rem 1.5rem 1rem;
+        margin: 1.5rem auto 1rem;
+        max-width: 1280px;
+        padding: 0 1.5rem;
       }
       .contracts-header-wrap .page-header-bar { margin: 0; }
 
       /* --- Panel --- */
       .manage-panel {
-        margin: 0 1.5rem 3rem;
+        margin: 0 auto 3rem;
+        max-width: 1280px;
         padding: 1.5rem;
         background: var(--card-bg);
         border-radius: 8px;
