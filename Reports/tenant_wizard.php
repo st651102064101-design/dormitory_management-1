@@ -1931,10 +1931,10 @@ main > div:first-of-type,
 </style>
 
 </head>
-<body>
-    <div style="display: flex;">
+<body class="reports-page">
+    <div class="app-shell" style="display: flex;">
         <?php include '../includes/sidebar.php'; ?>
-        <main style="flex: 1; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem;">
+        <main class="app-main" style="flex: 1; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem;">
             <div class="wizard-panel">
                 <?php $pageTitle = 'ตัวช่วยผู้เช่า'; include '../includes/page_header.php'; ?>
                 <div class="wizard-panel-body">
