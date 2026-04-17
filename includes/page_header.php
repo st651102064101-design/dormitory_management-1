@@ -349,21 +349,21 @@ $buildHeaderAttributes = static function (array $attributes): string {
 .page-header-bar {
   position: -webkit-sticky !important;
   position: sticky !important;
-  top: 0 !important;
+  top: 1rem !important;
   z-index: 120 !important;
-  padding: 0;
+  padding: 1rem 1.5rem;
   background: rgba(15, 23, 42, 0.8);
   backdrop-filter: blur(20px) saturate(180%);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 0 !important;
+  border-radius: 12px !important;
   box-sizing: border-box;
   display: flex !important;
   align-items: center;
   justify-content: space-between;
-  margin: 0 !important;
+  margin: 0 auto 1.5rem auto !important;
   width: 100% !important;
-  max-width: 100% !important;
+  max-width: 1280px !important;
   transform: translateY(0);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
               background 0.3s cubic-bezier(0.4, 0, 0.2, 1),

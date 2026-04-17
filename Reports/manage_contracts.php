@@ -1052,7 +1052,7 @@ main > div:first-of-type,
         <?php include '../includes/sidebar.php'; ?>
         <main style="flex: 1; min-width: 0; overflow-x: hidden; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem; display: flex; align-items: flex-start; justify-content: center;" class="app-main">
             <div style="flex: 1; max-width: 1280px; min-width: 0; padding: 0 1rem; box-sizing: border-box; margin: 0 auto auto auto;">
-              <div class="contracts-header-wrap" style="margin: 1.5rem 0 1rem; max-width: 100%; padding: 0;">
+              <div class="contracts-header-wrap" style="margin: 0 0 1rem; max-width: 100%; padding: 0;">
                 <?php $pageTitle = 'จัดการสัญญาเช่า'; include '../includes/page_header.php'; ?>
               </div>
 
