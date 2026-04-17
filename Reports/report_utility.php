@@ -108,9 +108,11 @@ $roomSql = "
     LEFT JOIN (
         SELECT room_id, MAX(ctr_id) AS ctr_id
         FROM contract
-        WHERE ctr_status IN ('0','1') 
+        WHERE ctr_status = '0' 
           AND ctr_start <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?), '%Y-%m'))
           AND (ctr_end IS NULL OR ctr_end >= STR_TO_DATE(CONCAT(?, '-', '01'), '%Y-%m-%d'))
+          AND EXISTS (SELECT 1 FROM checkin_record cr WHERE cr.ctr_id = contract.ctr_id
+                      AND cr.water_meter_start IS NOT NULL AND cr.elec_meter_start IS NOT NULL)
         GROUP BY room_id
     ) lc ON r.room_id = lc.room_id
     LEFT JOIN contract c ON lc.ctr_id = c.ctr_id
