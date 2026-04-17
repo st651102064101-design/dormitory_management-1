@@ -397,7 +397,7 @@ try {
                 </div>
 
                 <!-- Secondary Row -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
                     <!-- Action Required List -->
                     <div class="saas-card no-hover flex flex-col h-full overflow-hidden p-0">
                         <div class="p-6 border-b border-slate-100 flex items-center justify-between">
