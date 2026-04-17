@@ -4624,8 +4624,8 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.remove('sidebar-open');
       }
     } else if (window.innerWidth > 1024 && !sidebar.classList.contains('collapsed')) {
-      // On desktop, auto-collapse ONLY when clicking outside the sidebar
-      if (!sidebar.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) {
+      // On desktop, auto-collapse when clicking outside the sidebar OR clicking a nav link
+      if ((!sidebar.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) || isNavLink) {
         sidebar.classList.add('collapsed');
         try {
           localStorage.setItem('sidebarCollapsed', 'true');
