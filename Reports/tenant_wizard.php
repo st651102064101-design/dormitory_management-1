@@ -1940,9 +1940,9 @@ main > div:first-of-type,
 <body class="reports-page <?php echo $isLight ? 'live-light' : ''; ?>">
     <div class="app-shell">
         <?php include '../includes/sidebar.php'; ?>
-        <main class="app-main" style="overflow-y: auto; height: 100vh; padding-bottom: 4rem; width: 100%;">
-            <div style="max-width: 1280px; margin: 0 auto; width: 100%;">
-                <div class="wizard-panel">
+        <main class="app-main" style="overflow-y: auto; height: 100vh; padding-bottom: 4rem; width: 100%; display: flex; align-items: flex-start; justify-content: center;">
+            <div style="flex: 1; max-width: 1280px; min-width: 0; padding: 0 1rem; box-sizing: border-box; margin: auto;">
+                <div class="wizard-panel" style="margin: 1.5rem auto; width: 100%; max-width: 1280px;">
                     <?php $pageTitle = 'ตัวช่วยผู้เช่า'; include '../includes/page_header.php'; ?>
                     <div class="wizard-panel-body">
 
