@@ -60,6 +60,7 @@ $canUseSidebarSnapshot = is_array($sidebarSnapshot)
 $sidebarAccountFlashSuccess = (string)($_SESSION['sidebar_account_flash_success'] ?? '');
 $sidebarAccountFlashError = (string)($_SESSION['sidebar_account_flash_error'] ?? '');
 $sidebarAccountModalUsername = (string)($_SESSION['sidebar_account_old_username'] ?? ($_SESSION['admin_username'] ?? ''));
+$sidebarAccountModalName = (string)($_SESSION['sidebar_account_old_name'] ?? ($_SESSION['admin_name'] ?? ''));
 $sidebarAccountHasOldRecoveryEmail = array_key_exists('sidebar_account_old_recovery_email', $_SESSION);
 $sidebarAccountModalRecoveryEmail = (string)($_SESSION['sidebar_account_old_recovery_email'] ?? '');
 $sidebarAccountAutoOpen = ($sidebarAccountFlashError !== '');
@@ -67,6 +68,7 @@ unset(
   $_SESSION['sidebar_account_flash_success'],
   $_SESSION['sidebar_account_flash_error'],
   $_SESSION['sidebar_account_old_username'],
+  $_SESSION['sidebar_account_old_name'],
   $_SESSION['sidebar_account_old_recovery_email']
 );
 
@@ -78,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
   }
 
   $submittedUsername = trim((string)($_POST['new_admin_username'] ?? ''));
+  $submittedName = trim((string)($_POST['new_admin_name'] ?? ''));
   $submittedRecoveryEmail = trim((string)($_POST['recovery_email'] ?? ''));
   $currentPassword = (string)($_POST['current_admin_password'] ?? '');
   $newPassword = (string)($_POST['new_admin_password'] ?? '');
@@ -128,11 +131,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
           } else {
             if ($newPassword !== '') {
               $newPasswordHash = password_hash($newPassword, PASSWORD_DEFAULT);
-              $updateStmt = $pdoAccount->prepare('UPDATE admin SET admin_username = ?, admin_password = ? WHERE admin_id = ?');
-              $updateStmt->execute([$submittedUsername, $newPasswordHash, $currentAdminId]);
+              $updateStmt = $pdoAccount->prepare('UPDATE admin SET admin_username = ?, admin_name = ?, admin_password = ? WHERE admin_id = ?');
+              $updateStmt->execute([$submittedUsername, $submittedName, $newPasswordHash, $currentAdminId]);
             } else {
-              $updateStmt = $pdoAccount->prepare('UPDATE admin SET admin_username = ? WHERE admin_id = ?');
-              $updateStmt->execute([$submittedUsername, $currentAdminId]);
+              $updateStmt = $pdoAccount->prepare('UPDATE admin SET admin_username = ?, admin_name = ? WHERE admin_id = ?');
+              $updateStmt->execute([$submittedUsername, $submittedName, $currentAdminId]);
             }
 
             $recoverySettingKey = 'admin_recovery_email_' . $currentAdminId;
@@ -149,6 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
             }
 
             $_SESSION['admin_username'] = $submittedUsername;
+            $_SESSION['admin_name'] = $submittedName;
             if ($newPassword !== '' && $submittedRecoveryEmail !== '') {
               $_SESSION['sidebar_account_flash_success'] = 'อัปเดตชื่อผู้ใช้ รหัสผ่าน และอีเมลกู้คืนเรียบร้อยแล้ว';
             } elseif ($newPassword !== '') {
@@ -175,6 +179,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['sidebar_account_updat
 
   $_SESSION['sidebar_account_flash_error'] = $accountError;
   $_SESSION['sidebar_account_old_username'] = $submittedUsername;
+  $_SESSION['sidebar_account_old_name'] = $submittedName;
   $_SESSION['sidebar_account_old_recovery_email'] = $submittedRecoveryEmail;
   if (!headers_sent()) {
     header('Location: ' . $redirectTo);
@@ -4044,6 +4049,9 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
         <div class="sidebar-account-modal-body">
           <form method="post" action="" data-allow-submit>
             <input type="hidden" name="sidebar_account_update" value="1">
+
+            <label for="sidebarNewAdminName">ชื่อที่แสดง (Display Name)</label>
+            <input id="sidebarNewAdminName" name="new_admin_name" type="text" value="<?php echo htmlspecialchars($sidebarAccountModalName, ENT_QUOTES, 'UTF-8'); ?>">
 
             <label for="sidebarNewAdminUsername"><?php echo __('username_label'); ?></label>
             <input id="sidebarNewAdminUsername" name="new_admin_username" type="text" value="<?php echo htmlspecialchars($sidebarAccountModalUsername, ENT_QUOTES, 'UTF-8'); ?>" required>
