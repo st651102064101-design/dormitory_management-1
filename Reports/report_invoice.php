@@ -641,7 +641,7 @@ main > div:first-of-type,
                     <?php endforeach; ?>
                   </select>
                 </div>
-                <div class="filter-item" style="display:flex;align-items:flex-end;">
+                <div class="filter-item" id="clearBtnWrapper" style="display:none;align-items:flex-end;">
                   <button type="button" class="clear-btn" onclick="clearFilters()" style="width:100%;min-height:2.5rem;display:flex;align-items:center;justify-content:center;gap:0.4rem;">
                     ✕ ล้างตัวกรอง
                   </button>
@@ -872,6 +872,16 @@ main > div:first-of-type,
         const status = document.getElementById('filterStatus')?.value ?? '';
         const month  = document.getElementById('filterMonth')?.value  ?? '';
         const year   = document.getElementById('filterYear')?.value   ?? '';
+        
+        const clearBtnWrapper = document.getElementById('clearBtnWrapper');
+        if (clearBtnWrapper) {
+          if (room !== '' || status !== '' || month !== '' || year !== '') {
+            clearBtnWrapper.style.display = 'flex';
+          } else {
+            clearBtnWrapper.style.display = 'none';
+          }
+        }
+        
         document.querySelectorAll('[data-filter-item="invoice"]').forEach(el => {
           const matchRoom   = !room   || el.dataset.room   === room;
           const matchStatus = !status || el.dataset.status === status;
@@ -898,6 +908,7 @@ main > div:first-of-type,
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" defer></script>
     <script>
       document.addEventListener('DOMContentLoaded', function() {
+        applyFilters();
         const invoiceTable = document.getElementById('table-invoice');
         if (invoiceTable && typeof simpleDatatables !== 'undefined') {
           new simpleDatatables.DataTable(invoiceTable, {
