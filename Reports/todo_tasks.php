@@ -646,7 +646,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
     </style>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/futuristic-bright.css">
 </head>
-<body class="reports-page">
+<body class="reports-page <?php echo $isLight ? 'live-light' : ''; ?>">
     <script>
         (function() {
             var c = localStorage.getItem('theme_class');

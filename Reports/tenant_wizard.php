@@ -29,6 +29,12 @@ if ($settingsStmt) {
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         if ($row['setting_key'] === 'theme_color' && !empty($row['setting_value'])) {
             $themeColor = htmlspecialchars($row['setting_value'], ENT_QUOTES, 'UTF-8');
+            $hex = ltrim($themeColor, '#');
+            $r = hexdec(substr($hex, 0, 2));
+            $g = hexdec(substr($hex, 2, 2));
+            $b = hexdec(substr($hex, 4, 2));
+            $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
+            $isLight = $brightness > 155;
         }
     }
 }
@@ -1931,7 +1937,7 @@ main > div:first-of-type,
 </style>
 
 </head>
-<body class="reports-page live-light">
+<body class="reports-page <?php echo $isLight ? 'live-light' : ''; ?>">
     <div class="app-shell">
         <?php include '../includes/sidebar.php'; ?>
         <main class="app-main" style="overflow-y: auto; height: 100vh; padding-bottom: 4rem; width: 100%;">

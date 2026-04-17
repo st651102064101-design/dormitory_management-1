@@ -2001,6 +2001,12 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
   
   <?php if ($isLight): ?>
   <script>
+  // Automatically enable live-light class for CSS rules targeting it
+  document.documentElement.classList.add('live-light');
+  document.addEventListener('DOMContentLoaded', function() {
+    document.body.classList.add('live-light');
+  });
+
   // Force override inline styles for Light Mode
   document.addEventListener('DOMContentLoaded', function() {
     const allElements = document.querySelectorAll('[style*="background"], [style*="linear-gradient"]');
