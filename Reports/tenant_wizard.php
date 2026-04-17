@@ -1941,9 +1941,10 @@ main > div:first-of-type,
     <div class="app-shell">
         <?php include '../includes/sidebar.php'; ?>
         <main class="app-main" style="overflow-y: auto; height: 100vh; padding-bottom: 4rem; width: 100%;">
-            <div class="wizard-panel">
-                <?php $pageTitle = 'ตัวช่วยผู้เช่า'; include '../includes/page_header.php'; ?>
-                <div class="wizard-panel-body">
+            <div style="max-width: 1280px; margin: 0 auto; width: 100%;">
+                <div class="wizard-panel">
+                    <?php $pageTitle = 'ตัวช่วยผู้เช่า'; include '../includes/page_header.php'; ?>
+                    <div class="wizard-panel-body">
 
                 <?php if (!empty($_SESSION['error'])): ?>
                     <div style="margin: 0.5rem 0 1rem; padding: 0.75rem 1rem; background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; border-radius: 6px;">
@@ -2586,6 +2587,7 @@ main > div:first-of-type,
                     </div>
                 <?php endif; ?>
                 </div>
+            </div>
             </div>
         </main>
     </div>
