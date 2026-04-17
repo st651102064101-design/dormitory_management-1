@@ -1703,16 +1703,33 @@ main > div:first-of-type,
           // อัปเดตรูปภาพ
           const imageDiv = gridCard.querySelector('.room-card-image');
           if (imageDiv) {
-            if (room.room_image) {
-              imageDiv.innerHTML = `<img src="/dormitory_management/Public/Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />`;
-            } else {
-              imageDiv.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
-                <path d="M6 12V7a2 2 0 0 1 2-2h2" />
-                <path d="M2 16v-2" />
-                <path d="M22 16v-2" />
-              </svg>`;
+            imageDiv.classList.add('room-card-image-upload');
+            imageDiv.setAttribute('onclick', `triggerImageUpload(${roomId})`);
+            imageDiv.setAttribute('title', 'คลิกเพื่ออัปโหลดรูปภาพ');
+            imageDiv.style.cursor = 'pointer';
+            imageDiv.style.position = 'relative';
+
+            imageDiv.innerHTML = `${room.room_image ?
+              `<img src="/dormitory_management/Public/Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
+              `<div class="placeholder-upload-hint" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; flex-direction: column; gap: 0.5rem;">
+                <svg class="placeholder-upload-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
+                  <path d="M6 12V7a2 2 0 0 1 2-2h2" />
+                  <path d="M2 16v-2" />
+                  <path d="M22 16v-2" />
+                </svg>
+                <span class="placeholder-upload-text" style="font-size: 0.75rem; text-align: center;">คลิกเพื่ออัปโหลด</span>
+              </div>`
             }
+            <div class="image-upload-overlay">
+              <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              <span class="upload-text">อัปโหลดรูป</span>
+            </div>
+            <input type="file" id="imageInput_${roomId}" accept="image/*" style="display: none;" onchange="uploadRoomImage(${roomId}, this)">`;
           }
           
           // อัปเดตหมายเลขห้อง
@@ -2034,16 +2051,28 @@ main > div:first-of-type,
         if (roomsGrid) {
           const cardHTML = `
             <div class="room-card" data-room-id="${room.room_id}" data-room-number="${room.room_number}">
-              <div class="room-card-image">
+              <div class="room-card-image room-card-image-upload" onclick="triggerImageUpload(${room.room_id})" style="cursor: pointer; position: relative;" title="คลิกเพื่ออัปโหลดรูปภาพ">
                 ${room.room_image ? 
                   `<img src="/dormitory_management/Public/Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
-                  `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
-                    <path d="M6 12V7a2 2 0 0 1 2-2h2" />
-                    <path d="M2 16v-2" />
-                    <path d="M22 16v-2" />
-                  </svg>`
+                  `<div class="placeholder-upload-hint" style="display: flex; align-items: center; justify-content: center; width: 100%; height: 100%; flex-direction: column; gap: 0.5rem;">
+                    <svg class="placeholder-upload-icon" xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
+                      <path d="M6 12V7a2 2 0 0 1 2-2h2" />
+                      <path d="M2 16v-2" />
+                      <path d="M22 16v-2" />
+                    </svg>
+                    <span class="placeholder-upload-text" style="font-size: 0.75rem; text-align: center;">คลิกเพื่ออัปโหลด</span>
+                  </div>`
                 }
+                <div class="image-upload-overlay">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="17 8 12 3 7 8" />
+                    <line x1="12" y1="3" x2="12" y2="15" />
+                  </svg>
+                  <span class="upload-text">อัปโหลดรูป</span>
+                </div>
+                <input type="file" id="imageInput_${room.room_id}" accept="image/*" style="display: none;" onchange="uploadRoomImage(${room.room_id}, this)">
               </div>
               <div class="room-card-content">
                 <h3 class="room-card-number">ห้อง ${room.room_number}</h3>
@@ -2402,6 +2431,12 @@ main > div:first-of-type,
           // Replace image content
           imageDiv.innerHTML = '';
           imageDiv.appendChild(newImg);
+
+          imageDiv.classList.add('room-card-image-upload');
+          imageDiv.setAttribute('onclick', `triggerImageUpload(${roomId})`);
+          imageDiv.setAttribute('title', 'คลิกเพื่ออัปโหลดรูปภาพ');
+          imageDiv.style.cursor = 'pointer';
+          imageDiv.style.position = 'relative';
           
           // Re-add the overlay and file input
           const overlay = document.createElement('div');
@@ -2415,6 +2450,14 @@ main > div:first-of-type,
             <span class="upload-text">อัปโหลดรูป</span>
           `;
           imageDiv.appendChild(overlay);
+
+          const newFileInput = document.createElement('input');
+          newFileInput.type = 'file';
+          newFileInput.id = 'imageInput_' + roomId;
+          newFileInput.accept = 'image/*';
+          newFileInput.style.display = 'none';
+          newFileInput.onchange = function() { uploadRoomImage(roomId, this); };
+          imageDiv.appendChild(newFileInput);
           
           // Reset file input
           fileInput.value = '';
