@@ -137,6 +137,74 @@ try {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
+      #table-view .datatable-wrapper {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        border: none !important;
+      }
+      #table-view.invoice-table { border: 1px solid #f1f5f9; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05); border-radius: 16px; overflow: hidden; }
+
+      #table-view .datatable-wrapper .datatable-input,
+      #table-view .datatable-wrapper .datatable-selector {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #334155 !important;
+        border-radius: 8px !important;
+      }
+
+      #table-view .datatable-wrapper .datatable-input::placeholder {
+        color: #94a3b8 !important;
+      }
+
+      #table-view .datatable-wrapper table thead {
+        background: #f8fafc !important;
+      }
+
+      #table-view .datatable-wrapper table thead th {
+        color: #475569 !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+        font-weight: 600 !important;
+        font-size: 0.8rem !important;
+        text-transform: uppercase !important;
+        letter-spacing: 0.05em !important;
+      }
+
+      #table-view .datatable-wrapper table tbody tr {
+        background: #ffffff !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+        transition: background-color 0.2s;
+      }
+
+      #table-view .datatable-wrapper table tbody td {
+        color: #334155 !important;
+        font-weight: 500 !important;
+        border-bottom: 1px solid #f1f5f9 !important;
+      }
+
+      #table-view .datatable-wrapper table tbody tr:hover {
+        background: #f8fafc !important;
+      }
+
+      #table-view .datatable-wrapper .datatable-info {
+        color: #64748b !important;
+      }
+
+      #table-view .datatable-wrapper .datatable-pagination-list-item a,
+      #table-view .datatable-wrapper .datatable-pagination-list-item button,
+      #table-view .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link {
+        background: #ffffff !important;
+        border: 1px solid #e2e8f0 !important;
+        color: #64748b !important;
+        border-radius: 6px !important;
+      }
+
+      #table-view .datatable-wrapper .datatable-pagination-list-item a:hover,
+      #table-view .datatable-wrapper .datatable-pagination-list-item button:hover,
+      #table-view .datatable-wrapper .datatable-pagination-list-item .datatable-pagination-list-item-link:hover {
+        background: #f1f5f9 !important;
+        color: #0ea5e9 !important;
+      }
+
       .reports-container {
         width: 100%;
         max-width: 100%;
@@ -155,15 +223,16 @@ try {
       }
       .stat-card {
         background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
+        border: 1px solid #f1f5f9;
+        border-radius: 16px;
         padding: 1.5rem;
-        box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
         transition: transform 0.2s, box-shadow 0.2s;
       }
       .stat-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
+        transform: translateY(-2px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        border-color: #e2e8f0;
       }
       .stat-icon {
         font-size: 2.5rem;
@@ -175,12 +244,14 @@ try {
         text-transform: uppercase;
         letter-spacing: 0.05em;
         font-weight: 600;
+        margin-bottom: 0.2rem;
       }
       .stat-value {
-        font-size: 2rem;
-        font-weight: 700;
+        font-size: 2.25rem;
+        font-weight: 800;
         color: #0f172a;
         margin: 0.5rem 0;
+        letter-spacing: -0.025em;
       }
       .view-toggle {
         display: flex;
@@ -213,15 +284,16 @@ try {
       }
       .invoice-card {
         background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
+        border: 1px solid #f1f5f9;
+        border-radius: 16px;
         padding: 1.5rem;
         transition: all 0.2s;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
       }
       .invoice-card:hover {
         transform: translateY(-2px);
-        border-color: #93c5fd;
-        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+        border-color: #bae6fd;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
       }
       .invoice-header {
         display: flex;
@@ -303,9 +375,10 @@ try {
       }
       .invoice-table {
         background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
+        border: 1px solid #f1f5f9;
+        border-radius: 16px;
         overflow: hidden;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
       }
       .invoice-table table {
         width: 100%;
@@ -313,19 +386,25 @@ try {
       }
       .invoice-table th,
       .invoice-table td {
-        padding: 1rem;
+        padding: 1rem 1.25rem;
         text-align: left;
-        border-bottom: 1px solid #eef2f7;
+        border-bottom: 1px solid #f1f5f9;
       }
       .invoice-table th {
         background: #f8fafc;
-        color: #334155;
+        color: #475569;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.8rem;
         text-transform: uppercase;
+        letter-spacing: 0.05em;
+        border-bottom: 2px solid #e2e8f0;
       }
       .invoice-table td {
-        color: #1f2937;
+        color: #334155;
+        font-weight: 500;
+      }
+      .invoice-table tbody tr {
+        transition: background-color 0.2s;
       }
       .invoice-table tbody tr:hover {
         background: #f8fafc;
@@ -376,15 +455,16 @@ try {
       }
       .filter-section {
         background: #ffffff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
+        border: 1px solid #f1f5f9;
+        border-radius: 16px;
         padding: 1.5rem;
         margin-bottom: 2rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
       }
       .filter-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 1rem;
+        gap: 1.25rem;
       }
       .filter-item label {
         display: block;
@@ -392,20 +472,28 @@ try {
         font-size: 0.85rem;
         font-weight: 600;
         margin-bottom: 0.5rem;
+        letter-spacing: 0.025em;
       }
       .filter-item select {
         width: 100%;
-        padding: 0.75rem;
-        background: #ffffff;
-        border: 1px solid #cbd5e1;
+        padding: 0.75rem 2.5rem 0.75rem 1rem;
+        background: #f8fafc url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/></svg>') no-repeat right 0.75rem center/16px 16px;
+        border: 1px solid #e2e8f0;
         border-radius: 8px;
-        color: #0f172a;
-        font-size: 0.9rem;
+        color: #334155;
+        font-size: 0.95rem;
+        font-weight: 500;
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
+        transition: border-color 0.2s, box-shadow 0.2s;
       }
       .filter-item select:focus {
         outline: none;
-        border-color: #60a5fa;
-        background: #ffffff;
+        border-color: #7dd3fc;
+        background-color: #ffffff;
+        box-shadow: 0 0 0 3px rgba(125, 211, 252, 0.3);
       }
       .filter-btn {
         padding: 0.75rem 1.5rem;
@@ -584,7 +672,7 @@ main > div:first-of-type,
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 </div>
                 <div class="stat-label">รอตรวจสอบ</div>
-                <div class="stat-value" style="color:#fbbf24;"><?php echo number_format($pendingCount); ?></div>
+                <div class="stat-value" style="color:#d97706;"><?php echo number_format($pendingCount); ?></div>
               </div>
               <div class="stat-card particle-wrapper">
                 <div class="particle-container" data-particles="3"></div>
@@ -592,14 +680,14 @@ main > div:first-of-type,
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                 </div>
                 <div class="stat-label">ตรวจสอบแล้ว</div>
-                <div class="stat-value" style="color:#22c55e;"><?php echo number_format($verifiedCount); ?></div>
+                <div class="stat-value" style="color:#16a34a;"><?php echo number_format($verifiedCount); ?></div>
               </div>
               <div class="stat-card">
                 <div class="lottie-icon yellow">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
                 </div>
                 <div class="stat-label">ยอดรวมทั้งหมด</div>
-                <div class="stat-value" style="color:#60a5fa;">฿<?php echo number_format($totalAmount); ?></div>
+                <div class="stat-value" style="color:#0284c7;">฿<?php echo number_format($totalAmount); ?></div>
               </div>
             </div>
 
