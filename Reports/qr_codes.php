@@ -1531,32 +1531,7 @@ $defaultQrView = 'list';
             '.print-qr{width:170px;height:170px;object-fit:contain;border-radius:8px;}' +
             '@page{size:A4 portrait;margin:10mm;}' +
             '@media print{body{padding:0;} .print-grid{gap:12px;} .print-item{border:1px solid #cbd5e1;}}' +
-            '</style>
-
-
-
-<style>
-/* Fix margins all report pages v2 */
-main > div:first-of-type,
-.app-main > div:first-of-type, 
-.main-content > div:first-of-type, 
-.reports-container > div:first-of-type {
-    max-width: 1280px !important;
-    margin: 0 auto !important;
-    padding: 20px !important;
-    box-sizing: border-box;
-}
-@media (max-width: 768px) {
-    main > div:first-of-type,
-    .app-main > div:first-of-type, 
-    .main-content > div:first-of-type, 
-    .reports-container > div:first-of-type {
-        padding: 10px !important;
-    }
-}
-</style>
-
-</head><body>' +
+            '</style></head><body>' +
             '<div class="print-grid">' + htmlCards + '</div>' +
             '<script>window.onload=function(){setTimeout(function(){window.print();window.close();},350);};<\/script>' +
             '</body></html>'
@@ -1586,33 +1561,7 @@ main > div:first-of-type,
             '.qr-image { width: 200px; height: 200px; border-radius: 12px; }' +
             '.instructions { margin-top: 20px; font-size: 0.95rem; color: #86868b; }' +
             '@media print { body { background: white; } .print-card { box-shadow: none; border: 2px solid #e5e5e5; } }' +
-            '</style>' +
-            '
-
-
-
-<style>
-/* Fix margins all report pages v2 */
-main > div:first-of-type,
-.app-main > div:first-of-type, 
-.main-content > div:first-of-type, 
-.reports-container > div:first-of-type {
-    max-width: 1280px !important;
-    margin: 0 auto !important;
-    padding: 20px !important;
-    box-sizing: border-box;
-}
-@media (max-width: 768px) {
-    main > div:first-of-type,
-    .app-main > div:first-of-type, 
-    .main-content > div:first-of-type, 
-    .reports-container > div:first-of-type {
-        padding: 10px !important;
-    }
-}
-</style>
-
-</head>' +
+            '</style></head>' +
             '<body>' +
             '<div class="print-card">' +
             '<div class="room-badge">ห้อง ' + roomNumber + '</div>' +
