@@ -4351,8 +4351,11 @@ async function handleGoogleUnlink(e) {
         }
       }
 
-      // ให้ลิงก์ทำงานทันที
-      window.location.href = link.getAttribute('href');
+      // Allow default navigation if it's a real link, otherwise prevent default
+      const tempHref = link.getAttribute('href');
+      if (!tempHref || tempHref === '#' || tempHref === 'javascript:void(0);') {
+        e.preventDefault();
+      }
     });
   });
   
