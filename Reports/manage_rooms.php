@@ -895,6 +895,9 @@ try {
         display: inline-flex;
         align-items: center;
         gap: 0.5rem;
+        pointer-events: auto !important;
+        position: relative;
+        z-index: 9999;
       }
 
       body.live-light .load-more-btn,
