@@ -361,8 +361,8 @@ $buildHeaderAttributes = static function (array $attributes): string {
   display: flex !important;
   align-items: center;
   justify-content: space-between;
-  margin: 1.5rem auto 1rem !important;
-  width: calc(100% - 3rem) !important;
+  margin: 0 auto 1.5rem auto !important;
+  width: 100% !important;
   max-width: 1280px !important;
   transform: translateY(0);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
