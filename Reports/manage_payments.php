@@ -2588,7 +2588,8 @@ main > div:first-of-type,
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
 
       <main class="app-main" style="display: flex; align-items: flex-start; justify-content: center; width: 100%;">
-        <div style="flex: 1; max-width: 1280px; min-width: 0; padding: 0 1rem; padding-left: 1rem !important; box-sizing: border-box; margin: auto;">
+        <script>var sb=document.querySelector(".app-sidebar");if(sb){sb.classList.add("collapsed");localStorage.setItem("sidebarCollapsed","true");}</script>
+        <div style="flex: 1; max-width: 1280px; min-width: 0; padding: 0 1rem; padding: 0 1rem !important; box-sizing: border-box; margin: auto;">
           <?php
             $pageTitle = 'จัดการการชำระเงิน';
             include __DIR__ . '/../includes/page_header.php';
