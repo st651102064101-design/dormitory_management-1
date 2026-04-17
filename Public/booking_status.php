@@ -168,6 +168,7 @@ if ($isTenantLoggedIn) {
             JOIN tenant t ON b.tnt_id = t.tnt_id
             WHERE b.tnt_id = ? AND b.bkg_status IN ('1','2')
             ORDER BY b.bkg_id DESC
+            LIMIT 1
         ");
         error_log("SQL: SELECT bkg_id FROM booking WHERE tnt_id = '$tenantId' OR phone = '$tenantPhone'");
         $stmtBookings->execute([$tenantId]);
