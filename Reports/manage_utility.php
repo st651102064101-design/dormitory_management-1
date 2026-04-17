@@ -2319,7 +2319,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $r = $readings[$room['room_id']];
                                     $hasCtr = !empty($room['ctr_id']);
                                     $wUsed = ($r['water_new']!==''&&$r['water_new']!==null) ? ((int)$r['water_new']-$r['water_old']) : 0;
-                                    $waterOldDisplay = $hasCtr ? str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT) : '-';
+                                    $waterOldDisplay = str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT);
                                     $waterOldPlaceholder = str_pad((string)$r['water_old'], 7, '0', STR_PAD_LEFT);
                                 ?>
                                 <?php $needsWater = $hasCtr && !$r['water_saved'] && ($r['water_new'] === '' || $r['water_new'] === null); ?>
@@ -2388,7 +2388,7 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                     $r = $readings[$room['room_id']];
                                     $hasCtr = !empty($room['ctr_id']);
                                     $eUsed = ($r['elec_new']!==''&&$r['elec_new']!==null) ? ((int)$r['elec_new']-$r['elec_old']) : 0;
-                                    $elecOldDisplay = $hasCtr ? str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT) : '-';
+                                    $elecOldDisplay = str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT);
                                     $elecOldPlaceholder = str_pad((string)$r['elec_old'], 5, '0', STR_PAD_LEFT);
                                 ?>
                                 <?php $needsElec = $hasCtr && !$r['elec_saved'] && ($r['elec_new'] === '' || $r['elec_new'] === null); ?>
