@@ -879,6 +879,9 @@ try {
         margin-top: 2rem;
         padding-top: 1.5rem;
         border-top: 1px solid rgba(255,255,255,0.06);
+        pointer-events: auto !important;
+        position: relative;
+        z-index: 9999;
       }
       
       .load-more-btn,
@@ -1488,9 +1491,22 @@ main > div:first-of-type,
       document.addEventListener('DOMContentLoaded', () => {
         const overlays = document.querySelectorAll('.animate-ui-modal-overlay');
         overlays.forEach(el => {
-          el.style.display = 'none';
+          el.style.display = 'none !important';
+          el.style.pointerEvents = 'none !important';
+          el.style.visibility = 'hidden !important';
           el.remove();
         });
+
+        // Watch for any new overlays and remove them
+        const observer = new MutationObserver(() => {
+          document.querySelectorAll('.animate-ui-modal-overlay').forEach(el => {
+            el.style.display = 'none !important';
+            el.style.pointerEvents = 'none !important';
+            el.style.visibility = 'hidden !important';
+            el.remove();
+          });
+        });
+        observer.observe(document.body, { childList: true, subtree: true });
 
         // Restore form visibility from localStorage
         const isFormVisible = localStorage.getItem('roomFormVisible') !== 'false';
