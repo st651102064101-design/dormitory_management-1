@@ -4034,7 +4034,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
           </button>
         </div>
         <div class="sidebar-account-modal-body">
-          <form method="post" action="">
+          <form method="post" action="" data-allow-submit>
             <input type="hidden" name="sidebar_account_update" value="1">
 
             <label for="sidebarNewAdminUsername"><?php echo __('username_label'); ?></label>
