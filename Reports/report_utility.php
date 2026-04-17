@@ -101,9 +101,10 @@ $sql = "
     SELECT u.*, c.ctr_id, t.tnt_name, r.room_number, r.room_id
     FROM utility u
     INNER JOIN (
-        SELECT MAX(utl_id) AS utl_id
-        FROM utility
-        GROUP BY ctr_id, YEAR(utl_date), MONTH(utl_date)
+        SELECT MAX(u2.utl_id) AS utl_id
+        FROM utility u2
+        JOIN contract c2 ON u2.ctr_id = c2.ctr_id
+        GROUP BY c2.room_id, YEAR(u2.utl_date), MONTH(u2.utl_date)
     ) lu ON u.utl_id = lu.utl_id
     LEFT JOIN contract c ON u.ctr_id = c.ctr_id
     LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
