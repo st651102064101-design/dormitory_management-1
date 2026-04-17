@@ -433,6 +433,9 @@ try {
       .room-card-actions {
         display: flex;
         gap: 0.5rem;
+        position: relative;
+        z-index: 10;
+        pointer-events: auto;
       }
       
       .room-card-actions .btn {
