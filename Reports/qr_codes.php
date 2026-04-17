@@ -103,7 +103,7 @@ try {
 
 $baseUrl = getTenantPortalUrl();
 $totalContracts = count($contracts);
-$lightThemeClass = $isLightTheme ? 'live-light' : '';
+$lightThemeClass = 'live-light light-theme';
 $defaultQrView = 'list';
 ?>
 <!DOCTYPE html>
@@ -120,11 +120,8 @@ $defaultQrView = 'list';
     <script>
         // Apply theme immediately before page renders
         (function() {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') {
-                document.documentElement.classList.add('light-theme');
-                document.documentElement.classList.add('live-light');
-            }
+            document.documentElement.classList.add('light-theme');
+            document.documentElement.classList.add('live-light');
         })();
     </script>
     <style>
@@ -1345,6 +1342,107 @@ $defaultQrView = 'list';
         .light-theme .card-actions {
             background: transparent !important;
         }
+
+        /* FINAL SaaS LIGHT OVERRIDES */
+        body.qr-page {
+            background: linear-gradient(160deg, #f8fbff 0%, #eef4ff 45%, #f8fafc 100%) !important;
+            color: #1e293b !important;
+        }
+
+        .qr-wrapper {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            border-radius: 16px !important;
+            box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08) !important;
+        }
+
+        .qr-header h1 {
+            background: linear-gradient(135deg, #0f172a 0%, #334155 100%) !important;
+            -webkit-background-clip: text !important;
+            -webkit-text-fill-color: transparent !important;
+            background-clip: text !important;
+        }
+
+        .stats-bar .stat-item,
+        .qr-card,
+        .empty-icon {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06) !important;
+        }
+
+        .qr-card:hover,
+        .stats-bar .stat-item:hover {
+            border-color: #93c5fd !important;
+            box-shadow: 0 14px 30px rgba(59, 130, 246, 0.16) !important;
+        }
+
+        .tenant-name,
+        .stat-value,
+        .empty-state h3,
+        .qr-table th,
+        .qr-table td {
+            color: #0f172a !important;
+        }
+
+        .tenant-phone,
+        .stat-label,
+        .empty-state p,
+        .qr-header p {
+            color: #64748b !important;
+        }
+
+        .qr-container {
+            background: #ffffff !important;
+            border: 1px solid #e2e8f0 !important;
+            box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
+        }
+
+        .btn-apple.secondary {
+            background: #f8fafc !important;
+            color: #334155 !important;
+            border: 1px solid #cbd5e1 !important;
+        }
+
+        .btn-apple.secondary:hover {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+            border-color: #93c5fd !important;
+        }
+
+        .btn-card.portal {
+            background: #f5f3ff !important;
+            color: #6d28d9 !important;
+            border: 1px solid #ddd6fe !important;
+        }
+
+        .btn-card.download {
+            background: #ecfdf3 !important;
+            color: #166534 !important;
+            border: 1px solid #bbf7d0 !important;
+        }
+
+        .btn-card.print {
+            background: #eff6ff !important;
+            color: #1d4ed8 !important;
+            border: 1px solid #bfdbfe !important;
+        }
+
+        .btn-card.portal:hover,
+        .btn-card.download:hover,
+        .btn-card.print:hover {
+            transform: translateY(-2px);
+            filter: saturate(110%);
+        }
+
+        .qr-table-room,
+        .qr-table-room * {
+            color: #ffffff !important;
+        }
+
+        .particles .particle {
+            opacity: 0.18 !important;
+        }
     </style>
     <script>
     // QR Code Download Functions - defined in head to ensure availability
@@ -1834,7 +1932,7 @@ main > div:first-of-type,
         // Ensure badge SVG icons render white in Light Theme (runtime override)
         (function(){
             function applyWhiteToBadgeSVGs() {
-                const isLight = document.documentElement.classList.contains('light-theme') || document.documentElement.classList.contains('live-light') || document.body.classList.contains('live-light');
+                const isLight = true;
                 document.querySelectorAll('.room-badge svg').forEach(svg => {
                     try {
                         if (isLight) {
