@@ -1206,18 +1206,18 @@ main > div:first-of-type,
           </section>
 
           <section class="manage-panel">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;position: relative; z-index: 9999;">
               <div>
                 <h1>รายการห้องพัก</h1>
                 <p style="color:#94a3b8;margin-top:0.2rem;">ห้องพักและข้อมูลทั้งหมด</p>
               </div>
-              <div class="room-list-toolbar" style="display:flex;gap:0.75rem;align-items:center;">
+              <div class="room-list-toolbar" style="display:flex;gap:0.75rem;align-items:center;position: relative; z-index: 9999;">
                 <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 0.85rem;border-radius:8px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.05);color:#f5f8ff;font-size:0.95rem;cursor:pointer;">
                   <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
                   <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
                   <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
                 </select>
-                <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()" style="position: relative; z-index: 99; pointer-events: auto;">
+                <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()" style="position: relative; z-index: 9999; pointer-events: all; cursor: pointer;">
                   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
                   <span id="viewToggleText">มุมมองแถว</span>
                 </button>
