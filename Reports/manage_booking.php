@@ -4746,19 +4746,17 @@ main > div:first-of-type,
     <script>
       // Final safety net: explicit bindings after everything loads
       document.addEventListener('DOMContentLoaded', () => {
-        // Remove overlay if it exists
-        const removeOverlay = () => {
-          try {
-            document.querySelectorAll('.animate-ui-modal-overlay').forEach(el => {
-              el.style.display = 'none !important';
-              el.style.pointerEvents = 'none !important';
-              el.style.visibility = 'hidden !important';
-              if (el.parentNode) el.parentNode.removeChild(el);
-            });
-          } catch (e) {}
-        };
-        removeOverlay();
-        setTimeout(removeOverlay, 100);
+        try {
+          const overlays = document.querySelectorAll('.animate-ui-modal-overlay');
+          overlays.forEach(el => {
+            el.style.display = 'none !important';
+            el.style.pointerEvents = 'none !important';
+            el.style.visibility = 'hidden !important';
+            el.remove();
+          });
+        } catch (e) {
+          console.error('Error removing overlays:', e);
+        }
 
         const safeGet = (key) => {
           try { return localStorage.getItem(key); } catch (err) { return null; }
