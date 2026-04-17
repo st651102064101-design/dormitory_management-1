@@ -1158,11 +1158,13 @@ main > div:first-of-type,
         });
         
         // Auto print when page loads
+        <?php if (!isset($_GET['view_only']) || $_GET['view_only'] != '1'): ?>
         window.onload = function() {
             setTimeout(function() {
                 window.print();
             }, 500);
         };
+        <?php endif; ?>
         
         // Toggle card/table view on list page
         const toggleBtn = document.getElementById('toggle-view');

@@ -23,8 +23,8 @@ try {
         echo "Contract not found";
         exit;
     }
-    // Redirect to existing print contract page
-    header('Location: ../Reports/print_contract.php?ctr_id=' . urlencode((string)$ctrId));
+    // Redirect to existing print contract page with view_only parameter
+    header('Location: ../Reports/print_contract.php?ctr_id=' . urlencode((string)$ctrId) . '&view_only=1');
     exit;
 } catch (PDOException $e) {
     http_response_code(500);
