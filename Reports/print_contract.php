@@ -1157,6 +1157,13 @@ main > div:first-of-type,
             });
         });
         
+        // Auto print when page loads
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        };
+        
         // Toggle card/table view on list page
         const toggleBtn = document.getElementById('toggle-view');
         const gridView = document.querySelector('.grid');
