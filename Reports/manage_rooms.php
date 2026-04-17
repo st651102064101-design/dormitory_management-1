@@ -1136,7 +1136,7 @@ main > div:first-of-type,
             </button>
           </div>
 
-          <section class="manage-panel" id="addRoomSection">
+          <section class="manage-panel" id="addRoomSection" style="position: relative; z-index: 9999; pointer-events: all;">
             <div class="section-header">
               <div>
                 <h1>เพิ่มห้องพัก</h1>
