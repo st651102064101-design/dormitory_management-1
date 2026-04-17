@@ -1047,7 +1047,7 @@ main > div:first-of-type,
 </style>
 
 </head>
-<body>
+<body class="reports-page">
     <div style="display: flex; max-width: 100vw; overflow: hidden;">
         <?php include '../includes/sidebar.php'; ?>
         <main style="flex: 1; min-width: 0; overflow-x: hidden; overflow-y: auto; height: 100vh; scrollbar-width: none; -ms-overflow-style: none; padding-bottom: 4rem; display: flex; align-items: flex-start; justify-content: center;" class="app-main">
