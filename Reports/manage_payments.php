@@ -3017,13 +3017,24 @@ main > div:first-of-type,
                       <?php $filterMonthValue = $filterTimestamp ? (string)((int)date('n', $filterTimestamp)) : ''; ?>
                       <?php $filterYearValue = $filterTimestamp ? (string)date('Y', $filterTimestamp) : ''; ?>
                       <?php $contractScopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active'; ?>
+                      <?php $groupCount = (int)($pay['_group_count'] ?? 1); ?>
+                      <?php $groupItemsJson = htmlspecialchars(json_encode($pay['_group_items'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>
+                      <?php $groupTitle = 'รายการย่อยบิลเดือน ' . ($pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-') . ' ห้อง ' . (string)($pay['room_number'] ?? '-'); ?>
                       <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>">
                         <td><?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></td>
                         <td><?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?></td>
                         <td><?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></td>
                         <td><?php echo $pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-'; ?></td>
                         <td><?php echo $pay['pay_date'] ? thaiDate($pay['pay_date']) : '-'; ?></td>
-                        <td style="text-align:right;font-weight:700;color:#22c55e;">฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?></td>
+                        <td style="text-align:right;font-weight:700;color:#22c55e;">
+                          <?php if ($groupCount > 1): ?>
+                            <span class="group-amount-link" role="button" tabindex="0" data-group-title="<?php echo htmlspecialchars($groupTitle, ENT_QUOTES, 'UTF-8'); ?>" data-group-items="<?php echo $groupItemsJson; ?>" onclick="openGroupPaymentsModal(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGroupPaymentsModal(this);}">
+                              ฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?> (<?php echo $groupCount; ?> รายการ)
+                            </span>
+                          <?php else: ?>
+                            ฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?>
+                          <?php endif; ?>
+                        </td>
                         <td>
                           <?php if (!empty($pay['pay_proof'])): ?>
                             <span class="proof-link" onclick="showProof('<?php echo htmlspecialchars($pay['pay_proof'], ENT_QUOTES, 'UTF-8'); ?>')">
@@ -3099,6 +3110,9 @@ main > div:first-of-type,
                     $filterMonthValue = $filterTimestamp ? (string)((int)date('n', $filterTimestamp)) : '';
                     $filterYearValue = $filterTimestamp ? (string)date('Y', $filterTimestamp) : '';
                     $contractScopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active';
+                    $groupCount = (int)($pay['_group_count'] ?? 1);
+                    $groupItemsJson = htmlspecialchars(json_encode($pay['_group_items'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
+                    $groupTitle = 'รายการย่อยบิลเดือน ' . ($pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-') . ' ห้อง ' . (string)($pay['room_number'] ?? '-');
                   ?>
                   <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>">
                     <div class="payment-row-top">
@@ -3111,7 +3125,15 @@ main > div:first-of-type,
                     <div class="payment-row-meta">
                       <div>เดือนค่าใช้จ่าย: <?php echo $pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-'; ?></div>
                       <div>วันที่ชำระ: <?php echo $pay['pay_date'] ? thaiDate($pay['pay_date']) : '-'; ?></div>
-                      <div>จำนวนเงิน: <strong style="color:#22c55e;">฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?></strong></div>
+                      <div>จำนวนเงิน:
+                        <?php if ($groupCount > 1): ?>
+                          <strong class="group-amount-link" style="color:#22c55e;" role="button" tabindex="0" data-group-title="<?php echo htmlspecialchars($groupTitle, ENT_QUOTES, 'UTF-8'); ?>" data-group-items="<?php echo $groupItemsJson; ?>" onclick="openGroupPaymentsModal(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGroupPaymentsModal(this);}">
+                            ฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?> (<?php echo $groupCount; ?> รายการ)
+                          </strong>
+                        <?php else: ?>
+                          <strong style="color:#22c55e;">฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?></strong>
+                        <?php endif; ?>
+                      </div>
                       <div>หมายเหตุ: <?php echo !empty($pay['pay_remark']) ? htmlspecialchars($pay['pay_remark']) : 'ค่าเช่า'; ?></div>
                       <?php if ((int)($pay['_has_rejected_history'] ?? 0) === 1 && (string)($pay['pay_status'] ?? '') !== '2'): ?>
                         <div>ประวัติ: <span style="color:#ef4444;font-weight:700;">เคยตีกลับ</span></div>
@@ -3155,6 +3177,16 @@ main > div:first-of-type,
         <div class="modal-body" id="proofModalBody" style="text-align:center;">
           <!-- Content will be loaded here -->
         </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="groupPaymentsModal">
+      <div class="modal-content" style="max-width:720px;">
+        <div class="modal-header">
+          <h3 class="modal-title" id="groupPaymentsModalTitle">รายการชำระย่อย</h3>
+          <button class="modal-close" onclick="closeGroupPaymentsModal()">×</button>
+        </div>
+        <div class="modal-body" id="groupPaymentsModalBody" style="max-height:65vh;overflow:auto;"></div>
       </div>
     </div>
 
@@ -3534,9 +3566,84 @@ main > div:first-of-type,
         document.getElementById('proofModal').classList.remove('active');
       }
 
+      function openGroupPaymentsModal(triggerEl) {
+        const modal = document.getElementById('groupPaymentsModal');
+        const titleEl = document.getElementById('groupPaymentsModalTitle');
+        const bodyEl = document.getElementById('groupPaymentsModalBody');
+        if (!modal || !titleEl || !bodyEl || !triggerEl) return;
+
+        const title = triggerEl.dataset.groupTitle || 'รายการชำระย่อย';
+        let items = [];
+        try {
+          items = JSON.parse(triggerEl.dataset.groupItems || '[]');
+        } catch (e) {
+          items = [];
+        }
+
+        const statusMap = {
+          '0': 'รอตรวจสอบ',
+          '1': 'ตรวจสอบแล้ว',
+          '2': 'ตีกลับ',
+          'unpaid': 'รอชำระ'
+        };
+        const escHtml = (value) => String(value ?? '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+
+        titleEl.textContent = title;
+        if (!Array.isArray(items) || items.length === 0) {
+          bodyEl.innerHTML = '<div style="text-align:center;color:#64748b;padding:1rem;">ไม่พบรายการย่อย</div>';
+          modal.classList.add('active');
+          return;
+        }
+
+        const rows = items.map((item) => {
+          const amount = Number(item.amount || 0);
+          const statusText = escHtml(statusMap[String(item.status || '')] || String(item.status || '-'));
+          const dateText = escHtml(item.date ? item.date : '-');
+          const payId = Number(item.pay_id || 0);
+          const remark = escHtml(item.remark ? String(item.remark) : 'ค่าห้อง');
+          return `
+            <tr>
+              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${payId}</td>
+              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${dateText}</td>
+              <td style="padding:0.55rem 0.5rem;text-align:right;white-space:nowrap;">฿${amount.toLocaleString()}</td>
+              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${statusText}</td>
+              <td style="padding:0.55rem 0.5rem;">${remark}</td>
+            </tr>
+          `;
+        }).join('');
+
+        bodyEl.innerHTML = `
+          <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+            <thead>
+              <tr style="text-align:left;border-bottom:1px solid rgba(148,163,184,0.25);">
+                <th style="padding:0.55rem 0.5rem;">รหัส</th>
+                <th style="padding:0.55rem 0.5rem;">วันที่ชำระ</th>
+                <th style="padding:0.55rem 0.5rem;text-align:right;">จำนวนเงิน</th>
+                <th style="padding:0.55rem 0.5rem;">สถานะ</th>
+                <th style="padding:0.55rem 0.5rem;">หมายเหตุ</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
+        `;
+        modal.classList.add('active');
+      }
+
+      function closeGroupPaymentsModal() {
+        document.getElementById('groupPaymentsModal')?.classList.remove('active');
+      }
+
       // Close modal on overlay click
       document.getElementById('proofModal')?.addEventListener('click', function(e) {
         if (e.target === this) closeProofModal();
+      });
+      document.getElementById('groupPaymentsModal')?.addEventListener('click', function(e) {
+        if (e.target === this) closeGroupPaymentsModal();
       });
 
       // Copy to clipboard function with animated toast
@@ -3777,6 +3884,7 @@ main > div:first-of-type,
       document.addEventListener('keydown', function(e) {
         if (e.key === 'Escape') {
           closeProofModal();
+          closeGroupPaymentsModal();
         }
       });
     </script>
