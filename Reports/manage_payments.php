@@ -526,6 +526,7 @@ $getPayMonthYear = static function(array $pay): array {
 $pendingOnlyCount = 0;
 $unpaidOnlyCount  = 0;
 $rejectedOnlyCount = 0;
+$hadRejectedEverCount = 0;
 $pendingOnlyTotal = 0;
 $unpaidOnlyTotal  = 0;
 $verifiedFilteredCount = 0;
@@ -543,6 +544,10 @@ foreach ($payments as $pay) {
   $isCancelledContract = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true);
   if ($isCancelledContract) {
     $cancelledContractCount++;
+  }
+
+  if ((int)($pay['_has_rejected_history'] ?? 0) === 1) {
+    $hadRejectedEverCount++;
   }
 
     if (($pay['pay_status'] ?? '') === '0') {
@@ -2872,6 +2877,7 @@ main > div:first-of-type,
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '2' ? 'active' : ''; ?>" data-status="2">ตีกลับ <span class="tab-count"><?php echo $rejectedOnlyCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'had_rejected' ? 'active' : ''; ?>" data-status="had_rejected">เคยตีกลับ <span class="tab-count"><?php echo $hadRejectedEverCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1">ตรวจสอบแล้ว <span class="tab-count"><?php echo $verifiedFilteredCount; ?></span></button>
             </div>
             <!-- Compact Toolbar -->
@@ -2963,7 +2969,7 @@ main > div:first-of-type,
                       <?php $filterMonthValue = $filterTimestamp ? (string)((int)date('n', $filterTimestamp)) : ''; ?>
                       <?php $filterYearValue = $filterTimestamp ? (string)date('Y', $filterTimestamp) : ''; ?>
                       <?php $contractScopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active'; ?>
-                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>">
+                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>">
                         <td><?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></td>
                         <td><?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?></td>
                         <td><?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></td>
@@ -3046,7 +3052,7 @@ main > div:first-of-type,
                     $filterYearValue = $filterTimestamp ? (string)date('Y', $filterTimestamp) : '';
                     $contractScopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active';
                   ?>
-                  <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>">
+                  <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>">
                     <div class="payment-row-top">
                       <div class="payment-row-main">
                         <strong>#<?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></strong>
@@ -3209,8 +3215,12 @@ main > div:first-of-type,
 
         if (filters.status !== '') {
           // specific status filter
-          const rowStatus = element.dataset.status || '';
-          if (rowStatus !== filters.status) return false;
+          if (filters.status === 'had_rejected') {
+            if ((element.dataset.hasRejected || '0') !== '1') return false;
+          } else {
+            const rowStatus = element.dataset.status || '';
+            if (rowStatus !== filters.status) return false;
+          }
         }
 
         if (filters.contractScope && (element.dataset.contractScope || '') !== filters.contractScope) {
