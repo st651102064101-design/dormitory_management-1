@@ -442,11 +442,27 @@ foreach ($payments as $pay) {
       'count' => 0,
       'has_rejected' => false,
       'has_verified' => false,
+      'amount_by_status' => ['0' => 0, '1' => 0, '2' => 0, 'unpaid' => 0],
+      'items' => [],
     ];
   }
 
   $paymentGroups[$paymentKey]['count']++;
   $currentStatus = (string)($pay['pay_status'] ?? '0');
+  $currentAmount = (int)($pay['pay_amount'] ?? 0);
+  if (!isset($paymentGroups[$paymentKey]['amount_by_status'][$currentStatus])) {
+    $paymentGroups[$paymentKey]['amount_by_status'][$currentStatus] = 0;
+  }
+  $paymentGroups[$paymentKey]['amount_by_status'][$currentStatus] += $currentAmount;
+
+  $paymentGroups[$paymentKey]['items'][] = [
+    'pay_id' => (int)($pay['pay_id'] ?? 0),
+    'date' => (string)($pay['pay_date'] ?? ''),
+    'amount' => $currentAmount,
+    'status' => $currentStatus,
+    'remark' => (string)($pay['pay_remark'] ?? ''),
+  ];
+
   if ($currentStatus === '2') {
     $paymentGroups[$paymentKey]['has_rejected'] = true;
   }
@@ -461,10 +477,31 @@ foreach ($payments as $pay) {
 
 $payments = [];
 foreach ($dedupedPayments as $paymentKey => $pay) {
-  $group = $paymentGroups[$paymentKey] ?? ['count' => 1, 'has_rejected' => false, 'has_verified' => false];
+  $group = $paymentGroups[$paymentKey] ?? [
+    'count' => 1,
+    'has_rejected' => false,
+    'has_verified' => false,
+    'amount_by_status' => ['0' => 0, '1' => 0, '2' => 0, 'unpaid' => 0],
+    'items' => [],
+  ];
+
+  $amountByStatus = (array)($group['amount_by_status'] ?? []);
+  $displayAmount = (int)($pay['pay_amount'] ?? 0);
+  if (($amountByStatus['1'] ?? 0) > 0) {
+    $displayAmount = (int)$amountByStatus['1'];
+  } elseif (($amountByStatus['0'] ?? 0) > 0) {
+    $displayAmount = (int)$amountByStatus['0'];
+  } elseif (($amountByStatus['unpaid'] ?? 0) > 0) {
+    $displayAmount = (int)$amountByStatus['unpaid'];
+  } elseif (($amountByStatus['2'] ?? 0) > 0) {
+    $displayAmount = (int)$amountByStatus['2'];
+  }
+
+  $pay['pay_amount'] = $displayAmount;
   $pay['_group_count'] = (int)($group['count'] ?? 1);
   $pay['_has_rejected_history'] = !empty($group['has_rejected']) ? 1 : 0;
   $pay['_has_verified_history'] = !empty($group['has_verified']) ? 1 : 0;
+  $pay['_group_items'] = (array)($group['items'] ?? []);
   $payments[] = $pay;
 }
 
@@ -2388,6 +2425,17 @@ $filterRoomOptions = array_values($filterRoomOptions);
         transform: scale(1.05);
       }
 
+      .group-amount-link {
+        color: #2563eb;
+        cursor: pointer;
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        text-underline-offset: 2px;
+      }
+      .group-amount-link:hover {
+        color: #1d4ed8;
+      }
+
       .action-btn {
         padding: 0.4rem 0.8rem;
         border-radius: 6px;
@@ -2688,9 +2736,9 @@ $filterRoomOptions = array_values($filterRoomOptions);
       html.light-theme .pcp-legend { color: rgba(0,0,0,0.5); }
 
       /* ===== Payment Controls Row ===== */
-      .payment-controls-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1rem; }
+      .payment-controls-row { display: flex; flex-direction: column; align-items: stretch; gap: 0.75rem; margin-bottom: 1rem; }
       /* ===== Payment Filter Tabs ===== */
-      .payment-filter-tabs { display: flex; flex-wrap: nowrap; gap: 0.4rem; flex: 1; min-width: 0; margin-bottom: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.4) transparent; cursor: grab; padding-bottom: 2px; }
+      .payment-filter-tabs { display: flex; flex-wrap: nowrap; gap: 0.4rem; width: 100%; min-width: 0; margin-bottom: 0; overflow-x: auto; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: thin; scrollbar-color: rgba(148,163,184,0.4) transparent; cursor: grab; padding-bottom: 2px; }
       .payment-filter-tabs::-webkit-scrollbar { height: 4px; }
       .payment-filter-tabs::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.45); border-radius: 999px; }
       .payment-filter-tabs::-webkit-scrollbar-track { background: transparent; }
@@ -2704,7 +2752,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
       html.light-theme .payment-filter-tab.active { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.35); color: #4f46e5; }
 
       /* ===== Payment Toolbar ===== */
-      .payment-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; flex-shrink: 0; }
+      .payment-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: flex-start; width: 100%; }
       .payment-toolbar select { padding: 0.45rem 0.75rem; border-radius: 8px; border: 1px solid rgba(148,163,184,0.25); background: rgba(15,23,42,0.9); color: #e2e8f0; font-size: 0.88rem; cursor: pointer; }
       .payment-toolbar-clear { padding: 0.45rem 0.9rem; border-radius: 8px; border: 1px solid rgba(148,163,184,0.25); background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.6); font-size: 0.85rem; cursor: pointer; display: inline-flex; align-items: center; gap: 0.3rem; transition: all 0.2s ease; }
       .payment-toolbar-clear:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9); }
