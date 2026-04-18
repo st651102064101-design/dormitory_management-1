@@ -82,11 +82,15 @@ try {
   }
 } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
-// รับค่า filter จาก query parameter — default to '' (ทั้งหมด = unverified)
+// รับค่า filter จาก query parameter
 $filterStatus = isset($_GET['status']) ? $_GET['status'] : '';
 $filterMonth = isset($_GET['filter_month']) ? $_GET['filter_month'] : '';
 $filterYear = isset($_GET['filter_year']) ? $_GET['filter_year'] : '';
 $filterRoom = isset($_GET['room']) ? $_GET['room'] : '';
+$filterContractScope = isset($_GET['contract_scope']) ? trim((string)$_GET['contract_scope']) : '';
+if (!in_array($filterContractScope, ['active', 'cancelled'], true)) {
+  $filterContractScope = 'active';
+}
 
 $isMonthAllRequest = isset($_GET['filter_month']) && (
   $_GET['filter_month'] === 'all' || trim((string)$_GET['filter_month']) === ''
@@ -164,7 +168,7 @@ if (!$isMonthAllRequest && $filterMonth === '' && preg_match('/^\d{4}-\d{2}$/', 
 $sql = "
     SELECT p.*,
            e.exp_id, e.exp_month, e.exp_total, e.exp_status,
-           c.ctr_id, c.room_id,
+       c.ctr_id, c.room_id, c.ctr_status,
            t.tnt_id, t.tnt_name, t.tnt_phone,
            r.room_number,
            rt.type_name
@@ -199,6 +203,7 @@ try {
         bp.bp_proof,
         b.bkg_date,
         c.ctr_start,
+        c.ctr_status,
         t.tnt_id,
         t.tnt_name,
         t.tnt_phone,
@@ -237,6 +242,7 @@ try {
       'exp_total' => (int)($dep['bp_amount'] ?? 0),
       'exp_status' => '1',
       'ctr_id' => null,
+      'ctr_status' => (string)($dep['ctr_status'] ?? ''),
       'room_id' => null,
       'tnt_id' => $dep['tnt_id'] ?? null,
       'tnt_name' => $dep['tnt_name'] ?? '-',
@@ -263,6 +269,7 @@ try {
         e.exp_total,
         e.exp_status,
         c.ctr_id,
+        c.ctr_status,
         c.room_id,
         t.tnt_id,
         t.tnt_name,
@@ -281,7 +288,6 @@ try {
       LEFT JOIN roomtype rt ON r.type_id = rt.type_id
       LEFT JOIN payment p ON p.exp_id = e.exp_id
                           AND TRIM(COALESCE(p.pay_remark, '')) NOT LIKE '%มัดจำ%'
-                          AND p.pay_status IN ('0', '1')
       WHERE c.ctr_status = '0'
         AND p.exp_id IS NULL
         AND DATE_FORMAT(e.exp_month, '%Y-%m') <= '{$effectiveCurrentMonth}'
@@ -310,6 +316,7 @@ try {
       'exp_total' => (int)($row['exp_total'] ?? 0),
       'exp_status' => (string)($row['exp_status'] ?? '0'),
       'ctr_id' => (int)($row['ctr_id'] ?? 0),
+      'ctr_status' => (string)($row['ctr_status'] ?? ''),
       'room_id' => (int)($row['room_id'] ?? 0),
       'tnt_id' => $row['tnt_id'] ?? null,
       'tnt_name' => $row['tnt_name'] ?? '-',
@@ -328,14 +335,140 @@ try {
   error_log('manage_payments merge unpaid bills error: ' . $e->getMessage());
 }
 
-usort($payments, static function(array $a, array $b): int {
+$sortPaymentsByRoom = static function(array $a, array $b): int {
+  $aRoom = trim((string)($a['room_number'] ?? ''));
+  $bRoom = trim((string)($b['room_number'] ?? ''));
+  $aIsNum = ctype_digit($aRoom);
+  $bIsNum = ctype_digit($bRoom);
+
+  if ($aIsNum && $bIsNum) {
+    $roomCompare = ((int)$aRoom) <=> ((int)$bRoom);
+  } elseif ($aIsNum !== $bIsNum) {
+    $roomCompare = $aIsNum ? -1 : 1;
+  } else {
+    $roomCompare = strnatcasecmp($aRoom, $bRoom);
+  }
+
+  if ($roomCompare !== 0) {
+    return $roomCompare;
+  }
+
   $aTime = strtotime((string)($a['pay_date'] ?? $a['exp_month'] ?? '')) ?: 0;
   $bTime = strtotime((string)($b['pay_date'] ?? $b['exp_month'] ?? '')) ?: 0;
-  if ($aTime === $bTime) {
-    return ((int)($b['pay_id'] ?? 0)) <=> ((int)($a['pay_id'] ?? 0));
+  if ($aTime !== $bTime) {
+    return $bTime <=> $aTime;
   }
-  return $bTime <=> $aTime;
-});
+
+  return ((int)($b['pay_id'] ?? 0)) <=> ((int)($a['pay_id'] ?? 0));
+};
+
+usort($payments, $sortPaymentsByRoom);
+
+// Normalize status values from DB to a consistent string set.
+foreach ($payments as &$pay) {
+  $normalizedStatus = strtolower(trim((string)($pay['pay_status'] ?? '')));
+  if ($normalizedStatus === '') {
+    $normalizedStatus = '0';
+  }
+  $pay['pay_status'] = $normalizedStatus;
+}
+unset($pay);
+
+// ป้องกันรายการบิลซ้ำ: รวมการชำระของบิลเดือนเดียวกันให้อยู่ในแถวเดียว
+$buildPaymentKey = static function(array $pay): string {
+  $expId = (int)($pay['exp_id'] ?? 0);
+  $source = (string)($pay['payment_source'] ?? 'payment');
+  if ($expId > 0) {
+    return 'exp:' . $expId;
+  }
+
+  $src = !empty($pay['exp_month']) ? (string)$pay['exp_month'] : (string)($pay['pay_date'] ?? '');
+  $ts = $src !== '' ? strtotime($src) : false;
+  $monthKey = $ts ? date('Y-m', $ts) : 'na';
+
+  $tenantRaw = trim((string)($pay['tnt_id'] ?? ''));
+  $tenantKey = $tenantRaw !== ''
+    ? 'id:' . $tenantRaw
+    : 'name:' . strtolower(trim((string)($pay['tnt_name'] ?? '-')));
+  $roomKey = trim((string)($pay['room_number'] ?? '-'));
+  $ctrKey = trim((string)($pay['ctr_id'] ?? ''));
+  $isDeposit = strpos((string)($pay['pay_remark'] ?? ''), 'มัดจำ') !== false;
+  $category = $isDeposit ? 'deposit' : 'bill';
+
+  return implode('|', [
+    $category,
+    'source:' . $source,
+    'ctr:' . ($ctrKey !== '' ? $ctrKey : '-'),
+    'room:' . ($roomKey !== '' ? $roomKey : '-'),
+    'tenant:' . $tenantKey,
+    'month:' . $monthKey,
+  ]);
+};
+
+$statusRank = ['1' => 5, '0' => 4, '2' => 3, 'unpaid' => 2];
+$sourceRank = ['payment' => 3, 'booking_deposit' => 2, 'unpaid_expense' => 1];
+$shouldReplacePayment = static function(array $existing, array $candidate) use ($statusRank, $sourceRank): bool {
+  $existingSource = (string)($existing['payment_source'] ?? 'payment');
+  $candidateSource = (string)($candidate['payment_source'] ?? 'payment');
+  $existingSourceScore = $sourceRank[$existingSource] ?? 0;
+  $candidateSourceScore = $sourceRank[$candidateSource] ?? 0;
+  if ($candidateSourceScore !== $existingSourceScore) {
+    return $candidateSourceScore > $existingSourceScore;
+  }
+
+  $existingStatus = (string)($existing['pay_status'] ?? '0');
+  $candidateStatus = (string)($candidate['pay_status'] ?? '0');
+  $existingStatusScore = $statusRank[$existingStatus] ?? 0;
+  $candidateStatusScore = $statusRank[$candidateStatus] ?? 0;
+  if ($candidateStatusScore !== $existingStatusScore) {
+    return $candidateStatusScore > $existingStatusScore;
+  }
+
+  $existingTime = strtotime((string)($existing['pay_date'] ?? $existing['exp_month'] ?? '')) ?: 0;
+  $candidateTime = strtotime((string)($candidate['pay_date'] ?? $candidate['exp_month'] ?? '')) ?: 0;
+  if ($candidateTime !== $existingTime) {
+    return $candidateTime > $existingTime;
+  }
+
+  return abs((int)($candidate['pay_id'] ?? 0)) > abs((int)($existing['pay_id'] ?? 0));
+};
+
+$dedupedPayments = [];
+$paymentGroups = [];
+foreach ($payments as $pay) {
+  $paymentKey = $buildPaymentKey($pay);
+  if (!isset($paymentGroups[$paymentKey])) {
+    $paymentGroups[$paymentKey] = [
+      'count' => 0,
+      'has_rejected' => false,
+      'has_verified' => false,
+    ];
+  }
+
+  $paymentGroups[$paymentKey]['count']++;
+  $currentStatus = (string)($pay['pay_status'] ?? '0');
+  if ($currentStatus === '2') {
+    $paymentGroups[$paymentKey]['has_rejected'] = true;
+  }
+  if ($currentStatus === '1') {
+    $paymentGroups[$paymentKey]['has_verified'] = true;
+  }
+
+  if (!isset($dedupedPayments[$paymentKey]) || $shouldReplacePayment($dedupedPayments[$paymentKey], $pay)) {
+    $dedupedPayments[$paymentKey] = $pay;
+  }
+}
+
+$payments = [];
+foreach ($dedupedPayments as $paymentKey => $pay) {
+  $group = $paymentGroups[$paymentKey] ?? ['count' => 1, 'has_rejected' => false, 'has_verified' => false];
+  $pay['_group_count'] = (int)($group['count'] ?? 1);
+  $pay['_has_rejected_history'] = !empty($group['has_rejected']) ? 1 : 0;
+  $pay['_has_verified_history'] = !empty($group['has_verified']) ? 1 : 0;
+  $payments[] = $pay;
+}
+
+usort($payments, $sortPaymentsByRoom);
 
 // ดึงค่าใช้จ่ายที่รอชำระและชำระยังไม่ครบ (สำหรับ dropdown ในฟอร์ม)
 $unpaidExpenses = $pdo->query("
@@ -355,6 +488,7 @@ $unpaidExpenses = $pdo->query("
 $statusMap = [
     '0' => 'รอตรวจสอบ',
     '1' => 'ตรวจสอบแล้ว',
+    '2' => 'ตีกลับ',
   'unpaid' => 'รอชำระ',
 ];
 $statusColors = [
@@ -391,14 +525,25 @@ $getPayMonthYear = static function(array $pay): array {
 // ตัวเลขแยกตามสถานะ — กรองเดือน/ปีด้วยถ้ามี filter ใช้งานอยู่
 $pendingOnlyCount = 0;
 $unpaidOnlyCount  = 0;
+$rejectedOnlyCount = 0;
 $pendingOnlyTotal = 0;
 $unpaidOnlyTotal  = 0;
 $verifiedFilteredCount = 0;
+$allFilteredCount = 0;
+$cancelledContractCount = 0;
 foreach ($payments as $pay) {
     [$payM, $payY] = $getPayMonthYear($pay);
     $monthMatch = ($filterMonth === '' || $payM === $filterMonth);
     $yearMatch  = ($filterYear  === '' || $payY === $filterYear);
-    if (!$monthMatch || !$yearMatch) continue;
+  $scopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active';
+  $scopeMatch = ($filterContractScope === '' || $scopeValue === $filterContractScope);
+  if (!$monthMatch || !$yearMatch || !$scopeMatch) continue;
+
+  $allFilteredCount++;
+  $isCancelledContract = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true);
+  if ($isCancelledContract) {
+    $cancelledContractCount++;
+  }
 
     if (($pay['pay_status'] ?? '') === '0') {
         $pendingOnlyCount++;
@@ -406,6 +551,8 @@ foreach ($payments as $pay) {
     } elseif (($pay['pay_status'] ?? '') === 'unpaid') {
         $unpaidOnlyCount++;
         $unpaidOnlyTotal += (int)($pay['pay_amount'] ?? 0);
+  } elseif (($pay['pay_status'] ?? '') === '2') {
+    $rejectedOnlyCount++;
     } elseif (($pay['pay_status'] ?? '') === '1') {
         $verifiedFilteredCount++;
     }
@@ -494,8 +641,12 @@ $roomPaymentSummary = $pdo->query("
 ")->fetchAll(PDO::FETCH_ASSOC);
 
 $filterRoomOptions = [];
-foreach ($roomPaymentSummary as $room) {
-  $roomNumber = trim((string)($room['room_number'] ?? ''));
+foreach ($payments as $pay) {
+  $scopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active';
+  if ($filterContractScope !== '' && $scopeValue !== $filterContractScope) {
+    continue;
+  }
+  $roomNumber = trim((string)($pay['room_number'] ?? ''));
   if ($roomNumber === '') {
     continue;
   }
@@ -2717,9 +2868,10 @@ main > div:first-of-type,
             <!-- Controls Row: filter tabs + toolbar -->
             <div class="payment-controls-row">
             <div class="payment-filter-tabs" id="paymentFilterTabs">
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="">ทั้งหมด <span class="tab-count"><?php echo $pendingOnlyCount + $unpaidOnlyCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="">ทั้งหมด <span class="tab-count"><?php echo $allFilteredCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '2' ? 'active' : ''; ?>" data-status="2">ตีกลับ <span class="tab-count"><?php echo $rejectedOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1">ตรวจสอบแล้ว <span class="tab-count"><?php echo $verifiedFilteredCount; ?></span></button>
             </div>
             <!-- Compact Toolbar -->
@@ -2730,6 +2882,10 @@ main > div:first-of-type,
                 <?php foreach ($filterRoomOptions as $roomNumber): ?>
                   <option value="<?php echo htmlspecialchars((string)$roomNumber, ENT_QUOTES, 'UTF-8'); ?>" <?php echo $filterRoom === (string)$roomNumber ? 'selected' : ''; ?>>ห้อง <?php echo htmlspecialchars((string)$roomNumber, ENT_QUOTES, 'UTF-8'); ?></option>
                 <?php endforeach; ?>
+              </select>
+              <select id="filterContractScope" onchange="applyFilters()">
+                <option value="active" <?php echo $filterContractScope === 'active' ? 'selected' : ''; ?>>สัญญาปกติ</option>
+                <option value="cancelled" <?php echo $filterContractScope === 'cancelled' ? 'selected' : ''; ?>>สัญญายกเลิก/แจ้งยกเลิก (<?php echo number_format($cancelledContractCount); ?>)</option>
               </select>
               <select id="filterMonth" onchange="applyFilters()">
                 <option value="" <?php echo $filterMonth === '' ? 'selected' : ''; ?>>ทุกเดือน</option>
@@ -2806,7 +2962,8 @@ main > div:first-of-type,
                       <?php $filterTimestamp = $filterDateSource !== '' ? strtotime($filterDateSource) : false; ?>
                       <?php $filterMonthValue = $filterTimestamp ? (string)((int)date('n', $filterTimestamp)) : ''; ?>
                       <?php $filterYearValue = $filterTimestamp ? (string)date('Y', $filterTimestamp) : ''; ?>
-                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>">
+                      <?php $contractScopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active'; ?>
+                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>">
                         <td><?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></td>
                         <td><?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?></td>
                         <td><?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></td>
@@ -2828,16 +2985,24 @@ main > div:first-of-type,
                           <?php else: ?>
                             <span style="color:#64748b;">ค่าเช่า</span>
                           <?php endif; ?>
+                          <?php if ((int)($pay['_has_rejected_history'] ?? 0) === 1 && (string)($pay['pay_status'] ?? '') !== '2'): ?>
+                            <div style="margin-top:0.2rem;"><span style="display:inline-flex;align-items:center;gap:0.25rem;padding:0.12rem 0.45rem;border-radius:999px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.25);color:#ef4444;font-size:0.72rem;font-weight:700;">เคยตีกลับ</span></div>
+                          <?php endif; ?>
                         </td>
                         <td>
                           <?php 
-                          $statusClass = $pay['pay_status'] === '1' ? 'status-verified' : (($pay['pay_status'] ?? '') === 'unpaid' ? 'status-unpaid' : 'status-pending');
-                          $statusText = $statusMap[$pay['pay_status']] ?? 'ไม่ทราบ';
+                          $payStatus = (string)($pay['pay_status'] ?? '0');
+                          $statusClass = $payStatus === '1'
+                            ? 'status-verified'
+                            : ($payStatus === '2' ? 'status-unpaid' : ($payStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
+                          $statusText = $statusMap[$payStatus] ?? $statusMap['0'];
                           ?>
                           <span class="status-badge <?php echo $statusClass; ?>">
-                            <?php if ($pay['pay_status'] === '1'): ?>
+                            <?php if ($payStatus === '1'): ?>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="status-icon-check" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
-                            <?php elseif (($pay['pay_status'] ?? '') === 'unpaid'): ?>
+                            <?php elseif ($payStatus === '2'): ?>
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg>
+                            <?php elseif ($payStatus === 'unpaid'): ?>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
                             <?php else: ?>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="status-icon-pending" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
@@ -2868,16 +3033,20 @@ main > div:first-of-type,
               <?php else: ?>
                 <?php foreach ($payments as $pay): ?>
                   <?php 
-                    $statusClass = $pay['pay_status'] === '1' ? 'status-verified' : (($pay['pay_status'] ?? '') === 'unpaid' ? 'status-unpaid' : 'status-pending');
-                    $statusText = $statusMap[$pay['pay_status']] ?? 'ไม่ทราบ';
+                    $payStatus = (string)($pay['pay_status'] ?? '0');
+                    $statusClass = $payStatus === '1'
+                      ? 'status-verified'
+                      : ($payStatus === '2' ? 'status-unpaid' : ($payStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
+                    $statusText = $statusMap[$payStatus] ?? $statusMap['0'];
                     $isDepositRemark = strpos((string)($pay['pay_remark'] ?? ''), 'มัดจำ') !== false;
                     $hasExpenseLink = !empty($pay['exp_id']) && (int)$pay['exp_id'] > 0;
                     $filterDateSource = !empty($pay['exp_month']) ? (string)$pay['exp_month'] : (string)($pay['pay_date'] ?? '');
                     $filterTimestamp = $filterDateSource !== '' ? strtotime($filterDateSource) : false;
                     $filterMonthValue = $filterTimestamp ? (string)((int)date('n', $filterTimestamp)) : '';
                     $filterYearValue = $filterTimestamp ? (string)date('Y', $filterTimestamp) : '';
+                    $contractScopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active';
                   ?>
-                  <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>">
+                  <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>">
                     <div class="payment-row-top">
                       <div class="payment-row-main">
                         <strong>#<?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></strong>
@@ -2890,6 +3059,9 @@ main > div:first-of-type,
                       <div>วันที่ชำระ: <?php echo $pay['pay_date'] ? thaiDate($pay['pay_date']) : '-'; ?></div>
                       <div>จำนวนเงิน: <strong style="color:#22c55e;">฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?></strong></div>
                       <div>หมายเหตุ: <?php echo !empty($pay['pay_remark']) ? htmlspecialchars($pay['pay_remark']) : 'ค่าเช่า'; ?></div>
+                      <?php if ((int)($pay['_has_rejected_history'] ?? 0) === 1 && (string)($pay['pay_status'] ?? '') !== '2'): ?>
+                        <div>ประวัติ: <span style="color:#ef4444;font-weight:700;">เคยตีกลับ</span></div>
+                      <?php endif; ?>
                     </div>
                     <div class="payment-row-actions">
                       <div>
@@ -2969,6 +3141,7 @@ main > div:first-of-type,
       const paymentsDefaultFilters = {
         room: <?php echo json_encode($filterRoom, JSON_UNESCAPED_UNICODE); ?>,
         status: <?php echo json_encode($filterStatus, JSON_UNESCAPED_UNICODE); ?>,
+        contractScope: <?php echo json_encode($filterContractScope, JSON_UNESCAPED_UNICODE); ?>,
         month: <?php echo json_encode($filterMonth, JSON_UNESCAPED_UNICODE); ?>,
         year: <?php echo json_encode($filterYear, JSON_UNESCAPED_UNICODE); ?>
       };
@@ -2983,6 +3156,7 @@ main > div:first-of-type,
         return {
           room: document.getElementById('filterRoom')?.value || '',
           status: paymentsActiveStatus,
+          contractScope: document.getElementById('filterContractScope')?.value || '',
           month: document.getElementById('filterMonth')?.value || '',
           year: document.getElementById('filterYear')?.value || ''
         };
@@ -3000,6 +3174,12 @@ main > div:first-of-type,
           url.searchParams.set('status', filters.status);
         } else {
           url.searchParams.delete('status');
+        }
+
+        if (filters.contractScope) {
+          url.searchParams.set('contract_scope', filters.contractScope);
+        } else {
+          url.searchParams.delete('contract_scope');
         }
 
         if (filters.month) {
@@ -3027,13 +3207,14 @@ main > div:first-of-type,
           return false;
         }
 
-        if (filters.status === '') {
-          // 'ทั้งหมด' tab: show only unverified rows (pending + unpaid), exclude verified
-          if ((element.dataset.status || '') === '1') return false;
-        } else {
+        if (filters.status !== '') {
           // specific status filter
           const rowStatus = element.dataset.status || '';
           if (rowStatus !== filters.status) return false;
+        }
+
+        if (filters.contractScope && (element.dataset.contractScope || '') !== filters.contractScope) {
+          return false;
         }
 
         if (filters.month && (element.dataset.month || '') !== filters.month) {
@@ -3056,6 +3237,11 @@ main > div:first-of-type,
         let text = `พบ ${visibleCount} รายการ`;
         if (filters.room) {
           text += ` (ห้อง ${filters.room})`;
+        }
+        if (filters.contractScope === 'cancelled') {
+          text += ' • เฉพาะสัญญายกเลิก/แจ้งยกเลิก';
+        } else if (filters.contractScope === 'active') {
+          text += ' • เฉพาะสัญญาปกติ';
         }
         summary.textContent = text;
       }
@@ -3162,6 +3348,12 @@ main > div:first-of-type,
             url.searchParams.delete('status');
           }
 
+          if (filters.contractScope) {
+            url.searchParams.set('contract_scope', filters.contractScope);
+          } else {
+            url.searchParams.delete('contract_scope');
+          }
+
           if (filters.month) {
             url.searchParams.set('filter_month', filters.month);
           } else {
@@ -3235,12 +3427,14 @@ main > div:first-of-type,
 
       function clearFilters() {
         const room = document.getElementById('filterRoom');
+        const contractScope = document.getElementById('filterContractScope');
         const month = document.getElementById('filterMonth');
         const year = document.getElementById('filterYear');
 
         if (room) room.value = '';
-        if (month) month.value = paymentsDefaultFilters.month || '';
-        if (year) year.value = paymentsDefaultFilters.year || '';
+        if (contractScope) contractScope.value = 'active';
+        if (month) month.value = '';
+        if (year) year.value = '';
 
         paymentsActiveStatus = '';
 
