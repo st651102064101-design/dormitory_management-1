@@ -76,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
   }
   
-  $redirectUrl = 'Reports/todo_tasks.php#wizard';
+  $redirectUrl = 'https://project.3bbddns.com:36140/dormitory_management/Reports/dashboard.php';
   if (isset($_GET['redirect']) && !empty($_GET['redirect'])) {
       $parsedUrl = filter_var($_GET['redirect'], FILTER_SANITIZE_URL);
       if (strpos($parsedUrl, '/') === 0 || strpos($parsedUrl, 'Reports/') === 0 || strpos($parsedUrl, 'Manage/') === 0) {
@@ -2689,7 +2689,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           card.classList.add('success');
           
           setTimeout(function() {
-            window.location.href = 'Reports/dashboard.php';
+            window.location.href = 'https://project.3bbddns.com:36140/dormitory_management/Reports/dashboard.php';
           }, 1500);
         });
       </script>

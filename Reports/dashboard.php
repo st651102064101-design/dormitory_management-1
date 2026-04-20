@@ -238,6 +238,9 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="/dormitory_management/Public/Assets/Javascript/chart.umd.min.js"></script>
     <script>
+      // บังคับให้หน้า Dashboard ย่อ Sidebar ทุกครั้งที่เริ่มเข้า
+      try { localStorage.setItem('sidebarCollapsed', 'true'); } catch(e){}
+
       document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.__initSidebarState === 'function' && !window.__sidebarStateInitialized) {
           window.__sidebarStateInitialized = true;
@@ -539,7 +542,76 @@ try {
                     }
                 });
             }
+            
+            // 3. First Time Tour Guide (Sidebar Toggle)
+            if (!localStorage.getItem('sidebar_tour_seen')) {
+                setTimeout(function() {
+                    const toggleBtn = document.getElementById('sidebar-toggle');
+                    const overlay = document.getElementById('first-time-tour-overlay');
+                    const pointerBox = document.getElementById('tour-pointer');
+                    
+                    if (!toggleBtn || !overlay) return;
+                    
+                    // Show overlay
+                    overlay.style.display = 'block';
+                    
+                    // Highlight button
+                    const originalZIndex = toggleBtn.style.zIndex;
+                    const originalPosition = toggleBtn.style.position || 'static';
+                    
+                    toggleBtn.style.position = 'relative';
+                    toggleBtn.style.zIndex = '9999';
+                    toggleBtn.classList.add('ring-4', 'ring-blue-500', 'ring-opacity-60', 'scale-105', 'transition-transform');
+                    
+                    // Position the pointer box near the button
+                    const rect = toggleBtn.getBoundingClientRect();
+                    pointerBox.style.top = (rect.bottom + 20) + 'px';
+                    pointerBox.style.left = Math.max(10, rect.left - 10) + 'px'; // prevent off-screen
+                    
+                    // Setup close handler
+                    const closeTour = function() {
+                        overlay.style.display = 'none';
+                        toggleBtn.style.zIndex = originalZIndex;
+                        if (originalPosition === 'static') {
+                            toggleBtn.style.position = '';
+                        } else {
+                            toggleBtn.style.position = originalPosition;
+                        }
+                        toggleBtn.classList.remove('ring-4', 'ring-blue-500', 'ring-opacity-60', 'scale-105', 'transition-transform');
+                        localStorage.setItem('sidebar_tour_seen', 'true');
+                    };
+                    
+                    document.getElementById('close-tour-btn').addEventListener('click', closeTour);
+                    toggleBtn.addEventListener('click', closeTour, {once: true});
+                }, 800); // Wait for animations to finish
+            }
         });
     </script>
+
+    <!-- First Time Tour HTML -->
+    <div id="first-time-tour-overlay" class="animate-fade-in" style="display: none; position: fixed; inset: 0; z-index: 9998; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);">
+        <div id="tour-pointer" style="position: absolute; display: flex; flex-direction: column; align-items: flex-start; z-index: 9999;">
+            <!-- Arrow -->
+            <div style="width: 0; height: 0; border-left: 10px solid transparent; border-right: 10px solid transparent; border-bottom: 12px solid white; margin-left: 20px; margin-bottom: -1px;"></div>
+            <!-- Text Box -->
+            <div class="bg-white rounded-xl p-5 shadow-2xl max-w-[280px] animate-bounce-slight" style="border: 2px solid #3b82f6;">
+                <h3 class="font-bold text-lg mb-2 text-slate-800 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16v-4"/><path d="M12 8h.01"/><rect width="20" height="14" x="2" y="5" rx="2"/></svg>
+                    เมนูอยู่ตรงนี้นะ!
+                </h3>
+                <p class="text-sm text-slate-600 mb-4 leading-relaxed tracking-wide">คลิกที่ปุ่มนี้เพื่อเปิด/ปิดแผงเมนู และเข้าถึงฟังก์ชันต่างๆ ของระบบ</p>
+                <button id="close-tour-btn" class="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 w-full transition-colors shadow-sm">เข้าใจแล้ว</button>
+            </div>
+        </div>
+    </div>
+    <style>
+        .animate-bounce-slight {
+            animation: bounce-slight 2s infinite ease-in-out;
+        }
+        @keyframes bounce-slight {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+    </style>
 </body>
 </html>

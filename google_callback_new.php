@@ -292,7 +292,7 @@ try {
         
         error_log("✓ Admin logged in: " . $admin['admin_id']);
         
-        header('Location: /dormitory_management/Reports/dashboard.php');
+        header('Location: https://project.3bbddns.com:36140/dormitory_management/Reports/dashboard.php');
         exit;
     }
     
