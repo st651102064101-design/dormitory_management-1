@@ -102,7 +102,7 @@ $filterYearStr  = (string)$filterYear;
 
 $roomSql = "
     SELECT r.room_id, r.room_number,
-           c.ctr_id, t.tnt_name,
+        c.ctr_id, c.ctr_start, t.tnt_name,
            (c.ctr_id IS NOT NULL) AS is_occupied
     FROM room r
     LEFT JOIN (
@@ -124,24 +124,36 @@ $roomStmt->execute([$filterYearStr, $filterMonthStr, $filterYearStr]);
 $allRooms = $roomStmt->fetchAll(PDO::FETCH_ASSOC);
 
 $utilities = [];
+$checkinStmt = $pdo->prepare("SELECT water_meter_start, elec_meter_start FROM checkin_record WHERE ctr_id = ? ORDER BY checkin_id DESC LIMIT 1");
 foreach ($allRooms as $room) {
     $roomId = $room['room_id'];
     $isOccupied = (bool)$room['is_occupied'];
     $ctrId = $room['ctr_id'];
 
     $utilRow = null;
-    $hasReading = false;
+    $hasWaterReading = false;
+    $hasElecReading = false;
+    $checkinRow = null;
     
     if ($ctrId) {
         $uStmt = $pdo->prepare("SELECT * FROM utility WHERE MONTH(utl_date) = ? AND YEAR(utl_date) = ? AND ctr_id = ? ORDER BY utl_id DESC LIMIT 1");
         $uStmt->execute([$filterMonth, $filterYear, $ctrId]);
         $utilRow = $uStmt->fetch(PDO::FETCH_ASSOC);
         
-        if ($utilRow && (
-            ((int)$utilRow['utl_water_end'] !== (int)$utilRow['utl_water_start']) ||
-            ((int)$utilRow['utl_elec_end'] !== (int)$utilRow['utl_elec_start'])
-        )) {
-            $hasReading = true;
+        if ($utilRow) {
+            $hasWaterReading = $utilRow['utl_water_end'] !== null && (int)$utilRow['utl_water_end'] > 0;
+            $hasElecReading = $utilRow['utl_elec_end'] !== null && (int)$utilRow['utl_elec_end'] > 0;
+        }
+
+        $isFirstReadingMonth = false;
+        if (!empty($room['ctr_start']) && $filterYear !== '' && $filterMonth !== '') {
+            $isFirstReadingMonth = date('Y-m', strtotime((string)$room['ctr_start'])) === sprintf('%04d-%02d', (int)$filterYear, (int)$filterMonth);
+        }
+
+        // Same fallback behavior as manage_utility for first month of contract.
+        if ($isFirstReadingMonth && (!$hasWaterReading || !$hasElecReading)) {
+            $checkinStmt->execute([$ctrId]);
+            $checkinRow = $checkinStmt->fetch(PDO::FETCH_ASSOC) ?: null;
         }
     }
 
@@ -153,17 +165,55 @@ foreach ($allRooms as $room) {
     $oldWater = $prev ? (int)$prev['utl_water_end'] : 0;
     $oldElec  = $prev ? (int)$prev['utl_elec_end'] : 0;
 
-    $finalWaterOld = $utilRow ? (int)$utilRow['utl_water_start'] : $oldWater;
-    $finalWaterNew = $utilRow ? (int)$utilRow['utl_water_end'] : $oldWater;
-    $finalElecOld  = $utilRow ? (int)$utilRow['utl_elec_start'] : $oldElec;
-    $finalElecNew  = $utilRow ? (int)$utilRow['utl_elec_end'] : $oldElec;
+    $finalWaterOld = $oldWater;
+    $finalWaterNew = $oldWater;
+    $finalElecOld  = $oldElec;
+    $finalElecNew  = $oldElec;
+
+    if ($utilRow) {
+        if ($utilRow['utl_water_start'] !== null) {
+            $finalWaterOld = (int)$utilRow['utl_water_start'];
+        }
+        if ($utilRow['utl_water_end'] !== null) {
+            $finalWaterNew = (int)$utilRow['utl_water_end'];
+        }
+        if ($utilRow['utl_elec_start'] !== null) {
+            $finalElecOld = (int)$utilRow['utl_elec_start'];
+        }
+        if ($utilRow['utl_elec_end'] !== null) {
+            $finalElecNew = (int)$utilRow['utl_elec_end'];
+        }
+    }
+
+    if ($checkinRow) {
+        $checkinWater = (int)($checkinRow['water_meter_start'] ?? 0);
+        $checkinElec  = (int)($checkinRow['elec_meter_start'] ?? 0);
+
+        if (!$hasWaterReading && $checkinWater > 0) {
+            $hasWaterReading = true;
+            if (!$utilRow || $utilRow['utl_water_end'] === null || (int)$utilRow['utl_water_end'] <= 0) {
+                $finalWaterOld = $checkinWater;
+                $finalWaterNew = $checkinWater;
+            }
+        }
+
+        if (!$hasElecReading && $checkinElec > 0) {
+            $hasElecReading = true;
+            if (!$utilRow || $utilRow['utl_elec_end'] === null || (int)$utilRow['utl_elec_end'] <= 0) {
+                $finalElecOld = $checkinElec;
+                $finalElecNew = $checkinElec;
+            }
+        }
+    }
 
     $utilities[] = [
         'room_number' => $room['room_number'],
         'room_id'     => $room['room_id'],
         'tnt_name'    => $room['tnt_name'],
         'is_occupied' => $isOccupied,
-        'has_reading' => $hasReading,
+        'has_reading' => ($hasWaterReading && $hasElecReading),
+        'has_water_reading' => $hasWaterReading,
+        'has_elec_reading' => $hasElecReading,
         'utl_water_start' => $finalWaterOld,
         'utl_water_end'   => $finalWaterNew,
         'utl_elec_start'  => $finalElecOld,
@@ -829,14 +879,14 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                 <td data-label="เลขมิเตอร์เดือนล่าสุด">
                                     <?php if (!$util['is_occupied']): ?>
                                         <span class="curr-val" style="color:#aaa;">-</span>
-                                    <?php elseif (!$util['has_reading']): ?>
+                                    <?php elseif (!$util['has_water_reading']): ?>
                                         <span class="badge badge-warning" style="background:#fed7aa; color:#9a3412; padding:0.25rem 0.5rem; border-radius:0.25rem; font-size:0.8rem; font-weight:600;">ยังไม่ได้จด</span>
                                     <?php else: ?>
                                         <span class="curr-val"><?php echo str_pad((string)(int)($util['utl_water_end'] ?? 0), 7, '0', STR_PAD_LEFT); ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="usage-cell" data-label="หน่วยที่ใช้">
-                                    <?php if (!$util['is_occupied'] || !$util['has_reading']): ?>
+                                    <?php if (!$util['is_occupied'] || !$util['has_water_reading']): ?>
                                         -
                                     <?php else: ?>
                                         <?php echo number_format($waterUsage); ?>
@@ -888,14 +938,14 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                 <td data-label="เลขมิเตอร์เดือนล่าสุด">
                                     <?php if (!$util['is_occupied']): ?>
                                         <span class="curr-val elec-val" style="color:#aaa;">-</span>
-                                    <?php elseif (!$util['has_reading']): ?>
+                                    <?php elseif (!$util['has_elec_reading']): ?>
                                         <span class="badge badge-warning" style="background:#fed7aa; color:#9a3412; padding:0.25rem 0.5rem; border-radius:0.25rem; font-size:0.8rem; font-weight:600;">ยังไม่ได้จด</span>
                                     <?php else: ?>
                                         <span class="curr-val elec-val"><?php echo str_pad((string)(int)($util['utl_elec_end'] ?? 0), 5, '0', STR_PAD_LEFT); ?></span>
                                     <?php endif; ?>
                                 </td>
                                 <td class="usage-cell elec-usage" data-label="หน่วยที่ใช้">
-                                    <?php if (!$util['is_occupied'] || !$util['has_reading']): ?>
+                                    <?php if (!$util['is_occupied'] || !$util['has_elec_reading']): ?>
                                         -
                                     <?php else: ?>
                                         <?php echo number_format($elecUsage); ?>
@@ -948,7 +998,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                             <div class="vm-dial-face" style="background:#f5f5f5;">
                                                 <div style="font-size: 1.2rem; font-weight: bold; color: #aaa;">-</div>
                                             </div>
-                                        <?php elseif (!$util['has_reading']): ?>
+                                        <?php elseif (!$util['has_water_reading']): ?>
                                             <div class="vm-dial-face" style="background:#f5f5f5;">
                                                 <span class="badge badge-warning" style="background:#fed7aa; color:#9a3412; padding:0.25rem 0.5rem; border-radius:0.25rem; font-size:0.8rem; font-weight:600;">ยังไม่ได้จด</span>
                                             </div>
@@ -1015,7 +1065,7 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
                                             <div class="vm-elec-title">KILOWATT-HOUR METER</div>
                                             <?php if (!$util['is_occupied']): ?>
                                                 <div style="font-size: 1.2rem; font-weight: bold; color: #aaa; margin: 15px 0;">-</div>
-                                            <?php elseif (!$util['has_reading']): ?>
+                                            <?php elseif (!$util['has_elec_reading']): ?>
                                                 <div style="margin: 15px 0;">
                                                     <span class="badge badge-warning" style="background:#fed7aa; color:#9a3412; padding:0.25rem 0.5rem; border-radius:0.25rem; font-size:0.8rem; font-weight:600;">ยังไม่ได้จด</span>
                                                 </div>
