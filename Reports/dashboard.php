@@ -249,27 +249,260 @@ try {
       });
     </script>
     <style>
-        body { font-family: 'Prompt', sans-serif; background-color: #f8fafc; margin: 0; padding: 0; }
-        .saas-card { background: #ffffff; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); border: 1px solid rgba(226, 232, 240, 0.8); transition: all 0.2s ease; cursor: pointer; }
-        .saas-card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05); border-color: rgba(203, 213, 225, 1); }
-        .saas-card.no-hover:hover { transform: none; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03); cursor: default; border-color: auto; }
-        .app-main { background: #f8fafc !important; }
+        :root {
+            --dash-bg-a: rgba(99, 102, 241, 0.14);
+            --dash-bg-b: rgba(14, 165, 233, 0.1);
+            --dash-bg-c: rgba(16, 185, 129, 0.1);
+            --dash-edge: rgba(226, 232, 240, 0.92);
+            --dash-shadow: 0 8px 24px -14px rgba(15, 23, 42, 0.38);
+        }
+
+        body {
+            font-family: 'Prompt', sans-serif;
+            margin: 0;
+            padding: 0;
+            background:
+                radial-gradient(75rem 45rem at -12% -22%, var(--dash-bg-a) 0%, rgba(99, 102, 241, 0) 65%),
+                radial-gradient(56rem 36rem at 110% 10%, var(--dash-bg-b) 0%, rgba(14, 165, 233, 0) 70%),
+                radial-gradient(46rem 32rem at 82% 88%, var(--dash-bg-c) 0%, rgba(16, 185, 129, 0) 68%),
+                #f8fafc;
+        }
+
+        .app-main {
+            background: transparent !important;
+            position: relative;
+            isolation: isolate;
+        }
+
+        .app-main::before {
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background-image:
+                linear-gradient(rgba(148, 163, 184, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(148, 163, 184, 0.05) 1px, transparent 1px);
+            background-size: 22px 22px;
+            mask-image: radial-gradient(circle at 45% 25%, black 20%, transparent 80%);
+            z-index: -2;
+        }
+
+        .dashboard-shell {
+            position: relative;
+        }
+
+        .dashboard-shell::before,
+        .dashboard-shell::after {
+            content: "";
+            position: absolute;
+            filter: blur(56px);
+            border-radius: 999px;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.45;
+        }
+
+        .dashboard-shell::before {
+            width: 220px;
+            height: 220px;
+            background: rgba(99, 102, 241, 0.28);
+            top: -70px;
+            left: -80px;
+        }
+
+        .dashboard-shell::after {
+            width: 260px;
+            height: 260px;
+            background: rgba(16, 185, 129, 0.24);
+            right: -90px;
+            bottom: -120px;
+        }
+
+        .reveal-item {
+            opacity: 0;
+            transform: translateY(14px);
+            animation: dash-reveal 0.72s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        }
+
+        .reveal-item.delay-1 { animation-delay: 0.06s; }
+        .reveal-item.delay-2 { animation-delay: 0.13s; }
+        .reveal-item.delay-3 { animation-delay: 0.2s; }
+
+        @keyframes dash-reveal {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .saas-card {
+            position: relative;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.92);
+            border-radius: 1rem;
+            border: 1px solid var(--dash-edge);
+            box-shadow: var(--dash-shadow);
+            transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+            cursor: pointer;
+            backdrop-filter: blur(6px);
+        }
+
+        .saas-card::after {
+            content: "";
+            position: absolute;
+            top: -130%;
+            left: -45%;
+            width: 36%;
+            height: 360%;
+            transform: rotate(18deg) translateX(-220%);
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0));
+            transition: transform 0.85s ease;
+            pointer-events: none;
+        }
+
+        .saas-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(129, 140, 248, 0.4);
+            box-shadow: 0 20px 34px -24px rgba(30, 41, 59, 0.5);
+        }
+
+        .saas-card:hover::after {
+            transform: rotate(18deg) translateX(350%);
+        }
+
+        .saas-card.no-hover:hover {
+            transform: none;
+            box-shadow: var(--dash-shadow);
+            border-color: var(--dash-edge);
+            cursor: default;
+        }
+
+        .saas-card.no-hover:hover::after {
+            transform: rotate(18deg) translateX(-220%);
+        }
+
+        .kpi-card::before {
+            content: "";
+            position: absolute;
+            inset: 0 auto 0 0;
+            width: 4px;
+            border-radius: 10px 0 0 10px;
+            opacity: 0.85;
+            background: linear-gradient(180deg, #6366f1, #4f46e5);
+        }
+
+        .kpi-card.kpi-occupancy::before { background: linear-gradient(180deg, #0ea5e9, #0284c7); }
+        .kpi-card.kpi-tenants::before { background: linear-gradient(180deg, #a855f7, #7e22ce); }
+        .kpi-card.kpi-repairs::before { background: linear-gradient(180deg, #f59e0b, #d97706); }
+
+        .status-date-pill {
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 10px 24px -18px rgba(30, 41, 59, 0.62);
+        }
+
+        .status-date-pill::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(110deg, rgba(255, 255, 255, 0) 20%, rgba(255, 255, 255, 0.55) 50%, rgba(255, 255, 255, 0) 80%);
+            transform: translateX(-150%);
+            animation: date-pill-shine 3.8s ease-in-out infinite;
+            pointer-events: none;
+        }
+
+        @keyframes date-pill-shine {
+            45%, 100% { transform: translateX(160%); }
+        }
+
+        .chart-card {
+            background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+        }
+
+        .chart-card canvas {
+            transition: transform 0.25s ease, filter 0.25s ease;
+            filter: saturate(1.03);
+        }
+
+        .chart-card:hover canvas {
+            transform: scale(1.01);
+            filter: saturate(1.08);
+        }
+
+        .action-required-card a {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-required-card a::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0));
+            transform: scaleX(0);
+            transform-origin: left center;
+            transition: transform 0.24s ease;
+            pointer-events: none;
+        }
+
+        .action-required-card a:hover::before {
+            transform: scaleX(1);
+        }
+
+        .today-activity-card {
+            box-shadow: 0 16px 36px -22px rgba(37, 99, 235, 0.65);
+        }
+
+        .today-activity-card a {
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        .today-activity-card a:hover {
+            transform: translateX(4px);
+        }
         
         /* Scrollbar */
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        @media (max-width: 640px) {
+            .dashboard-shell::before,
+            .dashboard-shell::after {
+                opacity: 0.28;
+                filter: blur(42px);
+            }
+
+            .kpi-card::before {
+                width: 3px;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .reveal-item,
+            .saas-card,
+            .saas-card::after,
+            .status-date-pill::before,
+            .chart-card canvas,
+            .today-activity-card a,
+            .action-required-card a::before {
+                animation: none !important;
+                transition: none !important;
+                transform: none !important;
+            }
+        }
     </style>
 </head>
 <body class="reports-page live-light text-slate-800 antialiased">
     <div class="app-shell">
         <?php include __DIR__ . '/../includes/sidebar.php'; ?>
-        <main class="app-main flex-1 p-4 sm:p-8 lg:p-10 w-full overflow-y-auto">
-            <div class="max-w-7xl mx-auto space-y-8 pb-12">
+        <main class="app-main flex-1 w-full overflow-y-auto p-4 pb-14 sm:p-8 sm:pb-20 lg:p-10 lg:pb-24">
+            <div class="max-w-7xl mx-auto space-y-8 pb-24 sm:pb-32 lg:pb-36 dashboard-shell">
                 
                 <!-- Header -->
-                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mt-2">
+                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 mt-2 reveal-item">
                     <div class="flex items-center gap-4">
                         <button id="sidebar-toggle" data-sidebar-toggle="" aria-label="Toggle sidebar" aria-expanded="false" class="sidebar-toggle-btn p-2 bg-white border border-slate-200 rounded-lg shadow-sm hover:bg-slate-50 transition text-slate-600 flex-shrink-0">
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -283,7 +516,7 @@ try {
                             <p class="text-slate-500 mt-1.5 text-base">ยินดีต้อนรับกลับมา, <?php echo htmlspecialchars($admin_name); ?>! นี่คือภาพรวมข้อมูลของวันนี้</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-3 bg-white px-4 py-2 border border-slate-200 rounded-full shadow-sm">
+                    <div class="status-date-pill flex items-center gap-3 bg-white px-4 py-2 border border-slate-200 rounded-full shadow-sm">
                         <span class="flex h-3 w-3 relative">
                           <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                           <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
@@ -306,9 +539,9 @@ try {
                 <?php endif; ?>
 
                 <!-- Hero Stats Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 reveal-item delay-1">
                     <!-- Revenue -->
-                    <div class="saas-card p-6" onclick="window.location.href='report_payments.php'">
+                    <div class="saas-card kpi-card kpi-revenue p-6" onclick="window.location.href='report_payments.php'">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest"><?php echo __('total_revenue'); ?></h3>
                             <div class="p-2 bg-indigo-50 text-indigo-600 rounded-lg">
@@ -323,7 +556,7 @@ try {
                     </div>
 
                     <!-- Occupancy -->
-                    <div class="saas-card p-6" onclick="window.location.href='report_rooms.php'">
+                    <div class="saas-card kpi-card kpi-occupancy p-6" onclick="window.location.href='report_rooms.php'">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest"><?php echo __('occupancy_rate'); ?></h3>
                             <div class="p-2 bg-sky-50 text-sky-600 rounded-lg">
@@ -337,7 +570,7 @@ try {
                     </div>
 
                     <!-- Tenants -->
-                    <div class="saas-card p-6" onclick="window.location.href='report_tenants.php'">
+                    <div class="saas-card kpi-card kpi-tenants p-6" onclick="window.location.href='report_tenants.php'">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest"> ผู้เช่าปัจจุบัน</h3>
                             <div class="p-2 bg-purple-50 text-purple-600 rounded-lg">
@@ -351,7 +584,7 @@ try {
                     </div>
 
                     <!-- Pending Repairs -->
-                    <div class="saas-card p-6" onclick="window.location.href='report_repairs.php'">
+                    <div class="saas-card kpi-card kpi-repairs p-6" onclick="window.location.href='report_repairs.php'">
                         <div class="flex items-center justify-between mb-4">
                             <h3 class="text-xs font-bold text-slate-400 uppercase tracking-widest"> <?php echo __('pending_repairs'); ?></h3>
                             <div class="p-2 bg-amber-50 text-amber-600 rounded-lg">
@@ -366,9 +599,9 @@ try {
                 </div>
 
                 <!-- Charts Section -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 reveal-item delay-2">
                     <!-- Chart 1: Revenue -->
-                    <div class="saas-card no-hover p-6 lg:col-span-2">
+                    <div class="saas-card no-hover chart-card p-6 lg:col-span-2">
                         <div class="flex items-center justify-between mb-6">
                             <h3 class="text-lg font-bold text-slate-900 leading-none"><?php echo __('monthly_revenue'); ?></h3>
                             <a href="report_payments.php" class="text-sm text-indigo-600 font-semibold hover:text-indigo-800 transition"><?php echo __('view_details_arrow'); ?></a>
@@ -379,7 +612,7 @@ try {
                     </div>
                     
                     <!-- Chart 2: Room Status -->
-                    <div class="saas-card no-hover p-6 lg:col-span-1 flex flex-col">
+                    <div class="saas-card no-hover chart-card p-6 lg:col-span-1 flex flex-col">
                         <div class="flex items-center justify-between mb-2">
                             <h3 class="text-lg font-bold text-slate-900 leading-none"> <?php echo __('room_status'); ?></h3>
                         </div>
@@ -400,9 +633,9 @@ try {
                 </div>
 
                 <!-- Secondary Row -->
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8 reveal-item delay-3">
                     <!-- Action Required List -->
-                    <div class="saas-card no-hover flex flex-col h-full overflow-hidden p-0">
+                    <div class="saas-card no-hover action-required-card flex flex-col h-full overflow-hidden p-0">
                         <div class="p-6 border-b border-slate-100 flex items-center justify-between">
                             <h3 class="text-lg font-bold text-slate-900 leading-none">รายการต้องดำเนินการ</h3>
                             <span class="text-xs font-bold bg-rose-100 text-rose-700 px-3 py-1 rounded-full"><?php echo ($payment_pending + $repair_waiting); ?> รายการ</span>
@@ -444,7 +677,7 @@ try {
                     </div>
 
                     <!-- Today's <?php echo __('today_activity'); ?> -->
-                    <div class="saas-card no-hover relative overflow-hidden bg-gradient-to-br from-indigo-500 via-indigo-600 to-blue-600 border-none">
+                    <div class="saas-card no-hover today-activity-card relative overflow-hidden bg-gradient-to-br from-indigo-500 via-indigo-600 to-blue-600 border-none">
                         <!-- Decorative bg -->
                         <div class="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white opacity-5"></div>
                         <div class="absolute bottom-0 left-0 -ml-12 -mb-12 w-40 h-40 rounded-full bg-white opacity-10"></div>
@@ -472,6 +705,8 @@ try {
                         </div>
                     </div>
                 </div><!-- End Secondary Row -->
+
+                <div class="h-16 sm:h-20 lg:h-24" aria-hidden="true"></div>
 
             </div>
         </main>
