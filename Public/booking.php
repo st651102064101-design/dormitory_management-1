@@ -3587,16 +3587,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             currentStep = 2;
             saveCurrentStep(2);
             
-            // Close mobile form modal FIRST
+            // Close mobile form modal
             closeMobileForm();
             
-            // Then scroll to Step 2 in main view
+            // Reset body scroll and scroll to Step 2
+            document.body.style.overflow = '';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            
+            // Scroll to payment section after a delay
             setTimeout(() => {
-                const step2 = document.querySelector('.step-content[data-step="2"]');
-                if (step2) {
-                    step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                const bookingBox = document.querySelector('.booking-box');
+                if (bookingBox) {
+                    bookingBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
                 }
-            }, 100);
+            }, 300);
         }
         
         function openMobileForm() {
