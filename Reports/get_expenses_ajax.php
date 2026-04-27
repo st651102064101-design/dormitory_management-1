@@ -108,8 +108,20 @@ try {
       WHERE c.ctr_status = '0'
         AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
         AND e.exp_month IS NOT NULL
-        AND DATE_FORMAT(e.exp_month, '%Y-%m') <= :currentMonth
-      ORDER BY month_key DESC
+      AND DATE_FORMAT(e.exp_month, '%Y-%m') <= :currentMonth
+      AND NOT (
+        EXISTS (
+          SELECT 1 FROM payment p
+          WHERE p.exp_id = e.exp_id
+            AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+        )
+        AND NOT EXISTS (
+          SELECT 1 FROM payment p2
+          WHERE p2.exp_id = e.exp_id
+            AND TRIM(COALESCE(p2.pay_remark, '')) <> 'มัดจำ'
+        )
+      )
+    ORDER BY month_key DESC
     ");
     $monthStmt->execute([':currentMonth' => $currentMonth]);
     $availableMonths = $monthStmt->fetchAll(PDO::FETCH_COLUMN);

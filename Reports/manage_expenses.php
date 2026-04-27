@@ -228,6 +228,18 @@ $expenseSql = "\n  SELECT e.*,
       FROM tenant_workflow tw
       WHERE tw.ctr_id = c.ctr_id
         AND (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
+    )
+    AND NOT (
+      EXISTS (
+        SELECT 1 FROM payment p
+        WHERE p.exp_id = e.exp_id
+          AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM payment p2
+        WHERE p2.exp_id = e.exp_id
+          AND TRIM(COALESCE(p2.pay_remark, '')) <> 'มัดจำ'
+      )
     )";
 
 $expenseParams = [];
