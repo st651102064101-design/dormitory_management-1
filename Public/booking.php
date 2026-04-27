@@ -2624,7 +2624,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                     
-                    <button type="button" class="btn-next" onclick="goToStep(2)">
+                    <button type="button" class="btn-next" onclick="goToStep(2)" style="width: 100%; justify-content: center; margin-top: 20px;">
                         <span>ถัดไป: ชำระเงิน</span>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="9 18 15 12 9 6"></polyline>
