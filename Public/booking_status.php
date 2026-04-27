@@ -214,8 +214,7 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo) && $autoFill
                 COALESCE(tw.completed, 0) as workflow_completed,
                 COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
                 (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
-                (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature,
-                (SELECT bp_proof FROM booking_payment WHERE bkg_id = b.bkg_id ORDER BY bp_id DESC LIMIT 1) as payment_proof
+                (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
             FROM booking b
             JOIN tenant t ON b.tnt_id = t.tnt_id
             LEFT JOIN room r ON b.room_id = r.room_id
@@ -257,8 +256,7 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo)) {
                 COALESCE(tw.completed, 0) as workflow_completed,
                 COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
                 (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
-                (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature,
-                (SELECT bp_proof FROM booking_payment WHERE bkg_id = b.bkg_id ORDER BY bp_id DESC LIMIT 1) as payment_proof
+                (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
             FROM tenant t
                     INNER JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
             LEFT JOIN room r ON b.room_id = r.room_id
@@ -297,8 +295,7 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                     COALESCE(tw.completed, 0) as workflow_completed,
                     COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
                     (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
-                    (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature,
-                    (SELECT bp_proof FROM booking_payment WHERE bkg_id = b.bkg_id ORDER BY bp_id DESC LIMIT 1) as payment_proof
+                    (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
                 FROM tenant t
                 LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                 LEFT JOIN room r ON b.room_id = r.room_id
@@ -323,7 +320,7 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                         COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
                         (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
                         (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature,
-                        (SELECT bp_proof FROM booking_payment WHERE bkg_id = b.bkg_id ORDER BY bp_id DESC LIMIT 1) as payment_proof
+                        
                     FROM tenant t
                     LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                     LEFT JOIN room r ON b.room_id = r.room_id
@@ -348,7 +345,7 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                         COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
                         (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
                         (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature,
-                        (SELECT bp_proof FROM booking_payment WHERE bkg_id = b.bkg_id ORDER BY bp_id DESC LIMIT 1) as payment_proof
+                        
                     FROM tenant t
                     LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                     LEFT JOIN room r ON b.room_id = r.room_id
@@ -1232,20 +1229,6 @@ if ($currentStatus === '1') {
                     </span>
                 </div>
                 <?php endif; ?>
-            </div>
-            <?php endif; ?>
-            
-            <!-- Payment Proof Display -->
-            <?php if (!empty($bookingInfo['payment_proof'])): ?>
-            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
-                <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-muted);">หลักฐานการชำระเงิน</div>
-                <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 12px; text-align: center;">
-                    <img src="/dormitory_management/Public/Assets/Images/Payments/<?php echo htmlspecialchars($bookingInfo['payment_proof']); ?>" 
-                         alt="หลักฐานการชำระเงิน" 
-                         style="max-width: 100%; border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.5); max-height: 300px; object-fit: contain; cursor: pointer; transition: transform 0.2s;"
-                         onclick="this.style.transform = 'scale(1.05)'; setTimeout(() => this.style.transform = 'scale(1)', 200);"
-                         onerror="this.parentElement.innerHTML='<div style=\"color: var(--text-muted); padding: 20px;\">ไม่พบไฟล์สลิป</div>'">
-                </div>
             </div>
             <?php endif; ?>
         </div>
