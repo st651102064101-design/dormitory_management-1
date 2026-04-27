@@ -1,12 +1,7 @@
 <?php
 require 'ConnectDB.php';
 $pdo = connectDB();
-$stmt = $pdo->prepare("
-        SELECT e.*, 
-               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '1') as paid_amount,
-               (SELECT COALESCE(SUM(p.pay_amount), 0) FROM payment p WHERE p.exp_id = e.exp_id AND p.pay_status = '0') as pending_amount
-        FROM expense e
-        WHERE e.exp_id = 775775590
-");
-$stmt->execute();
+$stmt = $pdo->prepare("SELECT pay_id, pay_proof FROM payment p JOIN expense e ON p.exp_id = e.exp_id JOIN contract c ON e.ctr_id = c.ctr_id JOIN tenant_workflow tw ON c.ctr_id = tw.ctr_id WHERE tw.bkg_id = ?");
+$stmt->execute(['777295620']);
 print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
+?>

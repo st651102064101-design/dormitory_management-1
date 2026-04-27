@@ -1,5 +1,7 @@
 <?php
 require 'ConnectDB.php';
 $pdo = connectDB();
-$stmt = $pdo->query("SELECT * FROM booking_payment ORDER BY bp_id DESC LIMIT 3");
+$stmt = $pdo->prepare("SELECT * FROM tenant_workflow WHERE bkg_id = ?");
+$stmt->execute(['777295620']);
 print_r($stmt->fetchAll(PDO::FETCH_ASSOC));
+?>
