@@ -3457,6 +3457,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Auto-close any apple alerts when entering the booking page
             closeAppleAlert();
             
+            // Clear saved step on page load to prevent alert from showing
+            // (because savedStep tries to validate and show alert if form is empty)
+            clearSavedStep();
+            
             const savedStep = loadSavedStep();
             if (savedStep > 1) {
                 // Only restore if it's a valid step (1 or 2)
