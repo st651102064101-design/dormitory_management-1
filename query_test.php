@@ -1,7 +1,10 @@
 <?php
-require_once __DIR__ . '/ConnectDB.php';
+require 'ConnectDB.php';
 $pdo = connectDB();
-
-echo "Total Rooms: " . $pdo->query("SELECT COUNT(*) FROM room")->fetchColumn() . "\n";
-echo "Active Tenants: " . $pdo->query("SELECT COUNT(*) FROM tenant WHERE tnt_status = 1")->fetchColumn() . "\n";
-echo "Pending Bookings: " . $pdo->query("SELECT COUNT(*) FROM booking WHERE bkg_status = 1")->fetchColumn() . "\n";
+$stmt = $pdo->prepare("SELECT bkg_status, tnt_id, room_id FROM booking WHERE bkg_id = ?");
+$stmt->execute(['777295620']);
+print_r($stmt->fetch(PDO::FETCH_ASSOC));
+$stmt = $pdo->prepare("SELECT * FROM tenant_workflow WHERE bkg_id = ?");
+$stmt->execute(['777295620']);
+print_r($stmt->fetch(PDO::FETCH_ASSOC));
+?>
