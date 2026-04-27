@@ -3587,11 +3587,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             currentStep = 2;
             saveCurrentStep(2);
             
-            // Scroll to top of modal
-            const mobileFormBody = document.querySelector('.mobile-form-body');
-            if (mobileFormBody) {
-                mobileFormBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
+            // Close mobile form modal FIRST
+            closeMobileForm();
+            
+            // Then scroll to Step 2 in main view
+            setTimeout(() => {
+                const step2 = document.querySelector('.step-content[data-step="2"]');
+                if (step2) {
+                    step2.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }, 100);
         }
         
         function openMobileForm() {
