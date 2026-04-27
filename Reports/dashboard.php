@@ -65,7 +65,7 @@ try {
         UPDATE booking b
         JOIN contract c ON b.tnt_id = c.tnt_id AND b.room_id = c.room_id
         SET b.bkg_status = '2'
-        WHERE b.bkg_status = '1'
+        WHERE b.bkg_status = '1' AND b.bkg_id NOT IN (SELECT bkg_id FROM tenant_workflow)
     ");
     $pdo->exec("UPDATE room SET room_status = '0'");
     $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (

@@ -396,12 +396,12 @@ $statusLabels = [
 $currentStatus = $bookingInfo['bkg_status'] ?? '1';
 $expStatus = $bookingInfo['exp_status'] ?? '0';
 $currentStepForStatus = intval($bookingInfo['current_step'] ?? 1);
-$hasFirstBillingCycle = isset($bookingInfo['exp_status']) && $bookingInfo['exp_status'] !== null && $bookingInfo['exp_status'] !== '';
+$hasFirstBillingCycle = isset($bookingInfo['exp_status']) && $bookingInfo['exp_status'] !== null && $bookingInfo['exp_status'] !== '' && (string)$bookingInfo['exp_status'] !== '2';
 
 // Fallback: in some joins exp_status may be empty even though first bill already exists.
 if (!$hasFirstBillingCycle && !empty($bookingInfo['ctr_id'])) {
     try {
-        $stmtHasFirstBilling = $pdo->prepare("SELECT 1 FROM expense WHERE ctr_id = ? LIMIT 1");
+        $stmtHasFirstBilling = $pdo->prepare("SELECT 1 FROM expense WHERE ctr_id = ? AND exp_status != '2' LIMIT 1");
         $stmtHasFirstBilling->execute([$bookingInfo['ctr_id']]);
         $hasFirstBillingCycle = (bool)$stmtHasFirstBilling->fetchColumn();
     } catch (PDOException $e) {
