@@ -39,7 +39,7 @@ try {
         exit;
     }
     
-    // ตรวจสอบว่าห้องว่างหรือไม่ (room_status: 0 = ว่าง, 1 = ไม่ว่าง)
+    // ตรวจสอบว่าห้องมีการจองหรือเข้าพักอยู่แล้วจริงๆ
     $stmt = $pdo->prepare("SELECT room_status FROM room WHERE room_id = ?");
     $stmt->execute([$room_id]);
     $room = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -55,9 +55,21 @@ try {
         header('Location: ../Reports/manage_booking.php');
         exit;
     }
-    // ต้องเป็นห้องว่างเท่านั้น (room_status = 0)
-    if ($room['room_status'] !== '0') {
-        $msg = 'ห้องพักนี้ไม่ว่าง ไม่สามารถจองได้';
+
+    $activeBookingStmt = $pdo->prepare("SELECT COUNT(*) FROM booking WHERE room_id = ? AND bkg_status IN ('1','2')");
+    $activeBookingStmt->execute([$room_id]);
+    $activeBookingCount = (int)$activeBookingStmt->fetchColumn();
+
+    $activeContractStmt = $pdo->prepare("SELECT COUNT(*) FROM contract WHERE room_id = ? AND ctr_status = '0'");
+    $activeContractStmt->execute([$room_id]);
+    $activeContractCount = (int)$activeContractStmt->fetchColumn();
+
+    $duplicateTenantStmt = $pdo->prepare("SELECT COUNT(*) FROM booking WHERE tnt_id = ? AND bkg_status IN ('1','2')");
+    $duplicateTenantStmt->execute([$tnt_id]);
+    $duplicateTenantCount = (int)$duplicateTenantStmt->fetchColumn();
+
+    if ($activeBookingCount > 0 || $activeContractCount > 0) {
+        $msg = 'ห้องพักนี้ถูกจองหรือมีสัญญาเช่าอยู่แล้ว';
         if ($isAjax) {
             header('Content-Type: application/json');
             echo json_encode(['success' => false, 'error' => $msg]);
@@ -67,7 +79,19 @@ try {
         header('Location: ../Reports/manage_booking.php');
         exit;
     }
-    
+
+    if ($duplicateTenantCount > 0) {
+        $msg = 'ผู้เช่านี้มีการจองหรือเข้าพักอยู่แล้ว';
+        if ($isAjax) {
+            header('Content-Type: application/json');
+            echo json_encode(['success' => false, 'error' => $msg]);
+            exit;
+        }
+        $_SESSION['error'] = $msg;
+        header('Location: ../Reports/manage_booking.php');
+        exit;
+    }
+
     // เริ่ม transaction
     $pdo->beginTransaction();
     
