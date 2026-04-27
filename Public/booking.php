@@ -3454,6 +3454,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         // Load saved step on page load
         window.addEventListener('load', function() {
+            // Auto-close any apple alerts when entering the booking page
+            closeAppleAlert();
+            
             const savedStep = loadSavedStep();
             if (savedStep > 1) {
                 // Only restore if it's a valid step (1 or 2)
