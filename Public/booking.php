@@ -3587,13 +3587,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             currentStep = 2;
             saveCurrentStep(2);
             
-            // Close modal overlay after showing step 2
-            closeMobileForm();
-            
-            // Scroll to top
-            setTimeout(() => {
-                document.querySelector('.booking-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }, 50);
+            // Scroll to top of modal
+            const mobileFormBody = document.querySelector('.mobile-form-body');
+            if (mobileFormBody) {
+                mobileFormBody.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
         }
         
         function openMobileForm() {
