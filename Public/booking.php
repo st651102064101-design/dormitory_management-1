@@ -2624,7 +2624,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                     
-                    <button type="button" class="btn-next" onclick="goToStep(2)" style="width: 100%; justify-content: center; margin-top: 20px;">
+                    <button type="button" class="btn-next" onclick="goToMobileStep2()" style="width: 100%; justify-content: center; margin-top: 20px;">
                         <span>ถัดไป: ชำระเงิน</span>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="9 18 15 12 9 6"></polyline>
@@ -3515,6 +3515,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             document.getElementById('mobileSummaryStart').textContent = startDisplay;
             document.getElementById('mobileSummaryEnd').textContent = endDisplay;
+            
+            // Set the actual form fields for validation
+            const pad = (n) => String(n).padStart(2, '0');
+            document.getElementById('ctrStart').value = `${startDate.getFullYear()}-${pad(startDate.getMonth() + 1)}-${pad(startDay)}`;
+            document.getElementById('ctrEnd').value = `${endDate.getFullYear()}-${pad(endDate.getMonth() + 1)}-${pad(endDate.getDate())}`;
+        }
+        
+        function goToMobileStep2() {
+            const nameInput = document.getElementById('mobileNameInput');
+            const phoneInput = document.getElementById('mobilePhoneInput');
+            const name = nameInput.value.trim();
+            const phone = phoneInput.value.trim();
+            
+            // Validate name
+            if (!name || name.length < 4) {
+                alert('กรุณากรอกชื่อ-นามสกุลอย่างน้อย 4 ตัวอักษร');
+                nameInput.focus();
+                return;
+            }
+            
+            // Validate phone
+            if (!phone || phone.length !== 10) {
+                alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก');
+                phoneInput.focus();
+                return;
+            }
+            
+            if (!/^0[0-9]{9}$/.test(phone)) {
+                alert('เบอร์โทรศัพท์ต้องขึ้นต้นด้วย 0 และมี 10 หลัก');
+                phoneInput.focus();
+                return;
+            }
+            
+            // Sync mobile data to desktop form
+            document.querySelector('input[name="name"]').value = name;
+            document.querySelector('input[name="phone"]').value = phone;
+            if (selectedRoomData) {
+                document.querySelector(`input[name="room_id"][value="${selectedRoomData.id}"]`).checked = true;
+            }
+            
+            // Update contract dates in hidden fields
+            updateMobileContractDates();
+            
+            // Close mobile form and navigate to step 2
+            closeMobileForm();
+            goToStep(2);
         }
         
         function openMobileForm() {
