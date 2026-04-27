@@ -2624,12 +2624,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
                     
-                    <button type="button" class="submit-btn" id="mobileSubmitBtn" style="margin-top: 20px;">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
-                            <polyline points="22 4 12 14.01 9 11.01"/>
+                    <button type="button" class="btn-next" onclick="goToStep(2)">
+                        <span>ถัดไป: ชำระเงิน</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="9 18 15 12 9 6"></polyline>
                         </svg>
-                        ยืนยันการจอง
                     </button>
                 </div>
             </div>
