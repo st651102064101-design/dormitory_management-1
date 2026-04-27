@@ -2728,7 +2728,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     
                     <!-- Submit Button -->
-                    <button type="button" class="submit-btn" id="mobileSubmitBtn" onclick="submitMobileBooking()" style="width: 100%; margin-top: 20px;">
+                    <button type="button" class="submit-btn" id="mobileSubmitBtn" onclick="submitMobileBooking()" style="width: 100%; margin-top: 20px; opacity: 0.5; cursor: not-allowed;" disabled>
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
                             <polyline points="22 4 12 14.01 9 11.01"/>
@@ -3215,6 +3215,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 
                 mobilePaymentUploadZone.style.borderColor = '#22c55e';
                 mobilePaymentUploadZone.style.background = 'rgba(34, 197, 94, 0.05)';
+                
+                // Update submit button state
+                updateMobileSubmitButtonState();
             };
             reader.readAsDataURL(file);
         }
@@ -3754,12 +3757,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             const paymentSheet = document.getElementById('mobilePaymentSheet');
             if (paymentSheet) {
                 paymentSheet.style.display = 'block';
+                // Reset file input when opening payment sheet
+                const fileInput = document.getElementById('mobilePayProofInput');
+                if (fileInput) {
+                    fileInput.value = '';
+                }
+                document.getElementById('mobileUploadPreview').style.display = 'none';
+                document.getElementById('mobileUploadPlaceholder').style.display = 'block';
+                
                 // Update room info in payment sheet
                 if (selectedRoomData) {
                     document.getElementById('mobilePaymentRoom').textContent = 'ห้อง ' + selectedRoomData.number;
                     document.getElementById('mobilePaymentAmount').textContent = '฿' + parseInt(selectedRoomData.deposit || 2000).toLocaleString();
                     document.getElementById('mobilePaymentDisplay').textContent = '฿' + parseInt(selectedRoomData.deposit || 2000).toLocaleString();
                 }
+                // Update submit button state
+                updateMobileSubmitButtonState();
             }
         }
         
@@ -3769,6 +3782,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (paymentSheet) {
                 paymentSheet.style.display = 'none';
             }
+            
+            // Reset file input
+            const fileInput = document.getElementById('mobilePayProofInput');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            document.getElementById('mobileUploadPreview').style.display = 'none';
+            document.getElementById('mobileUploadPlaceholder').style.display = 'block';
             
             // Show Step 1 form sheet
             const formSheet = document.querySelector('.mobile-form-sheet');
@@ -3781,9 +3802,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             document.getElementById('mobilePayProofInput').value = '';
             document.getElementById('mobileUploadPreview').style.display = 'none';
             document.getElementById('mobileUploadPlaceholder').style.display = 'block';
+            updateMobileSubmitButtonState();
+        }
+        
+        function updateMobileSubmitButtonState() {
+            const fileInput = document.getElementById('mobilePayProofInput');
+            const submitBtn = document.getElementById('mobileSubmitBtn');
+            
+            if (!submitBtn) return;
+            
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                submitBtn.disabled = false;
+                submitBtn.style.opacity = '1';
+                submitBtn.style.cursor = 'pointer';
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.style.opacity = '0.5';
+                submitBtn.style.cursor = 'not-allowed';
+            }
         }
         
         function submitMobileBooking() {
+            const submitBtn = document.getElementById('mobileSubmitBtn');
+            if (submitBtn && submitBtn.disabled) {
+                return;
+            }
+            
             const fileInput = document.getElementById('mobilePayProofInput');
             if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
                 alert('กรุณาอัพโหลดสลิปการโอนเงิน');
