@@ -3563,40 +3563,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Update contract dates in hidden fields
             updateMobileContractDates();
             
-            // Close mobile form
+            // Show step 2 content BEFORE closing modal
+            document.querySelectorAll('.step-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            const step2 = document.querySelector('.step-content[data-step="2"]');
+            if (step2) {
+                step2.classList.add('active');
+            }
+            
+            // Update step indicators
+            document.querySelectorAll('.form-step').forEach(step => {
+                const stepNum = parseInt(step.dataset.step);
+                step.classList.remove('active', 'completed');
+                
+                if (stepNum === 2) {
+                    step.classList.add('active');
+                } else if (stepNum < 2) {
+                    step.classList.add('completed');
+                }
+            });
+            
+            currentStep = 2;
+            saveCurrentStep(2);
+            
+            // Close modal overlay after showing step 2
             closeMobileForm();
             
-            // Navigate to step 2 with a small delay to ensure overlay is closed
+            // Scroll to top
             setTimeout(() => {
-                // Force show step 2 content
-                document.querySelectorAll('.step-content').forEach(content => {
-                    content.classList.remove('active');
-                });
-                const step2 = document.querySelector('.step-content[data-step="2"]');
-                if (step2) {
-                    step2.classList.add('active');
-                }
-                
-                // Update step indicators
-                document.querySelectorAll('.form-step').forEach(step => {
-                    const stepNum = parseInt(step.dataset.step);
-                    step.classList.remove('active', 'completed');
-                    
-                    if (stepNum === 2) {
-                        step.classList.add('active');
-                    } else if (stepNum < 2) {
-                        step.classList.add('completed');
-                    }
-                });
-                
-                currentStep = 2;
-                saveCurrentStep(2);
-                
-                // Scroll to top
-                setTimeout(() => {
-                    document.querySelector('.booking-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }, 50);
-            }, 100);
+                document.querySelector('.booking-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
         }
         
         function openMobileForm() {
