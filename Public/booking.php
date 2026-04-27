@@ -3298,19 +3298,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return false;
             }
             
-            // Check tenant name
-            const tenantName = document.getElementById('tenantNameInput')?.value.trim();
-            if (!tenantName) {
-                alert('กรุณากรอกชื่อ-นามสกุล');
-                document.getElementById('tenantNameInput')?.focus();
+            // Check tenant name (support both desktop and mobile versions)
+            const desktopNameInput = document.getElementById('tenantNameInput');
+            const mobileNameInput = document.getElementById('mobileNameInput');
+            const tenantName = (desktopNameInput?.value || mobileNameInput?.value || '').trim();
+            
+            if (!tenantName || tenantName.length < 4) {
+                alert('กรุณากรอกชื่อ-นามสกุลอย่างน้อย 4 ตัวอักษร');
+                desktopNameInput?.focus();
+                mobileNameInput?.focus();
                 return false;
             }
             
-            // Check phone
-            const phone = document.querySelector('input[name="phone"]')?.value.trim();
+            // Check phone (support both desktop and mobile versions)
+            const desktopPhoneInput = document.querySelector('input[name="phone"]');
+            const mobilePhoneInput = document.getElementById('mobilePhoneInput');
+            const phone = (desktopPhoneInput?.value || mobilePhoneInput?.value || '').trim();
+            
             if (!phone || phone.length !== 10) {
                 alert('กรุณากรอกเบอร์โทรศัพท์ 10 หลัก');
-                document.querySelector('input[name="phone"]')?.focus();
+                desktopPhoneInput?.focus();
+                mobilePhoneInput?.focus();
                 return false;
             }
             
@@ -3384,7 +3392,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return false;
             }
             
-            if (!/^[\u0E00-\u0E7Fa-zA-Z\s]+$/.test(value)) {
+            if (!/^[a-zA-Z\u0E00-\u0E7F\s]+$/.test(value)) {
                 input.classList.add('invalid');
                 input.classList.remove('valid');
                 error.textContent = 'กรุณากรอกชื่อเป็นภาษาไทยหรืออังกฤษเท่านั้น';
@@ -3555,7 +3563,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 return;
             }
             
-            if (!/^[\u0E00-\u0E7Fa-zA-Z\s]+$/.test(name)) {
+            if (!/^[a-zA-Z\u0E00-\u0E7F\s]+$/.test(name)) {
                 nameInput.classList.add('invalid');
                 document.getElementById('mobileNameError').textContent = 'กรุณากรอกชื่อเป็นภาษาไทยหรืออังกฤษเท่านั้น';
                 document.getElementById('mobileNameError').classList.add('show');
