@@ -3233,6 +3233,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
             
+            // Ensure body is scrollable
+            document.body.style.overflow = '';
+            
             // Hide all steps
             document.querySelectorAll('.step-content').forEach(content => {
                 content.classList.remove('active');
@@ -3259,8 +3262,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             currentStep = stepNumber;
             saveCurrentStep(stepNumber);
             
-            // Scroll to top of form
-            document.querySelector('.booking-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Scroll to top of form with a small delay to ensure DOM is updated
+            setTimeout(() => {
+                document.querySelector('.booking-box')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }, 50);
         }
         
         // Load saved step on page load
@@ -3558,9 +3563,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Update contract dates in hidden fields
             updateMobileContractDates();
             
-            // Close mobile form and navigate to step 2
+            // Close mobile form
             closeMobileForm();
-            goToStep(2);
+            
+            // Navigate to step 2 with a small delay to ensure overlay is closed
+            setTimeout(() => {
+                goToStep(2);
+            }, 100);
         }
         
         function openMobileForm() {
