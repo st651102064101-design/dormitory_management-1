@@ -2632,6 +2632,119 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </button>
                 </div>
             </div>
+            
+            <!-- Mobile Payment Sheet (Step 2) -->
+            <div class="mobile-form-sheet" id="mobilePaymentSheet" style="display: none;">
+                <div class="mobile-form-header">
+                    <h3 class="mobile-form-title">ชำระค่ามัดจำ</h3>
+                    <button type="button" class="mobile-form-close" onclick="closeMobilePaymentForm()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="mobile-form-body">
+                    <div class="mobile-room-summary">
+                        <span class="room-name" id="mobilePaymentRoom">ห้อง 2</span>
+                        <span class="room-price" id="mobilePaymentAmount">฿2,000</span>
+                    </div>
+                    
+                    <!-- Payment Info -->
+                    <div style="display: grid; grid-template-columns: 1fr; gap: 12px; margin-bottom: 16px; padding: 12px; background: rgba(245, 158, 11, 0.08); border-radius: 10px; border: 1px solid rgba(245, 158, 11, 0.2);">
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px;">ค่ามัดจำ</div>
+                            <div id="mobilePaymentDisplay" style="font-size: 1.1rem; font-weight: 700; color: #d97706;">฿2,000</div>
+                        </div>
+                        <?php if (!empty($bankAccountNumber)): ?>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 4px;">เลขบัญชี</div>
+                            <div style="font-size: 0.95rem; font-weight: 600;">
+                                <?php echo htmlspecialchars($bankAccountNumber); ?>
+                                <?php if (!empty($bankName)): ?>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 2px;">
+                                    <?php echo htmlspecialchars($bankName); ?>
+                                </div>
+                                <?php endif; ?>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+                    </div>
+                    
+                    <?php if (!empty($promptpayNumber)): ?>
+                    <!-- PromptPay QR Code -->
+                    <div style="text-align: center; margin-bottom: 16px; padding: 12px; background: #f9fafb; border-radius: 10px;">
+                        <div style="background: white; padding: 12px; border-radius: 8px; display: inline-block;">
+                            <img src="https://promptpay.io/<?php echo urlencode($promptpayNumber); ?>/2000.png" 
+                                 alt="PromptPay QR Code" 
+                                 style="width: 160px; height: auto; display: block;">
+                        </div>
+                        <div style="margin-top: 8px; font-size: 0.75rem; color: var(--text-secondary);">
+                            สแกน QR พร้อมเพย์: <span style="color: #d97706; font-weight: 600;"><?php echo htmlspecialchars($promptpayNumber); ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <!-- Upload Slip -->
+                    <div class="form-group" style="margin-bottom: 0;">
+                        <label class="form-label" style="color: #b45309; margin-bottom: 8px;">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: inline-block; vertical-align: middle; margin-right: 6px;">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                <polyline points="17 8 12 3 7 8"/>
+                                <line x1="12" y1="3" x2="12" y2="15"/>
+                            </svg>
+                            อัพโหลดสลิป <span style="color: var(--accent-error);">*</span>
+                        </label>
+                        <div class="upload-zone upload-zone-inner" id="mobilePaymentUploadZone">
+                            <input type="file" name="mobile_pay_proof" id="mobilePayProofInput" accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf" style="display: none;">
+                            <div id="mobileUploadPlaceholder">
+                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="1.5" style="margin-bottom: 10px;">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+                                    <polyline points="17 8 12 3 7 8"/>
+                                    <line x1="12" y1="3" x2="12" y2="15"/>
+                                </svg>
+                                <p class="upload-placeholder-text">คลิกเพื่อเลือกไฟล์</p>
+                                <p class="upload-placeholder-sub">รองรับ JPG, PNG, PDF (ไม่เกิน 5MB)</p>
+                            </div>
+                            <div id="mobileUploadPreview" style="display: none;">
+                                <div style="display: flex; align-items: center; justify-content: center; gap: 12px;">
+                                    <img id="mobileSlipPreviewImg" src="" style="max-width: 100px; max-height: 100px; border-radius: 8px; display: none;">
+                                    <div id="mobilePdfPreview" style="display: none; background: rgba(239, 68, 68, 0.1); padding: 15px 20px; border-radius: 8px;">
+                                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                                            <polyline points="14 2 14 8 20 8"/>
+                                        </svg>
+                                        <div style="color: #ef4444; font-size: 0.75rem; margin-top: 4px;">PDF</div>
+                                    </div>
+                                </div>
+                                <div style="margin-top: 10px;">
+                                    <span id="mobileUploadFileName" style="color: var(--accent-success); font-size: 0.85rem;"></span>
+                                    <button type="button" onclick="removeMobilePaymentFile()" style="background: none; border: none; color: var(--accent-error); cursor: pointer; margin-left: 10px; font-size: 0.8rem;">ลบ</button>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="upload-hint">
+                            💡 กรุณาอัพโหลดสลิปการโอนเงินเพื่อยืนยันการจอง
+                        </p>
+                    </div>
+                    
+                    <!-- Submit Button -->
+                    <button type="button" class="submit-btn" id="mobileSubmitBtn" onclick="submitMobileBooking()" style="width: 100%; margin-top: 20px;">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/>
+                            <polyline points="22 4 12 14.01 9 11.01"/>
+                        </svg>
+                        ยืนยันการจอง
+                    </button>
+                    
+                    <!-- Back Button -->
+                    <button type="button" class="btn-prev" onclick="closeMobilePaymentForm()" style="width: 100%; margin-top: 10px; justify-content: center;">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="15 18 9 12 15 6"/>
+                        </svg>
+                        <span>กลับ</span>
+                    </button>
+                </div>
+            </div>
         </div>
         <?php endif; ?>
     </div>
@@ -3036,6 +3149,74 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             
             // Initialize button state
             updateSubmitButtonState();
+        }
+        
+        // Mobile Payment Upload Zone
+        const mobilePaymentUploadZone = document.getElementById('mobilePaymentUploadZone');
+        const mobilePayProofInput = document.getElementById('mobilePayProofInput');
+        
+        if (mobilePaymentUploadZone && mobilePayProofInput) {
+            // Click to upload
+            mobilePaymentUploadZone.addEventListener('click', () => mobilePayProofInput.click());
+            
+            // Drag and drop
+            mobilePaymentUploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                mobilePaymentUploadZone.style.borderColor = '#f59e0b';
+                mobilePaymentUploadZone.style.background = 'rgba(245, 158, 11, 0.1)';
+            });
+            
+            mobilePaymentUploadZone.addEventListener('dragleave', () => {
+                mobilePaymentUploadZone.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                mobilePaymentUploadZone.style.background = 'rgba(0,0,0,0.2)';
+            });
+            
+            mobilePaymentUploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                mobilePaymentUploadZone.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                mobilePaymentUploadZone.style.background = 'rgba(0,0,0,0.2)';
+                
+                const files = e.dataTransfer.files;
+                if (files.length > 0) {
+                    handleMobilePaymentFile(files[0]);
+                }
+            });
+            
+            // File input change
+            mobilePayProofInput.addEventListener('change', (e) => {
+                if (e.target.files.length > 0) {
+                    handleMobilePaymentFile(e.target.files[0]);
+                }
+            });
+        }
+        
+        function handleMobilePaymentFile(file) {
+            if (!validatePaymentFile(file)) {
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('mobileUploadPreview');
+                const placeholder = document.getElementById('mobileUploadPlaceholder');
+                
+                if (file.type === 'application/pdf') {
+                    document.getElementById('mobileSlipPreviewImg').style.display = 'none';
+                    document.getElementById('mobilePdfPreview').style.display = 'block';
+                } else {
+                    document.getElementById('mobileSlipPreviewImg').src = e.target.result;
+                    document.getElementById('mobileSlipPreviewImg').style.display = 'block';
+                    document.getElementById('mobilePdfPreview').style.display = 'none';
+                }
+                
+                document.getElementById('mobileUploadFileName').textContent = '✓ ' + file.name;
+                placeholder.style.display = 'none';
+                preview.style.display = 'block';
+                
+                mobilePaymentUploadZone.style.borderColor = '#22c55e';
+                mobilePaymentUploadZone.style.background = 'rgba(34, 197, 94, 0.05)';
+            };
+            reader.readAsDataURL(file);
         }
         
         function validatePaymentFile(file) {
@@ -3563,44 +3744,65 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Update contract dates in hidden fields
             updateMobileContractDates();
             
-            // Show step 2 content BEFORE closing modal
-            document.querySelectorAll('.step-content').forEach(content => {
-                content.classList.remove('active');
-            });
-            const step2 = document.querySelector('.step-content[data-step="2"]');
-            if (step2) {
-                step2.classList.add('active');
+            // Hide Step 1 form sheet
+            const formSheet = document.querySelector('.mobile-form-sheet');
+            if (formSheet) {
+                formSheet.style.display = 'none';
             }
             
-            // Update step indicators
-            document.querySelectorAll('.form-step').forEach(step => {
-                const stepNum = parseInt(step.dataset.step);
-                step.classList.remove('active', 'completed');
+            // Show Step 2 payment sheet
+            const paymentSheet = document.getElementById('mobilePaymentSheet');
+            if (paymentSheet) {
+                paymentSheet.style.display = 'block';
+                // Update room info in payment sheet
+                if (selectedRoomData) {
+                    document.getElementById('mobilePaymentRoom').textContent = 'ห้อง ' + selectedRoomData.number;
+                    document.getElementById('mobilePaymentAmount').textContent = '฿' + parseInt(selectedRoomData.deposit || 2000).toLocaleString();
+                    document.getElementById('mobilePaymentDisplay').textContent = '฿' + parseInt(selectedRoomData.deposit || 2000).toLocaleString();
+                }
+            }
+        }
+        
+        function closeMobilePaymentForm() {
+            // Hide payment sheet
+            const paymentSheet = document.getElementById('mobilePaymentSheet');
+            if (paymentSheet) {
+                paymentSheet.style.display = 'none';
+            }
+            
+            // Show Step 1 form sheet
+            const formSheet = document.querySelector('.mobile-form-sheet');
+            if (formSheet) {
+                formSheet.style.display = 'block';
+            }
+        }
+        
+        function removeMobilePaymentFile() {
+            document.getElementById('mobilePayProofInput').value = '';
+            document.getElementById('mobileUploadPreview').style.display = 'none';
+            document.getElementById('mobileUploadPlaceholder').style.display = 'block';
+        }
+        
+        function submitMobileBooking() {
+            const fileInput = document.getElementById('mobilePayProofInput');
+            if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+                alert('กรุณาอัพโหลดสลิปการโอนเงิน');
+                return;
+            }
+            
+            // Copy file to main form
+            const mainFileInput = document.getElementById('payProofInput');
+            if (mainFileInput && fileInput.files.length > 0) {
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(fileInput.files[0]);
+                mainFileInput.files = dataTransfer.files;
                 
-                if (stepNum === 2) {
-                    step.classList.add('active');
-                } else if (stepNum < 2) {
-                    step.classList.add('completed');
-                }
-            });
+                // Trigger file input change event
+                mainFileInput.dispatchEvent(new Event('change'));
+            }
             
-            currentStep = 2;
-            saveCurrentStep(2);
-            
-            // Close mobile form modal
-            closeMobileForm();
-            
-            // Reset body scroll and scroll to Step 2
-            document.body.style.overflow = '';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-            
-            // Scroll to payment section after a delay
-            setTimeout(() => {
-                const bookingBox = document.querySelector('.booking-box');
-                if (bookingBox) {
-                    bookingBox.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }, 300);
+            // Submit main form
+            document.querySelector('form')?.submit();
         }
         
         function openMobileForm() {
