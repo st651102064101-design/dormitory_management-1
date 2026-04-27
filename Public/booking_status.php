@@ -319,8 +319,7 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                         COALESCE(tw.completed, 0) as workflow_completed,
                         COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
                         (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
-                        (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature,
-                        
+                        (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
                     FROM tenant t
                     LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                     LEFT JOIN room r ON b.room_id = r.room_id
@@ -344,8 +343,7 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                         COALESCE(tw.completed, 0) as workflow_completed,
                         COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
                         (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
-                        (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature,
-                        
+                        (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
                     FROM tenant t
                     LEFT JOIN booking b ON t.tnt_id = b.tnt_id AND b.bkg_status IN ('1', '2')
                     LEFT JOIN room r ON b.room_id = r.room_id
