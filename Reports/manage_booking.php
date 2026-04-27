@@ -2098,7 +2098,7 @@ try {
         height: 100%; 
         object-fit: cover; 
       }
-      .room-image-container img { width: 100%; height: 100%; object-fit: cover; }
+      .room-image-container img { width: 100%; height: 100%; object-fit: cover; -webkit-user-drag: none; -khtml-user-drag: none; -moz-user-drag: none; -o-user-drag: none; user-select: none; -webkit-touch-callout: none; pointer-events: none; }
       .room-image-placeholder { display: grid; place-items: center; color: rgba(255,255,255,0.6); gap: 0.25rem; text-align: center; width: 100%; height: 100%; }
       .room-image-placeholder svg { width: 48px; height: 48px; opacity: 0.7; }
       .room-image-placeholder span { font-size: 0.7rem; }

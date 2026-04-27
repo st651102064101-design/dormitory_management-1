@@ -1475,6 +1475,13 @@ foreach ($availableMonths as $monthKey) {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            -webkit-user-drag: none;
+            -khtml-user-drag: none;
+            -moz-user-drag: none;
+            -o-user-drag: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            pointer-events: none;
         }
         
         /* Gradient overlay for text */
