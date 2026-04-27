@@ -1129,7 +1129,6 @@ if ($currentStatus === '1') {
             <!-- Alert สำหรับเตือนให้เซ็นสัญญา (แสดงเมื่อ step >= 4 คือสร้างสัญญาเสร็จแล้ว และยังไม่มีลายเซ็น) -->
             <?php 
             $hasSignature = !empty($bookingInfo['has_signature']) && intval($bookingInfo['has_signature']) > 0;
-                        (SELECT bp_proof FROM booking_payment WHERE bkg_id = b.bkg_id ORDER BY bp_id DESC LIMIT 1) as payment_proof,
             $needsSignature = $currentStep >= 4 && !empty($bookingInfo['access_token']) && $expStatus === '1' && !$hasSignature;
             if ($needsSignature): 
             ?>
