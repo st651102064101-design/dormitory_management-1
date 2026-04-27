@@ -1234,6 +1234,20 @@ if ($currentStatus === '1') {
                 <?php endif; ?>
             </div>
             <?php endif; ?>
+            
+            <!-- Payment Proof Display -->
+            <?php if (!empty($bookingInfo['payment_proof'])): ?>
+            <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
+                <div style="font-weight: 600; margin-bottom: 12px; color: var(--text-muted);">หลักฐานการชำระเงิน</div>
+                <div style="background: rgba(34, 197, 94, 0.08); border: 1px solid rgba(34, 197, 94, 0.3); border-radius: 10px; padding: 12px; text-align: center;">
+                    <img src="/dormitory_management/Public/Assets/Images/Payments/<?php echo htmlspecialchars($bookingInfo['payment_proof']); ?>" 
+                         alt="หลักฐานการชำระเงิน" 
+                         style="max-width: 100%; border-radius: 8px; border: 1px solid rgba(34, 197, 94, 0.5); max-height: 300px; object-fit: contain; cursor: pointer; transition: transform 0.2s;"
+                         onclick="this.style.transform = 'scale(1.05)'; setTimeout(() => this.style.transform = 'scale(1)', 200);"
+                         onerror="this.parentElement.innerHTML='<div style=\"color: var(--text-muted); padding: 20px;\">ไม่พบไฟล์สลิป</div>'">
+                </div>
+            </div>
+            <?php endif; ?>
         </div>
         
         <!-- Room Info -->
