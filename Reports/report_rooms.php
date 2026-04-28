@@ -24,11 +24,25 @@ $pdo->exec("
 
 // อัพเดทสถานะห้องให้ถูกต้อง
 $pdo->exec("UPDATE room SET room_status = '0'");
-// อัพเดทสถานะห้องเป็น "ไม่ว่าง" สำหรับห้องที่มีสัญญาใช้งานอยู่ หรือมีการจองที่ได้รับการยืนยัน
+// อัพเดทสถานะห้องเป็น "ไม่ว่าง" สำหรับห้องที่มีสัญญาใช้งานอยู่
+// หรือมีการจอง/เข้าพักที่ยังใช้งานอยู่โดยไม่มีสัญญาครอบคลุม
+// และห้องที่มีการแจ้งยกเลิกสัญญา (ctr_status = 2) ที่ยังไม่หมดระยะ
 $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (
     SELECT 1 FROM contract c WHERE c.room_id = room.room_id AND c.ctr_status = '0'
 ) OR EXISTS (
-    SELECT 1 FROM booking b WHERE b.room_id = room.room_id AND b.bkg_status = '1'
+    SELECT 1 FROM contract c WHERE c.room_id = room.room_id AND c.ctr_status = '2'
+      AND EXISTS (
+          SELECT 1 FROM termination tm WHERE tm.ctr_id = c.ctr_id AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())
+      )
+) OR EXISTS (
+    SELECT 1 FROM booking b
+    WHERE b.room_id = room.room_id
+      AND b.bkg_status IN ('1', '2')
+      AND NOT EXISTS (
+          SELECT 1 FROM contract c2
+          WHERE c2.room_id = b.room_id
+            AND c2.tnt_id = b.tnt_id
+      )
 )");
 
 // ดึงข้อมูลห้องพัก
