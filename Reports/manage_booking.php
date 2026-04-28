@@ -93,6 +93,9 @@ $fetchBookings = static function(PDO $pdo, string $orderBy, string $bookingFilte
     LEFT JOIN (
       SELECT c.room_id, c.tnt_id, MAX(c.ctr_id) AS ctr_id
       FROM contract c
+      LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+      WHERE c.ctr_status = '0'
+         OR (c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE()))
       GROUP BY c.room_id, c.tnt_id
     ) booking_ctr ON booking_ctr.room_id = b.room_id AND booking_ctr.tnt_id = b.tnt_id
     $whereSql
