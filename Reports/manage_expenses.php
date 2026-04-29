@@ -2171,7 +2171,6 @@ main > div:first-of-type,
     <div class="app-shell">
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main" style="display: flex; align-items: flex-start; justify-content: center; width: 100%;">
-        <script>var sb=document.querySelector(".app-sidebar");if(sb){sb.classList.add("collapsed");localStorage.setItem("sidebarCollapsed","true");}</script>
         <div style="flex: 1; max-width: 1280px; min-width: 0; padding: 0 1rem; padding: 0 1rem !important; box-sizing: border-box; margin: auto;">
           <?php 
             $pageTitle = 'จัดการค่าใช้จ่าย';
