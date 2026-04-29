@@ -54,6 +54,16 @@ try {
         exit;
     }
 
+    if (!empty($tnt_phone)) {
+        $stmtPhoneDup = $pdo->prepare('SELECT tnt_id FROM tenant WHERE tnt_name = ? AND tnt_phone = ? LIMIT 1');
+        $stmtPhoneDup->execute([$tnt_name, $tnt_phone]);
+        if ($stmtPhoneDup->fetchColumn()) {
+            $_SESSION['error'] = 'ผู้เช่านี้มีข้อมูลซ้ำในระบบแล้ว';
+            header('Location: ../Reports/manage_tenants.php');
+            exit;
+        }
+    }
+
     $stmtCheck = $pdo->prepare('SELECT COUNT(*) FROM tenant WHERE tnt_id = ?');
     $stmtCheck->execute([$tnt_id]);
     if ((int)$stmtCheck->fetchColumn() > 0) {

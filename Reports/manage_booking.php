@@ -142,13 +142,52 @@ $stmtAllTenants = $pdo->query("
 $allTenantsResult = $stmtAllTenants->fetch(PDO::FETCH_ASSOC);
 $totalTenants = (int)($allTenantsResult['total_tenants'] ?? 0);
 
+// ดึงรายการผู้เช่าที่กำลังมีการจองหรือเช่าพักอยู่เพื่อ disable ใน dropdown
+$stmtActiveTenants = $pdo->query("\n  SELECT DISTINCT tnt_id FROM (\n    SELECT tnt_id FROM booking WHERE bkg_status IN ('1','2')\n    UNION\n    SELECT c.tnt_id FROM contract c\n    LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id\n    WHERE c.ctr_status = '0'\n       OR (c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE()))\n  ) active_tenants\n");
+$activeTenantIds = $stmtActiveTenants->fetchAll(PDO::FETCH_COLUMN, 0);
+$activeTenantSet = array_fill_keys($activeTenantIds, true);
+
 // ดึงข้อมูลผู้เช่าที่เลือกได้ (ดึงทั้งหมดตามชื่อ)
 $stmtTenants = $pdo->query("
-  SELECT tnt_id, tnt_name, tnt_phone 
+  SELECT tnt_id, tnt_name, tnt_phone, tnt_status
   FROM tenant 
   ORDER BY tnt_name ASC
 ");
 $selectableTenants = $stmtTenants->fetchAll(PDO::FETCH_ASSOC);
+
+// Deduplicate tenant options by exact name + phone combination
+$uniqueTenants = [];
+$tenantGroupActive = [];
+foreach ($selectableTenants as $tenant) {
+    $tenantKey = trim((string)$tenant['tnt_name']) . '|' . trim((string)$tenant['tnt_phone']);
+    $isActive = isset($activeTenantSet[$tenant['tnt_id']]);
+
+    if ($tenantKey === '|') {
+        $tenant['disabled'] = $isActive;
+        $uniqueTenants[] = $tenant;
+        continue;
+    }
+
+    if (!isset($tenantGroupActive[$tenantKey])) {
+        $tenantGroupActive[$tenantKey] = false;
+    }
+    $tenantGroupActive[$tenantKey] = $tenantGroupActive[$tenantKey] || $isActive;
+
+    $existing = $uniqueTenants[$tenantKey] ?? null;
+    if ($existing === null || (int)($tenant['tnt_status'] ?? 0) > (int)($existing['tnt_status'] ?? 0)) {
+        $uniqueTenants[$tenantKey] = $tenant;
+    }
+}
+
+$selectableTenants = array_values($uniqueTenants);
+foreach ($selectableTenants as &$tenant) {
+    $tenantKey = trim((string)$tenant['tnt_name']) . '|' . trim((string)$tenant['tnt_phone']);
+    if ($tenantKey === '|') {
+        continue;
+    }
+    $tenant['disabled'] = !empty($tenantGroupActive[$tenantKey]);
+}
+unset($tenant);
 
 // ดึงข้อมูลการจองตาม filter ปัจจุบัน
 $bookings = $fetchBookings($pdo, $orderBy, $bookingFilterSql, $bookingFilterParams);
@@ -4607,7 +4646,7 @@ main > div:first-of-type,
             <select name="tnt_id" id="modal_tenant_id" class="tenant-select" size="8" required style="width: 100%; padding: 0.8rem 0.9rem; border-radius: 10px; font-size: 1rem; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
               <option value="">-- เลือกผู้เช่า --</option>
               <?php foreach($selectableTenants as $tenant): ?>
-                <option value="<?php echo $tenant['tnt_id']; ?>">
+                <option value="<?php echo $tenant['tnt_id']; ?>"<?php echo !empty($tenant['disabled']) ? ' disabled' : ''; ?>>
                   <?php echo htmlspecialchars($tenant['tnt_name']); ?> (<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '-'); ?>)
                 </option>
               <?php endforeach; ?>

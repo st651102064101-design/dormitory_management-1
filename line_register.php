@@ -61,6 +61,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' &&
     }
     
     try {
+        $stmtDuplicateTenant = $pdo->prepare('SELECT tnt_id FROM tenant WHERE tnt_name = ? AND tnt_phone = ? LIMIT 1');
+        $stmtDuplicateTenant->execute([$tntName, $tntPhone]);
+        if ($stmtDuplicateTenant->fetchColumn()) {
+            echo json_encode(['success' => false, 'error' => 'ผู้เช่านี้มีข้อมูลซ้ำในระบบแล้ว']);
+            exit;
+        }
+
         $tntId = generateTntId($pdo);
         
         $pdo->beginTransaction();
