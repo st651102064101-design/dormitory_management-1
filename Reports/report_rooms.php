@@ -28,11 +28,12 @@ $pdo->exec("UPDATE room SET room_status = '0'");
 // หรือมีการจอง/เข้าพักที่ยังใช้งานอยู่โดยไม่มีสัญญาครอบคลุม
 // และห้องที่มีการแจ้งยกเลิกสัญญา (ctr_status = 2) ที่ยังไม่หมดระยะ
 $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (
-    SELECT 1 FROM contract c WHERE c.room_id = room.room_id AND c.ctr_status = '0'
-) OR EXISTS (
-    SELECT 1 FROM contract c WHERE c.room_id = room.room_id AND c.ctr_status = '2'
-      AND EXISTS (
-          SELECT 1 FROM termination tm WHERE tm.ctr_id = c.ctr_id AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())
+    SELECT 1 FROM contract c
+    LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+    WHERE c.room_id = room.room_id
+      AND (
+        c.ctr_status = '0'
+        OR (c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE()))
       )
 ) OR EXISTS (
     SELECT 1 FROM booking b
