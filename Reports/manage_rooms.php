@@ -16,6 +16,7 @@ try {
   $pdo->exec("UPDATE room SET room_status = '0'");
   
   // NOTE: ห้องจะเป็น "ไม่ว่าง" (1) หากมีสัญญาเช่า active หรือมีการจองที่ยังไม่ได้ยกเลิก
+  // ข้ามการจองที่มีสัญญาเดิมสำหรับผู้เช่ารายนั้นในห้องเดียวกัน
   $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (
     SELECT 1 FROM contract c
     LEFT JOIN termination t ON t.ctr_id = c.ctr_id
@@ -27,6 +28,10 @@ try {
   ) OR EXISTS (
     SELECT 1 FROM booking b
     WHERE b.room_id = room.room_id AND b.bkg_status = '1'
+      AND NOT EXISTS (
+        SELECT 1 FROM contract c2
+        WHERE c2.room_id = b.room_id AND c2.tnt_id = b.tnt_id
+      )
   )");
 } catch (PDOException $e) {
   // ถ้าซิงก์ไม่สำเร็จ ให้ไปต่อแต่แสดงสถานะตามข้อมูลเดิม
