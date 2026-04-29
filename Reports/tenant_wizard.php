@@ -117,9 +117,14 @@ try {
         AND $latestBillPaidCondition
         AND $meterRecordedCondition
     ";
-    
-    // ดึงข้อมูลทั้งหมดมาไว้ก่อน แล้วค่อยให้ JS แยกแสดงผลที่หน้าจอ
-    $completionCondition = "";
+
+    if ($completedFilter === 1) {
+        // แสดงเฉพาะผู้เช่าที่ครบตามเงื่อนไข workflow แล้ว
+        $completionCondition = "AND tw.completed = 1";
+    } else {
+        // แสดงเฉพาะรายการที่ยังไม่ครบ 5 ขั้นตอน
+        $completionCondition = "AND NOT ($allStepsDoneCondition)";
+    }
     
     $sql = "
         SELECT
@@ -2406,7 +2411,9 @@ main > div:first-of-type,
                                     // Only go to step 4 if step 3 (contract) is actually completed
                                     $currentStep = max($currentStep, 4);
                                 }
-                                $isRowCompleted = $isBookingCancelled || (!$isCancelPending && $step4 && $meterBillDone && $firstBillPaid && $latestBillPaid);
+                                $isRowCompleted = $isBookingCancelled
+                                    || ((int)($tenant['completed'] ?? 0) === 1)
+                                    || (!$isCancelPending && $step4 && $meterBillDone && $firstBillPaid && $latestBillPaid);
                                 ?>
                                 <tr data-wiz-group="<?php echo $isRowCompleted ? 1 : 0; ?>"<?php if ($isCancelPending || $isBookingCancelled): ?> style="background:rgba(239,68,68,0.05)!important;border-left:3px solid rgba(239,68,68,0.45);"<?php endif; ?>>
                                     <td data-label="ผู้เช่า">
