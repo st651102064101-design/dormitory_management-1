@@ -430,7 +430,7 @@ try {
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.85);
+        background: rgba(255, 255, 255, 0.95);
         z-index: 9999;
         align-items: center;
         justify-content: center;
@@ -444,17 +444,17 @@ try {
         position: relative;
         max-width: 90vw;
         max-height: 90vh;
-        background: rgba(15, 23, 42, 0.95);
-        border-radius: 16px;
+        background: #ffffff;
+        border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 25px 60px rgba(15, 23, 42, 0.12);
+        border: 1px solid rgba(15, 23, 42, 0.08);
         animation: slideUp 0.3s ease;
       }
       .proof-modal-header {
         padding: 1.5rem;
-        background: rgba(255, 255, 255, 0.05);
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: #f8fafc;
+        border-bottom: 1px solid rgba(15, 23, 42, 0.08);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -462,17 +462,17 @@ try {
       .proof-modal-title {
         font-size: 1.2rem;
         font-weight: 600;
-        color: #f8fafc;
+        color: #0f172a;
         margin: 0;
       }
       .proof-modal-close {
         width: 36px;
         height: 36px;
         border: none;
-        background: rgba(255, 255, 255, 0.1);
-        color: #f8fafc;
+        background: rgba(15, 23, 42, 0.08);
+        color: #0f172a;
         font-size: 1.5rem;
-        border-radius: 8px;
+        border-radius: 10px;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -480,8 +480,8 @@ try {
         transition: all 0.2s;
       }
       .proof-modal-close:hover {
-        background: rgba(239, 68, 68, 0.2);
-        color: #ef4444;
+        background: rgba(15, 23, 42, 0.16);
+        color: #111827;
         transform: rotate(90deg);
       }
       .proof-modal-body {
@@ -491,12 +491,14 @@ try {
         justify-content: center;
         max-height: calc(90vh - 100px);
         overflow: auto;
+        background: #f8fafc;
       }
       .proof-modal-body img {
         max-width: 100%;
         max-height: calc(90vh - 120px);
         object-fit: contain;
-        border-radius: 8px;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.08);
       }
       @keyframes fadeIn {
         from { opacity: 0; }
