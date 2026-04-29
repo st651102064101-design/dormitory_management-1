@@ -52,6 +52,15 @@ try {
   $allRows = [];
 }
 
+// Normalize booking status for reporting: stale checked-in bookings where the tenant is no longer active
+foreach ($allRows as &$row) {
+  $row['effective_bkg_status'] = $row['bkg_status'];
+  if ($row['bkg_status'] === '2' && $row['tnt_status'] !== '1') {
+    $row['effective_bkg_status'] = '0';
+  }
+}
+unset($row);
+
 // Filter results based on selections
 $rows = [];
 foreach ($allRows as $row) {
@@ -65,7 +74,7 @@ foreach ($allRows as $row) {
   }
   
   if ($includeRow && !empty($selectedStatus)) {
-    if ((string)$row['bkg_status'] !== $selectedStatus) {
+    if ((string)$row['effective_bkg_status'] !== $selectedStatus) {
       $includeRow = false;
     }
   }
@@ -133,20 +142,29 @@ try {
 
 // คำนวณสถิติ
 $totalBookings = count($rows);
+$bookingCancelled = 0;
+$bookingConfirmed = 0;
+$bookingCompleted = 0;
+foreach ($rows as $row) {
+  switch ((string)$row['effective_bkg_status']) {
+    case '0':
+      $bookingCancelled++;
+      break;
+    case '1':
+      $bookingConfirmed++;
+      break;
+    case '2':
+      $bookingCompleted++;
+      break;
+  }
+}
+
+// แสดงจำนวนผู้ที่เข้าพักอยู่จริงตามสัญญาที่ยังใช้งานอยู่
 try {
-  // ยกเลิก
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = '0'");
-  $bookingCancelled = $stmt->fetch()['total'] ?? 0;
-  
-  // จองแล้ว
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = '1'");
-  $bookingConfirmed = $stmt->fetch()['total'] ?? 0;
-  
-  // เข้าพักแล้ว
-  $stmt = $pdo->query("SELECT COUNT(*) as total FROM booking WHERE bkg_status = '2'");
-  $bookingCompleted = $stmt->fetch()['total'] ?? 0;
+  $stmt = $pdo->query("SELECT COUNT(DISTINCT c.room_id) as total FROM contract c LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id WHERE c.ctr_status = '0' OR (c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE()))");
+  $bookingCompleted = $stmt->fetch()['total'] ?? $bookingCompleted;
 } catch (PDOException $e) {
-  $bookingCancelled = $bookingConfirmed = $bookingCompleted = 0;
+  error_log('Active stay count error: ' . $e->getMessage());
 }
 ?>
 <!DOCTYPE html>
@@ -288,23 +306,24 @@ try {
                     <!-- Card View -->
                     <div id="card-view" class="view-content grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         <?php foreach ($rows as $r): 
-                            $bgStatusIcon = match($r['bkg_status']) {
+                            $effectiveStatus = $r['effective_bkg_status'] ?? $r['bkg_status'];
+                            $bgStatusIcon = match($effectiveStatus) {
                                 '0' => 'bg-rose-100 text-rose-700',
                                 '1' => 'bg-blue-100 text-blue-700',
                                 '2' => 'bg-emerald-100 text-emerald-700',
                                 default => 'bg-amber-100 text-amber-700'
                             };
-                            $badgeStatus = match($r['bkg_status']) {
+                            $badgeStatus = match($effectiveStatus) {
                                 '0' => 'bg-rose-50 text-rose-600 border border-rose-200',
                                 '1' => 'bg-blue-50 text-blue-600 border border-blue-200',
                                 '2' => 'bg-emerald-50 text-emerald-600 border border-emerald-200',
                                 default => 'bg-amber-50 text-amber-600 border border-amber-200'
                             };
-                            $statusLabel = $statusLabels[$r['bkg_status']] ?? 'ไม่ทราบ';
+                            $statusLabel = $statusLabels[$effectiveStatus] ?? 'ไม่ทราบ';
                         ?>
                         <div class="saas-card no-hover flex flex-col h-full overflow-hidden group">
                             <!-- Top Decorator -->
-                            <div class="h-2 w-full <?php echo match($r['bkg_status']) { '0' => 'bg-rose-500', '1' => 'bg-blue-500', '2' => 'bg-emerald-500', default => 'bg-amber-500' }; ?>"></div>
+                            <div class="h-2 w-full <?php echo match($effectiveStatus) { '0' => 'bg-rose-500', '1' => 'bg-blue-500', '2' => 'bg-emerald-500', default => 'bg-amber-500' }; ?>"></div>
                             
                             <div class="p-6 flex-grow flex flex-col">
                                 <div class="flex justify-between items-start mb-6">
@@ -366,13 +385,14 @@ try {
                                 </thead>
                                 <tbody>
                                     <?php foreach ($rows as $r): 
-                                        $badgeStatus = match($r['bkg_status']) {
+                                        $effectiveStatus = $r['effective_bkg_status'] ?? $r['bkg_status'];
+                                        $badgeStatus = match($effectiveStatus) {
                                             '0' => 'bg-rose-50 text-rose-600 border border-rose-200',
                                             '1' => 'bg-blue-50 text-blue-600 border border-blue-200',
                                             '2' => 'bg-emerald-50 text-emerald-600 border border-emerald-200',
                                             default => 'bg-amber-50 text-amber-600 border border-amber-200'
                                         };
-                                        $statusLabel = $statusLabels[$r['bkg_status']] ?? 'ไม่ทราบ';
+                                        $statusLabel = $statusLabels[$effectiveStatus] ?? 'ไม่ทราบ';
                                         
                                         $tenantStatusLabels = [
                                             '0' => 'ย้ายออก', '1' => 'พักอยู่', '2' => 'รอซักพัก', '3' => 'จองห้อง', '4' => 'ยกเลิก'

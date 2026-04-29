@@ -49,20 +49,25 @@ $fetchBookings = static function(PDO $pdo, string $orderBy, string $bookingFilte
   if (strpos($extraFilter, 'b.bkg_id') !== false) {
     $whereSql = "WHERE $extraFilter";
   } else {
-      if (isset($bookingFilterParams[':bkg_status_filter']) && $bookingFilterParams[':bkg_status_filter'] === '1') {
-          // ถ้าตั้งใจกรองเพื่อ "รายการจองที่ต้องจัดการ" (สถานะ 1) ให้ซ่อนคนที่ทำสัญญาและเข้าพักไปแล้ว
-          $baseCondition = "COALESCE(b.bkg_status, '0') = '1' AND living_ctr.ctr_id IS NULL AND cancel_ctr.ctr_id IS NULL AND booking_ctr.ctr_id IS NULL";
-          $whereSql = "WHERE $baseCondition";
-          if ($extraFilter !== '') {
-             $whereSql .= " AND ($extraFilter)";
+      if (isset($bookingFilterParams[':bkg_status_filter'])) {
+          $filterValue = (string)$bookingFilterParams[':bkg_status_filter'];
+          if ($filterValue === '1') {
+              // เลือกเฉพาะจองแล้วที่ยังไม่เข้าพักหรือทำสัญญา
+              $baseCondition = "COALESCE(b.bkg_status, '0') = '1' AND living_ctr.ctr_id IS NULL AND cancel_ctr.ctr_id IS NULL AND booking_ctr.ctr_id IS NULL";
+          } elseif ($filterValue === '2') {
+              $baseCondition = "COALESCE(b.bkg_status, '0') = '2'";
+          } elseif ($filterValue === '0') {
+              $baseCondition = "COALESCE(b.bkg_status, '0') = '0'";
+          } else {
+              $baseCondition = "COALESCE(b.bkg_status, '0') = '1' AND living_ctr.ctr_id IS NULL AND cancel_ctr.ctr_id IS NULL AND booking_ctr.ctr_id IS NULL";
           }
       } else {
-          // ถ้ารายการจองทั้งหมด (หรือสถานะ 2) ให้แสดงการจองทั้งหมดที่ยังไม่ยกเลิก
-          $baseCondition = "COALESCE(b.bkg_status, '0') IN ('1','2')";
-          $whereSql = "WHERE $baseCondition";
-          if ($extraFilter !== '') {
-            $whereSql .= " AND ($extraFilter)";
-          }
+          // ค่าเริ่มต้น: แสดงเฉพาะการจองที่ยังไม่ได้เข้าพัก
+          $baseCondition = "COALESCE(b.bkg_status, '0') = '1' AND living_ctr.ctr_id IS NULL AND cancel_ctr.ctr_id IS NULL AND booking_ctr.ctr_id IS NULL";
+      }
+      $whereSql = "WHERE $baseCondition";
+      if ($extraFilter !== '') {
+        $whereSql .= " AND ($extraFilter)";
       }
     }
 
@@ -248,11 +253,13 @@ try {
   ");
   $stats['reserved'] = (int)$stmtStatsRes->fetchColumn();
 
-  // นับจำนวนเข้าพักอยู่ (สถานะ 2)
+  // นับจำนวนห้องที่กำลังเข้าพักจริงตามสัญญาที่ยังใช้งานอยู่
   $stmtStatsChk = $pdo->query("
-    SELECT COUNT(*) as cnt 
-    FROM booking b 
-    WHERE COALESCE(b.bkg_status, '0') = '2'
+    SELECT COUNT(DISTINCT c.room_id) as cnt
+    FROM contract c
+    LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+    WHERE c.ctr_status = '0'
+      OR (c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE()))
   ");
   $stats['checkedin'] = (int)$stmtStatsChk->fetchColumn();
 } catch (PDOException $e) {

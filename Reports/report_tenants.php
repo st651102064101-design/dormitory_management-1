@@ -46,7 +46,7 @@ try {
 // สถิติ
 $stats = [
     'total' => count($tenants),
-    'staying' => 0,        // tnt_status = 1
+    'staying' => 0,        // ผู้เช่าที่มีสัญญาใช้งานอยู่
     'waiting' => 0,        // tnt_status = 2
     'moved_out' => 0,      // tnt_status = 0
     'booking' => 0,        // tnt_status = 3
@@ -56,12 +56,22 @@ $stats = [
 
 foreach ($tenants as $t) {
     $status = (string)($t['tnt_status'] ?? '');
-    if ($status === '1') $stats['staying']++;
-    elseif ($status === '2') $stats['waiting']++;
+    if ($status === '2') $stats['waiting']++;
     elseif ($status === '0') $stats['moved_out']++;
     elseif ($status === '3') $stats['booking']++;
     elseif ($status === '4') $stats['cancel_booking']++;
     if (!empty($t['ctr_id'])) $stats['with_contract']++;
+}
+
+try {
+    $stmt = $pdo->query("SELECT COUNT(DISTINCT t.tnt_id) as total FROM tenant t
+        JOIN contract c ON t.tnt_id = c.tnt_id
+        LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+        WHERE c.ctr_status = '0'
+           OR (c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE()))");
+    $stats['staying'] = (int)$stmt->fetchColumn();
+} catch (PDOException $e) {
+    error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage());
 }
 
 $statusMap = [
