@@ -189,6 +189,18 @@ foreach ($selectableTenants as &$tenant) {
 }
 unset($tenant);
 
+$tenantGroups = [
+    'active' => [],
+    'inactive' => []
+];
+foreach ($selectableTenants as $tenant) {
+    if (!empty($tenant['disabled'])) {
+        $tenantGroups['active'][] = $tenant;
+    } else {
+        $tenantGroups['inactive'][] = $tenant;
+    }
+}
+
 // ดึงข้อมูลการจองตาม filter ปัจจุบัน
 $bookings = $fetchBookings($pdo, $orderBy, $bookingFilterSql, $bookingFilterParams);
 
@@ -2533,6 +2545,13 @@ try {
       .booking-form-group .tenant-select option:hover {
         background: rgba(96, 165, 250, 0.2);
       }
+      .booking-form-group .tenant-select option:disabled {
+        color: rgba(255, 255, 255, 0.45);
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .booking-form-group .tenant-select option:disabled:hover {
+        background: rgba(255, 255, 255, 0.05);
+      }
       .booking-form-group input[readonly] {
         background: rgba(255,255,255,0.05);
         border-color: rgba(255,255,255,0.12);
@@ -4645,11 +4664,24 @@ main > div:first-of-type,
             <label>ผู้เช่า: <span style="color: red;">*</span> <small style="font-weight: normal;">(ทั้งหมด <?php echo count($selectableTenants); ?> คน)</small></label>
             <select name="tnt_id" id="modal_tenant_id" class="tenant-select" size="8" required style="width: 100%; padding: 0.8rem 0.9rem; border-radius: 10px; font-size: 1rem; transition: border-color 0.2s ease, box-shadow 0.2s ease;">
               <option value="">-- เลือกผู้เช่า --</option>
-              <?php foreach($selectableTenants as $tenant): ?>
-                <option value="<?php echo $tenant['tnt_id']; ?>"<?php echo !empty($tenant['disabled']) ? ' disabled' : ''; ?>>
-                  <?php echo htmlspecialchars($tenant['tnt_name']); ?> (<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '-'); ?>)
-                </option>
-              <?php endforeach; ?>
+              <?php if (!empty($tenantGroups['inactive'])): ?>
+                <optgroup label="รายชื่อผู้เช่าที่ยังไม่ได้เข้าพัก">
+                  <?php foreach($tenantGroups['inactive'] as $tenant): ?>
+                    <option value="<?php echo $tenant['tnt_id']; ?>">
+                      <?php echo htmlspecialchars($tenant['tnt_name']); ?> (<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '-'); ?>)
+                    </option>
+                  <?php endforeach; ?>
+                </optgroup>
+              <?php endif; ?>
+              <?php if (!empty($tenantGroups['active'])): ?>
+                <optgroup label="รายชื่อผู้เช่าที่เข้าพักอยู่แล้ว">
+                  <?php foreach($tenantGroups['active'] as $tenant): ?>
+                    <option value="<?php echo $tenant['tnt_id']; ?>" disabled>
+                      <?php echo htmlspecialchars($tenant['tnt_name']); ?> (<?php echo htmlspecialchars($tenant['tnt_phone'] ?? '-'); ?>)
+                    </option>
+                  <?php endforeach; ?>
+                </optgroup>
+              <?php endif; ?>
             </select>
           </div>
           
@@ -5052,6 +5084,37 @@ main > div:first-of-type,
           };
           btn.addEventListener('click', btn._clickHandler);
         });
+
+        // Disabled tenant option alert
+        const tenantSelect = document.getElementById('modal_tenant_id');
+        if (tenantSelect) {
+          const disabledTenantAlert = () => {
+            const message = 'เลือกไม่ได้: ผู้เช่านี้เข้าพักอยู่แล้วหรือมีสัญญาเช่าที่ใช้งานอยู่';
+            if (typeof showErrorToast === 'function') {
+              showErrorToast(message);
+            } else if (typeof showToast === 'function') {
+              showToast('ผิดพลาด', message, 'error');
+            } else {
+              alert(message);
+            }
+          };
+
+          tenantSelect.addEventListener('pointerdown', (event) => {
+            const option = event.target.closest('option');
+            if (option && option.disabled) {
+              event.preventDefault();
+              disabledTenantAlert();
+            }
+          });
+
+          tenantSelect.addEventListener('mousedown', (event) => {
+            const option = event.target.closest('option');
+            if (option && option.disabled) {
+              event.preventDefault();
+              disabledTenantAlert();
+            }
+          });
+        }
       };
 
       // รอให้ DOM โหลดเสร็จ
