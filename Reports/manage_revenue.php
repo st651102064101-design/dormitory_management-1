@@ -362,7 +362,7 @@ main > div:first-of-type,
             <button id="toggle-view" aria-label="Toggle view" style="background:#eff6ff;border:1px solid #bfdbfe;color:#1e40af;padding:0.5rem 1rem;border-radius:6px;cursor:pointer;font-size:0.9rem;font-weight:600;transition:all 0.3s ease;display:inline-flex;align-items:center;gap:0.4rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>ตาราง</button>
           </div>
 
-          <section style="margin:1rem;padding:2rem;border-radius:16px;background:#ffffff;box-shadow:0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);color:#1e293b;border:1px solid #f1f5f9;">
+          <section style="margin:1rem 0 0;padding:2rem;border-radius:16px;background:#ffffff;box-shadow:0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.01);color:#1e293b;border:1px solid #f1f5f9;">
             <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1.5rem;flex-wrap:wrap;border-bottom:1px solid #e2e8f0;padding-bottom:1.25rem;">
               <div>
                 <h1 style="font-size:1.5rem;font-weight:700;color:#0f172a;letter-spacing:-0.025em;margin:0;">รายงานรายรับประจำเดือน</h1>
