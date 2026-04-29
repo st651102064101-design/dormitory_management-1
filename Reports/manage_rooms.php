@@ -16,17 +16,17 @@ try {
   $pdo->exec("UPDATE room SET room_status = '0'");
   
   // NOTE: ห้องจะเป็น "ไม่ว่าง" (1) เฉพาะเมื่อมีผู้เช่าเข้าพักแล้วเท่านั้น (checkin_record มีข้อมูล)
-  // ห้องยัง "ไม่ว่าง" หาก ctr_status='1' แต่ term_date ยังไม่ถึง (ผู้เช่ายังอยู่อาศัย)
+  // ห้องยัง "ไม่ว่าง" หาก ctr_status='2' และ term_date ยังไม่ถึง หรือ ctr_status='1' และ term_date ยังไม่ถึง
   // ปรับสถานะเป็น ไม่ว่าง (1) สำหรับห้องที่มีการเช็คอินแล้ว
   $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (
     SELECT 1 FROM checkin_record cr
     INNER JOIN contract c ON cr.ctr_id = c.ctr_id
+    LEFT JOIN termination t ON t.ctr_id = c.ctr_id
     WHERE c.room_id = room.room_id
     AND (
-        c.ctr_status IN ('0','2')
-        OR (c.ctr_status = '1' AND EXISTS (
-            SELECT 1 FROM termination t WHERE t.ctr_id = c.ctr_id AND t.term_date > CURDATE()
-        ))
+        c.ctr_status = '0'
+        OR (c.ctr_status = '2' AND (t.term_date IS NULL OR t.term_date >= CURDATE()))
+        OR (c.ctr_status = '1' AND t.term_date > CURDATE())
     )
   )");
 } catch (PDOException $e) {

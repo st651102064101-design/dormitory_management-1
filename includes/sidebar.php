@@ -4360,17 +4360,12 @@ async function handleGoogleUnlink(e) {
         } catch (err) {}
       }
 
-      // Auto-collapse sidebar loop
+      // On desktop, preserve the current sidebar open state.
+      // On mobile, close the sidebar after navigation.
       const sidebarVar = document.querySelector('.app-sidebar');
-      const toggleBtnVar = document.getElementById('sidebar-toggle');
-      if (sidebarVar) {
-        if (window.innerWidth <= 1024 && sidebarVar.classList.contains('mobile-open')) {
-          sidebarVar.classList.remove('mobile-open');
-          document.body.classList.remove('sidebar-open');
-        } else if (window.innerWidth > 1024 && !sidebarVar.classList.contains('collapsed')) {
-          sidebarVar.classList.add('collapsed');
-          try { localStorage.setItem('sidebarCollapsed', 'true'); } catch(err) {}
-        }
+      if (sidebarVar && window.innerWidth <= 1024 && sidebarVar.classList.contains('mobile-open')) {
+        sidebarVar.classList.remove('mobile-open');
+        document.body.classList.remove('sidebar-open');
       }
 
       // Allow default navigation if it's a real link, otherwise prevent default
@@ -4564,7 +4559,7 @@ async function handleGoogleUnlink(e) {
     }
   }, true);
   
-  // Desktop: auto-collapse sidebar when clicking ANY navigation link.
+  // Mobile: auto-close sidebar when clicking a navigation link; desktop should preserve open/collapse state.
   document.addEventListener('click', function(e) {
     const link = e.target.closest('.app-nav a');
     if (!link) return;
@@ -4576,17 +4571,9 @@ async function handleGoogleUnlink(e) {
     }
     
     const sidebar = document.querySelector('.app-sidebar');
-    if (sidebar && window.innerWidth > 1024) {
-      if (!sidebar.classList.contains('collapsed')) {
-        sidebar.style.setProperty('transition', 'none', 'important');
-        const elements = sidebar.querySelectorAll('*');
-        for (let i = 0; i < elements.length; i++) {
-          elements[i].style.setProperty('transition', 'none', 'important');
-        }
-        sidebar.classList.add('collapsed');
-        try { localStorage.setItem('sidebarCollapsed', 'true'); } catch(err) {}
-      }
-    } else if (sidebar && window.innerWidth <= 1024) {
+    if (!sidebar) return;
+
+    if (window.innerWidth <= 1024) {
       if (sidebar.classList.contains('mobile-open')) {
         sidebar.style.setProperty('transition', 'none', 'important');
         const elements = sidebar.querySelectorAll('*');
@@ -4595,7 +4582,6 @@ async function handleGoogleUnlink(e) {
         }
         sidebar.classList.remove('mobile-open');
         document.body.classList.remove('sidebar-open');
-        // Do not touch localStorage for desktop state
       }
     }
   }, true);
@@ -4667,19 +4653,11 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!sidebar) return;
 
     const isNavLink = e.target.closest('.app-nav a') !== null;
-    
+
     if (window.innerWidth <= 1024 && sidebar.classList.contains('mobile-open')) {
       if ((!sidebar.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) || isNavLink) {
         sidebar.classList.remove('mobile-open');
         document.body.classList.remove('sidebar-open');
-      }
-    } else if (window.innerWidth > 1024 && !sidebar.classList.contains('collapsed')) {
-      // On desktop, auto-collapse when clicking outside the sidebar OR clicking a nav link
-      if ((!sidebar.contains(e.target) && (!toggleBtn || !toggleBtn.contains(e.target))) || isNavLink) {
-        sidebar.classList.add('collapsed');
-        try {
-          localStorage.setItem('sidebarCollapsed', 'true');
-        } catch(err) {}
       }
     }
   });

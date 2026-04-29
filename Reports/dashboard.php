@@ -238,9 +238,6 @@ try {
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="/dormitory_management/Public/Assets/Javascript/chart.umd.min.js"></script>
     <script>
-      // บังคับให้หน้า Dashboard ย่อ Sidebar ทุกครั้งที่เริ่มเข้า
-      try { localStorage.setItem('sidebarCollapsed', 'true'); } catch(e){}
-
       document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.__initSidebarState === 'function' && !window.__sidebarStateInitialized) {
           window.__sidebarStateInitialized = true;

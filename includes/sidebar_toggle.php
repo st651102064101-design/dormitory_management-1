@@ -88,18 +88,42 @@
     var sidebar = document.querySelector('.app-sidebar');
     if (!sidebar) return;
 
-    // Desktop: Check saved state, default is expanded (not collapsed)
+    // Desktop: restore saved collapsed/open state explicitly
     if (!isMobile()) {
       var savedState = safeGet(STORAGE_KEY);
-      // Only collapse if explicitly saved as 'true'
       if (savedState === 'true') {
         sidebar.classList.add('collapsed');
+      } else if (savedState === 'false') {
+        sidebar.classList.remove('collapsed');
+      }
+
+      var btn = document.getElementById('sidebar-toggle');
+      if (btn) {
+        btn.setAttribute('aria-expanded', (!sidebar.classList.contains('collapsed')).toString());
       }
     }
 
     // Bind outside click handler
     document.addEventListener('click', window.__closeSidebarOnOutsideClick);
   };
+
+  // Keep desktop sidebar status synchronized on resize
+  window.addEventListener('resize', function() {
+    var sidebar = document.querySelector('.app-sidebar');
+    if (!sidebar) return;
+    if (!isMobile()) {
+      var savedState = safeGet(STORAGE_KEY);
+      if (savedState === 'true') {
+        sidebar.classList.add('collapsed');
+      } else if (savedState === 'false') {
+        sidebar.classList.remove('collapsed');
+      }
+      var btn = document.getElementById('sidebar-toggle');
+      if (btn) {
+        btn.setAttribute('aria-expanded', (!sidebar.classList.contains('collapsed')).toString());
+      }
+    }
+  });
 
   // Mark that toggle system is ready
   window.__sidebarToggleReady = true;
