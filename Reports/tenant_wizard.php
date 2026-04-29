@@ -434,6 +434,70 @@ try {
         }
     } catch (Exception $e) { /* non-critical */ }
 
+    // Count total wizard rows for button counts
+    $totalWizardCountStmt = $conn->query("
+        SELECT COUNT(*) as total_count
+        FROM booking b
+        INNER JOIN tenant t ON b.tnt_id = t.tnt_id
+        LEFT JOIN (
+            SELECT tw1.*
+            FROM tenant_workflow tw1
+            INNER JOIN (
+                SELECT bkg_id, MAX(id) AS latest_workflow_id
+                FROM tenant_workflow
+                GROUP BY bkg_id
+            ) tw2 ON tw1.id = tw2.latest_workflow_id
+        ) tw ON b.bkg_id = tw.bkg_id
+        LEFT JOIN contract c ON tw.ctr_id = c.ctr_id
+        LEFT JOIN (
+            SELECT active_contract.room_id, active_contract.ctr_id
+            FROM contract active_contract
+            WHERE active_contract.ctr_status = '0'
+              AND NOT EXISTS (
+                  SELECT 1
+                  FROM contract newer_contract
+                  WHERE newer_contract.room_id = active_contract.room_id
+                    AND newer_contract.ctr_status = '0'
+                    AND (
+                        COALESCE(newer_contract.ctr_end, '0000-00-00') > COALESCE(active_contract.ctr_end, '0000-00-00')
+                        OR (
+                            COALESCE(newer_contract.ctr_end, '0000-00-00') = COALESCE(active_contract.ctr_end, '0000-00-00')
+                            AND COALESCE(newer_contract.ctr_start, '0000-00-00') > COALESCE(active_contract.ctr_start, '0000-00-00')
+                        )
+                        OR (
+                            COALESCE(newer_contract.ctr_end, '0000-00-00') = COALESCE(active_contract.ctr_end, '0000-00-00')
+                            AND COALESCE(newer_contract.ctr_start, '0000-00-00') = COALESCE(active_contract.ctr_start, '0000-00-00')
+                            AND newer_contract.ctr_id > active_contract.ctr_id
+                        )
+                    )
+              )
+        ) current_room_contract ON current_room_contract.room_id = b.room_id
+        LEFT JOIN (
+            SELECT cr1.*
+            FROM checkin_record cr1
+            INNER JOIN (
+                SELECT ctr_id, MAX(checkin_id) AS latest_checkin_id
+                FROM checkin_record
+                GROUP BY ctr_id
+            ) cr2 ON cr1.checkin_id = cr2.latest_checkin_id
+        ) cr ON c.ctr_id = cr.ctr_id
+        WHERE (tw.id IS NULL OR tw.completed = 0 OR tw.completed = 1)
+            AND (c.ctr_id IS NULL OR c.ctr_status <> '1')
+            AND NOT EXISTS (
+                SELECT 1 FROM contract c3
+                LEFT JOIN termination t3 ON c3.ctr_id = t3.ctr_id
+                WHERE c3.room_id = b.room_id
+                  AND (
+                      (c3.ctr_status = '0' AND (c3.ctr_end IS NULL OR c3.ctr_end >= CURDATE()))
+                      OR (c3.ctr_status = '2' AND (t3.term_date IS NULL OR t3.term_date >= CURDATE()))
+                  )
+                  AND COALESCE(c3.tnt_id, '') <> COALESCE(b.tnt_id, '')
+            )
+            " . $bookingFilterCondition . "
+    ");
+    $totalWizardCountResult = $totalWizardCountStmt->fetch(PDO::FETCH_ASSOC);
+    $totalWizardCount = (int)($totalWizardCountResult['total_count'] ?? 0);
+
     // Count completed workflows for button visibility
     $completedCountStmt = $conn->query("
         SELECT COUNT(*) as completed_count
@@ -485,7 +549,9 @@ try {
           AND $meterRecordedCondition
     ");
     $completedCountResult = $completedCountStmt->fetch(PDO::FETCH_ASSOC);
-    $hasCompletedTenants = (int)($completedCountResult['completed_count'] ?? 0) > 0;
+    $completedCount = (int)($completedCountResult['completed_count'] ?? 0);
+    $pendingCount = max(0, $totalWizardCount - $completedCount);
+    $hasCompletedTenants = $completedCount > 0;
 } catch (Exception $e) {
     $wizardTenants = [];
     $hasCompletedTenants = false;
@@ -1984,8 +2050,8 @@ main > div:first-of-type,
 
                 <!-- Completion Status Filter Buttons -->
                 <div class="wiz-filter-bar">
-                    <button type="button" id="wizBtn0" onclick="wizFilter(0)" class="wiz-filter-btn pending-filter <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'active' : ''; ?>">⏳ ยังไม่ครบ 5 ขั้นตอน</button>
-                    <button type="button" id="wizBtn1" onclick="wizFilter(1)" class="wiz-filter-btn complete-filter <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'active' : ''; ?>">✅ ครบ 5 ขั้นตอนแล้ว</button>
+                    <button type="button" id="wizBtn0" onclick="wizFilter(0)" class="wiz-filter-btn pending-filter <?php echo (!isset($_GET['completed']) || $_GET['completed'] == 0) ? 'active' : ''; ?>">⏳ ยังไม่ครบ 5 ขั้นตอน (<?php echo number_format($pendingCount ?? 0); ?>)</button>
+                    <button type="button" id="wizBtn1" onclick="wizFilter(1)" class="wiz-filter-btn complete-filter <?php echo (isset($_GET['completed']) && $_GET['completed'] == 1) ? 'active' : ''; ?>">✅ ครบ 5 ขั้นตอนแล้ว (<?php echo number_format($completedCount ?? 0); ?>)</button>
                     <button type="button" id="wizRefreshBtn" onclick="refreshWizardTable()" class="wiz-filter-btn" style="margin-left: auto; background: rgba(59, 130, 246, 0.15); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3);" title="รีเฟรชข้อมูล">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 4px;"><path d="M1 4v6h6"></path><path d="M23 20v-6h-6"></path><path d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 0 1 3.51 15"></path></svg>
                         รีเฟรช

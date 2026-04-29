@@ -20,6 +20,8 @@ if (!in_array($statusFilter, ['all', '0', '1', '2'], true)) {
   $statusFilter = 'all';
 }
 
+$statusBaseUrl = 'manage_booking.php?' . ($todoOnly ? 'todo_only=1&' : '');
+
 switch ($sortBy) {
   case 'oldest':
     $orderBy = 'b.bkg_date ASC';
@@ -234,24 +236,49 @@ $stats = [
   'total' => $totalTenants,
   'reserved' => 0,
   'checkedin' => 0,
+  'cancelled' => 0,
+  'all' => 0,
 ];
 
 try {
-  // นับจำนวนจองแล้ว (สถานะ 1) โดยไม่รวมรายการที่สร้างสัญญาไปแล้ว (มีใน contract)
+  // นับจำนวนจองแล้ว (สถานะ 1) ที่ยังรอการเข้าพักจริง โดยไม่รวมรายการที่มีสัญญาใช้งานอยู่แล้ว
   $stmtStatsRes = $pdo->query("
     SELECT COUNT(*) as cnt 
     FROM booking b 
     WHERE COALESCE(b.bkg_status, '0') = '1'
       AND NOT EXISTS (
-        SELECT 1 FROM contract c 
-        WHERE c.room_id = b.room_id AND c.tnt_id = b.tnt_id
+        SELECT 1 FROM contract c
+        WHERE c.room_id = b.room_id
+          AND c.ctr_status = '0'
+          AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE())
       )
       AND NOT EXISTS (
-        SELECT 1 FROM contract c 
-        WHERE c.room_id = b.room_id AND c.ctr_status = '0' AND (c.ctr_end IS NULL OR c.ctr_end >= CURDATE())
+        SELECT 1 FROM contract c
+        LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+        WHERE c.room_id = b.room_id
+          AND c.ctr_status = '2'
+          AND (tm.term_date IS NULL OR tm.term_date >= CURDATE())
+      )
+      AND NOT EXISTS (
+        SELECT 1 FROM contract c
+        LEFT JOIN termination tm ON tm.ctr_id = c.ctr_id
+        WHERE c.room_id = b.room_id
+          AND c.tnt_id = b.tnt_id
+          AND (
+            c.ctr_status = '0'
+            OR (c.ctr_status = '2' AND (tm.term_date IS NULL OR tm.term_date >= CURDATE()))
+          )
       )
   ");
   $stats['reserved'] = (int)$stmtStatsRes->fetchColumn();
+
+  // นับจำนวนยกเลิกการจอง (สถานะ 0)
+  $stmtStatsCanc = $pdo->query("SELECT COUNT(*) as cnt FROM booking WHERE COALESCE(bkg_status, '0') = '0'");
+  $stats['cancelled'] = (int)$stmtStatsCanc->fetchColumn();
+
+  // นับจำนวนการจองทั้งหมดตามสถานะหลัก
+  $stmtStatsAll = $pdo->query("SELECT COUNT(*) as cnt FROM booking WHERE COALESCE(bkg_status, '0') IN ('0','1','2')");
+  $stats['all'] = (int)$stmtStatsAll->fetchColumn();
 
   // นับจำนวนห้องที่กำลังเข้าพักจริงตามสัญญาที่ยังใช้งานอยู่
   $stmtStatsChk = $pdo->query("
@@ -4273,10 +4300,16 @@ main > div:first-of-type,
 
           <!-- Toggle button for available rooms (only show when not filtering by specific booking) -->
           <?php if ($bookingIdFilter === 0): ?>
-          <div style="margin:1.5rem 0;">
+          <div style="margin:1.5rem 0; display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center;">
             <button type="button" id="toggleRoomsBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:1rem;border-radius:8px;transition:all 0.2s;" onclick="toggleAvailableRooms()">
               <span id="toggleRoomsIcon">▼</span> <span id="toggleRoomsText">ซ่อนห้องพักที่ว่าง</span>
             </button>
+            <div style="display:flex; flex-wrap:wrap; gap:0.6rem; align-items:center;">
+              <a href="<?php echo htmlspecialchars($statusBaseUrl . 'status=all', ENT_QUOTES, 'UTF-8'); ?>" style="padding:0.65rem 1rem; border-radius:8px; text-decoration:none; font-weight:600; border:1px solid #cbd5e1; background:<?php echo $statusFilter === 'all' ? '#e2e8f0' : '#ffffff'; ?>; color:#0f172a;">ทั้งหมด (<?php echo number_format($stats['all']); ?>)</a>
+              <a href="<?php echo htmlspecialchars($statusBaseUrl . 'status=1', ENT_QUOTES, 'UTF-8'); ?>" style="padding:0.65rem 1rem; border-radius:8px; text-decoration:none; font-weight:600; border:1px solid #cbd5e1; background:<?php echo $statusFilter === '1' ? '#fef3c7' : '#ffffff'; ?>; color:#92400e;">จองแล้ว (<?php echo number_format($stats['reserved']); ?>)</a>
+              <a href="<?php echo htmlspecialchars($statusBaseUrl . 'status=2', ENT_QUOTES, 'UTF-8'); ?>" style="padding:0.65rem 1rem; border-radius:8px; text-decoration:none; font-weight:600; border:1px solid #cbd5e1; background:<?php echo $statusFilter === '2' ? '#d1fae5' : '#ffffff'; ?>; color:#166534;">เข้าพักแล้ว (<?php echo number_format($stats['checkedin']); ?>)</a>
+              <a href="<?php echo htmlspecialchars($statusBaseUrl . 'status=0', ENT_QUOTES, 'UTF-8'); ?>" style="padding:0.65rem 1rem; border-radius:8px; text-decoration:none; font-weight:600; border:1px solid #cbd5e1; background:<?php echo $statusFilter === '0' ? '#fed7aa' : '#ffffff'; ?>; color:#943a06;">ยกเลิก (<?php echo number_format($stats['cancelled']); ?>)</a>
+            </div>
           </div>
 
           <!-- ส่วนแสดงห้องว่าง -->
