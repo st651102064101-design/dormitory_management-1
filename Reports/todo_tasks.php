@@ -126,6 +126,13 @@ try {
                    COALESCE(pay_agg.approved_amount, 0) AS paid_amount,
                    COALESCE(pay_agg.pending_count, 0) AS pending_count
             FROM expense e
+            INNER JOIN (
+                SELECT ctr_id, DATE_FORMAT(exp_month, '%Y-%m') AS month_key, MAX(exp_id) AS latest_exp_id
+                FROM expense
+                GROUP BY ctr_id, DATE_FORMAT(exp_month, '%Y-%m')
+            ) latest_exp ON latest_exp.ctr_id = e.ctr_id
+                          AND DATE_FORMAT(e.exp_month, '%Y-%m') = latest_exp.month_key
+                          AND e.exp_id = latest_exp.latest_exp_id
             INNER JOIN contract c ON e.ctr_id = c.ctr_id AND c.ctr_status = '0'
             LEFT JOIN room r ON c.room_id = r.room_id
             LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
