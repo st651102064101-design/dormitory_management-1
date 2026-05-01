@@ -1,15 +1,15 @@
-name: CD - Deploy to Server
+name: CD - Build & Release
 
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   workflow_dispatch:
 
 jobs:
-  deploy:
-    name: Deploy via SSH
+  build-and-release:
+    name: Build Release Package
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
     
     steps:
     - name: Checkout code
@@ -17,55 +17,72 @@ jobs:
       with:
         fetch-depth: 0
         
-    - name: Setup SSH
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
-        chmod 600 ~/.ssh/deploy_key
-        ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
         
-    - name: Deploy to server
+    - name: Build release package
       run: |
-        echo "🚀 Starting deployment..."
-        ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
-          set -e
-          
-          DEPLOY_DIR="${{ secrets.DEPLOY_PATH }}"
-          
-          echo "📁 Entering deployment directory: $DEPLOY_DIR"
-          cd "$DEPLOY_DIR" || exit 1
-          
-          echo "📥 Pulling latest code from repository..."
-          git fetch origin main
-          git checkout main
-          git reset --hard origin/main
-          
-          echo "🔧 Setting proper permissions..."
-          chmod -R 755 .
-          find . -type f -name "*.php" -exec chmod 644 {} \;
-          
-          # Set writable directories for web server
-          chmod -R 777 Public/Assets/Images/Payments 2>/dev/null || true
-          chmod -R 777 Public/Assets/Images 2>/dev/null || true
-          
-          echo "🧹 Clearing cache if applicable..."
-          if [ -d "cache" ]; then
-            rm -rf cache/*
-          fi
-          
-          echo "✅ Deployment completed successfully!"
-          echo "📊 Current branch: $(git branch --show-current)"
-          echo "📝 Latest commit: $(git log -1 --oneline)"
-        EOF
+        echo "📦 Building release package..."
         
-    - name: Cleanup
-      if: always()
-      run: rm -f ~/.ssh/deploy_key
-      
-    - name: Deployment Status
-      if: success()
-      run: echo "✅ Successfully deployed to server"
-      
-    - name: Deployment Failed
-      if: failure()
-      run: echo "❌ Deployment failed"
+        # Create release directory
+        mkdir -p release
+        RELEASE_DIR="./release"
+        PROJECT_NAME="dormitory_management"
+        VERSION=$(date +%Y%m%d-%H%M%S)
+        PACKAGE_NAME="${PROJECT_NAME}-${VERSION}.zip"
+        
+        echo "📋 Copying project files..."
+        # Copy files excluding dev/hidden files
+        rsync -av \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='node_modules' \
+          --exclude='vendor' \
+          --exclude='*.md' \
+          --exclude='.gitignore' \
+          --exclude='deploy_key*' \
+          --exclude='.env*' \
+          . $RELEASE_DIR/$PROJECT_NAME/
+        
+        echo "📦 Creating package: $PACKAGE_NAME"
+        cd $RELEASE_DIR
+        zip -r "$PACKAGE_NAME" $PROJECT_NAME
+        cd ..
+        
+        echo "✅ Package created: $PACKAGE_NAME"
+        ls -lh "$RELEASE_DIR/$PACKAGE_NAME"
+        
+    - name: Create Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+        
+    - name: Upload Release Asset
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./release/dormitory_management-*.zip
+        asset_name: dormitory_management-release.zip
+        asset_content_type: application/zip
+        
+    - name: Post Build Summary
+      run: |
+        echo "✅ Build Summary"
+        echo "================"
+        echo "Project: Dormitory Management System"
+        echo "Branch: ${{ github.ref }}"
+        echo "Commit: ${{ github.sha }}"
+        echo ""
+        echo "📦 Release packages created in ./release/"
+        echo "💾 Ready for local deployment via XAMPP"

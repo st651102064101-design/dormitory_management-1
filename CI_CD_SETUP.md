@@ -1,6 +1,6 @@
-# 🚀 CI/CD Pipeline Setup
+# 🚀 CI/CD Pipeline Setup (Local XAMPP Development)
 
-GitHub Actions CI/CD workflows สำหรับ Dormitory Management System
+GitHub Actions CI/CD workflows สำหรับ Dormitory Management System (XAMPP Local)
 
 ## 📋 Workflows
 
@@ -14,172 +14,279 @@ GitHub Actions CI/CD workflows สำหรับ Dormitory Management System
 - ✅ Database connection file
 - ✅ Common PHP mistakes
 
-### 2. **CD - Deploy to Server** (`deploy.yml`)
+### 2. **CD - Build & Release** (`deploy.yml`)
 ทำงานเมื่อ:
 - Push ไป `main` branch
-- Manual trigger (Actions → CD - Deploy to Server → Run workflow)
+- สร้าง Git tag (`v*.*.*`)
+- Manual trigger (Actions → CD - Build & Release → Run workflow)
 
 ทำการ:
-- 📥 Pull latest code from repository
-- 🔧 Set proper file permissions
-- 🧹 Clear cache
+- 📦 Package project files
+- 📝 Create release notes
+- 💾 Generate release ZIP
+
+### 3. **Local Development Setup** (`local-setup.yml`)
+ทำงานเมื่อ:
+- Manual trigger (Actions → Local Development Setup → Run workflow)
+
+ตรวจสอบ:
+- ✅ PHP configuration
+- ✅ Project structure
+- ✅ Database connection
+- ✅ Critical files existence
 
 ---
 
-## 🔐 Setup Instructions
+## 🚀 Quick Start
 
-### Step 1: สร้าง SSH Keys
+### For XAMPP Local Development:
 
-ใน local machine ของคุณ:
+#### 1. Clone/Update Repository
 ```bash
-# สร้าง SSH key pair (ถ้ายังไม่มี)
-ssh-keygen -t ed25519 -f deploy_key -N ""
-
-# ดู private key (ใช้ใน GitHub Secrets)
-cat deploy_key
+cd /Applications/XAMPP/xamppfiles/htdocs/
+git clone https://github.com/st651102064101-design/dormitory_management-1.git
+cd dormitory_management
 ```
 
-### Step 2: Setup SSH Key บน Server
-
+#### 2. Setup Database
 ```bash
-# เชื่อมต่อ server ด้วย SSH
-ssh user@your-server-ip
+# Start XAMPP MySQL
+/Applications/XAMPP/bin/mysql.server start
 
-# สร้าง .ssh directory
-mkdir -p ~/.ssh
-chmod 700 ~/.ssh
+# Create database
+mysql -u root < database.sql
 
-# เพิ่ม public key
-cat deploy_key.pub >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
+# Or manually:
+# mysql -u root
+# CREATE DATABASE dormitory_db;
+# USE dormitory_db;
+# SOURCE dump.sql;
 ```
 
-### Step 3: เซ็ตค่า GitHub Secrets
-
-ไปที่: **Settings → Secrets and variables → Actions → New repository secret**
-
-เพิ่ม 3 secrets ต่อไปนี้:
-
-| Secret Name | Value | ตัวอย่าง |
-|---|---|---|
-| `DEPLOY_HOST` | IP address หรือ domain ของ server | `project.3bbddns.com` |
-| `DEPLOY_USER` | SSH username | `ubuntu` หรือ `root` |
-| `DEPLOY_SSH_KEY` | Contents of `deploy_key` (private key) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
-| `DEPLOY_PATH` | Path ของ project บน server | `/var/www/dormitory_management` |
-
-### Step 4: ยืนยันการตั้งค่า
-
-```bash
-# Test SSH connection ก่อน setup
-ssh -i deploy_key user@your-server-ip "cd /path/to/project && ls -la"
+#### 3. Configure Connection
+Edit `ConnectDB.php`:
+```php
+$host = 'localhost';
+$user = 'root';
+$password = '';  // XAMPP default (empty)
+$database = 'dormitory_db';
 ```
 
----
-
-## 📊 Monitoring Workflows
-
-### ดู workflow status:
-1. ไปที่ repository → **Actions** tab
-2. เลือก workflow (`CI - PHP Validation` หรือ `CD - Deploy to Server`)
-3. ดู run history และ logs
-
-### ดู deployment logs:
-```bash
-ssh user@your-server-ip "cd /path/to/project && git log --oneline -10"
+#### 4. Access Application
+```
+http://localhost/dormitory_management/
 ```
 
 ---
 
-## 🔄 Manual Deployment
+## 📊 CI/CD Workflow Status
 
-ถ้าต้องการ deploy อย่างไม่ใช่เมื่อ push:
+### View Workflows:
+1. GitHub Repository → **Actions** tab
+2. Select workflow:
+   - `CI - PHP Validation` → Automatic on push
+   - `CD - Build & Release` → Manual trigger
+   - `Local Development Setup` → Manual trigger
 
-1. ไปที่ repository → **Actions** tab
-2. เลือก **CD - Deploy to Server** workflow
-3. คลิก **Run workflow**
-4. เลือก branch (`main`) แล้ว **Run workflow**
-
----
-
-## 🛠️ Troubleshooting
-
-### Problem: "Permission denied (publickey)"
-**Solution:**
-```bash
-# ตรวจสอบ SSH key permissions บน server
-ssh user@server "ls -la ~/.ssh/"
-# authorized_keys ต้องมี permission 600
-```
-
-### Problem: "fatal: not a git repository"
-**Solution:**
-```bash
-# ตรวจสอบว่า project folder มี .git
-ssh user@server "ls -la /path/to/project/.git"
-```
-
-### Problem: "Permission denied" ที่ file/folder
-**Solution:**
-```bash
-# ใหญ่ permissions ใหม่
-ssh user@server "chmod -R 755 /path/to/project"
-```
+### Check PHP Validation:
+- Push code to `main` or `develop`
+- GitHub Actions automatically validates syntax
+- Check status badges on README
 
 ---
 
-## 📝 Git Workflow Recommendation
+## 📦 Release Management
 
+### Creating a Release:
+
+#### Method 1: Create Git Tag
 ```bash
-# ทำ feature branch
-git checkout -b feature/new-feature
+git tag v1.0.0
+git push origin v1.0.0
+# CD workflow automatically creates release
+```
+
+#### Method 2: Manual Release
+1. GitHub → Actions → CD - Build & Release
+2. Click "Run workflow"
+3. Select branch: `main`
+4. Click "Run workflow"
+
+### Download Release:
+- GitHub → Releases tab
+- Download `dormitory_management-release.zip`
+
+---
+
+## 🛠️ Local Development Workflow
+
+### Daily Development:
+```bash
+# Create feature branch
+git checkout -b feature/your-feature
+
+# Make changes
+# ... edit files ...
 
 # Commit changes
 git add .
 git commit -m "Add new feature"
 
 # Push to GitHub
-git push origin feature/new-feature
+git push origin feature/your-feature
 
-# Create Pull Request บน GitHub
-# CI จะ run automatically
+# Create Pull Request on GitHub
+# CI validation runs automatically
+```
 
-# Merge PR
-# CD จะ run automatically และ deploy ไป server
+### Merge to Main:
+```bash
+# After PR review and approval
+git checkout main
+git pull origin main
+git merge feature/your-feature
+git push origin main
+
+# CI validation runs
+# CD build & release package created
 ```
 
 ---
 
-## ⚙️ Environment Configuration
+## 📝 Database Setup
 
-ถ้า server ใช้ environment variables ที่ต่างกัน:
-
-1. สร้าง `.env.production` บน server
-2. เพิ่ม step ใน `deploy.yml` เพื่อ source `.env`:
-```yaml
-- name: Load environment
-  run: |
-    ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
-      cd ${{ secrets.DEPLOY_PATH }}
-      source .env.production
-      # your custom commands
-    EOF
+### Option 1: Using SQL Dump
+```bash
+mysql -u root < database_wizard_final.sql
 ```
+
+### Option 2: Manual Setup
+```sql
+CREATE DATABASE dormitory_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE dormitory_db;
+
+-- Import tables
+-- (See database schema files)
+```
+
+### Option 3: Using phpMyAdmin (XAMPP)
+1. Open http://localhost/phpmyadmin
+2. Click "New"
+3. Enter: `dormitory_db`
+4. Click "Create"
+5. Import SQL file via "Import" tab
+
+---
+
+## 🔧 Troubleshooting
+
+### Problem: "MySQL connection failed"
+**Solution:**
+1. Start XAMPP MySQL: `/Applications/XAMPP/bin/mysql.server start`
+2. Check credentials in `ConnectDB.php`
+3. Ensure database exists:
+   ```bash
+   mysql -u root -e "SHOW DATABASES LIKE 'dormitory_db';"
+   ```
+
+### Problem: "File permissions denied"
+**Solution:**
+```bash
+chmod -R 755 /Applications/XAMPP/xamppfiles/htdocs/dormitory_management
+chmod -R 777 /Applications/XAMPP/xamppfiles/htdocs/dormitory_management/Public/Assets/Images
+```
+
+### Problem: "PHP syntax error in workflow"
+**Solution:**
+- Workflow shows exact file and line number
+- Fix error locally and commit
+- Push to GitHub → CI validates automatically
+
+### Problem: "404 Not Found"
+**Solution:**
+1. Check Apache is running: `ps aux | grep httpd`
+2. Verify project path: `/Applications/XAMPP/xamppfiles/htdocs/dormitory_management/`
+3. Check `.htaccess` files (if using rewrites)
+
+---
+
+## 📚 Project Structure
+
+```
+dormitory_management/
+├── .github/
+│   └── workflows/
+│       ├── ci.yml              # PHP validation
+│       ├── deploy.yml          # Build & release
+│       └── local-setup.yml     # Local setup check
+├── Public/
+│   ├── Assets/
+│   │   └── Images/
+│   │       └── Payments/       # (must be writable)
+│   └── ...
+├── Tenant/
+│   ├── index.php
+│   ├── payment.php
+│   ├── renew_contract.php
+│   └── ...
+├── Manage/
+│   └── ...
+├── Reports/
+│   └── ...
+├── includes/
+│   ├── apple_alert.php        # Alert component
+│   └── ...
+├── ConnectDB.php              # Database connection
+├── config.php                 # Configuration
+├── index.php                  # Home page
+└── README.md
+```
+
+---
+
+## 🔐 Security Notes for Local Development
+
+1. **ConnectDB.php** - Contains database credentials
+   - Keep in `.gitignore` if using different credentials per environment
+   - Use strong passwords in production
+
+2. **.env files** - Already in `.gitignore`
+   - Create `.env.local` for local overrides
+   - Never commit `.env` to repository
+
+3. **SSH Keys** - Already in `.gitignore`
+   - Deployment keys not tracked in git
+   - Generate new keys for each environment
+
+---
+
+## ✅ Deployment Checklist
+
+- [ ] PHP Validation passes (Green checkmark in Actions)
+- [ ] All code committed and pushed
+- [ ] Database migrations applied
+- [ ] Local testing completed
+- [ ] Ready to create release
 
 ---
 
 ## 📚 Resources
 
 - [GitHub Actions Documentation](https://docs.github.com/en/actions)
-- [Using secrets in GitHub Actions](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions)
-- [SSH Deploy Action](https://github.com/appleboy/ssh-action)
+- [XAMPP Documentation](https://www.apachefriends.org/)
+- [PHP Manual](https://www.php.net/manual/)
+- [MySQL Documentation](https://dev.mysql.com/doc/)
 
 ---
 
-## ✅ Checklist
+## 🆘 Getting Help
 
-- [ ] SSH keys สร้างแล้ว
-- [ ] Public key เพิ่มไปบน server แล้ว
-- [ ] GitHub Secrets ตั้งค่าแล้ว
-- [ ] Test CI workflow สำเร็จ
-- [ ] Test CD workflow สำเร็จ
-- [ ] Documentation updated
+1. Check workflow logs in GitHub Actions
+2. Review error messages in terminal
+3. Check `.github/workflows/` files for workflow definitions
+4. Review CI_CD_SETUP.md for detailed instructions
+
+---
+
+**Last Updated:** 2024
+**Status:** ✅ Local XAMPP Development Ready

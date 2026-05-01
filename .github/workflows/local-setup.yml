@@ -1,0 +1,79 @@
+name: Local Development Setup
+
+on:
+  workflow_dispatch:
+
+jobs:
+  local-setup:
+    name: Setup Local Development Environment
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup PHP Environment
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        extensions: pdo, pdo_mysql, mbstring, json
+        
+    - name: Verify PHP Configuration
+      run: |
+        echo "📋 PHP Configuration"
+        echo "==================="
+        php -v
+        php -m | grep -E "pdo|mysql|mbstring"
+        
+    - name: Verify Project Structure
+      run: |
+        echo "📁 Project Structure Check"
+        echo "=========================="
+        
+        # Check main files
+        echo "✓ Main files:"
+        ls -la ConnectDB.php config.php 2>/dev/null || echo "  ⚠️ Missing connection files"
+        
+        # Check directories
+        echo ""
+        echo "✓ Directories:"
+        ls -d Public/ Tenant/ Manage/ Reports/ includes/ 2>/dev/null || echo "  ⚠️ Missing directories"
+        
+        # Check critical files
+        echo ""
+        echo "✓ Critical files:"
+        ls -la index.php Tenant/index.php 2>/dev/null || echo "  ⚠️ Missing index files"
+        
+    - name: Check Database Connection
+      run: |
+        echo "🔍 Database Configuration Check"
+        echo "=============================="
+        
+        if [ -f "ConnectDB.php" ]; then
+          echo "✅ ConnectDB.php found"
+          # Extract DB configuration
+          grep -E "host|user|password|database" ConnectDB.php | head -5 || echo "⚠️ Could not read DB config"
+        else
+          echo "❌ ConnectDB.php not found"
+        fi
+        
+    - name: Generate Summary Report
+      run: |
+        echo "📊 Local Development Setup Summary"
+        echo "=================================="
+        echo ""
+        echo "✅ Workflow completed"
+        echo ""
+        echo "🚀 Next Steps:"
+        echo "1. Start XAMPP (Apache + MySQL)"
+        echo "2. Copy project to htdocs:"
+        echo "   cp -r /path/to/dormitory_management /Applications/XAMPP/xamppfiles/htdocs/"
+        echo "3. Access via browser:"
+        echo "   http://localhost/dormitory_management/"
+        echo ""
+        echo "📝 Notes:"
+        echo "- Ensure MySQL is running"
+        echo "- Check ConnectDB.php for correct DB credentials"
+        echo "- Database should be created: dormitory_db"
+        echo ""
+        echo "✨ Ready for local development!"
