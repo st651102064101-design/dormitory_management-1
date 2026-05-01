@@ -2101,6 +2101,13 @@ main > div:first-of-type,
                                 // step 5 ต้องรอให้ step 4 (เช็คอิน) เสร็จเรียบร้อยก่อน
                                 $step5 = ((int)$tenant['step_5_confirmed'] === 1 && $step4 === 1) ? 1 : 0;
 
+                                // บังคับไม่ให้ currentStep ข้ามขั้นตอนที่ยังไม่เสร็จ (ป้องกันกรณีแก้ไขข้อมูลหรือบัคข้าม step)
+                                if ($step1 === 0) $currentStep = 1;
+                                elseif ($step2 === 0) $currentStep = 2;
+                                elseif ($step3 === 0) $currentStep = 3;
+                                elseif ($step4 === 0) $currentStep = 4;
+                                elseif ($step5 === 0) $currentStep = 5;
+
                                 $contractStartRaw = (string)($tenant['ctr_start'] ?? '');
                                 $expectedFirstBillMonthRaw = '';
                                 if ($contractStartRaw !== '' && strtotime($contractStartRaw) !== false) {
@@ -2181,24 +2188,6 @@ main > div:first-of-type,
                                 $currentYm = date('Y-m');
                                 $currentMonthMeterDone = ($utilMonthsRecorded[$ctrIdInt][$currentYm] ?? '') === 'full';
                                 $billingModalMeterOk = ($ctrStartYm === $currentYm) || $currentMonthMeterDone;
-
-                                // บังคับไม่ให้ currentStep ข้ามขั้นตอนที่ยังไม่เสร็จ
-                                if ($step1 === 0) {
-                                    $currentStep = 1;
-                                } elseif ($step2 === 0) {
-                                    $currentStep = 2;
-                                } elseif ($step3 === 0) {
-                                    $currentStep = 3;
-                                } elseif ($step4 === 0) {
-                                    $currentStep = 4;
-                                } elseif ($step5 === 0) {
-                                    // ถ้าเช็คอินเสร็จแล้ว แต่ยังไม่มีการจดมิเตอร์/บิลใดๆ ให้ยังคงอยู่ที่ Step 4
-                                    if ($step4 === 1 && !$meterBillDone) {
-                                        $currentStep = 4;
-                                    } else {
-                                        $currentStep = 5;
-                                    }
-                                }
 
                                 // HTML สถานะมิเตอร์ (แสดงใต้สถานะบิล สำหรับแถว ⏳ เท่านั้น)
                                 $openBillingJs = "openBillingModal(" . (int)$tenant['ctr_id'] . ", "
@@ -2917,7 +2906,7 @@ main > div:first-of-type,
                                 <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #cbd5e1;">
                                     💧 มิเตอร์น้ำ
                                 </label>
-                                <input type="number" name="water_meter_start" id="checkin_water_meter" min="0" max="9999999" placeholder="เลขมิเตอร์" inputmode="numeric" pattern="\d*"
+                                <input type="number" name="water_meter_start" id="checkin_water_meter" min="0" max="9999999" step="1" placeholder="เลขมิเตอร์" inputmode="numeric" pattern="\d*"
                                     style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;"
                                     oninput="limitMeterDigits(this, 7)" onblur="normalizeMeterValue(this, 7)">
                                 <div id="checkin_water_meter_hint" style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.4rem;">เลขมิเตอร์ปัจจุบัน (สูงสุด 7 หลัก)</div>
@@ -2927,7 +2916,7 @@ main > div:first-of-type,
                                 <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #cbd5e1;">
                                     ⚡ มิเตอร์ไฟ
                                 </label>
-                                <input type="number" name="elec_meter_start" id="checkin_elec_meter" min="0" max="99999" placeholder="เลขมิเตอร์" inputmode="numeric" pattern="\d*"
+                                <input type="number" name="elec_meter_start" id="checkin_elec_meter" min="0" max="99999" step="1" placeholder="เลขมิเตอร์" inputmode="numeric" pattern="\d*"
                                     style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;"
                                     oninput="limitMeterDigits(this, 5)" onblur="normalizeMeterValue(this, 5)">
                                 <div id="checkin_elec_meter_hint" style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.4rem;">เลขมิเตอร์ปัจจุบัน (สูงสุด 5 หลัก)</div>
@@ -3065,9 +3054,9 @@ main > div:first-of-type,
                                     </svg>
                                     <span>มิเตอร์น้ำ (ครั้งก่อน: <span id="prevWaterDisplay">-</span>)</span>
                                 </div>
-                                <input type="number" id="meterWaterInput" min="0" max="9999999" placeholder="เลขมิเตอร์ใหม่"
+                                <input type="number" id="meterWaterInput" min="0" max="9999999" step="1" placeholder="เลขมิเตอร์ใหม่"
                                     style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.6);border:1px solid rgba(96,165,250,0.4);border-radius:7px;color:#f8fafc;padding:0.5rem 0.65rem;font-size:0.9rem;outline:none;"
-                                    oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); updateMeterPreview()">
+                                    oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); limitMeterDigits(this, 7); updateMeterPreview()">
                             </div>
                             <!-- Elec -->
                             <div>
@@ -3077,9 +3066,9 @@ main > div:first-of-type,
                                     </svg>
                                     <span>มิเตอร์ไฟ (ครั้งก่อน: <span id="prevElecDisplay">-</span>)</span>
                                 </div>
-                                <input type="number" id="meterElecInput" min="0" max="99999" placeholder="เลขมิเตอร์ใหม่"
+                                <input type="number" id="meterElecInput" min="0" max="99999" step="1" placeholder="เลขมิเตอร์ใหม่"
                                     style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.6);border:1px solid rgba(251,191,36,0.4);border-radius:7px;color:#f8fafc;padding:0.5rem 0.65rem;font-size:0.9rem;outline:none;"
-                                    oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); updateMeterPreview()">
+                                    oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); limitMeterDigits(this, 5); updateMeterPreview()">
                             </div>
                         </div>
                         <!-- preview -->
@@ -3141,9 +3130,9 @@ main > div:first-of-type,
                             <span>ค่าก่อน: <span id="moPrevWater" style="color:#f8fafc;font-weight:600;">...</span></span>
                             <button type="button" onclick="if(document.getElementById('moPrevWater').textContent !== '...' && document.getElementById('moPrevWater').textContent !== '0000000') { document.getElementById('moWaterInput').value = document.getElementById('moPrevWater').textContent; updateMoPreview(); }" style="background:transparent;border:1px solid rgba(96,165,250,0.5);color:#60a5fa;font-size:0.65rem;border-radius:4px;padding:0.1rem 0.4rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(96,165,250,0.1)'" onmouseout="this.style.background='transparent'">+ ใช้ค่าเดิม</button>
                         </div>
-                        <input type="number" id="moWaterInput" min="0" max="9999999" placeholder="เลขมิเตอร์ใหม่"
+                        <input type="number" id="moWaterInput" min="0" max="9999999" step="1" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(96,165,250,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
-                            oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); updateMoPreview();"
+                            oninput="if(this.value.length > 7) this.value = this.value.slice(0, 7); limitMeterDigits(this, 7); updateMoPreview();"
                             onfocus="this.style.borderColor='#60a5fa'" onblur="this.style.borderColor='rgba(96,165,250,0.4)'">
                     </div>
                     <div>
@@ -3152,9 +3141,9 @@ main > div:first-of-type,
                             <span>ค่าก่อน: <span id="moPrevElec" style="color:#f8fafc;font-weight:600;">...</span></span>
                             <button type="button" onclick="if(document.getElementById('moPrevElec').textContent !== '...' && document.getElementById('moPrevElec').textContent !== '00000') { document.getElementById('moElecInput').value = document.getElementById('moPrevElec').textContent; updateMoPreview(); }" style="background:transparent;border:1px solid rgba(251,191,36,0.5);color:#fbbf24;font-size:0.65rem;border-radius:4px;padding:0.1rem 0.4rem;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(251,191,36,0.1)'" onmouseout="this.style.background='transparent'">+ ใช้ค่าเดิม</button>
                         </div>
-                        <input type="number" id="moElecInput" min="0" max="99999" placeholder="เลขมิเตอร์ใหม่"
+                        <input type="number" id="moElecInput" min="0" max="99999" step="1" placeholder="เลขมิเตอร์ใหม่"
                             style="width:100%;box-sizing:border-box;background:rgba(15,23,42,0.7);border:1px solid rgba(251,191,36,0.4);border-radius:8px;color:#f8fafc;padding:0.55rem 0.7rem;font-size:0.95rem;outline:none;"
-                            oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); updateMoPreview();"
+                            oninput="if(this.value.length > 5) this.value = this.value.slice(0, 5); limitMeterDigits(this, 5); updateMoPreview();"
                             onfocus="this.style.borderColor='#fbbf24'" onblur="this.style.borderColor='rgba(251,191,36,0.4)'">
                     </div>
                 </div>
