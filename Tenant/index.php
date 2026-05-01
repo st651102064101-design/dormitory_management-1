@@ -432,6 +432,33 @@ try {
 } catch (PDOException $e) { 
     error_log("PDOException checking termination eligibility: " . $e->getMessage()); 
 }
+
+// --- เช็คเงื่อนไขการต่อสัญญา ---
+$renewalAllowed = true;
+$renewalReason = '';
+
+if (isset($termData) && (int)$termData['is_step5_complete'] !== 1) {
+    $renewalAllowed = false;
+    $renewalReason = 'รอเจ้าหน้าที่ตรวจสอบการเข้าพักให้เรียบร้อย จึงจะสามารถใช้งานเมนูอื่นได้';
+} else {
+    // ถ้าสัญญาถูกยกเลิกแล้ว เช็คว่ามีคนอื่นเช่าห้องนี้ไปหรือยัง
+    try {
+        $checkOccupiedStmt = $pdo->prepare("
+            SELECT COUNT(*) 
+            FROM contract 
+            WHERE room_id = ? 
+              AND ctr_status IN ('0', '2') 
+              AND ctr_id != ?
+        ");
+        $checkOccupiedStmt->execute([$contract['room_id'], $contract['ctr_id']]);
+        $hasNewTenant = (int)$checkOccupiedStmt->fetchColumn() > 0;
+        
+        if ($hasNewTenant) {
+            $renewalAllowed = false;
+            $renewalReason = 'ไม่สามารถต่อสัญญาได้ เนื่องจากมีผู้เช่ารายใหม่เช่าห้องนี้ไปแล้ว';
+        }
+    } catch (Exception $e) {}
+}
 ?>
 <!DOCTYPE html>
 <html lang="th">
@@ -1184,6 +1211,15 @@ try {
                 <div class="menu-icon red"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="9" y1="15" x2="15" y2="15"/></svg></div>
                 <div class="menu-label">แจ้งยกเลิกสัญญา</div>
                 <?php endif; ?>
+            </a>
+            <?php if (!$renewalAllowed): ?>
+            <a href="#" onclick="alert('<?= htmlspecialchars($renewalReason, ENT_QUOTES, 'UTF-8') ?>'); return false;" class="menu-item" style="opacity: 0.5;">
+            <?php else: ?>
+            <a href="renew_contract.php?token=<?php echo urlencode($token); ?>" class="menu-item">
+            <?php endif; ?>
+                <!-- สีชมพูแดง / ม่วง สำหรับการต่อสัญญา -->
+                <div class="menu-icon" style="color: #ec4899; background: rgba(236, 72, 153, 0.12);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><circle cx="12" cy="14" r="3"/><line x1="12" y1="11" x2="12" y2="11.01"/></svg></div>
+                <div class="menu-label">ต่อสัญญาเช่า</div>
             </a>
         </div>
         
