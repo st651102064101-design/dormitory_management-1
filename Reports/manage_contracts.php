@@ -2216,6 +2216,32 @@ main > div:first-of-type,
         }
       }
 
+      function openProofModal(imgUrl) {
+        var modal = document.getElementById('proofModal');
+        if (!modal) {
+          // Create modal if it doesn't exist
+          modal = document.createElement('div');
+          modal.id = 'proofModal';
+          modal.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.9);z-index:9999;justify-content:center;align-items:center;padding:1rem;';
+          modal.innerHTML = '<div style="position:relative;max-width:90vw;max-height:90vh;"><button onclick="closeProofModal()" style="position:absolute;top:-2rem;right:0;background:none;border:none;color:#fff;font-size:2rem;cursor:pointer;padding:0;width:2.5rem;height:2.5rem;display:flex;align-items:center;justify-content:center;">✕</button><img id="proofImg" src="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;"></div>';
+          document.body.appendChild(modal);
+        }
+        var img = document.getElementById('proofImg');
+        img.src = imgUrl;
+        modal.style.display = 'flex';
+        modal.onclick = function(e) { if (e.target === modal) closeProofModal(); };
+      }
+
+      function closeProofModal() {
+        var modal = document.getElementById('proofModal');
+        if (modal) modal.style.display = 'none';
+      }
+
+      // Close modal with Escape key
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeProofModal();
+      });
+
       async function _confirmRefund(ctrId) {
         var ok = await appleConfirm('ยืนยันว่าโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงินมัดจำ');
         if (!ok) return;
@@ -2899,7 +2925,7 @@ main > div:first-of-type,
             ${rf ? `
             <div style="border-top:1px solid ${t.divider};padding-top:0.6rem;margin-top:0.2rem;">
               <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">หลักฐานการโอนคืน</label>
-              ${rfProof ? `<div style="margin-bottom:0.4rem;"><a href="/${rfProof}" target="_blank" style="font-size:0.82rem;color:${t.link};">📎 ดูหลักฐานปัจจุบัน</a></div>` : ''}
+              ${rfProof ? `<div style="margin-bottom:0.4rem;"><a href="javascript:void(0)" onclick="openProofModal('/${rfProof}')" style="font-size:0.82rem;color:${t.link};cursor:pointer;">📎 ดูหลักฐานปัจจุบัน</a></div>` : ''}
               <input id="rfProofFile" type="file" accept="image/*,.pdf" style="font-size:0.82rem;color:${t.muted};margin-bottom:0.4rem;">
               <div style="font-size:0.75rem;color:${t.dim};margin-top:0.2rem;">เลือกไฟล์เพื่ออัพโหลดโดยอัตโนมัติ</div>
             </div>
