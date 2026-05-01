@@ -5168,6 +5168,19 @@ main > div:first-of-type,
         const form = document.getElementById(formId);
         if (!form) return;
         const formData = new FormData(form);
+        
+        // Special handling: ensure meter fields are always included, even if disabled
+        if (formId === 'checkinForm') {
+            const waterMeterField = form.querySelector('input[name="water_meter_start"]');
+            const elecMeterField = form.querySelector('input[name="elec_meter_start"]');
+            if (waterMeterField && waterMeterField.disabled) {
+                formData.set('water_meter_start', waterMeterField.value);
+            }
+            if (elecMeterField && elecMeterField.disabled) {
+                formData.set('elec_meter_start', elecMeterField.value);
+            }
+        }
+        
         const actionUrl = form.getAttribute('action');
         
         // Find and disable the submit button
@@ -5409,7 +5422,22 @@ main > div:first-of-type,
             errorContainer.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         } else {
             errorContainer.style.display = 'none';
+            // Temporarily enable disabled meter fields for submission
+            const waterMeterField = form.querySelector('input[name="water_meter_start"]');
+            const elecMeterField = form.querySelector('input[name="elec_meter_start"]');
+            const wasWaterDisabled = waterMeterField && waterMeterField.disabled;
+            const wasElecDisabled = elecMeterField && elecMeterField.disabled;
+            
+            if (waterMeterField) waterMeterField.disabled = false;
+            if (elecMeterField) elecMeterField.disabled = false;
+            
             submitWizardStep('checkinForm', closeCheckinModal);
+            
+            // Re-disable if they were disabled before
+            setTimeout(() => {
+                if (waterMeterField && wasWaterDisabled) waterMeterField.disabled = true;
+                if (elecMeterField && wasElecDisabled) elecMeterField.disabled = true;
+            }, 100);
         }
     }
 </script>
