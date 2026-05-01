@@ -577,8 +577,8 @@ try {
               WHERE u.ctr_id = c.ctr_id
                 AND MONTH(u.utl_date) = MONTH(CURDATE())
                 AND YEAR(u.utl_date) = YEAR(CURDATE())
-                AND u.utl_water_end IS NOT NULL AND u.utl_water_end > 0
-                AND u.utl_elec_end IS NOT NULL AND u.utl_elec_end > 0
+                AND u.utl_water_end IS NOT NULL AND u.utl_water_end >= 0
+                AND u.utl_elec_end IS NOT NULL AND u.utl_elec_end >= 0
           )
     ");
     $meterBadgeStmt->execute();
