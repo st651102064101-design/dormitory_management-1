@@ -245,25 +245,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('ไม่พบบิลที่ระบุ');
             }
 
-            // ข้ามการตรวจมิเตอร์สำหรับบิลเดือนแรก (ctr_start) เพราะใช้ค่าจาก checkin record
-            $expMonthYm = date('Y-m', strtotime((string)$expense['exp_month']));
-            $isFirstBill = ($expMonthYm === $firstBillMonth);
-            if (!$isFirstBill) {
-                $meterCheckStmt = $pdo->prepare("
-                    SELECT 1
-                    FROM utility
-                    WHERE ctr_id = ?
-                      AND YEAR(utl_date) = YEAR(?)
-                      AND MONTH(utl_date) = MONTH(?)
-                      AND utl_water_end IS NOT NULL
-                      AND utl_elec_end IS NOT NULL
-                    LIMIT 1
-                ");
-                $meterCheckStmt->execute([$contract['ctr_id'], (string)$expense['exp_month'], (string)$expense['exp_month']]);
-                if (!$meterCheckStmt->fetchColumn()) {
-                    throw new Exception('บิลนี้ยังไม่ได้จดมิเตอร์ครบ จึงยังไม่สามารถชำระได้');
-                }
-            }
+            // Allow payment even if meter is not recorded (tenant can pay partial first, admin can record meter later)
+            // This prevents blocking partial payments when meter hasn't been recorded yet
 
             $sumRowsStmt = $pdo->prepare("SELECT pay_amount, pay_remark FROM payment WHERE exp_id = ? AND pay_status IN ('0', '1') FOR UPDATE");
             $sumRowsStmt->execute([$exp_id]);
