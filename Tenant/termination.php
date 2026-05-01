@@ -93,6 +93,17 @@ try {
     }
 } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
+// Check if deposit refund has been confirmed
+$refundConfirmed = false;
+try {
+    $refStmt = $pdo->prepare("SELECT refund_status FROM deposit_refund WHERE ctr_id = ? ORDER BY refund_id DESC LIMIT 1");
+    $refStmt->execute([$contract['ctr_id']]);
+    $refund = $refStmt->fetch(PDO::FETCH_ASSOC);
+    if ($refund && $refund['refund_status'] === '1') {
+        $refundConfirmed = true;
+    }
+} catch (PDOException $e) { error_log("PDOException checking refund status: " . $e->getMessage()); }
+
 // Handle form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'cancel_termination' && $hasTermination) {
     try {
@@ -495,6 +506,17 @@ function _bankFormFields(?array $term): string {
             background: rgba(239,68,68,0.22);
             transform: translateY(-1px);
         }
+        .btn-cancel-termination:disabled {
+            background: rgba(239,68,68,0.08);
+            border-color: rgba(239,68,68,0.2);
+            color: rgba(248,113,113,0.5);
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        .btn-cancel-termination:disabled:hover {
+            background: rgba(239,68,68,0.08);
+            transform: none;
+        }
         .btn-cancel-termination svg {
             width: 16px;
             height: 16px;
@@ -784,17 +806,22 @@ function _bankFormFields(?array $term): string {
             <?php endif; ?>
             <!-- two-step confirm เพื่อหลีก window.confirm() ที่ถูก block บน mobile -->
             <div id="cancelTermStep1" style="margin-top:1.25rem;">
-                <button type="button" class="btn-cancel-termination" onclick="document.getElementById('cancelTermStep1').style.display='none';document.getElementById('cancelTermStep2').style.display='block';">
+                <button type="button" class="btn-cancel-termination" <?php echo $refundConfirmed ? 'disabled' : ''; ?> <?php echo !$refundConfirmed ? 'onclick="document.getElementById(\'cancelTermStep1\').style.display=\'none\';document.getElementById(\'cancelTermStep2\').style.display=\'block\';"' : ''; ?> title="<?php echo $refundConfirmed ? 'ไม่สามารถยกเลิกได้เนื่องจากจ่ายคืนเงินมัดจำแล้ว' : ''; ?>">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
                     ยกเลิกคำร้องยกเลิกสัญญา
                 </button>
+                <?php if ($refundConfirmed): ?>
+                <div style="margin-top:0.5rem;padding:0.5rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:6px;font-size:0.8rem;color:#ef4444;">
+                    ⚠️ ปุ่มนี้ไม่สามารถใช้ได้ เพราะเงินมัดจำได้จ่ายคืนแล้ว
+                </div>
+                <?php endif; ?>
             </div>
             <div id="cancelTermStep2" style="display:none;margin-top:1rem;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.35);border-radius:12px;padding:1rem;text-align:left;">
                 <p style="color:#fca5a5;font-size:0.88rem;margin-bottom:0.85rem;">⚠ ยืนยันยกเลิกคำร้อง? สัญญาจะกลับสู่สถานะ “ปกติ”</p>
                 <form method="POST">
                     <input type="hidden" name="action" value="cancel_termination">
                     <div style="display:flex;gap:0.6rem;">
-                        <button type="submit" class="btn-cancel-termination" style="flex:1;justify-content:center;margin-top:0;padding:0.75rem;font-size:0.88rem;">✓ ยืนยัน</button>
+                        <button type="submit" class="btn-cancel-termination" <?php echo $refundConfirmed ? 'disabled' : ''; ?> style="flex:1;justify-content:center;margin-top:0;padding:0.75rem;font-size:0.88rem;">✓ ยืนยัน</button>
                         <button type="button" style="flex:1;padding:0.75rem;background:rgba(100,116,139,0.15);border:1px solid rgba(100,116,139,0.4);border-radius:10px;color:#e2e8f0;font-family:inherit;font-size:0.88rem;cursor:pointer;" onclick="document.getElementById('cancelTermStep2').style.display='none';document.getElementById('cancelTermStep1').style.display='block';">ย้อนกลับ</button>
                     </div>
                 </form>
