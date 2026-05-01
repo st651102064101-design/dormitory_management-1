@@ -356,7 +356,8 @@ $currentEndDate = $contract['ctr_end'] ?: date('Y-m-d');
         <?php if ($success): ?>
         showAppleAlert('สัญญาเช่าของคุณได้รับการต่ออายุเรียบร้อยแล้ว', 'ต่ออายุสัญญาสำเร็จ!');
         setTimeout(() => {
-            window.location.href = 'index.php';
+            const token = '<?php echo urlencode($_SESSION['tenant_token'] ?? ''); ?>';
+            window.location.href = token ? `index.php?token=${token}` : 'index.php';
         }, 1500);
         <?php elseif ($error): ?>
         showAppleAlert('<?php echo addslashes($error); ?>', 'เกิดข้อผิดพลาด!');
