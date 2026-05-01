@@ -2808,7 +2808,7 @@ main > div:first-of-type,
 
       return `
         <div id="refundSection" style="margin-top:1rem;padding:1rem;border-radius:10px;
-                    background:rgba(251,191,36,0.06);border:1px solid rgba(251,191,36,0.2);">
+                    background:rgba(251,191,36,0.15);border:2px solid rgba(251,191,36,0.4);">
           <div style="font-weight:600;color:#fbbf24;margin-bottom:0.8rem;">💸 คืนเงินมัดจำ</div>
           <div style="display:grid;gap:0.6rem;">
             ${bankCard}
