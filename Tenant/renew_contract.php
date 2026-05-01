@@ -108,7 +108,6 @@ $currentEndDate = $contract['ctr_end'] ?: date('Y-m-d');
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ต่อสัญญาเช่า</title>
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
         :root {
             --primary: #3b82f6;
@@ -344,41 +343,26 @@ $currentEndDate = $contract['ctr_end'] ?: date('Y-m-d');
         // initial display
         updateDisplay();
         
-        document.getElementById('submitBtn').addEventListener('click', function() {
-            Swal.fire({
-                title: 'ยืนยันการต่อสัญญา?',
-                text: "คุณต้องการต่ออายุสัญญาเช่าของคุณใช่หรือไม่?",
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonColor: '#3b82f6',
-                cancelButtonColor: '#64748b',
-                confirmButtonText: 'ยืนยัน',
-                cancelButtonText: 'ยกเลิก'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    document.getElementById('renewForm').submit();
-                }
-            })
+        document.getElementById('submitBtn').addEventListener('click', async function() {
+            const confirmed = await showAppleConfirm(
+                'คุณต้องการต่ออายุสัญญาเช่าของคุณใช่หรือไม่?',
+                'ยืนยันการต่อสัญญา?'
+            );
+            if (confirmed) {
+                document.getElementById('renewForm').submit();
+            }
         });
         
         <?php if ($success): ?>
-        Swal.fire({
-            title: 'ต่ออายุสัญญาสำเร็จ!',
-            text: 'สัญญาเช่าของคุณได้รับการต่ออายุเรียบร้อยแล้ว',
-            icon: 'success',
-            confirmButtonText: 'ตกลง',
-            confirmButtonColor: '#10b981'
-        }).then((result) => {
+        showAppleAlert('สัญญาเช่าของคุณได้รับการต่ออายุเรียบร้อยแล้ว', 'ต่ออายุสัญญาสำเร็จ!');
+        setTimeout(() => {
             window.location.href = 'index.php';
-        });
+        }, 1500);
         <?php elseif ($error): ?>
-        Swal.fire({
-            title: 'เกิดข้อผิดพลาด!',
-            text: '<?php echo addslashes($error); ?>',
-            icon: 'error',
-            confirmButtonText: 'ตกลง'
-        });
+        showAppleAlert('<?php echo addslashes($error); ?>', 'เกิดข้อผิดพลาด!');
         <?php endif; ?>
     </script>
+    
+    <?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
 </body>
 </html>
