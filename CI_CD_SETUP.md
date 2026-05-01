@@ -2,7 +2,71 @@
 
 GitHub Actions CI/CD workflows สำหรับ Dormitory Management System (XAMPP Local)
 
-## 📋 Workflows
+## � Quick Start - Local + Public Domain Deployment
+
+GitHub Actions CI/CD workflows สำหรับ:
+1. 🏠 **Local XAMPP Development** - `http://localhost/`
+2. 🌐 **Public Domain** - `https://project.3bbddns.com:36140/`
+
+---
+
+## 📋 Workflows Available
+
+### 1. **CI - PHP Validation** (`ci.yml`)
+- ✅ Automatic on push/PR
+- ✅ Validates PHP syntax
+- ✅ No setup required
+
+### 2. **CD - Deploy to Domain** (`deploy.yml`)
+- 🚀 Automatic on push to `main`
+- 🌐 Deploys via SSH to public domain
+- ⚙️ Requires GitHub Secrets setup
+
+### 3. **Local Development Setup** (`local-setup.yml`)
+- 🔧 Manual trigger
+- ✅ Verifies environment
+- ✅ No setup required
+
+---
+
+## 🌐 Setup for Public Domain Deployment
+
+### Quick Setup (5 minutes):
+
+1. **Create SSH Key** (if not already done):
+   ```bash
+   ssh-keygen -t ed25519 -f ~/.ssh/github_deploy -N ""
+   ```
+
+2. **Add Public Key to Server**:
+   ```bash
+   ssh user@project.3bbddns.com
+   mkdir -p ~/.ssh
+   cat >> ~/.ssh/authorized_keys << 'EOF'
+   [PASTE github_deploy.pub here]
+   EOF
+   chmod 600 ~/.ssh/authorized_keys
+   ```
+
+3. **Configure GitHub Secrets** (Repository → Settings → Secrets):
+   - `DEPLOY_HOST`: `project.3bbddns.com`
+   - `DEPLOY_SSH_PORT`: `22` (or your SSH port)
+   - `DEPLOY_USER`: SSH username
+   - `DEPLOY_SSH_KEY`: Contents of `~/.ssh/github_deploy`
+   - `DEPLOY_PATH`: `/path/to/project`
+   - `DEPLOY_DOMAIN`: `project.3bbddns.com:36140`
+
+4. **Test & Deploy**:
+   ```bash
+   git push origin main
+   # Check: Repository → Actions → CD - Deploy to Domain
+   ```
+
+📖 **See [DEPLOY_TO_PUBLIC_DOMAIN.md](DEPLOY_TO_PUBLIC_DOMAIN.md) for detailed instructions**
+
+---
+
+## 📊 Workflows
 
 ### 1. **CI - PHP Validation** (`ci.yml`)
 ทำงานเมื่อ:

@@ -1,14 +1,13 @@
-name: CD - Build & Release
+name: CD - Deploy to Domain
 
 on:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
   workflow_dispatch:
 
 jobs:
-  build-and-release:
-    name: Build Release Package
+  deploy:
+    name: Deploy via SSH
     runs-on: ubuntu-latest
     
     steps:
@@ -17,72 +16,80 @@ jobs:
       with:
         fetch-depth: 0
         
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.1'
-        
-    - name: Build release package
+    - name: Setup SSH
       run: |
-        echo "📦 Building release package..."
+        mkdir -p ~/.ssh
+        echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
         
-        # Create release directory
-        mkdir -p release
-        RELEASE_DIR="./release"
-        PROJECT_NAME="dormitory_management"
-        VERSION=$(date +%Y%m%d-%H%M%S)
-        PACKAGE_NAME="${PROJECT_NAME}-${VERSION}.zip"
+        # Add host to known_hosts
+        ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} 2>/dev/null >> ~/.ssh/known_hosts || true
+        ssh-keyscan -H -p ${{ secrets.DEPLOY_SSH_PORT }} ${{ secrets.DEPLOY_HOST }} 2>/dev/null >> ~/.ssh/known_hosts || true
         
-        echo "📋 Copying project files..."
-        # Copy files excluding dev/hidden files
-        rsync -av \
-          --exclude='.git' \
-          --exclude='.github' \
-          --exclude='node_modules' \
-          --exclude='vendor' \
-          --exclude='*.md' \
-          --exclude='.gitignore' \
-          --exclude='deploy_key*' \
-          --exclude='.env*' \
-          . $RELEASE_DIR/$PROJECT_NAME/
-        
-        echo "📦 Creating package: $PACKAGE_NAME"
-        cd $RELEASE_DIR
-        zip -r "$PACKAGE_NAME" $PROJECT_NAME
-        cd ..
-        
-        echo "✅ Package created: $PACKAGE_NAME"
-        ls -lh "$RELEASE_DIR/$PACKAGE_NAME"
-        
-    - name: Create Release
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: actions/create-release@v1
+    - name: Deploy to server
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        tag_name: ${{ github.ref }}
-        release_name: Release ${{ github.ref }}
-        draft: false
-        prerelease: false
-        
-    - name: Upload Release Asset
-      if: startsWith(github.ref, 'refs/tags/')
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./release/dormitory_management-*.zip
-        asset_name: dormitory_management-release.zip
-        asset_content_type: application/zip
-        
-    - name: Post Build Summary
+        DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+        DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+        DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
       run: |
-        echo "✅ Build Summary"
-        echo "================"
-        echo "Project: Dormitory Management System"
-        echo "Branch: ${{ github.ref }}"
-        echo "Commit: ${{ github.sha }}"
+        echo "🚀 Starting deployment to ${{ secrets.DEPLOY_HOST }}"
+        
+        # Deploy using SSH
+        ssh -i ~/.ssh/deploy_key \
+            -p ${{ secrets.DEPLOY_SSH_PORT }} \
+            ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          set -e
+          
+          DEPLOY_DIR="${{ secrets.DEPLOY_PATH }}"
+          
+          echo "📁 Deployment directory: $DEPLOY_DIR"
+          
+          # Navigate to project
+          if [ -d "$DEPLOY_DIR" ]; then
+            cd "$DEPLOY_DIR"
+            echo "📥 Updating existing project..."
+            git fetch origin main
+            git checkout main
+            git reset --hard origin/main
+          else
+            echo "📁 Creating new project directory..."
+            mkdir -p "$DEPLOY_DIR"
+            cd "$DEPLOY_DIR"
+            git clone https://github.com/st651102064101-design/dormitory_management-1.git .
+          fi
+          
+          echo "🔧 Setting permissions..."
+          chmod -R 755 .
+          find . -type f -name "*.php" -exec chmod 644 {} \;
+          
+          # Make upload directories writable
+          mkdir -p Public/Assets/Images/Payments
+          chmod -R 777 Public/Assets/Images 2>/dev/null || true
+          
+          echo "🧹 Cleaning cache..."
+          [ -d "cache" ] && rm -rf cache/* || true
+          
+          echo "✅ Deployment completed!"
+          echo "📊 Current branch: $(git branch --show-current)"
+          echo "📝 Latest commit: $(git log -1 --oneline)"
+          echo "🌐 Access at: https://${{ secrets.DEPLOY_DOMAIN }}"
+        EOF
+        
+    - name: Verify Deployment
+      run: |
+        echo "✅ Deployment successful!"
         echo ""
-        echo "📦 Release packages created in ./release/"
-        echo "💾 Ready for local deployment via XAMPP"
+        echo "🌐 Your application is now live at:"
+        echo "   https://${{ secrets.DEPLOY_DOMAIN }}"
+        echo ""
+        echo "📊 Deployment Details:"
+        echo "   Server: ${{ secrets.DEPLOY_HOST }}"
+        echo "   Path: ${{ secrets.DEPLOY_PATH }}"
+        echo "   Branch: main"
+        
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -f ~/.ssh/deploy_key
+        rm -f ~/.ssh/known_hosts
