@@ -31,6 +31,7 @@ $selectedCtrFilterActive = $selectedCtrId > 0;
 $filterPendingMeter = isset($_GET['filter']) && $_GET['filter'] === 'pending_meter';
 if ($filterPendingMeter) {
     $todoOnly = true;  // แสดงเฉพาะห้องที่ต้องจดมิเตอร์
+}
 
 // เดือน/ปีที่มีอยู่จริงในฐานข้อมูล (utility) แต่เฉพาะที่ไม่ใช่เดือนอนาคต
 $availableYears = [];
