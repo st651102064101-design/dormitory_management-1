@@ -114,15 +114,29 @@ try {
             }
 
             $uploadDir = __DIR__ . '/../Public/Assets/Images/Payments/';
-            if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
+            if (!is_dir($uploadDir)) {
+                if (!mkdir($uploadDir, 0755, true)) {
+                    echo json_encode(['success' => false, 'error' => 'ไม่สามารถสร้างโฟลเดอร์สำหรับอัพโหลดได้']);
+                    exit;
+                }
+            }
             $newName = 'refund_' . $ctr_id . '_' . time() . '.' . $ext;
-            if (!move_uploaded_file($file['tmp_name'], $uploadDir . $newName)) {
-                echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัพโหลดไฟล์ได้']);
+            $filePath = $uploadDir . $newName;
+            if (!move_uploaded_file($file['tmp_name'], $filePath)) {
+                echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัพโหลดไฟล์ได้ (เขียนไฟล์ล้มเหลว)']);
+                exit;
+            }
+            if (!is_file($filePath)) {
+                echo json_encode(['success' => false, 'error' => 'ไม่สามารถตรวจสอบไฟล์ที่อัพโหลด']);
                 exit;
             }
 
             $dbPath = 'dormitory_management/Public/Assets/Images/Payments/' . $newName;
-            $pdo->prepare("UPDATE deposit_refund SET refund_proof=? WHERE refund_id=?")->execute([$dbPath, $existing['refund_id']]);
+            $upd = $pdo->prepare("UPDATE deposit_refund SET refund_proof=? WHERE refund_id=?");
+            if (!$upd->execute([$dbPath, $existing['refund_id']])) {
+                echo json_encode(['success' => false, 'error' => 'ไม่สามารถบันทึกข้อมูลไฟล์ในฐานข้อมูลได้']);
+                exit;
+            }
 
             echo json_encode(['success' => true, 'message' => 'อัพโหลดหลักฐานเรียบร้อย', 'proof_path' => $dbPath]);
             break;

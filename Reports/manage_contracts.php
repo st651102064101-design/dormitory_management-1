@@ -2205,11 +2205,15 @@ main > div:first-of-type,
           var data = await res.json();
           if (data.success) {
             showCtrToast('✅ ' + data.message, 'success');
-            openContractDetail(ctrId);
+            fileInput.value = '';
+            setTimeout(function() { openContractDetail(ctrId); }, 500);
           } else {
             showCtrToast('❌ ' + data.error, 'error');
           }
-        } catch(e) { showCtrToast('❌ ข้อผิดพลาดเครือข่าย', 'error'); }
+        } catch(e) { 
+          console.error('Upload error:', e);
+          showCtrToast('❌ ข้อผิดพลาดเครือข่าย: ' + e.message, 'error'); 
+        }
       }
 
       async function _confirmRefund(ctrId) {
