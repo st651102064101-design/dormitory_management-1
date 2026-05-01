@@ -4414,8 +4414,8 @@ main > div:first-of-type,
                     badge.style.display = 'inline-block';
                     btn.style.display   = 'inline-block';
                     btn.textContent     = 'อัปเดตมิเตอร์';
-                    document.getElementById('meterWaterInput').value    = (d.curr_water != null && d.curr_water > 0) ? String(Math.floor(parseFloat(String(d.curr_water).replace(/,/g, '')))).padStart(7, '0') : '';
-                    document.getElementById('meterElecInput').value     = (d.curr_elec  != null && d.curr_elec  > 0) ? String(Math.floor(parseFloat(String(d.curr_elec).replace(/,/g, '')))).padStart(5, '0')  : '';
+                    document.getElementById('meterWaterInput').value    = (d.curr_water != null) ? String(Math.floor(parseFloat(String(d.curr_water).replace(/,/g, '')))).padStart(7, '0') : '';
+                    document.getElementById('meterElecInput').value     = (d.curr_elec  != null) ? String(Math.floor(parseFloat(String(d.curr_elec).replace(/,/g, '')))).padStart(5, '0')  : '';
                     document.getElementById('meterWaterInput').disabled = false;
                     document.getElementById('meterElecInput').disabled  = false;
                     updateMeterPreview();
