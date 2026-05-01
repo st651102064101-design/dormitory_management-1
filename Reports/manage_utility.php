@@ -577,6 +577,12 @@ if ($showMode === 'occupied') {
         $allSql .= "\n        WHERE c.ctr_id = ?";
         $allParams[] = $selectedCtrId;
     }
+    if ($filterPendingMeter) {
+        $whereWord = $selectedCtrFilterActive ? "AND" : "WHERE";
+        $allSql .= "\n        " . $whereWord . " NOT EXISTS (SELECT 1 FROM utility u WHERE u.ctr_id = c.ctr_id AND MONTH(u.utl_date) = ? AND YEAR(u.utl_date) = ?)";
+        $allParams[] = $month;
+        $allParams[] = $year;
+    }
 
     $allSql .= "\n        ORDER BY CAST(r.room_number AS UNSIGNED) ASC";
     $allStmt = $pdo->prepare($allSql);
@@ -2259,6 +2265,9 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                             <input type="hidden" name="todo_only" value="1">
                             <input type="hidden" name="ctr_id" value="<?php echo (int)$selectedCtrId; ?>">
                             <?php endif; ?>
+                            <?php if ($filterPendingMeter): ?>
+                            <input type="hidden" name="filter" value="pending_meter">
+                            <?php endif; ?>
                             <select name="month" onchange="this.form.submit()">
                                 <?php foreach (($availableMonthsByYear[$year] ?? []) as $m): ?>
                                 <option value="<?php echo $m; ?>" <?php echo $month === (int)$m ? 'selected' : ''; ?>><?php echo $thaiMonthsFull[(int)$m]; ?></option>
@@ -2269,8 +2278,8 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                                 <option value="<?php echo $y; ?>" <?php echo $year === (int)$y ? 'selected' : ''; ?>><?php echo ((int)$y) + 543; ?></option>
                                 <?php endforeach; ?>
                             </select>
-                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=occupied<?php echo $selectedCtrFilterActive ? '&todo_only=1&ctr_id=' . (int)$selectedCtrId : ''; ?>" class="mode-link <?php echo $showMode === 'occupied' ? 'active' : ''; ?>">มีผู้เช่า</a>
-                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=all<?php echo $selectedCtrFilterActive ? '&todo_only=1&ctr_id=' . (int)$selectedCtrId : ''; ?>" class="mode-link <?php echo $showMode === 'all' ? 'active' : ''; ?>">ทั้งหมด</a>
+                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=occupied<?php echo $selectedCtrFilterActive ? '&todo_only=1&ctr_id=' . (int)$selectedCtrId : ''; ?><?php echo $filterPendingMeter ? '&filter=pending_meter' : ''; ?>" class="mode-link <?php echo $showMode === 'occupied' ? 'active' : ''; ?>">มีผู้เช่า</a>
+                            <a href="?month=<?php echo $month; ?>&year=<?php echo $year; ?>&tab=<?php echo $activeTab; ?>&show=all<?php echo $selectedCtrFilterActive ? '&todo_only=1&ctr_id=' . (int)$selectedCtrId : ''; ?><?php echo $filterPendingMeter ? '&filter=pending_meter' : ''; ?>" class="mode-link <?php echo $showMode === 'all' ? 'active' : ''; ?>">ทั้งหมด</a>
                         </form>
                     </div>
 
@@ -2280,22 +2289,30 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
                         <span class="stat-badge pending"><?php echo max(0, $totalPending); ?> รอ</span>
                     </div>
 
-                    <?php if ($selectedCtrFilterActive): ?>
+                    <?php if ($selectedCtrFilterActive || $filterPendingMeter): ?>
                     <?php
-                        // หาชื่อผู้เช่า/ห้องจาก $rooms (ถ้ามีข้อมูล)
-                        $filterRoomLabel = '';
-                        foreach ($rooms as $_fr) {
-                            if (!empty($_fr['room_number'])) {
-                                $filterRoomLabel = 'ห้อง ' . htmlspecialchars($_fr['room_number'], ENT_QUOTES, 'UTF-8');
-                                if (!empty($_fr['tnt_name'])) $filterRoomLabel .= ' – ' . htmlspecialchars($_fr['tnt_name'], ENT_QUOTES, 'UTF-8');
-                                break;
+                        if ($filterPendingMeter) {
+                            $thaiMonths = ['', 'มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
+                            $thaiMonthName = $thaiMonths[(int)$month] ?? '';
+                            $thaiYear = ((int)$year) + 543;
+                            $filterLabel = 'ยังไม่ได้จดมิเตอร์เดือน ' . $thaiMonthName . ' ' . $thaiYear;
+                        } else {
+                            // หาชื่อผู้เช่า/ห้องจาก $rooms (ถ้ามีข้อมูล)
+                            $filterRoomLabel = '';
+                            foreach ($rooms as $_fr) {
+                                if (!empty($_fr['room_number'])) {
+                                    $filterRoomLabel = 'ห้อง ' . htmlspecialchars($_fr['room_number'], ENT_QUOTES, 'UTF-8');
+                                    if (!empty($_fr['tnt_name'])) $filterRoomLabel .= ' – ' . htmlspecialchars($_fr['tnt_name'], ENT_QUOTES, 'UTF-8');
+                                    break;
+                                }
                             }
+                            $filterLabel = 'กรองเฉพาะ' . ($filterRoomLabel ?: 'สัญญา #' . (int)$selectedCtrId);
                         }
                         $clearUrl = '?month=' . $month . '&year=' . $year . '&tab=' . htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8') . '&show=' . htmlspecialchars($showMode, ENT_QUOTES, 'UTF-8');
                     ?>
                     <div style="margin:0.5rem 0; display:flex; align-items:center; gap:0.6rem; flex-wrap:wrap; padding:0.5rem 0.75rem; background:rgba(245,158,11,0.10); border:1px solid rgba(245,158,11,0.35); border-radius:8px; font-size:0.85rem;">
                         <svg viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" style="width:15px;height:15px;flex-shrink:0;"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
-                        <span style="color:#fbbf24; font-weight:600;">กรองเฉพาะ<?php echo $filterRoomLabel ?: 'สัญญา #' . (int)$selectedCtrId; ?></span>
+                        <span style="color:#fbbf24; font-weight:600;"><?php echo $filterLabel; ?></span>
                         <a href="<?php echo $clearUrl; ?>" style="margin-left:auto; display:inline-flex; align-items:center; gap:0.3rem; background:rgba(239,68,68,0.15); border:1px solid #ef4444; color:#fca5a5; border-radius:20px; padding:0.2rem 0.65rem; text-decoration:none; font-size:0.8rem; font-weight:600; white-space:nowrap;">
                             ✕ ล้าง Filter
                         </a>
