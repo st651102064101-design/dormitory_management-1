@@ -2164,11 +2164,17 @@ main > div:first-of-type,
       async function _saveRefund(ctrId) {
         var dedAmt = document.getElementById('rfDeductAmt');
         var dedReason = document.getElementById('rfDeductReason');
+        var roomRate = document.getElementById('rfRoomRate');
+        var waterCost = document.getElementById('rfWaterCost');
+        var elecCost = document.getElementById('rfElecCost');
         var fd = new FormData();
         fd.append('action', 'create');
         fd.append('ctr_id', ctrId);
         fd.append('deduction_amount', dedAmt ? dedAmt.value : '0');
         fd.append('deduction_reason', dedReason ? dedReason.value : '');
+        fd.append('room_rate', roomRate ? roomRate.value : '0');
+        fd.append('water_cost', waterCost ? waterCost.value : '0');
+        fd.append('elec_cost', elecCost ? elecCost.value : '0');
         try {
           var res = await fetch('../Manage/process_deposit_refund.php', {
             method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd
@@ -2271,12 +2277,18 @@ main > div:first-of-type,
         });
       });
 
-      // Delegated input handler for deposit deduction calculator (rfDeductAmt)
+      // Delegated input handler for deposit deduction and utility cost calculator
       document.addEventListener('input', function(e) {
-        if (e.target && e.target.id === 'rfDeductAmt') {
-          var maxAmt = parseFloat(e.target.getAttribute('max')) || 0;
-          var ded = Math.max(0, Math.min(maxAmt, parseInt(e.target.value)||0));
-          var refund = maxAmt - ded;
+        if (e.target && (e.target.id === 'rfDeductAmt' || e.target.id === 'rfRoomRate' || e.target.id === 'rfWaterCost' || e.target.id === 'rfElecCost')) {
+          var maxAmt = document.getElementById('rfDeductAmt').getAttribute('max');
+          maxAmt = parseFloat(maxAmt) || 0;
+          var ded = Math.max(0, Math.min(maxAmt, parseInt(document.getElementById('rfDeductAmt').value)||0));
+          var roomRate = parseInt(document.getElementById('rfRoomRate').value)||0;
+          var waterCost = parseInt(document.getElementById('rfWaterCost').value)||0;
+          var elecCost = parseInt(document.getElementById('rfElecCost').value)||0;
+          var totalUtilities = roomRate + waterCost + elecCost;
+          var refund = maxAmt - ded - totalUtilities;
+          refund = Math.max(0, refund);
           var el = document.getElementById('rfRefundDisplay');
           if (el) el.textContent = refund.toLocaleString('th-TH') + ' ฿';
         }
@@ -2836,6 +2848,27 @@ main > div:first-of-type,
             <div>
               <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">เหตุผลการหัก (ถ้ามี)</label>
               <input id="rfDeductReason" type="text" value="${dedReason}" placeholder="เช่น ค่าซ่อมประตู, ค่าทำความสะอาด"
+                style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #e2e8f0;
+                  background:#ffffff;color:${t.body};font-size:0.9rem;font-family:inherit;">
+            </div>
+            <div style="border-top:1px solid ${t.divider};padding-top:0.6rem;margin-top:0.2rem;margin-bottom:0.2rem;">
+              <div style="font-size:0.82rem;color:${t.muted};font-weight:600;margin-bottom:0.4rem;">📊 ค่าใช้ไป (ถ้ามี)</div>
+            </div>
+            <div>
+              <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">ค่าห้อง (บาท)</label>
+              <input id="rfRoomRate" type="number" min="0" value="0"
+                style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #e2e8f0;
+                  background:#ffffff;color:${t.body};font-size:0.9rem;font-family:inherit;">
+            </div>
+            <div>
+              <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">ค่าน้ำ (บาท)</label>
+              <input id="rfWaterCost" type="number" min="0" value="0"
+                style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #e2e8f0;
+                  background:#ffffff;color:${t.body};font-size:0.9rem;font-family:inherit;">
+            </div>
+            <div>
+              <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">ค่าไฟ (บาท)</label>
+              <input id="rfElecCost" type="number" min="0" value="0"
                 style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #e2e8f0;
                   background:#ffffff;color:${t.body};font-size:0.9rem;font-family:inherit;">
             </div>
