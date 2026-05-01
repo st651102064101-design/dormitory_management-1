@@ -2057,7 +2057,7 @@ main > div:first-of-type,
                         รีเฟรช
                     </button>
                     <?php if ($meterPendingBadgeCount > 0): ?>
-                    <a href="manage_utility.php?filter=pending_meter&month=<?php echo htmlspecialchars(date('Y-m'), ENT_QUOTES, 'UTF-8'); ?>" class="wiz-meter-alert" title="ไปจดมิเตอร์">
+                    <a href="manage_utility.php?filter=pending_meter&month=<?php echo (int)date('n'); ?>&year=<?php echo (int)date('Y'); ?>" class="wiz-meter-alert" title="ไปจดมิเตอร์">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>
                         ยังไม่จดมิเตอร์เดือนนี้ (<?php echo htmlspecialchars($currentMonthDisplay, ENT_QUOTES, 'UTF-8'); ?>)
                         <span class="wiz-meter-count"><?php echo $meterPendingBadgeCount > 99 ? '99+' : $meterPendingBadgeCount; ?></span>
