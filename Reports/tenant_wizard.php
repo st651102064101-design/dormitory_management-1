@@ -387,12 +387,12 @@ try {
             // รองรับ partial save: น้ำจดแล้ว/ไฟยังไม่ หรือกลับกัน
             $utilStmt = $conn->prepare(
                 "SELECT ctr_id, DATE_FORMAT(utl_date, '%Y-%m') AS ym,
-                        MAX(CASE WHEN utl_water_end IS NOT NULL AND utl_water_end > 0 THEN 1 ELSE 0 END) AS has_water,
-                        MAX(CASE WHEN utl_elec_end IS NOT NULL AND utl_elec_end > 0 THEN 1 ELSE 0 END) AS has_elec
+                        MAX(CASE WHEN utl_water_end IS NOT NULL AND utl_water_end >= 0 THEN 1 ELSE 0 END) AS has_water,
+                        MAX(CASE WHEN utl_elec_end IS NOT NULL AND utl_elec_end >= 0 THEN 1 ELSE 0 END) AS has_elec
                  FROM utility WHERE ctr_id IN ($placeholders)
                  AND (
-                    (utl_water_end IS NOT NULL AND utl_water_end > 0)
-                    OR (utl_elec_end IS NOT NULL AND utl_elec_end > 0)
+                    (utl_water_end IS NOT NULL AND utl_water_end >= 0)
+                    OR (utl_elec_end IS NOT NULL AND utl_elec_end >= 0)
                  )
                  GROUP BY ctr_id, DATE_FORMAT(utl_date, '%Y-%m')"
             );
