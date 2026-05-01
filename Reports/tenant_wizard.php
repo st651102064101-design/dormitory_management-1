@@ -2888,7 +2888,8 @@ main > div:first-of-type,
                                     💧 มิเตอร์น้ำ
                                 </label>
                                 <input type="number" name="water_meter_start" id="checkin_water_meter" min="0" max="9999999" placeholder="เลขมิเตอร์" 
-                                    style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;">
+                                    style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;"
+                                    oninput="if (this.value === '') return; this.value = Math.max(0, Math.min(9999999, parseInt(this.value, 10) || 0)); if (this.value.length > 7) this.value = this.value.slice(0, 7);">
                                 <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.4rem;">เลขมิเตอร์ปัจจุบัน (7 หลัก)</div>
                             </div>
                             <!-- Electricity Meter -->
@@ -2897,7 +2898,8 @@ main > div:first-of-type,
                                     ⚡ มิเตอร์ไฟ
                                 </label>
                                 <input type="number" name="elec_meter_start" id="checkin_elec_meter" min="0" max="99999" placeholder="เลขมิเตอร์" 
-                                    style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;">
+                                    style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;"
+                                    oninput="if (this.value === '') return; this.value = Math.max(0, Math.min(99999, parseInt(this.value, 10) || 0)); if (this.value.length > 5) this.value = this.value.slice(0, 5);">
                                 <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.4rem;">เลขมิเตอร์ปัจจุบัน (5 หลัก)</div>
                             </div>
                         </div>
@@ -5368,7 +5370,24 @@ main > div:first-of-type,
         const form = document.getElementById('checkinForm');
         const errors = [];
         const checkinDate = document.getElementById('checkin_date_hidden').value;
-        if (!checkinDate) errors.push('กรุณาเลือกวันที่เช็คอิน');
+        const waterMeter = document.getElementById('checkin_water_meter').value.trim();
+        const elecMeter = document.getElementById('checkin_elec_meter').value.trim();
+        
+        if (!checkinDate) {
+            errors.push('กรุณาเลือกวันที่เช็คอิน');
+        }
+        if (waterMeter !== '') {
+            const waterValue = parseInt(waterMeter, 10);
+            if (Number.isNaN(waterValue) || waterValue < 0 || waterValue > 9999999) {
+                errors.push('เลขมิเตอร์น้ำต้องเป็นตัวเลขระหว่าง 0 ถึง 9,999,999');
+            }
+        }
+        if (elecMeter !== '') {
+            const elecValue = parseInt(elecMeter, 10);
+            if (Number.isNaN(elecValue) || elecValue < 0 || elecValue > 99999) {
+                errors.push('เลขมิเตอร์ไฟต้องเป็นตัวเลขระหว่าง 0 ถึง 99,999');
+            }
+        }
         
         const errorContainer = document.getElementById('validationError');
         const errorList = document.getElementById('errorList');
