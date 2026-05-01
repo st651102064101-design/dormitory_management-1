@@ -2879,11 +2879,19 @@ main > div:first-of-type,
             </div>
             <button onclick="_saveRefund(${ctrId})"
                     style="padding:0.6rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;
-                           font-weight:600;font-size:0.88rem;color:#fff;
+                           font-weight:600;font-size:0.88rem;color:#fff;width:100%;
                            background:linear-gradient(135deg,#3b82f6,#2563eb);">
               💾 บันทึกข้อมูลคืนเงิน
             </button>
-            ${rf ? '<div style="border-top:1px solid '+t.divider+';padding-top:0.6rem;margin-top:0.2rem;"><label style="display:block;font-size:0.8rem;color:'+t.muted+';margin-bottom:0.3rem;">หลักฐานการโอนคืน</label>'+(rfProof ? '<div style="margin-bottom:0.4rem;"><a href="/'+rfProof+'" target="_blank" style="font-size:0.82rem;color:'+t.link+';">📎 ดูหลักฐานปัจจุบัน</a></div>' : '')+'<input id="rfProofFile" type="file" accept="image/*,.pdf" style="font-size:0.82rem;color:'+t.muted+';"><button onclick="_uploadRefundProof('+ctrId+')" style="margin-top:0.4rem;padding:0.45rem 0.8rem;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:500;color:#fff;background:#6366f1;">📤 อัพโหลด</button></div><button onclick="_confirmRefund('+ctrId+')" style="padding:0.6rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.88rem;color:#fff;background:linear-gradient(135deg,#22c55e,#16a34a);">✅ ยืนยันโอนคืนเงินแล้ว</button>' : ''}
+            ${rf ? `
+            <div style="border-top:1px solid ${t.divider};padding-top:0.6rem;margin-top:0.2rem;">
+              <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">หลักฐานการโอนคืน</label>
+              ${rfProof ? `<div style="margin-bottom:0.4rem;"><a href="/${rfProof}" target="_blank" style="font-size:0.82rem;color:${t.link};">📎 ดูหลักฐานปัจจุบัน</a></div>` : ''}
+              <input id="rfProofFile" type="file" accept="image/*,.pdf" style="font-size:0.82rem;color:${t.muted};margin-bottom:0.4rem;">
+              <button onclick="_uploadRefundProof(${ctrId})" style="margin-top:0.4rem;padding:0.45rem 0.8rem;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:500;color:#fff;width:100%;background:#6366f1;">📤 อัพโหลด</button>
+            </div>
+            <button onclick="_confirmRefund(${ctrId})" style="padding:0.6rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.88rem;color:#fff;width:100%;background:linear-gradient(135deg,#22c55e,#16a34a);">✅ ยืนยันโอนคืนเงินแล้ว</button>
+            ` : ''}
           </div>
         </div>`;
     }
