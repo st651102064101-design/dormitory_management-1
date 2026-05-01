@@ -2189,6 +2189,33 @@ main > div:first-of-type,
         } catch(e) { showCtrToast('❌ ข้อผิดพลาดเครือข่าย', 'error'); }
       }
 
+      async function _uploadRefundProof(ctrId) {
+        var fileInput = document.getElementById('rfProofFile');
+        if (!fileInput || !fileInput.files.length) {
+          showCtrToast('กรุณาเลือกไฟล์', 'error'); return;
+        }
+        var fd = new FormData();
+        fd.append('action', 'upload');
+        fd.append('ctr_id', ctrId);
+        fd.append('refund_proof', fileInput.files[0]);
+        try {
+          var res = await fetch('../Manage/process_deposit_refund.php', {
+            method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd
+          });
+          var data = await res.json();
+          if (data.success) {
+            showCtrToast('✅ ' + data.message, 'success');
+            fileInput.value = '';
+            setTimeout(function() { openContractDetail(ctrId); }, 500);
+          } else {
+            showCtrToast('❌ ' + data.error, 'error');
+          }
+        } catch(e) { 
+          console.error('Upload error:', e);
+          showCtrToast('❌ ข้อผิดพลาดเครือข่าย: ' + e.message, 'error'); 
+        }
+      }
+
       async function _confirmRefund(ctrId) {
         var ok = await appleConfirm('ยืนยันว่าโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงินมัดจำ');
         if (!ok) return;
@@ -2268,6 +2295,21 @@ main > div:first-of-type,
           refund = Math.max(0, refund);
           var el = document.getElementById('rfRefundDisplay');
           if (el) el.textContent = refund.toLocaleString('th-TH') + ' ฿';
+        }
+      });
+
+      // Auto-upload refund proof when file is selected
+      document.addEventListener('change', function(e) {
+        if (e.target && e.target.id === 'rfProofFile' && e.target.files && e.target.files.length) {
+          // Get ctrId from the confirm button or from the form
+          var confirmBtn = document.querySelector('[onclick*="_confirmRefund"]');
+          if (!confirmBtn) return;
+          var matches = confirmBtn.getAttribute('onclick').match(/\d+/);
+          var ctrId = matches ? matches[0] : null;
+          if (!ctrId) return;
+          
+          showCtrToast('⏳ กำลังอัพโหลดหลักฐาน...', 'info');
+          _uploadRefundProof(parseInt(ctrId));
         }
       });
 
@@ -2859,6 +2901,7 @@ main > div:first-of-type,
               <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">หลักฐานการโอนคืน</label>
               ${rfProof ? `<div style="margin-bottom:0.4rem;"><a href="/${rfProof}" target="_blank" style="font-size:0.82rem;color:${t.link};">📎 ดูหลักฐานปัจจุบัน</a></div>` : ''}
               <input id="rfProofFile" type="file" accept="image/*,.pdf" style="font-size:0.82rem;color:${t.muted};margin-bottom:0.4rem;">
+              <div style="font-size:0.75rem;color:${t.dim};margin-top:0.2rem;">เลือกไฟล์เพื่ออัพโหลดโดยอัตโนมัติ</div>
             </div>
             <button onclick="_confirmRefund(${ctrId})" style="padding:0.6rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.88rem;color:#fff;width:100%;background:linear-gradient(135deg,#22c55e,#16a34a);">✅ ยืนยันโอนคืนเงินแล้ว</button>
             ` : ''}
