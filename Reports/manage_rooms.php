@@ -7,7 +7,9 @@ if (empty($_SESSION['admin_username'])) {
     exit;
 }
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/room_price_migration.php';
 $pdo = connectDB();
+ensureRoomPriceColumn($pdo);
 
 // ซิงก์สถานะห้องอัตโนมัติจากสัญญาและการจอง
 // room_status: 0 = ว่าง, 1 = ไม่ว่าง (มีจอง หรือ มีสัญญา)
@@ -60,7 +62,13 @@ switch ($sortBy) {
 
 // ดึงข้อมูลห้องพัก
 $stmt = $pdo->query("
-    SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.type_id, r.room_features, rt.type_name, rt.type_price
+    SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.type_id, r.room_features,
+           r.room_price, rt.type_name, rt.type_price,
+           COALESCE(NULLIF(r.room_price, 0), rt.type_price) AS display_price,
+           CASE
+             WHEN r.room_price IS NOT NULL AND r.room_price > 0 AND r.room_price != rt.type_price THEN 1
+             ELSE 0
+           END AS has_custom_price
     FROM room r
     LEFT JOIN roomtype rt ON r.type_id = rt.type_id
     $orderBy
@@ -1646,6 +1654,11 @@ main > div:first-of-type,
                    </div>
                 </div>
                 <div class="room-form-group">
+                  <label for="room_price">ราคาห้องพิเศษ (บาท/เดือน)</label>
+                  <input type="number" id="room_price" name="room_price" min="0" step="1" placeholder="เว้นว่าง = ใช้ราคาตามประเภทห้อง" />
+                  <small style="display:block;margin-top:0.35rem;color:#94a3b8;font-size:0.8rem;">ใช้สำหรับลดราคาเฉพาะห้องในช่วงปิดเทอม</small>
+                </div>
+                <div class="room-form-group">
                   <label>สิ่งอำนวยความสะดวก:</label>
                   <div id="add_features_checkboxes" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.35rem;">
                     <?php
@@ -1737,8 +1750,11 @@ main > div:first-of-type,
                       <h3 class="room-card-number">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></h3>
                       <div class="room-card-meta">
                         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                        <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?> • <?php echo number_format($room['type_price'] ?? 0); ?> บาท/เดือน
+                        <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?> • <?php echo number_format((int)($room['display_price'] ?? 0)); ?> บาท/เดือน
                       </div>
+                      <?php if (!empty($room['has_custom_price'])): ?>
+                        <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem;">ปกติ <?php echo number_format((int)($room['type_price'] ?? 0)); ?> บาท</div>
+                      <?php endif; ?>
                       <div class="room-card-status <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
                         <?php if ($room['room_status'] === '0'): ?>
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
@@ -1808,9 +1824,12 @@ main > div:first-of-type,
                         <td style="font-weight:600;color:#0f172a;">
                           ห้อง <?php echo htmlspecialchars($room['room_number']); ?><br>
                           <span style="font-size:0.85rem;color:#64748b;font-weight:normal;">
-                            <?php echo number_format($room['type_price'] ?? 0); ?> บาท<br>
+                            <?php echo number_format((int)($room['display_price'] ?? 0)); ?> บาท<br>
                             ประเภท: <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?>
                           </span>
+                          <?php if (!empty($room['has_custom_price'])): ?>
+                            <div style="font-size:0.75rem;color:#94a3b8;margin-top:0.25rem;">ปกติ <?php echo number_format((int)($room['type_price'] ?? 0)); ?> บาท</div>
+                          <?php endif; ?>
                         </td>
                         <td>
                           <span class="room-card-status <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
@@ -1880,6 +1899,12 @@ main > div:first-of-type,
                 <?php endforeach; ?>
               </select>
             </div>
+          </div>
+
+          <div class="booking-form-group">
+            <label for="edit_room_price">ราคาห้องพิเศษ (บาท/เดือน)</label>
+            <input type="number" name="room_price" id="edit_room_price" min="0" step="1" placeholder="เว้นว่าง = ใช้ราคาตามประเภทห้อง">
+            <small style="display:block;margin-top:0.35rem;color:#94a3b8;font-size:0.8rem;">ใช้สำหรับลดราคาเฉพาะห้องในช่วงปิดเทอม</small>
           </div>
           
           <div class="booking-form-group">
@@ -2009,6 +2034,11 @@ main > div:first-of-type,
         document.getElementById('edit_room_number').value = room.room_number;
         document.getElementById('edit_type_id').value = room.type_id;
         document.getElementById('delete_image').value = '0';
+        const editRoomPriceInput = document.getElementById('edit_room_price');
+        if (editRoomPriceInput) {
+          const rawPrice = parseFloat(room.room_price || 0);
+          editRoomPriceInput.value = rawPrice > 0 ? rawPrice : '';
+        }
         
         // ตั้งค่า features checkboxes
         var roomFeats = (room.room_features || '').split(',').map(function(s){ return s.trim(); }).filter(Boolean);

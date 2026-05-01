@@ -12,7 +12,9 @@ if (empty($_SESSION['admin_username'])) {
 
 require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/lang.php';
+require_once __DIR__ . '/../includes/room_price_migration.php';
 $pdo = connectDB();
+ensureRoomPriceColumn($pdo);
 
 // ซ่อมแซมข้อมูลการจองที่ค้างอยู่ (ถ้ามีการทำสัญญาแล้ว ให้สถานะการจองเป็นเข้าพักแล้ว)
 $pdo->exec("
@@ -48,8 +50,13 @@ $pdo->exec("UPDATE room SET room_status = '1' WHERE EXISTS (
 
 // ดึงข้อมูลห้องพัก
 $rooms = $pdo->query("
-  SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.type_id, 
-         rt.type_name, rt.type_price
+  SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.type_id,
+         r.room_price, rt.type_name, rt.type_price,
+         COALESCE(NULLIF(r.room_price, 0), rt.type_price) AS display_price,
+         CASE
+           WHEN r.room_price IS NOT NULL AND r.room_price > 0 AND r.room_price != rt.type_price THEN 1
+           ELSE 0
+         END AS has_custom_price
   FROM room r
   LEFT JOIN roomtype rt ON r.type_id = rt.type_id
   ORDER BY CAST(r.room_number AS UNSIGNED) ASC
@@ -533,7 +540,10 @@ main > div:first-of-type,
                 <div class="room-item <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
                   <div class="room-number">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></div>
                   <div class="room-type"><?php echo htmlspecialchars($room['type_name'] ?? '-'); ?></div>
-                  <div class="room-price">฿<?php echo number_format((int)($room['type_price'] ?? 0)); ?>/ด.</div>
+                  <div class="room-price">฿<?php echo number_format((int)($room['display_price'] ?? 0)); ?>/ด.</div>
+                  <?php if (!empty($room['has_custom_price'])): ?>
+                    <div style="font-size:0.75rem;color:#94a3b8;">ปกติ ฿<?php echo number_format((int)($room['type_price'] ?? 0)); ?></div>
+                  <?php endif; ?>
                   <div style="margin-top:0.5rem;">
                     <?php if ($room['room_status'] === '0'): ?>
                       <span class="status-indicator status-vacant" style="font-size:0.75rem;padding:0.3rem 0.6rem;">✓ ว่าง</span>
@@ -561,7 +571,12 @@ main > div:first-of-type,
                     <tr>
                       <td data-label="ห้อง">ห้อง <?php echo htmlspecialchars($room['room_number']); ?></td>
                       <td data-label="ประเภทห้อง"><?php echo htmlspecialchars($room['type_name'] ?? '-'); ?></td>
-                      <td data-label="ราคา/เดือน">฿<?php echo number_format((int)($room['type_price'] ?? 0)); ?></td>
+                      <td data-label="ราคา/เดือน">
+                        ฿<?php echo number_format((int)($room['display_price'] ?? 0)); ?>
+                        <?php if (!empty($room['has_custom_price'])): ?>
+                          <div style="font-size:0.75rem;color:#94a3b8;">ปกติ ฿<?php echo number_format((int)($room['type_price'] ?? 0)); ?></div>
+                        <?php endif; ?>
+                      </td>
                       <td data-label="สถานะ">
                         <?php if ($room['room_status'] === '0'): ?>
                           <span class="status-indicator status-vacant">✓ ว่าง</span>

@@ -23,7 +23,9 @@ $csrfToken = (string)($_SESSION['csrf_token'] ?? '');
 require_once __DIR__ . '/../ConnectDB.php';
 require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/../includes/water_calc.php';
+require_once __DIR__ . '/../includes/room_price_migration.php';
 $pdo = connectDB();
+ensureRoomPriceColumn($pdo);
 
 // --- อัตโนมัติสร้างรายการค่าใช้จ่ายใหม่เมื่อถึงเดือนใหม่ ---
 $today = new DateTime();
@@ -72,10 +74,10 @@ foreach ($contracts as $contract) {
     $checkStmt->execute([$ctr_id, $nextMonth]);
     if ((int)$checkStmt->fetchColumn() === 0) {
       // ดึงราคาห้อง
-      $roomStmt = $pdo->prepare("SELECT r.room_id, rt.type_price FROM contract c LEFT JOIN room r ON c.room_id = r.room_id LEFT JOIN roomtype rt ON r.type_id = rt.type_id WHERE c.ctr_id = ?");
+      $roomStmt = $pdo->prepare("SELECT r.room_id, r.room_price, rt.type_price, COALESCE(NULLIF(r.room_price, 0), rt.type_price) AS effective_room_price FROM contract c LEFT JOIN room r ON c.room_id = r.room_id LEFT JOIN roomtype rt ON r.type_id = rt.type_id WHERE c.ctr_id = ?");
       $roomStmt->execute([$ctr_id]);
       $room = $roomStmt->fetch(PDO::FETCH_ASSOC);
-      $room_price = (int)($room['type_price'] ?? 0);
+      $room_price = (int)($room['effective_room_price'] ?? 0);
       // ดึงเรตไฟ/น้ำ ล่าสุด
       $rateRow = $pdo->query("SELECT rate_water, rate_elec FROM rate ORDER BY rate_id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
       $rate_elec = (int)($rateRow['rate_elec'] ?? 7);

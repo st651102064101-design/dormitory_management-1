@@ -14,10 +14,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/room_price_migration.php';
 require_once __DIR__ . '/../includes/water_calc.php';
 
 try {
     $pdo = connectDB();
+    ensureRoomPriceColumn($pdo);
 
     $ctr_id = isset($_POST['ctr_id']) ? (int)$_POST['ctr_id'] : 0;
     $exp_month = $_POST['exp_month'] ?? '';
@@ -35,7 +37,8 @@ try {
 
     // ดึงข้อมูลสัญญาและราคาห้อง
     $ctrStmt = $pdo->prepare("
-        SELECT c.ctr_id, c.ctr_status, r.room_id, rt.type_price
+        SELECT c.ctr_id, c.ctr_status, r.room_id, r.room_price, rt.type_price,
+               COALESCE(NULLIF(r.room_price, 0), rt.type_price) AS effective_room_price
         FROM contract c
         LEFT JOIN room r ON c.room_id = r.room_id
         LEFT JOIN roomtype rt ON r.type_id = rt.type_id
@@ -48,7 +51,7 @@ try {
         die(json_encode(['success' => false, 'error' => 'ไม่พบข้อมูลสัญญา']));
     }
 
-    $room_price = (int)($contract['type_price'] ?? 0);
+    $room_price = (int)($contract['effective_room_price'] ?? 0);
 
     // คำนวณค่าใช้จ่าย (ค่ามัดจำ 2000 ไม่เกี่ยวข้อง ใช้สำหรับบิลเดือนเท่านั้น)
     $exp_elec_chg = (int)round($exp_elec_unit * $rate_elec);

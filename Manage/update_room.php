@@ -16,13 +16,20 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/room_price_migration.php';
 
 try {
     $pdo = connectDB();
+    ensureRoomPriceColumn($pdo);
 
     $room_id = isset($_POST['room_id']) ? (int)$_POST['room_id'] : 0;
     $room_number = trim($_POST['room_number'] ?? '');
     $type_id = isset($_POST['type_id']) ? (int)$_POST['type_id'] : 0;
+    $roomPriceRaw = preg_replace('/[^0-9]/', '', $_POST['room_price'] ?? '');
+    $room_price = $roomPriceRaw !== '' ? (int)$roomPriceRaw : null;
+    if ($room_price !== null && $room_price <= 0) {
+        $room_price = null;
+    }
 
     if ($room_id <= 0 || $room_number === '' || $type_id <= 0) {
         http_response_code(400);
@@ -99,8 +106,8 @@ try {
         $room_features = implode(',', array_values($cleaned));
     }
 
-    $update = $pdo->prepare("UPDATE room SET room_number = ?, type_id = ?, room_image = ?, room_features = ? WHERE room_id = ?");
-    $update->execute([$room_number, $type_id, $room_image, $room_features, $room_id]);
+    $update = $pdo->prepare("UPDATE room SET room_number = ?, type_id = ?, room_price = ?, room_image = ?, room_features = ? WHERE room_id = ?");
+    $update->execute([$room_number, $type_id, $room_price, $room_image, $room_features, $room_id]);
 
     // ดึงข้อมูลห้องที่อัปเดตพร้อมชื่อประเภทห้อง
     $roomQuery = $pdo->prepare("

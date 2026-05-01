@@ -15,12 +15,19 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../includes/room_price_migration.php';
 
 try {
     $pdo = connectDB();
+    ensureRoomPriceColumn($pdo);
 
     $roomNumber = isset($_POST['room_number']) ? trim($_POST['room_number']) : '';
     $typeId = isset($_POST['type_id']) ? (int)$_POST['type_id'] : 0;
+    $roomPriceRaw = preg_replace('/[^0-9]/', '', $_POST['room_price'] ?? '');
+    $roomPrice = $roomPriceRaw !== '' ? (int)$roomPriceRaw : null;
+    if ($roomPrice !== null && $roomPrice <= 0) {
+        $roomPrice = null;
+    }
     
     if ($roomNumber === '' || $typeId <= 0) {
         echo json_encode(['success' => false, 'message' => 'กรุณากรอกข้อมูลให้ครบถ้วน']);
@@ -63,13 +70,13 @@ try {
 
     // บันทึกข้อมูลห้อง
     $roomStatus = '0'; // ห้องใหม่เริ่มต้นเป็นว่าง
-    $stmtInsert = $pdo->prepare('INSERT INTO room (room_number, type_id, room_status, room_image, room_features) VALUES (?, ?, ?, ?, ?)');
-    $stmtInsert->execute([$roomNumber, $typeId, $roomStatus, $roomImage, $room_features]);
+    $stmtInsert = $pdo->prepare('INSERT INTO room (room_number, type_id, room_status, room_price, room_image, room_features) VALUES (?, ?, ?, ?, ?, ?)');
+    $stmtInsert->execute([$roomNumber, $typeId, $roomStatus, $roomPrice, $roomImage, $room_features]);
     
     $roomId = $pdo->lastInsertId();
     
     // ดึงข้อมูลห้องที่เพิ่มเพื่อส่งกลับ
-    $stmt = $pdo->prepare('SELECT r.room_id, r.room_number, r.room_status, r.room_image, rt.type_name, rt.type_price FROM room r LEFT JOIN roomtype rt ON r.type_id = rt.type_id WHERE r.room_id = ?');
+    $stmt = $pdo->prepare('SELECT r.room_id, r.room_number, r.room_status, r.room_image, r.room_price, rt.type_name, rt.type_price FROM room r LEFT JOIN roomtype rt ON r.type_id = rt.type_id WHERE r.room_id = ?');
     $stmt->execute([$roomId]);
     $newRoom = $stmt->fetch(PDO::FETCH_ASSOC);
     
