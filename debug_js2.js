@@ -844,8 +844,8 @@
                 document.getElementById('moPrevWater').textContent = String(_moPrevWater).padStart(7, '0');
                 document.getElementById('moPrevElec').textContent  = String(_moPrevElec).padStart(5, '0');
                 if (d.saved && d.meter_month == _moMonth && d.meter_year == _moYear && !_moIsFuture && d.curr_water !== null && d.curr_elec !== null) {
-                    document.getElementById('moWaterInput').value    = d.curr_water != null ? String(d.curr_water).padStart(7, '0') : '';
-                    document.getElementById('moElecInput').value     = d.curr_elec  != null ? String(d.curr_elec).padStart(5, '0')  : '';
+                    document.getElementById('moWaterInput').value    = d.curr_water != null ? String(Math.floor(parseFloat(String(d.curr_water).replace(/,/g, '')))).padStart(7, '0') : '';
+                    document.getElementById('moElecInput').value     = d.curr_elec  != null ? String(Math.floor(parseFloat(String(d.curr_elec).replace(/,/g, '')))).padStart(5, '0')  : '';
                     // Allow editing even after saved - just show the current values
                     btn.style.display = 'inline-block';
                     btn.textContent = 'อัปเดตมิเตอร์';
@@ -857,12 +857,12 @@
                 } else if (!d.saved && d.meter_month == _moMonth && d.meter_year == _moYear && (d.water_saved || d.elec_saved)) {
                     // Partial save: one meter recorded, the other not
                     if (d.water_saved && d.curr_water !== null) {
-                        document.getElementById('moWaterInput').value = String(d.curr_water).padStart(7, '0');
+                        document.getElementById('moWaterInput').value = String(Math.floor(parseFloat(String(d.curr_water).replace(/,/g, '')))).padStart(7, '0');
                         document.getElementById('moWaterInput').disabled = true;
                         document.getElementById('moWaterInput').style.opacity = '0.6';
                     }
                     if (d.elec_saved && d.curr_elec !== null) {
-                        document.getElementById('moElecInput').value = String(d.curr_elec).padStart(5, '0');
+                        document.getElementById('moElecInput').value = String(Math.floor(parseFloat(String(d.curr_elec).replace(/,/g, '')))).padStart(5, '0');
                         document.getElementById('moElecInput').disabled = true;
                         document.getElementById('moElecInput').style.opacity = '0.6';
                     }
@@ -1040,8 +1040,8 @@
                     badge.style.display = 'inline-block';
                     btn.style.display   = 'inline-block';
                     btn.textContent     = 'อัปเดตมิเตอร์';
-                    document.getElementById('meterWaterInput').value    = (d.curr_water != null && d.curr_water > 0) ? String(d.curr_water).padStart(7, '0') : '';
-                    document.getElementById('meterElecInput').value     = (d.curr_elec  != null && d.curr_elec  > 0) ? String(d.curr_elec).padStart(5, '0')  : '';
+                    document.getElementById('meterWaterInput').value    = (d.curr_water != null && d.curr_water > 0) ? String(Math.floor(parseFloat(String(d.curr_water).replace(/,/g, '')))).padStart(7, '0') : '';
+                    document.getElementById('meterElecInput').value     = (d.curr_elec  != null && d.curr_elec  > 0) ? String(Math.floor(parseFloat(String(d.curr_elec).replace(/,/g, '')))).padStart(5, '0')  : '';
                     document.getElementById('meterWaterInput').disabled = false;
                     document.getElementById('meterElecInput').disabled  = false;
                     updateMeterPreview();
