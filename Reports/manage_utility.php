@@ -27,6 +27,11 @@ $todoOnly = isset($_GET['todo_only']) && $_GET['todo_only'] === '1';
 $selectedCtrId = isset($_GET['ctr_id']) ? (int)$_GET['ctr_id'] : 0;
 $selectedCtrFilterActive = $selectedCtrId > 0;
 
+// เพิ่ม filter สำหรับห้องที่ยังไม่ได้จดมิเตอร์ (pending meter)
+$filterPendingMeter = isset($_GET['filter']) && $_GET['filter'] === 'pending_meter';
+if ($filterPendingMeter) {
+    $todoOnly = true;  // แสดงเฉพาะห้องที่ต้องจดมิเตอร์
+
 // เดือน/ปีที่มีอยู่จริงในฐานข้อมูล (utility) แต่เฉพาะที่ไม่ใช่เดือนอนาคต
 $availableYears = [];
 $availableMonthsByYear = [];
@@ -537,6 +542,11 @@ if ($showMode === 'occupied') {
     if ($selectedCtrFilterActive) {
         $occupiedSql .= "\n        AND c.ctr_id = ?";
         $occupiedParams[] = $selectedCtrId;
+    }
+    if ($filterPendingMeter) {
+        $occupiedSql .= "\n        AND NOT EXISTS (SELECT 1 FROM utility u WHERE u.ctr_id = c.ctr_id AND MONTH(u.utl_date) = ? AND YEAR(u.utl_date) = ?)";
+        $occupiedParams[] = $month;
+        $occupiedParams[] = $year;
     }
 
     $occupiedSql .= "\n        ORDER BY CAST(r.room_number AS UNSIGNED) ASC";
