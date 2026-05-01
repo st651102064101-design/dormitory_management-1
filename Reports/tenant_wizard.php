@@ -2101,13 +2101,6 @@ main > div:first-of-type,
                                 // step 5 ต้องรอให้ step 4 (เช็คอิน) เสร็จเรียบร้อยก่อน
                                 $step5 = ((int)$tenant['step_5_confirmed'] === 1 && $step4 === 1) ? 1 : 0;
 
-                                // บังคับไม่ให้ currentStep ข้ามขั้นตอนที่ยังไม่เสร็จ (ป้องกันกรณีแก้ไขข้อมูลหรือบัคข้าม step)
-                                if ($step1 === 0) $currentStep = 1;
-                                elseif ($step2 === 0) $currentStep = 2;
-                                elseif ($step3 === 0) $currentStep = 3;
-                                elseif ($step4 === 0) $currentStep = 4;
-                                elseif ($step5 === 0) $currentStep = 5;
-
                                 $contractStartRaw = (string)($tenant['ctr_start'] ?? '');
                                 $expectedFirstBillMonthRaw = '';
                                 if ($contractStartRaw !== '' && strtotime($contractStartRaw) !== false) {
@@ -2188,6 +2181,24 @@ main > div:first-of-type,
                                 $currentYm = date('Y-m');
                                 $currentMonthMeterDone = ($utilMonthsRecorded[$ctrIdInt][$currentYm] ?? '') === 'full';
                                 $billingModalMeterOk = ($ctrStartYm === $currentYm) || $currentMonthMeterDone;
+
+                                // บังคับไม่ให้ currentStep ข้ามขั้นตอนที่ยังไม่เสร็จ
+                                if ($step1 === 0) {
+                                    $currentStep = 1;
+                                } elseif ($step2 === 0) {
+                                    $currentStep = 2;
+                                } elseif ($step3 === 0) {
+                                    $currentStep = 3;
+                                } elseif ($step4 === 0) {
+                                    $currentStep = 4;
+                                } elseif ($step5 === 0) {
+                                    // ถ้าเช็คอินเสร็จแล้ว แต่ยังไม่มีการจดมิเตอร์/บิลใดๆ ให้ยังคงอยู่ที่ Step 4
+                                    if ($step4 === 1 && !$meterBillDone) {
+                                        $currentStep = 4;
+                                    } else {
+                                        $currentStep = 5;
+                                    }
+                                }
 
                                 // HTML สถานะมิเตอร์ (แสดงใต้สถานะบิล สำหรับแถว ⏳ เท่านั้น)
                                 $openBillingJs = "openBillingModal(" . (int)$tenant['ctr_id'] . ", "
