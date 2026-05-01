@@ -1753,7 +1753,7 @@ main > div:first-of-type,
                         <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?> • <?php echo number_format((int)($room['display_price'] ?? 0)); ?> บาท/เดือน
                       </div>
                       <?php if (!empty($room['has_custom_price'])): ?>
-                        <div style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem;">ปกติ <?php echo number_format((int)($room['type_price'] ?? 0)); ?> บาท</div>
+                        <div class="room-price-note" style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem;">ปกติ <?php echo number_format((int)($room['type_price'] ?? 0)); ?> บาท</div>
                       <?php endif; ?>
                       <div class="room-card-status <?php echo $room['room_status'] === '0' ? 'vacant' : 'occupied'; ?>">
                         <?php if ($room['room_status'] === '0'): ?>
@@ -1828,7 +1828,7 @@ main > div:first-of-type,
                             ประเภท: <?php echo htmlspecialchars($room['type_name'] ?? '-'); ?>
                           </span>
                           <?php if (!empty($room['has_custom_price'])): ?>
-                            <div style="font-size:0.75rem;color:#94a3b8;margin-top:0.25rem;">ปกติ <?php echo number_format((int)($room['type_price'] ?? 0)); ?> บาท</div>
+                            <div class="room-price-note" style="font-size:0.75rem;color:#94a3b8;margin-top:0.25rem;">ปกติ <?php echo number_format((int)($room['type_price'] ?? 0)); ?> บาท</div>
                           <?php endif; ?>
                         </td>
                         <td>
@@ -2026,6 +2026,14 @@ main > div:first-of-type,
       const roomsData = <?php echo json_encode($rooms); ?>;
       window.roomsData = roomsData;
 
+      function getRoomPriceInfo(room) {
+        const typePrice = parseFloat(room.type_price || 0);
+        const customPrice = parseFloat(room.room_price || 0);
+        const useCustom = customPrice > 0 && customPrice !== typePrice;
+        const displayPrice = useCustom ? customPrice : typePrice;
+        return { displayPrice, useCustom, typePrice };
+      }
+
       function editRoom(roomId) {
         const room = roomsData.find(r => r.room_id == roomId);
         if (!room) return;
@@ -2184,6 +2192,9 @@ main > div:first-of-type,
       // Function to update room in display without page reload
       function updateRoomInDisplay(room) {
         const roomId = room.room_id;
+        const priceInfo = getRoomPriceInfo(room);
+        const priceText = new Intl.NumberFormat('th-TH').format(priceInfo.displayPrice || 0);
+        const basePriceText = new Intl.NumberFormat('th-TH').format(priceInfo.typePrice || 0);
         
         // อัปเดตข้อมูลใน roomsData array
         const index = roomsData.findIndex(r => r.room_id == roomId);
@@ -2236,7 +2247,21 @@ main > div:first-of-type,
           const metaEl = gridCard.querySelector('.room-card-meta');
           if (metaEl) {
             metaEl.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              ${room.type_name || '-'} • ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท/เดือน`;
+              ${room.type_name || '-'} • ${priceText} บาท/เดือน`;
+            const noteEl = gridCard.querySelector('.room-price-note');
+            if (priceInfo.useCustom) {
+              if (noteEl) {
+                noteEl.textContent = `ปกติ ${basePriceText} บาท`;
+              } else {
+                const note = document.createElement('div');
+                note.className = 'room-price-note';
+                note.style.cssText = 'font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem;';
+                note.textContent = `ปกติ ${basePriceText} บาท`;
+                metaEl.insertAdjacentElement('afterend', note);
+              }
+            } else if (noteEl) {
+              noteEl.remove();
+            }
           }
         }
         
@@ -2264,11 +2289,15 @@ main > div:first-of-type,
           
           // อัปเดตข้อมูลห้อง (cell 1)
           if (cells[1]) {
+            const tablePriceNote = priceInfo.useCustom
+              ? `<div class="room-price-note" style="font-size:0.75rem;color:#94a3b8;margin-top:0.25rem;">ปกติ ${basePriceText} บาท</div>`
+              : '';
             cells[1].innerHTML = `ห้อง ${room.room_number}<br>
               <span style="font-size:0.85rem;color:#64748b;font-weight:normal;">
-                ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท<br>
+                ${priceText} บาท<br>
                 ประเภท: ${room.type_name || '-'}
-              </span>`;
+              </span>
+              ${tablePriceNote}`;
             cells[1].style.fontWeight = '600';
             cells[1].style.color = '#0f172a';
           }
@@ -2539,6 +2568,13 @@ main > div:first-of-type,
         if (emptyState) {
           emptyState.remove();
         }
+
+        const priceInfo = getRoomPriceInfo(room);
+        const priceText = new Intl.NumberFormat('th-TH').format(priceInfo.displayPrice || 0);
+        const basePriceText = new Intl.NumberFormat('th-TH').format(priceInfo.typePrice || 0);
+        const priceNote = priceInfo.useCustom
+          ? `<div class="room-price-note" style="font-size:0.75rem;color:#94a3b8;margin-bottom:0.5rem;">ปกติ ${basePriceText} บาท</div>`
+          : '';
         
         // เพิ่มลงในการ์ดมุมมอง (grid view)
         const roomsGrid = document.getElementById('roomsGrid');
@@ -2572,8 +2608,9 @@ main > div:first-of-type,
                 <h3 class="room-card-number">ห้อง ${room.room_number}</h3>
                 <div class="room-card-meta">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-                  ${room.type_name || '-'} • ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท/เดือน
+                  ${room.type_name || '-'} • ${priceText} บาท/เดือน
                 </div>
+                ${priceNote}
                 <div class="room-card-status vacant">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
                   ว่าง
@@ -2617,9 +2654,10 @@ main > div:first-of-type,
                 <td style="font-weight:600;color:#0f172a;">
                   ห้อง ${room.room_number}<br>
                   <span style="font-size:0.85rem;color:#64748b;font-weight:normal;">
-                    ${new Intl.NumberFormat('th-TH').format(room.type_price || 0)} บาท<br>
+                    ${priceText} บาท<br>
                     ประเภท: ${room.type_name || '-'}
                   </span>
+                  ${priceInfo.useCustom ? `<div class="room-price-note" style="font-size:0.75rem;color:#94a3b8;margin-top:0.25rem;">ปกติ ${basePriceText} บาท</div>` : ''}
                 </td>
                 <td>
                   <span class="room-card-status vacant">
