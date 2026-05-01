@@ -115,10 +115,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
     try {
         $repair_desc = trim($_POST['repair_desc'] ?? '');
         $scheduled_date = trim((string)($_POST['scheduled_date'] ?? ''));
-        $scheduled_time_start = trim((string)($_POST['scheduled_time_start'] ?? ''));
-        $scheduled_time_end = trim((string)($_POST['scheduled_time_end'] ?? ''));
-        $technician_name = trim((string)($_POST['technician_name'] ?? ''));
-        $technician_phone = trim((string)($_POST['technician_phone'] ?? ''));
         
         if (empty($repair_desc)) {
             $error = 'กรุณาระบุรายละเอียดการแจ้งซ่อม';
@@ -127,8 +123,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
                 throw new Exception('ระบบยังไม่รองรับการบันทึกนัดหมาย กรุณาแจ้งผู้ดูแลระบบ');
             }
 
-            if ($scheduled_date === '' || $scheduled_time_start === '' || $scheduled_time_end === '' || $technician_name === '' || $technician_phone === '') {
-                throw new Exception('กรุณากรอกข้อมูลนัดหมายให้ครบ: วันที่ เวลา ชื่อช่าง และเบอร์โทร');
+            if ($scheduled_date === '') {
+                throw new Exception('กรุณากรอกข้อมูลวันที่นัดหมาย');
             }
 
             $scheduledDateObj = DateTime::createFromFormat('Y-m-d', $scheduled_date);
@@ -136,19 +132,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
                 throw new Exception('รูปแบบวันที่นัดหมายไม่ถูกต้อง');
             }
 
-            $startTimeObj = DateTime::createFromFormat('H:i', $scheduled_time_start);
-            $endTimeObj = DateTime::createFromFormat('H:i', $scheduled_time_end);
-            if (!$startTimeObj || $startTimeObj->format('H:i') !== $scheduled_time_start || !$endTimeObj || $endTimeObj->format('H:i') !== $scheduled_time_end) {
-                throw new Exception('รูปแบบเวลานัดหมายไม่ถูกต้อง');
-            }
-            if ((int)$startTimeObj->format('Hi') >= (int)$endTimeObj->format('Hi')) {
-                throw new Exception('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น');
-            }
-
-            $technicianPhoneDigits = preg_replace('/\D+/', '', $technician_phone);
-            if (strlen((string)$technicianPhoneDigits) < 8) {
-                throw new Exception('กรุณาระบุเบอร์โทรช่างให้ถูกต้อง');
-            }
+            $scheduled_time_start = null;
+            $scheduled_time_end = null;
+            $technician_name = null;
+            $technician_phone = null;
 
             // AI spam check — server-side gate
             $aiResult = scoreRepairText($repair_desc);
@@ -970,41 +957,9 @@ try {
                 <div class="form-group">
                     <label for="scheduled_date_input" class="repair-schedule-label">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
-                        วันที่นัดหมาย *
+                        วันที่สะดวกให้เข้าซ่อม *
                     </label>
                     <input type="date" name="scheduled_date" id="scheduled_date_input" class="repair-schedule-input" required>
-                </div>
-                <div class="repair-schedule-row">
-                    <div class="form-group">
-                        <label for="scheduled_time_start_input" class="repair-schedule-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            เวลาเริ่ม *
-                        </label>
-                        <input type="time" name="scheduled_time_start" id="scheduled_time_start_input" class="repair-schedule-input" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="scheduled_time_end_input" class="repair-schedule-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                            เวลาสิ้นสุด *
-                        </label>
-                        <input type="time" name="scheduled_time_end" id="scheduled_time_end_input" class="repair-schedule-input" required>
-                    </div>
-                </div>
-                <div class="repair-schedule-row">
-                    <div class="form-group">
-                        <label for="technician_name_input" class="repair-schedule-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                            ชื่อช่าง *
-                        </label>
-                        <input type="text" name="technician_name" id="technician_name_input" class="repair-schedule-input" placeholder="เช่น ช่างเอก" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="technician_phone_input" class="repair-schedule-label">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
-                            เบอร์โทรช่าง *
-                        </label>
-                        <input type="tel" name="technician_phone" id="technician_phone_input" class="repair-schedule-input" placeholder="0xx-xxx-xxxx" required>
-                    </div>
                 </div>
                 <div class="form-group">
                     <label>รูปภาพประกอบ (ถ้ามี)</label>
@@ -1599,29 +1554,14 @@ try {
             if (!submitBtn) return;
 
             const scheduledDateInput = document.getElementById('scheduled_date_input');
-            const startTimeInput = document.getElementById('scheduled_time_start_input');
-            const endTimeInput = document.getElementById('scheduled_time_end_input');
-            const technicianNameInput = document.getElementById('technician_name_input');
-            const technicianPhoneInput = document.getElementById('technician_phone_input');
 
-            if (!scheduledDateInput || !startTimeInput || !endTimeInput || !technicianNameInput || !technicianPhoneInput) {
+            if (!scheduledDateInput) {
                 showRepairAlert('ไม่พบช่องข้อมูลนัดหมายที่จำเป็น', 'error');
                 return;
             }
 
-            if (!scheduledDateInput.value || !startTimeInput.value || !endTimeInput.value || !technicianNameInput.value.trim() || !technicianPhoneInput.value.trim()) {
-                showRepairAlert('กรุณากรอกข้อมูลนัดหมายให้ครบ: วันที่ เวลา ชื่อช่าง และเบอร์โทร', 'error');
-                return;
-            }
-
-            if (startTimeInput.value >= endTimeInput.value) {
-                showRepairAlert('เวลาสิ้นสุดต้องมากกว่าเวลาเริ่มต้น', 'error');
-                return;
-            }
-
-            const phoneDigits = technicianPhoneInput.value.replace(/\D+/g, '');
-            if (phoneDigits.length < 8) {
-                showRepairAlert('กรุณาระบุเบอร์โทรช่างให้ถูกต้อง', 'error');
+            if (!scheduledDateInput.value) {
+                showRepairAlert('กรุณากรอกข้อมูลวันที่นัดหมายให้ครบ', 'error');
                 return;
             }
 
