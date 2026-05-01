@@ -3275,7 +3275,7 @@ main > div:first-of-type,
         if (meterWaterInput) meterWaterInput.value = waterMeter ? String(Math.floor(parseFloat(String(waterMeter).replace(/,/g, '')))).padStart(7, '0') : '';
         if (meterElecInput) meterElecInput.value = elecMeter ? String(Math.floor(parseFloat(String(elecMeter).replace(/,/g, '')))).padStart(5, '0') : '';
         
-        // Enable/disable meter fields based on readOnly mode
+        // Enable/disable meter fields based on readOnly mode (they'll be temporarily enabled during submission)
         if (meterWaterInput) meterWaterInput.disabled = readOnly;
         if (meterElecInput) meterElecInput.disabled = readOnly;
         
