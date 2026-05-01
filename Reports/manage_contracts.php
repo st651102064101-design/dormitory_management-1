@@ -2189,33 +2189,6 @@ main > div:first-of-type,
         } catch(e) { showCtrToast('❌ ข้อผิดพลาดเครือข่าย', 'error'); }
       }
 
-      async function _uploadRefundProof(ctrId) {
-        var fileInput = document.getElementById('rfProofFile');
-        if (!fileInput || !fileInput.files.length) {
-          showCtrToast('กรุณาเลือกไฟล์', 'error'); return;
-        }
-        var fd = new FormData();
-        fd.append('action', 'upload');
-        fd.append('ctr_id', ctrId);
-        fd.append('refund_proof', fileInput.files[0]);
-        try {
-          var res = await fetch('../Manage/process_deposit_refund.php', {
-            method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd
-          });
-          var data = await res.json();
-          if (data.success) {
-            showCtrToast('✅ ' + data.message, 'success');
-            fileInput.value = '';
-            setTimeout(function() { openContractDetail(ctrId); }, 500);
-          } else {
-            showCtrToast('❌ ' + data.error, 'error');
-          }
-        } catch(e) { 
-          console.error('Upload error:', e);
-          showCtrToast('❌ ข้อผิดพลาดเครือข่าย: ' + e.message, 'error'); 
-        }
-      }
-
       async function _confirmRefund(ctrId) {
         var ok = await appleConfirm('ยืนยันว่าโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงินมัดจำ');
         if (!ok) return;
@@ -2886,7 +2859,6 @@ main > div:first-of-type,
               <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">หลักฐานการโอนคืน</label>
               ${rfProof ? `<div style="margin-bottom:0.4rem;"><a href="/${rfProof}" target="_blank" style="font-size:0.82rem;color:${t.link};">📎 ดูหลักฐานปัจจุบัน</a></div>` : ''}
               <input id="rfProofFile" type="file" accept="image/*,.pdf" style="font-size:0.82rem;color:${t.muted};margin-bottom:0.4rem;">
-              <button onclick="_uploadRefundProof(${ctrId})" style="margin-top:0.4rem;padding:0.45rem 0.8rem;border-radius:6px;border:none;cursor:pointer;font-family:inherit;font-size:0.82rem;font-weight:500;color:#fff;width:100%;background:#6366f1;">📤 อัพโหลด</button>
             </div>
             <button onclick="_confirmRefund(${ctrId})" style="padding:0.6rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.88rem;color:#fff;width:100%;background:linear-gradient(135deg,#22c55e,#16a34a);">✅ ยืนยันโอนคืนเงินแล้ว</button>
             ` : ''}
