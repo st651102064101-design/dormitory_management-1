@@ -109,31 +109,23 @@ try {
     $curr = $currStmt->fetch(PDO::FETCH_ASSOC);
 
     // ตรวจสอบแยกแต่ละมิเตอร์
-    $waterSaved = $curr && (int)($curr['utl_water_end'] ?? 0) > 0;
-    $elecSaved  = $curr && (int)($curr['utl_elec_end']  ?? 0) > 0;
-    $allSaved   = $waterSaved && $elecSaved;
+    // หาก utility record มีอยู่ แล้ว ถือว่า first reading ถูกจดแล้ว (แม้ว่าค่าจะเป็น 0)
+    $waterSaved = $curr && (int)($curr['utl_water_end'] ?? 0) >= 0;
+    $elecSaved  = $curr && (int)($curr['utl_elec_end']  ?? 0) >= 0;
+    $allSaved   = $curr !== null;  // ถ้ามี utility record = first reading ถูกจดแล้ว
 
-    // ถ้าเป็น all-zero first record → ถือว่ายังไม่ได้จดจริง
-    $isAllZeroFirst = $isFirstReading && $curr
-        && (int)($curr['utl_water_end'] ?? 0) === 0
-        && (int)($curr['utl_elec_end']  ?? 0) === 0;
-    if ($isAllZeroFirst) {
-        $waterSaved = false;
-        $elecSaved  = false;
-        $allSaved   = false;
-    }
-
-    if ($curr && ($waterSaved || $elecSaved)) {
-        if ($waterSaved) $prevWater = (int)$curr['utl_water_start'];
-        if ($elecSaved)  $prevElec  = (int)$curr['utl_elec_start'];
+    // ตั้งค่า prev จากค่า start ใน utility record ถ้าหากมี
+    if ($curr) {
+        $prevWater = (int)($curr['utl_water_start'] ?? 0);
+        $prevElec  = (int)($curr['utl_elec_start'] ?? 0);
     } elseif (!$prev) {
         // ไม่มีทั้ง utility เดือนนี้และเดือนก่อน — ใช้ค่า checkin_record เป็นค่าเริ่มต้น
         $chkStmt = $pdo->prepare("SELECT water_meter_start, elec_meter_start FROM checkin_record WHERE ctr_id = ? LIMIT 1");
         $chkStmt->execute([$ctrId]);
         $chkRow = $chkStmt->fetch(PDO::FETCH_ASSOC);
-        if ($chkRow && (int)$chkRow['water_meter_start'] > 0 && (int)$chkRow['elec_meter_start'] > 0) {
-            $prevWater = (int)$chkRow['water_meter_start'];
-            $prevElec  = (int)$chkRow['elec_meter_start'];
+        if ($chkRow) {
+            $prevWater = (int)($chkRow['water_meter_start'] ?? 0);
+            $prevElec  = (int)($chkRow['elec_meter_start'] ?? 0);
         }
     }
 
@@ -143,8 +135,8 @@ try {
         'saved'       => $allSaved,
         'water_saved' => $waterSaved,
         'elec_saved'  => $elecSaved,
-        'curr_water'  => $waterSaved ? (int)$curr['utl_water_end'] : null,
-        'curr_elec'   => $elecSaved  ? (int)$curr['utl_elec_end']  : null,
+        'curr_water'  => $curr ? (int)($curr['utl_water_end'] ?? 0) : null,
+        'curr_elec'   => $curr ? (int)($curr['utl_elec_end'] ?? 0) : null,
         'is_first_reading' => $isFirstReading,
         'meter_month' => $meterMonth,
         'meter_year'  => $meterYear,
