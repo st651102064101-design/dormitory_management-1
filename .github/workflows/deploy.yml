@@ -1,0 +1,71 @@
+name: CD - Deploy to Server
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy via SSH
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+        
+    - name: Setup SSH
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+        chmod 600 ~/.ssh/deploy_key
+        ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Deploy to server
+      run: |
+        echo "🚀 Starting deployment..."
+        ssh -i ~/.ssh/deploy_key ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }} << 'EOF'
+          set -e
+          
+          DEPLOY_DIR="${{ secrets.DEPLOY_PATH }}"
+          
+          echo "📁 Entering deployment directory: $DEPLOY_DIR"
+          cd "$DEPLOY_DIR" || exit 1
+          
+          echo "📥 Pulling latest code from repository..."
+          git fetch origin main
+          git checkout main
+          git reset --hard origin/main
+          
+          echo "🔧 Setting proper permissions..."
+          chmod -R 755 .
+          find . -type f -name "*.php" -exec chmod 644 {} \;
+          
+          # Set writable directories for web server
+          chmod -R 777 Public/Assets/Images/Payments 2>/dev/null || true
+          chmod -R 777 Public/Assets/Images 2>/dev/null || true
+          
+          echo "🧹 Clearing cache if applicable..."
+          if [ -d "cache" ]; then
+            rm -rf cache/*
+          fi
+          
+          echo "✅ Deployment completed successfully!"
+          echo "📊 Current branch: $(git branch --show-current)"
+          echo "📝 Latest commit: $(git log -1 --oneline)"
+        EOF
+        
+    - name: Cleanup
+      if: always()
+      run: rm -f ~/.ssh/deploy_key
+      
+    - name: Deployment Status
+      if: success()
+      run: echo "✅ Successfully deployed to server"
+      
+    - name: Deployment Failed
+      if: failure()
+      run: echo "❌ Deployment failed"

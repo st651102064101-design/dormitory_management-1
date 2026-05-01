@@ -1,0 +1,52 @@
+name: CI - PHP Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  php-lint:
+    name: PHP Syntax Check
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.1'
+        tools: composer
+        
+    - name: Cache Composer dependencies
+      uses: actions/cache@v3
+      with:
+        path: vendor
+        key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-composer-
+          
+    - name: Run PHP Linter
+      run: |
+        echo "🔍 Checking PHP syntax..."
+        for file in $(find . -name "*.php" -type f ! -path "./vendor/*" ! -path "./.git/*"); do
+          php -l "$file" || exit 1
+        done
+        echo "✅ All PHP files syntax OK"
+        
+    - name: Check for common PHP errors
+      run: |
+        echo "🔍 Scanning for common errors..."
+        grep -r "error_reporting" . --include="*.php" | grep -v "error_reporting(E_ALL)" || true
+        echo "✅ Scan complete"
+        
+    - name: Verify database connection file
+      run: |
+        if [ ! -f "ConnectDB.php" ]; then
+          echo "⚠️ Warning: ConnectDB.php not found"
+        else
+          echo "✅ Database connection file found"
+        fi

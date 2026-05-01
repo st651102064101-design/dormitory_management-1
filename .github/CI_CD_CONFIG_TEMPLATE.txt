@@ -1,0 +1,98 @@
+# GitHub Actions CI/CD Configuration Template
+# Please save this and reference when setting up secrets
+
+# 🔑 GitHub Secrets to Configure
+# ====================================
+
+# 1. DEPLOY_HOST (required for CD)
+#    Server IP address or domain
+#    Example: 192.168.1.100 or project.3bbddns.com
+DEPLOY_HOST=
+
+# 2. DEPLOY_USER (required for CD)
+#    SSH username for server
+#    Example: ubuntu, root, or www-data
+DEPLOY_USER=
+
+# 3. DEPLOY_SSH_KEY (required for CD)
+#    Private SSH key (from deploy_key file)
+#    Copy entire contents of the private key file
+#    (starts with -----BEGIN OPENSSH PRIVATE KEY----- and ends with -----END OPENSSH PRIVATE KEY-----)
+DEPLOY_SSH_KEY=
+
+# 4. DEPLOY_PATH (required for CD)
+#    Path to project directory on server
+#    Example: /var/www/dormitory_management or /home/user/dormitory_management
+DEPLOY_PATH=
+
+# ====================================
+# 📋 SSH Setup Commands
+# ====================================
+
+# 1. Generate SSH key pair (on your local machine)
+# ssh-keygen -t ed25519 -f deploy_key -N ""
+
+# 2. Copy public key to server
+# ssh-copy-id -i deploy_key.pub user@server-ip
+# or manually:
+# cat deploy_key.pub >> ~/.ssh/authorized_keys on server
+
+# 3. Test connection
+# ssh -i deploy_key user@server-ip "ls -la"
+
+# 4. Copy private key content to GitHub Secrets (DEPLOY_SSH_KEY)
+# cat deploy_key
+
+# ====================================
+# ✅ Workflow Testing
+# ====================================
+
+# 1. Push code to trigger CI
+# git push origin main
+
+# 2. Check GitHub Actions for results
+# Repository → Actions tab → select workflow
+
+# 3. Manual deployment trigger
+# Repository → Actions → CD - Deploy to Server → Run workflow
+
+# ====================================
+# 🚀 Automated Deployment on Push
+# ====================================
+
+# Current setup:
+# - CI runs on: push to main/develop, pull requests
+# - CD runs on: push to main branch only
+
+# Customize by editing:
+# .github/workflows/ci.yml
+# .github/workflows/deploy.yml
+
+# ====================================
+# 📝 Environment Variables on Server
+# ====================================
+
+# If using .env file, create it on server:
+# .env (development)
+# .env.production (for CD deployment)
+
+# Example:
+# DB_HOST=localhost
+# DB_USER=root
+# DB_PASSWORD=secret
+# DB_NAME=dormitory_db
+
+# ====================================
+# ⚠️ Important Notes
+# ====================================
+
+# 1. Keep DEPLOY_SSH_KEY private and secure
+# 2. Never commit private keys to git
+# 3. Restrict SSH key permissions on server:
+#    chmod 700 ~/.ssh
+#    chmod 600 ~/.ssh/authorized_keys
+# 4. Use .gitignore to exclude sensitive files:
+#    .env
+#    deploy_key
+#    deploy_key.pub
+# 5. Monitor deployment logs in GitHub Actions

@@ -6,3 +6,11 @@ node_modules/
 /blob-report/
 /playwright/.cache/
 /playwright/.auth/
+
+# CI/CD & Deployment
+deploy_key
+deploy_key.pub
+*.pem
+*.key
+ssh_config
+
