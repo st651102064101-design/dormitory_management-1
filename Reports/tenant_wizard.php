@@ -2875,6 +2875,37 @@ main > div:first-of-type,
                         </script>
                     </div>
 
+                    <!-- Section 2: จดมิเตอร์ (น้ำและไฟ) -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem;">
+                            <span style="background: #10b981; color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: bold;">2</span>
+                            <span style="font-weight: 600; color: #f1f5f9;">จดมิเตอร์น้ำและไฟ (ครั้งแรก)</span>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                            <!-- Water Meter -->
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #cbd5e1;">
+                                    💧 มิเตอร์น้ำ
+                                </label>
+                                <input type="number" name="water_meter_start" id="checkin_water_meter" min="0" max="9999999" placeholder="เลขมิเตอร์" 
+                                    style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;">
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.4rem;">เลขมิเตอร์ปัจจุบัน (7 หลัก)</div>
+                            </div>
+                            <!-- Electricity Meter -->
+                            <div>
+                                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #cbd5e1;">
+                                    ⚡ มิเตอร์ไฟ
+                                </label>
+                                <input type="number" name="elec_meter_start" id="checkin_elec_meter" min="0" max="99999" placeholder="เลขมิเตอร์" 
+                                    style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;">
+                                <div style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.4rem;">เลขมิเตอร์ปัจจุบัน (5 หลัก)</div>
+                            </div>
+                        </div>
+                        <div style="margin-top: 0.75rem; padding: 0.75rem; border-radius: 8px; background: rgba(52, 211, 153, 0.08); border: 1px solid rgba(52, 211, 153, 0.25); color: #4ade80; font-size: 0.85rem; font-weight: 500;">
+                            ℹ️ จดมิเตอร์ครั้งแรก — ไม่มีค่าใช้จ่าย (ใช้เป็นค่าอ้างอิงเท่านั้น)
+                        </div>
+                    </div>
+
                     <!-- Summary Box -->
                     <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(234, 88, 12, 0.08)); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 12px; padding: 1rem 1.25rem;">
                         <h4 style="margin: 0 0 0.75rem 0; color: #fbbf24; font-size: 1rem;">✅ ระบบจะดำเนินการ:</h4>
@@ -3216,6 +3247,16 @@ main > div:first-of-type,
             const year = date.getFullYear() + 543; // Thai Buddhist year
             return `${day} ${month} ${year}`;
         };
+        
+        // Set meter values if provided
+        const meterWaterInput = document.getElementById('checkin_water_meter');
+        const meterElecInput = document.getElementById('checkin_elec_meter');
+        if (meterWaterInput) meterWaterInput.value = waterMeter ? String(waterMeter).padStart(7, '0') : '';
+        if (meterElecInput) meterElecInput.value = elecMeter ? String(elecMeter).padStart(5, '0') : '';
+        
+        // Enable/disable meter fields based on readOnly mode
+        if (meterWaterInput) meterWaterInput.disabled = readOnly;
+        if (meterElecInput) meterElecInput.disabled = readOnly;
         
         document.getElementById('tenantInfo').innerHTML = `
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; color: #e2e8f0;">
