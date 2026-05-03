@@ -2001,14 +2001,6 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     background-color: #ffffff !important;
   }
   
-  /* Override gradient backgrounds */
-  body.reports-page [style*="background: linear-gradient"],
-  body.reports-page [style*="background:linear-gradient"],
-  body.reports-page div[style*="background"],
-  body.reports-page section[style*="background"] {
-    background: #ffffff !important;
-    background-color: #ffffff !important;
-  }
   
   <?php endif; ?>
   
