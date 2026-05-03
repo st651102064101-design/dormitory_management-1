@@ -3186,9 +3186,11 @@ main > div:first-of-type,
                       </tr>
                       <?php if ($groupCount > 1 && !empty($pay['_group_items'])): ?>
                         <?php foreach ($pay['_group_items'] as $subItem): ?>
-                          <tr class="payment-subrow" style="display:none;" data-parent-pay-id="<?php echo (int)$pay['pay_id']; ?>">
-                            <td style="padding-left:3rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:-1px;margin-right:0.4rem;">├─ </svg>#<?php echo (int)($subItem['pay_id'] ?? 0); ?></td>
-                            <td colspan="3"></td>
+                          <tr class="payment-subrow" style="display:none;background-color:rgba(99,102,241,0.08);border-left:3px solid rgba(99,102,241,0.5);" data-parent-pay-id="<?php echo (int)$pay['pay_id']; ?>">
+                            <td style="padding-left:1rem;color:#a5b4fc;font-weight:600;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:-1px;margin-right:0.4rem;">├─ </svg>#<?php echo (int)($subItem['pay_id'] ?? 0); ?></td>
+                            <td style="color:#64748b;font-size:0.9rem;">-</td>
+                            <td style="color:#64748b;font-size:0.9rem;">-</td>
+                            <td style="color:#64748b;font-size:0.9rem;">-</td>
                             <td style="font-size:0.9rem;color:#64748b;"><?php echo htmlspecialchars($subItem['date'] ?? '-'); ?></td>
                             <td style="text-align:right;font-weight:600;">฿<?php echo number_format((int)($subItem['amount'] ?? 0)); ?></td>
                             <td>
@@ -3205,6 +3207,7 @@ main > div:first-of-type,
                               $subStatusClass = $subStatus === '1' ? 'status-verified' : ($subStatus === '2' ? 'status-unpaid' : ($subStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
                               echo $subStatusClass;
                             ?>"> <?php echo $statusMap[$subStatus] ?? $statusMap['0']; ?></span></td>
+                            <td style="color:#64748b;font-size:0.9rem;">-</td>
                             <td>
                               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
                                 <?php if (((string)($subItem['status'] ?? '') === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink): ?>
