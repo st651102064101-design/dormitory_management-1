@@ -2534,6 +2534,15 @@ $filterRoomOptions = array_values($filterRoomOptions);
         transform: scale(1) translateY(0) opacity(1);
         opacity: 1;
       }
+      
+      /* Proof modal should be on top of group payments modal */
+      #proofModal {
+        z-index: 10001;
+      }
+      #groupPaymentsModal {
+        z-index: 10000;
+      }
+      
       .modal-header {
         display: flex;
         justify-content: space-between;
