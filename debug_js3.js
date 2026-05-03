@@ -1479,7 +1479,7 @@
         modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;';
         modalEl.innerHTML = `
             <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:1.75rem;width:min(460px,92vw);position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
-                <button onclick="closeRefundModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
+                <button type="button" onclick="closeRefundModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
                 <h3 id="_rfTitle" style="margin:0 0 1rem;font-size:1.1rem;color:#0f172a;">💰 คืนเงินมัดจำ</h3>
                 <div id="_rfBankInfo" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:0.85rem 1rem;margin-bottom:1rem;">
                     <div style="font-size:0.8rem;font-weight:700;color:#0369a1;margin-bottom:0.5rem;">🏦 บัญชีรับคืนเงินมัดจำที่ระบุไว้</div>
@@ -1507,18 +1507,18 @@
                         <input type="text" id="_rfReason" placeholder="-" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
                     </div>
                     <div id="_rfSaveArea" style="display:flex;gap:0.6rem;margin-top:1.1rem;">
-                        <button id="_rfSaveBtn" onclick="doSaveRefund()" style="flex:1;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">บันทึกข้อมูลคืนเงิน</button>
-                        <button onclick="closeRefundModal()" style="padding:0.65rem 1rem;border-radius:12px;border:1px solid #e2e8f0;background:none;color:#64748b;cursor:pointer;">ยกเลิก</button>
+                        <button type="button" id="_rfSaveBtn" onclick="doSaveRefund()" style="flex:1;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">บันทึกข้อมูลคืนเงิน</button>
+                        <button type="button" onclick="closeRefundModal()" style="padding:0.65rem 1rem;border-radius:12px;border:1px solid #e2e8f0;background:none;color:#64748b;cursor:pointer;">ยกเลิก</button>
                     </div>
                     <div id="_rfConfirmArea" style="display:none;margin-top:1rem;">
                         <!-- เพิ่มส่วนอัพโหลดสลิปตรงนี้ -->
                         <div style="margin-bottom:0.9rem;">
                             <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">อัพโหลดหลักฐานการโอนเงิน (สลิป) <span style="color:#ef4444;">*</span></label>
-                            <input type="file" id="_rfProofFile" accept="image/*,.pdf" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
+                            <input type="file" id="_rfProofFile" accept="image/*,.pdf" onchange="doConfirmRefund()" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
+                            <div id="_rfProofError" style="display:none;color:#b91c1b;font-size:0.85rem;margin-top:0.4rem;">กรุณาแนบไฟล์สลิปหลักฐานการโอนเงิน</div>
                         </div>
                         
-                        <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและกด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อเรียบร้อย</p>
-                        <button onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.2);">✓ ยืนยันโอนเงินแล้ว</button>
+                        <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและไฟล์จะถูกยืนยันอัตโนมัติเมื่อเลือกไฟล์</p>
                         <div id="_rfProofProgress" style="display:none; text-align:center; font-size:0.85rem; color:#0369a1; margin-top:0.5rem; font-weight:600;">กำลังอัพโหลดสลิป...</div>
                     </div>
                 </div>
@@ -1599,11 +1599,15 @@
 
     async function doConfirmRefund() {
         const fileInput = document.getElementById('_rfProofFile');
+        const proofError = document.getElementById('_rfProofError');
+        if (proofError) proofError.style.display = 'none';
         
         // เช็คก่อนว่าได้เลือกไฟล์หรือยัง
         if (fileInput && fileInput.files.length === 0) {
+            if (proofError) proofError.style.display = 'block';
             if (typeof showErrorToast === 'function') showErrorToast('❌ กรุณาแนบไฟล์สลิปหลักฐานการโอนเงินครับ');
             else alert('กรุณาแนบไฟล์สลิปหลักฐานการโอนเงิน');
+            if (fileInput) fileInput.focus();
             return;
         }
 
