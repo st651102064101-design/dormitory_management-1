@@ -3615,7 +3615,10 @@ main > div:first-of-type,
 
         const rows = items.map((item) => {
           const amount = Number(item.amount || 0);
-          const statusText = escHtml(statusMap[String(item.status || '')] || String(item.status || '-'));
+          const status = String(item.status || '');
+          const statusText = escHtml(statusMap[status] || status || '-');
+          const statusClass = status === '1' ? 'status-verified' : (status === '2' ? 'status-unpaid' : (status === 'unpaid' ? 'status-unpaid' : 'status-pending'));
+          const statusBadge = `<span class="status-badge ${statusClass}" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.85rem;font-weight:600;">${statusText}</span>`;
           const dateText = escHtml(item.date ? item.date : '-');
           const payId = Number(item.pay_id || 0);
           const remark = escHtml(item.remark ? String(item.remark) : 'ค่าห้อง');
@@ -3624,7 +3627,7 @@ main > div:first-of-type,
               <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${payId}</td>
               <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${dateText}</td>
               <td style="padding:0.55rem 0.5rem;text-align:right;white-space:nowrap;">฿${amount.toLocaleString()}</td>
-              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${statusText}</td>
+              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${statusBadge}</td>
               <td style="padding:0.55rem 0.5rem;">${remark}</td>
             </tr>
           `;
