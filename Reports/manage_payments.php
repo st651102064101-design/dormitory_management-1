@@ -461,6 +461,7 @@ foreach ($payments as $pay) {
   if (!isset($paymentGroups[$paymentKey])) {
     $paymentGroups[$paymentKey] = [
       'count' => 0,
+      'active_count' => 0,
       'has_rejected' => false,
       'has_verified' => false,
       'has_pending' => false,
@@ -472,6 +473,9 @@ foreach ($payments as $pay) {
   $paymentGroups[$paymentKey]['count']++;
   $currentStatus = (string)($pay['pay_status'] ?? '0');
   $currentAmount = (int)($pay['pay_amount'] ?? 0);
+  if ($currentStatus !== '2') {
+    $paymentGroups[$paymentKey]['active_count']++;
+  }
   if (!isset($paymentGroups[$paymentKey]['amount_by_status'][$currentStatus])) {
     $paymentGroups[$paymentKey]['amount_by_status'][$currentStatus] = 0;
   }
@@ -513,16 +517,16 @@ foreach ($dedupedPayments as $paymentKey => $pay) {
   ];
 
   $amountByStatus = (array)($group['amount_by_status'] ?? []);
-  // Display amount ต้องเป็นการรวมของทั้งกลุ่ม ไม่ใช่เพียงรายการเดียว
-  $displayAmount = (int)array_sum($amountByStatus);
+  // Display amount ต้องเป็นการรวมของทั้งกลุ่มโดยไม่นับรายการที่ถูกตีกลับ
+  $displayAmount = (int)($amountByStatus['0'] ?? 0) + (int)($amountByStatus['1'] ?? 0) + (int)($amountByStatus['unpaid'] ?? 0);
   
-  // ถ้าไม่มีรายการในกลุ่ม ให้ใช้ original pay_amount
   if ($displayAmount <= 0) {
+    // ถ้าไม่มียอดที่ยังไม่ถูกตีกลับ ให้ fallback เป็นยอดเดิมของ pay
     $displayAmount = (int)($pay['pay_amount'] ?? 0);
   }
 
   $pay['pay_amount'] = $displayAmount;
-  $pay['_group_count'] = (int)($group['count'] ?? 1);
+  $pay['_group_count'] = (int)(($group['active_count'] ?? 0) > 0 ? $group['active_count'] : ($group['count'] ?? 1));
   $pay['_has_rejected_history'] = !empty($group['has_rejected']) ? 1 : 0;
   $pay['_has_verified_history'] = !empty($group['has_verified']) ? 1 : 0;
   $pay['_has_pending_history'] = !empty($group['has_pending']) ? 1 : 0;
