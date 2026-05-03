@@ -4119,14 +4119,13 @@ main > div:first-of-type,
         const statusText = newStatus === '1' ? 'ยืนยันการชำระเงิน' : 'ยกเลิกการยืนยัน';
         
         let confirmed = false;
-        if (typeof showConfirmDialog === 'function') {
-          confirmed = await showConfirmDialog(
-            'ยืนยันการดำเนินการ',
+        if (typeof showAppleConfirm === 'function') {
+          confirmed = await showAppleConfirm(
             `คุณต้องการ${statusText}นี้หรือไม่?`,
-            'warning'
+            'ยืนยันการดำเนินการ'
           );
         } else {
-          confirmed = confirm(`คุณต้องการ${statusText}นี้หรือไม่?`);
+          confirmed = await showAppleConfirm(`คุณต้องการ${statusText}นี้หรือไม่?`, 'ยืนยันการดำเนินการ');
         }
         if (confirmed) {
           await doUpdatePaymentStatus(payId, newStatus, expId);
@@ -4275,14 +4274,13 @@ main > div:first-of-type,
       // Delete payment
       async function deletePayment(payId) {
         let confirmed = false;
-        if (typeof showConfirmDialog === 'function') {
-          confirmed = await showConfirmDialog(
-            'ยืนยันการลบ',
+        if (typeof showAppleConfirm === 'function') {
+          confirmed = await showAppleConfirm(
             'คุณต้องการลบรายการชำระเงินนี้หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้',
-            'delete'
+            'ยืนยันการลบ'
           );
         } else {
-          confirmed = confirm('คุณต้องการลบรายการชำระเงินนี้หรือไม่?');
+          confirmed = await showAppleConfirm('คุณต้องการลบรายการชำระเงินนี้หรือไม่?', 'ยืนยันการลบ');
         }
         if (confirmed) {
           await doDeletePayment(payId);

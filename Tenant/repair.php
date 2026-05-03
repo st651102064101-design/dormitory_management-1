@@ -1427,9 +1427,9 @@ try {
     }
 
     async function requestCancelRepair(repairId, buttonEl) {
-        const confirmed = (typeof showConfirmDialog === 'function')
-            ? await showConfirmDialog('ยืนยันการยกเลิก', 'คุณยืนยันยกเลิกรายการแจ้งซ่อมนี้?', 'warning')
-            : window.confirm('ยืนยันยกเลิกรายการแจ้งซ่อมนี้?');
+        const confirmed = (typeof showAppleConfirm === 'function')
+            ? await showAppleConfirm('คุณยืนยันยกเลิกรายการแจ้งซ่อมนี้?', 'ยืนยันการยกเลิก')
+            : confirm('ยืนยันยกเลิกรายการแจ้งซ่อมนี้?');
         if (!confirmed) return;
 
         if (buttonEl) {

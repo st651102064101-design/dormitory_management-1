@@ -550,7 +550,8 @@ document.getElementById('lineQrCodeForm')?.addEventListener('submit', async func
 
 // Delete LINE QR Code
 document.getElementById('btnDeleteLineQr')?.addEventListener('click', async function() {
-  if (!confirm('ยืนยันลบภาพ QR Code ใช่หรือไม่?')) return;
+  const confirmed = await showAppleConfirm('ยืนยันลบภาพ QR Code ใช่หรือไม่?', 'ยืนยันการลบ');
+  if (!confirmed) return;
   
   try {
     const res = await fetch('../Manage/save_system_settings.php', {

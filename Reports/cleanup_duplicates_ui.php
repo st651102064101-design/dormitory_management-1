@@ -104,7 +104,7 @@ try {
         
         if (cleanupBtn) {
             cleanupBtn.addEventListener('click', async () => {
-                if (!confirm('⚠️ ยืนยันการลบสัญญาซ้ำ? การกระทำนี้ไม่สามารถ undo')) {
+                const confirmed = await showAppleConfirm('⚠️ ยืนยันการลบสัญญาซ้ำ? การกระทำนี้ไม่สามารถ undo', 'ยืนยันการลบสัญญาซ้ำ');\n                if (!confirmed) {
                     return;
                 }
                 

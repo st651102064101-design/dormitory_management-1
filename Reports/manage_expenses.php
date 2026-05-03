@@ -2693,12 +2693,12 @@ main > div:first-of-type,
             );
             console.log('showConfirmDialog returned:', confirmed);
           } catch (error) {
-            console.error('showConfirmDialog error:', error);
-            confirmed = confirm('คุณต้องการเปลี่ยนสถานะเป็น "' + statusText + '" หรือไม่?');
+            console.error('showAppleConfirm error:', error);
+            confirmed = await showAppleConfirm('คุณต้องการเปลี่ยนสถานะเป็น "' + statusText + '" หรือไม่?', 'ยืนยันการเปลี่ยนสถานะ');
           }
         } else {
-          console.warn('showConfirmDialog not a function, using browser confirm');
-          confirmed = confirm('คุณต้องการเปลี่ยนสถานะเป็น "' + statusText + '" หรือไม่?');
+          console.warn('showAppleConfirm not a function, using browser confirm');
+          confirmed = await showAppleConfirm('คุณต้องการเปลี่ยนสถานะเป็น "' + statusText + '" หรือไม่?', 'ยืนยันการเปลี่ยนสถานะ');
         }
         
         console.log('Confirm result:', confirmed);
@@ -2842,14 +2842,13 @@ main > div:first-of-type,
         }
 
         let confirmed = false;
-        if (typeof showConfirmDialog === 'function') {
-          confirmed = await showConfirmDialog(
-            'ยืนยันการส่งแจ้งเตือน',
-            `ต้องการส่งแจ้งเตือนชำระเงิน <strong>${expenseIds.length.toLocaleString('th-TH')}</strong> รายการในหน้าปัจจุบันหรือไม่?`,
-            'warning'
+        if (typeof showAppleConfirm === 'function') {
+          confirmed = await showAppleConfirm(
+            `ต้องการส่งแจ้งเตือนชำระเงิน ${expenseIds.length.toLocaleString('th-TH')} รายการในหน้าปัจจุบันหรือไม่?`,
+            'ส่งแจ้งเตือนชำระเงิน'
           );
         } else {
-          confirmed = confirm('ต้องการส่งแจ้งเตือนชำระเงิน ' + expenseIds.length.toLocaleString('th-TH') + ' รายการในหน้าปัจจุบันหรือไม่?');
+          confirmed = await showAppleConfirm('ต้องการส่งแจ้งเตือนชำระเงิน ' + expenseIds.length.toLocaleString('th-TH') + ' รายการในหน้าปัจจุบันหรือไม่?', 'ส่งแจ้งเตือนชำระเงิน');
         }
 
         if (!confirmed) return;

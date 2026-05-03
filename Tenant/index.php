@@ -1361,7 +1361,7 @@ if (isset($termData) && (int)$termData['is_step5_complete'] !== 1) {
                             <?php else: ?>
                             `<div style="margin-top:12px; font-size:0.8rem; color:#10b981; border-top:1px solid rgba(16,185,129,0.2); padding-top:12px; text-align:center;">
                                 ✓ แจ้งเตือนทาง LINE ทำงานอยู่<br>
-                                <a href="?<?php echo !empty($token) ? 'token=' . urlencode($token) . '&' : ''; ?>action=unlink_line" onclick="return confirm('คุณต้องการยกเลิกการแจ้งเตือนและผูกบัญชี LINE ใช่หรือไม่?');" style="display:inline-block; margin-top:8px; padding:4px 12px; border-radius:16px; background:#fef2f2; color:#ef4444; border:1px solid rgba(239,68,68,0.3); text-decoration:none; font-weight:600;">
+                                <a href="javascript:void(0);" onclick="handleUnlinkLine();" style="display:inline-block; margin-top:8px; padding:4px 12px; border-radius:16px; background:#fef2f2; color:#ef4444; border:1px solid rgba(239,68,68,0.3); text-decoration:none; font-weight:600;">
                                     ❌ ยกเลิกผูกบัญชี LINE
                                 </a>
                             </div>`
@@ -1377,6 +1377,16 @@ if (isset($termData) && (int)$termData['is_step5_complete'] !== 1) {
                 document.getElementById('weather-widget').innerHTML = '<div style="color:#ef4444; text-align:center; font-size:0.9rem; padding:10px;">❌ ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์อากาศได้</div>';
             });
         });
+        
+        // Handle LINE unlink with Apple confirm
+        async function handleUnlinkLine() {
+            const token = '<?php echo urlencode($_SESSION['tenant_token'] ?? ''); ?>';
+            const confirmed = await showAppleConfirm('คุณต้องการยกเลิกการแจ้งเตือนและผูกบัญชี LINE ใช่หรือไม่?', 'ยืนยันการยกเลิก');
+            if (confirmed) {
+                const url = `?${token ? 'token=' + encodeURIComponent(token) + '&' : ''}action=unlink_line`;
+                window.location.href = url;
+            }
+        }
         </script>
         <?php endif; ?>
 

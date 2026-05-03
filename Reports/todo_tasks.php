@@ -1216,11 +1216,12 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
 
             // Cancel booking from todo list
             document.querySelectorAll('.todo-cancel-booking').forEach(function(btn){
-                btn.addEventListener('click', function(e){
+                btn.addEventListener('click', async function(e){
                     e.preventDefault();
                     const bkgId = btn.getAttribute('data-bkgid');
-                    if (!bkgId) return alert('ไม่พบรหัสการจอง');
-                    if (!confirm('ยืนยันการยกเลิกการจองใช่หรือไม่? รายการจะถูกลบถาวร')) return;
+                    if (!bkgId) return showAppleAlert('ไม่พบรหัสการจอง');
+                    const confirmed = await showAppleConfirm('ยืนยันการยกเลิกการจองใช่หรือไม่? รายการจะถูกลบถาวร', 'ยืนยันการยกเลิก');
+                    if (!confirmed) return;
 
                     btn.disabled = true;
                     btn.textContent = 'กำลังยกเลิก...';

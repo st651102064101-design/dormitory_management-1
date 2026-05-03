@@ -948,11 +948,11 @@ function _bankFormFields(?array $term): string {
     </nav>
     
     <script>
-    function confirmTermination() {
-        return confirm('⚠️ คุณแน่ใจหรือไม่ที่จะยกเลิกสัญญา?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้');
+    async function confirmTermination() {
+        return await showAppleConfirm('⚠️ คุณแน่ใจหรือไม่ที่จะยกเลิกสัญญา?\n\nการดำเนินการนี้ไม่สามารถย้อนกลับได้', 'ยืนยันการยกเลิกสัญญา');
     }
-    function confirmCancelTermination() {
-        return confirm('ยืนยันยกเลิกคำร้องยกเลิกสัญญา?\n\nสัญญาของคุณจะกลับสู่สถานะ “ปกติ”');
+    async function confirmCancelTermination() {
+        return await showAppleConfirm('ยืนยันยกเลิกคำร้องยกเลิกสัญญา?\n\nสัญญาของคุณจะกลับสู่สถานะ "ปกติ"', 'ยืนยันการยกเลิก');
     }
     </script>
 </body>
