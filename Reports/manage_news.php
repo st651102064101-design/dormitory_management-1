@@ -107,84 +107,129 @@ if (!function_exists('formatNewsDateForManageNews')) {
     <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <style>
+        /* Apple UI System - CSS Variables */
+        :root {
+          /* Light Mode */
+          --bg-primary: #FFFFFF;
+          --bg-secondary: #F2F2F7;
+          --text-primary: #000000;
+          --text-secondary: rgba(60, 60, 67, 0.6);
+          --accent-blue: #007AFF;
+          --system-blue: #0A84FF;
+          --system-red: #FF453A;
+          --separator: rgba(60, 60, 67, 0.3);
+          --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+          --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+          --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.2);
+          --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+        }
+        
+        @media (prefers-color-scheme: dark) {
+          :root {
+            /* Dark Mode */
+            --bg-primary: #000000;
+            --bg-secondary: #1C1C1E;
+            --text-primary: #FFFFFF;
+            --text-secondary: rgba(235, 235, 245, 0.6);
+            --system-blue: #0A84FF;
+            --system-red: #FF453A;
+            --separator: rgba(84, 84, 88, 0.3);
+          }
+        }
+        
         /* Force-hide animate-ui modal overlays on this page */
         .animate-ui-modal, .animate-ui-modal-overlay { display: none !important; visibility: hidden !important; opacity: 0 !important; }
 
             .reports-container { width: 100%; max-width: 100%; padding: 0; }
       .reports-container .container { max-width: 100%; width: 100%; padding: 0 1.5rem 1.5rem; }
       
+      /* Apple Typography Foundation */
+      * {
+        font-family: var(--font-family);
+      }
+      
+      body {
+        background-color: var(--bg-primary);
+        color: var(--text-primary);
+        line-height: 1.3;
+      }
+      
       .news-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1.5rem;
+        gap: 1rem;
         margin-bottom: 2rem;
       }
       .news-stat-card {
-        background: #ffffff;
-        border: 1px solid #f1f5f9;
-        border-radius: 12px;
+        background: var(--bg-primary);
+        border: 1px solid var(--separator);
+        border-radius: 18px;
         padding: 1.5rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
-        transition: transform 0.2s, box-shadow 0.2s;
-        color: #0f172a;
+        box-shadow: var(--shadow-sm);
+        transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+        color: var(--text-primary);
       }
       .news-stat-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
-        border-color: #e2e8f0;
+        box-shadow: var(--shadow-md);
+        background: var(--bg-secondary);
       }
       .news-stat-card h3 {
         margin: 0;
-        font-size: 0.85rem;
-        color: #64748b;
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
         text-transform: uppercase;
-        letter-spacing: 0.05em;
+        letter-spacing: 0.12px;
         font-weight: 600;
-        margin-bottom: 0.2rem;
+        margin-bottom: 0.5rem;
+        line-height: 1.3;
       }
       .news-stat-card .stat-value {
-        font-size: 2.25rem;
-        font-weight: 800;
-        color: #0f172a;
+        font-size: 2.125rem;
+        font-weight: 700;
+        color: var(--text-primary);
         margin: 0.5rem 0;
-        letter-spacing: -0.025em;
+        letter-spacing: -0.05em;
+        line-height: 1.2;
       }
       
       .manage-panel {
-        background: #ffffff;
-        border: 1px solid #f1f5f9;
-        border-radius: 12px;
+        background: var(--bg-primary);
+        border: 1px solid var(--separator);
+        border-radius: 18px;
         padding: 1.5rem;
         margin-bottom: 2rem;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.2s;
       }
       
       .news-form {
         display: grid;
-        gap: 1.25rem;
+        gap: 1rem;
         margin-top: 1.5rem;
       }
       .news-form-group label {
-        color: #475569;
-        font-size: 0.85rem;
+        color: var(--text-primary);
+        font-size: 0.9375rem;
         font-weight: 600;
         display: block;
         margin-bottom: 0.5rem;
-        letter-spacing: 0.025em;
+        letter-spacing: -0.32px;
+        line-height: 1.3;
       }
       .news-form-group input,
       .news-form-group textarea {
         width: 100%;
         padding: 0.75rem 1rem;
         border-radius: 10px;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
-        color: #334155;
-        font-size: 0.95rem;
+        border: 1px solid var(--separator);
+        background: var(--bg-primary);
+        color: var(--text-primary);
+        font-size: 0.9375rem;
         font-weight: 500;
         font-family: inherit;
-        box-shadow: 0 1px 2px 0 rgba(0,0,0,0.05);
-        transition: border-color 0.2s, box-shadow 0.2s;
+        box-shadow: var(--shadow-sm);
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
       }
       .news-form-group textarea {
         min-height: 120px;
@@ -193,28 +238,28 @@ if (!function_exists('formatNewsDateForManageNews')) {
       .news-form-group input:focus,
       .news-form-group textarea:focus {
         outline: none;
-        border-color: #0A84FF;
-        box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.25);
+        border-color: var(--system-blue);
+        box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
       }
       .news-form-actions {
         display: flex;
         gap: 0.75rem;
-        margin-top: 1rem;
+        margin-top: 1.5rem;
       }
       
       .news-card {
-        background: #ffffff; 
-        border: 1px solid #f1f5f9; 
-        border-radius: 12px; 
+        background: var(--bg-primary); 
+        border: 1px solid var(--separator); 
+        border-radius: 18px; 
         padding: 1.5rem; 
-        margin-bottom: 1.5rem; 
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+        margin-bottom: 1rem; 
+        box-shadow: var(--shadow-sm);
         transition: all 0.2s; 
       }
       .news-card:hover { 
         transform: translateY(-2px); 
-        border-color: #bae6fd; 
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1); 
+        box-shadow: var(--shadow-md);
+        background: var(--bg-secondary);
       }
       .news-card-header {
         display: flex;
@@ -224,85 +269,115 @@ if (!function_exists('formatNewsDateForManageNews')) {
       }
       .news-card-title {
         font-size: 1rem;
-        font-weight: 700;
-        color: #0f172a;
+        font-weight: 600;
+        color: var(--text-primary);
         margin: 0;
+        line-height: 1.3;
+        letter-spacing: -0.43px;
       }
       .news-card-meta {
         display: flex;
         gap: 1rem;
-        font-size: 0.8rem;
-        color: #64748b;
+        font-size: 0.8125rem;
+        color: var(--text-secondary);
         margin-bottom: 1rem;
         font-weight: 500;
         padding-bottom: 1rem;
-        border-bottom: 1px solid #e5e7eb;
+        border-bottom: 1px solid var(--separator);
+        line-height: 1.3;
       }
       .news-card-meta span {
         display: flex;
         align-items: center;
         gap: 0.4rem;
-        background: #f8fafc;
-        padding: 0.2rem 0.6rem;
-        border-radius: 6px;
+        background: var(--bg-secondary);
+        padding: 0.375rem 0.75rem;
+        border-radius: 8px;
       }
       .news-card-content {
-        color: #334155;
+        color: var(--text-secondary);
         line-height: 1.6;
         margin-bottom: 1.25rem;
-        font-size: 0.95rem;
+        font-size: 0.9375rem;
       }
       
       .news-card-actions {
         display: flex;
-        gap: 0.5rem;
+        gap: 0.75rem;
       }
       .news-card-actions button {
         padding: 0.5rem 1rem;
         border-radius: 10px;
         font-weight: 600;
-        font-size: 0.85rem;
+        font-size: 0.8125rem;
         cursor: pointer;
         transition: all 0.2s;
         border: none;
+        line-height: 1.3;
       }
       
-      .reports-page .news-card-actions .animate-ui-action-btn.edit { background: #E8F5FF !important; color: #0A84FF !important; border: 1px solid #B3D9FF !important; }
-      .reports-page .news-card-actions .animate-ui-action-btn.edit:hover { background: #B3D9FF !important; }
+      .reports-page .news-card-actions .animate-ui-action-btn.edit { 
+        background: rgba(10, 132, 255, 0.1) !important; 
+        color: var(--system-blue) !important; 
+        border: 1px solid rgba(10, 132, 255, 0.3) !important; 
+      }
+      .reports-page .news-card-actions .animate-ui-action-btn.edit:hover { 
+        background: rgba(10, 132, 255, 0.2) !important; 
+      }
       
-      .reports-page .news-card-actions .animate-ui-action-btn.delete { background: #FFE5E5 !important; color: #FF453A !important; border: 1px solid #FFB3B3 !important; }
-      .reports-page .news-card-actions .animate-ui-action-btn.delete:hover { background: #FFB3B3 !important; }
+      .reports-page .news-card-actions .animate-ui-action-btn.delete { 
+        background: rgba(255, 69, 58, 0.1) !important; 
+        color: var(--system-red) !important; 
+        border: 1px solid rgba(255, 69, 58, 0.3) !important; 
+      }
+      .reports-page .news-card-actions .animate-ui-action-btn.delete:hover { 
+        background: rgba(255, 69, 58, 0.2) !important; 
+      }
       
       .news-empty {
         text-align: center;
         padding: 3rem 1rem;
-        color: #64748b;
+        color: var(--text-secondary);
       }
       .news-empty-icon {
-        font-size: 4rem;
+        font-size: 3.5rem;
         margin-bottom: 1rem;
         opacity: 0.5;
+      }
+      .news-empty h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: var(--text-primary);
+        margin: 1rem 0;
+        line-height: 1.3;
+      }
+      .news-empty p {
+        font-size: 0.9375rem;
+        line-height: 1.5;
+        margin: 0;
       }
       
       /* Buttons inside form */
       .news-form-actions button[type="submit"] {
-        padding: 0.75rem 1.5rem; background: #0A84FF; color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9rem;
+        padding: 0.75rem 1.5rem; background: var(--system-blue); color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9375rem; line-height: 1.3;
       }
-      .news-form-actions button[type="submit"]:hover { background: #0068CC; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(10, 132, 255, 0.4); }
+      .news-form-actions button[type="submit"]:hover { background: #0068CC; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+      .news-form-actions button[type="submit"]:active { transform: translateY(0); }
       
       .news-form-actions button[type="reset"] {
-        padding: 0.75rem 1.5rem; background: #FF453A; color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9rem;
+        padding: 0.75rem 1.5rem; background: var(--system-red); color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9375rem; line-height: 1.3;
       }
-      .news-form-actions button[type="reset"]:hover { background: #E63C34; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(255, 69, 58, 0.4); }
+      .news-form-actions button[type="reset"]:hover { background: #E63C34; transform: translateY(-1px); box-shadow: var(--shadow-md); }
+      .news-form-actions button[type="reset"]:active { transform: translateY(0); }
 
       #editModal {
         display: none;
         position: fixed;
         inset: 0;
         padding: 1.5rem;
-        background: rgba(15,23,42,0.35);
-        backdrop-filter: blur(6px);
-        -webkit-backdrop-filter: blur(6px);
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(33px);
+        -webkit-backdrop-filter: blur(33px);
         align-items: center;
         justify-content: center;
         z-index: 20000;
@@ -310,96 +385,127 @@ if (!function_exists('formatNewsDateForManageNews')) {
       #editModal.is-open { display: flex; }
       #editModal .booking-modal-content {
         width: min(720px, 100%);
-        background: #ffffff;
-        border-radius: 13px;
-        border: 1px solid rgba(15,23,42,0.12);
-        box-shadow: 0 20px 60px rgba(15,23,42,0.2);
-        padding: 1.8rem;
-        color: #1e293b;
+        background: var(--bg-primary);
+        border-radius: 18px;
+        border: 1px solid var(--separator);
+        box-shadow: var(--shadow-lg);
+        padding: 1.75rem;
+        color: var(--text-primary);
       }
       #editModal h2 {
         margin-top: 0;
-        margin-bottom: 1rem;
-        color: #0f172a;
+        margin-bottom: 1.5rem;
+        color: var(--text-primary);
         text-align: center;
         font-size: 1.0625rem;
-        font-weight: 700;
+        font-weight: 600;
+        letter-spacing: -0.43px;
+        line-height: 1.3;
       }
       #editModal .booking-form-group {
         display: flex;
         flex-direction: column;
-        gap: 0.35rem;
-        margin-bottom: 1rem;
+        gap: 0.5rem;
+        margin-bottom: 1.25rem;
       }
       #editModal label {
         font-weight: 600;
-        color: #334155;
-        font-size: 0.8125rem;
+        color: var(--text-primary);
+        font-size: 0.9375rem;
+        letter-spacing: -0.32px;
+        line-height: 1.3;
       }
       #editModal input,
       #editModal textarea {
         width: 100%;
-        padding: 0.75rem 0.9rem;
+        padding: 0.75rem 1rem;
         border-radius: 10px;
-        border: 1px solid rgba(15,23,42,0.14);
-        background: #ffffff;
-        color: #0f172a;
+        border: 1px solid var(--separator);
+        background: var(--bg-primary);
+        color: var(--text-primary);
         font-family: inherit;
+        font-size: 0.9375rem;
       }
       #editModal textarea { min-height: 140px; resize: vertical; }
       #editModal input:focus,
       #editModal textarea:focus {
         outline: none;
-        border-color: #0A84FF;
-        box-shadow: 0 0 0 3px rgba(10,132,255,0.25);
+        border-color: var(--system-blue);
+        box-shadow: 0 0 0 3px rgba(10,132,255,0.15);
       }
       #editModal .booking-form-actions {
         display: flex;
         gap: 0.75rem;
         justify-content: flex-end;
-        margin-top: 1rem;
+        margin-top: 1.75rem;
       }
       #editModal .btn-submit {
-        background: #0A84FF;
+        background: var(--system-blue);
         color: #ffffff;
         border: none;
         border-radius: 10px;
-        padding: 0.75rem 1.4rem;
+        padding: 0.75rem 1.5rem;
         font-weight: 600;
         cursor: pointer;
-        font-size: 1rem;
+        font-size: 0.9375rem;
+        line-height: 1.3;
+        transition: all 0.2s;
       }
       #editModal .btn-submit:hover {
         background: #0068CC;
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-md);
       }
       #editModal .btn-cancel {
-        background: #ffffff;
-        color: #0A84FF;
-        border: 1px solid #0A84FF;
+        background: var(--bg-secondary);
+        color: var(--system-blue);
+        border: 1px solid var(--separator);
         border-radius: 10px;
-        padding: 0.75rem 1.1rem;
+        padding: 0.75rem 1.5rem;
         font-weight: 600;
         cursor: pointer;
-        font-size: 1rem;
+        font-size: 0.9375rem;
+        line-height: 1.3;
+        transition: all 0.2s;
       }
       #editModal .btn-cancel:hover {
-        background: #F2F2F7;
+        background: var(--separator);
       }
       #submitNewsBtn:hover {
         background: #0068CC !important;
-        opacity: 0.95;
+        transform: translateY(-1px) !important;
+        box-shadow: var(--shadow-md) !important;
       }
       #submitNewsBtn:active {
-        opacity: 0.9;
+        transform: translateY(0) !important;
       }
       .page-header-bar {
         margin-top: 1rem !important;
       }
       .reports-page .manage-panel {
         margin: 0 !important;
-        background: #ffffff;
-        border: 1px solid rgba(15,23,42,0.1);
-        box-shadow: 0 10px 26px rgba(15,23,42,0.08);
+        background: var(--bg-primary);
+        border: 1px solid var(--separator);
+        box-shadow: var(--shadow-sm);
+      }
+      
+      /* Section Header */
+      .section-header {
+        margin-bottom: 1.5rem;
+      }
+      .section-header h1 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--text-primary);
+        margin: 0 0 0.5rem 0;
+        letter-spacing: -0.8px;
+        line-height: 1.2;
+      }
+      .section-header p {
+        font-size: 0.9375rem;
+        color: var(--text-secondary);
+        margin: 0;
+        line-height: 1.5;
       }
     </style>
   
@@ -472,7 +578,7 @@ main > div:first-of-type,
 
           <!-- Toggle button for news form -->
           <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleNewsFormBtn" style="white-space:nowrap;padding:0.8rem 1.5rem;cursor:pointer;font-size:0.95rem;font-weight:500;background:#ffffff;border:1px solid #0A84FF;color:#0A84FF;border-radius:10px;transition:all 0.2s;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);" onclick="toggleNewsForm()" onmouseover="this.style.background='#E8F5FF';this.style.borderColor='#0A84FF'" onmouseout="this.style.background='#ffffff';this.style.borderColor='#0A84FF'">
+            <button type="button" id="toggleNewsFormBtn" style="white-space:nowrap;padding:0.75rem 1.5rem;cursor:pointer;font-size:0.9375rem;font-weight:600;background:rgba(10, 132, 255, 0.1);border:1px solid rgba(10, 132, 255, 0.3);color:var(--system-blue);border-radius:10px;transition:all 0.2s;box-shadow:var(--shadow-sm);font-family:var(--font-family);" onclick="toggleNewsForm()" onmouseover="this.style.background='rgba(10, 132, 255, 0.15)'" onmouseout="this.style.background='rgba(10, 132, 255, 0.1)'">
               <span id="toggleNewsFormIcon">▼</span> <span id="toggleNewsFormText"><?php echo __('toggle_hide_form'); ?></span>
             </button>
           </div>
@@ -505,11 +611,11 @@ main > div:first-of-type,
                   </div>
                 </div>
                 <div class="news-form-actions">
-                  <button type="submit" id="submitNewsBtn" style="flex:1; background: #0A84FF; color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
+                  <button type="submit" id="submitNewsBtn" style="flex:1; background: var(--system-blue); color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 0.9375rem; font-family: var(--font-family);">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     <?php echo __('news_publish_button'); ?>
                   </button>
-                  <button type="reset" style="flex:1; background: #FF453A; color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 1rem;">
+                  <button type="reset" style="flex:1; background: var(--system-red); color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 0.9375rem; font-family: var(--font-family);">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     <?php echo __('clear_data'); ?>
                   </button>
@@ -573,10 +679,10 @@ main > div:first-of-type,
               </div>
               <?php if ($totalNews > $displayLimit): ?>
                 <div style="text-align:center; margin-top:1.5rem;">
-                  <button type="button" id="showMoreBtn" onclick="showMoreNews()" style="background:#ffffff; color:#0A84FF; border:1px solid #0A84FF; border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#E8F5FF'" onmouseout="this.style.background='#ffffff'">
+                  <button type="button" id="showMoreBtn" onclick="showMoreNews()" style="background:rgba(10, 132, 255, 0.1); color:var(--system-blue); border:1px solid rgba(10, 132, 255, 0.3); border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:var(--font-family);" onmouseover="this.style.background='rgba(10, 132, 255, 0.15)'" onmouseout="this.style.background='rgba(10, 132, 255, 0.1)'">
                     <?php echo __('show_more_items', ['count' => $totalNews - $displayLimit]); ?>
                   </button>
-                  <button type="button" id="showLessBtn" onclick="showLessNews()" style="display:none; background:#ffffff; color:#FF453A; border:1px solid #FF453A; border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.2s;" onmouseover="this.style.background='#FFE5E5'" onmouseout="this.style.background='#ffffff'">
+                  <button type="button" id="showLessBtn" onclick="showLessNews()" style="display:none; background:rgba(255, 69, 58, 0.1); color:var(--system-red); border:1px solid rgba(255, 69, 58, 0.3); border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:var(--font-family);" onmouseover="this.style.background='rgba(255, 69, 58, 0.15)'" onmouseout="this.style.background='rgba(255, 69, 58, 0.1)'">
                     <?php echo __('show_less'); ?>
                   </button>
                 </div>
