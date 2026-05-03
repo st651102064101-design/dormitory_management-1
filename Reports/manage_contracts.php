@@ -2869,7 +2869,7 @@ main > div:first-of-type,
           </div>`;
       }
 
-      if (depAmount <= 0) return '';
+      if (depAmount <= 0 || c.ctr_status !== '1') return '';
 
       const dedAmt = rf ? rf.deduction_amount : 0;
       const dedReason = rf ? (rf.deduction_reason || '') : '';
