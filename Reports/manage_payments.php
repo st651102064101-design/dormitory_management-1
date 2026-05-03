@@ -2802,6 +2802,13 @@ $filterRoomOptions = array_values($filterRoomOptions);
         display: none;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         color: #64748b;
+        cursor: pointer;
+      }
+      .payment-group-row.has-subrows {
+        cursor: pointer;
+      }
+      .payment-group-row.has-subrows:hover {
+        background-color: rgba(59, 130, 246, 0.03);
       }
       .payment-group-row.has-subrows:hover .expand-btn {
         display: block;
@@ -4319,6 +4326,25 @@ main > div:first-of-type,
         ensurePaymentsViewVisible();
         applyFilters({ skipReload: true, updateHistory: false });
         setupPaymentRowHoverBehavior();
+
+        // Make entire payment row clickable to open group modal
+        const paymentsTable = document.getElementById('paymentsTable');
+        if (paymentsTable) {
+          paymentsTable.addEventListener('click', function(e) {
+            const row = e.target.closest('tr.payment-group-row.has-subrows');
+            if (!row) return;
+            
+            // Don't trigger if clicking on interactive elements
+            const clickedElement = e.target.closest('.expand-btn, .group-amount-link, button, a, [role="button"]');
+            if (clickedElement) return;
+            
+            // Find the expand button to get data attributes
+            const expandBtn = row.querySelector('.expand-btn');
+            if (expandBtn) {
+              openGroupPaymentsModal(expandBtn);
+            }
+          });
+        }
 
         // Status filter tabs – use delegated click handler for robustness
         const tabsContainer = document.getElementById('paymentFilterTabs');
