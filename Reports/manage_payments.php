@@ -3747,7 +3747,33 @@ main > div:first-of-type,
           
           if (!expandBtn) return;
 
-          // Hide expand button when mouse leaves the entire group (main + all sub-rows)
+          // Function to expand subrows
+          const expandSubRows = () => {
+            if (!expandBtn.classList.contains('expanded')) {
+              subRows.forEach(row => row.style.display = '');
+              expandBtn.classList.add('expanded');
+              const svg = expandBtn.querySelector('svg');
+              if (svg) svg.style.transform = 'rotate(90deg)';
+            }
+          };
+
+          // Function to collapse subrows
+          const collapseSubRows = () => {
+            if (expandBtn.classList.contains('expanded')) {
+              subRows.forEach(row => row.style.display = 'none');
+              expandBtn.classList.remove('expanded');
+              const svg = expandBtn.querySelector('svg');
+              if (svg) svg.style.transform = 'rotate(0deg)';
+            }
+          };
+
+          // Expand on hover of main row
+          mainRow.addEventListener('mouseenter', () => {
+            expandBtn.style.display = 'block';
+            expandSubRows();
+          });
+
+          // Collapse when leaving entire group (main + all sub-rows)
           allGroupRows.forEach(row => {
             row.addEventListener('mouseleave', (e) => {
               // Check if we're leaving to another row in the group
@@ -3756,13 +3782,9 @@ main > div:first-of-type,
               
               if (isLeavingGroup) {
                 expandBtn.style.display = 'none';
+                collapseSubRows();
               }
             });
-          });
-
-          // Show expand button when mouse enters the main row
-          mainRow.addEventListener('mouseenter', () => {
-            expandBtn.style.display = 'block';
           });
         });
       }
