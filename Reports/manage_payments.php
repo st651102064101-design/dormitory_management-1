@@ -3062,6 +3062,10 @@ main > div:first-of-type,
                         <td>
                           <?php 
                           $payStatus = (string)($pay['pay_status'] ?? '0');
+                          // ถ้า group มี pending item ให้แสดง "รอตรวจสอบ" แม้ representative เป็น "1"
+                          if ((int)($pay['_has_pending_history'] ?? 0) === 1 && $payStatus !== '0') {
+                            $payStatus = '0';
+                          }
                           $statusClass = $payStatus === '1'
                             ? 'status-verified'
                             : ($payStatus === '2' ? 'status-unpaid' : ($payStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
@@ -3104,6 +3108,10 @@ main > div:first-of-type,
                 <?php foreach ($payments as $pay): ?>
                   <?php 
                     $payStatus = (string)($pay['pay_status'] ?? '0');
+                    // ถ้า group มี pending item ให้แสดง "รอตรวจสอบ" แม้ representative เป็น "1"
+                    if ((int)($pay['_has_pending_history'] ?? 0) === 1 && $payStatus !== '0') {
+                      $payStatus = '0';
+                    }
                     $statusClass = $payStatus === '1'
                       ? 'status-verified'
                       : ($payStatus === '2' ? 'status-unpaid' : ($payStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
