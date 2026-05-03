@@ -2869,7 +2869,7 @@ main > div:first-of-type,
           </div>`;
       }
 
-      if (depAmount <= 0 || c.ctr_status !== '1') return '';
+      if (depAmount <= 0) return '';
 
       const dedAmt = rf ? rf.deduction_amount : 0;
       const dedReason = rf ? (rf.deduction_reason || '') : '';
@@ -3059,7 +3059,22 @@ main > div:first-of-type,
             </div>` : `<div style="margin-top:0.5rem;font-size:0.8rem;color:${t.dim};">ไม่มีเอกสารสัญญา PDF ในระบบ</div>`}
         </div>
 
-
+        <div class="cdr-section">
+          <div class="cdr-section-title">💰 ค่ามัดจำ & คืนเงิน</div>
+          <div class="cdr-grid">
+            ${dep ? _field('ค่ามัดจำ', _fmtMoney(dep.bp_amount)) : _field('ค่ามัดจำ', '-')}
+            ${dep ? _field('สถานะมัดจำ', dep.bp_status === '1' ? '✓ ยืนยันแล้ว' : 'รอยืนยัน') : _field('สถานะมัดจำ', '-')}
+            ${ci  ? _field('วันเช็คอิน', _fmtDate(ci.checkin_date)) : _field('วันเช็คอิน', '-')}
+            ${ci  ? _field('มิเตอร์น้ำเริ่มต้น', ci.water_meter_start || '0') : ''}
+            ${ci  ? _field('มิเตอร์ไฟเริ่มต้น', ci.elec_meter_start || '0') : ''}
+          </div>
+          ${dep && dep.bp_proof ? `
+            <div style="margin-top:0.6rem;">
+              <a href="/dormitory_management/Public/Assets/Images/Payments/${dep.bp_proof}" target="_blank" rel="noopener"
+                 style="font-size:0.82rem;color:${t.link};">📎 ดูหลักฐานการชำระมัดจำ</a>
+            </div>` : ''}
+          ${_renderRefundSection(data, t, c)}
+        </div>
         ${_renderPaymentGate(data, t, c)}
       `;
 
@@ -3091,7 +3106,15 @@ main > div:first-of-type,
               </span>
             </div>
 
-
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0.4rem;
+                        margin-bottom:0.75rem;font-size:0.8rem;">
+              <div><div style="color:${t.muted};">ค่าห้อง</div>
+                   <div style="color:${t.body};font-weight:600;">${_fmtMoney(e.room_price)}</div></div>
+              <div><div style="color:${t.muted};">ค่าน้ำ&nbsp;(${e.exp_water_unit||0}&nbsp;หน่วย)</div>
+                   <div style="color:${t.water};font-weight:600;">${_fmtMoney(e.exp_water)}</div></div>
+              <div><div style="color:${t.muted};">ค่าไฟ&nbsp;(${e.exp_elec_unit||0}&nbsp;หน่วย)</div>
+                   <div style="color:${t.elec};font-weight:600;">${_fmtMoney(e.exp_elec_chg)}</div></div>
+            </div>
 
             <div style="display:flex;justify-content:space-between;font-weight:700;
                         padding:0.45rem 0;border-top:1px solid ${t.divider};
