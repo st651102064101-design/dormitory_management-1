@@ -3820,9 +3820,10 @@ main > div:first-of-type,
       }
 
       function rejectVerifiedPayment(payId, expId) {
-        if (!confirm('คุณแน่ใจว่าต้องการตีกลับการยืนยันนี้? สถานะจะเปลี่ยนเป็น "ตีกลับ"')) return;
+        showConfirmDialog('ตีกลับการยืนยัน', 'คุณแน่ใจว่าต้องการตีกลับการยืนยันนี้ใช่หรือไม่? สถานะจะเปลี่ยนเป็น <strong>ตีกลับ</strong>', 'delete').then(confirmed => {
+          if (!confirmed) return;
         
-        const loadingToast = showToast('กำลังประมวลผล...', 'info');
+          const loadingToast = showToast('กำลังประมวลผล...', 'info');
         
         fetch('/dormitory_management/Manage/update_payment_status.php', {
           method: 'POST',
@@ -3846,6 +3847,7 @@ main > div:first-of-type,
           removeToast(loadingToast);
           showToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์', 'error');
           console.error('Reject error:', err);
+        });
         });
       }
 

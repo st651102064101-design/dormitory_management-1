@@ -4024,24 +4024,26 @@ main > div:first-of-type,
     }
 
     function rejectWizardPayment(payId, expId) {
-        if (!confirm('คุณแน่ใจว่าต้องการตีกลับการยืนยันนี้? สถานะจะเปลี่ยนเป็น "ตีกลับ"')) return;
-        
-        fetch('/dormitory_management/Manage/update_payment_status.php', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `pay_id=${String(payId)}&status=2&exp_id=${String(expId)}`
-        })
-        .then(res => res.json())
-        .then(data => {
-          if (data.success) {
-            location.reload();
-          } else {
-            alert(data.message || 'เกิดข้อผิดพลาด');
-          }
-        })
-        .catch(err => {
-          alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์');
-          console.error('Reject error:', err);
+        showConfirmDialog('ตีกลับการยืนยัน', 'คุณแน่ใจว่าต้องการตีกลับการยืนยันนี้ใช่หรือไม่? สถานะจะเปลี่ยนเป็น <strong>ตีกลับ</strong>', 'delete').then(confirmed => {
+          if (!confirmed) return;
+          
+          fetch('/dormitory_management/Manage/update_payment_status.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `pay_id=${String(payId)}&status=2&exp_id=${String(expId)}`
+          })
+          .then(res => res.json())
+          .then(data => {
+            if (data.success) {
+              location.reload();
+            } else {
+              alert(data.message || 'เกิดข้อผิดพลาด');
+            }
+          })
+          .catch(err => {
+            alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์');
+            console.error('Reject error:', err);
+          });
         });
     }
 
