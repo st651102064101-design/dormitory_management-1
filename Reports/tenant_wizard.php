@@ -4992,13 +4992,13 @@ main > div:first-of-type,
                         <!-- เพิ่มส่วนอัพโหลดสลิปตรงนี้ -->
                         <div style="margin-bottom:0.9rem;">
                             <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">อัพโหลดหลักฐานการโอนเงิน (สลิป) <span style="color:#ef4444;">*</span></label>
-                            <input type="file" id="_rfProofFile" accept="image/*,.pdf" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
+                            <input type="file" id="_rfProofFile" accept="image/*,.pdf" onchange="_updateConfirmButtonState()" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
                             <div id="_rfProofError" style="display:none;color:#b91c1b;font-size:0.85rem;margin-top:0.4rem;">กรุณาแนบไฟล์สลิปหลักฐานการโอนเงิน</div>
                         </div>
                         
                         <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและกด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อเรียบร้อย</p>
                         <button type="button" onclick="goBackRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;margin-bottom:0.75rem;">← แก้ไขข้อมูลคืนเงิน</button>
-                        <button type="button" onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.2);position:relative;z-index:1;pointer-events:auto;">✓ ยืนยันโอนเงินแล้ว</button>
+                        <button id="_rfConfirmBtn" type="button" onclick="doConfirmRefund()" disabled style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:not-allowed;opacity:0.6;text-shadow:0 1px 2px rgba(0,0,0,0.2);position:relative;z-index:1;">✓ ยืนยันโอนเงินแล้ว</button>
                         <div id="_rfProofProgress" style="display:none; text-align:center; font-size:0.85rem; color:#0369a1; margin-top:0.5rem; font-weight:600;">กำลังอัพโหลดสลิป...</div>
                     </div>
                 </div>
@@ -5047,6 +5047,16 @@ main > div:first-of-type,
         try { localStorage.setItem(key, raw); } catch (e) {}
     }
 
+    function _updateConfirmButtonState() {
+        const btn = document.getElementById('_rfConfirmBtn');
+        const fileInput = document.getElementById('_rfProofFile');
+        if (!btn) return;
+        const enabled = fileInput && fileInput.files && fileInput.files.length > 0;
+        btn.disabled = !enabled;
+        btn.style.opacity = enabled ? '1' : '0.6';
+        btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+    }
+
     function openRefundModal(ctrId, tntName, roomNumber, bankName, bankAccName, bankAccNum, depositAmt, refundPending) {
         refundPending = refundPending === true || refundPending === 'true' || refundPending === 1 || refundPending === '1';
         _rfCtrId = Number(ctrId) || 0;
@@ -5059,6 +5069,10 @@ main > div:first-of-type,
         document.getElementById('_rfRoomRate').value = savedRefundState && savedRefundState.room_rate != null ? savedRefundState.room_rate : '0';
         document.getElementById('_rfWaterCost').value = savedRefundState && savedRefundState.water_cost != null ? savedRefundState.water_cost : '0';
         document.getElementById('_rfElecCost').value = savedRefundState && savedRefundState.elec_cost != null ? savedRefundState.elec_cost : '0';
+        const proofFile = document.getElementById('_rfProofFile');
+        if (proofFile) proofFile.value = '';
+        const proofError = document.getElementById('_rfProofError');
+        if (proofError) proofError.style.display = 'none';
         _updateRefundDisplay(depositAmt || 0);
         if ((_rfSavedRefundCtrId && _rfSavedRefundCtrId === _rfCtrId) || refundPending) {
             document.getElementById('_rfActionContainer').style.display = 'none';
@@ -5074,6 +5088,7 @@ main > div:first-of-type,
                 saveBtn.textContent = 'บันทึกข้อมูลคืนเงิน';
             }
         }
+        _updateConfirmButtonState();
         // Bank info — แสดงเสมอ ถ้าไม่มีข้อมูลแสดง "ไม่ระบุบัญชี"
         const bankInfoEl = document.getElementById('_rfBankInfo');
         const noBankMsgEl = document.getElementById('_rfNoBankMsg');
@@ -5223,8 +5238,14 @@ main > div:first-of-type,
     }
 
     async function doConfirmRefund() {
+        const confirmBtn = document.getElementById('_rfConfirmBtn');
         const fileInput = document.getElementById('_rfProofFile');
         const proofError = document.getElementById('_rfProofError');
+        if (confirmBtn) {
+            confirmBtn.disabled = true;
+            confirmBtn.style.opacity = '0.6';
+            confirmBtn.style.cursor = 'not-allowed';
+        }
         if (proofError) proofError.style.display = 'none';
         
         // เช็คก่อนว่าได้เลือกไฟล์หรือยัง
@@ -5232,6 +5253,7 @@ main > div:first-of-type,
             if (proofError) proofError.style.display = 'block';
             if (typeof showErrorToast === 'function') showErrorToast('❌ กรุณาแนบไฟล์สลิปหลักฐานการโอนเงินครับ');
             if (fileInput) fileInput.focus();
+            _updateConfirmButtonState();
             return;
         }
 
@@ -5239,7 +5261,10 @@ main > div:first-of-type,
             ? await showConfirmDialog('ยืนยันการคืนเงิน', 'ยืนยันว่าแนบสลิปและโอนคืนเงินเรียบร้อยแล้ว?', 'success')
             : confirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
             
-        if (!ok) return;
+        if (!ok) {
+            _updateConfirmButtonState();
+            return;
+        }
 
         document.getElementById('_rfProofProgress').style.display = 'block';
 
@@ -5256,11 +5281,13 @@ main > div:first-of-type,
                 document.getElementById('_rfProofProgress').style.display = 'none';
                 if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (upData.error || 'ไฟล์อัพโหลดล้มเหลว'));
                 else console.error(upData.error || 'ไฟล์อัพโหลดล้มเหลว');
+                _updateConfirmButtonState();
                 return;
             }
         } catch(e) {
             document.getElementById('_rfProofProgress').style.display = 'none';
             if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่ายขณะอัพโหลดสลิป');
+            _updateConfirmButtonState();
             return;
         }
 
@@ -5284,6 +5311,7 @@ main > div:first-of-type,
         } catch(e) { 
             document.getElementById('_rfProofProgress').style.display = 'none';
             if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); 
+            _updateConfirmButtonState();
         }
     }
 
