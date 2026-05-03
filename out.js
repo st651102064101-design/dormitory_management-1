@@ -1529,9 +1529,9 @@
         // สร้าง modal ครั้งเดียว
         const modalEl = document.createElement('div');
         modalEl.id = '_refundModal';
-        modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(15,23,42,0.35);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;';
+        modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(15,23,42,0.35);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;overflow:auto;padding:1rem;';
         modalEl.innerHTML = `
-            <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:1.75rem;width:min(460px,92vw);position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+            <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:1.75rem;width:min(460px,92vw);max-height:calc(100vh - 40px);overflow:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
                 <button type="button" onclick="closeRefundModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
                 <h3 id="_rfTitle" style="margin:0 0 1rem;font-size:1.1rem;color:#0f172a;">💰 คืนเงินมัดจำ</h3>
                 <div id="_rfBankInfo" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:0.85rem 1rem;margin-bottom:1rem;">
@@ -1582,15 +1582,17 @@
                         <button type="button" id="_rfSaveBtn" onclick="doSaveRefund()" style="flex:1;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">บันทึกข้อมูลคืนเงิน</button>
                         <button type="button" onclick="closeRefundModal()" style="padding:0.65rem 1rem;border-radius:12px;border:1px solid #e2e8f0;background:none;color:#64748b;cursor:pointer;">ยกเลิก</button>
                     </div>
-                    <div id="_rfConfirmArea" style="display:none;margin-top:1rem;">
+                </div>
+                <div id="_rfConfirmArea" style="display:none;margin-top:1rem;">
                         <!-- เพิ่มส่วนอัพโหลดสลิปตรงนี้ -->
                         <div style="margin-bottom:0.9rem;">
                             <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">อัพโหลดหลักฐานการโอนเงิน (สลิป) <span style="color:#ef4444;">*</span></label>
-                            <input type="file" id="_rfProofFile" accept="image/*,.pdf" onchange="doConfirmRefund()" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
+                            <input type="file" id="_rfProofFile" accept="image/*,.pdf" style="width:100%;padding:0.45rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;font-size:0.9rem;box-sizing:border-box;">
                         <div id="_rfProofError" style="display:none;color:#b91c1b;font-size:0.85rem;margin-top:0.4rem;">กรุณาแนบไฟล์สลิปหลักฐานการโอนเงิน</div>
                         </div>
                         
-                        <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและไฟล์จะถูกยืนยันอัตโนมัติเมื่อเลือกไฟล์</p>
+                        <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและกด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อเรียบร้อย</p>
+                        <button type="button" onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.2);position:relative;z-index:1;pointer-events:auto;">✓ ยืนยันโอนเงินแล้ว</button>
                         <div id="_rfProofProgress" style="display:none; text-align:center; font-size:0.85rem; color:#0369a1; margin-top:0.5rem; font-weight:600;">กำลังอัพโหลดสลิป...</div>
                     </div>
                 </div>
@@ -1601,6 +1603,7 @@
     })();
 
     var _rfCtrId = 0;
+    var _rfSavedRefundCtrId = null;
 
     function openRefundModal(ctrId, tntName, roomNumber, bankName, bankAccName, bankAccNum, depositAmt) {
         _rfCtrId = ctrId;
@@ -1612,8 +1615,15 @@
         document.getElementById('_rfWaterCost').value = '0';
         document.getElementById('_rfElecCost').value = '0';
         _updateRefundDisplay(depositAmt || 0);
-        document.getElementById('_rfSaveArea').style.display = 'flex';
-        document.getElementById('_rfConfirmArea').style.display = 'none';
+        if (_rfSavedRefundCtrId === ctrId) {
+            document.getElementById('_rfActionContainer').style.display = 'none';
+            document.getElementById('_rfSaveArea').style.display = 'none';
+            document.getElementById('_rfConfirmArea').style.display = 'block';
+        } else {
+            document.getElementById('_rfActionContainer').style.display = 'block';
+            document.getElementById('_rfSaveArea').style.display = 'flex';
+            document.getElementById('_rfConfirmArea').style.display = 'none';
+        }
         // Bank info — แสดงเสมอ ถ้าไม่มีข้อมูลแสดง "ไม่ระบุบัญชี"
         const bankInfoEl = document.getElementById('_rfBankInfo');
         const noBankMsgEl = document.getElementById('_rfNoBankMsg');
@@ -1627,9 +1637,16 @@
         if (!bankAccNum || bankAccNum.trim() === '' || bankAccNum.trim() === '-') {
             noBankMsgEl.style.display = 'block';
             actionContainerEl.style.display = 'none';
+            document.getElementById('_rfConfirmArea').style.display = 'none';
         } else {
             noBankMsgEl.style.display = 'none';
-            actionContainerEl.style.display = 'block';
+            if (_rfSavedRefundCtrId === ctrId) {
+                actionContainerEl.style.display = 'none';
+                document.getElementById('_rfConfirmArea').style.display = 'block';
+            } else {
+                actionContainerEl.style.display = 'block';
+                document.getElementById('_rfConfirmArea').style.display = 'none';
+            }
         }
 
         // Deposit amount
@@ -1720,8 +1737,12 @@
             const data = await res.json();
             if (data.success) {
                 if (typeof showSuccessToast === 'function') showSuccessToast('✅ บันทึกข้อมูลคืนเงินแล้ว');
+                _rfSavedRefundCtrId = _rfCtrId;
+                document.getElementById('_rfActionContainer').style.display = 'none';
                 document.getElementById('_rfSaveArea').style.display = 'none';
-                document.getElementById('_rfConfirmArea').style.display = 'block';
+                const confirmArea = document.getElementById('_rfConfirmArea');
+                confirmArea.style.display = 'block';
+                confirmArea.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             } else {
                 btn.disabled = false; btn.textContent = orig;
                 if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
