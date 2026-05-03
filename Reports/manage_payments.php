@@ -2546,7 +2546,7 @@ $filterRoomOptions = array_values($filterRoomOptions);
       /* Proof modal footer - sticky button */
       .modal-footer {
         display: flex;
-        justify-content: flex-start;
+        justify-content: flex-end;
         gap: 0.75rem;
         padding-top: 1rem;
         border-top: 1px solid rgba(255,255,255,0.08);
