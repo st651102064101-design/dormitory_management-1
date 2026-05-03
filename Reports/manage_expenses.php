@@ -3653,19 +3653,80 @@ main > div:first-of-type,
       const ownerBankName = <?php echo json_encode((string)($settings['bank_name'] ?? ''), JSON_UNESCAPED_UNICODE); ?>;
       const ownerAccountNumber = <?php echo json_encode((string)($settings['bank_account_number'] ?? ''), JSON_UNESCAPED_UNICODE); ?>;
 
-      function renderPaymentModalCard(payment, context) {
+      function renderPaymentModalCard(payments, context) {
         const toNumber = (value) => Number(value || 0);
         const formatBaht = (value) => `฿${toNumber(value).toLocaleString('th-TH')}`;
-        const proofSrc = payment.pay_proof
-          ? '/dormitory_management/Public/Assets/Images/Payments/' + payment.pay_proof
-          : '';
-        const ext = String(payment.pay_proof || '').toLowerCase().split('.').pop();
-        const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
-        const paidDate = payment.pay_date ? new Date(payment.pay_date).toLocaleDateString('th-TH') : '-';
-        const isVerified = String(payment.pay_status) === '1';
-        const fallbackStatusText = isVerified ? 'ชำระแล้ว' : 'รอตรวจสอบ';
-        const statusText = String(context.statusText || '').trim() || fallbackStatusText;
-        let statusClass = isVerified ? 'paid' : 'pending';
+        
+        // Ensure payments is an array
+        const paymentList = Array.isArray(payments) ? payments : [payments];
+        
+        // Calculate totals and status from all payments
+        let totalAmount = 0;
+        let paymentItems = '';
+        
+        paymentList.forEach((payment, index) => {
+          const proofSrc = payment.pay_proof
+            ? '/dormitory_management/Public/Assets/Images/Payments/' + payment.pay_proof
+            : '';
+          const ext = String(payment.pay_proof || '').toLowerCase().split('.').pop();
+          const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(ext);
+          const paidDate = payment.pay_date ? new Date(payment.pay_date).toLocaleDateString('th-TH') : '-';
+          const paymentRemark = String(payment.pay_remark || '').trim();
+          const paymentType = paymentRemark || 'ค่าห้อง/ค่าน้ำ/ค่าไฟ';
+          const paymentAmount = toNumber(payment.pay_amount);
+          
+          totalAmount += paymentAmount;
+          
+          const proofHtml = !proofSrc
+            ? '<div class="payment-modal-value" style="color:#94a3b8;">-</div>'
+            : (isImage
+                ? '<img class="payment-proof-thumb" src="' + proofSrc + '" alt="หลักฐานการโอน" />'
+                : '<a class="payment-modal-value" style="color:#2563eb;font-weight:700;" href="' + proofSrc + '" target="_blank" rel="noopener">เปิดไฟล์หลักฐาน</a>');
+          
+          const isVerified = String(payment.pay_status) === '1';
+          const statusClass = isVerified ? 'paid' : 'pending';
+          const statusText = isVerified ? 'ชำระแล้ว' : 'รอตรวจสอบ';
+          
+          const statusIcon = isVerified 
+            ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.7" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><polyline points="12 7 12 12 15 14"></polyline></svg>';
+          
+          paymentItems += `
+            <div style="border-top: 1px solid #e2e8f0; padding-top: 1.5rem; margin-top: 1.5rem;">
+              <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1rem;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: ${isVerified ? '#22c55e' : '#f59e0b'}; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                  ${statusIcon}
+                </div>
+                <div style="flex: 1;">
+                  <div style="color: #94a3b8; font-size: 0.85rem;">แจ้งชำระเงินครั้งที่ ${index + 1}</div>
+                  <div style="color: ${isVerified ? '#22c55e' : '#f59e0b'}; font-weight: 700;">${statusText}</div>
+                </div>
+              </div>
+              
+              <div class="payment-modal-grid">
+                <div class="payment-modal-label">วันที่ชำระ</div>
+                <div class="payment-modal-value">${paidDate}</div>
+
+                <div class="payment-modal-label">จำนวนเงิน</div>
+                <div class="payment-modal-value" style="font-weight: 700; color: #22c55e;">${formatBaht(paymentAmount)}</div>
+
+                <div class="payment-modal-label">ประเภทรายการ</div>
+                <div class="payment-modal-value">${paymentType}</div>
+
+                <div class="payment-modal-label">ธนาคารปลายทาง</div>
+                <div class="payment-modal-value">${ownerBankName || '-'}<br>${ownerAccountNumber || '-'}</div>
+              </div>
+              
+              <div style="margin-top: 1rem;">
+                <h5 class="payment-modal-section-title">หลักฐานการโอน</h5>
+                <div>${proofHtml}</div>
+              </div>
+            </div>
+          `;
+        });
+        
+        const statusText = String(context.statusText || '').trim() || 'รอตรวจสอบ';
+        let statusClass = 'pending';
         if (statusText.startsWith('รอชำระ') || statusText.startsWith('ยังไม่ได้จดมิเตอร์')) {
           statusClass = 'unpaid';
         } else if (statusText.startsWith('ค้างชำระ')) {
@@ -3686,29 +3747,17 @@ main > div:first-of-type,
           overdue: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>'
         };
         const statusIcon = statusIconMap[statusClass] || statusIconMap.pending;
-        const paymentRemark = String(payment.pay_remark || '').trim();
-        const paymentType = paymentRemark || 'ค่าห้อง/ค่าน้ำ/ค่าไฟ';
+        
         const chargesPaid = toNumber(context.chargesPaid);
         const chargesRemain = toNumber(context.chargesRemain);
-        const totalPaid = chargesPaid;
-        const totalRemain = chargesRemain;
-        const totalRemainColor = totalRemain > 0 ? '#ef4444' : '#22c55e';
-        const showTotalPaid = totalPaid > 0;
-        const showTotalRemain = totalRemain > 0;
-        const showChargesPaid = chargesPaid > 0;
-        const showChargesRemain = chargesRemain > 0;
-        const proofHtml = !proofSrc
-          ? '<div class="payment-modal-value" style="color:#94a3b8;">-</div>'
-          : (isImage
-              ? '<img class="payment-proof-thumb" src="' + proofSrc + '" alt="หลักฐานการโอน" />'
-              : '<a class="payment-modal-value" style="color:#2563eb;font-weight:700;" href="' + proofSrc + '" target="_blank" rel="noopener">เปิดไฟล์หลักฐาน</a>');
+        const totalRemainColor = chargesRemain > 0 ? '#ef4444' : '#22c55e';
 
         paymentProofContent.innerHTML = `
           <div class="payment-modal-head">
             <div class="payment-modal-check ${statusClass}">
               ${statusIcon}
             </div>
-            <h3 class="payment-modal-title">แจ้งชำระเงิน</h3>
+            <h3 class="payment-modal-title">รายละเอียดการชำระเงิน (${paymentList.length} รายการ)</h3>
           </div>
           <div class="payment-modal-body">
             <div class="payment-modal-summary">
@@ -3716,50 +3765,27 @@ main > div:first-of-type,
                 <div class="payment-modal-summary-label">สถานะ</div>
                 <div class="payment-modal-summary-value payment-modal-status ${statusClass}">${statusText}</div>
               </div>
-              ${showTotalPaid ? `<div class="payment-modal-summary-item">
+              ${chargesPaid > 0 ? `<div class="payment-modal-summary-item">
                 <div class="payment-modal-summary-label">จ่ายแล้วรวม</div>
-                <div class="payment-modal-summary-value">${formatBaht(totalPaid)}</div>
+                <div class="payment-modal-summary-value">${formatBaht(chargesPaid)}</div>
               </div>` : ''}
-              ${showTotalRemain ? `<div class="payment-modal-summary-item">
+              ${chargesRemain > 0 ? `<div class="payment-modal-summary-item">
                 <div class="payment-modal-summary-label">ยอดค้างรวม</div>
-                <div class="payment-modal-summary-value" style="color:${totalRemainColor};">${formatBaht(totalRemain)}</div>
+                <div class="payment-modal-summary-value" style="color:${totalRemainColor};">${formatBaht(chargesRemain)}</div>
               </div>` : ''}
             </div>
 
             <div class="payment-modal-section">
-              <h4 class="payment-modal-section-title">ข้อมูลการชำระ</h4>
+              <h4 class="payment-modal-section-title">ข้อมูลผู้เช่า</h4>
               <div class="payment-modal-grid">
                 <div class="payment-modal-label">ผู้เช่า</div>
                 <div class="payment-modal-value">${context.tenantName || '-'}</div>
-
-                <div class="payment-modal-label">ธนาคารปลายทาง</div>
-                <div class="payment-modal-value">${ownerBankName || '-'}<br>${ownerAccountNumber || '-'}</div>
-
-                <div class="payment-modal-label">วันที่ชำระ</div>
-                <div class="payment-modal-value">${paidDate}</div>
-
-                <div class="payment-modal-label">จำนวนเงิน</div>
-                <div class="payment-modal-value">${formatBaht(payment.pay_amount)}</div>
-
-                <div class="payment-modal-label">ประเภทรายการ</div>
-                <div class="payment-modal-value">${paymentType}</div>
               </div>
             </div>
 
-            ${(showChargesPaid || showChargesRemain) ? `<div class="payment-modal-section">
-              <h4 class="payment-modal-section-title">สรุปย่อย</h4>
-              <div class="payment-modal-grid">
-                ${showChargesPaid ? `<div class="payment-modal-label">ชำระแล้ว</div>
-                <div class="payment-modal-value">${formatBaht(chargesPaid)}</div>` : ''}
-
-                ${showChargesRemain ? `<div class="payment-modal-label">ค้างชำระ</div>
-                <div class="payment-modal-value" style="color:#ef4444;font-weight:700;">${formatBaht(chargesRemain)}</div>` : ''}
-              </div>
-            </div>` : ''}
-
             <div class="payment-modal-section">
-              <h4 class="payment-modal-section-title">หลักฐานการโอน</h4>
-              <div>${proofHtml}</div>
+              <h4 class="payment-modal-section-title">รายการชำระย่อยทั้งหมด</h4>
+              ${paymentItems}
             </div>
           </div>
         `;
@@ -3806,17 +3832,18 @@ main > div:first-of-type,
             throw new Error(data.message || 'ไม่สามารถโหลดข้อมูลการชำระเงินได้');
           }
 
-          const firstPayment = (Array.isArray(data.payments) && data.payments.length > 0)
-            ? data.payments[0]
-            : {
+          // Pass all payments, not just the first one
+          const payments = Array.isArray(data.payments) && data.payments.length > 0
+            ? data.payments
+            : [{
                 pay_proof: '',
                 pay_date: '',
                 pay_amount: 0,
                 pay_remark: '',
                 pay_status: '0'
-              };
+              }];
 
-          renderPaymentModalCard(firstPayment, context);
+          renderPaymentModalCard(payments, context);
           showPaymentModal();
           return true;
         } catch (error) {
@@ -3837,6 +3864,26 @@ main > div:first-of-type,
 
         card.__paymentPreviewBound = true;
         card.dataset.boundPreview = '1';
+        
+        // Add hover event listener to show payment details immediately
+        let hoverTimeout;
+        card.addEventListener('mouseenter', function(e) {
+          if (card.dataset.previewBusy === '1') return;
+          
+          // Show modal on hover with a slight delay (300ms)
+          hoverTimeout = setTimeout(() => {
+            if (card.dataset.boundPreview === '1' && card.dataset.previewBusy !== '1') {
+              openPaymentFromTrigger(card);
+            }
+          }, 300);
+        });
+        
+        card.addEventListener('mouseleave', function() {
+          // Clear the timeout if user moves away before it triggers
+          if (hoverTimeout) {
+            clearTimeout(hoverTimeout);
+          }
+        });
       }
 
       async function openPaymentFromTrigger(card) {
