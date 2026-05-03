@@ -3819,8 +3819,34 @@ main > div:first-of-type,
         modal.classList.add('active');
       }
 
-      function closeProofModal() {
-        document.getElementById('proofModal').classList.remove('active');
+      function rejectVerifiedPayment(payId, expId) {
+        if (!confirm('คุณแน่ใจว่าต้องการตีกลับการยืนยันนี้? สถานะจะเปลี่ยนเป็น "ตีกลับ"')) return;
+        
+        const loadingToast = showToast('กำลังประมวลผล...', 'info');
+        
+        fetch('/dormitory_management/Manage/update_payment_status.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `pay_id=${String(payId)}&status=2&exp_id=${String(expId)}`
+        })
+        .then(res => res.json())
+        .then(data => {
+          removeToast(loadingToast);
+          if (data.success) {
+            showToast('ตีกลับการยืนยันเรียบร้อย', 'success');
+            setTimeout(() => { 
+              closeGroupPaymentsModal();
+              location.reload(); 
+            }, 1500);
+          } else {
+            showToast(data.message || 'เกิดข้อผิดพลาด', 'error');
+          }
+        })
+        .catch(err => {
+          removeToast(loadingToast);
+          showToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์', 'error');
+          console.error('Reject error:', err);
+        });
       }
 
       function togglePaymentSubRows(btn, event) {
@@ -3955,7 +3981,7 @@ main > div:first-of-type,
             proofLink = `<span style="color:#2563eb;cursor:pointer;font-weight:500;text-decoration:underline;" onclick="showProof('${escHtml(proofFile)}')">ดูหลักฐาน</span>`;
           }
           
-          const verifyBtn = status === '0' ? `<button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(${payId}, '${proofFile}', ${expId})" style="padding:0.35rem 0.6rem;font-size:0.8rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;margin-right:3px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยัน</button>` : '-';
+          const verifyBtn = status === '0' ? `<button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(${payId}, '${proofFile}', ${expId})" style="padding:0.35rem 0.6rem;font-size:0.8rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;margin-right:3px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยัน</button>` : (status === '1' ? `<button type="button" class="action-btn" onclick="rejectVerifiedPayment(${payId}, ${expId})" style="padding:0.35rem 0.6rem;font-size:0.8rem;background-color:#ef4444;color:#fff;border:none;border-radius:6px;cursor:pointer;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;margin-right:3px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>ตีกลับ</button>` : '-');
           
           return `
             <tr>
