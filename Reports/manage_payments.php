@@ -3211,15 +3211,21 @@ main > div:first-of-type,
                           if ((int)($pay['_has_pending_history'] ?? 0) === 1 && $payStatus !== '0') {
                             $payStatus = '0';
                           }
-                          $statusClass = $payStatus === '1'
-                            ? 'status-verified'
-                            : ($payStatus === '2' ? 'status-unpaid' : ($payStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
-                          $statusText = $statusMap[$payStatus] ?? $statusMap['0'];
+                          $hasRejectedHistory = (int)($pay['_has_rejected_history'] ?? 0) === 1;
+                          if ($hasRejectedHistory && $payStatus !== '2') {
+                            $statusClass = 'status-unpaid';
+                            $statusText = 'มีรายการตีกลับ';
+                          } else {
+                            $statusClass = $payStatus === '1'
+                              ? 'status-verified'
+                              : ($payStatus === '2' ? 'status-unpaid' : ($payStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
+                            $statusText = $statusMap[$payStatus] ?? $statusMap['0'];
+                          }
                           ?>
                           <span class="status-badge <?php echo $statusClass; ?>">
-                            <?php if ($payStatus === '1'): ?>
+                            <?php if ($payStatus === '1' && !$hasRejectedHistory): ?>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="status-icon-check" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg>
-                            <?php elseif ($payStatus === '2'): ?>
+                            <?php elseif ($payStatus === '2' || $hasRejectedHistory): ?>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg>
                             <?php elseif ($payStatus === 'unpaid'): ?>
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
