@@ -1529,7 +1529,7 @@
         // สร้าง modal ครั้งเดียว
         const modalEl = document.createElement('div');
         modalEl.id = '_refundModal';
-        modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.55);align-items:center;justify-content:center;';
+        modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(15,23,42,0.35);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);align-items:center;justify-content:center;';
         modalEl.innerHTML = `
             <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:1.75rem;width:min(460px,92vw);position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
                 <button onclick="closeRefundModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
