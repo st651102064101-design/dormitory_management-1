@@ -3571,6 +3571,21 @@ main > div:first-of-type,
             info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
           }
         });
+        
+        // Attach click handler to open modal when clicking anywhere on grouped payment rows
+        paymentsTable.addEventListener('click', function(e) {
+          const row = e.target.closest('tr.payment-group-row.has-subrows');
+          if (!row) return;
+          
+          // Don't trigger if clicking on interactive elements
+          if (e.target.closest('.expand-btn, .group-amount-link, button, a, [role="button"]')) return;
+          
+          // Find the expand button to get data attributes
+          const expandBtn = row.querySelector('.expand-btn');
+          if (expandBtn) {
+            openGroupPaymentsModal(expandBtn);
+          }
+        });
       }
 
       function destroyPaymentsDataTable() {
@@ -4326,25 +4341,6 @@ main > div:first-of-type,
         ensurePaymentsViewVisible();
         applyFilters({ skipReload: true, updateHistory: false });
         setupPaymentRowHoverBehavior();
-
-        // Make entire payment row clickable to open group modal
-        const paymentsTable = document.getElementById('paymentsTable');
-        if (paymentsTable) {
-          paymentsTable.addEventListener('click', function(e) {
-            const row = e.target.closest('tr.payment-group-row.has-subrows');
-            if (!row) return;
-            
-            // Don't trigger if clicking on interactive elements
-            const clickedElement = e.target.closest('.expand-btn, .group-amount-link, button, a, [role="button"]');
-            if (clickedElement) return;
-            
-            // Find the expand button to get data attributes
-            const expandBtn = row.querySelector('.expand-btn');
-            if (expandBtn) {
-              openGroupPaymentsModal(expandBtn);
-            }
-          });
-        }
 
         // Status filter tabs – use delegated click handler for robustness
         const tabsContainer = document.getElementById('paymentFilterTabs');
