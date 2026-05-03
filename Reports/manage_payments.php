@@ -3119,26 +3119,12 @@ main > div:first-of-type,
                         </td>
                         <td>
                           <?php 
-                          $proofItems = [];
-                          // ถ้ามีรายการย่อย ให้ดึงหลักฐานจากทั้งหมด
-                          if ($groupCount > 1 && !empty($pay['_group_items'])) {
-                            foreach ($pay['_group_items'] as $subItem) {
-                              if (!empty($subItem['pay_proof'])) {
-                                $proofItems[] = $subItem['pay_proof'];
-                              }
-                            }
-                          } elseif (!empty($pay['pay_proof'])) {
-                            $proofItems[] = $pay['pay_proof'];
-                          }
-                          
-                          if (!empty($proofItems)): ?>
-                            <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                              <?php foreach ($proofItems as $proof): ?>
-                                <span class="proof-link" onclick="showProof('<?php echo htmlspecialchars($proof, ENT_QUOTES, 'UTF-8'); ?>')" style="cursor:pointer;color:#2563eb;text-decoration:underline;font-weight:500;font-size:0.85rem;display:inline-flex;align-items:center;gap:0.3rem;">
-                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ดู
-                                </span>
-                              <?php endforeach; ?>
-                            </div>
+                          // แสดงหลักฐานเฉพาะเมื่อไม่มีรายการย่อย
+                          // ถ้ามีรายการย่อย หลักฐานจะแสดงในแถวย่อยแทน
+                          if ($groupCount <= 1 && !empty($pay['pay_proof'])): ?>
+                            <span class="proof-link" onclick="showProof('<?php echo htmlspecialchars($pay['pay_proof'], ENT_QUOTES, 'UTF-8'); ?>')" style="cursor:pointer;color:#2563eb;text-decoration:underline;font-weight:500;font-size:0.85rem;display:inline-flex;align-items:center;gap:0.3rem;">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ดู
+                            </span>
                           <?php else: ?>
                             <span style="color:#64748b;">-</span>
                           <?php endif; ?>
@@ -3193,7 +3179,15 @@ main > div:first-of-type,
                             <td colspan="3"></td>
                             <td style="font-size:0.9rem;color:#64748b;"><?php echo htmlspecialchars($subItem['date'] ?? '-'); ?></td>
                             <td style="text-align:right;font-weight:600;">฿<?php echo number_format((int)($subItem['amount'] ?? 0)); ?></td>
-                            <td></td>
+                            <td>
+                              <?php if (!empty($subItem['pay_proof'])): ?>
+                                <span class="proof-link" onclick="showProof('<?php echo htmlspecialchars((string)($subItem['pay_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>')" style="cursor:pointer;color:#2563eb;text-decoration:underline;font-weight:500;font-size:0.85rem;display:inline-flex;align-items:center;gap:0.3rem;">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ดู
+                                </span>
+                              <?php else: ?>
+                                <span style="color:#64748b;">-</span>
+                              <?php endif; ?>
+                            </td>
                             <td><span class="status-badge <?php 
                               $subStatus = (string)($subItem['status'] ?? '0');
                               $subStatusClass = $subStatus === '1' ? 'status-verified' : ($subStatus === '2' ? 'status-unpaid' : ($subStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
@@ -3272,26 +3266,12 @@ main > div:first-of-type,
                     <div class="payment-row-actions">
                       <div>
                         <?php 
-                        $proofItems = [];
-                        // ถ้ามีรายการย่อย ให้ดึงหลักฐานจากทั้งหมด
-                        if ($groupCount > 1 && !empty($pay['_group_items'])) {
-                          foreach ($pay['_group_items'] as $subItem) {
-                            if (!empty($subItem['pay_proof'])) {
-                              $proofItems[] = $subItem['pay_proof'];
-                            }
-                          }
-                        } elseif (!empty($pay['pay_proof'])) {
-                          $proofItems[] = $pay['pay_proof'];
-                        }
-                        
-                        if (!empty($proofItems)): ?>
-                          <div style="display:flex;gap:0.4rem;flex-wrap:wrap;">
-                            <?php foreach ($proofItems as $proof): ?>
-                              <span class="proof-link" onclick="showProof('<?php echo htmlspecialchars($proof, ENT_QUOTES, 'UTF-8'); ?>')" style="cursor:pointer;color:#2563eb;text-decoration:underline;font-weight:500;font-size:0.85rem;display:inline-flex;align-items:center;gap:0.3rem;">
-                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ดู
-                              </span>
-                            <?php endforeach; ?>
-                          </div>
+                        // แสดงหลักฐานเฉพาะเมื่อไม่มีรายการย่อย
+                        // ถ้ามีรายการย่อย หลักฐานจะแสดงในแถวย่อยแทน
+                        if ($groupCount <= 1 && !empty($pay['pay_proof'])): ?>
+                          <span class="proof-link" onclick="showProof('<?php echo htmlspecialchars($pay['pay_proof'], ENT_QUOTES, 'UTF-8'); ?>')" style="cursor:pointer;color:#2563eb;text-decoration:underline;font-weight:500;font-size:0.85rem;display:inline-flex;align-items:center;gap:0.3rem;">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>ดู
+                          </span>
                         <?php else: ?>
                           <span style="color:#64748b;">-</span>
                         <?php endif; ?>
