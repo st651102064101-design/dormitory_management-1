@@ -2940,6 +2940,7 @@ main > div:first-of-type,
               <span style="color:${t.muted};">ยอดคืน:</span>
               <span id="rfRefundDisplay" style="color:${t.green};font-weight:700;">${_fmtMoney(depAmount - dedAmt)}</span>
             </div>
+            <button type="button" onclick="_saveRefund(${ctrId})" style="padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#3b82f6,#2563eb);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;">💾 บันทึกข้อมูลคืนเงิน</button>
             ${rf ? `
             <div style="border-top:1px solid ${t.divider};padding-top:0.6rem;margin-top:0.2rem;">
               <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">หลักฐานการโอนคืน</label>
