@@ -3109,7 +3109,7 @@ main > div:first-of-type,
                       <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>" class="payment-group-row <?php echo $groupCount > 1 ? 'has-subrows' : ''; ?>">
                         <td style="position:relative;">
                           <?php if ($groupCount > 1): ?>
-                            <button type="button" class="expand-btn" onclick="togglePaymentSubRows(this, event)" style="background:none;border:none;cursor:pointer;padding:0.2rem;margin-right:0.3rem;">
+                            <button type="button" class="expand-btn" onclick="openGroupPaymentsModal(this)" style="background:none;border:none;cursor:pointer;padding:0.2rem;margin-right:0.3rem;" data-group-title="<?php echo htmlspecialchars($groupTitle, ENT_QUOTES, 'UTF-8'); ?>" data-group-items="<?php echo $groupItemsJson; ?>" data-exp-id="<?php echo (int)$pay['exp_id']; ?>" title="ดูรายการย่อย">
                               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:-3px;">
                                 <polyline points="9 18 15 12 9 6"></polyline>
                               </svg>
