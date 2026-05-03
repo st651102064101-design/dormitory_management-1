@@ -442,6 +442,7 @@ foreach ($payments as $pay) {
       'count' => 0,
       'has_rejected' => false,
       'has_verified' => false,
+      'has_pending' => false,
       'amount_by_status' => ['0' => 0, '1' => 0, '2' => 0, 'unpaid' => 0],
       'items' => [],
     ];
@@ -469,6 +470,9 @@ foreach ($payments as $pay) {
   if ($currentStatus === '1') {
     $paymentGroups[$paymentKey]['has_verified'] = true;
   }
+  if ($currentStatus === '0') {
+    $paymentGroups[$paymentKey]['has_pending'] = true;
+  }
 
   if (!isset($dedupedPayments[$paymentKey]) || $shouldReplacePayment($dedupedPayments[$paymentKey], $pay)) {
     $dedupedPayments[$paymentKey] = $pay;
@@ -481,6 +485,7 @@ foreach ($dedupedPayments as $paymentKey => $pay) {
     'count' => 1,
     'has_rejected' => false,
     'has_verified' => false,
+    'has_pending' => false,
     'amount_by_status' => ['0' => 0, '1' => 0, '2' => 0, 'unpaid' => 0],
     'items' => [],
   ];
@@ -501,6 +506,7 @@ foreach ($dedupedPayments as $paymentKey => $pay) {
   $pay['_group_count'] = (int)($group['count'] ?? 1);
   $pay['_has_rejected_history'] = !empty($group['has_rejected']) ? 1 : 0;
   $pay['_has_verified_history'] = !empty($group['has_verified']) ? 1 : 0;
+  $pay['_has_pending_history'] = !empty($group['has_pending']) ? 1 : 0;
   $pay['_group_items'] = (array)($group['items'] ?? []);
   $payments[] = $pay;
 }
@@ -3076,7 +3082,7 @@ main > div:first-of-type,
                         </td>
                         <td>
                           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                            <?php if ($pay['pay_status'] === '0' && !$isDepositRemark && $hasExpenseLink): ?>
+                            <?php if (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink): ?>
                               <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                             <?php endif; ?>
                           </div>
@@ -3149,7 +3155,7 @@ main > div:first-of-type,
                         <?php endif; ?>
                       </div>
                       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                        <?php if ($pay['pay_status'] === '0' && !$isDepositRemark && $hasExpenseLink): ?>
+                        <?php if (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink): ?>
                           <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                         <?php endif; ?>
                       </div>
