@@ -3756,8 +3756,9 @@ main > div:first-of-type,
                 const payStatus = String(pay.pay_status || '0');
                 const proofFilename = String(pay.pay_proof || '').trim();
                 const canReview = allowReviewAction && payId > 0 && payStatus === '0';
+                const canReject = allowReviewAction && payId > 0 && payStatus === '1';
                 const statusBadge = payStatus === '1'
-                    ? `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(34,197,94,0.15);color:#4ade80;font-size:0.78rem;font-weight:600;">✓ อนุมัติแล้ว</span>`
+                    ? `<div style="display:inline-flex;align-items:center;gap:0.3rem;"><span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(34,197,94,0.15);color:#4ade80;font-size:0.78rem;font-weight:600;">✓ อนุมัติแล้ว</span>${canReject ? `<button type="button" onclick="rejectWizardPayment(${payId},${expenseId})" title="ตีกลับการยืนยัน" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(239,68,68,0.15);color:#f87171;font-size:0.78rem;font-weight:600;border:1px solid rgba(239,68,68,0.3);cursor:pointer;transition:background 0.15s;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:12px;height:12px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>ตีกลับ</button>` : ''}</div>`
                     : payStatus === '2'
                         ? `<span style="display:inline-block;padding:0.2rem 0.55rem;border-radius:20px;background:rgba(239,68,68,0.15);color:#f87171;font-size:0.78rem;font-weight:600;">✕ ตีกลับ</span>`
                         : canReview
@@ -4020,6 +4021,28 @@ main > div:first-of-type,
         rejectBtn.style.opacity = isApproveAction ? '1' : '0.6';
         approveBtn.style.cursor = 'not-allowed';
         rejectBtn.style.cursor = 'not-allowed';
+    }
+
+    function rejectWizardPayment(payId, expId) {
+        if (!confirm('คุณแน่ใจว่าต้องการตีกลับการยืนยันนี้? สถานะจะเปลี่ยนเป็น "ตีกลับ"')) return;
+        
+        fetch('/dormitory_management/Manage/update_payment_status.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: `pay_id=${String(payId)}&status=2&exp_id=${String(expId)}`
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            location.reload();
+          } else {
+            alert(data.message || 'เกิดข้อผิดพลาด');
+          }
+        })
+        .catch(err => {
+          alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์');
+          console.error('Reject error:', err);
+        });
     }
 
     function openSlipReview(payId, expId, proofFilename, payDate, amount) {
