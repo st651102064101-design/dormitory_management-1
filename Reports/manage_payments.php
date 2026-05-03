@@ -3823,16 +3823,20 @@ main > div:first-of-type,
         showConfirmDialog('ตีกลับการยืนยัน', 'คุณแน่ใจว่าต้องการตีกลับการยืนยันนี้ใช่หรือไม่? สถานะจะเปลี่ยนเป็น <strong>ตีกลับ</strong>', 'delete').then(confirmed => {
           if (!confirmed) return;
         
-          const loadingToast = showToast('กำลังประมวลผล...', 'info');
+          const formData = new URLSearchParams();
+          formData.append('csrf_token', '<?php echo $csrfToken; ?>');
+          formData.append('pay_id', String(payId));
+          formData.append('pay_status', '2');
+          formData.append('exp_id', String(expId));
         
         fetch('/dormitory_management/Manage/update_payment_status.php', {
           method: 'POST',
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: `pay_id=${String(payId)}&status=2&exp_id=${String(expId)}`
+          body: formData.toString(),
+          credentials: 'include'
         })
         .then(res => res.json())
         .then(data => {
-          removeToast(loadingToast);
           if (data.success) {
             showToast('ตีกลับการยืนยันเรียบร้อย', 'success');
             setTimeout(() => { 
@@ -3840,11 +3844,10 @@ main > div:first-of-type,
               location.reload(); 
             }, 1500);
           } else {
-            showToast(data.message || 'เกิดข้อผิดพลาด', 'error');
+            showToast(data.error || 'เกิดข้อผิดพลาด', 'error');
           }
         })
         .catch(err => {
-          removeToast(loadingToast);
           showToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์', 'error');
           console.error('Reject error:', err);
         });

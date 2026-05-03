@@ -4027,22 +4027,42 @@ main > div:first-of-type,
         showConfirmDialog('ตีกลับการยืนยัน', 'คุณแน่ใจว่าต้องการตีกลับการยืนยันนี้ใช่หรือไม่? สถานะจะเปลี่ยนเป็น <strong>ตีกลับ</strong>', 'delete').then(confirmed => {
           if (!confirmed) return;
           
+          const ctrId = document.getElementById('modal_billing_ctr_id').value;
+          const formData = new URLSearchParams();
+          formData.append('csrf_token', '<?php echo $csrfToken; ?>');
+          formData.append('pay_id', String(payId));
+          formData.append('pay_status', '2');
+          formData.append('exp_id', String(expId));
+          
           fetch('/dormitory_management/Manage/update_payment_status.php', {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `pay_id=${String(payId)}&status=2&exp_id=${String(expId)}`
+            body: formData.toString(),
+            credentials: 'include'
           })
           .then(res => res.json())
           .then(data => {
             if (data.success) {
-              location.reload();
+              if (typeof showSuccessToast === 'function') {
+                showSuccessToast(data.message || 'ตีกลับการยืนยันเรียบร้อย');
+              }
+              refreshBillingPayments(ctrId);
+              refreshWizardTable();
             } else {
-              alert(data.message || 'เกิดข้อผิดพลาด');
+              if (typeof showErrorToast === 'function') {
+                showErrorToast(data.error || 'เกิดข้อผิดพลาด');
+              } else {
+                alert(data.error || 'เกิดข้อผิดพลาด');
+              }
             }
           })
           .catch(err => {
-            alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์');
             console.error('Reject error:', err);
+            if (typeof showErrorToast === 'function') {
+              showErrorToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์');
+            } else {
+              alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์');
+            }
           });
         });
     }
