@@ -1592,6 +1592,7 @@
                         </div>
                         
                         <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและกด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อเรียบร้อย</p>
+                        <button type="button" onclick="goBackRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;margin-bottom:0.75rem;">← แก้ไขข้อมูลคืนเงิน</button>
                         <button type="button" onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.2);position:relative;z-index:1;pointer-events:auto;">✓ ยืนยันโอนเงินแล้ว</button>
                         <div id="_rfProofProgress" style="display:none; text-align:center; font-size:0.85rem; color:#0369a1; margin-top:0.5rem; font-weight:600;">กำลังอัพโหลดสลิป...</div>
                     </div>
@@ -1605,7 +1606,8 @@
     var _rfCtrId = 0;
     var _rfSavedRefundCtrId = null;
 
-    function openRefundModal(ctrId, tntName, roomNumber, bankName, bankAccName, bankAccNum, depositAmt) {
+    function openRefundModal(ctrId, tntName, roomNumber, bankName, bankAccName, bankAccNum, depositAmt, refundPending) {
+        refundPending = refundPending === true || refundPending === 'true' || refundPending === 1 || refundPending === '1';
         _rfCtrId = ctrId;
         document.getElementById('_rfTitle').textContent = '💰 คืนเงินมัดจำ — ห้อง ' + (roomNumber || '') + ' (' + (tntName || '') + ')';
         document.getElementById('_rfDeduct').value = '0';
@@ -1615,7 +1617,7 @@
         document.getElementById('_rfWaterCost').value = '0';
         document.getElementById('_rfElecCost').value = '0';
         _updateRefundDisplay(depositAmt || 0);
-        if (_rfSavedRefundCtrId === ctrId) {
+        if (_rfSavedRefundCtrId === ctrId || refundPending) {
             document.getElementById('_rfActionContainer').style.display = 'none';
             document.getElementById('_rfSaveArea').style.display = 'none';
             document.getElementById('_rfConfirmArea').style.display = 'block';
@@ -1623,6 +1625,11 @@
             document.getElementById('_rfActionContainer').style.display = 'block';
             document.getElementById('_rfSaveArea').style.display = 'flex';
             document.getElementById('_rfConfirmArea').style.display = 'none';
+            const saveBtn = document.getElementById('_rfSaveBtn');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'บันทึกข้อมูลคืนเงิน';
+            }
         }
         // Bank info — แสดงเสมอ ถ้าไม่มีข้อมูลแสดง "ไม่ระบุบัญชี"
         const bankInfoEl = document.getElementById('_rfBankInfo');
@@ -1719,6 +1726,19 @@
             if (el) el.textContent = refund.toLocaleString('th-TH') + ' ฿';
         }
     });
+
+    function goBackRefund() {
+        const saveBtn = document.getElementById('_rfSaveBtn');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'บันทึกข้อมูลคืนเงิน';
+        }
+        document.getElementById('_rfActionContainer').style.display = 'block';
+        document.getElementById('_rfSaveArea').style.display = 'flex';
+        document.getElementById('_rfConfirmArea').style.display = 'none';
+        const deductInput = document.getElementById('_rfDeduct');
+        if (deductInput) deductInput.focus();
+    }
 
     async function doSaveRefund() {
         const btn = document.getElementById('_rfSaveBtn');

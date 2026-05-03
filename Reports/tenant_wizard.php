@@ -324,7 +324,8 @@ try {
         ) tm ON c.ctr_id = tm.ctr_id
         LEFT JOIN (
             SELECT dr.ctr_id,
-                   MAX(CASE WHEN dr.refund_status = '1' THEN 1 ELSE 0 END) AS refund_confirmed
+                   MAX(CASE WHEN dr.refund_status = '1' THEN 1 ELSE 0 END) AS refund_confirmed,
+                   MAX(CASE WHEN dr.refund_status = '0' THEN 1 ELSE 0 END) AS refund_pending
             FROM deposit_refund dr GROUP BY dr.ctr_id
         ) dr ON c.ctr_id = dr.ctr_id
                                 WHERE (
@@ -2450,6 +2451,7 @@ main > div:first-of-type,
                                               $ctrIdCancel = (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0);
                                               $termDateDisplay = !empty($tenant['term_date']) ? thaiDate($tenant['term_date']) : '-';
                                               $refundDone = (int)($tenant['refund_confirmed'] ?? 0) === 1;
+                                              $refundPending = (int)($tenant['refund_pending'] ?? 0) === 1;
                                               $bankName = $tenant['bank_name'] ?? '';
                                               $bankAccName = $tenant['bank_account_name'] ?? '';
                                               $bankAccNum = $tenant['bank_account_number'] ?? '';
@@ -2479,7 +2481,7 @@ main > div:first-of-type,
                                                     </button>
                                                     <?php elseif ($needsRefund && !$refundDone): ?>
                                                     <button type="button"
-                                                        onclick="openRefundModal(<?php echo $ctrIdCancel; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccNum), ENT_QUOTES, 'UTF-8'); ?>, <?php echo $depositAmt; ?>)"
+                                                        onclick="openRefundModal(<?php echo $ctrIdCancel; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccNum), ENT_QUOTES, 'UTF-8'); ?>, <?php echo $depositAmt; ?>, <?php echo $refundPending ? 'true' : 'false'; ?>)"
                                                         style="font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(251,191,36,0.5);background:rgba(251,191,36,0.1);color:#fbbf24;font-weight:600;cursor:pointer;">
                                                         💰 คืนเงินมัดจำก่อน
                                                     </button>
@@ -4995,6 +4997,7 @@ main > div:first-of-type,
                         </div>
                         
                         <p style="font-size:0.85rem;color:#475569;margin:0 0 0.5rem;">บันทึกข้อมูลแล้ว อัพโหลดสลิปและกด <strong>ยืนยันโอนเงินแล้ว</strong> เมื่อเรียบร้อย</p>
+                        <button type="button" onclick="goBackRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;margin-bottom:0.75rem;">← แก้ไขข้อมูลคืนเงิน</button>
                         <button type="button" onclick="doConfirmRefund()" style="width:100%;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-weight:700;font-size:0.95rem;cursor:pointer;text-shadow:0 1px 2px rgba(0,0,0,0.2);position:relative;z-index:1;pointer-events:auto;">✓ ยืนยันโอนเงินแล้ว</button>
                         <div id="_rfProofProgress" style="display:none; text-align:center; font-size:0.85rem; color:#0369a1; margin-top:0.5rem; font-weight:600;">กำลังอัพโหลดสลิป...</div>
                     </div>
@@ -5008,7 +5011,8 @@ main > div:first-of-type,
     var _rfCtrId = 0;
     var _rfSavedRefundCtrId = null;
 
-    function openRefundModal(ctrId, tntName, roomNumber, bankName, bankAccName, bankAccNum, depositAmt) {
+    function openRefundModal(ctrId, tntName, roomNumber, bankName, bankAccName, bankAccNum, depositAmt, refundPending) {
+        refundPending = refundPending === true || refundPending === 'true' || refundPending === 1 || refundPending === '1';
         _rfCtrId = ctrId;
         document.getElementById('_rfTitle').textContent = '💰 คืนเงินมัดจำ — ห้อง ' + (roomNumber || '') + ' (' + (tntName || '') + ')';
         document.getElementById('_rfDeduct').value = '0';
@@ -5018,7 +5022,7 @@ main > div:first-of-type,
         document.getElementById('_rfWaterCost').value = '0';
         document.getElementById('_rfElecCost').value = '0';
         _updateRefundDisplay(depositAmt || 0);
-        if (_rfSavedRefundCtrId === ctrId) {
+        if (_rfSavedRefundCtrId === ctrId || refundPending) {
             document.getElementById('_rfActionContainer').style.display = 'none';
             document.getElementById('_rfSaveArea').style.display = 'none';
             document.getElementById('_rfConfirmArea').style.display = 'block';
@@ -5026,6 +5030,11 @@ main > div:first-of-type,
             document.getElementById('_rfActionContainer').style.display = 'block';
             document.getElementById('_rfSaveArea').style.display = 'flex';
             document.getElementById('_rfConfirmArea').style.display = 'none';
+            const saveBtn = document.getElementById('_rfSaveBtn');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'บันทึกข้อมูลคืนเงิน';
+            }
         }
         // Bank info — แสดงเสมอ ถ้าไม่มีข้อมูลแสดง "ไม่ระบุบัญชี"
         const bankInfoEl = document.getElementById('_rfBankInfo');
@@ -5043,7 +5052,7 @@ main > div:first-of-type,
             document.getElementById('_rfConfirmArea').style.display = 'none';
         } else {
             noBankMsgEl.style.display = 'none';
-            if (_rfSavedRefundCtrId === ctrId) {
+            if (_rfSavedRefundCtrId === ctrId || refundPending) {
                 actionContainerEl.style.display = 'none';
                 document.getElementById('_rfConfirmArea').style.display = 'block';
             } else {
@@ -5122,6 +5131,19 @@ main > div:first-of-type,
             if (el) el.textContent = refund.toLocaleString('th-TH') + ' ฿';
         }
     });
+
+    function goBackRefund() {
+        const saveBtn = document.getElementById('_rfSaveBtn');
+        if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = 'บันทึกข้อมูลคืนเงิน';
+        }
+        document.getElementById('_rfActionContainer').style.display = 'block';
+        document.getElementById('_rfSaveArea').style.display = 'flex';
+        document.getElementById('_rfConfirmArea').style.display = 'none';
+        const deductInput = document.getElementById('_rfDeduct');
+        if (deductInput) deductInput.focus();
+    }
 
     async function doSaveRefund() {
         const btn = document.getElementById('_rfSaveBtn');
