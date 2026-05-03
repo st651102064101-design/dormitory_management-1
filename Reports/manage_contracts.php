@@ -2310,15 +2310,33 @@ main > div:first-of-type,
       // Delegated input handler for deposit deduction and utility cost calculator
       document.addEventListener('input', function(e) {
         if (e.target && (e.target.id === 'rfDeductAmt' || e.target.id === 'rfRoomRate' || e.target.id === 'rfWaterCost' || e.target.id === 'rfElecCost')) {
-          var maxAmt = document.getElementById('rfDeductAmt').getAttribute('max');
-          maxAmt = parseFloat(maxAmt) || 0;
-          var ded = Math.max(0, Math.min(maxAmt, parseInt(document.getElementById('rfDeductAmt').value)||0));
-          var roomRate = parseInt(document.getElementById('rfRoomRate').value)||0;
-          var waterCost = parseInt(document.getElementById('rfWaterCost').value)||0;
-          var elecCost = parseInt(document.getElementById('rfElecCost').value)||0;
+          var maxAmt = parseFloat(document.getElementById('rfDeductAmt').getAttribute('max')) || 0;
+          var dedInput = document.getElementById('rfDeductAmt');
+          var roomRateInput = document.getElementById('rfRoomRate');
+          var waterCostInput = document.getElementById('rfWaterCost');
+          var elecCostInput = document.getElementById('rfElecCost');
+
+          var ded = Math.max(0, Math.min(maxAmt, parseInt(dedInput.value) || 0));
+          dedInput.value = ded;
+
+          var roomRate = Math.max(0, parseInt(roomRateInput.value) || 0);
+          var waterCost = Math.max(0, parseInt(waterCostInput.value) || 0);
+          var elecCost = Math.max(0, parseInt(elecCostInput.value) || 0);
           var totalUtilities = roomRate + waterCost + elecCost;
-          var refund = maxAmt - ded - totalUtilities;
-          refund = Math.max(0, refund);
+          var availableForUtilities = Math.max(0, maxAmt - ded);
+
+          if (totalUtilities > availableForUtilities && e.target && (e.target.id === 'rfRoomRate' || e.target.id === 'rfWaterCost' || e.target.id === 'rfElecCost')) {
+            var currentValue = Math.max(0, parseInt(e.target.value) || 0);
+            var otherTotal = totalUtilities - currentValue;
+            var maxForCurrent = Math.max(0, availableForUtilities - otherTotal);
+            e.target.value = Math.min(currentValue, maxForCurrent);
+            roomRate = Math.max(0, parseInt(roomRateInput.value) || 0);
+            waterCost = Math.max(0, parseInt(waterCostInput.value) || 0);
+            elecCost = Math.max(0, parseInt(elecCostInput.value) || 0);
+            totalUtilities = roomRate + waterCost + elecCost;
+          }
+
+          var refund = Math.max(0, maxAmt - ded - totalUtilities);
           var el = document.getElementById('rfRefundDisplay');
           if (el) el.textContent = refund.toLocaleString('th-TH') + ' ฿';
         }
