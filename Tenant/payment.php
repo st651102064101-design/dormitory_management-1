@@ -309,6 +309,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             $pdo->commit();
 
+            // Auto commit image to git when payment proof is uploaded successfully
+            require_once __DIR__ . '/../includes/git_helper.php';
+            $paymentProofPath = $uploadsDir . '/' . $filename;
+            if (file_exists($paymentProofPath)) {
+                autoGitCommitImageUpload($paymentProofPath, 'payment');
+            }
+
             require_once __DIR__ . '/../LineHelper.php';
             if (function_exists('sendLineToContract')) {
                 $tenantName = $contract['tnt_name'] ?? 'ผู้เช่า';
