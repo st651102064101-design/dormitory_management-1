@@ -107,34 +107,54 @@ if (!function_exists('formatNewsDateForManageNews')) {
     <script src="/dormitory_management/Public/Assets/Javascript/particle-effects.js"></script>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css" />
     <style>
-        /* Apple UI System - CSS Variables */
+        /* Apple UI System - Complete Implementation per ui-standard.md */
         :root {
           /* Light Mode */
+          --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
           --bg-primary: #FFFFFF;
           --bg-secondary: #F2F2F7;
           --text-primary: #000000;
           --text-secondary: rgba(60, 60, 67, 0.6);
-          --accent-blue: #007AFF;
-          --system-blue: #0A84FF;
-          --system-red: #FF453A;
+          --text-tertiary: rgba(60, 60, 67, 0.3);
+          --system-blue: #007AFF;
+          --system-red: #FF3B30;
+          --system-green: #34C759;
           --separator: rgba(60, 60, 67, 0.3);
           --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
-          --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
-          --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.2);
-          --font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", sans-serif;
+          --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+          --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.05);
+          --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.06);
         }
         
         @media (prefers-color-scheme: dark) {
           :root {
-            /* Dark Mode */
             --bg-primary: #000000;
             --bg-secondary: #1C1C1E;
             --text-primary: #FFFFFF;
             --text-secondary: rgba(235, 235, 245, 0.6);
+            --text-tertiary: rgba(235, 235, 245, 0.3);
             --system-blue: #0A84FF;
             --system-red: #FF453A;
+            --system-green: #30B0C0;
             --separator: rgba(84, 84, 88, 0.3);
+            --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+            --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
+            --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.2);
           }
+        }
+        
+        /* Typography Foundation */
+        * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+        
+        body {
+          background-color: var(--bg-primary);
+          color: var(--text-primary);
+          transition: background-color 0.3s ease, color 0.3s ease;
         }
         
         /* Force-hide animate-ui modal overlays on this page */
@@ -143,132 +163,119 @@ if (!function_exists('formatNewsDateForManageNews')) {
             .reports-container { width: 100%; max-width: 100%; padding: 0; }
       .reports-container .container { max-width: 100%; width: 100%; padding: 0 1.5rem 1.5rem; }
       
-      /* Apple Typography Foundation */
-      * {
-        font-family: var(--font-family);
-      }
-      
-      body {
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        line-height: 1.3;
-      }
-      
+      /* Bento Grid - Cards */
       .news-stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
       }
       .news-stat-card {
-        background: var(--bg-primary);
+        background: var(--bg-secondary);
         border: 1px solid var(--separator);
-        border-radius: 18px;
-        padding: 1.5rem;
-        box-shadow: var(--shadow-sm);
-        transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-        color: var(--text-primary);
+        border-radius: 20px;
+        padding: 24px;
+        box-shadow: var(--shadow-subtle);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .news-stat-card:hover {
-        transform: translateY(-2px);
+        transform: translateY(-4px);
         box-shadow: var(--shadow-md);
-        background: var(--bg-secondary);
       }
       .news-stat-card h3 {
         margin: 0;
-        font-size: 0.8125rem;
+        font-size: 13px;
         color: var(--text-secondary);
         text-transform: uppercase;
-        letter-spacing: 0.12px;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        line-height: 1.3;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        margin-bottom: 12px;
       }
       .news-stat-card .stat-value {
-        font-size: 2.125rem;
+        font-size: 34px;
         font-weight: 700;
         color: var(--text-primary);
-        margin: 0.5rem 0;
-        letter-spacing: -0.05em;
+        margin: 0;
+        letter-spacing: 0.40px;
         line-height: 1.2;
       }
       
       .manage-panel {
         background: var(--bg-primary);
         border: 1px solid var(--separator);
-        border-radius: 18px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        box-shadow: var(--shadow-sm);
-        transition: all 0.2s;
+        border-radius: 20px;
+        padding: 24px;
+        margin-bottom: 32px;
+        box-shadow: var(--shadow-subtle);
+        transition: background-color 0.3s ease, border-color 0.3s ease;
       }
       
       .news-form {
         display: grid;
-        gap: 1rem;
-        margin-top: 1.5rem;
+        gap: 20px;
+        margin-top: 24px;
       }
       .news-form-group label {
         color: var(--text-primary);
-        font-size: 0.9375rem;
+        font-size: 17px;
         font-weight: 600;
         display: block;
-        margin-bottom: 0.5rem;
-        letter-spacing: -0.32px;
+        margin-bottom: 8px;
+        letter-spacing: -0.43px;
         line-height: 1.3;
       }
       .news-form-group input,
       .news-form-group textarea {
         width: 100%;
-        padding: 0.75rem 1rem;
-        border-radius: 10px;
+        padding: 12px 16px;
+        border-radius: 12px;
         border: 1px solid var(--separator);
         background: var(--bg-primary);
         color: var(--text-primary);
-        font-size: 0.9375rem;
-        font-weight: 500;
-        font-family: inherit;
-        box-shadow: var(--shadow-sm);
-        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        font-size: 17px;
+        font-weight: 400;
+        font-family: var(--font-apple);
+        box-shadow: inset 0 0 0 1px var(--separator);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .news-form-group textarea {
-        min-height: 120px;
+        min-height: 140px;
         resize: vertical;
       }
       .news-form-group input:focus,
       .news-form-group textarea:focus {
         outline: none;
         border-color: var(--system-blue);
-        box-shadow: 0 0 0 3px rgba(10, 132, 255, 0.15);
+        background-color: var(--bg-primary);
+        box-shadow: inset 0 0 0 1px var(--system-blue), 0 0 0 3px rgba(0, 122, 255, 0.1);
       }
       .news-form-actions {
         display: flex;
-        gap: 0.75rem;
-        margin-top: 1.5rem;
+        gap: 12px;
+        margin-top: 24px;
       }
       
       .news-card {
-        background: var(--bg-primary); 
+        background: var(--bg-secondary); 
         border: 1px solid var(--separator); 
-        border-radius: 18px; 
-        padding: 1.5rem; 
-        margin-bottom: 1rem; 
-        box-shadow: var(--shadow-sm);
-        transition: all 0.2s; 
+        border-radius: 20px; 
+        padding: 24px; 
+        margin-bottom: 16px; 
+        box-shadow: var(--shadow-subtle);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
       }
       .news-card:hover { 
-        transform: translateY(-2px); 
+        transform: translateY(-2px);
         box-shadow: var(--shadow-md);
-        background: var(--bg-secondary);
       }
       .news-card-header {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: 0.75rem;
+        margin-bottom: 12px;
       }
       .news-card-title {
-        font-size: 1rem;
+        font-size: 17px;
         font-weight: 600;
         color: var(--text-primary);
         margin: 0;
@@ -277,105 +284,155 @@ if (!function_exists('formatNewsDateForManageNews')) {
       }
       .news-card-meta {
         display: flex;
-        gap: 1rem;
-        font-size: 0.8125rem;
+        gap: 12px;
+        font-size: 13px;
         color: var(--text-secondary);
-        margin-bottom: 1rem;
-        font-weight: 500;
-        padding-bottom: 1rem;
+        margin-bottom: 16px;
+        font-weight: 400;
+        padding-bottom: 16px;
         border-bottom: 1px solid var(--separator);
-        line-height: 1.3;
+        flex-wrap: wrap;
       }
       .news-card-meta span {
-        display: flex;
+        display: inline-flex;
         align-items: center;
-        gap: 0.4rem;
-        background: var(--bg-secondary);
-        padding: 0.375rem 0.75rem;
+        gap: 6px;
+        background: var(--bg-primary);
+        padding: 6px 12px;
         border-radius: 8px;
       }
       .news-card-content {
         color: var(--text-secondary);
         line-height: 1.6;
-        margin-bottom: 1.25rem;
-        font-size: 0.9375rem;
+        margin-bottom: 20px;
+        font-size: 16px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
       
       .news-card-actions {
         display: flex;
-        gap: 0.75rem;
+        gap: 12px;
       }
       .news-card-actions button {
-        padding: 0.5rem 1rem;
-        border-radius: 10px;
+        min-width: 44px;
+        min-height: 44px;
+        padding: 10px 16px;
+        border-radius: 12px;
         font-weight: 600;
-        font-size: 0.8125rem;
+        font-size: 16px;
         cursor: pointer;
-        transition: all 0.2s;
-        border: none;
-        line-height: 1.3;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1.5px solid;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
       }
       
       .reports-page .news-card-actions .animate-ui-action-btn.edit { 
-        background: rgba(10, 132, 255, 0.1) !important; 
+        background: rgba(0, 122, 255, 0.1) !important; 
         color: var(--system-blue) !important; 
-        border: 1px solid rgba(10, 132, 255, 0.3) !important; 
+        border-color: rgba(0, 122, 255, 0.3) !important; 
       }
       .reports-page .news-card-actions .animate-ui-action-btn.edit:hover { 
-        background: rgba(10, 132, 255, 0.2) !important; 
+        background: rgba(0, 122, 255, 0.15) !important;
+        box-shadow: var(--shadow-sm) !important;
+      }
+      .reports-page .news-card-actions .animate-ui-action-btn.edit:active { 
+        opacity: 0.7;
+        transform: scale(0.97);
       }
       
       .reports-page .news-card-actions .animate-ui-action-btn.delete { 
-        background: rgba(255, 69, 58, 0.1) !important; 
+        background: rgba(255, 59, 48, 0.1) !important; 
         color: var(--system-red) !important; 
-        border: 1px solid rgba(255, 69, 58, 0.3) !important; 
+        border-color: rgba(255, 59, 48, 0.3) !important; 
       }
       .reports-page .news-card-actions .animate-ui-action-btn.delete:hover { 
-        background: rgba(255, 69, 58, 0.2) !important; 
+        background: rgba(255, 59, 48, 0.15) !important;
+        box-shadow: var(--shadow-sm) !important;
+      }
+      .reports-page .news-card-actions .animate-ui-action-btn.delete:active { 
+        opacity: 0.7;
+        transform: scale(0.97);
       }
       
       .news-empty {
         text-align: center;
-        padding: 3rem 1rem;
+        padding: 4rem 1rem;
         color: var(--text-secondary);
       }
       .news-empty-icon {
-        font-size: 3.5rem;
-        margin-bottom: 1rem;
-        opacity: 0.5;
+        font-size: 4rem;
+        margin-bottom: 1.5rem;
+        opacity: 0.3;
       }
       .news-empty h3 {
-        font-size: 1rem;
+        font-size: 17px;
         font-weight: 600;
         color: var(--text-primary);
         margin: 1rem 0;
         line-height: 1.3;
+        letter-spacing: -0.43px;
       }
       .news-empty p {
-        font-size: 0.9375rem;
+        font-size: 16px;
         line-height: 1.5;
         margin: 0;
+        color: var(--text-secondary);
       }
       
       /* Buttons inside form */
-      .news-form-actions button[type="submit"] {
-        padding: 0.75rem 1.5rem; background: var(--system-blue); color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9375rem; line-height: 1.3;
+      .news-form-actions button[type="submit"],
+      .news-form-actions button[type="reset"] {
+        min-height: 44px;
+        padding: 12px 24px;
+        border: none;
+        border-radius: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 16px;
+        line-height: 1.3;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
       }
-      .news-form-actions button[type="submit"]:hover { background: #0068CC; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-      .news-form-actions button[type="submit"]:active { transform: translateY(0); }
+      
+      .news-form-actions button[type="submit"] {
+        background: var(--system-blue);
+        color: #fff;
+        flex: 1;
+      }
+      .news-form-actions button[type="submit"]:hover { 
+        background: #0068CC;
+        box-shadow: var(--shadow-md);
+      }
+      .news-form-actions button[type="submit"]:active { 
+        transform: scale(0.98);
+      }
       
       .news-form-actions button[type="reset"] {
-        padding: 0.75rem 1.5rem; background: var(--system-red); color: #fff; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-size: 0.9375rem; line-height: 1.3;
+        background: var(--system-red);
+        color: #fff;
+        flex: 1;
       }
-      .news-form-actions button[type="reset"]:hover { background: #E63C34; transform: translateY(-1px); box-shadow: var(--shadow-md); }
-      .news-form-actions button[type="reset"]:active { transform: translateY(0); }
+      .news-form-actions button[type="reset"]:hover { 
+        background: #E63C34;
+        box-shadow: var(--shadow-md);
+      }
+      .news-form-actions button[type="reset"]:active { 
+        transform: scale(0.98);
+      }
 
       #editModal {
         display: none;
         position: fixed;
         inset: 0;
         padding: 1.5rem;
-        background: rgba(0, 0, 0, 0.4);
+        background: rgba(0, 0, 0, 0.3);
         backdrop-filter: blur(33px);
         -webkit-backdrop-filter: blur(33px);
         align-items: center;
@@ -386,101 +443,127 @@ if (!function_exists('formatNewsDateForManageNews')) {
       #editModal .booking-modal-content {
         width: min(720px, 100%);
         background: var(--bg-primary);
-        border-radius: 18px;
+        border-radius: 20px;
         border: 1px solid var(--separator);
-        box-shadow: var(--shadow-lg);
-        padding: 1.75rem;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+        padding: 28px;
         color: var(--text-primary);
+        animation: slideUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      @keyframes slideUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       #editModal h2 {
         margin-top: 0;
-        margin-bottom: 1.5rem;
+        margin-bottom: 20px;
         color: var(--text-primary);
-        text-align: center;
-        font-size: 1.0625rem;
-        font-weight: 600;
-        letter-spacing: -0.43px;
-        line-height: 1.3;
+        text-align: left;
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.8px;
+        line-height: 1.2;
       }
       #editModal .booking-form-group {
         display: flex;
         flex-direction: column;
-        gap: 0.5rem;
-        margin-bottom: 1.25rem;
+        gap: 8px;
+        margin-bottom: 20px;
       }
       #editModal label {
         font-weight: 600;
         color: var(--text-primary);
-        font-size: 0.9375rem;
-        letter-spacing: -0.32px;
+        font-size: 17px;
+        letter-spacing: -0.43px;
         line-height: 1.3;
       }
       #editModal input,
       #editModal textarea {
         width: 100%;
-        padding: 0.75rem 1rem;
-        border-radius: 10px;
+        padding: 12px 16px;
+        border-radius: 12px;
         border: 1px solid var(--separator);
         background: var(--bg-primary);
         color: var(--text-primary);
         font-family: inherit;
-        font-size: 0.9375rem;
+        font-size: 16px;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
-      #editModal textarea { min-height: 140px; resize: vertical; }
+      #editModal textarea { 
+        min-height: 140px; 
+        resize: vertical; 
+      }
       #editModal input:focus,
       #editModal textarea:focus {
         outline: none;
         border-color: var(--system-blue);
-        box-shadow: 0 0 0 3px rgba(10,132,255,0.15);
+        box-shadow: inset 0 0 0 1px var(--system-blue), 0 0 0 3px rgba(10,132,255,0.15);
       }
       #editModal .booking-form-actions {
         display: flex;
-        gap: 0.75rem;
+        gap: 12px;
         justify-content: flex-end;
-        margin-top: 1.75rem;
+        margin-top: 28px;
       }
       #editModal .btn-submit {
         background: var(--system-blue) !important;
         color: #FFFFFF !important;
         border: none !important;
-        border-radius: 10px !important;
-        padding: 0.75rem 1.5rem !important;
+        border-radius: 12px !important;
+        padding: 12px 24px !important;
+        min-height: 44px !important;
         font-weight: 600 !important;
         cursor: pointer !important;
-        font-size: 0.9375rem !important;
+        font-size: 16px !important;
         line-height: 1.3 !important;
-        transition: all 0.2s !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
       #editModal .btn-submit:hover {
         background: #0068CC !important;
-        transform: translateY(-1px);
         box-shadow: var(--shadow-md) !important;
       }
+      #editModal .btn-submit:active {
+        transform: scale(0.98) !important;
+      }
       #editModal .btn-cancel {
-        background: rgba(10, 132, 255, 0.15) !important;
+        background: rgba(0, 122, 255, 0.1) !important;
         color: var(--system-blue) !important;
         border: 1.5px solid var(--system-blue) !important;
-        border-radius: 10px !important;
-        padding: 0.75rem 1.5rem !important;
+        border-radius: 12px !important;
+        padding: 12px 24px !important;
+        min-height: 44px !important;
         font-weight: 600 !important;
         cursor: pointer !important;
-        font-size: 0.9375rem !important;
+        font-size: 16px !important;
         line-height: 1.3 !important;
-        transition: all 0.2s !important;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
       }
       #editModal .btn-cancel:hover {
-        background: rgba(10, 132, 255, 0.25) !important;
+        background: rgba(0, 122, 255, 0.15) !important;
+        box-shadow: var(--shadow-sm) !important;
       }
       #editModal .btn-cancel:active {
-        background: rgba(10, 132, 255, 0.35) !important;
+        background: rgba(0, 122, 255, 0.25) !important;
+        transform: scale(0.98) !important;
       }
       #submitNewsBtn:hover {
         background: #0068CC !important;
-        transform: translateY(-1px) !important;
         box-shadow: var(--shadow-md) !important;
       }
       #submitNewsBtn:active {
-        transform: translateY(0) !important;
+        transform: scale(0.98) !important;
       }
       .page-header-bar {
         margin-top: 1rem !important;
@@ -489,26 +572,118 @@ if (!function_exists('formatNewsDateForManageNews')) {
         margin: 0 !important;
         background: var(--bg-primary);
         border: 1px solid var(--separator);
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-subtle);
       }
       
       /* Section Header */
       .section-header {
-        margin-bottom: 1.5rem;
+        margin-bottom: 20px;
       }
       .section-header h1 {
-        font-size: 1.75rem;
+        font-size: 28px;
         font-weight: 700;
         color: var(--text-primary);
-        margin: 0 0 0.5rem 0;
+        margin: 0 0 8px 0;
         letter-spacing: -0.8px;
         line-height: 1.2;
       }
       .section-header p {
-        font-size: 0.9375rem;
+        font-size: 16px;
         color: var(--text-secondary);
         margin: 0;
         line-height: 1.5;
+        letter-spacing: -0.32px;
+      }
+      
+      /* Toggle Form Button */
+      #toggleNewsFormBtn {
+        min-height: 44px;
+        padding: 10px 16px;
+        border-radius: 12px;
+        border: 1.5px solid rgba(0, 122, 255, 0.3);
+        background: rgba(0, 122, 255, 0.1);
+        color: var(--system-blue);
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+      #toggleNewsFormBtn:hover {
+        background: rgba(0, 122, 255, 0.15);
+        box-shadow: var(--shadow-sm);
+      }
+      #toggleNewsFormBtn:active {
+        transform: scale(0.97);
+      }
+      
+      /* Sort Select */
+      #sortSelect {
+        padding: 10px 36px 10px 16px;
+        border-radius: 12px;
+        border: 1px solid var(--separator);
+        background: var(--bg-secondary) url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%23999\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/></svg>') no-repeat right 8px center/20px 20px;
+        color: var(--text-primary);
+        font-size: 16px;
+        font-weight: 500;
+        font-family: var(--font-apple);
+        appearance: none;
+        -webkit-appearance: none;
+        cursor: pointer;
+        box-shadow: var(--shadow-subtle);
+        transition: all 0.2s;
+      }
+      #sortSelect:hover {
+        background-color: var(--bg-secondary);
+        box-shadow: var(--shadow-sm);
+      }
+      #sortSelect:focus {
+        outline: none;
+        border-color: var(--system-blue);
+        box-shadow: inset 0 0 0 1px var(--system-blue), 0 0 0 3px rgba(0, 122, 255, 0.1);
+      }
+      
+      /* Show More/Less Buttons */
+      #showMoreBtn, #showLessBtn {
+        min-height: 44px;
+        padding: 10px 24px;
+        border-radius: 12px;
+        border: 1.5px solid;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        font-size: 16px;
+        font-family: var(--font-apple);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+      #showMoreBtn {
+        background: rgba(0, 122, 255, 0.1);
+        color: var(--system-blue);
+        border-color: rgba(0, 122, 255, 0.3);
+      }
+      #showMoreBtn:hover {
+        background: rgba(0, 122, 255, 0.15);
+        box-shadow: var(--shadow-sm);
+      }
+      #showMoreBtn:active {
+        transform: scale(0.97);
+      }
+      
+      #showLessBtn {
+        background: rgba(255, 69, 58, 0.1);
+        color: var(--system-red);
+        border-color: rgba(255, 69, 58, 0.3);
+      }
+      #showLessBtn:hover {
+        background: rgba(255, 69, 58, 0.15);
+        box-shadow: var(--shadow-sm);
+      }
+      #showLessBtn:active {
+        transform: scale(0.97);
       }
     </style>
   
@@ -580,45 +755,43 @@ main > div:first-of-type,
           </section>
 
           <!-- Toggle button for news form -->
-          <div style="margin:1.5rem 0;">
-            <button type="button" id="toggleNewsFormBtn" style="white-space:nowrap;padding:0.75rem 1.5rem;cursor:pointer;font-size:0.9375rem;font-weight:600;background:rgba(10, 132, 255, 0.1);border:1px solid rgba(10, 132, 255, 0.3);color:var(--system-blue);border-radius:10px;transition:all 0.2s;box-shadow:var(--shadow-sm);font-family:var(--font-family);" onclick="toggleNewsForm()" onmouseover="this.style.background='rgba(10, 132, 255, 0.15)'" onmouseout="this.style.background='rgba(10, 132, 255, 0.1)'">
+          <div style="margin:20px 0;">
+            <button type="button" id="toggleNewsFormBtn" onclick="toggleNewsForm()">
               <span id="toggleNewsFormIcon">▼</span> <span id="toggleNewsFormText"><?php echo __('toggle_hide_form'); ?></span>
             </button>
           </div>
 
-          <section class="manage-panel" style="background:#ffffff; color:#0f172a;" id="addNewsSection">
+          <section class="manage-panel" id="addNewsSection">
             <div class="section-header">
-              <div>
-                <h1><?php echo __('news_add_new_title'); ?></h1>
-                <p style="margin-top:0.25rem;color:#64748b;"><?php echo __('news_add_new_subtitle'); ?></p>
-              </div>
+              <h1><?php echo __('news_add_new_title'); ?></h1>
+              <p><?php echo __('news_add_new_subtitle'); ?></p>
             </div>
             <form action="../Manage/process_news.php" method="post" id="newsForm">
               <div class="news-form">
                 <div class="news-form-group">
-                  <label for="news_title"><?php echo __('news_title'); ?> <span style="color:#f87171;">*</span></label>
+                  <label for="news_title"><?php echo __('news_title'); ?> <span style="color:var(--system-red);">*</span></label>
                   <input type="text" id="news_title" name="news_title" required maxlength="255" placeholder="<?php echo htmlspecialchars(__('news_title_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" />
                 </div>
                 <div class="news-form-group">
-                  <label for="news_details"><?php echo __('news_content'); ?> <span style="color:#f87171;">*</span></label>
+                  <label for="news_details"><?php echo __('news_content'); ?> <span style="color:var(--system-red);">*</span></label>
                   <textarea id="news_details" name="news_details" required placeholder="<?php echo htmlspecialchars(__('news_content_placeholder'), ENT_QUOTES, 'UTF-8'); ?>"></textarea>
                 </div>
-                <div class="news-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+                <div class="news-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                   <div>
-                    <label for="news_date"><?php echo __('news_date'); ?> <span style="color:#f87171;">*</span></label>
+                    <label for="news_date"><?php echo __('news_date'); ?> <span style="color:var(--system-red);">*</span></label>
                     <input type="date" id="news_date" name="news_date" required value="<?php echo date('Y-m-d'); ?>" />
                   </div>
                   <div>
                     <label for="news_by"><?php echo __('news_publisher'); ?></label>
-                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="<?php echo htmlspecialchars(__('news_publisher_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" readonly style="background:#f8fafc; border-color:rgba(15,23,42,0.12); cursor:not-allowed; color:#64748b;" />
+                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="<?php echo htmlspecialchars(__('news_publisher_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" readonly style="background:var(--bg-secondary); border-color:var(--separator); cursor:not-allowed; color:var(--text-secondary);" />
                   </div>
                 </div>
                 <div class="news-form-actions">
-                  <button type="submit" id="submitNewsBtn" style="flex:1; background: var(--system-blue); color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 0.9375rem; font-family: var(--font-family);">
+                  <button type="submit" id="submitNewsBtn">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" /></svg>
                     <?php echo __('news_publish_button'); ?>
                   </button>
-                  <button type="reset" style="flex:1; background: var(--system-red); color: white; padding: 0.85rem 1.5rem; border: none; border-radius: 10px; font-weight: 600; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; transition: all 0.3s ease; font-size: 0.9375rem; font-family: var(--font-family);">
+                  <button type="reset">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
                     <?php echo __('clear_data'); ?>
                   </button>
@@ -628,12 +801,12 @@ main > div:first-of-type,
           </section>
 
           <section class="manage-panel">
-            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;">
+            <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:24px;">
               <div>
                 <h1><?php echo __('news_list_title'); ?></h1>
-                <p style="color:#64748b;margin-top:0.2rem;"><?php echo __('news_list_subtitle'); ?></p>
+                <p><?php echo __('news_list_subtitle'); ?></p>
               </div>
-              <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 2.5rem 0.6rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%2364748b\'><path stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'/></svg>') no-repeat right 0.75rem center/16px 16px;color:#334155;font-size:0.95rem;font-weight:500;appearance:none;-webkit-appearance:none;cursor:pointer;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);">
+              <select id="sortSelect" onchange="changeSortBy(this.value)">
                 <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>><?php echo __('sort_newest'); ?></option>
                 <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>><?php echo __('sort_oldest'); ?></option>
                 <option value="title" <?php echo ($sortBy === 'title' ? 'selected' : ''); ?>><?php echo __('sort_title'); ?></option>
@@ -681,11 +854,11 @@ main > div:first-of-type,
                 <?php endforeach; ?>
               </div>
               <?php if ($totalNews > $displayLimit): ?>
-                <div style="text-align:center; margin-top:1.5rem;">
-                  <button type="button" id="showMoreBtn" onclick="showMoreNews()" style="background:rgba(10, 132, 255, 0.1); color:var(--system-blue); border:1px solid rgba(10, 132, 255, 0.3); border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:var(--font-family);" onmouseover="this.style.background='rgba(10, 132, 255, 0.15)'" onmouseout="this.style.background='rgba(10, 132, 255, 0.1)'">
+                <div style="text-align:center; margin-top:24px;">
+                  <button type="button" id="showMoreBtn" onclick="showMoreNews()">
                     <?php echo __('show_more_items', ['count' => $totalNews - $displayLimit]); ?>
                   </button>
-                  <button type="button" id="showLessBtn" onclick="showLessNews()" style="display:none; background:rgba(255, 69, 58, 0.1); color:var(--system-red); border:1px solid rgba(255, 69, 58, 0.3); border-radius:10px; padding:0.75rem 2rem; font-weight:600; cursor:pointer; transition:all 0.2s; font-family:var(--font-family);" onmouseover="this.style.background='rgba(255, 69, 58, 0.15)'" onmouseout="this.style.background='rgba(255, 69, 58, 0.1)'">
+                  <button type="button" id="showLessBtn" onclick="showLessNews()" style="display:none;">
                     <?php echo __('show_less'); ?>
                   </button>
                 </div>
