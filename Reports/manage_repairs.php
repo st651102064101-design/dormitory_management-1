@@ -1556,10 +1556,146 @@ main > div:first-of-type,
         padding: 10px !important;
     }
 }
+
+/* Global Skeleton Loader */
+#global-skeleton-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background-color: #f8fafc;
+  display: flex;
+  transition: opacity 0.4s ease, visibility 0.4s ease;
+  pointer-events: none;
+}
+/* Sidebar Skeleton */
+.skeleton-sidebar {
+  width: 256px;
+  background: #ffffff;
+  border-right: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+.skeleton-sidebar-header {
+  height: 48px;
+  border-radius: 0.5rem;
+  background: #e2e8f0;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  margin-bottom: 2rem;
+}
+.skeleton-sidebar-item {
+  height: 40px;
+  border-radius: 0.5rem;
+  background: #e2e8f0;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+/* Main Content Skeleton */
+.skeleton-main {
+  flex: 1;
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.skeleton-header {
+  height: 64px;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  margin-bottom: 1rem;
+}
+.skeleton-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.5rem;
+}
+.skeleton-card {
+  height: 120px;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.skeleton-content {
+  flex: 1;
+  border-radius: 0.75rem;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+@media (max-width: 1024px) {
+  .skeleton-sidebar {
+    display: none;
+  }
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+/* Ensure the body doesn't show scrollbars while loading */
+body.loading-skeleton {
+  overflow: hidden !important;
+}
 </style>
 
 </head>
   <body class="reports-page">
+    <script>
+    (function() {
+      // Inject the skeleton immediately after opening body
+      const observer = new MutationObserver(function(mutations, me) {
+        if (document.body) {
+          document.body.classList.add('loading-skeleton');
+          
+          const loader = document.createElement('div');
+          loader.id = 'global-skeleton-loader';
+          
+          const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+          const sidebarWidth = isCollapsed ? '80px' : '280px';
+
+          loader.innerHTML = `
+            <div class="skeleton-sidebar" style="width: ${sidebarWidth}">
+              <div class="skeleton-sidebar-header"></div>
+              <div class="skeleton-sidebar-item"></div>
+              <div class="skeleton-sidebar-item"></div>
+              <div class="skeleton-sidebar-item"></div>
+              <div class="skeleton-sidebar-item"></div>
+              <div class="skeleton-sidebar-item"></div>
+            </div>
+            <div class="skeleton-main">
+              <div class="skeleton-header"></div>
+              <div class="skeleton-cards">
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+                <div class="skeleton-card"></div>
+              </div>
+              <div class="skeleton-content"></div>
+            </div>
+          `;
+          
+          document.body.insertBefore(loader, document.body.firstChild);
+          me.disconnect();
+        }
+      });
+      
+      observer.observe(document.documentElement, { childList: true });
+      
+      window.addEventListener('load', function() {
+        const loader = document.getElementById('global-skeleton-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          loader.style.visibility = 'hidden';
+          document.body.classList.remove('loading-skeleton');
+          setTimeout(() => {
+            if (loader.parentNode) loader.parentNode.removeChild(loader);
+          }, 400);
+        }
+      });
+    })();
+    </script>
     <div class="app-shell">
       <?php include __DIR__ . '/../includes/sidebar.php'; ?>
       <main class="app-main">
