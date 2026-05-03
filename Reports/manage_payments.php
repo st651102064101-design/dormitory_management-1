@@ -3109,7 +3109,7 @@ main > div:first-of-type,
                         <td><?php echo $pay['pay_date'] ? thaiDate($pay['pay_date']) : '-'; ?></td>
                         <td style="text-align:right;font-weight:700;color:#22c55e;">
                           <?php if ($groupCount > 1): ?>
-                            <span class="group-amount-link" role="button" tabindex="0" data-group-title="<?php echo htmlspecialchars($groupTitle, ENT_QUOTES, 'UTF-8'); ?>" data-group-items="<?php echo $groupItemsJson; ?>" onclick="openGroupPaymentsModal(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGroupPaymentsModal(this);}">
+                            <span class="group-amount-link" role="button" tabindex="0" data-group-title="<?php echo htmlspecialchars($groupTitle, ENT_QUOTES, 'UTF-8'); ?>" data-group-items="<?php echo $groupItemsJson; ?>" data-exp-id="<?php echo (int)$pay['exp_id']; ?>" onclick="openGroupPaymentsModal(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGroupPaymentsModal(this);}">
                               ฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?> (<?php echo $groupCount; ?> รายการ)
                             </span>
                           <?php else: ?>
@@ -3162,7 +3162,7 @@ main > div:first-of-type,
                         </td>
                         <td>
                           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                            <?php if (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink): ?>
+                            <?php if (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1): ?>
                               <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                             <?php endif; ?>
                           </div>
@@ -3181,7 +3181,13 @@ main > div:first-of-type,
                               $subStatusClass = $subStatus === '1' ? 'status-verified' : ($subStatus === '2' ? 'status-unpaid' : ($subStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
                               echo $subStatusClass;
                             ?>"> <?php echo $statusMap[$subStatus] ?? $statusMap['0']; ?></span></td>
-                            <td></td>
+                            <td>
+                              <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+                                <?php if (((string)($subItem['status'] ?? '') === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink): ?>
+                                  <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)($subItem['pay_id'] ?? 0); ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
+                                <?php endif; ?>
+                              </div>
+                            </td>
                           </tr>
                         <?php endforeach; ?>
                       <?php endif; ?>
@@ -3233,7 +3239,7 @@ main > div:first-of-type,
                       <div>วันที่ชำระ: <?php echo $pay['pay_date'] ? thaiDate($pay['pay_date']) : '-'; ?></div>
                       <div>จำนวนเงิน:
                         <?php if ($groupCount > 1): ?>
-                          <strong class="group-amount-link" style="color:#22c55e;" role="button" tabindex="0" data-group-title="<?php echo htmlspecialchars($groupTitle, ENT_QUOTES, 'UTF-8'); ?>" data-group-items="<?php echo $groupItemsJson; ?>" onclick="openGroupPaymentsModal(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGroupPaymentsModal(this);}">
+                          <strong class="group-amount-link" style="color:#22c55e;" role="button" tabindex="0" data-group-title="<?php echo htmlspecialchars($groupTitle, ENT_QUOTES, 'UTF-8'); ?>" data-group-items="<?php echo $groupItemsJson; ?>" data-exp-id="<?php echo (int)$pay['exp_id']; ?>" onclick="openGroupPaymentsModal(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openGroupPaymentsModal(this);}">
                             ฿<?php echo number_format((int)($pay['pay_amount'] ?? 0)); ?> (<?php echo $groupCount; ?> รายการ)
                           </strong>
                         <?php else: ?>
@@ -3256,7 +3262,7 @@ main > div:first-of-type,
                         <?php endif; ?>
                       </div>
                       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                        <?php if (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink): ?>
+                        <?php if (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1): ?>
                           <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                         <?php endif; ?>
                       </div>
@@ -3823,6 +3829,7 @@ main > div:first-of-type,
           return;
         }
 
+        const expId = Number(triggerEl.dataset.expId || 0);
         const rows = items.map((item) => {
           const amount = Number(item.amount || 0);
           const status = String(item.status || '');
@@ -3832,6 +3839,7 @@ main > div:first-of-type,
           const dateText = escHtml(item.date ? item.date : '-');
           const payId = Number(item.pay_id || 0);
           const remark = escHtml(item.remark ? String(item.remark) : 'ค่าห้อง');
+          const verifyBtn = status === '0' ? `<button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(${payId}, '1', ${expId})" style="padding:0.35rem 0.6rem;font-size:0.8rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;margin-right:3px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยัน</button>` : '-';
           return `
             <tr>
               <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${payId}</td>
@@ -3839,6 +3847,7 @@ main > div:first-of-type,
               <td style="padding:0.55rem 0.5rem;text-align:right;white-space:nowrap;">฿${amount.toLocaleString()}</td>
               <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${statusBadge}</td>
               <td style="padding:0.55rem 0.5rem;">${remark}</td>
+              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${verifyBtn}</td>
             </tr>
           `;
         }).join('');
@@ -3852,6 +3861,7 @@ main > div:first-of-type,
                 <th style="padding:0.55rem 0.5rem;text-align:right;">จำนวนเงิน</th>
                 <th style="padding:0.55rem 0.5rem;">สถานะ</th>
                 <th style="padding:0.55rem 0.5rem;">หมายเหตุ</th>
+                <th style="padding:0.55rem 0.5rem;">ดำเนินการ</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
