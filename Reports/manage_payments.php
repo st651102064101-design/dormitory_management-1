@@ -376,12 +376,37 @@ unset($pay);
 
 // ป้องกันรายการบิลซ้ำ: รวมการชำระของบิลเดือนเดียวกันให้อยู่ในแถวเดียว
 $buildPaymentKey = static function(array $pay): string {
-  $expId = (int)($pay['exp_id'] ?? 0);
   $source = (string)($pay['payment_source'] ?? 'payment');
-  if ($expId > 0) {
-    return 'exp:' . $expId;
+  $isDeposit = strpos((string)($pay['pay_remark'] ?? ''), 'มัดจำ') !== false;
+  $category = $isDeposit ? 'deposit' : 'bill';
+  
+  // Group by contract ID first if available
+  $ctrKey = trim((string)($pay['ctr_id'] ?? ''));
+  if ($ctrKey !== '') {
+    // For same contract, check exp_id or month for additional grouping
+    $expId = (int)($pay['exp_id'] ?? 0);
+    if ($expId > 0) {
+      return implode('|', [
+        $category,
+        'source:' . $source,
+        'ctr:' . $ctrKey,
+        'exp:' . $expId,
+      ]);
+    }
+    
+    $src = !empty($pay['exp_month']) ? (string)$pay['exp_month'] : (string)($pay['pay_date'] ?? '');
+    $ts = $src !== '' ? strtotime($src) : false;
+    $monthKey = $ts ? date('Y-m', $ts) : 'na';
+    
+    return implode('|', [
+      $category,
+      'source:' . $source,
+      'ctr:' . $ctrKey,
+      'month:' . $monthKey,
+    ]);
   }
 
+  // Fallback if no contract ID
   $src = !empty($pay['exp_month']) ? (string)$pay['exp_month'] : (string)($pay['pay_date'] ?? '');
   $ts = $src !== '' ? strtotime($src) : false;
   $monthKey = $ts ? date('Y-m', $ts) : 'na';
@@ -391,14 +416,10 @@ $buildPaymentKey = static function(array $pay): string {
     ? 'id:' . $tenantRaw
     : 'name:' . strtolower(trim((string)($pay['tnt_name'] ?? '-')));
   $roomKey = trim((string)($pay['room_number'] ?? '-'));
-  $ctrKey = trim((string)($pay['ctr_id'] ?? ''));
-  $isDeposit = strpos((string)($pay['pay_remark'] ?? ''), 'มัดจำ') !== false;
-  $category = $isDeposit ? 'deposit' : 'bill';
 
   return implode('|', [
     $category,
     'source:' . $source,
-    'ctr:' . ($ctrKey !== '' ? $ctrKey : '-'),
     'room:' . ($roomKey !== '' ? $roomKey : '-'),
     'tenant:' . $tenantKey,
     'month:' . $monthKey,
