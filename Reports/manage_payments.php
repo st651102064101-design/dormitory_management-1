@@ -2775,6 +2775,18 @@ $filterRoomOptions = array_values($filterRoomOptions);
       html.light-theme .payment-filter-tab { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.55); }
       html.light-theme .payment-filter-tab:hover { background: rgba(0,0,0,0.07); color: rgba(0,0,0,0.85); }
       html.light-theme .payment-filter-tab.active { background: rgba(99,102,241,0.12); border-color: rgba(99,102,241,0.35); color: #4f46e5; }
+      
+      /* Responsive: Mobile */
+      @media (max-width: 768px) {
+        .payment-filter-tabs { flex-wrap: wrap; overflow-x: visible; overflow-y: visible; cursor: default; padding-bottom: 0; }
+        .payment-filter-tab { padding: 0.35rem 0.7rem; font-size: 0.75rem; flex: 0 1 auto; }
+        .payment-filter-tab .tab-count { font-size: 0.65rem; padding: 0.05rem 0.35rem; }
+      }
+      @media (max-width: 480px) {
+        .payment-filter-tabs { gap: 0.3rem; }
+        .payment-filter-tab { padding: 0.3rem 0.6rem; font-size: 0.7rem; }
+        .payment-filter-tab .tab-count { display: none; }
+      }
 
       /* ===== Payment Toolbar ===== */
       .payment-toolbar { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: flex-start; width: 100%; }
