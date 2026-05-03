@@ -912,6 +912,15 @@ $filterRoomOptions = array_values($filterRoomOptions);
         color: #ffffff !important;
         border: none !important;
       }
+      html.light-theme .status-badge.status-unpaid {
+        background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        color: #ffffff !important;
+        border: none !important;
+        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+      }
+      html.light-theme .status-badge.status-unpaid svg {
+        stroke: #ffffff !important;
+      }
       html.light-theme .status-badge svg {
         stroke: #ffffff !important;
       }
@@ -2426,9 +2435,11 @@ $filterRoomOptions = array_values($filterRoomOptions);
         border: 1px solid rgba(34, 197, 94, 0.3);
       }
       .status-unpaid {
-        background: rgba(245, 158, 11, 0.12);
-        color: #f59e0b;
-        border: 1px solid rgba(245, 158, 11, 0.24);
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
+        color: #dc2626;
+        border: 1.5px solid rgba(239, 68, 68, 0.5);
+        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
+        font-weight: 700;
       }
 
       .proof-link {
@@ -3982,7 +3993,9 @@ main > div:first-of-type,
           const status = String(item.status || '');
           const statusText = escHtml(statusMap[status] || status || '-');
           const statusClass = status === '1' ? 'status-verified' : (status === '2' ? 'status-unpaid' : (status === 'unpaid' ? 'status-unpaid' : 'status-pending'));
-          const statusBadge = `<span class="status-badge ${statusClass}" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.85rem;font-weight:600;">${statusText}</span>`;
+          const statusBadge = status === '2' 
+            ? `<span class="status-badge ${statusClass}" style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.3rem 0.7rem;border-radius:8px;font-size:0.85rem;font-weight:700;background:linear-gradient(135deg,rgba(239,68,68,0.2),rgba(220,38,38,0.15));color:#dc2626;border:1.5px solid rgba(239,68,68,0.5);box-shadow:0 2px 8px rgba(239,68,68,0.2);"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="width:13px;height:13px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>${statusText}</span>`
+            : `<span class="status-badge ${statusClass}" style="display:inline-flex;align-items:center;gap:0.3rem;padding:0.2rem 0.6rem;border-radius:6px;font-size:0.85rem;font-weight:600;">${statusText}</span>`;
           const dateText = escHtml(item.date ? item.date : '-');
           const payId = Number(item.pay_id || 0);
           const remark = escHtml(item.remark ? String(item.remark) : 'ค่าห้อง');
