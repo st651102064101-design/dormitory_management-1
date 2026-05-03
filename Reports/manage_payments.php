@@ -3849,6 +3849,13 @@ main > div:first-of-type,
         });
       }
 
+      function closeProofModal() {
+        const modal = document.getElementById('proofModal');
+        if (modal) {
+          modal.classList.remove('active');
+        }
+      }
+
       function togglePaymentSubRows(btn, event) {
         event.stopPropagation();
         const mainRow = btn.closest('.payment-group-row');
