@@ -4738,11 +4738,7 @@ main > div:first-of-type,
         let confirmed = false;
         const msg = `ยืนยันการส่ง SMS แจ้งเตือนผู้เช่าห้อง ${roomNumber} (${tntName}) \nให้ระบุบัญชีธนาคารเพื่อรับเงินประกันคืนหรือไม่?`;
         
-        if (typeof showConfirmDialog === 'function') {
-            confirmed = await showConfirmDialog('ยืนยันส่ง SMS แจ้งเตือน', msg);
-        } else {
-            confirmed = confirm(msg);
-        }
+        confirmed = await showAppleConfirm(msg, 'ยืนยันส่ง SMS แจ้งเตือน');
         
         if (!confirmed) return;
         
@@ -4888,10 +4884,10 @@ main > div:first-of-type,
     async function confirmCancelContract(ctrId, tntName, btn) {
         let confirmed = false;
         const msg = `ยืนยันการยกเลิกสัญญาของ "${tntName}" หรือไม่?\n\nการดำเนินการนี้จะเปลี่ยนสถานะสัญญาเป็น "ยกเลิกแล้ว" และไม่สามารถย้อนกลับได้`;
-        if (typeof showConfirmDialog === 'function') {
-            confirmed = await showConfirmDialog('ยืนยันยกเลิกสัญญา', msg, 'delete');
+        if (typeof showAppleConfirm === 'function') {
+            confirmed = await showAppleConfirm(msg, 'ยืนยันยกเลิกสัญญา');
         } else {
-            confirmed = confirm(msg);
+            confirmed = await showAppleConfirm(msg, 'ยืนยันยกเลิกสัญญา');
         }
         if (!confirmed) return;
 
@@ -5287,9 +5283,9 @@ main > div:first-of-type,
             return;
         }
 
-        const ok = typeof showConfirmDialog === 'function'
-            ? await showConfirmDialog('ยืนยันการคืนเงิน', 'ยืนยันว่าแนบสลิปและโอนคืนเงินเรียบร้อยแล้ว?', 'success')
-            : confirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
+        const ok = typeof showAppleConfirm === 'function'
+            ? await showAppleConfirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงิน')
+            : await showAppleConfirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงิน');
             
         if (!ok) {
             _updateConfirmButtonState();
