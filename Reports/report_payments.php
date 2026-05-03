@@ -159,6 +159,7 @@ try {
 $summary = [
   'pending' => null,
   'verified' => null,
+  'rejected' => null,
   'total' => null,
   'range' => null,
 ];
@@ -174,6 +175,7 @@ try {
   if ($hasPayStatus) {
     $summary['pending'] = (int)($pdo->query("SELECT COUNT(*) FROM payment $summaryWhere" . ($summaryWhere ? " AND" : " WHERE") . " pay_status = 0")->fetchColumn());
     $summary['verified'] = (int)($pdo->query("SELECT COUNT(*) FROM payment $summaryWhere" . ($summaryWhere ? " AND" : " WHERE") . " pay_status = 1")->fetchColumn());
+    $summary['rejected'] = (int)($pdo->query("SELECT COUNT(*) FROM payment $summaryWhere" . ($summaryWhere ? " AND" : " WHERE") . " pay_status = 2")->fetchColumn());
   }
   if ($hasPayAmount) {
     $summary['total'] = (float)($pdo->query("SELECT SUM(pay_amount) FROM payment $summaryWhere")->fetchColumn());
@@ -762,6 +764,18 @@ main > div:first-of-type,
                 </div>
                 <div class="stat-value" style="color:#22c55e;"><?php echo number_format($summary['verified'] ?? 0); ?></div>
                 <div class="stat-subtitle">ยืนยันแล้ว</div>
+              </div>
+
+              <div class="stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
+                <div class="stat-card-header">
+                  <div class="lottie-icon red">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16"/><line x1="16" y1="8" x2="8" y2="16"/></svg>
+                  </div>
+                  <div class="stat-label">ตีกลับ</div>
+                </div>
+                <div class="stat-value" style="color:#ef4444;"><?php echo number_format($summary['rejected'] ?? 0); ?></div>
+                <div class="stat-subtitle">มีรายการตีกลับ</div>
               </div>
               <?php endif; ?>
 
