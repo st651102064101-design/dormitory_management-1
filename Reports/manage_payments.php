@@ -3129,7 +3129,7 @@ main > div:first-of-type,
                     <th>หลักฐาน</th>
                     <th>หมายเหตุ</th>
                     <th>สถานะ</th>
-                    <th>การดำเนินการ</th>
+                    <th></th>
                   </tr>
                 </thead>
                 <tbody>
