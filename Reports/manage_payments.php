@@ -2461,6 +2461,16 @@ $filterRoomOptions = array_values($filterRoomOptions);
         transform: scale(1.05);
       }
 
+      .payment-group-row.has-subrows {
+        cursor: pointer;
+        transition: background 0.2s ease;
+      }
+      .payment-group-row.has-subrows:hover {
+        background: rgba(15, 23, 42, 0.06);
+      }
+      .payment-group-row.has-subrows:hover .group-amount-link {
+        color: #1d4ed8;
+      }
       .group-amount-link {
         color: #2563eb;
         cursor: pointer;
@@ -3149,7 +3159,7 @@ main > div:first-of-type,
                       <?php $groupCount = (int)($pay['_group_count'] ?? 1); ?>
                       <?php $groupItemsJson = htmlspecialchars(json_encode($pay['_group_items'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>
                       <?php $groupTitle = 'รายการย่อยบิลเดือน ' . ($pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-') . ' ห้อง ' . (string)($pay['room_number'] ?? '-'); ?>
-                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>" class="payment-group-row <?php echo $groupCount > 1 ? 'has-subrows' : ''; ?>">
+                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>" class="payment-group-row <?php echo $groupCount > 1 ? 'has-subrows' : ''; ?>"<?php echo $groupCount > 1 ? ' title="คลิกเพื่อดูรายการย่อย"' : ''; ?>>
                         <td style="position:relative;">
                           <?php if ($groupCount > 1): ?>
                             <button type="button" class="expand-btn" onclick="openGroupPaymentsModal(this)" style="background:none;border:none;cursor:pointer;padding:0.2rem;margin-right:0.3rem;" data-group-title="<?php echo htmlspecialchars($groupTitle, ENT_QUOTES, 'UTF-8'); ?>" data-group-items="<?php echo $groupItemsJson; ?>" data-exp-id="<?php echo (int)$pay['exp_id']; ?>" title="ดูรายการย่อย">
