@@ -3912,8 +3912,16 @@ main > div:first-of-type,
       }
 
       async function doUpdatePaymentStatus(payId, newStatus, expId) {
-        // Find the verify button to show loading state
-        const btnEl = document.querySelector(`[data-pay-id="${payId}"] .btn-verify`);
+        // Find the verify button to show loading state (try both table row and card view)
+        let btnEl = document.querySelector(`[data-pay-id="${payId}"] .btn-verify`);
+        if (!btnEl) {
+          // Try to find it in table view without data-pay-id selector
+          btnEl = Array.from(document.querySelectorAll('.btn-verify')).find(btn => {
+            const onclick = btn.getAttribute('onclick') || '';
+            return onclick.includes(`updatePaymentStatus(${payId},`);
+          });
+        }
+        
         const origText = btnEl ? btnEl.innerHTML : '';
         if (btnEl) {
           btnEl.disabled = true;
@@ -3925,10 +3933,12 @@ main > div:first-of-type,
         const oldStatus = rowElement ? (rowElement.dataset.status || '') : '';
 
         try {
+          console.log('Updating payment status:', { payId, newStatus, expId });
+          
           const formData = new FormData();
-          formData.append('pay_id', payId);
-          formData.append('pay_status', newStatus);
-          formData.append('exp_id', expId);
+          formData.append('pay_id', String(payId));
+          formData.append('pay_status', String(newStatus));
+          formData.append('exp_id', String(expId));
           formData.append('csrf_token', '<?php echo $csrfToken; ?>');
 
           const response = await fetch('../Manage/update_payment_status.php', {
@@ -3936,14 +3946,21 @@ main > div:first-of-type,
             body: formData
           });
 
+          console.log('Response status:', response.status, response.statusText);
+          
           const responseText = await response.text();
+          console.log('Response text:', responseText.substring(0, 300));
+          
           let data;
           try {
             data = JSON.parse(responseText);
           } catch (parseErr) {
+            console.error('Parse error:', parseErr, 'Response:', responseText);
             throw new Error('Server error (HTTP ' + response.status + '): ' + responseText.substring(0, 200));
           }
 
+          console.log('Response data:', data);
+          
           if (!response.ok || !data.success) {
             throw new Error(data.error || 'HTTP ' + response.status);
           }
@@ -3951,7 +3968,11 @@ main > div:first-of-type,
           // Success — reload page to guarantee fresh state
           if (typeof showSuccessToast === 'function') {
             showSuccessToast(data.message || 'อัปเดตสถานะเรียบร้อย');
+          } else {
+            alert(data.message || 'อัปเดตสถานะเรียบร้อย');
           }
+          
+          console.log('Update successful, reloading page...');
           setTimeout(() => window.location.reload(), 800);
 
         } catch (err) {
@@ -3960,7 +3981,15 @@ main > div:first-of-type,
             btnEl.disabled = false;
             btnEl.innerHTML = origText;
           }
-          alert('เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถเชื่อมต่อได้'));
+          
+          const errorMsg = 'เกิดข้อผิดพลาด: ' + (err.message || 'ไม่สามารถเชื่อมต่อได้');
+          console.error('Showing error:', errorMsg);
+          
+          if (typeof showErrorToast === 'function') {
+            showErrorToast(errorMsg);
+          } else {
+            alert(errorMsg);
+          }
         }
       }
 

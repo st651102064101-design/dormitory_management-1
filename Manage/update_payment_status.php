@@ -89,14 +89,16 @@ if (empty($_POST['csrf_token']) || !hash_equals($_SESSION['csrf_token'] ?? '', $
 }
 
 // รับข้อมูลจาก POST
-$payId = $_POST['pay_id'] ?? '';
+$payId = trim((string)($_POST['pay_id'] ?? ''));
 $payStatus = (string)($_POST['pay_status'] ?? '');
 
 // ตรวจสอบข้อมูลที่จำเป็น
-if (empty($payId)) {
-    echo json_encode(['success' => false, 'error' => 'ไม่พบรหัสการชำระเงิน']);
+if (empty($payId) || !ctype_digit($payId)) {
+    echo json_encode(['success' => false, 'error' => 'ไม่พบรหัสการชำระเงิน หรือรูปแบบไม่ถูกต้อง']);
     exit;
 }
+
+$payId = (int)$payId;
 
 if (!in_array($payStatus, ['0', '1', '2'], true)) {
     echo json_encode(['success' => false, 'error' => 'สถานะไม่ถูกต้อง']);
@@ -104,30 +106,56 @@ if (!in_array($payStatus, ['0', '1', '2'], true)) {
 }
 
 // รับ exp_id จาก POST (ถ้ามี)
-$expId = $_POST['exp_id'] ?? '';
+$expId = trim((string)($_POST['exp_id'] ?? ''));
+if (!empty($expId) && !ctype_digit($expId)) {
+    echo json_encode(['success' => false, 'error' => 'รหัสค่าใช้จ่ายไม่ถูกต้อง']);
+    exit;
+}
+$expId = !empty($expId) ? (int)$expId : 0;
 
 try {
     // ตรวจสอบว่ามีรายการชำระเงินนี้อยู่จริง
-    $checkStmt = $pdo->prepare("SELECT pay_id, exp_id FROM payment WHERE pay_id = ?");
+    $checkStmt = $pdo->prepare("SELECT pay_id, exp_id FROM payment WHERE pay_id = ? LIMIT 1");
     $checkStmt->execute([$payId]);
     $payment = $checkStmt->fetch(PDO::FETCH_ASSOC);
     
     if (!$payment) {
+        error_log("[update_payment_status] Payment not found: pay_id={$payId}");
         echo json_encode(['success' => false, 'error' => 'ไม่พบรายการชำระเงินนี้']);
         exit;
     }
 
     // ใช้ exp_id จาก payment ถ้าไม่ได้ส่งมา
-    if (empty($expId) && !empty($payment['exp_id'])) {
-        $expId = $payment['exp_id'];
+    if ($expId === 0 && !empty($payment['exp_id'])) {
+        $expId = (int)$payment['exp_id'];
     }
+
+    // ตรวจสอบสถานะปัจจุบัน
+    $currentStatusStmt = $pdo->prepare("SELECT pay_status FROM payment WHERE pay_id = ? LIMIT 1");
+    $currentStatusStmt->execute([$payId]);
+    $currentPayment = $currentStatusStmt->fetch(PDO::FETCH_ASSOC);
+    $currentStatus = (string)($currentPayment['pay_status'] ?? '');
 
     // อัปเดตสถานะ payment
     $updateStmt = $pdo->prepare("UPDATE payment SET pay_status = ? WHERE pay_id = ?");
-    $updateStmt->execute([$payStatus, $payId]);
+    $updateResult = $updateStmt->execute([$payStatus, $payId]);
+    
+    if (!$updateResult) {
+        error_log("[update_payment_status] Update failed for pay_id={$payId}");
+        echo json_encode(['success' => false, 'error' => 'ไม่สามารถอัปเดตสถานะได้']);
+        exit;
+    }
 
-    if (!empty($expId)) {
-        recalculateExpenseStatus($pdo, (int)$expId);
+    // ตรวจสอบว่า update สำเร็จ
+    $verifyStmt = $pdo->prepare("SELECT pay_status FROM payment WHERE pay_id = ? LIMIT 1");
+    $verifyStmt->execute([$payId]);
+    $verified = $verifyStmt->fetch(PDO::FETCH_ASSOC);
+    $verifiedStatus = (string)($verified['pay_status'] ?? '');
+    
+    error_log("[update_payment_status] Updated pay_id={$payId}: {$currentStatus} -> {$payStatus} (verified: {$verifiedStatus})");
+
+    if ($expId > 0) {
+        recalculateExpenseStatus($pdo, $expId);
     }
 
     $statusTextMap = [
