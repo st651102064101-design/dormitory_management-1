@@ -457,9 +457,9 @@ if (!function_exists('formatNewsDateForManageNews')) {
         box-shadow: var(--shadow-md);
       }
       #editModal .btn-cancel {
-        background: var(--bg-secondary);
+        background: transparent;
         color: var(--system-blue);
-        border: 1px solid var(--separator);
+        border: 1.5px solid var(--system-blue);
         border-radius: 10px;
         padding: 0.75rem 1.5rem;
         font-weight: 600;
@@ -469,7 +469,10 @@ if (!function_exists('formatNewsDateForManageNews')) {
         transition: all 0.2s;
       }
       #editModal .btn-cancel:hover {
-        background: var(--separator);
+        background: rgba(10, 132, 255, 0.1);
+      }
+      #editModal .btn-cancel:active {
+        background: rgba(10, 132, 255, 0.2);
       }
       #submitNewsBtn:hover {
         background: #0068CC !important;
