@@ -292,7 +292,7 @@ try {
         
         error_log("✓ Admin logged in: " . $admin['admin_id']);
         
-        header('Location: https://localhost:36140/dormitory_management/Reports/dashboard.php');
+        header('Location: /dormitory_management/Reports/dashboard.php');
         exit;
     }
     

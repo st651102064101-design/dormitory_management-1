@@ -13,7 +13,7 @@
 // ถ้าเว้นว่าง '' จะใช้ค่าอัตโนมัติจาก $_SERVER['HTTP_HOST']
 // ⚠️ สำคัญ: ต้องตรงกับที่ลงทะเบียนใน LINE/Google Developers Console พอดี!
 
-define('SITE_HOST', 'localhost:36140');
+define('SITE_HOST', '');
 
 // ===========================================
 // ตั้งค่า Protocol (http หรือ https)
@@ -22,7 +22,7 @@ define('SITE_HOST', 'localhost:36140');
 // ใส่ '' เพื่อให้ระบบตรวจจากการส่งข้อมูลอัตโนมัติ (ตรวจ HTTPS, SERVER_PORT, X_FORWARDED_PROTO)
 // ⚠️ ใช้ HTTPS เพราะ XAMPP มี SSL certificate สำหรับ project.3bbddns.com บน port 443
 
-define('SITE_PROTOCOL', 'https');
+define('SITE_PROTOCOL', '');
 
 // ===========================================
 // ฟังก์ชันสร้าง Base URL
