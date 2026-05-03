@@ -3675,7 +3675,7 @@ main > div:first-of-type,
 
         if (visibleCount > 0) {
           initPaymentsDataTable();
-          setupPaymentRowHoverBehavior();
+          // setupPaymentRowHoverBehavior(); // Disabled: sub-rows now show in modal instead
         }
 
         // --- Grid/row view: plain show/hide (no DataTable involved) ---
@@ -3800,6 +3800,8 @@ main > div:first-of-type,
         }
       }
 
+      // Deprecated: setupPaymentRowHoverBehavior() - Sub-rows now display in modal instead
+      /*
       function setupPaymentRowHoverBehavior() {
         const tbody = document.querySelector('#paymentsTable tbody');
         if (!tbody) return;
@@ -3855,6 +3857,7 @@ main > div:first-of-type,
           });
         });
       }
+      */
 
       function openGroupPaymentsModal(triggerEl) {
         const modal = document.getElementById('groupPaymentsModal');
@@ -4240,6 +4243,8 @@ main > div:first-of-type,
           card.style.animation = 'fadeInUp 0.6s cubic-bezier(.16,1,.3,1) forwards';
           card.style.animationDelay = (i * 0.08) + 's';
         });
+        
+        // setupPaymentRowHoverBehavior(); // Disabled: sub-rows now show in modal instead
       });
     </script>
     <script src="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4" type="text/javascript"></script>
