@@ -5011,18 +5011,56 @@ main > div:first-of-type,
     var _rfCtrId = 0;
     var _rfSavedRefundCtrId = null;
 
+    function _getRefundSavedKey(ctrId) {
+        return '_refundSaved_ctr_' + (Number(ctrId) || 0);
+    }
+
+    function _getRefundStateKey(ctrId) {
+        return '_refundState_ctr_' + (Number(ctrId) || 0);
+    }
+
+    function _isRefundSaved(ctrId) {
+        return !!(sessionStorage.getItem(_getRefundSavedKey(ctrId)) || localStorage.getItem(_getRefundSavedKey(ctrId)));
+    }
+
+    function _markRefundSaved(ctrId) {
+        const key = _getRefundSavedKey(ctrId);
+        try { sessionStorage.setItem(key, '1'); } catch (e) {}
+        try { localStorage.setItem(key, '1'); } catch (e) {}
+    }
+
+    function _loadRefundState(ctrId) {
+        const key = _getRefundStateKey(ctrId);
+        let raw = null;
+        try { raw = sessionStorage.getItem(key); } catch (e) { raw = null; }
+        if (!raw) {
+            try { raw = localStorage.getItem(key); } catch (e) { raw = null; }
+        }
+        if (!raw) return null;
+        try { return JSON.parse(raw); } catch (e) { return null; }
+    }
+
+    function _saveRefundState(ctrId, state) {
+        const key = _getRefundStateKey(ctrId);
+        const raw = JSON.stringify(state || {});
+        try { sessionStorage.setItem(key, raw); } catch (e) {}
+        try { localStorage.setItem(key, raw); } catch (e) {}
+    }
+
     function openRefundModal(ctrId, tntName, roomNumber, bankName, bankAccName, bankAccNum, depositAmt, refundPending) {
         refundPending = refundPending === true || refundPending === 'true' || refundPending === 1 || refundPending === '1';
-        _rfCtrId = ctrId;
+        _rfCtrId = Number(ctrId) || 0;
+        _rfSavedRefundCtrId = _rfCtrId && _isRefundSaved(_rfCtrId) ? _rfCtrId : null;
+        const savedRefundState = _rfCtrId ? _loadRefundState(_rfCtrId) : null;
         document.getElementById('_rfTitle').textContent = '💰 คืนเงินมัดจำ — ห้อง ' + (roomNumber || '') + ' (' + (tntName || '') + ')';
-        document.getElementById('_rfDeduct').value = '0';
+        document.getElementById('_rfDeduct').value = savedRefundState && savedRefundState.deduction_amount != null ? savedRefundState.deduction_amount : '0';
         document.getElementById('_rfDeduct').setAttribute('max', depositAmt || '0');
-        document.getElementById('_rfReason').value = '';
-        document.getElementById('_rfRoomRate').value = '0';
-        document.getElementById('_rfWaterCost').value = '0';
-        document.getElementById('_rfElecCost').value = '0';
+        document.getElementById('_rfReason').value = savedRefundState && savedRefundState.deduction_reason != null ? savedRefundState.deduction_reason : '';
+        document.getElementById('_rfRoomRate').value = savedRefundState && savedRefundState.room_rate != null ? savedRefundState.room_rate : '0';
+        document.getElementById('_rfWaterCost').value = savedRefundState && savedRefundState.water_cost != null ? savedRefundState.water_cost : '0';
+        document.getElementById('_rfElecCost').value = savedRefundState && savedRefundState.elec_cost != null ? savedRefundState.elec_cost : '0';
         _updateRefundDisplay(depositAmt || 0);
-        if (_rfSavedRefundCtrId === ctrId || refundPending) {
+        if ((_rfSavedRefundCtrId && _rfSavedRefundCtrId === _rfCtrId) || refundPending) {
             document.getElementById('_rfActionContainer').style.display = 'none';
             document.getElementById('_rfSaveArea').style.display = 'none';
             document.getElementById('_rfConfirmArea').style.display = 'block';
@@ -5052,7 +5090,7 @@ main > div:first-of-type,
             document.getElementById('_rfConfirmArea').style.display = 'none';
         } else {
             noBankMsgEl.style.display = 'none';
-            if (_rfSavedRefundCtrId === ctrId || refundPending) {
+            if ((_rfSavedRefundCtrId && _rfSavedRefundCtrId === _rfCtrId) || refundPending) {
                 actionContainerEl.style.display = 'none';
                 document.getElementById('_rfConfirmArea').style.display = 'block';
             } else {
@@ -5154,11 +5192,22 @@ main > div:first-of-type,
         fd.append('ctr_id', _rfCtrId);
         fd.append('deduction_amount', document.getElementById('_rfDeduct').value || '0');
         fd.append('deduction_reason', document.getElementById('_rfReason').value || '');
+        fd.append('room_rate', document.getElementById('_rfRoomRate').value || '0');
+        fd.append('water_cost', document.getElementById('_rfWaterCost').value || '0');
+        fd.append('elec_cost', document.getElementById('_rfElecCost').value || '0');
         try {
             const res = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd });
             const data = await res.json();
             if (data.success) {
                 if (typeof showSuccessToast === 'function') showSuccessToast('✅ บันทึกข้อมูลคืนเงินแล้ว');
+                _saveRefundState(_rfCtrId, {
+                    deduction_amount: document.getElementById('_rfDeduct').value || '0',
+                    deduction_reason: document.getElementById('_rfReason').value || '',
+                    room_rate: document.getElementById('_rfRoomRate').value || '0',
+                    water_cost: document.getElementById('_rfWaterCost').value || '0',
+                    elec_cost: document.getElementById('_rfElecCost').value || '0'
+                });
+                _markRefundSaved(_rfCtrId);
                 _rfSavedRefundCtrId = _rfCtrId;
                 document.getElementById('_rfActionContainer').style.display = 'none';
                 document.getElementById('_rfSaveArea').style.display = 'none';
@@ -5168,9 +5217,9 @@ main > div:first-of-type,
             } else {
                 btn.disabled = false; btn.textContent = orig;
                 if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
-                else alert(data.error || 'เกิดข้อผิดพลาด');
+                else console.error(data.error || 'เกิดข้อผิดพลาด');
             }
-        } catch(e) { btn.disabled = false; btn.textContent = orig; if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); }
+        } catch(e) { btn.disabled = false; btn.textContent = orig; if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); else console.error(e); }
     }
 
     async function doConfirmRefund() {
@@ -5182,7 +5231,6 @@ main > div:first-of-type,
         if (fileInput && fileInput.files.length === 0) {
             if (proofError) proofError.style.display = 'block';
             if (typeof showErrorToast === 'function') showErrorToast('❌ กรุณาแนบไฟล์สลิปหลักฐานการโอนเงินครับ');
-            else alert('กรุณาแนบไฟล์สลิปหลักฐานการโอนเงิน');
             if (fileInput) fileInput.focus();
             return;
         }
@@ -5207,7 +5255,7 @@ main > div:first-of-type,
             if (!upData.success) {
                 document.getElementById('_rfProofProgress').style.display = 'none';
                 if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (upData.error || 'ไฟล์อัพโหลดล้มเหลว'));
-                else alert(upData.error || 'ไฟล์อัพโหลดล้มเหลว');
+                else console.error(upData.error || 'ไฟล์อัพโหลดล้มเหลว');
                 return;
             }
         } catch(e) {
@@ -5231,7 +5279,7 @@ main > div:first-of-type,
                 if (typeof refreshWizardTable === 'function') refreshWizardTable();
             } else {
                 if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
-                else alert(data.error || 'เกิดข้อผิดพลาด');
+                else console.error(data.error || 'เกิดข้อผิดพลาด');
             }
         } catch(e) { 
             document.getElementById('_rfProofProgress').style.display = 'none';

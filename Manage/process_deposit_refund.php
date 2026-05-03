@@ -88,7 +88,16 @@ try {
             echo json_encode([
                 'success' => true,
                 'message' => 'บันทึกข้อมูลคืนเงินมัดจำเรียบร้อย',
-                'refund' => ['refund_id' => $refundId, 'deposit_amount' => $deposit_amount, 'deduction_amount' => $deduction_amount, 'refund_amount' => $refund_amount, 'refund_status' => '0']
+                'refund' => [
+                    'refund_id' => $refundId,
+                    'deposit_amount' => $deposit_amount,
+                    'deduction_amount' => $deduction_amount,
+                    'room_rate' => $room_rate,
+                    'water_cost' => $water_cost,
+                    'elec_cost' => $elec_cost,
+                    'refund_amount' => $refund_amount,
+                    'refund_status' => '0'
+                ]
             ]);
             break;
 
