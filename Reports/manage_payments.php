@@ -483,6 +483,7 @@ foreach ($payments as $pay) {
     'amount' => $currentAmount,
     'status' => $currentStatus,
     'remark' => (string)($pay['pay_remark'] ?? ''),
+    'pay_proof' => (string)($pay['pay_proof'] ?? ''),
   ];
 
   if ($currentStatus === '2') {
@@ -3163,7 +3164,7 @@ main > div:first-of-type,
                         <td>
                           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
                             <?php if (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1): ?>
-                              <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
+                              <button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(<?php echo (int)$pay['pay_id']; ?>, '<?php echo htmlspecialchars((string)($pay['pay_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                             <?php endif; ?>
                           </div>
                         </td>
@@ -3184,7 +3185,7 @@ main > div:first-of-type,
                             <td>
                               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
                                 <?php if (((string)($subItem['status'] ?? '') === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink): ?>
-                                  <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)($subItem['pay_id'] ?? 0); ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
+                                  <button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(<?php echo (int)($subItem['pay_id'] ?? 0); ?>, '<?php echo htmlspecialchars((string)($subItem['pay_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                                 <?php endif; ?>
                               </div>
                             </td>
@@ -3263,7 +3264,7 @@ main > div:first-of-type,
                       </div>
                       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
                         <?php if (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1): ?>
-                          <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(<?php echo (int)$pay['pay_id']; ?>, '1', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
+                          <button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(<?php echo (int)$pay['pay_id']; ?>, '<?php echo htmlspecialchars((string)($pay['pay_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                         <?php endif; ?>
                       </div>
                     </div>
@@ -3713,6 +3714,37 @@ main > div:first-of-type,
         modal.classList.add('active');
       }
 
+      function showPaymentProofAndVerify(payId, proofFilename, expId) {
+        const modal = document.getElementById('proofModal');
+        const body = document.getElementById('proofModalBody');
+        
+        let proofHtml = '';
+        if (proofFilename && proofFilename.trim() !== '') {
+          const ext = proofFilename.toLowerCase().split('.').pop();
+          const isPdf = ext === 'pdf';
+          const path = '/dormitory_management/Public/Assets/Images/Payments/' + proofFilename;
+          
+          if (isPdf) {
+            proofHtml = '<embed src="' + path + '" type="application/pdf" width="100%" height="600px" />';
+          } else {
+            proofHtml = '<img src="' + path + '" alt="หลักฐานการชำระเงิน" style="max-width:100%;max-height:70vh;border-radius:8px;" />';
+          }
+        } else {
+          proofHtml = '<div style="text-align:center;color:#94a3b8;padding:2rem;font-size:0.95rem;">ไม่พบหลักฐานการชำระเงิน</div>';
+        }
+        
+        body.innerHTML = proofHtml + `
+          <div style="margin-top:1.5rem;text-align:center;">
+            <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(${payId}, '1', ${expId}); setTimeout(() => closeProofModal(), 1000);" style="padding:0.6rem 1.2rem;font-size:0.95rem;">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline;margin-right:6px;vertical-align:-2px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              ยืนยันการชำระเงิน
+            </button>
+          </div>
+        `;
+        
+        modal.classList.add('active');
+      }
+
       function closeProofModal() {
         document.getElementById('proofModal').classList.remove('active');
       }
@@ -3839,7 +3871,15 @@ main > div:first-of-type,
           const dateText = escHtml(item.date ? item.date : '-');
           const payId = Number(item.pay_id || 0);
           const remark = escHtml(item.remark ? String(item.remark) : 'ค่าห้อง');
-          const verifyBtn = status === '0' ? `<button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(${payId}, '1', ${expId})" style="padding:0.35rem 0.6rem;font-size:0.8rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;margin-right:3px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยัน</button>` : '-';
+          const proofFile = String(item.pay_proof || '');
+          
+          let proofLink = '-';
+          if (proofFile.trim() !== '') {
+            proofLink = `<span style="color:#2563eb;cursor:pointer;font-weight:500;text-decoration:underline;" onclick="showProof('${escHtml(proofFile)}')">ดูหลักฐาน</span>`;
+          }
+          
+          const verifyBtn = status === '0' ? `<button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(${payId}, '${proofFile}', ${expId})" style="padding:0.35rem 0.6rem;font-size:0.8rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:12px;height:12px;display:inline;margin-right:3px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยัน</button>` : '-';
+          
           return `
             <tr>
               <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${payId}</td>
@@ -3847,6 +3887,7 @@ main > div:first-of-type,
               <td style="padding:0.55rem 0.5rem;text-align:right;white-space:nowrap;">฿${amount.toLocaleString()}</td>
               <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${statusBadge}</td>
               <td style="padding:0.55rem 0.5rem;">${remark}</td>
+              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${proofLink}</td>
               <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${verifyBtn}</td>
             </tr>
           `;
@@ -3861,6 +3902,7 @@ main > div:first-of-type,
                 <th style="padding:0.55rem 0.5rem;text-align:right;">จำนวนเงิน</th>
                 <th style="padding:0.55rem 0.5rem;">สถานะ</th>
                 <th style="padding:0.55rem 0.5rem;">หมายเหตุ</th>
+                <th style="padding:0.55rem 0.5rem;">หลักฐาน</th>
                 <th style="padding:0.55rem 0.5rem;">ดำเนินการ</th>
               </tr>
             </thead>
