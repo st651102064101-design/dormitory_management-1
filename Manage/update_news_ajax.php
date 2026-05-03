@@ -9,7 +9,8 @@ if (empty($_SESSION['admin_username']) || $_SERVER['REQUEST_METHOD'] !== 'POST')
 }
 
 try {
-    $pdo = new PDO("mysql:host=localhost:3306;dbname=dormitory_management_db;charset=utf8mb4", 'root', '12345678');
+    require_once __DIR__ . '/../ConnectDB.php';
+    $pdo = connectDB();
     
     $id = (int)($_POST['news_id'] ?? 0);
     $title = trim($_POST['news_title'] ?? '');

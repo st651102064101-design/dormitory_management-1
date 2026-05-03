@@ -383,6 +383,12 @@ if (!function_exists('formatNewsDateForManageNews')) {
         color: var(--text-secondary);
       }
       
+      #newsContainer {
+        margin-top: 24px;
+        display: grid;
+        gap: 16px;
+      }
+      
       /* Buttons inside form */
       .news-form-actions button[type="submit"],
       .news-form-actions button[type="reset"] {
@@ -820,7 +826,7 @@ main > div:first-of-type,
                 <p><?php echo __('news_empty_hint'); ?></p>
               </div>
             <?php else: ?>
-              <div style="margin-top:1rem;" id="newsContainer">
+              <div id="newsContainer">
                 <?php 
                 $displayLimit = 6;
                 $totalNews = count($newsList);
@@ -1049,7 +1055,7 @@ main > div:first-of-type,
             try {
               console.log('Submitting edit form...', Object.fromEntries(formData));
               
-              const response = await fetch('../Manage/update_news_ajax.php', {
+              const response = await fetch('../Manage/update_news.php', {
                 method: 'POST',
                 body: formData,
                 headers: {

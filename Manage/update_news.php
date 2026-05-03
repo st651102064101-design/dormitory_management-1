@@ -35,15 +35,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 try {
-    $pdo = new PDO(
-        "mysql:host=localhost:3306;dbname=dormitory_management_db;charset=utf8mb4",
-        'root',
-        '12345678',
-        [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        ]
-    );
+    require_once __DIR__ . '/../ConnectDB.php';
+    $pdo = connectDB();
 
     $news_id = isset($_POST['news_id']) ? (int)$_POST['news_id'] : 0;
     $news_title = trim($_POST['news_title'] ?? '');
