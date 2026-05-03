@@ -2543,6 +2543,22 @@ $filterRoomOptions = array_values($filterRoomOptions);
         z-index: 10000;
       }
       
+      /* Proof modal footer - sticky button */
+      .modal-footer {
+        display: flex;
+        justify-content: flex-start;
+        gap: 0.75rem;
+        padding-top: 1rem;
+        border-top: 1px solid rgba(255,255,255,0.08);
+        margin-top: 1rem;
+        flex-shrink: 0;
+      }
+      
+      .modal-footer .action-btn {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.95rem;
+      }
+      
       .modal-header {
         display: flex;
         justify-content: space-between;
@@ -3327,13 +3343,16 @@ main > div:first-of-type,
 
     <!-- Proof Modal -->
     <div class="modal-overlay" id="proofModal">
-      <div class="modal-content" style="max-width:80vw;">
+      <div class="modal-content" style="max-width:80vw;display:flex;flex-direction:column;">
         <div class="modal-header">
           <h3 class="modal-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px;height:20px;vertical-align:-4px;margin-right:6px;"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>หลักฐานการชำระเงิน</h3>
           <button class="modal-close" onclick="closeProofModal()">×</button>
         </div>
-        <div class="modal-body" id="proofModalBody" style="text-align:center;">
+        <div class="modal-body" id="proofModalBody" style="text-align:center;flex:1;overflow-y:auto;">
           <!-- Content will be loaded here -->
+        </div>
+        <div class="modal-footer" id="proofModalFooter">
+          <!-- Verify button will be added here -->
         </div>
       </div>
     </div>
@@ -3777,6 +3796,7 @@ main > div:first-of-type,
       function showPaymentProofAndVerify(payId, proofFilename, expId) {
         const modal = document.getElementById('proofModal');
         const body = document.getElementById('proofModalBody');
+        const footer = document.getElementById('proofModalFooter');
         
         let proofHtml = '';
         if (proofFilename && proofFilename.trim() !== '') {
@@ -3793,14 +3813,8 @@ main > div:first-of-type,
           proofHtml = '<div style="text-align:center;color:#94a3b8;padding:2rem;font-size:0.95rem;">ไม่พบหลักฐานการชำระเงิน</div>';
         }
         
-        body.innerHTML = proofHtml + `
-          <div style="margin-top:1.5rem;text-align:center;">
-            <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(${payId}, '1', ${expId}); setTimeout(() => closeProofModal(), 1000);" style="padding:0.6rem 1.2rem;font-size:0.95rem;">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:inline;margin-right:6px;vertical-align:-2px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              ยืนยันการชำระเงิน
-            </button>
-          </div>
-        `;
+        body.innerHTML = proofHtml;
+        footer.innerHTML = `<button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(${payId}, '1', ${expId}); setTimeout(() => closeProofModal(), 1000);" style="display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยันการชำระเงิน</button>`;
         
         modal.classList.add('active');
       }
