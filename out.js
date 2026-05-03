@@ -1529,9 +1529,9 @@
         // สร้าง modal ครั้งเดียว
         const modalEl = document.createElement('div');
         modalEl.id = '_refundModal';
-        modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(15,23,42,0.35);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;overflow:auto;padding:1rem;';
+        modalEl.style.cssText = 'display:none;position:fixed;inset:0;z-index:99998;background:rgba(0,0,0,0.25);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);align-items:center;justify-content:center;overflow:auto;padding:1rem;';
         modalEl.innerHTML = `
-            <div style="background:rgba(255,255,255,0.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(226,232,240,0.5);border-radius:16px;padding:1.75rem;width:min(460px,92vw);max-height:calc(100vh - 40px);overflow:auto;position:relative;box-shadow:0 20px 60px rgba(0,0,0,0.2);">
+            <div style="background:#ffffff;border:1px solid #e2e8f0;border-radius:16px;padding:1.75rem;width:min(460px,92vw);max-height:calc(100vh - 40px);overflow:auto;position:relative;box-shadow:0 25px 60px rgba(0,0,0,0.3);">
                 <button type="button" onclick="closeRefundModal()" style="position:absolute;top:1rem;right:1rem;background:none;border:none;color:#94a3b8;font-size:1.4rem;cursor:pointer;line-height:1;">&times;</button>
                 <h3 id="_rfTitle" style="margin:0 0 1rem;font-size:1.1rem;color:#0f172a;">💰 คืนเงินมัดจำ</h3>
                 <div id="_rfBankInfo" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:0.85rem 1rem;margin-bottom:1rem;">
