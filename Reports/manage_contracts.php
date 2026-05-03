@@ -2642,7 +2642,7 @@ main > div:first-of-type,
     <!-- ========= CONTRACT DETAIL DRAWER ========= -->
     <div id="cdrOverlay"
          onclick="closeContractDetail()"
-         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1040;"></div>
+         style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.1);backdrop-filter:blur(6px);z-index:1040;"></div>
 
     <div id="cdrDrawer"
          style="display:none;position:fixed;top:0;right:0;height:100%;width:min(600px,100vw);
