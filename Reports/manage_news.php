@@ -440,39 +440,39 @@ if (!function_exists('formatNewsDateForManageNews')) {
         margin-top: 1.75rem;
       }
       #editModal .btn-submit {
-        background: var(--system-blue);
-        color: #ffffff;
-        border: none;
-        border-radius: 10px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 0.9375rem;
-        line-height: 1.3;
-        transition: all 0.2s;
+        background: var(--system-blue) !important;
+        color: #FFFFFF !important;
+        border: none !important;
+        border-radius: 10px !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        font-size: 0.9375rem !important;
+        line-height: 1.3 !important;
+        transition: all 0.2s !important;
       }
       #editModal .btn-submit:hover {
-        background: #0068CC;
+        background: #0068CC !important;
         transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-md) !important;
       }
       #editModal .btn-cancel {
-        background: transparent;
-        color: var(--system-blue);
-        border: 1.5px solid var(--system-blue);
-        border-radius: 10px;
-        padding: 0.75rem 1.5rem;
-        font-weight: 600;
-        cursor: pointer;
-        font-size: 0.9375rem;
-        line-height: 1.3;
-        transition: all 0.2s;
+        background: rgba(10, 132, 255, 0.15) !important;
+        color: var(--system-blue) !important;
+        border: 1.5px solid var(--system-blue) !important;
+        border-radius: 10px !important;
+        padding: 0.75rem 1.5rem !important;
+        font-weight: 600 !important;
+        cursor: pointer !important;
+        font-size: 0.9375rem !important;
+        line-height: 1.3 !important;
+        transition: all 0.2s !important;
       }
       #editModal .btn-cancel:hover {
-        background: rgba(10, 132, 255, 0.1);
+        background: rgba(10, 132, 255, 0.25) !important;
       }
       #editModal .btn-cancel:active {
-        background: rgba(10, 132, 255, 0.2);
+        background: rgba(10, 132, 255, 0.35) !important;
       }
       #submitNewsBtn:hover {
         background: #0068CC !important;
