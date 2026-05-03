@@ -2786,8 +2786,12 @@ $filterRoomOptions = array_values($filterRoomOptions);
       
       /* Expandable Payment Rows */
       .expand-btn {
+        display: none;
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         color: #64748b;
+      }
+      .payment-group-row.has-subrows:hover .expand-btn {
+        display: block;
       }
       .expand-btn:hover {
         color: #0f172a;
@@ -3635,6 +3639,7 @@ main > div:first-of-type,
 
         if (visibleCount > 0) {
           initPaymentsDataTable();
+          setupPaymentRowHoverBehavior();
         }
 
         // --- Grid/row view: plain show/hide (no DataTable involved) ---
@@ -3726,6 +3731,40 @@ main > div:first-of-type,
           btn.classList.add('expanded');
           btn.querySelector('svg').style.transform = 'rotate(90deg)';
         }
+      }
+
+      function setupPaymentRowHoverBehavior() {
+        const tbody = document.querySelector('#paymentsTable tbody');
+        if (!tbody) return;
+
+        const mainRows = tbody.querySelectorAll('tr.payment-group-row.has-subrows');
+        
+        mainRows.forEach(mainRow => {
+          const payId = mainRow.dataset.payId;
+          const subRows = Array.from(tbody.querySelectorAll(`.payment-subrow[data-parent-pay-id="${payId}"]`));
+          const allGroupRows = [mainRow, ...subRows];
+          const expandBtn = mainRow.querySelector('.expand-btn');
+          
+          if (!expandBtn) return;
+
+          // Hide expand button when mouse leaves the entire group (main + all sub-rows)
+          allGroupRows.forEach(row => {
+            row.addEventListener('mouseleave', (e) => {
+              // Check if we're leaving to another row in the group
+              const relatedTarget = e.relatedTarget;
+              const isLeavingGroup = !allGroupRows.some(r => r.contains(relatedTarget));
+              
+              if (isLeavingGroup) {
+                expandBtn.style.display = 'none';
+              }
+            });
+          });
+
+          // Show expand button when mouse enters the main row
+          mainRow.addEventListener('mouseenter', () => {
+            expandBtn.style.display = 'block';
+          });
+        });
       }
 
       function openGroupPaymentsModal(triggerEl) {
@@ -4142,6 +4181,7 @@ main > div:first-of-type,
 
         ensurePaymentsViewVisible();
         applyFilters({ skipReload: true, updateHistory: false });
+        setupPaymentRowHoverBehavior();
 
         // Status filter tabs – use delegated click handler for robustness
         const tabsContainer = document.getElementById('paymentFilterTabs');
