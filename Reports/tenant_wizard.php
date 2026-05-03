@@ -4962,6 +4962,25 @@ main > div:first-of-type,
                         <label style="font-size:0.85rem;color:#475569;display:block;margin-bottom:0.3rem;">เหตุผลหัก (ถ้ามี)</label>
                         <input type="text" id="_rfReason" placeholder="-" style="width:100%;padding:0.55rem 0.75rem;border-radius:10px;border:1px solid #cbd5e1;background:#f8fafc;color:#0f172a;font-size:0.95rem;box-sizing:border-box;">
                     </div>
+                    <div style="border-top:1px solid rgba(0,0,0,0.07);padding-top:0.6rem;margin-top:0.6rem;margin-bottom:0.6rem;">
+                        <div style="font-size:0.85rem;color:#64748b;font-weight:600;margin-bottom:0.4rem;">📊 ค่าใช้ไป (ถ้ามี)</div>
+                    </div>
+                    <div style="margin-bottom:0.7rem;">
+                        <label style="font-size:0.8rem;color:#64748b;display:block;margin-bottom:0.3rem;">ค่าห้อง (บาท)</label>
+                        <input type="number" id="_rfRoomRate" min="0" value="0" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #e2e8f0;background:#f8fafc;color:#0f172a;font-size:0.9rem;box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:0.7rem;">
+                        <label style="font-size:0.8rem;color:#64748b;display:block;margin-bottom:0.3rem;">ค่าน้ำ (บาท)</label>
+                        <input type="number" id="_rfWaterCost" min="0" value="0" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #e2e8f0;background:#f8fafc;color:#0f172a;font-size:0.9rem;box-sizing:border-box;">
+                    </div>
+                    <div style="margin-bottom:0.9rem;">
+                        <label style="font-size:0.8rem;color:#64748b;display:block;margin-bottom:0.3rem;">ค่าไฟ (บาท)</label>
+                        <input type="number" id="_rfElecCost" min="0" value="0" style="width:100%;padding:0.5rem;border-radius:6px;border:1px solid #e2e8f0;background:#f8fafc;color:#0f172a;font-size:0.9rem;box-sizing:border-box;">
+                    </div>
+                    <div id="_rfCalcDisplay" style="font-size:0.9rem;padding:0.5rem;border-radius:6px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.15);margin-bottom:1rem;">
+                        <span style="color:#64748b;">ยอดคืน:</span>
+                        <span id="_rfRefundDisplay" style="color:#16a34a;font-weight:700;">0 ฿</span>
+                    </div>
                     <div id="_rfSaveArea" style="display:flex;gap:0.6rem;margin-top:1.1rem;">
                         <button id="_rfSaveBtn" onclick="doSaveRefund()" style="flex:1;padding:0.65rem;border-radius:12px;border:none;background:linear-gradient(135deg,#fbbf24,#d97706);color:#0f172a;font-weight:700;font-size:0.95rem;cursor:pointer;">บันทึกข้อมูลคืนเงิน</button>
                         <button onclick="closeRefundModal()" style="padding:0.65rem 1rem;border-radius:12px;border:1px solid #e2e8f0;background:none;color:#64748b;cursor:pointer;">ยกเลิก</button>
@@ -4990,7 +5009,12 @@ main > div:first-of-type,
         _rfCtrId = ctrId;
         document.getElementById('_rfTitle').textContent = '💰 คืนเงินมัดจำ — ห้อง ' + (roomNumber || '') + ' (' + (tntName || '') + ')';
         document.getElementById('_rfDeduct').value = '0';
+        document.getElementById('_rfDeduct').setAttribute('max', depositAmt || '0');
         document.getElementById('_rfReason').value = '';
+        document.getElementById('_rfRoomRate').value = '0';
+        document.getElementById('_rfWaterCost').value = '0';
+        document.getElementById('_rfElecCost').value = '0';
+        _updateRefundDisplay(depositAmt || 0);
         document.getElementById('_rfSaveArea').style.display = 'flex';
         document.getElementById('_rfConfirmArea').style.display = 'none';
         // Bank info — แสดงเสมอ ถ้าไม่มีข้อมูลแสดง "ไม่ระบุบัญชี"
@@ -5029,7 +5053,59 @@ main > div:first-of-type,
         document.body.style.overflow = '';
     }
 
-    async function doSaveRefund() {
+    function _updateRefundDisplay(maxAmt) {
+        var dedInput = document.getElementById('_rfDeduct');
+        var roomRateInput = document.getElementById('_rfRoomRate');
+        var waterCostInput = document.getElementById('_rfWaterCost');
+        var elecCostInput = document.getElementById('_rfElecCost');
+        
+        var ded = Math.max(0, Math.min(maxAmt, parseInt(dedInput.value) || 0));
+        var roomRate = Math.max(0, parseInt(roomRateInput.value) || 0);
+        var waterCost = Math.max(0, parseInt(waterCostInput.value) || 0);
+        var elecCost = Math.max(0, parseInt(elecCostInput.value) || 0);
+        var totalUtilities = roomRate + waterCost + elecCost;
+        var refund = Math.max(0, maxAmt - ded - totalUtilities);
+        
+        var el = document.getElementById('_rfRefundDisplay');
+        if (el) el.textContent = refund.toLocaleString('th-TH') + ' ฿';
+    }
+
+    // Delegated input handler for deposit deduction and utility cost calculator
+    document.addEventListener('input', function(e) {
+        if (e.target && (e.target.id === '_rfDeduct' || e.target.id === '_rfRoomRate' || e.target.id === '_rfWaterCost' || e.target.id === '_rfElecCost')) {
+            var dedInput = document.getElementById('_rfDeduct');
+            var maxAmt = parseFloat(dedInput.getAttribute('max')) || 0;
+            var roomRateInput = document.getElementById('_rfRoomRate');
+            var waterCostInput = document.getElementById('_rfWaterCost');
+            var elecCostInput = document.getElementById('_rfElecCost');
+
+            var ded = Math.max(0, Math.min(maxAmt, parseInt(dedInput.value) || 0));
+            dedInput.value = ded;
+
+            var roomRate = Math.max(0, parseInt(roomRateInput.value) || 0);
+            var waterCost = Math.max(0, parseInt(waterCostInput.value) || 0);
+            var elecCost = Math.max(0, parseInt(elecCostInput.value) || 0);
+            var totalUtilities = roomRate + waterCost + elecCost;
+            var availableForUtilities = Math.max(0, maxAmt - ded);
+
+            // Prevent utility costs from exceeding available balance
+            if (totalUtilities > availableForUtilities && e.target && (e.target.id === '_rfRoomRate' || e.target.id === '_rfWaterCost' || e.target.id === '_rfElecCost')) {
+                var currentValue = Math.max(0, parseInt(e.target.value) || 0);
+                var otherTotal = totalUtilities - currentValue;
+                var maxForCurrent = Math.max(0, availableForUtilities - otherTotal);
+                e.target.value = Math.min(currentValue, maxForCurrent);
+                roomRate = Math.max(0, parseInt(roomRateInput.value) || 0);
+                waterCost = Math.max(0, parseInt(waterCostInput.value) || 0);
+                elecCost = Math.max(0, parseInt(elecCostInput.value) || 0);
+                totalUtilities = roomRate + waterCost + elecCost;
+            }
+
+            var refund = Math.max(0, maxAmt - ded - totalUtilities);
+            var el = document.getElementById('_rfRefundDisplay');
+            if (el) el.textContent = refund.toLocaleString('th-TH') + ' ฿';
+        }
+    });
+
         const btn = document.getElementById('_rfSaveBtn');
         const orig = btn.textContent;
         btn.disabled = true; btn.textContent = 'กำลังบันทึก...';
