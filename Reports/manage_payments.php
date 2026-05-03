@@ -3450,7 +3450,21 @@ main > div:first-of-type,
           return;
         }
 
-        paymentsSourceRows = Array.from(tbody.querySelectorAll('tr[data-filter-item="payment"]')).map((row) => row.cloneNode(true));
+        // Capture main rows with their sub-rows as a unit
+        Array.from(tbody.querySelectorAll('tr[data-filter-item="payment"]')).forEach((mainRow) => {
+          const clonedMain = mainRow.cloneNode(true);
+          paymentsSourceRows.push(clonedMain);
+          
+          // Capture any following sub-rows that belong to this main row
+          const payId = mainRow.dataset.payId;
+          if (payId) {
+            let nextRow = mainRow.nextElementSibling;
+            while (nextRow && nextRow.classList.contains('payment-subrow') && nextRow.dataset.parentPayId === payId) {
+              paymentsSourceRows.push(nextRow.cloneNode(true));
+              nextRow = nextRow.nextElementSibling;
+            }
+          }
+        });
       }
 
       function cleanupPaymentsTableDom() {
@@ -3557,13 +3571,37 @@ main > div:first-of-type,
           }
 
           Array.from(tbody.querySelectorAll('tr[data-filter-item="payment"]')).forEach((row) => row.remove());
+          Array.from(tbody.querySelectorAll('tr.payment-subrow')).forEach((row) => row.remove());
 
-          paymentsSourceRows.forEach((row) => {
-            if (matchesPaymentFilters(row, filters)) {
-              tbody.appendChild(row.cloneNode(true));
-              visibleCount += 1;
+          // Process rows, treating main rows + their sub-rows as units
+          let i = 0;
+          while (i < paymentsSourceRows.length) {
+            const row = paymentsSourceRows[i];
+            
+            // Only filter main rows (with data-filter-item="payment")
+            if (row.dataset.filterItem === 'payment') {
+              if (matchesPaymentFilters(row, filters)) {
+                // Add the main row
+                tbody.appendChild(row.cloneNode(true));
+                visibleCount += 1;
+                
+                // Add all following sub-rows that belong to this main row
+                const payId = row.dataset.payId;
+                i++;
+                while (i < paymentsSourceRows.length) {
+                  const nextRow = paymentsSourceRows[i];
+                  if (nextRow.classList.contains('payment-subrow') && nextRow.dataset.parentPayId === payId) {
+                    tbody.appendChild(nextRow.cloneNode(true));
+                    i++;
+                  } else {
+                    break;
+                  }
+                }
+                continue;
+              }
             }
-          });
+            i++;
+          }
 
           if (visibleCount === 0 && noResultsRow) {
             tbody.appendChild(noResultsRow);
