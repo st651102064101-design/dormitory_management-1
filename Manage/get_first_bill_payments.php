@@ -45,7 +45,7 @@ function buildExpensePayload(PDO $pdo, array $expense, bool $hasPayRemark): arra
         '1' => 'ชำระแล้ว',
         '2' => 'รอตรวจสอบ',
         '3' => 'ชำระยังไม่ครบ',
-        '4' => 'ค้างชำระ',
+        '4' => 'ตีกลับ',
     ];
 
     if ($hasPayRemark) {

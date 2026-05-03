@@ -65,7 +65,16 @@ function recalculateExpenseStatus(PDO $pdo, int $expId): void
     $pendingStmt->execute([$expId]);
     $pendingCount = (int)($pendingStmt->fetchColumn() ?: 0);
 
-    if ($expTotal > 0 && $approvedAmount >= ($expTotal - 0.00001)) {
+    // ตรวจสอบว่ามี payment ที่ถูกตีกลับหรือไม่
+    $rejectedSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '2'";
+    $rejectedStmt = $pdo->prepare($rejectedSql);
+    $rejectedStmt->execute([$expId]);
+    $rejectedCount = (int)($rejectedStmt->fetchColumn() ?: 0);
+
+    // ถ้ามี payment ที่ถูกตีกลับ ให้ status เป็น 4 (ตีกลับ)
+    if ($rejectedCount > 0) {
+        $nextStatus = '4';
+    } elseif ($expTotal > 0 && $approvedAmount >= ($expTotal - 0.00001)) {
         $nextStatus = '1';
     } elseif ($approvedAmount > 0) {
         $nextStatus = '3';
