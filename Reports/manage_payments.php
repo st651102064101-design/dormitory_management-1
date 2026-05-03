@@ -491,15 +491,12 @@ foreach ($dedupedPayments as $paymentKey => $pay) {
   ];
 
   $amountByStatus = (array)($group['amount_by_status'] ?? []);
-  $displayAmount = (int)($pay['pay_amount'] ?? 0);
-  if (($amountByStatus['1'] ?? 0) > 0) {
-    $displayAmount = (int)$amountByStatus['1'];
-  } elseif (($amountByStatus['0'] ?? 0) > 0) {
-    $displayAmount = (int)$amountByStatus['0'];
-  } elseif (($amountByStatus['unpaid'] ?? 0) > 0) {
-    $displayAmount = (int)$amountByStatus['unpaid'];
-  } elseif (($amountByStatus['2'] ?? 0) > 0) {
-    $displayAmount = (int)$amountByStatus['2'];
+  // Display amount ต้องเป็นการรวมของทั้งกลุ่ม ไม่ใช่เพียงรายการเดียว
+  $displayAmount = (int)array_sum($amountByStatus);
+  
+  // ถ้าไม่มีรายการในกลุ่ม ให้ใช้ original pay_amount
+  if ($displayAmount <= 0) {
+    $displayAmount = (int)($pay['pay_amount'] ?? 0);
   }
 
   $pay['pay_amount'] = $displayAmount;
