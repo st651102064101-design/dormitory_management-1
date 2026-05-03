@@ -2762,6 +2762,52 @@ $filterRoomOptions = array_values($filterRoomOptions);
       html.light-theme .payment-toolbar select { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: #111827; }
       html.light-theme .payment-toolbar-clear { background: rgba(0,0,0,0.04); border-color: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); }
       html.light-theme .payment-toolbar-clear:hover { background: rgba(0,0,0,0.08); color: rgba(0,0,0,0.9); }
+      
+      /* Expandable Payment Rows */
+      .expand-btn {
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        color: #64748b;
+      }
+      .expand-btn:hover {
+        color: #0f172a;
+        transform: scale(1.15);
+      }
+      html.light-theme .expand-btn { color: #94a3b8; }
+      html.light-theme .expand-btn:hover { color: #334155; }
+      
+      .expand-btn svg {
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+      
+      .expand-btn.expanded svg {
+        transform: rotate(90deg);
+      }
+      
+      .payment-group-row.has-subrows td:first-child {
+        position: relative;
+      }
+      
+      .payment-subrow {
+        background: rgba(99, 102, 241, 0.05);
+        border-left: 2px solid rgba(99, 102, 241, 0.3);
+        animation: slideDown 0.3s ease-out;
+      }
+      
+      @keyframes slideDown {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      
+      html.light-theme .payment-subrow {
+        background: rgba(99, 102, 241, 0.03);
+        border-left-color: rgba(99, 102, 241, 0.2);
+      }
     </style>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/futuristic-bright.css" />
   
@@ -3022,8 +3068,16 @@ main > div:first-of-type,
                       <?php $groupCount = (int)($pay['_group_count'] ?? 1); ?>
                       <?php $groupItemsJson = htmlspecialchars(json_encode($pay['_group_items'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>
                       <?php $groupTitle = 'รายการย่อยบิลเดือน ' . ($pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-') . ' ห้อง ' . (string)($pay['room_number'] ?? '-'); ?>
-                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>">
-                        <td><?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></td>
+                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>" class="payment-group-row <?php echo $groupCount > 1 ? 'has-subrows' : ''; ?>">
+                        <td style="position:relative;">
+                          <?php if ($groupCount > 1): ?>
+                            <button type="button" class="expand-btn" onclick="togglePaymentSubRows(this, event)" style="background:none;border:none;cursor:pointer;padding:0.2rem;margin-right:0.3rem;">
+                              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;vertical-align:-3px;">
+                                <polyline points="9 18 15 12 9 6"></polyline>
+                              </svg>
+                            </button>
+                          <?php endif; ?>
+                          <?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?>
                         <td><?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?></td>
                         <td><?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></td>
                         <td><?php echo $pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-'; ?></td>
@@ -3089,6 +3143,23 @@ main > div:first-of-type,
                           </div>
                         </td>
                       </tr>
+                      <?php if ($groupCount > 1 && !empty($pay['_group_items'])): ?>
+                        <?php foreach ($pay['_group_items'] as $subItem): ?>
+                          <tr class="payment-subrow" style="display:none;" data-parent-pay-id="<?php echo (int)$pay['pay_id']; ?>">
+                            <td style="padding-left:3rem;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:12px;height:12px;vertical-align:-1px;margin-right:0.4rem;">├─ </svg>#<?php echo (int)($subItem['pay_id'] ?? 0); ?></td>
+                            <td colspan="3"></td>
+                            <td style="font-size:0.9rem;color:#64748b;"><?php echo htmlspecialchars($subItem['date'] ?? '-'); ?></td>
+                            <td style="text-align:right;font-weight:600;">฿<?php echo number_format((int)($subItem['amount'] ?? 0)); ?></td>
+                            <td></td>
+                            <td><span class="status-badge <?php 
+                              $subStatus = (string)($subItem['status'] ?? '0');
+                              $subStatusClass = $subStatus === '1' ? 'status-verified' : ($subStatus === '2' ? 'status-unpaid' : ($subStatus === 'unpaid' ? 'status-unpaid' : 'status-pending'));
+                              echo $subStatusClass;
+                            ?>"> <?php echo $statusMap[$subStatus] ?? $statusMap['0']; ?></span></td>
+                            <td></td>
+                          </tr>
+                        <?php endforeach; ?>
+                      <?php endif; ?>
                     <?php endforeach; ?>
                     <tr id="paymentsNoResultsRow" style="display:none;">
                       <td colspan="10" style="text-align:center;padding:2rem;color:#64748b;">ไม่พบข้อมูลตามตัวกรองที่เลือก</td>
@@ -3574,6 +3645,28 @@ main > div:first-of-type,
 
       function closeProofModal() {
         document.getElementById('proofModal').classList.remove('active');
+      }
+
+      function togglePaymentSubRows(btn, event) {
+        event.stopPropagation();
+        const mainRow = btn.closest('.payment-group-row');
+        if (!mainRow) return;
+        
+        const payId = mainRow.dataset.payId;
+        const subRows = document.querySelectorAll(`.payment-subrow[data-parent-pay-id="${payId}"]`);
+        const isExpanded = btn.classList.contains('expanded');
+        
+        if (isExpanded) {
+          // Collapse
+          subRows.forEach(row => row.style.display = 'none');
+          btn.classList.remove('expanded');
+          btn.querySelector('svg').style.transform = 'rotate(0deg)';
+        } else {
+          // Expand
+          subRows.forEach(row => row.style.display = '');
+          btn.classList.add('expanded');
+          btn.querySelector('svg').style.transform = 'rotate(90deg)';
+        }
       }
 
       function openGroupPaymentsModal(triggerEl) {
