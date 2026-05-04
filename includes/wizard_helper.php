@@ -338,7 +338,8 @@ function getWizardItems(PDO $pdo): array
                 GROUP BY ctr_id
             ) cr2 ON cr1.checkin_id = cr2.latest_checkin_id
         ) cr ON c.ctr_id = cr.ctr_id
-        WHERE (tw.id IS NULL OR tw.completed = 0 OR tw.completed = 1)
+        WHERE COALESCE(tw.completed, 0) = 0
+            AND COALESCE(tw.current_step, 0) < 5
             AND (c.ctr_id IS NULL OR c.ctr_status <> '1')
             AND NOT EXISTS (
                 SELECT 1 FROM contract c3
