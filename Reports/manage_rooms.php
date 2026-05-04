@@ -833,6 +833,14 @@ try {
         display: flex;
         gap: 0.75rem;
         margin-top: 1.75rem;
+        position: sticky;
+        bottom: 0;
+        z-index: 2;
+        margin-left: -2rem;
+        margin-right: -2rem;
+        padding: 1rem 2rem;
+        background: linear-gradient(180deg, rgba(20, 25, 35, 0) 0%, rgba(20, 25, 35, 0.85) 35%, rgba(20, 25, 35, 0.98) 100%);
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
       }
       
       .btn-submit {
