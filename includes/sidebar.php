@@ -340,6 +340,7 @@ try {
         ) cr ON c.ctr_id = cr.ctr_id
         WHERE b.bkg_status != '0' 
           AND COALESCE(b.bkg_status, '') <> '5'
+          AND COALESCE(tw.current_step, 0) < 5
           AND (c.ctr_id IS NULL OR c.ctr_status <> '1')
           AND NOT EXISTS (
               SELECT 1 FROM contract c3
