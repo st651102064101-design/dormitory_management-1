@@ -248,8 +248,8 @@ function getWizardItems(PDO $pdo): array
                     c.ctr_start IS NULL
                     OR DATE_FORMAT(e_first.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
                 )
-                AND e_first.exp_month = (
-                    SELECT MIN(e_min.exp_month)
+                AND DATE_FORMAT(e_first.exp_month, '%Y-%m') = (
+                    SELECT MIN(DATE_FORMAT(e_min.exp_month, '%Y-%m'))
                     FROM expense e_min
                     WHERE e_min.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
                         AND (
@@ -281,8 +281,8 @@ function getWizardItems(PDO $pdo): array
             SELECT 1
             FROM expense e_latest
             WHERE e_latest.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
-                AND e_latest.exp_month = (
-                    SELECT MAX(e_max.exp_month)
+                AND DATE_FORMAT(e_latest.exp_month, '%Y-%m') = (
+                    SELECT MAX(DATE_FORMAT(e_max.exp_month, '%Y-%m'))
                     FROM expense e_max
                     WHERE e_max.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
                 )
