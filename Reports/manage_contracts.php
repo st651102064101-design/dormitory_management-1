@@ -378,7 +378,7 @@ $pendingRefundCtrIdSet = array_flip(array_column($refundPendingContracts, 'ctr_i
         transition: all 0.2s ease;
         box-shadow: 0 4px 12px rgba(34,197,94,0.35);
         position: relative;
-        z-index: 9999;
+        z-index: 10;
         pointer-events: auto;
         touch-action: manipulation;
         white-space: nowrap;
