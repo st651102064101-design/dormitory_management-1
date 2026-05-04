@@ -4904,7 +4904,7 @@ main > div:first-of-type,
         if (typeof showAppleConfirm === 'function') {
             confirmed = await showAppleConfirm(msg, 'ยืนยันยกเลิกสัญญา');
         } else {
-            confirmed = await showAppleConfirm(msg, 'ยืนยันยกเลิกสัญญา');
+            confirmed = window.confirm(msg);
         }
         if (!confirmed) return;
 
@@ -5302,7 +5302,7 @@ main > div:first-of-type,
 
         const ok = typeof showAppleConfirm === 'function'
             ? await showAppleConfirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงิน')
-            : await showAppleConfirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงิน');
+            : window.confirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
             
         if (!ok) {
             _updateConfirmButtonState();

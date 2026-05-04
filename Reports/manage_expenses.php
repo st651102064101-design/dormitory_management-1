@@ -2856,7 +2856,7 @@ main > div:first-of-type,
             'ส่งแจ้งเตือนชำระเงิน'
           );
         } else {
-          confirmed = await showAppleConfirm('ต้องการส่งแจ้งเตือนชำระเงิน ' + expenseIds.length.toLocaleString('th-TH') + ' รายการในหน้าปัจจุบันหรือไม่?', 'ส่งแจ้งเตือนชำระเงิน');
+          confirmed = window.confirm('ต้องการส่งแจ้งเตือนชำระเงิน ' + expenseIds.length.toLocaleString('th-TH') + ' รายการในหน้าปัจจุบันหรือไม่?');
         }
 
         if (!confirmed) return;

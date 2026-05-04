@@ -4132,8 +4132,6 @@ main > div:first-of-type,
             `คุณต้องการ${statusText}นี้หรือไม่?`,
             'ยืนยันการดำเนินการ'
           );
-        } else {
-          confirmed = await showAppleConfirm(`คุณต้องการ${statusText}นี้หรือไม่?`, 'ยืนยันการดำเนินการ');
         }
         if (confirmed) {
           await doUpdatePaymentStatus(payId, newStatus, expId);
@@ -4287,8 +4285,6 @@ main > div:first-of-type,
             'คุณต้องการลบรายการชำระเงินนี้หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้',
             'ยืนยันการลบ'
           );
-        } else {
-          confirmed = await showAppleConfirm('คุณต้องการลบรายการชำระเงินนี้หรือไม่?', 'ยืนยันการลบ');
         }
         if (confirmed) {
           await doDeletePayment(payId);
@@ -4480,6 +4476,7 @@ main > div:first-of-type,
         }
       });
     </script>
+<?php include_once __DIR__ . '/../includes/apple_alert.php'; ?>
     <script src="/dormitory_management/Public/Assets/Js/futuristic-bright.js"></script>
   </body>
 </html>
