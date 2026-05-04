@@ -286,7 +286,7 @@ if (!function_exists('formatNewsDateForManageNews')) {
         display: flex;
         gap: 12px;
         font-size: 13px;
-        color: var(--text-secondary);
+        color: #FFFFFF;
         margin-bottom: 16px;
         font-weight: 400;
         padding-bottom: 16px;
@@ -297,9 +297,17 @@ if (!function_exists('formatNewsDateForManageNews')) {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: var(--bg-primary);
+        background: rgba(0, 0, 0, 0.15);
         padding: 6px 12px;
         border-radius: 8px;
+      }
+      @media (prefers-color-scheme: dark) {
+        .news-card-meta {
+          color: #FFFFFF;
+        }
+        .news-card-meta span {
+          background: rgba(255, 255, 255, 0.1);
+        }
       }
       .news-card-content {
         color: var(--text-secondary);
