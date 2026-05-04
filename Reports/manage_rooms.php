@@ -165,446 +165,158 @@ try {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
-      /* ===== Apple Design System Standards ===== */
+      /* ===== Apple-Style Modern Design ===== */
       
-      /* Apple Typography System */
-      :root {
-        /* Apple Font System */
-        --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
-        
-        /* Apple Color System - Light Mode */
-        --bg-primary: #FFFFFF;
-        --bg-secondary: #F2F2F7;
-        --text-primary: #000000;
-        --text-secondary: rgba(60, 60, 67, 0.6);
-        --text-tertiary: rgba(60, 60, 67, 0.3);
-        --system-blue: #007AFF;
-        --system-red: #FF3B30;
-        --separator: rgba(60, 60, 67, 0.3);
-        
-        /* Apple Spacing System */
-        --space-xs: 8px;
-        --space-sm: 16px;
-        --space-md: 24px;
-        --space-lg: 32px;
-        --space-xl: 48px;
-      }
-
-      @media (prefers-color-scheme: dark) {
-        :root {
-          /* Apple Color System - Dark Mode */
-          --bg-primary: #000000;
-          --bg-secondary: #1C1C1E;
-          --text-primary: #FFFFFF;
-          --text-secondary: rgba(235, 235, 245, 0.6);
-          --text-tertiary: rgba(235, 235, 245, 0.3);
-          --system-blue: #0A84FF;
-          --system-red: #FF453A;
-          --separator: rgba(84, 84, 88, 0.3);
-        }
-      }
-      
-      /* Apple Global Styles */
-      body {
-        font-family: var(--font-apple);
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        background-color: var(--bg-primary);
-        color: var(--text-primary);
-        line-height: 1.47059;
-        font-weight: 400;
-        letter-spacing: -0.022em;
-      }
-      
-      /* Apple Typography Hierarchy */
-      .apple-large-title {
-        font-size: 34px;
-        font-weight: 700;
-        letter-spacing: 0.40px;
-        line-height: 1.11765;
-      }
-      
-      .apple-title-1 {
-        font-size: 28px;
-        font-weight: 700;
-        letter-spacing: 0.36px;
-        line-height: 1.14286;
-      }
-      
-      .apple-title-2 {
-        font-size: 22px;
-        font-weight: 700;
-        letter-spacing: 0.35px;
-        line-height: 1.18182;
-      }
-      
-      .apple-headline {
-        font-size: 17px;
-        font-weight: 600;
-        letter-spacing: -0.43px;
-        line-height: 1.23529;
-      }
-      
-      .apple-body {
-        font-size: 17px;
-        font-weight: 400;
-        letter-spacing: -0.43px;
-        line-height: 1.47059;
-      }
-      
-      .apple-callout {
-        font-size: 16px;
-        font-weight: 400;
-        letter-spacing: -0.32px;
-        line-height: 1.5;
-      }
-      
-      .apple-caption {
-        font-size: 12px;
-        font-weight: 400;
-        letter-spacing: 0;
-        line-height: 1.33337;
-      }
-      
-      /* Apple Glassmorphism Effect */
-      .apple-glass {
-        background-color: rgba(255, 255, 255, 0.65);
-        backdrop-filter: blur(33px);
-        -webkit-backdrop-filter: blur(33px);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
-      }
-      
-      @media (prefers-color-scheme: dark) {
-        .apple-glass {
-          background-color: rgba(30, 30, 30, 0.65);
-          box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-        }
-      }
-      
-      /* Apple Button System */
-      .apple-button {
-        min-width: 44px;
-        min-height: 44px;
-        padding: 12px 24px;
-        background-color: var(--system-blue);
-        color: #FFFFFF;
-        font-family: var(--font-apple);
-        font-size: 17px;
-        font-weight: 600;
-        letter-spacing: -0.43px;
-        border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        transition: opacity 0.2s ease;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-      }
-      
-      .apple-button:hover {
-        opacity: 0.8;
-      }
-      
-      .apple-button:active {
-        opacity: 0.7;
-      }
-      
-      .apple-button-secondary {
-        background-color: transparent;
-        color: var(--system-blue);
-        box-shadow: inset 0 0 0 1px var(--system-blue);
-      }
-      
-      /* Apple Stats Cards - Bento Grid Style */
+      /* Stats Cards - Glassmorphism */
       .rooms-stats {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: var(--space-sm);
-        margin-top: var(--space-md);
-        padding: var(--space-md);
+        gap: 1.25rem;
+        margin-top: 1rem;
       }
       
       .room-stat-card {
-        background: var(--bg-secondary);
-        border-radius: 18px;
-        padding: var(--space-md);
+        background: rgba(255,255,255,0.03);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-radius: 20px;
+        padding: 1.5rem;
+        border: 1px solid rgba(255,255,255,0.08);
         position: relative;
         overflow: hidden;
         transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        border: 1px solid transparent;
+      }
+      
+      .room-stat-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        opacity: 0;
+        transition: opacity 0.3s;
       }
       
       .room-stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        transform: translateY(-4px);
+        border-color: rgba(255,255,255,0.15);
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3);
       }
       
-      @media (prefers-color-scheme: dark) {
-        .room-stat-card:hover {
-          box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
+      .room-stat-card:hover::before {
+        opacity: 1;
       }
       
       .room-stat-card h3 {
         margin: 0;
-        font-size: 12px;
-        font-weight: 600;
-        color: var(--text-secondary);
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: rgba(255,255,255,0.5);
         text-transform: uppercase;
-        letter-spacing: 0.03em;
-        margin-bottom: var(--space-xs);
+        letter-spacing: 0.05em;
       }
       
       .room-stat-card .stat-value {
-        font-size: 28px;
+        font-size: 3rem;
         font-weight: 700;
-        color: var(--text-primary);
+        margin-top: 0.5rem;
+        background: linear-gradient(135deg, #60a5fa, #a78bfa);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
         line-height: 1.1;
-        letter-spacing: 0.36px;
       }
       
-      /* Apple Room Cards - Minimal Design */
+      .room-stat-card:nth-child(2) .stat-value {
+        background: linear-gradient(135deg, #34d399, #10b981);
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+      
+      .room-stat-card:nth-child(3) .stat-value {
+        background: linear-gradient(135deg, #f87171, #ef4444);
+        -webkit-background-clip: text;
+        background-clip: text;
+      }
+      
+      /* Room Cards Grid */
       .rooms-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-        gap: var(--space-sm);
-        margin-top: var(--space-md);
-        padding: var(--space-sm);
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 1.25rem;
+        margin-top: 1.25rem;
       }
       
       .room-card {
-        background: var(--bg-secondary);
-        border-radius: 18px;
+        background: rgba(255,255,255,0.02);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 20px;
         overflow: hidden;
-        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         cursor: pointer;
         position: relative;
-        border: 1px solid transparent;
+      }
+      
+      .room-card::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: 20px;
+        padding: 1px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+        -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+        -webkit-mask-composite: xor;
+        mask-composite: exclude;
+        pointer-events: none;
+        opacity: 0;
+        transition: opacity 0.3s;
       }
       
       .room-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+        transform: translateY(-6px) scale(1.01);
+        border-color: rgba(96,165,250,0.3);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.25), 0 0 0 1px rgba(96,165,250,0.1);
       }
       
-      @media (prefers-color-scheme: dark) {
-        .room-card:hover {
-          box-shadow: 0 20px 40px rgba(0,0,0,0.4);
-        }
+      .room-card:hover::after {
+        opacity: 1;
       }
       
       .room-card-image {
         width: 100%;
-        height: 180px;
-        background: var(--bg-secondary);
+        height: 160px;
+        background: linear-gradient(135deg, rgba(30,41,59,0.8), rgba(15,23,42,0.9));
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--text-tertiary);
-        font-size: 48px;
+        color: rgba(255,255,255,0.2);
+        font-size: 3.5rem;
         overflow: hidden;
         position: relative;
+      }
+      
+      .room-card-image::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(180deg, transparent 60%, rgba(0,0,0,0.6));
+        z-index: 1;
       }
       
       .room-card-image img {
         width: 100%;
         height: 100%;
         object-fit: cover;
-        transition: transform 0.3s ease;
+        transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
       }
       
       .room-card:hover .room-card-image img {
-        transform: scale(1.05);
-      }
-      
-      .room-card-content {
-        padding: var(--space-md);
-      }
-      
-      .room-card-number {
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin: 0 0 var(--space-xs) 0;
-        letter-spacing: 0.35px;
-      }
-      
-      .room-card-meta {
-        font-size: 14px;
-        color: var(--text-secondary);
-        margin-bottom: var(--space-sm);
-        display: flex;
-        align-items: center;
-        gap: 6px;
-      }
-      
-      .room-card-status {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 4px 12px;
-        border-radius: 100px;
-        font-size: 12px;
-        font-weight: 600;
-        margin-bottom: var(--space-sm);
-        text-transform: uppercase;
-        letter-spacing: 0.03em;
-      }
-      
-      .room-card-status.vacant {
-        background: rgba(52, 199, 89, 0.12);
-        color: #34C759;
-      }
-      
-      .room-card-status.occupied {
-        background: rgba(255, 59, 48, 0.12);
-        color: #FF3B30;
-      }
-      
-      .room-card-actions {
-        display: flex;
-        gap: var(--space-xs);
-        margin-top: var(--space-sm);
-      }
-      
-      .room-card-actions .btn {
-        flex: 1;
-        min-height: 44px;
-        padding: 12px 16px;
-        border-radius: 12px;
-        font-size: 17px;
-        font-weight: 600;
-        border: none;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        letter-spacing: -0.43px;
-      }
-      
-      .room-card-actions .btn-edit {
-        background: var(--system-blue);
-        color: #FFFFFF;
-      }
-      
-      .room-card-actions .btn-delete {
-        background: var(--system-red);
-        color: #FFFFFF;
-      }
-      
-      .room-card-actions .btn:hover {
-        opacity: 0.8;
-      }
-      
-      .room-card-actions .btn:active {
-        opacity: 0.7;
-      }
-      
-      /* Apple Form Styles */
-      .room-form {
-        display: grid;
-        gap: var(--space-md);
-        margin-top: var(--space-md);
-        padding: var(--space-md);
-        background: var(--bg-secondary);
-        border-radius: 18px;
-      }
-      
-      .room-form-group label {
-        font-size: 17px;
-        font-weight: 600;
-        color: var(--text-primary);
-        margin-bottom: var(--space-xs);
-        display: block;
-        letter-spacing: -0.43px;
-      }
-      
-      .room-form-group input,
-      .room-form-group select {
-        width: 100%;
-        min-height: 44px;
-        padding: 12px 16px;
-        border-radius: 12px;
-        border: 1px solid var(--separator);
-        background: var(--bg-primary);
-        color: var(--text-primary);
-        font-family: var(--font-apple);
-        font-size: 17px;
-        font-weight: 400;
-        letter-spacing: -0.43px;
-        transition: all 0.2s ease;
-      }
-      
-      .room-form-group input:focus,
-      .room-form-group select:focus {
-        outline: none;
-        border-color: var(--system-blue);
-        box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.15);
-      }
-      
-      .room-form-actions {
-        display: flex;
-        gap: var(--space-sm);
-        margin-top: var(--space-md);
-      }
-      
-      /* Apple Navigation and Header */
-      .apple-header {
-        background: var(--bg-primary);
-        border-bottom: 1px solid var(--separator);
-        padding: var(--space-md) var(--space-lg);
-        position: sticky;
-        top: 0;
-        z-index: 100;
-        backdrop-filter: saturate(180%) blur(20px);
-        -webkit-backdrop-filter: saturate(180%) blur(20px);
-      }
-      
-      .apple-header h1 {
-        margin: 0;
-        font-size: 28px;
-        font-weight: 700;
-        letter-spacing: 0.36px;
-        color: var(--text-primary);
-      }
-      
-      .apple-toolbar {
-        display: flex;
-        gap: var(--space-sm);
-        align-items: center;
-        margin-top: var(--space-md);
-        padding: 0 var(--space-sm);
-      }
-      
-      /* Apple Empty State */
-      .room-empty {
-        text-align: center;
-        padding: var(--space-xl) var(--space-md);
-        color: var(--text-secondary);
-      }
-      
-      .room-empty-icon {
-        font-size: 64px;
-        margin-bottom: var(--space-md);
-        opacity: 0.3;
-      }
-      
-      .room-empty h3 {
-        font-size: 22px;
-        font-weight: 700;
-        color: var(--text-primary);
-        margin: 0 0 var(--space-xs) 0;
-        letter-spacing: 0.35px;
-      }
-      
-      .room-empty p {
-        font-size: 17px;
-        color: var(--text-secondary);
-        margin: 0;
-        letter-spacing: -0.43px;
+        transform: scale(1.08);
       }
 
       /* Image Upload Overlay */
@@ -1877,24 +1589,27 @@ main > div:first-of-type,
 
           <section class="manage-panel">
             <div class="rooms-stats">
-              <div class="room-stat-card apple-glass">
-                <h3 class="apple-callout" style="color: var(--text-secondary); margin-bottom: var(--space-xs);">ห้องทั้งหมด</h3>
-                <div class="apple-title-1"><?php echo number_format($totalRooms); ?></div>
+              <div class="room-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
+                <h3>ห้องทั้งหมด</h3>
+                <div class="stat-value"><?php echo number_format($totalRooms); ?></div>
               </div>
-              <div class="room-stat-card apple-glass">
-                <h3 class="apple-callout" style="color: var(--text-secondary); margin-bottom: var(--space-xs);">ห้องว่าง</h3>
-                <div class="apple-title-1" style="color: var(--system-blue);"><?php echo number_format($vacant); ?></div>
+              <div class="room-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
+                <h3>ห้องว่าง</h3>
+                <div class="stat-value"><?php echo number_format($vacant); ?></div>
               </div>
-              <div class="room-stat-card apple-glass">
-                <h3 class="apple-callout" style="color: var(--text-secondary); margin-bottom: var(--space-xs);">มีผู้เข้าพัก</h3>
-                <div class="apple-title-1" style="color: var(--system-red);"><?php echo number_format($occupied); ?></div>
+              <div class="room-stat-card particle-wrapper">
+                <div class="particle-container" data-particles="3"></div>
+                <h3>มีผู้เข้าพัก</h3>
+                <div class="stat-value"><?php echo number_format($occupied); ?></div>
               </div>
             </div>
           </section>
 
           <!-- Toggle button for room form -->
-          <div style="margin: var(--space-md) 0;">
-            <button type="button" id="toggleRoomFormBtn" class="apple-button" onclick="toggleRoomForm()">
+          <div style="margin:1.5rem 0;">
+            <button type="button" id="toggleRoomFormBtn" style="white-space:nowrap;padding:0.85rem 1.5rem;cursor:pointer;font-size:0.95rem;background:#ffffff;border:1px solid #e2e8f0;color:#334155;border-radius:8px;transition:all 0.2s;font-weight:600;display:inline-flex;align-items:center;gap:0.5rem;" onclick="toggleRoomForm()" onmouseover="this.style.background='#f8fafc';this.style.borderColor='#cbd5e1';this.style.color='#0f172a'" onmouseout="this.style.background='#ffffff';this.style.borderColor='#e2e8f0';this.style.color='#334155'">
               <span id="toggleRoomFormIcon">▼</span> <span id="toggleRoomFormText">ซ่อนฟอร์ม</span>
             </button>
           </div>
@@ -1902,8 +1617,8 @@ main > div:first-of-type,
           <section class="manage-panel" id="addRoomSection">
             <div class="section-header">
               <div>
-                <h1 class="apple-title-1">เพิ่มห้องพัก</h1>
-                <p class="apple-callout" style="color: var(--text-secondary); margin-top: var(--space-xs);">สร้างห้องพัก</p>
+                <h1>เพิ่มห้องพัก</h1>
+                <p style="margin-top:0.25rem;color:#64748b;">สร้างห้องพัก</p>
               </div>
             </div>
             <form id="addRoomForm" enctype="multipart/form-data">
@@ -2865,7 +2580,7 @@ main > div:first-of-type,
         const roomsGrid = document.getElementById('roomsGrid');
         if (roomsGrid) {
           const cardHTML = `
-            <div class="room-card apple-glass" data-room-id="${room.room_id}" data-room-number="${room.room_number}">
+            <div class="room-card" data-room-id="${room.room_id}" data-room-number="${room.room_number}">
               <div class="room-card-image room-card-image-upload" onclick="triggerImageUpload(${room.room_id})" style="cursor: pointer; position: relative;" title="คลิกเพื่ออัปโหลดรูปภาพ">
                 ${room.room_image ? 
                   `<img src="/dormitory_management/Public/Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
@@ -2876,36 +2591,36 @@ main > div:first-of-type,
                       <path d="M2 16v-2" />
                       <path d="M22 16v-2" />
                     </svg>
-                    <span class="placeholder-upload-text apple-caption" style="text-align: center;">คลิกเพื่ออัปโหลด</span>
+                    <span class="placeholder-upload-text" style="font-size: 0.75rem; text-align: center;">คลิกเพื่ออัปโหลด</span>
                   </div>`
                 }
-                <div class="image-upload-overlay apple-glass">
+                <div class="image-upload-overlay">
                   <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="upload-icon">
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                     <polyline points="17 8 12 3 7 8" />
                     <line x1="12" y1="3" x2="12" y2="15" />
                   </svg>
-                  <span class="upload-text apple-callout">อัปโหลดรูป</span>
+                  <span class="upload-text">อัปโหลดรูป</span>
                 </div>
                 <input type="file" id="imageInput_${room.room_id}" accept="image/*" style="display: none;" onchange="uploadRoomImage(${room.room_id}, this)">
               </div>
               <div class="room-card-content">
-                <h3 class="apple-title-2" style="margin-bottom: var(--space-xs);">ห้อง ${room.room_number}</h3>
-                <div class="room-card-meta apple-body" style="color: var(--text-secondary); margin-bottom: var(--space-sm);">
+                <h3 class="room-card-number">ห้อง ${room.room_number}</h3>
+                <div class="room-card-meta">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                   ${room.type_name || '-'} • ${priceText} บาท/เดือน
                 </div>
                 ${priceNote}
-                <div class="room-card-status apple-callout ${room.room_status == 0 ? 'vacant' : 'occupied'}" style="margin-bottom: var(--space-md);">
+                <div class="room-card-status vacant">
                   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                  ${room.room_status == 0 ? 'ว่าง' : 'ไม่ว่าง'}
+                  ว่าง
                 </div>
                 <div class="room-card-actions">
-                  <button type="button" class="apple-button" onclick="editRoom(${room.room_id})" style="background-color: var(--system-blue); margin-right: var(--space-xs);">
+                  <button type="button" class="btn btn-edit" onclick="editRoom(${room.room_id})">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                     แก้ไข
                   </button>
-                  <button type="button" class="apple-button" onclick="deleteRoom(${room.room_id}, '${room.room_number}')" style="background-color: var(--system-red);">
+                  <button type="button" class="btn btn-delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                     ลบ
                   </button>
@@ -2927,7 +2642,7 @@ main > div:first-of-type,
                   <div class="room-image-small">
                     ${room.room_image ?
                       `<img src="/dormitory_management/Public/Assets/Images/Rooms/${room.room_image}" alt="ห้อง ${room.room_number}" />` :
-                      `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                      `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M4 12h16a2 2 0 0 1 2 2v4H2v-4a2 2 0 0 1 2-2Z" />
                         <path d="M6 12V7a2 2 0 0 1 2-2h2" />
                         <path d="M2 16v-2" />
@@ -2936,26 +2651,27 @@ main > div:first-of-type,
                     }
                   </div>
                 </td>
-                <td class="apple-body">
-                  <div class="apple-headline" style="color: var(--text-primary);">ห้อง ${room.room_number}</div>
-                  <div class="apple-callout" style="color: var(--text-secondary);">
-                    ${priceText} บาท • ประเภท: ${room.type_name || '-'}
-                  </div>
-                  ${priceInfo.useCustom ? `<div class="apple-caption" style="color: var(--text-tertiary);">ปกติ ${basePriceText} บาท</div>` : ''}
+                <td style="font-weight:600;color:#0f172a;">
+                  ห้อง ${room.room_number}<br>
+                  <span style="font-size:0.85rem;color:#64748b;font-weight:normal;">
+                    ${priceText} บาท<br>
+                    ประเภท: ${room.type_name || '-'}
+                  </span>
+                  ${priceInfo.useCustom ? `<div class="room-price-note" style="font-size:0.75rem;color:#94a3b8;margin-top:0.25rem;">ปกติ ${basePriceText} บาท</div>` : ''}
                 </td>
                 <td>
-                  <span class="room-card-status apple-callout ${room.room_status == 0 ? 'vacant' : 'occupied'}">
+                  <span class="room-card-status vacant">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                    ${room.room_status == 0 ? 'ว่าง' : 'ไม่ว่าง'}
+                    ว่าง
                   </span>
                 </td>
                 <td>
                   <div class="room-card-actions">
-                    <button type="button" class="apple-button" onclick="editRoom(${room.room_id})" style="background-color: var(--system-blue); margin-right: var(--space-xs);">
+                    <button type="button" class="btn btn-edit" onclick="editRoom(${room.room_id})">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                       แก้ไข
                     </button>
-                    <button type="button" class="apple-button" onclick="deleteRoom(${room.room_id}, '${room.room_number}')" style="background-color: var(--system-red);">
+                    <button type="button" class="btn btn-delete" onclick="deleteRoom(${room.room_id}, '${room.room_number}')">
                       <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
                       ลบ
                     </button>
