@@ -198,7 +198,7 @@ try {
                                                 OR DATE_FORMAT(e_min.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
                                             )
                                     )
-                                ORDER BY (e.exp_total - (e.room_price + e.exp_elec_chg + e.exp_water)) ASC, e.exp_id DESC
+                                ORDER BY (e.exp_total - (e.room_price + e.exp_elec_chg + e.exp_water)) DESC, e.exp_id DESC
                                 LIMIT 1
                         ) AS first_exp_status,
                         (

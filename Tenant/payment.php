@@ -63,7 +63,7 @@ try {
               )
               AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
               AND DATE_FORMAT(exp_month, '%Y-%m') <= ?
-            GROUP BY exp_month
+            GROUP BY DATE_FORMAT(exp_month, '%Y-%m')
         ) latest ON e.exp_id = latest.exp_id
         LEFT JOIN (
             SELECT exp_id, COALESCE(SUM(pay_amount), 0) AS submitted_amount
