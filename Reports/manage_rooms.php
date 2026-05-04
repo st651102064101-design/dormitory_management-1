@@ -647,6 +647,29 @@ try {
         box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.15);
         background: rgba(255, 59, 48, 0.1);
       }
+
+      /* Form Error & Hint Messages per ui-standard.md */
+      .form-error-message {
+        display: none;
+        color: var(--system-red);
+        font-size: 13px;
+        margin-top: 6px;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+      .room-form-group.has-error .form-error-message {
+        display: block;
+      }
+      .booking-form-group.has-error .form-error-message {
+        display: block;
+      }
+      .form-hint {
+        color: var(--text-secondary);
+        font-size: 13px;
+        margin-top: 4px;
+        line-height: 1.4;
+        font-weight: 400;
+      }
       
       .add-type-row { display:flex; align-items:center; gap:0.5rem; }
       
@@ -1716,11 +1739,13 @@ main > div:first-of-type,
                 <p style="margin-top:0.25rem;color:#64748b;">สร้างห้องพัก</p>
               </div>
             </div>
-            <form id="addRoomForm" enctype="multipart/form-data">
+            <form id="addRoomForm" enctype="multipart/form-data" novalidate>
               <div class="room-form">
                 <div class="room-form-group">
                   <label for="room_number">หมายเลขห้อง <span style="color:#f87171;">*</span></label>
-                  <input type="text" id="room_number" name="room_number" required maxlength="2" placeholder="เช่น 01, 02, ..." value="<?php echo htmlspecialchars($nextRoomNumber); ?>" />
+                  <input type="text" id="room_number" name="room_number" required maxlength="2" placeholder="เช่น 01, 02, ..." value="<?php echo htmlspecialchars($nextRoomNumber); ?>" aria-required="true" aria-describedby="room_number_error room_number_hint" />
+                  <p class="form-hint" id="room_number_hint"><?php echo __('max_2_characters'); ?></p>
+                  <p class="form-error-message" id="room_number_error"><?php echo __('field_required'); ?></p>
                 </div>
                 <div class="room-form-group room-form-split" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                   <div>
@@ -1729,13 +1754,14 @@ main > div:first-of-type,
                       <button type="button" class="add-type-btn" id="addTypeBtn">+ เพิ่มประเภทห้อง</button>
                       <button type="button" class="add-type-btn delete-type-btn" id="deleteTypeBtn">ลบประเภทห้อง</button>
                     </div>
-                    <select id="type_id" name="type_id" required>
+                    <select id="type_id" name="type_id" required aria-required="true" aria-describedby="type_id_error">
                       <?php foreach ($roomTypes as $index => $type): ?>
                         <option value="<?php echo $type['type_id']; ?>" <?php echo ($index === 0 ? 'selected' : ''); ?>>
                           <?php echo htmlspecialchars($type['type_name']); ?> (<?php echo number_format($type['type_price']); ?> บาท/เดือน)
                         </option>
                       <?php endforeach; ?>
                     </select>
+                    <p class="form-error-message" id="type_id_error"><?php echo __('field_required'); ?></p>
                   </div>
                    <div>
                      <label style="display:block;">สถานะห้อง</label>
@@ -1750,12 +1776,12 @@ main > div:first-of-type,
                 </div>
                 <div class="room-form-group">
                   <label for="room_price">ราคาห้องพิเศษ (บาท/เดือน)</label>
-                  <input type="number" id="room_price" name="room_price" min="0" step="1" placeholder="เว้นว่าง = ใช้ราคาตามประเภทห้อง" />
-                  <small style="display:block;margin-top:0.35rem;color:#94a3b8;font-size:0.8rem;">ใช้สำหรับลดราคาเฉพาะห้องในช่วงปิดเทอม</small>
+                  <input type="number" id="room_price" name="room_price" min="0" step="1" placeholder="เว้นว่าง = ใช้ราคาตามประเภทห้อง" aria-describedby="room_price_hint" />
+                  <p class="form-hint" id="room_price_hint"><?php echo __('special_price_for_specific_room'); ?></p>
                 </div>
                 <div class="room-form-group">
                   <label>สิ่งอำนวยความสะดวก:</label>
-                  <div id="add_features_checkboxes" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.35rem;">
+                  <div id="add_features_checkboxes" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.35rem;" aria-describedby="room_features_hint">
                     <?php
                     $addAllFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi', 'เฟอร์นิเจอร์', 'แอร์', 'ตู้เย็น'];
                     foreach ($addAllFeatures as $f):
@@ -1766,6 +1792,7 @@ main > div:first-of-type,
                     </label>
                     <?php endforeach; ?>
                   </div>
+                  <p class="form-hint" id="room_features_hint"><?php echo __('select_room_features'); ?></p>
                   <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
                     <input type="text" id="add_custom_feature_input" placeholder="เพิ่มสิ่งอำนวยความสะดวกเพิ่มเติม..." maxlength="40" style="flex:1;padding:0.4rem 0.65rem;border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:0.85rem;outline:none;">
                     <button type="button" onclick="addCustomFeature('add')" style="padding:0.4rem 0.9rem;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:0.85rem;cursor:pointer;white-space:nowrap;">+ เพิ่ม</button>
@@ -1773,7 +1800,8 @@ main > div:first-of-type,
                 </div>
                 <div class="room-form-group">
                   <label for="room_image">รูปภาพห้อง</label>
-                  <input type="file" id="room_image" name="room_image" accept="image/*" />
+                  <input type="file" id="room_image" name="room_image" accept="image/*" aria-describedby="room_image_hint" />
+                  <p class="form-hint" id="room_image_hint"><?php echo __('room_image_formats'); ?></p>
                 </div>
                 <div class="room-form-actions">
                   <button type="submit" class="animate-ui-add-btn" data-allow-submit="true" data-animate-ui-skip="true" data-no-modal="true" style="flex:2;">
@@ -2248,8 +2276,49 @@ main > div:first-of-type,
       // Handle Edit Form Submit via AJAX
       const editForm = document.getElementById('editForm');
       if (editForm) {
+        // Form validation function per ui-standard.md
+        function validateEditRoomForm(form) {
+          let isValid = true;
+          const roomNumber = form.querySelector('[name="room_number"]');
+          const typeId = form.querySelector('[name="type_id"]');
+          
+          // Validate room_number
+          const roomNumberGroup = roomNumber.closest('.booking-form-group');
+          if (!roomNumber.value.trim()) {
+            roomNumberGroup.classList.add('has-error');
+            roomNumber.setAttribute('aria-invalid', 'true');
+            isValid = false;
+          } else if (!/^\d{1,2}$/.test(roomNumber.value.trim())) {
+            roomNumberGroup.classList.add('has-error');
+            roomNumber.setAttribute('aria-invalid', 'true');
+            isValid = false;
+          } else {
+            roomNumberGroup.classList.remove('has-error');
+            roomNumber.setAttribute('aria-invalid', 'false');
+          }
+          
+          // Validate type_id
+          const typeIdGroup = typeId.closest('.booking-form-group');
+          if (!typeId.value) {
+            typeIdGroup.classList.add('has-error');
+            typeId.setAttribute('aria-invalid', 'true');
+            isValid = false;
+          } else {
+            typeIdGroup.classList.remove('has-error');
+            typeId.setAttribute('aria-invalid', 'false');
+          }
+          
+          return isValid;
+        }
+        
         editForm.addEventListener('submit', async (e) => {
           e.preventDefault();
+          
+          // Validate form before submission
+          if (!validateEditRoomForm(editForm)) {
+            showErrorToast('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
+            return;
+          }
           
           const roomNumber = document.getElementById('edit_room_number').value.trim();
           if (!roomNumber) {
@@ -2606,13 +2675,47 @@ main > div:first-of-type,
           typeSelectEl.value = defaultTypeId;
         }
         
+        // Form validation function per ui-standard.md
+        function validateRoomForm(form) {
+          let isValid = true;
+          const roomNumber = form.querySelector('[name="room_number"]');
+          const typeId = form.querySelector('[name="type_id"]');
+          
+          // Validate room_number
+          const roomNumberGroup = roomNumber.closest('.room-form-group');
+          if (!roomNumber.value.trim()) {
+            roomNumberGroup.classList.add('has-error');
+            roomNumber.setAttribute('aria-invalid', 'true');
+            isValid = false;
+          } else if (!/^\d{1,2}$/.test(roomNumber.value.trim())) {
+            roomNumberGroup.classList.add('has-error');
+            roomNumber.setAttribute('aria-invalid', 'true');
+            isValid = false;
+          } else {
+            roomNumberGroup.classList.remove('has-error');
+            roomNumber.setAttribute('aria-invalid', 'false');
+          }
+          
+          // Validate type_id
+          const typeIdGroup = typeId.closest('.room-form-group');
+          if (!typeId.value) {
+            typeIdGroup.classList.add('has-error');
+            typeId.setAttribute('aria-invalid', 'true');
+            isValid = false;
+          } else {
+            typeIdGroup.classList.remove('has-error');
+            typeId.setAttribute('aria-invalid', 'false');
+          }
+          
+          return isValid;
+        }
+        
         addRoomForm.addEventListener('submit', async (e) => {
           e.preventDefault();
           
-          const roomNumberInput = document.getElementById('room_number');
-          if (!roomNumberInput || !roomNumberInput.value.trim()) {
-            showErrorToast('กรุณากรอกหมายเลขห้อง');
-            roomNumberInput?.focus();
+          // Validate form before submission
+          if (!validateRoomForm(addRoomForm)) {
+            showErrorToast('กรุณากรอกข้อมูลที่จำเป็นให้ครบถ้วน');
             return;
           }
           
