@@ -189,11 +189,16 @@ try {
                                     END
                                 FROM expense e
                                 WHERE e.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
-                                    AND (
-                                        c.ctr_start IS NULL
-                                        OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                    AND DATE_FORMAT(e.exp_month, '%Y-%m') = (
+                                        SELECT MIN(DATE_FORMAT(e_min.exp_month, '%Y-%m'))
+                                        FROM expense e_min
+                                        WHERE e_min.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                                            AND (
+                                                c.ctr_start IS NULL
+                                                OR DATE_FORMAT(e_min.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                            )
                                     )
-                                ORDER BY e.exp_month ASC, e.exp_id DESC
+                                ORDER BY (e.exp_total - (e.room_price + e.exp_elec_chg + e.exp_water)) ASC, e.exp_id DESC
                                 LIMIT 1
                         ) AS first_exp_status,
                         (
@@ -241,11 +246,12 @@ try {
                                     END
                                 FROM expense e
                                 WHERE e.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
-                                    AND (
-                                        c.ctr_start IS NULL
-                                        OR DATE_FORMAT(e.exp_month, '%Y-%m') >= DATE_FORMAT(c.ctr_start, '%Y-%m')
+                                    AND DATE_FORMAT(e.exp_month, '%Y-%m') = (
+                                        SELECT MAX(DATE_FORMAT(e_max.exp_month, '%Y-%m'))
+                                        FROM expense e_max
+                                        WHERE e_max.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
                                     )
-                                ORDER BY e.exp_month DESC, e.exp_id DESC
+                                ORDER BY (e.exp_total - (e.room_price + e.exp_elec_chg + e.exp_water)) ASC, e.exp_id DESC
                                 LIMIT 1
                         ) AS latest_exp_status,
                         (
