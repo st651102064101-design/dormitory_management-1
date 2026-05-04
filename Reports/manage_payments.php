@@ -4190,7 +4190,12 @@ main > div:first-of-type,
           }
           
           console.log('Update successful, reloading page after 1.5 seconds...');
-          setTimeout(() => window.location.reload(), 1500);
+          setTimeout(() => {
+            // Add cache-buster query param to force fresh data
+            const url = new URL(window.location);
+            url.searchParams.set('t', Date.now());
+            window.location.href = url.toString();
+          }, 1500);
 
         } catch (err) {
           console.error('doUpdatePaymentStatus error:', err);

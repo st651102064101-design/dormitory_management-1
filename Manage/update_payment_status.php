@@ -88,6 +88,8 @@ function recalculateExpenseStatus(PDO $pdo, int $expId): void
 
     $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = ? WHERE exp_id = ?");
     $updateExpStmt->execute([$nextStatus, $expId]);
+    
+    error_log("[recalculateExpenseStatus] exp_id={$expId}: total={$expTotal}, approved={$approvedAmount}, pending={$pendingCount}, rejected={$rejectedCount} → status {$existingStatus} → {$nextStatus}");
 }
 
 // CSRF validation
