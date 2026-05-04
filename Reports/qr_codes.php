@@ -142,6 +142,13 @@ $defaultQrView = 'list';
             --apple-radius: 20px;
         }
 
+        /* Typography Foundation */
+        * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
         /* Light Theme CSS Variables */
         html.light-theme,
         body.light-theme,
