@@ -2889,7 +2889,7 @@ main > div:first-of-type,
                             if (raw.length > maxDigits) {
                                 raw = raw.slice(0, maxDigits);
                             }
-                            field.value = raw ? String(parseInt(raw, 10)) : '';
+                            field.value = raw;
                         }
                         function normalizeMeterValue(field, maxDigits) {
                             if (!field.value) return;
@@ -2901,7 +2901,7 @@ main > div:first-of-type,
                             if (value.length > maxDigits) {
                                 value = value.slice(0, maxDigits);
                             }
-                            field.value = String(parseInt(value, 10));
+                            field.value = value;
                         }
                         document.addEventListener('DOMContentLoaded', updateCheckinDate);
                         </script>
@@ -2919,7 +2919,7 @@ main > div:first-of-type,
                                 <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #cbd5e1;">
                                     💧 มิเตอร์น้ำ
                                 </label>
-                                <input type="number" name="water_meter_start" id="checkin_water_meter" min="0" max="9999999" step="1" placeholder="เลขมิเตอร์" inputmode="numeric" pattern="\d*"
+                                <input type="text" name="water_meter_start" id="checkin_water_meter" maxlength="7" placeholder="เลขมิเตอร์" inputmode="numeric" pattern="\d*"
                                     style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;"
                                     oninput="limitMeterDigits(this, 7)" onblur="normalizeMeterValue(this, 7)">
                                 <div id="checkin_water_meter_hint" style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.4rem;">เลขมิเตอร์ปัจจุบัน (สูงสุด 7 หลัก)</div>
@@ -2929,7 +2929,7 @@ main > div:first-of-type,
                                 <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: #cbd5e1;">
                                     ⚡ มิเตอร์ไฟ
                                 </label>
-                                <input type="number" name="elec_meter_start" id="checkin_elec_meter" min="0" max="99999" step="1" placeholder="เลขมิเตอร์" inputmode="numeric" pattern="\d*"
+                                <input type="text" name="elec_meter_start" id="checkin_elec_meter" maxlength="5" placeholder="เลขมิเตอร์" inputmode="numeric" pattern="\d*"
                                     style="width: 100%; padding: 0.875rem 0.75rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #f1f5f9; font-size: 1rem;"
                                     oninput="limitMeterDigits(this, 5)" onblur="normalizeMeterValue(this, 5)">
                                 <div id="checkin_elec_meter_hint" style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.4rem;">เลขมิเตอร์ปัจจุบัน (สูงสุด 5 หลัก)</div>
