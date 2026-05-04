@@ -338,8 +338,7 @@ try {
                 GROUP BY ctr_id
             ) cr2 ON cr1.checkin_id = cr2.latest_checkin_id
         ) cr ON c.ctr_id = cr.ctr_id
-        WHERE b.bkg_status != '0' 
-          AND COALESCE(b.bkg_status, '') <> '5'
+        WHERE (tw.id IS NULL OR tw.completed = 0 OR tw.completed = 1)
           AND (c.ctr_id IS NULL OR c.ctr_status <> '1')
           AND NOT EXISTS (
               SELECT 1 FROM contract c3
