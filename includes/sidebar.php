@@ -3961,9 +3961,10 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     <div class="group">
       <details id="nav-tenants" <?php echo $navTenantsOpen ? 'open' : ''; ?>>
         <summary>
-          <a href="manage_tenants.php" class="summary-link<?php echo $currentPage === 'manage_tenants.php' ? ' active' : ''; ?>">
+          <a href="manage_tenants.php" class="summary-link<?php echo $currentPage === 'manage_tenants.php' ? ' active' : ''; ?>" style="position:relative;padding-right:<?php echo $contractActionBadgeTotal > 0 ? '2.5rem' : ''; ?>">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
             <span class="summary-label"><?php echo __('menu_tenants'); ?></span>
+            <?php if ($contractActionBadgeTotal > 0): ?><span style="position:absolute;top:6px;right:6px;background:#f59e0b;color:white;border-radius:999px;min-width:22px;height:22px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;"><?php echo $contractActionBadgeTotal > 99 ? '99+' : $contractActionBadgeTotal; ?></span><?php endif; ?>
           </a>
           <span class="chev chev-toggle" data-target="nav-tenants" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
