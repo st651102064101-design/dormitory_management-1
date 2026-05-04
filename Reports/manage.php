@@ -52,6 +52,17 @@ $wizardCount = safeCount($pdo, "SELECT COUNT(*) FROM tenant_workflow WHERE compl
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css" />
     <style>
+      :root {
+        --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+      }
+
+      /* Typography Foundation */
+      * {
+        font-family: var(--font-apple);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+
       /* ===== Apple-Style Modern Design ===== */
       
       .manage-grid {
