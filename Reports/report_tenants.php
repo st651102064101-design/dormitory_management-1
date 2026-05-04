@@ -113,6 +113,13 @@ $statusMap = [
             --shadow-glow: 0 0 40px rgba(96,165,250,0.15);
         }
 
+        /* Typography Foundation */
+        * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
         /* ===== Page Header ===== */
         .page-header {
             background: var(--card-bg);

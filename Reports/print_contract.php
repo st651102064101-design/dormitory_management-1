@@ -86,12 +86,23 @@ if ($ctr_id === 0) {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css">
     <style>
+        :root {
+          --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+        }
+
+        /* Typography Foundation */
+        * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body,
         body.reports-page,
         body.reports-page .app-main,
         body.reports-page .container {
-            font-family: Tahoma, Arial, sans-serif;
+            font-family: var(--font-apple);
             background: #ffffff !important;
             color: #0f172a !important;
             min-height: 100vh;
@@ -646,19 +657,19 @@ function nameWithoutNickname($fullName) {
     <title>พิมพ์สัญญา</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Cordia New', Tahoma, serif; font-size: 14px; line-height: 1.6; background: #f5f5f5; padding: 20px; font-weight: normal; -webkit-font-smoothing: antialiased; }
-        @page { size: A4; margin: 0; font-family: 'Cordia New', Tahoma, serif; }
-        .print-container { width: 210mm; min-height: 297mm; height: auto; padding: 20mm 12.7mm 20mm 20.32mm; background: white; margin: 20px auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-family: 'Cordia New', Tahoma, serif; font-weight: normal; position: relative; }
-        .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #000; font-family: 'Cordia New', Tahoma, serif; }
-        .header h1 { font-size: 18px; margin-bottom: 5px; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
-        .header p { font-size: 13px; margin: 2px 0; font-family: 'Cordia New', Tahoma, serif; }
-        .section { margin-bottom: 18px; font-family: 'Cordia New', Tahoma, serif; }
-        .section-title { font-size: 13px; font-weight: normal; margin-bottom: 10px; padding: 5px; background: #f0f0f0; font-family: 'Cordia New', Tahoma, serif; }
-        .row { display: flex; margin-bottom: 8px; gap: 15px; font-family: 'Cordia New', Tahoma, serif; }
-        .col { flex: 1; font-family: 'Cordia New', Tahoma, serif; }
-        .form-field { border-bottom: 1px solid #000; padding: 2px 5px; font-size: 12px; min-height: 16px; font-family: 'Cordia New', Tahoma, serif; font-weight: normal; }
-        .label { font-size: 11px; font-weight: normal; display: block; margin-bottom: 2px; font-family: 'Cordia New', Tahoma, serif; }
-        .terms { font-size: 12px; margin-top: 10px; line-height: 1.5; font-family: 'Cordia New', Tahoma, serif; }
+        body { font-family: var(--font-apple); font-size: 14px; line-height: 1.6; background: #f5f5f5; padding: 20px; font-weight: normal; -webkit-font-smoothing: antialiased; }
+        @page { size: A4; margin: 0; font-family: var(--font-apple); }
+        .print-container { width: 210mm; min-height: 297mm; height: auto; padding: 20mm 12.7mm 20mm 20.32mm; background: white; margin: 20px auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); font-family: var(--font-apple); font-weight: normal; position: relative; }
+        .header { text-align: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid #000; font-family: var(--font-apple); }
+        .header h1 { font-size: 18px; margin-bottom: 5px; font-family: var(--font-apple); font-weight: normal; }
+        .header p { font-size: 13px; margin: 2px 0; font-family: var(--font-apple); }
+        .section { margin-bottom: 18px; font-family: var(--font-apple); }
+        .section-title { font-size: 13px; font-weight: normal; margin-bottom: 10px; padding: 5px; background: #f0f0f0; font-family: var(--font-apple); }
+        .row { display: flex; margin-bottom: 8px; gap: 15px; font-family: var(--font-apple); }
+        .col { flex: 1; font-family: var(--font-apple); }
+        .form-field { border-bottom: 1px solid #000; padding: 2px 5px; font-size: 12px; min-height: 16px; font-family: var(--font-apple); font-weight: normal; }
+        .label { font-size: 11px; font-weight: normal; display: block; margin-bottom: 2px; font-family: var(--font-apple); }
+        .terms { font-size: 12px; margin-top: 10px; line-height: 1.5; font-family: var(--font-apple); }
         .terms ol { margin-left: 20px; }
         .terms li { margin-bottom: 4px; font-family: 'Cordia New', Tahoma, serif; }
         .signatures { margin-top: 25px; display: grid; grid-template-columns: 1fr; gap: 18px 0; font-family: 'Cordia New', Tahoma, serif; }
