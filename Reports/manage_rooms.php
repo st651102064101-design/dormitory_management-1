@@ -45,8 +45,8 @@ try {
 
 
 // รับค่า sort จาก query parameter
-$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'newest';
-$orderBy = 'ORDER BY r.room_id DESC';
+$sortBy = isset($_GET['sort']) ? $_GET['sort'] : 'oldest';
+$orderBy = 'ORDER BY r.room_id ASC';
 
 switch ($sortBy) {
   case 'oldest':
@@ -56,8 +56,10 @@ switch ($sortBy) {
     $orderBy = 'ORDER BY CAST(r.room_number AS UNSIGNED) ASC';
     break;
   case 'newest':
-  default:
     $orderBy = 'ORDER BY r.room_id DESC';
+    break;
+  default:
+    $orderBy = 'ORDER BY r.room_id ASC';
 }
 
 // ดึงข้อมูลห้องพัก
@@ -1830,8 +1832,8 @@ main > div:first-of-type,
               </div>
               <div class="room-list-toolbar" style="display:flex;gap:0.75rem;align-items:center;">
                 <select id="sortSelect" onchange="changeSortBy(this.value)" style="padding:0.6rem 2.5rem 0.6rem 1rem;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;font-size:0.95rem;cursor:pointer;appearance:none;-webkit-appearance:none;">
-                  <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
                   <option value="oldest" <?php echo ($sortBy === 'oldest' ? 'selected' : ''); ?>>เพิ่มเก่าสุด</option>
+                  <option value="newest" <?php echo ($sortBy === 'newest' ? 'selected' : ''); ?>>เพิ่มล่าสุด</option>
                   <option value="room_number" <?php echo ($sortBy === 'room_number' ? 'selected' : ''); ?>>หมายเลขห้อง</option>
                 </select>
                 <button type="button" class="view-toggle-btn" id="viewToggleBtn" onclick="toggleView()">
