@@ -3853,7 +3853,7 @@ main > div:first-of-type,
         }
         
         body.innerHTML = proofHtml;
-        footer.innerHTML = `<button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(${payId}, '1', ${expId}); setTimeout(() => closeProofModal(), 1000);" style="display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยันการชำระเงิน</button>`;
+        footer.innerHTML = `<button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(${payId}, '1', ${expId});" style="display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยันการชำระเงิน</button>`;
         
         modal.classList.add('active');
       }
@@ -4192,7 +4192,8 @@ main > div:first-of-type,
             throw new Error(data.error || 'HTTP ' + response.status);
           }
 
-          // Success — reload page to guarantee fresh state
+          // Success — close proof modal, show success, then reload immediately.
+          closeProofModal();
           if (typeof showSuccessToast === 'function') {
             showSuccessToast(data.message || 'อัปเดตสถานะเรียบร้อย');
           } else {
@@ -4200,7 +4201,7 @@ main > div:first-of-type,
           }
           
           console.log('Update successful, reloading page...');
-          setTimeout(() => window.location.reload(), 800);
+          window.location.reload();
 
         } catch (err) {
           console.error('doUpdatePaymentStatus error:', err);
