@@ -1937,7 +1937,7 @@ main > div:first-of-type,
                   </thead>
                   <tbody>
                     <?php foreach ($rooms as $index => $room): ?>
-                      <tr class="room-row <?php echo $index >= 20 ? 'hidden-row' : ''; ?>" data-index="<?php echo $index; ?>" data-room-id="<?php echo $room['room_id']; ?>" data-room-number="<?php echo htmlspecialchars($room['room_number']); ?>">
+                      <tr class="room-row" data-index="<?php echo $index; ?>" data-room-id="<?php echo $room['room_id']; ?>" data-room-number="<?php echo htmlspecialchars($room['room_number']); ?>">
                         <td>
                           <div class="room-image-small">
                             <?php if (!empty($room['room_image'])): ?>
