@@ -269,8 +269,16 @@ $thaiMonthsFull = ['', 'มกราคม', 'กุมภาพันธ์', '
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <style>
         :root {
+            --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
             --report-accent: #f97316;
             --report-accent-dark: #ea580c;
+        }
+
+        /* Typography Foundation */
+        * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
 
         body[data-report-tab="water"] {

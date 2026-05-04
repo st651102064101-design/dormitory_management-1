@@ -126,6 +126,7 @@ $defaultQrView = 'list';
     </script>
     <style>
         :root {
+            --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
             --apple-blue: #007aff;
             --apple-green: #34c759;
             --apple-purple: #af52de;

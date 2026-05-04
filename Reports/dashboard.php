@@ -258,11 +258,19 @@ try {
     </script>
     <style>
         :root {
+            --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
             --dash-bg-a: rgba(99, 102, 241, 0.14);
             --dash-bg-b: rgba(14, 165, 233, 0.1);
             --dash-bg-c: rgba(16, 185, 129, 0.1);
             --dash-edge: rgba(226, 232, 240, 0.92);
             --dash-shadow: 0 8px 24px -14px rgba(15, 23, 42, 0.38);
+        }
+
+        /* Typography Foundation */
+        * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
 
         body {

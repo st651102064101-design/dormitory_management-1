@@ -99,6 +99,7 @@ $statusMap = [
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
         :root {
+            --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
             --theme-bg: <?php echo $themeColor; ?>;
             --card-bg: linear-gradient(145deg, rgba(30,41,59,0.95), rgba(15,23,42,0.98));
             --glass-bg: rgba(255,255,255,0.03);

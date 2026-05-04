@@ -265,6 +265,17 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         })();
     </script>
     <style>
+        :root {
+          --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+        }
+
+        /* Typography Foundation */
+        html, body, * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
         html, body.reports-page {
             font-family: 'Prompt', system-ui, -apple-system, 'Segoe UI', sans-serif !important;
         }

@@ -602,6 +602,17 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/animate-ui.css">
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/confirm-modal.css">
     <style>
+        :root {
+          --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+        }
+
+        /* Typography Foundation */
+        * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
+        }
+
         /* ============================================================
            🎨 FUTURISTIC WIZARD UI — Bright Indigo-Purple Theme
            ============================================================ */
