@@ -4124,18 +4124,7 @@ main > div:first-of-type,
 
       // Update payment status
       async function updatePaymentStatus(payId, newStatus, expId) {
-        const statusText = newStatus === '1' ? 'ยืนยันการชำระเงิน' : 'ยกเลิกการยืนยัน';
-        
-        let confirmed = false;
-        if (typeof showAppleConfirm === 'function') {
-          confirmed = await showAppleConfirm(
-            `คุณต้องการ${statusText}นี้หรือไม่?`,
-            'ยืนยันการดำเนินการ'
-          );
-        }
-        if (confirmed) {
-          await doUpdatePaymentStatus(payId, newStatus, expId);
-        }
+        await doUpdatePaymentStatus(payId, newStatus, expId);
       }
 
       async function doUpdatePaymentStatus(payId, newStatus, expId) {
