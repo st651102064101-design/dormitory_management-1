@@ -42,54 +42,51 @@ function recalculateExpenseStatus(PDO $pdo, int $expId): void
     $expenseStmt->execute([$expId]);
     $expense = $expenseStmt->fetch(PDO::FETCH_ASSOC);
     if (!$expense) {
+        error_log("[recalculateExpenseStatus] Expense not found: exp_id={$expId}");
         return;
     }
 
     $expTotal = (float)($expense['exp_total'] ?? 0);
     $existingStatus = (string)($expense['exp_status'] ?? '0');
-    $hasPayRemark = hasPayRemarkColumn($pdo);
-
-    if (true) {
-        $approvedSql = "SELECT COALESCE(SUM(pay_amount), 0) FROM payment WHERE exp_id = ? AND pay_status = '1'";
-        $pendingSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0'";
-    } else {
-        $approvedSql = "SELECT COALESCE(SUM(pay_amount), 0) FROM payment WHERE exp_id = ? AND pay_status = '1'";
-        $pendingSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0'";
-    }
-
+    
+    // Get approved payments (status = '1', excluding deposits)
+    $approvedSql = "SELECT COALESCE(SUM(pay_amount), 0) FROM payment WHERE exp_id = ? AND pay_status = '1' AND TRIM(COALESCE(pay_remark, '')) NOT LIKE '%มัดจำ%'";
     $approvedStmt = $pdo->prepare($approvedSql);
     $approvedStmt->execute([$expId]);
     $approvedAmount = (float)($approvedStmt->fetchColumn() ?: 0);
 
+    // Get pending payments (status = '0', excluding deposits)
+    $pendingSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '0' AND TRIM(COALESCE(pay_remark, '')) NOT LIKE '%มัดจำ%'";
     $pendingStmt = $pdo->prepare($pendingSql);
     $pendingStmt->execute([$expId]);
     $pendingCount = (int)($pendingStmt->fetchColumn() ?: 0);
 
-    // ตรวจสอบว่ามี payment ที่ถูกตีกลับหรือไม่
+    // Check for rejected payments
     $rejectedSql = "SELECT COUNT(*) FROM payment WHERE exp_id = ? AND pay_status = '2'";
     $rejectedStmt = $pdo->prepare($rejectedSql);
     $rejectedStmt->execute([$expId]);
     $rejectedCount = (int)($rejectedStmt->fetchColumn() ?: 0);
 
-    // ถ้ามี payment ที่ถูกตีกลับ ให้ status เป็น 4 (ตีกลับ)
+    // Determine new status
     if ($rejectedCount > 0) {
-        $nextStatus = '4';
+        $nextStatus = '4';  // Rejected
     } elseif ($expTotal > 0 && $approvedAmount >= ($expTotal - 0.00001)) {
-        $nextStatus = '1';
+        $nextStatus = '1';  // Fully paid
     } elseif ($approvedAmount > 0) {
-        $nextStatus = '3';
+        $nextStatus = '3';  // Partially paid
     } elseif ($pendingCount > 0) {
-        $nextStatus = '2';
+        $nextStatus = '2';  // Pending
     } elseif ($existingStatus === '4') {
-        $nextStatus = '4';
+        $nextStatus = '4';  // Keep rejected status
     } else {
-        $nextStatus = '0';
+        $nextStatus = '0';  // Unpaid
     }
 
+    // Update expense status
     $updateExpStmt = $pdo->prepare("UPDATE expense SET exp_status = ? WHERE exp_id = ?");
     $updateExpStmt->execute([$nextStatus, $expId]);
     
-    error_log("[recalculateExpenseStatus] exp_id={$expId}: total={$expTotal}, approved={$approvedAmount}, pending={$pendingCount}, rejected={$rejectedCount} → status {$existingStatus} → {$nextStatus}");
+    error_log("[recalculateExpenseStatus] exp_id={$expId}: total={$expTotal}, approved={$approvedAmount}, pending={$pendingCount}, rejected={$rejectedCount} → {$existingStatus} → {$nextStatus}");
 }
 
 // CSRF validation
