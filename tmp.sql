@@ -1,1 +1,0 @@
-DESCRIBE tenant_workflow;
