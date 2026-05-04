@@ -124,7 +124,8 @@ foreach ($expenses as $expIndex => $exp) {
         $pendingAmount = $pendingAmount + $depositPendingAmount;
     }
     
-    $remaining = max(0, $expTotal - $paidAmount);
+    $statusBasisAmount = $isDepositOnly ? $ctrDeposit : $expTotal;
+    $remaining = max(0, $statusBasisAmount - $paidAmount);
     
     if ($isDepositOnly) {
         $totalPaid += max(0, $paidAmount);
@@ -481,11 +482,13 @@ $precomputedBillCount = $billCount;
                 // เพื่อป้องกันบั๊กเวลา tenant จ่ายผ่านหน้าแจ้งชำระเงินปกติแล้วไม่ได้ระบุ remark
                 $paidAmount = $paidAmount + $depositPaidAmount;
                 $pendingAmount = $pendingAmount + $depositPendingAmount;
-                $remaining = max(0, $expTotal - $paidAmount);
             }
 
+            $statusBasisAmount = $isDepositOnly ? $ctrDeposit : $expTotal;
+            $remaining = max(0, $statusBasisAmount - $paidAmount);
+
             $statusKey = '0';
-            if ($paidAmount >= $expTotal && $expTotal > 0) {
+            if ($paidAmount >= $statusBasisAmount && $statusBasisAmount > 0) {
                 $statusKey = '1';
             } elseif ($paidAmount > 0) {
                 $statusKey = '3';
