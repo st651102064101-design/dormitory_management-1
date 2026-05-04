@@ -291,6 +291,7 @@ try {
       WHERE c.ctr_status = '0'
         AND p.exp_id IS NULL
         AND DATE_FORMAT(e.exp_month, '%Y-%m') <= '{$effectiveCurrentMonth}'
+        AND e.exp_status NOT IN ('1')
         AND EXISTS (
           SELECT 1 FROM utility u
           WHERE u.ctr_id = e.ctr_id
