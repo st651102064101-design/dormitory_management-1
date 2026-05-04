@@ -4616,11 +4616,11 @@ async function handleGoogleUnlink(e) {
     const badge = details.querySelector('summary > a > span[style*="position:absolute"]');
     
     if (isOpening) {
-      // Opening: set open then trigger animation
+      // Opening: hide badge
       details.open = true;
       if (badge) {
-        badge.style.display = 'none';
-        badge.style.visibility = 'hidden';
+        badge.dataset.badgeHidden = 'true';
+        badge.style.display = 'none !important';
       }
       
       // Force reflow to trigger animation
@@ -4642,12 +4642,13 @@ async function handleGoogleUnlink(e) {
         item.style.animationDelay = (0.03 * (items.length - index - 1)) + 's';
       });
       
-      // Close after animation completes
+      // Close after animation completes and show badge again
       setTimeout(() => {
         details.open = false;
-        if (badge) {
-          badge.style.display = 'inline-flex';
-          badge.style.visibility = 'visible';
+        if (badge && badge.dataset.badgeHidden === 'true') {
+          // Remove the inline display property to restore original visibility
+          badge.style.display = '';
+          delete badge.dataset.badgeHidden;
         }
       }, 300 + (items.length * 30));
     }
