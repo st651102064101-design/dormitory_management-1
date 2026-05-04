@@ -468,66 +468,66 @@ try {
       .room-card-actions .btn-edit,
       body.live-light .room-card-actions .btn-edit,
       html.light-theme .room-card-actions .btn-edit {
-        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-        border: 1px solid #1d4ed8 !important;
-        color: #ffffff !important;
+        background: var(--system-blue) !important;
+        border: 1px solid var(--system-blue) !important;
+        color: #FFFFFF !important;
       }
 
       .room-card-actions .btn-edit svg,
       body.live-light .room-card-actions .btn-edit svg,
       html.light-theme .room-card-actions .btn-edit svg {
-        color: #ffffff !important;
+        color: #FFFFFF !important;
         stroke: currentColor;
       }
       
       .room-card-actions .btn-edit:hover,
       body.live-light .room-card-actions .btn-edit:hover,
       html.light-theme .room-card-actions .btn-edit:hover {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-        border-color: #1e40af !important;
-        color: #ffffff !important;
+        background: #0068CC !important;
+        border-color: #0068CC !important;
+        color: #FFFFFF !important;
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(37,99,235,0.35);
+        box-shadow: 0 8px 20px rgba(0, 122, 255, 0.35);
       }
       
       .room-card-actions .btn-delete,
       body.live-light .room-card-actions .btn-delete,
       html.light-theme .room-card-actions .btn-delete {
-        background: #dc2626 !important;
-        color: #ffffff !important;
-        border: 1px solid #b91c1c !important;
+        background: var(--system-red) !important;
+        color: #FFFFFF !important;
+        border: 1px solid var(--system-red) !important;
       }
-
+      
       .room-card-actions .btn-delete svg,
       body.live-light .room-card-actions .btn-delete svg,
       html.light-theme .room-card-actions .btn-delete svg {
-        color: #ffffff !important;
+        color: #FFFFFF !important;
         stroke: currentColor;
       }
       
       .room-card-actions .btn-delete:hover,
       body.live-light .room-card-actions .btn-delete:hover,
       html.light-theme .room-card-actions .btn-delete:hover {
-        background: #b91c1c !important;
-        border-color: #991b1b !important;
-        color: #ffffff !important;
+        background: #E63C34 !important;
+        border-color: #E63C34 !important;
+        color: #FFFFFF !important;
         transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(239,68,68,0.2);
+        box-shadow: 0 8px 20px rgba(255, 59, 48, 0.35);
       }
 
       /* Keep action button colors stable even if global button styles load later */
       .rooms-grid .room-card-actions button.btn.btn-edit,
       .rooms-table .room-card-actions button.btn.btn-edit {
-        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
-        border: 1px solid #1d4ed8 !important;
-        color: #ffffff !important;
+        background: var(--system-blue) !important;
+        border: 1px solid var(--system-blue) !important;
+        color: #FFFFFF !important;
       }
 
       .rooms-grid .room-card-actions button.btn.btn-delete,
       .rooms-table .room-card-actions button.btn.btn-delete {
-        background: #dc2626 !important;
-        border: 1px solid #b91c1c !important;
-        color: #ffffff !important;
+        background: var(--system-red) !important;
+        border: 1px solid var(--system-red) !important;
+        color: #FFFFFF !important;
       }
 
       .rooms-grid .room-card-actions button.btn.btn-edit svg,
@@ -564,6 +564,12 @@ try {
         font-size: 0.9rem;
         display: block;
         margin-bottom: 0.5rem;
+        position: relative;
+      }
+      .room-form-group label span[style*="red"] {
+        color: var(--system-red);
+        margin-left: 4px;
+        font-weight: 600;
       }
       
       .room-form-group input,
@@ -586,15 +592,26 @@ try {
         box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
         background: rgba(0,0,0,0.4);
       }
+      .room-form-group input:invalid,
+      .room-form-group select:invalid {
+        border-color: var(--system-red);
+        background: rgba(255, 59, 48, 0.08);
+      }
+      .room-form-group input:invalid:focus,
+      .room-form-group select:invalid:focus {
+        border-color: var(--system-red);
+        box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.15);
+        background: rgba(255, 59, 48, 0.1);
+      }
       
       .add-type-row { display:flex; align-items:center; gap:0.5rem; }
       
       .add-type-btn {
         padding: 0.9rem 1.1rem;
-        border-radius: 12px;
-        border: 1px dashed rgba(96,165,250,0.4);
-        background: rgba(59,130,246,0.08);
-        color: #60a5fa;
+        border-radius: 11px;
+        border: 1px dashed rgba(0, 122, 255, 0.4);
+        background: rgba(0, 122, 255, 0.08);
+        color: var(--system-blue);
         font-weight: 600;
         cursor: pointer;
         white-space: nowrap;
@@ -602,20 +619,20 @@ try {
       }
       
       .add-type-btn:hover {
-        background: rgba(59,130,246,0.15);
-        border-color: rgba(96,165,250,0.6);
+        background: rgba(0, 122, 255, 0.15);
+        border-color: rgba(0, 122, 255, 0.6);
         transform: translateY(-1px);
       }
       
       .delete-type-btn {
-        border-color: rgba(248,113,113,0.4);
-        color: #f87171;
-        background: rgba(239,68,68,0.08);
+        border-color: rgba(255, 59, 48, 0.4);
+        color: var(--system-red);
+        background: rgba(255, 59, 48, 0.08);
       }
       
       .delete-type-btn:hover {
-        background: rgba(239,68,68,0.15);
-        border-color: rgba(248,113,113,0.6);
+        background: rgba(255, 59, 48, 0.15);
+        border-color: rgba(255, 59, 48, 0.6);
       }
       
       .room-form-actions {
@@ -702,6 +719,12 @@ try {
         font-weight: 600;
         font-size: 0.9rem;
         margin-bottom: 0.5rem;
+        position: relative;
+      }
+      .booking-form-group label span[style*="red"] {
+        color: var(--system-red);
+        margin-left: 4px;
+        font-weight: 600;
       }
       
       .booking-form-group input,
@@ -725,6 +748,19 @@ try {
         border-color: #3b82f6;
         box-shadow: 0 0 0 4px rgba(59,130,246,0.15);
       }
+      .booking-form-group input:invalid,
+      .booking-form-group select:invalid,
+      .booking-form-group textarea:invalid {
+        border-color: var(--system-red);
+        background: rgba(255, 59, 48, 0.08);
+      }
+      .booking-form-group input:invalid:focus,
+      .booking-form-group select:invalid:focus,
+      .booking-form-group textarea:invalid:focus {
+        border-color: var(--system-red);
+        box-shadow: 0 0 0 4px rgba(255, 59, 48, 0.15);
+        background: rgba(255, 59, 48, 0.1);
+      }
       
       .booking-form-actions {
         display: flex;
@@ -735,10 +771,10 @@ try {
       .btn-submit {
         flex: 1;
         padding: 1rem 1.5rem;
-        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        background: var(--system-blue);
         color: white;
         border: none;
-        border-radius: 14px;
+        border-radius: 11px;
         font-weight: 600;
         font-size: 1rem;
         cursor: pointer;
@@ -746,18 +782,23 @@ try {
       }
       
       .btn-submit:hover {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8);
-        box-shadow: 0 10px 30px rgba(37,99,235,0.4);
+        background: #0068CC;
+        box-shadow: 0 10px 30px rgba(0, 122, 255, 0.4);
         transform: translateY(-2px);
+      }
+      
+      .btn-submit:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       
       .btn-cancel {
         flex: 1;
         padding: 1rem 1.5rem;
-        background: rgba(100,116,139,0.15);
-        color: #94a3b8;
-        border: 1px solid rgba(148,163,184,0.2);
-        border-radius: 14px;
+        background: rgba(0, 122, 255, 0.1);
+        color: var(--system-blue);
+        border: 1.5px solid var(--system-blue);
+        border-radius: 11px;
         font-weight: 600;
         font-size: 1rem;
         cursor: pointer;
@@ -765,17 +806,22 @@ try {
       }
       
       .btn-cancel:hover {
-        background: rgba(100,116,139,0.25);
-        border-color: rgba(148,163,184,0.4);
+        background: rgba(0, 122, 255, 0.15);
+        border-color: var(--system-blue);
+      }
+      
+      .btn-cancel:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       
       /* View Toggle */
       .view-toggle-btn {
         padding: 0.7rem 1.3rem;
-        background: rgba(255,255,255,0.05);
-        color: #94a3b8;
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 10px;
+        background: rgba(0, 122, 255, 0.1);
+        color: var(--system-blue);
+        border: 1px solid rgba(0, 122, 255, 0.3);
+        border-radius: 11px;
         font-weight: 600;
         cursor: pointer;
         transition: all 0.25s ease;
@@ -785,9 +831,14 @@ try {
       }
       
       .view-toggle-btn:hover {
-        background: rgba(255,255,255,0.1);
-        color: #f8fafc;
-        border-color: rgba(255,255,255,0.2);
+        background: rgba(0, 122, 255, 0.15);
+        color: var(--system-blue);
+        border-color: rgba(0, 122, 255, 0.5);
+      }
+      
+      .view-toggle-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
       }
       
       /* Table View */
@@ -917,9 +968,9 @@ try {
 
       body.live-light .load-more-btn,
       html.light-theme .load-more-btn {
-        background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+        background: var(--system-blue) !important;
         color: #ffffff !important;
-        border: 1px solid #1d4ed8 !important;
+        border: 1px solid var(--system-blue) !important;
       }
       
       .load-more-btn:hover,
@@ -933,10 +984,10 @@ try {
 
       body.live-light .load-more-btn:hover,
       html.light-theme .load-more-btn:hover {
-        background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
-        border-color: #1e40af !important;
+        background: #0068CC !important;
+        border-color: #0068CC !important;
         color: #ffffff !important;
-        box-shadow: 0 10px 30px rgba(37,99,235,0.35);
+        box-shadow: 0 10px 30px rgba(0, 122, 255, 0.35);
       }
 
       .load-more-container:has(.load-more-btn.hidden) {
