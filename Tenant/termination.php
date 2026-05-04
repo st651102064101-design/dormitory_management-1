@@ -262,14 +262,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     }
 }
 
-// ดึงจำนวนบิลค้างชำระ
+// ดึงจำนวนบิลค้างชำระและยอดรวม
 $unpaidBillCount = 0;
+$unpaidTotal = 0;
 if ($sharedUnpaidBillCount !== null) {
     $unpaidBillCount = (int)$sharedUnpaidBillCount;
 } else {
     try {
         $ubStmt = $pdo->prepare("
-            SELECT COUNT(*) FROM expense e
+            SELECT COUNT(*) as cnt,
+                   SUM(GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE((
+                        SELECT SUM(p.pay_amount) FROM payment p
+                        WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
+                        AND TRIM(COALESCE(p.pay_remark, '')) <> 'มัดจำ'
+                    ), 0))
+                    +
+                    GREATEST(0, (e.exp_total - (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0))) - COALESCE((
+                        SELECT SUM(p.pay_amount) FROM payment p
+                        WHERE p.exp_id = e.exp_id AND p.pay_status IN ('0','1')
+                        AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+                    ), 0))
+                ) > 0) as total_outstanding
+            FROM expense e
             INNER JOIN (
                 SELECT MAX(exp_id) AS exp_id FROM expense WHERE ctr_id = ? GROUP BY exp_month
             ) latest ON e.exp_id = latest.exp_id
@@ -289,7 +303,9 @@ if ($sharedUnpaidBillCount !== null) {
                 ) > 0
         ");
         $ubStmt->execute([$contract['ctr_id'], $contract['ctr_id']]);
-        $unpaidBillCount = (int)$ubStmt->fetchColumn();
+        $ubData = $ubStmt->fetch(PDO::FETCH_ASSOC);
+        $unpaidBillCount = (int)($ubData['cnt'] ?? 0);
+        $unpaidTotal = (float)($ubData['total_outstanding'] ?? 0);
     } catch (Exception $e) { error_log("Exception in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 }
 
@@ -842,7 +858,7 @@ function _bankFormFields(?array $term): string {
                 </ul>
             </div>
             
-            <?php if ($unpaidBillCount > 0): ?>
+            <?php if ($unpaidBillCount > 0 && $unpaidTotal > 0): ?>
             <div style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);border-radius:12px;padding:1rem;margin-bottom:1rem;">
                 <div style="color:#f87171;font-weight:600;font-size:0.9rem;">⚠️ ยังมีบิลค้างชำระ <?php echo $unpaidBillCount; ?> รายการ</div>
                 <div style="color:#fca5a5;font-size:0.85rem;margin-top:0.3rem;">กรุณาชำระค่าห้องให้ครบทุกเดือนก่อนแจ้งยกเลิกสัญญา</div>

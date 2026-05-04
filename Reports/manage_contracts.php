@@ -3102,7 +3102,7 @@ body.loading-skeleton {
       // ไม่แสดงสำหรับสัญญาที่ยกเลิกแล้ว
       if (c.ctr_status === '1') return '';
       const ps = data.paymentSummary;
-      if (!ps || parseInt(ps.unpaid_count) === 0) return '';
+      if (!ps || parseInt(ps.unpaid_count) === 0 || parseFloat(ps.total_outstanding) <= 0) return '';
       return `
         <div class="cdr-section" style="border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.05);border-radius:12px;padding:1rem;">
           <div style="color:${t.red};font-weight:600;font-size:0.95rem;margin-bottom:0.4rem;">
