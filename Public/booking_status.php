@@ -440,9 +440,8 @@ if ($currentStatus === '1') {
     <link rel="icon" href="/dormitory_management/Public/Assets/Images/<?php echo htmlspecialchars($logoFilename); ?>">
     <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        
         :root {
+            --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
             --primary: <?php echo $themeColor; ?>;
             --action-bg: #2563eb;
             --action-bg-hover: #1d4ed8;
@@ -457,6 +456,13 @@ if ($currentStatus === '1') {
             --success: #22c55e;
             --warning: #f59e0b;
             --danger: #ef4444;
+        }
+
+        /* Typography Foundation */
+        * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
 
         body.theme-light {
