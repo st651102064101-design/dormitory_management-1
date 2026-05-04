@@ -3340,6 +3340,10 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
     /* Hide badge when dropdown is open */
     #nav-tenants[open] > summary span[style*="position:absolute"] {
       display: none !important;
+      visibility: hidden !important;
+    }
+    #nav-tenants[open] > summary > a > span[style*="position:absolute;top:6px;right:32px"] {
+      display: none !important;
     }
   }</style>
 <style>
@@ -4608,9 +4612,13 @@ async function handleGoogleUnlink(e) {
 
     const isOpening = !details.open;
     
+    // Hide/show badge for nav-tenants
+    const badge = details.querySelector('span[style*="position:absolute;top:6px;right:32px"]');
+    
     if (isOpening) {
       // Opening: set open then trigger animation
       details.open = true;
+      if (badge) badge.style.display = 'none';
       
       // Force reflow to trigger animation
       void details.offsetHeight;
@@ -4634,6 +4642,7 @@ async function handleGoogleUnlink(e) {
       // Close after animation completes
       setTimeout(() => {
         details.open = false;
+        if (badge) badge.style.display = 'inline-flex';
       }, 300 + (items.length * 30));
     }
 
