@@ -265,6 +265,24 @@ if (!function_exists('formatNewsDateForManageNews')) {
         border-color: var(--system-red);
         box-shadow: inset 0 0 0 1px var(--system-red), 0 0 0 3px rgba(255, 59, 48, 0.1);
       }
+      .form-error-message {
+        display: none;
+        color: var(--system-red);
+        font-size: 13px;
+        margin-top: 6px;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+      .news-form-group.has-error .form-error-message {
+        display: block;
+      }
+      .form-hint {
+        color: var(--text-secondary);
+        font-size: 13px;
+        margin-top: 4px;
+        line-height: 1.4;
+        font-weight: 400;
+      }
       .news-form-actions {
         display: flex;
         gap: 12px;
@@ -302,7 +320,7 @@ if (!function_exists('formatNewsDateForManageNews')) {
         display: flex;
         gap: 12px;
         font-size: 13px;
-        color: #FFFFFF;
+        color: var(--text-secondary);
         margin-bottom: 16px;
         font-weight: 400;
         padding-bottom: 16px;
@@ -313,17 +331,39 @@ if (!function_exists('formatNewsDateForManageNews')) {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: rgba(0, 0, 0, 0.15);
+        background: rgba(0, 122, 255, 0.08);
         padding: 6px 12px;
         border-radius: 8px;
+        color: var(--text-secondary);
       }
       @media (prefers-color-scheme: dark) {
         .news-card-meta {
-          color: #FFFFFF;
+          color: var(--text-secondary);
         }
         .news-card-meta span {
-          background: rgba(255, 255, 255, 0.1);
+          background: rgba(10, 132, 255, 0.12);
+          color: rgba(235, 235, 245, 0.8);
         }
+      }
+
+      /* Form Error Styling per ui-standard.md */
+      .form-error-message {
+        display: none;
+        color: var(--system-red);
+        font-size: 13px;
+        margin-top: 6px;
+        font-weight: 500;
+        line-height: 1.4;
+      }
+      .news-form-group.has-error .form-error-message {
+        display: block;
+      }
+      .form-hint {
+        color: var(--text-secondary);
+        font-size: 13px;
+        margin-top: 4px;
+        line-height: 1.4;
+        font-weight: 400;
       }
       .news-card-content {
         color: var(--text-secondary);
@@ -827,24 +867,29 @@ main > div:first-of-type,
               <h1><?php echo __('news_add_new_title'); ?></h1>
               <p><?php echo __('news_add_new_subtitle'); ?></p>
             </div>
-            <form action="../Manage/process_news.php" method="post" id="newsForm">
+            <form action="../Manage/process_news.php" method="post" id="newsForm" novalidate>
               <div class="news-form">
                 <div class="news-form-group">
                   <label for="news_title"><?php echo __('news_title'); ?> <span style="color:var(--system-red);">*</span></label>
-                  <input type="text" id="news_title" name="news_title" required maxlength="255" placeholder="<?php echo htmlspecialchars(__('news_title_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" />
+                  <input type="text" id="news_title" name="news_title" required maxlength="255" placeholder="<?php echo htmlspecialchars(__('news_title_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" aria-required="true" aria-describedby="news_title_error news_title_hint" />
+                  <p class="form-hint" id="news_title_hint"><?php echo __('max_255_characters'); ?></p>
+                  <p class="form-error-message" id="news_title_error"><?php echo __('field_required'); ?></p>
                 </div>
                 <div class="news-form-group">
                   <label for="news_details"><?php echo __('news_content'); ?> <span style="color:var(--system-red);">*</span></label>
-                  <textarea id="news_details" name="news_details" required placeholder="<?php echo htmlspecialchars(__('news_content_placeholder'), ENT_QUOTES, 'UTF-8'); ?>"></textarea>
+                  <textarea id="news_details" name="news_details" required placeholder="<?php echo htmlspecialchars(__('news_content_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" aria-required="true" aria-describedby="news_details_error"></textarea>
+                  <p class="form-error-message" id="news_details_error"><?php echo __('field_required'); ?></p>
                 </div>
                 <div class="news-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
                   <div>
                     <label for="news_date"><?php echo __('news_date'); ?> <span style="color:var(--system-red);">*</span></label>
-                    <input type="date" id="news_date" name="news_date" required value="<?php echo date('Y-m-d'); ?>" />
+                    <input type="date" id="news_date" name="news_date" required value="<?php echo date('Y-m-d'); ?>" aria-required="true" aria-describedby="news_date_error news_date_hint" />
+                    <p class="form-hint" id="news_date_hint"><?php echo __('select_valid_date'); ?></p>
+                    <p class="form-error-message" id="news_date_error"><?php echo __('field_required'); ?></p>
                   </div>
                   <div>
                     <label for="news_by"><?php echo __('news_publisher'); ?></label>
-                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="<?php echo htmlspecialchars(__('news_publisher_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" readonly style="background:var(--bg-secondary); border-color:var(--separator); cursor:not-allowed; color:var(--text-secondary);" />
+                    <input type="text" id="news_by" name="news_by" maxlength="100" placeholder="<?php echo htmlspecialchars(__('news_publisher_placeholder'), ENT_QUOTES, 'UTF-8'); ?>" value="<?php echo htmlspecialchars($_SESSION['admin_name'] ?? $_SESSION['admin_username'] ?? ''); ?>" readonly style="background:var(--bg-secondary); border-color:var(--separator); cursor:not-allowed; color:var(--text-secondary);" aria-disabled="true" />
                   </div>
                 </div>
                 <div class="news-form-actions">
@@ -938,22 +983,25 @@ main > div:first-of-type,
           <input type="hidden" name="news_id" id="edit_news_id">
           
           <div class="booking-form-group">
-            <label><?php echo __('news_title'); ?>: <span style="color: red;">*</span></label>
-            <input type="text" name="news_title" id="edit_news_title" required maxlength="255">
+            <label for="edit_news_title"><?php echo __('news_title'); ?>: <span style="color: var(--system-red);">*</span></label>
+            <input type="text" name="news_title" id="edit_news_title" required maxlength="255" aria-required="true" aria-describedby="edit_news_title_error">
+            <p class="form-error-message" id="edit_news_title_error"><?php echo __('field_required'); ?></p>
           </div>
           
           <div class="booking-form-group">
-            <label><?php echo __('news_content'); ?>: <span style="color: red;">*</span></label>
-            <textarea name="news_details" id="edit_news_details" required style="min-height:150px;"></textarea>
+            <label for="edit_news_details"><?php echo __('news_content'); ?>: <span style="color: var(--system-red);">*</span></label>
+            <textarea name="news_details" id="edit_news_details" required style="min-height:150px;" aria-required="true" aria-describedby="edit_news_details_error"></textarea>
+            <p class="form-error-message" id="edit_news_details_error"><?php echo __('field_required'); ?></p>
           </div>
           
           <div class="booking-form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div>
-              <label><?php echo __('news_date'); ?>: <span style="color: red;">*</span></label>
-              <input type="date" name="news_date" id="edit_news_date" required>
+              <label for="edit_news_date"><?php echo __('news_date'); ?>: <span style="color: var(--system-red);">*</span></label>
+              <input type="date" name="news_date" id="edit_news_date" required aria-required="true" aria-describedby="edit_news_date_error">
+              <p class="form-error-message" id="edit_news_date_error"><?php echo __('field_required'); ?></p>
             </div>
             <div>
-              <label><?php echo __('news_publisher'); ?>:</label>
+              <label for="edit_news_by"><?php echo __('news_publisher'); ?>:</label>
               <input type="text" name="news_by" id="edit_news_by" maxlength="100">
             </div>
           </div>
@@ -1196,6 +1244,57 @@ main > div:first-of-type,
         }
       });
       
+      // Form validation helper - per ui-standard.md Error Handling section
+      function validateNewsForm(form) {
+        let isValid = true;
+        const title = form.querySelector('[name="news_title"]');
+        const details = form.querySelector('[name="news_details"]');
+        const date = form.querySelector('[name="news_date"]');
+        
+        // Validate title with specific error message
+        const titleGroup = title.closest('.news-form-group');
+        if (!title.value.trim()) {
+          titleGroup.classList.add('has-error');
+          title.setAttribute('aria-invalid', 'true');
+          isValid = false;
+        } else if (title.value.trim().length < 3) {
+          titleGroup.classList.add('has-error');
+          title.setAttribute('aria-invalid', 'true');
+          isValid = false;
+        } else {
+          titleGroup.classList.remove('has-error');
+          title.setAttribute('aria-invalid', 'false');
+        }
+        
+        // Validate details with specific error message
+        const detailsGroup = details.closest('.news-form-group');
+        if (!details.value.trim()) {
+          detailsGroup.classList.add('has-error');
+          details.setAttribute('aria-invalid', 'true');
+          isValid = false;
+        } else if (details.value.trim().length < 10) {
+          detailsGroup.classList.add('has-error');
+          details.setAttribute('aria-invalid', 'true');
+          isValid = false;
+        } else {
+          detailsGroup.classList.remove('has-error');
+          details.setAttribute('aria-invalid', 'false');
+        }
+        
+        // Validate date with specific error message
+        const dateGroup = date.closest('.news-form-group');
+        if (!date.value) {
+          dateGroup.classList.add('has-error');
+          date.setAttribute('aria-invalid', 'true');
+          isValid = false;
+        } else {
+          dateGroup.classList.remove('has-error');
+          date.setAttribute('aria-invalid', 'false');
+        }
+        
+        return isValid;
+      }
+
       // Block animate-ui from intercepting the submit button
       document.addEventListener('DOMContentLoaded', function() {
         const submitBtn = document.getElementById('submitNewsBtn');
@@ -1208,8 +1307,8 @@ main > div:first-of-type,
             e.stopPropagation();
             e.stopImmediatePropagation();
             
-            if (!newsForm.checkValidity()) {
-              newsForm.reportValidity();
+            if (!validateNewsForm(newsForm)) {
+              showErrorToast(newsI18n.submitError);
               return false;
             }
             
