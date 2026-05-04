@@ -4612,13 +4612,16 @@ async function handleGoogleUnlink(e) {
 
     const isOpening = !details.open;
     
-    // Hide/show badge for nav-tenants
-    const badge = details.querySelector('span[style*="position:absolute;top:6px;right:32px"]');
+    // Get badge element - look for absolute positioned span with badge styling
+    const badge = details.querySelector('summary > a > span[style*="position:absolute"]');
     
     if (isOpening) {
       // Opening: set open then trigger animation
       details.open = true;
-      if (badge) badge.style.display = 'none';
+      if (badge) {
+        badge.style.display = 'none';
+        badge.style.visibility = 'hidden';
+      }
       
       // Force reflow to trigger animation
       void details.offsetHeight;
@@ -4642,7 +4645,10 @@ async function handleGoogleUnlink(e) {
       // Close after animation completes
       setTimeout(() => {
         details.open = false;
-        if (badge) badge.style.display = 'inline-flex';
+        if (badge) {
+          badge.style.display = 'inline-flex';
+          badge.style.visibility = 'visible';
+        }
       }, 300 + (items.length * 30));
     }
 
