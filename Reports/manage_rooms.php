@@ -2938,11 +2938,16 @@ main > div:first-of-type,
         const tableView = document.getElementById('roomsTable');
         const toggleText = document.getElementById('viewToggleText');
         const toggleBtn = document.getElementById('viewToggleBtn');
+        const loadMoreContainer = document.querySelector('.load-more-container');
         
         if (currentView === 'grid') {
           // Switch to table view
           gridView.style.display = 'none';
           tableView.style.display = 'block';
+          if (loadMoreContainer) loadMoreContainer.style.display = 'none';
+          tableView.querySelectorAll('tr.room-row.hidden-row').forEach(row => {
+            row.classList.remove('hidden-row');
+          });
           toggleText.textContent = 'มุมมองการ์ด';
           toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg><span id="viewToggleText">มุมมองการ์ด</span>`;
           currentView = 'table';
@@ -2951,6 +2956,7 @@ main > div:first-of-type,
           // Switch to grid view
           gridView.style.display = 'grid';
           tableView.style.display = 'none';
+          if (loadMoreContainer) loadMoreContainer.style.display = '';
           toggleText.textContent = 'มุมมองแถว';
           toggleBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg><span id="viewToggleText">มุมมองแถว</span>`;
           currentView = 'grid';
@@ -2998,9 +3004,11 @@ main > div:first-of-type,
           if (tableBody) {
             const rows = Array.from(tableBody.querySelectorAll('tr.room-row'));
             rows.sort(sortComparer);
-            
+            const hasDataTable = !!window.__roomsDataTable;
             rows.forEach((row, index) => {
-              if (index < visibleRooms) {
+              if (hasDataTable) {
+                row.classList.remove('hidden-row');
+              } else if (index < visibleRooms) {
                 row.classList.remove('hidden-row');
               } else {
                 row.classList.add('hidden-row');
@@ -3075,7 +3083,7 @@ main > div:first-of-type,
           const remaining = totalCards - visibleRooms;
           if (remainingCountEl) remainingCountEl.textContent = remaining;
           if (remaining <= 0) loadMoreBtn?.classList.add('hidden');
-        } else {
+        } else if (!window.__roomsDataTable) {
           // table view
           const hiddenRows = document.querySelectorAll('.room-row.hidden-row');
           const totalRows = document.querySelectorAll('.room-row').length;
