@@ -1,53 +1,47 @@
 UI Standard Guidelines
-This ui-standard.md file compiles the design and development standards for User Interfaces, heavily referencing digital accessibility principles and system guidelines for various operating systems.
-1. Color & Dark Mode
-System Colors: You should use system colors to ensure the UI feels at home on the device and automatically adapts to Dark Mode, vibrancy settings, and accessibility preferences
+This document outlines the standard guidelines for designing and developing user interfaces, ensuring they are accessible, consistent, and compliant with best practices.
+1. Color, Dark Mode & Materials
+System Colors: Use system colors (e.g., label, secondaryLabel, systemBlue) so the UI automatically adapts to Dark Mode, vibrancy, and accessibility settings
 .
-Color Contrast: Text and icons must have a color contrast ratio of at least 4.5:1 against the background to ensure readability
+Color Contrast: Text and icons must maintain a minimum color contrast ratio of 4.5:1 against their background
 .
-Color as Meaning: Do not rely solely on color to convey information or instructions. For example, use an asterisk (*) alongside color to indicate mandatory form fields
+Color as Meaning: Do not rely solely on color to convey information or instructions. For example, use an asterisk (*) along with color to indicate mandatory form fields
 .
-Color Conversion: You can utilize extensions to easily convert HEX strings to UIColor and Color for use within UIKit and SwiftUI projects
+Vibrancy and Materials: When using visual effects like Liquid Glass or Materials to create a sense of depth, avoid using quaternary vibrancy on thin and ultraThin materials as the contrast will be too low
 .
 2. Typography
-Standard Fonts: It is recommended to use the San Francisco (SF) typeface. Use SF UI Text for text sizes of 19pt or smaller, and SF UI Display for text sizes of 20pt or larger
+Standard Fonts: Use the San Francisco (SF) typeface. Specifically, use SF UI Text for text sizes 19pt or smaller, and SF UI Display for text sizes 20pt or larger
 .
-Large Default Sizes: The recommended default sizes are 17pt for Body and Headline, 15pt for Subhead, 28pt for Title 1, and 22pt for Title 2
+Default Sizes: The recommended large default sizes are 17pt for Body and Headline, and 28pt for Title 1
 .
-Dynamic Type Scaling: Avoid hard-coding font values. Instead, use preferredFont(forTextStyle:) or scaledFont(for:) with UIFont.TextStyle constants so that the text can automatically scale based on the user's accessibility settings
+Dynamic Type Scaling: Do not hard-code font sizes. Use preferredFont(forTextStyle:) or scaledFont(for:) to allow text to scale according to the user's system preferences
 .
-Avoid Images of Text: Do not use images containing text (e.g., text embedded in an image button); use real text to ensure screen readers can access it
+Text Resizing: The UI must remain readable and functional when text is scaled up to 200% of its initial size
 .
-Text Resizing: Users must be able to resize or zoom text (up to 200%) without losing functionality or clipping the content
+Avoid Images of Text: Use real text instead of images of text so that the content is fully accessible and scalable
 .
-3. UI Components & Materials
-Liquid Glass & Vibrancy: You can implement Liquid Glass effects for visually rich elements
-. When using materials, be mindful of visual hierarchy and background blur
+3. UI Components & Interaction
+Alerts: Use alerts sparingly. They should only be used to deliver critical information, warn users about destructive actions, or confirm important purchases
 .
-Buttons:
-Ensure all buttons and interactive elements have a sufficiently large tap target area
+Sheets & Modality: Use Sheets to help users perform narrowly scoped tasks (e.g., attaching a file or choosing a location) without losing their previous context. Modality prevents interaction with the parent view until the task is explicitly dismissed or completed
 .
-For corner styles, you can use UIButton.Configuration.CornerStyle values (large, medium, or small). This configuration ignores the background's corner radius and applies the system-defined corner radius instead
-.
-Sheets: Use Sheets to help users perform scoped tasks or input specific information (e.g., attaching a file) before returning them to the main parent view
+Buttons & Gestures: Ensure all buttons have a sufficient tap target size. Use simple gestures (e.g., a simple tap) for primary interactions
+. For iOS buttons, utilize configurations like UIButton.Configuration.CornerStyle to maintain system-standard corner radii
 .
 4. Form Input & Validation
-Form Labels: All text fields and controls must be programmatically associated with visible labels so that screen readers can accurately interpret the required input
+Labels: All text fields and form controls must be programmatically associated with visible labels
 .
-Minimize Input: Where possible, replace text typing with selection lists (like UIPickerView) to reduce the user's input burden
+Error Handling: If an input error is detected, the system must clearly identify the error and provide a text-based error suggestion to help the user fix it
 .
-Error Handling (Validation): If an error is detected, the system must clearly identify the error and provide a text-based error suggestion to help the user fix it before submission
+Error Prevention: Always provide a Confirmation Page that allows users to review, confirm, or modify their information before finalizing a submission
 .
-Error Prevention: Always provide a Confirmation page that allows users to review, confirm, or change their data before finalizing the submission to prevent critical errors
+Adjustable Time Limits: If a form or a task has a time limit, users must be provided with a warning and a function to extend the time limit
 .
-5. Layout & Accessibility (a11y)
-Alternative Text (Alt Text): All non-text content, such as image buttons, must have alternative text. For iOS, you can achieve this by setting isAccessibilityElement = YES and assigning a clear accessibilityLabel
+5. Accessibility (a11y)
+Alternative Text: All non-text content (like images and image buttons) must have descriptive alternative text. For example, set isAccessibilityElement = YES and provide an accessibilityLabel in iOS, or use setContentDescription in Android
 .
-Reading Sequence: The logical reading order should typically flow from left to right and top to bottom. You must also provide a clear, meaningful page title so screen reader users immediately understand the page's purpose
+Meaningful Sequence: The logical reading order should flow from left to right, and top to bottom. If necessary, manually adjust the accessibility traversal order (e.g., using AccessibilityTraversalAfter in Android or ordering accessibilityElements in iOS)
 .
-Flashing Content: To prevent seizures, ensure that no UI element (such as banners) flashes more than 3 times per second
+Flashing Content: To prevent seizures, ensure that UI elements (such as banners) flash fewer than 3 times per second
 .
-Adjustable Time Limits: If a form or task has a time limit, you must provide a warning and allow the user to extend the time limit
-.
-Auto-updating Content: For lists or banners with user-initiated auto-updating, provide settings that allow the user to easily stop or pause the updates
-.
+Auto-updating Content: For lists or banners with user-initiated auto-updating, you must provide a setting to let users easily stop or pause the updates
