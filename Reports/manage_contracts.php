@@ -3094,7 +3094,6 @@ body.loading-skeleton {
           </div>
         </div>`;
     }
-    }
 
     /* ---- Payment Gate: show unpaid warning ---- */
     function _renderPaymentGate(data, t, c) {
