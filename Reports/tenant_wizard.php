@@ -2448,7 +2448,7 @@ main > div:first-of-type,
                                               $billsComplete = $firstBillPaid && $latestBillPaid;
                                         ?>
                                             <div style="display:flex;flex-direction:column;align-items:flex-start;gap:0.4rem;">
-                                                <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.7rem;border-radius:20px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);color:#f87171;font-size:0.82rem;font-weight:700;">
+                                                <div onclick="viewTerminationDetails(<?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($termDateDisplay), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccNum), ENT_QUOTES, 'UTF-8'); ?>)" style="cursor: pointer; display:inline-flex;align-items:center;gap:0.35rem;padding:0.28rem 0.7rem;border-radius:20px;background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);color:#f87171;font-size:0.82rem;font-weight:700; transition: background 0.2s;" onmouseover="this.style.background='rgba(239,68,68,0.2)'" onmouseout="this.style.background='rgba(239,68,68,0.12)'">
                                                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg> ผู้เช่าแจ้งยกเลิกสัญญา<?php if ($termDateDisplay !== '-'): ?>&nbsp;<span style="font-weight:400;opacity:0.8;">(ย้ายออก <?php echo htmlspecialchars($termDateDisplay, ENT_QUOTES, 'UTF-8'); ?>)</span><?php endif; ?>
                                                 </div>
                                                 <?php if (!$billsComplete): ?>
@@ -2652,6 +2652,59 @@ main > div:first-of-type,
             </div>
             </div>
         </main>
+    </div>
+
+    <!-- Modal สำหรับดูรายละเอียดผู้เช่าแจ้งยกเลิกสัญญา -->
+    <div id="terminationViewModal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="modal-header">
+                <button type="button" class="modal-close" onclick="closeTerminationViewModal()">&times;</button>
+                <div style="text-align: center;">
+                    <div style="width: 48px; height: 48px; background: #ef4444; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; font-weight: bold; margin: 0 auto 1rem; box-shadow: 0 4px 15px rgba(239, 68, 68, 0.3);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:24px;height:24px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                    <h2 style="color: var(--text-color, #f8fafc); margin: 0.5rem 0;">ผู้เช่าแจ้งยกเลิกสัญญา</h2>
+                    <p style="color: var(--text-muted, rgba(241, 245, 249, 0.7)); margin: 0;">รายละเอียดการแจ้งย้ายออก</p>
+                </div>
+            </div>
+            
+            <div class="modal-body">
+                <div class="receipt-card" style="margin-top: 1rem; background: var(--bg-card, #1e293b); border: 1px solid var(--border-color, rgba(255,255,255,0.1)); border-radius: 8px; padding: 1.5rem;">
+                    <table style="width: 100%; border-collapse: collapse; color: var(--text-color, #e2e8f0); font-size: 0.95rem;">
+                        <tbody>
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); width: 35%; color: var(--text-muted, #94a3b8);">ผู้เช่า</td>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); font-weight: 500;" id="tv_tntName">-</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); color: var(--text-muted, #94a3b8);">ห้องพัก</td>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); font-weight: 500;" id="tv_roomNumber">-</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); color: var(--text-muted, #94a3b8);">วันที่ย้ายออก</td>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); font-weight: 500; color: #ef4444;" id="tv_termDate">-</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); color: var(--text-muted, #94a3b8);">ธนาคาร</td>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); font-weight: 500;" id="tv_bankName">-</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); color: var(--text-muted, #94a3b8);">ชื่อบัญชี</td>
+                                <td style="padding: 8px 0; border-bottom: 1px solid var(--border-light, rgba(255,255,255,0.1)); font-weight: 500;" id="tv_bankAccName">-</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 8px 0; color: var(--text-muted, #94a3b8);">เลขบัญชี</td>
+                                <td style="padding: 8px 0; font-weight: 500;" id="tv_bankAccNum">-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <div class="modal-footer" style="justify-content: center; border-top: 1px solid var(--border-light, rgba(255,255,255,0.1)); padding-top: 1.5rem; margin-top: 1rem;">
+                <button type="button" class="btn-modal btn-modal-secondary" onclick="closeTerminationViewModal()" style="width: 100%;">ปิดหน้าต่าง</button>
+            </div>
+        </div>
     </div>
 
     <!-- Modal สำหรับยืนยันการจอง (Step 1) -->
@@ -3403,6 +3456,25 @@ main > div:first-of-type,
         document.getElementById('bookingModal').classList.add('active');
         document.body.style.overflow = 'hidden';
         document.body.classList.add('modal-open');
+    }
+
+    function viewTerminationDetails(tntName, roomNum, termDate, bankName, bankAccName, bankAccNum) {
+        document.getElementById('tv_tntName').textContent = tntName || '-';
+        document.getElementById('tv_roomNumber').textContent = roomNum || '-';
+        document.getElementById('tv_termDate').textContent = termDate || '-';
+        document.getElementById('tv_bankName').textContent = bankName || '-';
+        document.getElementById('tv_bankAccName').textContent = bankAccName || '-';
+        document.getElementById('tv_bankAccNum').textContent = bankAccNum || '-';
+        
+        document.getElementById('terminationViewModal').classList.add('active');
+        document.body.style.overflow = 'hidden';
+        document.body.classList.add('modal-open');
+    }
+    
+    function closeTerminationViewModal() {
+        document.getElementById('terminationViewModal').classList.remove('active');
+        document.body.style.overflow = '';
+        document.body.classList.remove('modal-open');
     }
 
     function closeBookingModal() {
