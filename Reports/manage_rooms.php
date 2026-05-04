@@ -1744,8 +1744,8 @@ main > div:first-of-type,
                 <div class="room-form-group">
                   <label for="room_number">หมายเลขห้อง <span style="color:#f87171;">*</span></label>
                   <input type="text" id="room_number" name="room_number" required maxlength="2" placeholder="เช่น 01, 02, ..." value="<?php echo htmlspecialchars($nextRoomNumber); ?>" aria-required="true" aria-describedby="room_number_error room_number_hint" />
-                  <p class="form-hint" id="room_number_hint"><?php echo __('max_2_characters'); ?></p>
-                  <p class="form-error-message" id="room_number_error"><?php echo __('field_required'); ?></p>
+                  <p class="form-hint" id="room_number_hint">ตัวเลข 1-2 หลัก เช่น 01, 02</p>
+                  <p class="form-error-message" id="room_number_error">กรุณากรอกหมายเลขห้อง</p>
                 </div>
                 <div class="room-form-group room-form-split" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
                   <div>
@@ -1761,7 +1761,7 @@ main > div:first-of-type,
                         </option>
                       <?php endforeach; ?>
                     </select>
-                    <p class="form-error-message" id="type_id_error"><?php echo __('field_required'); ?></p>
+                    <p class="form-error-message" id="type_id_error">กรุณาเลือกประเภทห้อง</p>
                   </div>
                    <div>
                      <label style="display:block;">สถานะห้อง</label>
@@ -1777,7 +1777,7 @@ main > div:first-of-type,
                 <div class="room-form-group">
                   <label for="room_price">ราคาห้องพิเศษ (บาท/เดือน)</label>
                   <input type="number" id="room_price" name="room_price" min="0" step="1" placeholder="เว้นว่าง = ใช้ราคาตามประเภทห้อง" aria-describedby="room_price_hint" />
-                  <p class="form-hint" id="room_price_hint"><?php echo __('special_price_for_specific_room'); ?></p>
+                  <p class="form-hint" id="room_price_hint">ใช้สำหรับลดราคาเฉพาะห้องในช่วงปิดเทอม</p>
                 </div>
                 <div class="room-form-group">
                   <label>สิ่งอำนวยความสะดวก:</label>
@@ -1792,7 +1792,7 @@ main > div:first-of-type,
                     </label>
                     <?php endforeach; ?>
                   </div>
-                  <p class="form-hint" id="room_features_hint"><?php echo __('select_room_features'); ?></p>
+                  <p class="form-hint" id="room_features_hint">เลือกสิ่งอำนวยความสะดวกที่มีในห้อง</p>
                   <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
                     <input type="text" id="add_custom_feature_input" placeholder="เพิ่มสิ่งอำนวยความสะดวกเพิ่มเติม..." maxlength="40" style="flex:1;padding:0.4rem 0.65rem;border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:0.85rem;outline:none;">
                     <button type="button" onclick="addCustomFeature('add')" style="padding:0.4rem 0.9rem;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:0.85rem;cursor:pointer;white-space:nowrap;">+ เพิ่ม</button>
@@ -1801,7 +1801,7 @@ main > div:first-of-type,
                 <div class="room-form-group">
                   <label for="room_image">รูปภาพห้อง</label>
                   <input type="file" id="room_image" name="room_image" accept="image/*" aria-describedby="room_image_hint" />
-                  <p class="form-hint" id="room_image_hint"><?php echo __('room_image_formats'); ?></p>
+                  <p class="form-hint" id="room_image_hint">รูปภาพ JPG, PNG หรือ GIF (ไม่เกิน 5MB)</p>
                 </div>
                 <div class="room-form-actions">
                   <button type="submit" class="animate-ui-add-btn" data-allow-submit="true" data-animate-ui-skip="true" data-no-modal="true" style="flex:2;">
@@ -1998,22 +1998,24 @@ main > div:first-of-type,
     <div class="booking-modal" id="editModal" style="display:none;">
       <div class="booking-modal-content" style="max-width:600px;">
         <h2>แก้ไขห้องพัก</h2>
-        <form id="editForm" method="POST" action="../Manage/update_room.php" enctype="multipart/form-data">
+        <form id="editForm" method="POST" action="../Manage/update_room.php" enctype="multipart/form-data" novalidate>
           <input type="hidden" name="room_id" id="edit_room_id">
           
           <div class="booking-form-group">
-            <label>หมายเลขห้อง: <span style="color: red;">*</span></label>
-            <input type="text" name="room_number" id="edit_room_number" required maxlength="2">
+            <label for="edit_room_number">หมายเลขห้อง <span style="color: red;">*</span></label>
+            <input type="text" name="room_number" id="edit_room_number" required maxlength="2" aria-required="true" aria-describedby="edit_room_number_error edit_room_number_hint">
+            <p class="form-hint" id="edit_room_number_hint">ตัวเลข 1-2 หลัก เช่น 01, 02</p>
+            <p class="form-error-message" id="edit_room_number_error">กรุณากรอกหมายเลขห้อง</p>
           </div>
           
           <div class="booking-form-group booking-form-split" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
             <div>
               <div class="add-type-row" style="margin-bottom:0.35rem;">
-                <label style="margin:0;">ประเภทห้อง: <span style="color: red;">*</span></label>
+                <label for="edit_type_id" style="margin:0;">ประเภทห้อง <span style="color: red;">*</span></label>
                 <button type="button" class="add-type-btn" id="addTypeBtnEdit">+ เพิ่มประเภทห้อง</button>
                 <button type="button" class="add-type-btn delete-type-btn" id="deleteTypeBtnEdit">ลบประเภทห้อง</button>
               </div>
-              <select name="type_id" id="edit_type_id" required>
+              <select name="type_id" id="edit_type_id" required aria-required="true" aria-describedby="edit_type_id_error">
                 <option value="">-- เลือกประเภทห้อง --</option>
                 <?php foreach ($roomTypes as $type): ?>
                   <option value="<?php echo $type['type_id']; ?>">
@@ -2021,18 +2023,19 @@ main > div:first-of-type,
                   </option>
                 <?php endforeach; ?>
               </select>
+              <p class="form-error-message" id="edit_type_id_error">กรุณาเลือกประเภทห้อง</p>
             </div>
           </div>
 
           <div class="booking-form-group">
             <label for="edit_room_price">ราคาห้องพิเศษ (บาท/เดือน)</label>
-            <input type="number" name="room_price" id="edit_room_price" min="0" step="1" placeholder="เว้นว่าง = ใช้ราคาตามประเภทห้อง">
-            <small style="display:block;margin-top:0.35rem;color:#94a3b8;font-size:0.8rem;">ใช้สำหรับลดราคาเฉพาะห้องในช่วงปิดเทอม</small>
+            <input type="number" name="room_price" id="edit_room_price" min="0" step="1" placeholder="เว้นว่าง = ใช้ราคาตามประเภทห้อง" aria-describedby="edit_room_price_hint">
+            <p class="form-hint" id="edit_room_price_hint">ใช้สำหรับลดราคาเฉพาะห้องในช่วงปิดเทอม</p>
           </div>
           
           <div class="booking-form-group">
             <label>สิ่งอำนวยความสะดวก:</label>
-            <div id="edit_features_checkboxes" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.35rem;">
+            <div id="edit_features_checkboxes" style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-top:0.35rem;" aria-describedby="edit_room_features_hint">
               <?php
               $allFeatures = ['ไฟฟ้า', 'น้ำประปา', 'WiFi', 'เฟอร์นิเจอร์', 'แอร์', 'ตู้เย็น'];
               foreach ($allFeatures as $f):
@@ -2043,6 +2046,7 @@ main > div:first-of-type,
               </label>
               <?php endforeach; ?>
             </div>
+            <p class="form-hint" id="edit_room_features_hint">เลือกสิ่งอำนวยความสะดวกที่มีในห้อง</p>
             <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
               <input type="text" id="edit_custom_feature_input" placeholder="เพิ่มสิ่งอำนวยความสะดวกเพิ่มเติม..." maxlength="40" style="flex:1;padding:0.4rem 0.65rem;border:1px solid rgba(99,102,241,0.3);border-radius:8px;font-size:0.85rem;outline:none;">
               <button type="button" onclick="addCustomFeature('edit')" style="padding:0.4rem 0.9rem;background:#6366f1;color:#fff;border:none;border-radius:8px;font-size:0.85rem;cursor:pointer;white-space:nowrap;">+ เพิ่ม</button>
@@ -2271,6 +2275,12 @@ main > div:first-of-type,
         document.getElementById('delete_image').value = '0';
         // ลบ custom features ที่เพิ่มไว้
         document.querySelectorAll('#edit_features_checkboxes label[data-custom="1"]').forEach(function(l){ l.remove(); });
+        // Clear error states
+        document.getElementById('editForm').querySelectorAll('.booking-form-group').forEach(group => {
+          group.classList.remove('has-error');
+          const input = group.querySelector('input, select');
+          if (input) input.setAttribute('aria-invalid', 'false');
+        });
       }
       
       // Handle Edit Form Submit via AJAX
@@ -2350,6 +2360,15 @@ main > div:first-of-type,
           } catch (error) {
             showErrorToast('เกิดข้อผิดพลาด: ' + error.message);
           }
+        });
+        
+        // Handle edit form reset to clear error states
+        editForm.addEventListener('reset', (e) => {
+          editForm.querySelectorAll('.booking-form-group').forEach(group => {
+            group.classList.remove('has-error');
+            const input = group.querySelector('input, select');
+            if (input) input.setAttribute('aria-invalid', 'false');
+          });
         });
       }
       
@@ -2738,6 +2757,12 @@ main > div:first-of-type,
               
               // รีข้อมูลฟอร์ม
               addRoomForm.reset();
+              // Clear error states
+              addRoomForm.querySelectorAll('.room-form-group').forEach(group => {
+                group.classList.remove('has-error');
+                const input = group.querySelector('input, select');
+                if (input) input.setAttribute('aria-invalid', 'false');
+              });
               
               // รีหมายเลขห้องถัดไป - ตั้งค่าใหม่หลังจาก reset()
               const roomNumberInputAfterReset = document.getElementById('room_number');
@@ -2756,6 +2781,15 @@ main > div:first-of-type,
             console.error('Error:', error);
             showErrorToast('เกิดข้อผิดพลาดในการเพิ่มห้อง');
           }
+        });
+        
+        // Handle form reset to clear error states
+        addRoomForm.addEventListener('reset', (e) => {
+          addRoomForm.querySelectorAll('.room-form-group').forEach(group => {
+            group.classList.remove('has-error');
+            const input = group.querySelector('input, select');
+            if (input) input.setAttribute('aria-invalid', 'false');
+          });
         });
       }
       
