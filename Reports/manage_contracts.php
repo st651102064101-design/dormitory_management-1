@@ -2490,10 +2490,9 @@ body.loading-skeleton {
       document.addEventListener('change', function(e) {
         if (e.target && e.target.id === 'rfProofFile' && e.target.files && e.target.files.length) {
           // Get ctrId from the confirm button or from the form
-          var confirmBtn = document.querySelector('[onclick*="_confirmRefund"]');
+          var confirmBtn = document.getElementById('btnConfirmRefund');
           if (!confirmBtn) return;
-          var matches = confirmBtn.getAttribute('onclick').match(/\d+/);
-          var ctrId = matches ? matches[0] : null;
+          var ctrId = confirmBtn.dataset.ctrid;
           if (!ctrId) return;
           
           showCtrToast('⏳ กำลังอัพโหลดหลักฐาน...', 'info');
@@ -3090,7 +3089,7 @@ body.loading-skeleton {
               <input id="rfProofFile" type="file" accept="image/*,.pdf" style="font-size:0.82rem;color:${t.muted};margin-bottom:0.4rem;">
               <div style="font-size:0.75rem;color:${t.dim};margin-top:0.2rem;">เลือกไฟล์เพื่ออัพโหลดโดยอัตโนมัติ</div>
             </div>
-            <button onclick="_confirmRefund(${ctrId})" style="padding:0.6rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.88rem;color:#fff;width:100%;background:linear-gradient(135deg,#22c55e,#16a34a);">✅ ยืนยันโอนคืนเงินแล้ว</button>
+            <button id="btnConfirmRefund" data-ctrid="${ctrId}" ${rfProof ? `onclick="_confirmRefund(${ctrId})"` : 'disabled'} style="padding:0.6rem;border-radius:8px;border:none;cursor:${rfProof ? 'pointer' : 'not-allowed'};font-family:inherit;font-weight:600;font-size:0.88rem;color:#fff;width:100%;${rfProof ? 'background:linear-gradient(135deg,#22c55e,#16a34a);' : 'background:#9ca3af;opacity:0.8;'}">✅ ยืนยันโอนคืนเงินแล้ว</button>
           </div>
         </div>`;
     }
