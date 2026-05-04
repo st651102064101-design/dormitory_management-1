@@ -3338,14 +3338,13 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
       padding: 0.4rem 0.5rem !important;
       font-size: 0.9rem;
     }
+</style>
+<style>
     /* Hide badge when dropdown is open */
     #nav-tenants[open] summary a .tenant-summary-badge {
       display: none !important;
     }
-    #nav-tenants[open] > summary > a > span[style*="position:absolute;top:6px;right:32px"] {
-      display: none !important;
-    }
-  }</style>
+</style>
 <style>
   /* Final overrides to ensure active filter/view icons and counts are white in light modes. */
   body.live-light a.filter-btn[style*="#60a5fa"],
