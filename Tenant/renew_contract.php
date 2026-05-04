@@ -47,7 +47,18 @@ try {
                 <title>ไม่สามารถเข้าถึงได้</title>
                 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
                 <style>
-                    body { font-family: "Prompt", sans-serif; background: #f8fafc; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
+                    :root {
+                      --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+                    }
+
+                    /* Typography Foundation */
+                    * {
+                      font-family: var(--font-apple);
+                      -webkit-font-smoothing: antialiased;
+                      -moz-osx-font-smoothing: grayscale;
+                    }
+
+                    body { font-family: var(--font-apple), sans-serif; background: #f8fafc; margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; text-align: center; }
                     .card { background: white; padding: 40px 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); max-width: 400px; width: 100%; border-top: 4px solid #ef4444; }
                     .icon { font-size: 48px; margin-bottom: 20px; color: #ef4444; }
                     h1 { color: #1e293b; font-size: 20px; margin-bottom: 10px; }
