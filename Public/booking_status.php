@@ -213,6 +213,7 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo) && $autoFill
                 COALESCE(tw.current_step, 1) as current_step,
                 COALESCE(tw.completed, 0) as workflow_completed,
                 COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
+                COALESCE(tw.step_5_confirmed, 0) as step_5_confirmed,
                 (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
                 (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
             FROM booking b
@@ -255,6 +256,7 @@ if ($isTenantLoggedIn && !empty($bookingRef) && empty($bookingInfo)) {
                 COALESCE(tw.current_step, 1) as current_step,
                 COALESCE(tw.completed, 0) as workflow_completed,
                 COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
+                COALESCE(tw.step_5_confirmed, 0) as step_5_confirmed,
                 (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
                 (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
             FROM tenant t
@@ -294,6 +296,7 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                     COALESCE(tw.current_step, 1) as current_step,
                     COALESCE(tw.completed, 0) as workflow_completed,
                     COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
+                    COALESCE(tw.step_5_confirmed, 0) as step_5_confirmed,
                     (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
                     (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
                 FROM tenant t
@@ -318,6 +321,7 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                         COALESCE(tw.current_step, 1) as current_step,
                         COALESCE(tw.completed, 0) as workflow_completed,
                         COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
+                        COALESCE(tw.step_5_confirmed, 0) as step_5_confirmed,
                         (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
                         (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
                     FROM tenant t
@@ -342,6 +346,7 @@ if ((!empty($bookingRef) || !empty($contactInfo)) || $isTenantLoggedIn) {
                         COALESCE(tw.current_step, 1) as current_step,
                         COALESCE(tw.completed, 0) as workflow_completed,
                         COALESCE(tw.step_2_confirmed, 0) as step_2_confirmed,
+                        COALESCE(tw.step_5_confirmed, 0) as step_5_confirmed,
                         (SELECT COALESCE(SUM(CASE WHEN bp_status = '1' THEN bp_amount ELSE 0 END), 0) FROM booking_payment WHERE bkg_id = b.bkg_id) as paid_amount,
                         (SELECT COUNT(*) FROM signature_logs WHERE contract_id = c.ctr_id AND signer_type = 'tenant') as has_signature
                     FROM tenant t
@@ -396,20 +401,8 @@ $statusLabels = [
 $currentStatus = $bookingInfo['bkg_status'] ?? '1';
 $expStatus = $bookingInfo['exp_status'] ?? '0';
 $currentStepForStatus = intval($bookingInfo['current_step'] ?? 1);
-$hasFirstBillingCycle = isset($bookingInfo['exp_status']) && $bookingInfo['exp_status'] !== null && $bookingInfo['exp_status'] !== '' && (string)$bookingInfo['exp_status'] !== '2';
-
-// Fallback: in some joins exp_status may be empty even though first bill already exists.
-if (!$hasFirstBillingCycle && !empty($bookingInfo['ctr_id'])) {
-    try {
-        $stmtHasFirstBilling = $pdo->prepare("SELECT 1 FROM expense WHERE ctr_id = ? AND exp_status != '2' LIMIT 1");
-        $stmtHasFirstBilling->execute([$bookingInfo['ctr_id']]);
-        $hasFirstBillingCycle = (bool)$stmtHasFirstBilling->fetchColumn();
-    } catch (PDOException $e) {
-        error_log('Booking status first billing detection error: ' . $e->getMessage());
-    }
-}
-
-$step5Started = $hasFirstBillingCycle || $currentStepForStatus >= 5 || intval($bookingInfo['workflow_completed'] ?? 0) === 1;
+$step5Confirmed = intval($bookingInfo['step_5_confirmed'] ?? 0) === 1;
+$step5Started = $step5Confirmed || $currentStepForStatus >= 5 || intval($bookingInfo['workflow_completed'] ?? 0) === 1;
 $tenantPortalUrl = !empty($bookingInfo['access_token'])
     ? '../Tenant/index.php?token=' . urlencode((string)$bookingInfo['access_token'])
     : '';
