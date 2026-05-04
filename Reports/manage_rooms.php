@@ -165,6 +165,50 @@ try {
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@9.0.4/dist/style.css" />
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
+      /* Apple UI System - Complete Implementation per ui-standard.md */
+      :root {
+        /* Light Mode */
+        --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+        --bg-primary: #FFFFFF;
+        --bg-secondary: #F2F2F7;
+        --text-primary: #000000;
+        --text-secondary: rgba(60, 60, 67, 0.6);
+        --text-tertiary: rgba(60, 60, 67, 0.3);
+        --system-blue: #007AFF;
+        --system-red: #FF3B30;
+        --system-green: #34C759;
+        --separator: rgba(60, 60, 67, 0.3);
+        --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+        --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+        --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.05);
+        --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.06);
+      }
+      
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --bg-primary: #000000;
+          --bg-secondary: #1C1C1E;
+          --text-primary: #FFFFFF;
+          --text-secondary: rgba(235, 235, 245, 0.6);
+          --text-tertiary: rgba(235, 235, 245, 0.3);
+          --system-blue: #0A84FF;
+          --system-red: #FF453A;
+          --system-green: #30B0C0;
+          --separator: rgba(84, 84, 88, 0.3);
+          --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+          --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+          --shadow-lg: 0 10px 30px rgba(0, 0, 0, 0.2);
+          --shadow-subtle: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+      }
+      
+      /* Typography Foundation */
+      * {
+        font-family: var(--font-apple);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      
       /* ===== Apple-Style Modern Design ===== */
       
       /* Stats Cards - Glassmorphism */

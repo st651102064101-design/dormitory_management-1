@@ -73,9 +73,13 @@ $appleSettingsScriptVersion = is_file($appleSettingsScriptPath) ? (string)filemt
     $fallbackTextColor = $themeIsLight ? '#111827' : '#f1f5f9';
   ?>
   <style>
-    /* Force Prompt everywhere (Thai sans-serif, no serifs) */
+    /* Apple UI System - Typography Foundation */
+    :root {
+      --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+    }
+    
     html, body, * {
-      font-family: 'Prompt', 'Noto Sans Thai', 'Segoe UI', 'Helvetica Neue', sans-serif !important;
+      font-family: var(--font-apple);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
     }
