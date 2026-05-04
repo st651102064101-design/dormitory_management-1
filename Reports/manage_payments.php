@@ -4192,7 +4192,7 @@ main > div:first-of-type,
             throw new Error(data.error || 'HTTP ' + response.status);
           }
 
-          // Success — close proof modal, show success, then reload immediately.
+          // Success — close proof modal, show success, then reload after delay.
           closeProofModal();
           if (typeof showSuccessToast === 'function') {
             showSuccessToast(data.message || 'อัปเดตสถานะเรียบร้อย');
@@ -4200,8 +4200,8 @@ main > div:first-of-type,
             alert(data.message || 'อัปเดตสถานะเรียบร้อย');
           }
           
-          console.log('Update successful, reloading page...');
-          window.location.reload();
+          console.log('Update successful, reloading page after 1.5 seconds...');
+          setTimeout(() => window.location.reload(), 1500);
 
         } catch (err) {
           console.error('doUpdatePaymentStatus error:', err);
