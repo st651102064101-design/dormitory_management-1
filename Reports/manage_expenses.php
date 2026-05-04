@@ -556,7 +556,15 @@ try {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/datatable-modern.css" />
     <style>
       :root {
+        --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
         --theme-bg-color: <?php echo $themeColor; ?>;
+      }
+
+      /* Typography Foundation */
+      * {
+        font-family: var(--font-apple);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
       
       .expense-stats {

@@ -900,9 +900,17 @@ if (!in_array($activeTab, ['water', 'electric'], true)) {
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/main.css">
     <style>
         :root {
+            --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
             --meter-accent: #f97316;
             --meter-accent-dark: #ea580c;
             --meter-accent-shadow: rgba(249,115,22,0.25);
+        }
+
+        /* Typography Foundation */
+        * {
+          font-family: var(--font-apple);
+          -webkit-font-smoothing: antialiased;
+          -moz-osx-font-smoothing: grayscale;
         }
 
         body[data-meter-tab="water"] {

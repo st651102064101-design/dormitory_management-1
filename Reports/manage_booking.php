@@ -879,6 +879,7 @@ try {
       
       /* ===== THEME VARIABLES ===== */
       :root {
+        --font-apple: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
         --card-bg: linear-gradient(145deg, #ffffff 0%, #f0f4f8 100%);
         --card-border: rgba(0,0,0,0.08);
         --card-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
@@ -904,6 +905,13 @@ try {
         --shadow-md: 0 4px 14px rgba(0,0,0,0.1);
         --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
         --shadow-card: 0 2px 8px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.08);
+      }
+      
+      /* Typography Foundation */
+      * {
+        font-family: var(--font-apple);
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
       }
       
       /* Light Theme Variables */
