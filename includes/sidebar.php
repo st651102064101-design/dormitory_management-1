@@ -3339,9 +3339,8 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
       font-size: 0.9rem;
     }
     /* Hide badge when dropdown is open */
-    #nav-tenants[open] > summary span[style*="position:absolute"] {
+    #nav-tenants[open] summary a .tenant-summary-badge {
       display: none !important;
-      visibility: hidden !important;
     }
     #nav-tenants[open] > summary > a > span[style*="position:absolute;top:6px;right:32px"] {
       display: none !important;
@@ -3973,7 +3972,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
           <a href="manage_tenants.php" class="summary-link<?php echo $currentPage === 'manage_tenants.php' ? ' active' : ''; ?>" style="position:relative;padding-right:<?php echo $contractActionBadgeTotal > 0 ? '2.5rem' : ''; ?>">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
             <span class="summary-label"><?php echo __('menu_tenants'); ?></span>
-            <?php if ($contractActionBadgeTotal > 0): ?><span style="position:absolute;top:6px;right:32px;background:#f59e0b;color:white;border-radius:999px;min-width:22px;height:22px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;"><?php echo $contractActionBadgeTotal > 99 ? '99+' : $contractActionBadgeTotal; ?></span><?php endif; ?>
+            <?php if ($contractActionBadgeTotal > 0): ?><span class="tenant-summary-badge" style="position:absolute;top:6px;right:32px;background:#f59e0b;color:white;border-radius:999px;min-width:22px;height:22px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;"><?php echo $contractActionBadgeTotal > 99 ? '99+' : $contractActionBadgeTotal; ?></span><?php endif; ?>
           </a>
           <span class="chev chev-toggle" data-target="nav-tenants" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
@@ -4613,16 +4612,9 @@ async function handleGoogleUnlink(e) {
 
     const isOpening = !details.open;
     
-    // Get badge element - look for absolute positioned span with badge styling
-    const badge = details.querySelector('summary > a > span[style*="position:absolute"]');
-    
     if (isOpening) {
-      // Opening: hide badge
+      // Opening: animate in
       details.open = true;
-      if (badge) {
-        badge.dataset.badgeHidden = 'true';
-        badge.style.display = 'none !important';
-      }
       
       // Force reflow to trigger animation
       void details.offsetHeight;
@@ -4643,14 +4635,9 @@ async function handleGoogleUnlink(e) {
         item.style.animationDelay = (0.03 * (items.length - index - 1)) + 's';
       });
       
-      // Close after animation completes and show badge again
+      // Close after animation completes
       setTimeout(() => {
         details.open = false;
-        if (badge && badge.dataset.badgeHidden === 'true') {
-          // Remove the inline display property to restore original visibility
-          badge.style.display = '';
-          delete badge.dataset.badgeHidden;
-        }
       }, 300 + (items.length * 30));
     }
 
