@@ -3342,7 +3342,10 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
 <style>
     /* Hide badge when dropdown is open */
     #nav-tenants[open] summary a .tenant-summary-badge {
-      display: none !important;
+      opacity: 0;
+      transform: scale(0.5);
+      visibility: hidden;
+      pointer-events: none;
     }
 </style>
 <style>
@@ -3971,7 +3974,7 @@ if (!$sidebarAccountHasOldRecoveryEmail) {
           <a href="manage_tenants.php" class="summary-link<?php echo $currentPage === 'manage_tenants.php' ? ' active' : ''; ?>" style="position:relative;padding-right:<?php echo $contractActionBadgeTotal > 0 ? '2.5rem' : ''; ?>">
             <span class="app-nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
             <span class="summary-label"><?php echo __('menu_tenants'); ?></span>
-            <?php if ($contractActionBadgeTotal > 0): ?><span class="tenant-summary-badge" style="position:absolute;top:6px;right:32px;background:#f59e0b;color:white;border-radius:999px;min-width:22px;height:22px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;"><?php echo $contractActionBadgeTotal > 99 ? '99+' : $contractActionBadgeTotal; ?></span><?php endif; ?>
+            <?php if ($contractActionBadgeTotal > 0): ?><span class="tenant-summary-badge" style="position:absolute;top:6px;right:32px;background:#f59e0b;color:white;border-radius:999px;min-width:22px;height:22px;padding:0 6px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:bold;transition: all 0.2s ease-in-out;transform-origin: center;"><?php echo $contractActionBadgeTotal > 99 ? '99+' : $contractActionBadgeTotal; ?></span><?php endif; ?>
           </a>
           <span class="chev chev-toggle" data-target="nav-tenants" style="cursor:pointer;font-size: 1.5rem;">›</span>
         </summary>
