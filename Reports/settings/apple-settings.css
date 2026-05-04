@@ -5,12 +5,11 @@
    Enhanced with Modern Animations
 ====================================== */
 
-/* Import Prompt font - same as other pages */
-@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap');
-
-/* Global sans-serif font for Thai text - use Prompt like other pages */
+/* Global sans-serif font for Thai text - use Apple system font like other pages */
 html, body, * {
-  font-family: 'Prompt', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif !important;
+  font-family: var(--font-apple, -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 :root {
