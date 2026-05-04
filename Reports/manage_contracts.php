@@ -3084,7 +3084,6 @@ body.loading-skeleton {
               <span style="color:${t.muted};">ยอดคืน:</span>
               <span id="rfRefundDisplay" style="color:${t.green};font-weight:700;">${_fmtMoney(depAmount - dedAmt)}</span>
             </div>
-            ${rf ? `
             <div style="border-top:1px solid ${t.divider};padding-top:0.6rem;margin-top:0.2rem;">
               <label style="display:block;font-size:0.8rem;color:${t.muted};margin-bottom:0.3rem;">หลักฐานการโอนคืน</label>
               ${rfProof ? `<div style="margin-bottom:0.4rem;"><a href="javascript:void(0)" onclick="openProofModal('/${rfProof}')" style="font-size:0.82rem;color:${t.link};cursor:pointer;">📎 ดูหลักฐานปัจจุบัน</a></div>` : ''}
@@ -3092,9 +3091,9 @@ body.loading-skeleton {
               <div style="font-size:0.75rem;color:${t.dim};margin-top:0.2rem;">เลือกไฟล์เพื่ออัพโหลดโดยอัตโนมัติ</div>
             </div>
             <button onclick="_confirmRefund(${ctrId})" style="padding:0.6rem;border-radius:8px;border:none;cursor:pointer;font-family:inherit;font-weight:600;font-size:0.88rem;color:#fff;width:100%;background:linear-gradient(135deg,#22c55e,#16a34a);">✅ ยืนยันโอนคืนเงินแล้ว</button>
-            ` : ''}
           </div>
         </div>`;
+    }
     }
 
     /* ---- Payment Gate: show unpaid warning ---- */
