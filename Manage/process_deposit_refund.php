@@ -104,17 +104,61 @@ try {
             ]);
             break;
 
-        case 'upload': file_put_contents("/tmp/debug_upload.log", json_encode($_POST) . " files: " . json_encode($_FILES));
+        case 'upload':
             if (empty($_FILES['refund_proof']) || $_FILES['refund_proof']['error'] !== UPLOAD_ERR_OK) {
                 echo json_encode(['success' => false, 'error' => 'กรุณาอัพโหลดหลักฐานการโอนเงิน']);
                 exit;
             }
+            
+            // If the refund record doesn't exist, create it first using the auto-calculated data
             $existStmt = $pdo->prepare('SELECT refund_id, refund_status FROM deposit_refund WHERE ctr_id = ? LIMIT 1');
             $existStmt->execute([$ctr_id]);
             $existing = $existStmt->fetch(PDO::FETCH_ASSOC);
+            
             if (!$existing) {
-                echo json_encode(['success' => false, 'error' => 'กรุณาบันทึกข้อมูลคืนเงินก่อน (ctr_id: ' . $ctr_id . ')']);
-                exit;
+                $deduction_amount = max(0, (int)($_POST['deduction_amount'] ?? 0));
+                $deduction_reason = trim($_POST['deduction_reason'] ?? '');
+                $room_rate = (int)($_POST['room_rate'] ?? 0);
+                $water_cost = (int)($_POST['water_cost'] ?? 0);
+                $elec_cost = (int)($_POST['elec_cost'] ?? 0);
+                $deposit_amount = (int)($contract['ctr_deposit'] ?? 0);
+                
+                if ($deposit_amount <= 0) {
+                    $bpStmt = $pdo->prepare("SELECT bp.bp_amount FROM booking_payment bp INNER JOIN tenant_workflow tw ON tw.bkg_id = bp.bkg_id WHERE tw.ctr_id = ? AND bp.bp_status = '1' ORDER BY bp.bp_id DESC LIMIT 1");
+                    $bpStmt->execute([$ctr_id]);
+                    $bp = $bpStmt->fetch(PDO::FETCH_ASSOC);
+                    if ($bp) $deposit_amount = (int)$bp['bp_amount'];
+                }
+                
+                $refund_amount = max(0, $deposit_amount - $deduction_amount - $room_rate - $water_cost - $elec_cost);
+                
+                $ins = $pdo->prepare("INSERT INTO deposit_refund (ctr_id, deposit_amount, deduction_amount, deduction_reason, room_rate, water_cost, elec_cost, refund_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $ins->execute([$ctr_id, $deposit_amount, $deduction_amount, $deduction_reason, $room_rate, $water_cost, $elec_cost, $refund_amount]);
+                $refundId = (int)$pdo->lastInsertId();
+            } else {
+                // Also update the fields in case they were modified during upload
+                if ($existing['refund_status'] !== '1') {
+                    $deduction_amount = isset($_POST['deduction_amount']) ? max(0, (int)$_POST['deduction_amount']) : null;
+                    if ($deduction_amount !== null) {
+                        $deduction_reason = trim($_POST['deduction_reason'] ?? '');
+                        $room_rate = (int)($_POST['room_rate'] ?? 0);
+                        $water_cost = (int)($_POST['water_cost'] ?? 0);
+                        $elec_cost = (int)($_POST['elec_cost'] ?? 0);
+                        
+                        $deposit_amount = (int)($contract['ctr_deposit'] ?? 0);
+                        if ($deposit_amount <= 0) {
+                            $bpStmt = $pdo->prepare("SELECT bp.bp_amount FROM booking_payment bp INNER JOIN tenant_workflow tw ON tw.bkg_id = bp.bkg_id WHERE tw.ctr_id = ? AND bp.bp_status = '1' ORDER BY bp.bp_id DESC LIMIT 1");
+                            $bpStmt->execute([$ctr_id]);
+                            $bp = $bpStmt->fetch(PDO::FETCH_ASSOC);
+                            if ($bp) $deposit_amount = (int)$bp['bp_amount'];
+                        }
+                        
+                        $refund_amount = max(0, $deposit_amount - $deduction_amount - $room_rate - $water_cost - $elec_cost);
+                        
+                        $upd = $pdo->prepare("UPDATE deposit_refund SET deduction_amount=?, deduction_reason=?, room_rate=?, water_cost=?, elec_cost=?, refund_amount=? WHERE refund_id=?");
+                        $upd->execute([$deduction_amount, $deduction_reason, $room_rate, $water_cost, $elec_cost, $refund_amount, $existing['refund_id']]);
+                    }
+                }
             }
 
             $file = $_FILES['refund_proof'];

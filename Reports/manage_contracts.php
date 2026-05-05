@@ -2341,6 +2341,19 @@ body.loading-skeleton {
         fd.append('action', 'upload');
         fd.append('ctr_id', ctrId);
         fd.append('refund_proof', fileInput.files[0]);
+        
+        // Append form data so it can save simultaneously if record doesn't exist
+        var dedAmt = document.getElementById('rfDeductAmt');
+        var dedReason = document.getElementById('rfDeductReason');
+        var roomRate = document.getElementById('rfRoomRate');
+        var waterCost = document.getElementById('rfWaterCost');
+        var elecCost = document.getElementById('rfElecCost');
+        if (dedAmt) fd.append('deduction_amount', dedAmt.value);
+        if (dedReason) fd.append('deduction_reason', dedReason.value);
+        if (roomRate) fd.append('room_rate', roomRate.value);
+        if (waterCost) fd.append('water_cost', waterCost.value);
+        if (elecCost) fd.append('elec_cost', elecCost.value);
+        
         try {
           var res = await fetch('../Manage/process_deposit_refund.php', {
             method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd
