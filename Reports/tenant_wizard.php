@@ -5358,6 +5358,11 @@ main > div:first-of-type,
             const uploadFd = new FormData();
             uploadFd.append('action', 'upload');
             uploadFd.append('ctr_id', _rfCtrId);
+            uploadFd.append('deduction_amount', document.getElementById('_rfDeduct').value || '0');
+            uploadFd.append('deduction_reason', document.getElementById('_rfReason').value || '');
+            uploadFd.append('room_rate', document.getElementById('_rfRoomRate').value || '0');
+            uploadFd.append('water_cost', document.getElementById('_rfWaterCost').value || '0');
+            uploadFd.append('elec_cost', document.getElementById('_rfElecCost').value || '0');
             uploadFd.append('refund_proof', fileInput.files[0]);
             
             const upRes = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: uploadFd });

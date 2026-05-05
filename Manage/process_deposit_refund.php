@@ -130,6 +130,11 @@ try {
                     if ($bp) $deposit_amount = (int)$bp['bp_amount'];
                 }
                 
+                if ($deposit_amount <= 0) {
+                    echo json_encode(['success' => false, 'error' => 'ไม่พบข้อมูลเงินมัดจำ']);
+                    exit;
+                }
+                
                 $refund_amount = max(0, $deposit_amount - $deduction_amount - $room_rate - $water_cost - $elec_cost);
                 
                 $ins = $pdo->prepare("INSERT INTO deposit_refund (ctr_id, deposit_amount, deduction_amount, deduction_reason, room_rate, water_cost, elec_cost, refund_amount) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
