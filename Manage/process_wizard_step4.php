@@ -279,7 +279,7 @@ try {
 
                 $msgBill = "🧾 แจ้งบิลค่าเช่าล่วงหน้า (เดือนแรกเข้า) ห้อง {$lineInfo['room_number']}\n";
                 $msgBill .= "ประจำเดือน: {$mStr}\n";
-                $msgBill .= "สถานะ: รอชำระเงิน\n";
+                $msgBill .= "สถานะ: รอตรวจสอบ\n";
                 $msgBill .= "------------------------\n";
                 $msgBill .= "ยอดที่ต้องชำระ: ฿" . number_format((float)$firstBillAmount, 2) . "\n";
                 $msgBill .= "------------------------\n";

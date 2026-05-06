@@ -2201,7 +2201,7 @@ main > div:first-of-type,
                                     } elseif ($isFirstMeter && $latestBillUnpaid) {
                                         if ($billingModalMeterOk) {
                                             // billing modal จะพร้อมแสดงข้อมูลได้
-                                            $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">รอชำระเงิน</span>';
+                                            $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">รอตรวจสอบ</span>';
                                         } else {
                                             // เดือนปัจจุบันยังไม่ได้จดมิเตอร์ → แสดงปุ่มจดมิเตอร์
                                             $currentDisp = thaiMonthYear($currentYm . '-01');
@@ -2601,7 +2601,7 @@ main > div:first-of-type,
                                                                 $unpaidDisp = $firstBillUnpaid && !$firstBillWaiting && $firstBillMonthDisplay !== '-'
                                                                     ? $firstBillMonthDisplay
                                                                     : ($latestMonthDisplay !== '-' && !$latestBillWaiting ? $latestMonthDisplay : '');
-                                                                $unpaidLabel = $firstBillDueReached ? 'รอชำระเงิน' : 'ยังไม่ถึงกำหนด';
+                                                                $unpaidLabel = $firstBillDueReached ? 'รอตรวจสอบ' : 'ยังไม่ถึงกำหนด';
                                                                 // ถ้าบิลรอตรวจสอบทั้งหมดอยู่แล้ว ไม่ต้องแสดงซ้ำ
                                                                 $hasUnpaidNonWaiting = ($firstBillUnpaid && !$firstBillWaiting) || ($latestBillUnpaid && !$latestBillWaiting);
                                                                 // ยังไม่มีบิลเลย — จดมิเตอร์แล้วแต่ยังไม่ได้ออกบิล
