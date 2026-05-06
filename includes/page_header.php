@@ -833,26 +833,34 @@ body[data-theme="light"] .sidebar-toggle-btn:hover {
   function initFilterDrag(el) {
     if (!el || el._dragInit) return;
     el._dragInit = true;
-    var isDown = false, startX, scrollLeft;
+    var isDown = false, isDragging = false, startX, scrollLeft;
+    var dragThreshold = 5; // pixels
     el.addEventListener('mousedown', function(e) {
       if (e.target.closest('a, button, input, select')) return;
       isDown = true;
-      el.style.cursor = 'grabbing';
+      isDragging = false;
       startX = e.pageX - el.offsetLeft;
       scrollLeft = el.scrollLeft;
     });
     document.addEventListener('mouseup', function() {
       isDown = false;
+      isDragging = false;
       if (el) el.style.cursor = '';
     });
     el.addEventListener('mousemove', function(e) {
       if (!isDown) return;
-      e.preventDefault();
       var x = e.pageX - el.offsetLeft;
+      var distance = Math.abs(x - startX);
+      if (distance > dragThreshold) {
+        isDragging = true;
+      }
+      if (!isDragging) return;
+      e.preventDefault();
       el.scrollLeft = scrollLeft - (x - startX);
     });
     el.addEventListener('mouseleave', function() {
       isDown = false;
+      isDragging = false;
       el.style.cursor = '';
     });
   }

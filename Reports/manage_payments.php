@@ -2826,10 +2826,10 @@ $filterRoomOptions = array_values($filterRoomOptions);
       .payment-filter-tabs::-webkit-scrollbar { height: 4px; }
       .payment-filter-tabs::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.45); border-radius: 999px; }
       .payment-filter-tabs::-webkit-scrollbar-track { background: transparent; }
-      .payment-filter-tab { padding: 0.45rem 1rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.6); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.4rem; }
+      .payment-filter-tab { padding: 0.45rem 1rem; border-radius: 24px; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.04); color: rgba(255,255,255,0.6); font-size: 0.88rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.4rem; pointer-events: auto; white-space: nowrap; position: relative; overflow: visible !important; }
       .payment-filter-tab:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.9); }
       .payment-filter-tab.active { background: rgba(99,102,241,0.2); border-color: rgba(99,102,241,0.5); color: #a5b4fc; }
-      .payment-filter-tab .tab-count { font-size: 0.75rem; background: rgba(255,255,255,0.1); padding: 0.1rem 0.45rem; border-radius: 12px; font-weight: 700; }
+      .payment-filter-tab .tab-count { font-size: 0.75rem; background: rgba(255,255,255,0.1); padding: 0.1rem 0.45rem; border-radius: 12px; font-weight: 700; pointer-events: auto; }
       .payment-filter-tab.active .tab-count { background: rgba(99,102,241,0.3); color: #c7d2fe; }
       html.light-theme .payment-filter-tab { border-color: rgba(0,0,0,0.1); background: rgba(0,0,0,0.04); color: rgba(0,0,0,0.55); }
       html.light-theme .payment-filter-tab:hover { background: rgba(0,0,0,0.07); color: rgba(0,0,0,0.85); }
@@ -4439,27 +4439,29 @@ main > div:first-of-type,
         // clicking a filter tab should reload the page with the new status
         if (tabsContainer) {
           tabsContainer.addEventListener('click', function(e) {
-            const tab = e.target.closest('.payment-filter-tab');
+            const tab = e.target.closest('button.payment-filter-tab');
             if (!tab) return;
             e.preventDefault();
+            e.stopPropagation();
             tabsContainer.querySelectorAll('.payment-filter-tab').forEach(function(t) { t.classList.remove('active'); });
             tab.classList.add('active');
             paymentsActiveStatus = tab.dataset.status || '';
             // navigate to updated URL (applyFilters without skipReload)
             applyFilters();
-          });
-        } else {
-          // Fallback: bind directly if container not present
-          document.querySelectorAll('.payment-filter-tab').forEach(function(tab) {
-            tab.addEventListener('click', function(e) {
-              e.preventDefault();
-              document.querySelectorAll('.payment-filter-tab').forEach(function(t) { t.classList.remove('active'); });
-              this.classList.add('active');
-              paymentsActiveStatus = tab.dataset.status || '';
-              applyFilters();
-            });
-          });
+          }, true); // Use capture phase for more reliable event handling
         }
+        
+        // Fallback: also bind directly to each button for maximum compatibility
+        document.querySelectorAll('button.payment-filter-tab').forEach(function(tab) {
+          tab.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            document.querySelectorAll('.payment-filter-tab').forEach(function(t) { t.classList.remove('active'); });
+            this.classList.add('active');
+            paymentsActiveStatus = this.dataset.status || '';
+            applyFilters();
+          });
+        });
 
         // Animate progress bar fill
         const fill = document.getElementById('pcpBarFill');
