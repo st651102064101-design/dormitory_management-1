@@ -3073,12 +3073,12 @@ main > div:first-of-type,
             <!-- Controls Row: filter tabs + toolbar -->
             <div class="payment-controls-row">
             <div class="payment-filter-tabs" id="paymentFilterTabs">
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="">ทั้งหมด <span class="tab-count"><?php echo $allFilteredCount; ?></span></button>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '2' ? 'active' : ''; ?>" data-status="2">ตีกลับ <span class="tab-count"><?php echo $rejectedOnlyCount; ?></span></button>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'had_rejected' ? 'active' : ''; ?>" data-status="had_rejected">เคยตีกลับ <span class="tab-count"><?php echo $hadRejectedEverCount; ?></span></button>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1">ตรวจสอบแล้ว <span class="tab-count"><?php echo $verifiedFilteredCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="" onclick="window.handlePaymentFilterTab(this)">ทั้งหมด <span class="tab-count"><?php echo $allFilteredCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0" onclick="window.handlePaymentFilterTab(this)">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid" onclick="window.handlePaymentFilterTab(this)">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '2' ? 'active' : ''; ?>" data-status="2" onclick="window.handlePaymentFilterTab(this)">ตีกลับ <span class="tab-count"><?php echo $rejectedOnlyCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'had_rejected' ? 'active' : ''; ?>" data-status="had_rejected" onclick="window.handlePaymentFilterTab(this)">เคยตีกลับ <span class="tab-count"><?php echo $hadRejectedEverCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1" onclick="window.handlePaymentFilterTab(this)">ตรวจสอบแล้ว <span class="tab-count"><?php echo $verifiedFilteredCount; ?></span></button>
             </div>
             <!-- Compact Toolbar -->
             <div class="payment-toolbar">
@@ -3663,6 +3663,22 @@ main > div:first-of-type,
         }
         cleanupPaymentsTableDom();
       }
+
+      // Handle payment filter tab clicks
+      window.handlePaymentFilterTab = function(clickedButton) {
+        if (!clickedButton) return;
+        
+        // Update active state
+        const allTabs = document.querySelectorAll('button.payment-filter-tab');
+        allTabs.forEach(function(tab) { 
+          tab.classList.remove('active'); 
+        });
+        clickedButton.classList.add('active');
+        
+        // Set filter status and apply
+        paymentsActiveStatus = clickedButton.dataset.status || '';
+        applyFilters();
+      };
 
       function applyFilters(options = {}) {
         const filters = getPaymentsFilterState();

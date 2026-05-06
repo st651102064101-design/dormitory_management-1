@@ -168,10 +168,11 @@
   /* === Ripple Effect on Buttons === */
   function initRippleEffects() {
     document.addEventListener('click', function (e) {
-      const btn = e.target.closest('button, .btn-action, .todo-tab, .submit-btn-animated');
+      // Only apply ripple to specific button types, NOT to all buttons
+      const btn = e.target.closest('.btn-action, .todo-tab, .submit-btn-animated, .action-btn');
       if (!btn) return;
-      // ข้ามปุ่มบางประเภท เพื่อไม่ให้ overflow:hidden รบกวนการคลิก
-      if (btn.classList.contains('meter-tab') || btn.classList.contains('payment-filter-tab') || btn.closest('.payment-filter-tabs')) return;
+      // Skip any button in interactive filter/tab areas
+      if (btn.closest('.payment-filter-tabs, .meter-tabs, [role="tablist"]')) return;
 
       const ripple = document.createElement('span');
       const rect = btn.getBoundingClientRect();
