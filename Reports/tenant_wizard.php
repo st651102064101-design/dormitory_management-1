@@ -4066,9 +4066,10 @@ main > div:first-of-type,
                 }
 
                 // Refresh wizard table to reflect updated expense status after loading payment data
-                // (in case payment status was just changed from '0' to '2' after submission)
+                // (in case payment status was just changed from '0', '3', or '4' to '2' after submission)
+                // Use longer delay to ensure database has persisted the changes
                 if (typeof refreshWizardTable === 'function') {
-                    setTimeout(() => { refreshWizardTable(); }, 500);
+                    setTimeout(() => { refreshWizardTable(); }, 1500);
                 }
 
             })
@@ -4752,8 +4753,18 @@ main > div:first-of-type,
         document.body.classList.remove('modal-open');
         document.getElementById('billingForm').reset();
         // Refresh wizard table when billing modal closes (payment may have been submitted)
+        // Use multiple refresh attempts with increasing delays to ensure data is updated
         if (typeof refreshWizardTable === 'function') {
-            setTimeout(() => { refreshWizardTable(); }, 300);
+            // First soft refresh after 1 second
+            setTimeout(() => { refreshWizardTable(); }, 1000);
+            // If soft refresh doesn't work, fallback to hard reload after 3 seconds
+            setTimeout(() => { 
+                const wrapper = document.getElementById('wizardTableWrapper');
+                if (!wrapper || wrapper.innerHTML.includes('รอชำระเงิน')) {
+                    // Data might not have updated, try a hard reload
+                    location.reload();
+                }
+            }, 3000);
         }
     }
 
