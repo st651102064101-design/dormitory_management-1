@@ -112,7 +112,8 @@ try {
     ]);
 
     // อัพเดทสถานะของ expense เป็น '2' (รอตรวจสอบ)
-    $updateExpense = $pdo->prepare("UPDATE expense SET exp_status = '2' WHERE exp_id = ?");
+    // Update from unpaid statuses ('0', '3', '4') to pending verification ('2')
+    $updateExpense = $pdo->prepare("UPDATE expense SET exp_status = '2' WHERE exp_id = ? AND exp_status IN ('0', '3', '4')");
     $updateExpense->execute([$exp_id]);
 
     echo json_encode([

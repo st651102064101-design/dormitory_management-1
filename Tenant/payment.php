@@ -308,8 +308,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt->execute([$recordAmount, $filename, $exp_id]);
 
             // Update expense status to '2' (รอตรวจสอบ - Pending Verification)
-            // Only update if current status is '0' (ยังไม่จ่าย - Unpaid)
-            $updateStmt = $pdo->prepare("UPDATE expense SET exp_status = '2' WHERE exp_id = ? AND exp_status = '0'");
+            // Update from ANY unpaid status ('0', '3', '4') to '2'
+            // Don't update if already paid ('1') or already pending verification ('2')
+            $updateStmt = $pdo->prepare("UPDATE expense SET exp_status = '2' WHERE exp_id = ? AND exp_status IN ('0', '3', '4')");
             $updateStmt->execute([$exp_id]);
 
             $pdo->commit();
