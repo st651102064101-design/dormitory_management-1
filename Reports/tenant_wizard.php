@@ -5625,10 +5625,15 @@ main > div:first-of-type,
         if (!wizardWsConfig || !wizardWsConfig.enabled || !wizardWsConfig.url) return;
         var ws = null;
         var retry = 0;
+        var maxRetries = 5;
 
         function scheduleReconnect() {
+            if (retry >= maxRetries) {
+                console.warn('Wizard WebSocket disabled after ' + maxRetries + ' failed connection attempts.');
+                return;
+            }
             var delay = Math.min(30000, 1000 * Math.pow(2, retry));
-            retry = Math.min(retry + 1, 6);
+            retry++;
             setTimeout(connect, delay);
         }
 

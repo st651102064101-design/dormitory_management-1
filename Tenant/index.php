@@ -373,6 +373,15 @@ try {
     }
 } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
+$firstUnpaidExpenseLabel = 'ชำระค่าเช่าเดือนแรก';
+if ($firstUnpaidExpense) {
+    $expenseMonth = date('Y-m', strtotime((string)($firstUnpaidExpense['exp_month'] ?? '')));
+    $firstBillMonthKey = $firstBillMonth ? date('Y-m', strtotime($firstBillMonth)) : '';
+    if ($expenseMonth !== '' && $expenseMonth !== $firstBillMonthKey) {
+        $firstUnpaidExpenseLabel = 'ชำระค่าเช่าเดือน ' . date('m/Y', strtotime((string)$firstUnpaidExpense['exp_month']));
+    }
+}
+
 // ดึงข่าวประชาสัมพันธ์ล่าสุด
 $latestNews = [];
 try {
@@ -1161,9 +1170,12 @@ if (isset($termData) && (int)$termData['is_step5_complete'] !== 1) {
             <div class="alert-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg></div>
             <div class="alert-content">
                 <h3>มีบิลค้างชำระ</h3>
-                <p>ยอดคงเหลือ <?php echo number_format((int)($firstUnpaidExpense['remaining_amount'] ?? $firstUnpaidExpense['exp_total'] ?? 0)); ?> บาท</p>
+                <p>ยอดคงเหลือ <?php echo number_format((int)($firstUnpaidExpense['remaining_amount'] ?? $firstUnpaidExpense['exp_total'] ?? 0)); ?> บาท
+                <?php if (!empty($firstUnpaidExpense['exp_month'])): ?>
+                    สำหรับบิลเดือน <?php echo date('m/Y', strtotime((string)$firstUnpaidExpense['exp_month'])); ?>
+                <?php endif; ?></p>
                 <a class="alert-btn" href="payment.php?token=<?php echo urlencode($token); ?>&exp_id=<?php echo (int)$firstUnpaidExpense['exp_id']; ?>">
-                    ชำระค่าเช่าเดือนแรก
+                    <?php echo htmlspecialchars($firstUnpaidExpenseLabel, ENT_QUOTES, 'UTF-8'); ?>
                 </a>
             </div>
         </div>
