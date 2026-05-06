@@ -290,6 +290,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $remainingAmount = max(0, $expTotal - $submittedAmount);
             if ($remainingAmount <= 0) {
                 throw new Exception('บิลนี้ถูกส่งชำระครบแล้ว ไม่สามารถส่งซ้ำได้');
+            // Update expense status to '2' (รอตรวจสอบ - Pending Verification)
+            // Only update if current status is '0' (ยังไม่จ่าย - Unpaid)
+            $updateStmt = $pdo->prepare("UPDATE expense SET exp_status = '2' WHERE exp_id = ? AND exp_status = '0'");
+            $updateStmt->execute([$exp_id]);
+
             }
 
             $recordAmount = $pay_amount > 0 ? $pay_amount : $remainingAmount;
