@@ -327,11 +327,12 @@ while ($pay = $paymentStmt->fetch(PDO::FETCH_ASSOC)) {
 
 $paymentFlagsByExp = [];
 try {
-  $paymentFlagStmt = $pdo->query("\n    SELECT\n      exp_id,\n      SUM(CASE WHEN pay_status = '0' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN 1 ELSE 0 END) AS pending_count,\n      SUM(CASE WHEN pay_status = '1' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN pay_amount ELSE 0 END) AS approved_amount\n    FROM payment\n    GROUP BY exp_id\n  ");
+  $paymentFlagStmt = $pdo->query("\n    SELECT\n      exp_id,\n      SUM(CASE WHEN pay_status = '0' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN 1 ELSE 0 END) AS pending_count,\n      SUM(CASE WHEN pay_status = '1' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN pay_amount ELSE 0 END) AS approved_amount,\n      SUM(CASE WHEN pay_status = '2' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN 1 ELSE 0 END) AS rejected_count\n    FROM payment\n    GROUP BY exp_id\n  ");
   while ($row = $paymentFlagStmt->fetch(PDO::FETCH_ASSOC)) {
     $paymentFlagsByExp[(int)$row['exp_id']] = [
       'pending_count' => (int)($row['pending_count'] ?? 0),
       'approved_amount' => (int)($row['approved_amount'] ?? 0),
+      'rejected_count' => (int)($row['rejected_count'] ?? 0),
     ];
   }
 } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
@@ -407,6 +408,7 @@ $buildExpenseStatus = function(array $exp) use (
 
   $chargesPaid = (int)($paymentFlagsByExp[$expId]['approved_amount'] ?? 0);
   $pendingCount = (int)($paymentFlagsByExp[$expId]['pending_count'] ?? 0);
+  $rejectedCount = (int)($paymentFlagsByExp[$expId]['rejected_count'] ?? 0);
   $chargesTotal = (int)($exp['exp_total'] ?? 0);
 
   if ($hasMeterMissing) {
@@ -419,6 +421,7 @@ $buildExpenseStatus = function(array $exp) use (
       'chargesPaid' => $chargesPaid,
       'chargesTotal' => $chargesTotal,
       'chargesRemain' => $chargesRemain,
+      'rejectedCount' => $rejectedCount,
     ];
   }
 
@@ -457,6 +460,7 @@ $buildExpenseStatus = function(array $exp) use (
     'chargesPaid' => $chargesPaid,
     'chargesTotal' => $chargesTotal,
     'chargesRemain' => $chargesRemain,
+    'rejectedCount' => $rejectedCount,
   ];
 };
 
@@ -2496,6 +2500,7 @@ main > div:first-of-type,
                           <?php
                             $chargesPaid = (int)$rowStatus['chargesPaid'];
                             $chargesRemain = (int)$rowStatus['chargesRemain'];
+                            $rejectedCount = (int)($rowStatus['rejectedCount'] ?? 0);
                             $expStatus = (string)($rowStatus['status'] ?? '');
                           ?>
                           <div class="payment-cell-wrap">
@@ -2510,6 +2515,12 @@ main > div:first-of-type,
                               <div class="payment-compact-row">
                                 <span class="payment-compact-label">ค้างชำระ</span>
                                 <span class="payment-compact-value<?php echo $chargesRemain > 0 ? ' warn' : ''; ?>">฿<?php echo number_format($chargesRemain); ?></span>
+                              </div>
+                              <?php endif; ?>
+                              <?php if ($rejectedCount > 0): ?>
+                              <div class="payment-compact-row">
+                                <span class="payment-compact-label" style="color: #ef4444;">ตีกลับ</span>
+                                <span class="payment-compact-value" style="color: #ef4444; font-weight: 700;"><?php echo $rejectedCount; ?> รายการ</span>
                               </div>
                               <?php endif; ?>
                             </div>
@@ -2586,6 +2597,7 @@ main > div:first-of-type,
                     <?php
                       $cardTotal = (int)($exp['exp_total'] ?? 0);
                       $cardPaid = (int)$rowStatus['chargesPaid'];
+                      $cardRejected = (int)($rowStatus['rejectedCount'] ?? 0);
                       $cardPct = $cardTotal > 0 ? min(100, round(($cardPaid / $cardTotal) * 100)) : 0;
                       $cardFillClass = $cardPct >= 100 ? 'full' : ($cardPct > 0 ? 'partial' : 'none');
                     ?>
@@ -2594,6 +2606,9 @@ main > div:first-of-type,
                       <div class="expense-card-progress-text">
                         <span>ชำระ ฿<?php echo number_format($cardPaid); ?></span>
                         <span>คงเหลือ ฿<?php echo number_format(max(0, $cardTotal - $cardPaid)); ?></span>
+                        <?php if ($cardRejected > 0): ?>
+                        <span style="color: #ef4444; font-weight: 700;">ตีกลับ <?php echo $cardRejected; ?> รายการ</span>
+                        <?php endif; ?>
                       </div>
                     </div>
                   </div>
