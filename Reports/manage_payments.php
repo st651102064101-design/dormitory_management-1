@@ -4434,31 +4434,21 @@ main > div:first-of-type,
         applyFilters({ skipReload: true, updateHistory: false });
         setupPaymentRowHoverBehavior();
 
-        // Status filter tabs – use delegated click handler for robustness
-        const tabsContainer = document.getElementById('paymentFilterTabs');
-        // clicking a filter tab should reload the page with the new status
-        if (tabsContainer) {
-          tabsContainer.addEventListener('click', function(e) {
-            const tab = e.target.closest('button.payment-filter-tab');
-            if (!tab) return;
-            e.preventDefault();
-            e.stopPropagation();
-            tabsContainer.querySelectorAll('.payment-filter-tab').forEach(function(t) { t.classList.remove('active'); });
-            tab.classList.add('active');
-            paymentsActiveStatus = tab.dataset.status || '';
-            // navigate to updated URL (applyFilters without skipReload)
-            applyFilters();
-          }, true); // Use capture phase for more reliable event handling
-        }
-        
-        // Fallback: also bind directly to each button for maximum compatibility
-        document.querySelectorAll('button.payment-filter-tab').forEach(function(tab) {
+        // Status filter tabs – direct click handlers for each button
+        const tabs = document.querySelectorAll('button.payment-filter-tab');
+        tabs.forEach(function(tab) {
           tab.addEventListener('click', function(e) {
             e.preventDefault();
             e.stopPropagation();
-            document.querySelectorAll('.payment-filter-tab').forEach(function(t) { t.classList.remove('active'); });
-            this.classList.add('active');
-            paymentsActiveStatus = this.dataset.status || '';
+            
+            // Update active state
+            tabs.forEach(function(t) { 
+              t.classList.remove('active'); 
+            });
+            tab.classList.add('active');
+            
+            // Set filter and apply
+            paymentsActiveStatus = tab.dataset.status || '';
             applyFilters();
           });
         });

@@ -171,7 +171,7 @@
       const btn = e.target.closest('button, .btn-action, .todo-tab, .submit-btn-animated');
       if (!btn) return;
       // ข้ามปุ่มบางประเภท เพื่อไม่ให้ overflow:hidden รบกวนการคลิก
-      if (btn.classList.contains('meter-tab') || btn.classList.contains('payment-filter-tab')) return;
+      if (btn.classList.contains('meter-tab') || btn.classList.contains('payment-filter-tab') || btn.closest('.payment-filter-tabs')) return;
 
       const ripple = document.createElement('span');
       const rect = btn.getBoundingClientRect();
