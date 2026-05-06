@@ -527,7 +527,7 @@ foreach ($dedupedPayments as $paymentKey => $pay) {
   }
 
   $pay['pay_amount'] = $displayAmount;
-  $pay['_group_count'] = (int)(($group['active_count'] ?? 0) > 0 ? $group['active_count'] : ($group['count'] ?? 1));
+  $pay['_group_count'] = (int)($group['count'] ?? 1);
   $pay['_has_rejected_history'] = !empty($group['has_rejected']) ? 1 : 0;
   $pay['_has_verified_history'] = !empty($group['has_verified']) ? 1 : 0;
   $pay['_has_pending_history'] = !empty($group['has_pending']) ? 1 : 0;
