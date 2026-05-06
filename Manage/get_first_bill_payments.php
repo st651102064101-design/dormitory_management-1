@@ -111,10 +111,10 @@ function buildExpensePayload(PDO $pdo, array $expense, bool $hasPayRemark): arra
 
     if ($actualRentDue > 0 && $approvedAmount >= ($actualRentDue - 0.00001)) {
         $effectiveExpenseStatus = '1';
-    } elseif ($approvedAmount > 0) {
-        $effectiveExpenseStatus = '3';
     } elseif ($pendingAmount > 0) {
         $effectiveExpenseStatus = '2';
+    } elseif ($approvedAmount > 0) {
+        $effectiveExpenseStatus = '3';
     } elseif ($storedExpenseStatus === '4') {
         $effectiveExpenseStatus = '4';
     } else {

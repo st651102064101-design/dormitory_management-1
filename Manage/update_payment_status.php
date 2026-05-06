@@ -72,10 +72,10 @@ function recalculateExpenseStatus(PDO $pdo, int $expId): void
         $nextStatus = '4';  // Rejected
     } elseif ($expTotal > 0 && $approvedAmount >= ($expTotal - 0.00001)) {
         $nextStatus = '1';  // Fully paid
-    } elseif ($approvedAmount > 0) {
-        $nextStatus = '3';  // Partially paid
     } elseif ($pendingCount > 0) {
         $nextStatus = '2';  // Pending
+    } elseif ($approvedAmount > 0) {
+        $nextStatus = '3';  // Partially paid
     } elseif ($existingStatus === '4') {
         $nextStatus = '4';  // Keep rejected status
     } else {
