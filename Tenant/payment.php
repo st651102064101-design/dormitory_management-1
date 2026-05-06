@@ -312,6 +312,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ");
             $stmt->execute([$recordAmount, $filename, $exp_id]);
 
+            // Update expense status to '2' (รอตรวจสอบ - Pending Verification)
+            // Only update if current status is '0' (ยังไม่จ่าย - Unpaid)
+            $updateStmt = $pdo->prepare("UPDATE expense SET exp_status = '2' WHERE exp_id = ? AND exp_status = '0'");
+            $updateStmt->execute([$exp_id]);
+
             $pdo->commit();
 
             // Auto commit image to git when payment proof is uploaded successfully
