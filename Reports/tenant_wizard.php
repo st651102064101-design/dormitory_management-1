@@ -5588,9 +5588,13 @@ main > div:first-of-type,
                 
                 if (window.location.protocol === 'https:') {
                     urlObj.protocol = 'wss:';
-                    // Optional: quick tunnels may only route standard ports.
-                    // If you run apache on 80, and tunnel proxies 80, it won't proxy 8080 unless configured.
-                    // But we'll keep the port or let users configure proxy.
+                    // Cloudflare tunnels use 443 for wss: traffic and port 8080 is an HTTP port on Cloudflare edge.
+                    // So connecting to wss://*.trycloudflare.com:8080 will throw ERR_SSL_PROTOCOL_ERROR.
+                    // We drop the port to force it through Cloudflare's default HTTPS port (443).
+                    // Note: This requires Apache/Nginx to proxy the WS request to the internal 8080 port.
+                    if (urlObj.hostname.includes('trycloudflare.com')) {
+                        urlObj.port = '';
+                    }
                 } else {
                     urlObj.protocol = 'ws:';
                 }
