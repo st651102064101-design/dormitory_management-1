@@ -68,16 +68,22 @@ function recalculateExpenseStatus(PDO $pdo, int $expId): void
     $rejectedCount = (int)($rejectedStmt->fetchColumn() ?: 0);
 
     // Determine new status
-    if ($rejectedCount > 0) {
-        $nextStatus = '4';  // Rejected
-    } elseif ($expTotal > 0 && $approvedAmount >= ($expTotal - 0.00001)) {
-        $nextStatus = '1';  // Fully paid
-    } elseif ($pendingCount > 0) {
-        $nextStatus = '2';  // Pending
-    } elseif ($approvedAmount > 0) {
+    $isFullyPaid = ($expTotal > 0 && $approvedAmount >= ($expTotal - 0.00001));
+    $hasPending = $pendingCount > 0;
+    $hasPartialApproval = $approvedAmount > 0 && !$isFullyPaid;
+    $hasRejected = $rejectedCount > 0;
+
+    if ($isFullyPaid) {
+        // Fully paid must override rejected/pending states.
+        $nextStatus = '1';
+    } elseif ($hasPending) {
+        $nextStatus = '2';  // Pending verification
+    } elseif ($hasPartialApproval) {
         $nextStatus = '3';  // Partially paid
+    } elseif ($hasRejected) {
+        $nextStatus = '4';  // Rejected / overdue
     } elseif ($existingStatus === '4') {
-        $nextStatus = '4';  // Keep rejected status
+        $nextStatus = '4';  // Keep rejected status if nothing changed
     } else {
         $nextStatus = '0';  // Unpaid
     }

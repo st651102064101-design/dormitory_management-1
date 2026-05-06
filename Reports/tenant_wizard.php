@@ -227,6 +227,13 @@ try {
                                 LIMIT 1
                         ) AS first_exp_status,
                         (
+                                SELECT COUNT(p_sub.pay_id)
+                                FROM payment p_sub
+                                JOIN expense e_sub ON (p_sub.exp_id = e_sub.exp_id)
+                                WHERE e_sub.ctr_id = COALESCE(c.ctr_id, tw.ctr_id)
+                                  AND p_sub.pay_status = '0'
+                        ) AS pending_payments_count,
+                        (
                                 SELECT
                                     e.exp_status
                                 FROM expense e
@@ -2154,6 +2161,9 @@ main > div:first-of-type,
                                 $firstBillOverdue = in_array($firstExpStatus, ['3', '4']);
                                 $firstBillUnpaid  = in_array($firstExpStatus, ['0', '3', '4']);
 
+                                // Override logic: if any pending payments exist for this tenant, enforce "waiting"
+                                $pendingPaymentsCount = (int)($tenant['pending_payments_count'] ?? 0);
+
                                 // ใช้ latest exp เป็นหลักสำหรับแสดงสถานะล่าสุด
                                 $latestExpMonthRaw = (string)($tenant['latest_exp_month'] ?? '');
                                 $latestExpStatus   = (string)($tenant['latest_exp_status'] ?? '');
@@ -2163,6 +2173,13 @@ main > div:first-of-type,
                                 $latestBillWaiting = ($latestExpStatus === '2');
                                 $latestBillOverdue = in_array($latestExpStatus, ['3', '4']);
                                 $latestBillUnpaid  = in_array($latestExpStatus, ['0', '3', '4']);
+
+                                if ($pendingPaymentsCount > 0) {
+                                    $firstBillWaiting = true;
+                                    $latestBillWaiting = true;
+                                    $firstBillUnpaid = false;
+                                    $latestBillUnpaid = false;
+                                }
 
                                 // Check if current month is also paid
                                 $currentExpStatus = (string)($tenant['current_exp_status'] ?? '');
