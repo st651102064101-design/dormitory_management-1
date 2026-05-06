@@ -4065,6 +4065,12 @@ main > div:first-of-type,
                     });
                 }
 
+                // Refresh wizard table to reflect updated expense status after loading payment data
+                // (in case payment status was just changed from '0' to '2' after submission)
+                if (typeof refreshWizardTable === 'function') {
+                    setTimeout(() => { refreshWizardTable(); }, 500);
+                }
+
             })
             .catch((e) => {
                 console.error('[refreshBillingPayments] Error loading or rendering data:', e);
@@ -4745,6 +4751,10 @@ main > div:first-of-type,
         document.body.style.overflow = '';
         document.body.classList.remove('modal-open');
         document.getElementById('billingForm').reset();
+        // Refresh wizard table when billing modal closes (payment may have been submitted)
+        if (typeof refreshWizardTable === 'function') {
+            setTimeout(() => { refreshWizardTable(); }, 300);
+        }
     }
 
     function closeWizardIntro() {
