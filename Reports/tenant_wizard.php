@@ -5581,14 +5581,18 @@ main > div:first-of-type,
     if (wizardWsConfig.url) {
         try {
             var urlObj = new URL(wizardWsConfig.url);
-            // If the current hostname is different from the configured one, update it
-            if (window.location.hostname !== urlObj.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+            // Always overwrite hostname if different
+            if (window.location.hostname !== urlObj.hostname) {
+                // Use the new hostname (e.g. localhost, 127.0.0.1, or trycloudflare URL)
                 urlObj.hostname = window.location.hostname;
-                // If accessed via HTTPS (e.g., Cloudflare tunnel), use WSS
+                
                 if (window.location.protocol === 'https:') {
                     urlObj.protocol = 'wss:';
-                    // Optional: if through Cloudflare quick tunnels, port 8080 might be blocked. 
-                    // Let's leave port as is unless we know they have a proxy. Usually the server is on 8080.
+                    // Optional: quick tunnels may only route standard ports.
+                    // If you run apache on 80, and tunnel proxies 80, it won't proxy 8080 unless configured.
+                    // But we'll keep the port or let users configure proxy.
+                } else {
+                    urlObj.protocol = 'ws:';
                 }
                 wizardWsConfig.url = urlObj.toString();
             }
