@@ -295,41 +295,82 @@ try {
     $latestExpense = $expStmt->fetch(PDO::FETCH_ASSOC);
 } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
-// ดึงบิลค้างชำระสำหรับชำระค่าเช่าเดือนแรก
+// ดึงบิลเดือนแรกจากวันเริ่มสัญญา
+$firstBillMonth = null;
+$contractStart = (string)($contract['ctr_start'] ?? '');
+if ($contractStart !== '' && strtotime($contractStart) !== false) {
+    $firstBillMonth = date('Y-m-01', strtotime($contractStart));
+}
+
+// ดึงบิลค้างชำระสำหรับชำระค่าเช่าเดือนแรก (ตรวจสอบให้เป็นบิลเดือนแรกโดยเฉพาะ)
 $firstUnpaidExpense = null;
 try {
-    $unpaidStmt = $pdo->prepare("\n        SELECT
-            e.*,
-            (COALESCE(ps.submitted_rent_amount, 0) + COALESCE(ps.submitted_deposit_amount, 0)) AS submitted_amount,
-            (e.exp_total - (COALESCE(ps.submitted_rent_amount, 0) + COALESCE(ps.submitted_deposit_amount, 0))) AS remaining_amount
-        FROM expense e
-        JOIN (
-            SELECT MAX(exp_id) AS exp_id
-            FROM expense
-            WHERE ctr_id = ?
-              AND exp_status IN ('0', '3', '4')
-              AND DATE_FORMAT(exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
-            GROUP BY DATE_FORMAT(exp_month, '%Y-%m')
-        ) latest ON latest.exp_id = e.exp_id
-        LEFT JOIN (
-            SELECT 
-                exp_id, 
-                COALESCE(SUM(CASE WHEN TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN pay_amount ELSE 0 END), 0) AS submitted_rent_amount,
-                COALESCE(SUM(CASE WHEN TRIM(COALESCE(pay_remark, '')) = 'มัดจำ' THEN pay_amount ELSE 0 END), 0) AS submitted_deposit_amount
-            FROM payment
-            WHERE pay_status IN ('0', '1')
-            GROUP BY exp_id
-        ) ps ON ps.exp_id = e.exp_id
-        WHERE (
-            GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE(ps.submitted_rent_amount, 0))
-            +
-            GREATEST(0, (e.exp_total - (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0))) - COALESCE(ps.submitted_deposit_amount, 0))
-        ) > 0
-        ORDER BY e.exp_month ASC
-        LIMIT 1
-    ");
-    $unpaidStmt->execute([$contract['ctr_id']]);
-    $firstUnpaidExpense = $unpaidStmt->fetch(PDO::FETCH_ASSOC);
+    // ถ้ามีวันเริ่มสัญญา ให้ตรวจสอบบิลเดือนแรกโดยเฉพาะ
+    if ($firstBillMonth) {
+        $unpaidStmt = $pdo->prepare("\n            SELECT
+                e.*,
+                (COALESCE(ps.submitted_rent_amount, 0) + COALESCE(ps.submitted_deposit_amount, 0)) AS submitted_amount,
+                (e.exp_total - (COALESCE(ps.submitted_rent_amount, 0) + COALESCE(ps.submitted_deposit_amount, 0))) AS remaining_amount
+            FROM expense e
+            LEFT JOIN (
+                SELECT 
+                    exp_id, 
+                    COALESCE(SUM(CASE WHEN TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN pay_amount ELSE 0 END), 0) AS submitted_rent_amount,
+                    COALESCE(SUM(CASE WHEN TRIM(COALESCE(pay_remark, '')) = 'มัดจำ' THEN pay_amount ELSE 0 END), 0) AS submitted_deposit_amount
+                FROM payment
+                WHERE pay_status IN ('0', '1')
+                GROUP BY exp_id
+            ) ps ON ps.exp_id = e.exp_id
+            WHERE e.ctr_id = ?
+              AND DATE_FORMAT(e.exp_month, '%Y-%m') = DATE_FORMAT(?, '%Y-%m')
+              AND e.exp_status IN ('0', '3', '4')
+              AND (
+                GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE(ps.submitted_rent_amount, 0))
+                +
+                GREATEST(0, (e.exp_total - (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0))) - COALESCE(ps.submitted_deposit_amount, 0))
+              ) > 0
+            ORDER BY e.exp_id DESC
+            LIMIT 1
+        ");
+        $unpaidStmt->execute([$contract['ctr_id'], $firstBillMonth]);
+        $firstUnpaidExpense = $unpaidStmt->fetch(PDO::FETCH_ASSOC);
+    }
+    
+    // ถ้าไม่มีการกำหนดเดือนแรก หรือเดือนแรกไม่ค้างชำระ ให้ดึงบิลค้างชำระเร็วสุด
+    if (!$firstUnpaidExpense) {
+        $unpaidStmt = $pdo->prepare("\n            SELECT
+                e.*,
+                (COALESCE(ps.submitted_rent_amount, 0) + COALESCE(ps.submitted_deposit_amount, 0)) AS submitted_amount,
+                (e.exp_total - (COALESCE(ps.submitted_rent_amount, 0) + COALESCE(ps.submitted_deposit_amount, 0))) AS remaining_amount
+            FROM expense e
+            JOIN (
+                SELECT MAX(exp_id) AS exp_id
+                FROM expense
+                WHERE ctr_id = ?
+                  AND exp_status IN ('0', '3', '4')
+                  AND DATE_FORMAT(exp_month, '%Y-%m') <= DATE_FORMAT(CURDATE(), '%Y-%m')
+                GROUP BY DATE_FORMAT(exp_month, '%Y-%m')
+            ) latest ON latest.exp_id = e.exp_id
+            LEFT JOIN (
+                SELECT 
+                    exp_id, 
+                    COALESCE(SUM(CASE WHEN TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN pay_amount ELSE 0 END), 0) AS submitted_rent_amount,
+                    COALESCE(SUM(CASE WHEN TRIM(COALESCE(pay_remark, '')) = 'มัดจำ' THEN pay_amount ELSE 0 END), 0) AS submitted_deposit_amount
+                FROM payment
+                WHERE pay_status IN ('0', '1')
+                GROUP BY exp_id
+            ) ps ON ps.exp_id = e.exp_id
+            WHERE (
+                GREATEST(0, (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0)) - COALESCE(ps.submitted_rent_amount, 0))
+                +
+                GREATEST(0, (e.exp_total - (COALESCE(e.room_price, 0) + COALESCE(e.exp_elec_chg, 0) + COALESCE(e.exp_water, 0))) - COALESCE(ps.submitted_deposit_amount, 0))
+            ) > 0
+            ORDER BY e.exp_month ASC
+            LIMIT 1
+        ");
+        $unpaidStmt->execute([$contract['ctr_id']]);
+        $firstUnpaidExpense = $unpaidStmt->fetch(PDO::FETCH_ASSOC);
+    }
 } catch (PDOException $e) { error_log("PDOException in " . __FILE__ . " on line " . __LINE__ . ": " . $e->getMessage()); }
 
 // ดึงข่าวประชาสัมพันธ์ล่าสุด
