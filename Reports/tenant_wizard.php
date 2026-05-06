@@ -23,19 +23,54 @@ if (empty($_SESSION['csrf_token'])) {
 $csrfToken = $_SESSION['csrf_token'];
 
 
-// ดึง theme color จากการตั้งค่าระบบ
-$settingsStmt = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key = 'theme_color'");
+// ดึง theme color + websocket settings จากการตั้งค่าระบบ
+$themeColor = '#0f172a';
+$isLight = false;
+$wsEnabled = false;
+$wsUrl = '';
+$wsHost = '';
+$wsPort = '';
+$settingsStmt = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('theme_color', 'ws_enabled', 'ws_url', 'ws_port', 'ws_host')");
 if ($settingsStmt) {
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
-        if ($row['setting_key'] === 'theme_color' && !empty($row['setting_value'])) {
-            $themeColor = htmlspecialchars($row['setting_value'], ENT_QUOTES, 'UTF-8');
+        $key = (string)($row['setting_key'] ?? '');
+        $value = (string)($row['setting_value'] ?? '');
+        if ($key === 'theme_color' && $value !== '') {
+            $themeColor = htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
             $hex = ltrim($themeColor, '#');
             $r = hexdec(substr($hex, 0, 2));
             $g = hexdec(substr($hex, 2, 2));
             $b = hexdec(substr($hex, 4, 2));
             $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
             $isLight = $brightness > 155;
+        } elseif ($key === 'ws_enabled') {
+            $wsEnabled = ((int)$value === 1);
+        } elseif ($key === 'ws_url') {
+            $wsUrl = trim($value);
+        } elseif ($key === 'ws_host') {
+            $wsHost = trim($value);
+        } elseif ($key === 'ws_port') {
+            $wsPort = trim($value);
         }
+    }
+}
+
+$wsEndpoint = '';
+if ($wsUrl !== '') {
+    if (stripos($wsUrl, 'wss://') === 0 || stripos($wsUrl, 'ws://') === 0) {
+        $wsEndpoint = $wsUrl;
+    } elseif (stripos($wsUrl, 'https://') === 0) {
+        $wsEndpoint = 'wss://' . substr($wsUrl, 8);
+    } elseif (stripos($wsUrl, 'http://') === 0) {
+        $wsEndpoint = 'ws://' . substr($wsUrl, 7);
+    } else {
+        $wsEndpoint = 'ws://' . $wsUrl;
+    }
+} elseif ($wsHost !== '' && $wsPort !== '') {
+    if (stripos($wsHost, 'wss://') === 0 || stripos($wsHost, 'ws://') === 0) {
+        $wsEndpoint = rtrim($wsHost, '/') . ':' . $wsPort;
+    } else {
+        $wsEndpoint = 'ws://' . rtrim($wsHost, '/') . ':' . $wsPort;
     }
 }
 
@@ -2201,7 +2236,7 @@ main > div:first-of-type,
                                     } elseif ($isFirstMeter && $latestBillUnpaid) {
                                         if ($billingModalMeterOk) {
                                             // billing modal จะพร้อมแสดงข้อมูลได้
-                                            $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">รอตรวจสอบ</span>';
+                                            $meterStatusHtml = '<span style="display:inline-block;margin-top:0.25rem;font-size:0.78rem;color:#f59e0b;font-weight:600;">รอชำระเงิน</span>';
                                         } else {
                                             // เดือนปัจจุบันยังไม่ได้จดมิเตอร์ → แสดงปุ่มจดมิเตอร์
                                             $currentDisp = thaiMonthYear($currentYm . '-01');
@@ -2601,7 +2636,7 @@ main > div:first-of-type,
                                                                 $unpaidDisp = $firstBillUnpaid && !$firstBillWaiting && $firstBillMonthDisplay !== '-'
                                                                     ? $firstBillMonthDisplay
                                                                     : ($latestMonthDisplay !== '-' && !$latestBillWaiting ? $latestMonthDisplay : '');
-                                                                $unpaidLabel = $firstBillDueReached ? 'รอตรวจสอบ' : 'ยังไม่ถึงกำหนด';
+                                                                $unpaidLabel = $firstBillDueReached ? 'รอชำระเงิน' : 'ยังไม่ถึงกำหนด';
                                                                 // ถ้าบิลรอตรวจสอบทั้งหมดอยู่แล้ว ไม่ต้องแสดงซ้ำ
                                                                 $hasUnpaidNonWaiting = ($firstBillUnpaid && !$firstBillWaiting) || ($latestBillUnpaid && !$latestBillWaiting);
                                                                 // ยังไม่มีบิลเลย — จดมิเตอร์แล้วแต่ยังไม่ได้ออกบิล
@@ -5499,6 +5534,117 @@ main > div:first-of-type,
         });
     }
 
+    var wizardWsConfig = {
+        enabled: <?php echo $wsEnabled ? 'true' : 'false'; ?>,
+        url: <?php echo json_encode($wsEndpoint, JSON_UNESCAPED_SLASHES); ?>
+    };
+
+    function formatWizardCount(value) {
+        var num = Number(value);
+        if (!Number.isFinite(num)) return '0';
+        return Math.max(0, num).toLocaleString('en-US');
+    }
+
+    function updateWizardFilterButton(btnId, text) {
+        var btn = document.getElementById(btnId);
+        if (!btn || !text) return;
+        btn.textContent = text;
+        btn.setAttribute('title', text);
+        btn.setAttribute('data-bs-title', text);
+        if (!btn.hasAttribute('data-bs-toggle')) {
+            btn.setAttribute('data-bs-toggle', 'tooltip');
+        }
+        if (!btn.hasAttribute('data-bs-placement')) {
+            btn.setAttribute('data-bs-placement', 'top');
+        }
+        if (window.bootstrap && window.bootstrap.Tooltip) {
+            var existing = window.bootstrap.Tooltip.getInstance(btn);
+            if (existing) existing.dispose();
+            new window.bootstrap.Tooltip(btn, { container: 'body' });
+        }
+    }
+
+    function updateWizardCounts(pending, completed) {
+        var pendingText = formatWizardCount(pending);
+        var completedText = formatWizardCount(completed);
+        updateWizardFilterButton('wizBtn0', '⏳ ยังไม่ครบ 5 ขั้นตอน (' + pendingText + ')');
+        updateWizardFilterButton('wizBtn1', '✅ ครบ 5 ขั้นตอนแล้ว (' + completedText + ')');
+    }
+
+    function syncWizardFilterCountsFromDoc(doc) {
+        if (!doc || typeof doc.getElementById !== 'function') return;
+        var newBtn0 = doc.getElementById('wizBtn0');
+        var newBtn1 = doc.getElementById('wizBtn1');
+        if (newBtn0 && newBtn0.textContent) {
+            updateWizardFilterButton('wizBtn0', newBtn0.textContent.trim());
+        }
+        if (newBtn1 && newBtn1.textContent) {
+            updateWizardFilterButton('wizBtn1', newBtn1.textContent.trim());
+        }
+    }
+
+    function initWizardCountsWebSocket() {
+        if (!wizardWsConfig || !wizardWsConfig.enabled || !wizardWsConfig.url) return;
+        var ws = null;
+        var retry = 0;
+
+        function scheduleReconnect() {
+            var delay = Math.min(30000, 1000 * Math.pow(2, retry));
+            retry = Math.min(retry + 1, 6);
+            setTimeout(connect, delay);
+        }
+
+        function connect() {
+            try {
+                ws = new WebSocket(wizardWsConfig.url);
+            } catch (err) {
+                scheduleReconnect();
+                return;
+            }
+
+            ws.addEventListener('open', function() {
+                retry = 0;
+                try {
+                    ws.send(JSON.stringify({ type: 'subscribe', channel: 'wizard_counts' }));
+                } catch (err) { /* noop */ }
+            });
+
+            ws.addEventListener('message', function(event) {
+                var payload = null;
+                try {
+                    payload = JSON.parse(event.data || '{}');
+                } catch (err) {
+                    return;
+                }
+
+                if (payload && payload.channel === 'wizard_counts' && payload.data) {
+                    payload = payload.data;
+                }
+
+                if (payload && payload.type === 'wizard_counts' && payload.data) {
+                    payload = payload.data;
+                }
+
+                if (!payload || typeof payload !== 'object') return;
+                var pending = payload.pending ?? payload.pending_count ?? payload.pendingCount;
+                var completed = payload.completed ?? payload.completed_count ?? payload.completedCount;
+                if (pending != null || completed != null) {
+                    updateWizardCounts(pending, completed);
+                }
+            });
+
+            ws.addEventListener('close', function() {
+                scheduleReconnect();
+            });
+
+            ws.addEventListener('error', function() {
+                try { ws.close(); } catch (err) { /* noop */ }
+            });
+        }
+
+        connect();
+    }
+
     // === AJAX Wizard Step Submission ===
     function submitWizardStep(formId, closeModalFn) {
         const form = document.getElementById(formId);
@@ -5580,6 +5726,7 @@ main > div:first-of-type,
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
             const newWrapper = doc.getElementById('wizardTableWrapper');
+            syncWizardFilterCountsFromDoc(doc);
             if (newWrapper) {
                 wrapper.innerHTML = newWrapper.innerHTML;
                 if (typeof wizFilterApply === 'function') wizFilterApply(window._wizCurrentGroup || 0);
@@ -5701,6 +5848,7 @@ main > div:first-of-type,
     document.addEventListener('DOMContentLoaded', function() {
         wizFilter(_wizCurrentGroup);
         bindSlipPreviewInteractions(document);
+        initWizardCountsWebSocket();
         
         // Auto-refresh the wizard table every 30 seconds to reflect status changes in real-time
         var wizRefreshInterval = setInterval(function() {
