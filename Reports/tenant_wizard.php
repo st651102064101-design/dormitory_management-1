@@ -5576,6 +5576,26 @@ main > div:first-of-type,
         enabled: <?php echo $wsEnabled ? 'true' : 'false'; ?>,
         url: <?php echo json_encode($wsEndpoint, JSON_UNESCAPED_SLASHES); ?>
     };
+    
+    // Auto-adjust websocket URL for dynamic hosts (like trycloudflare tunnels)
+    if (wizardWsConfig.url) {
+        try {
+            var urlObj = new URL(wizardWsConfig.url);
+            // If the current hostname is different from the configured one, update it
+            if (window.location.hostname !== urlObj.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+                urlObj.hostname = window.location.hostname;
+                // If accessed via HTTPS (e.g., Cloudflare tunnel), use WSS
+                if (window.location.protocol === 'https:') {
+                    urlObj.protocol = 'wss:';
+                    // Optional: if through Cloudflare quick tunnels, port 8080 might be blocked. 
+                    // Let's leave port as is unless we know they have a proxy. Usually the server is on 8080.
+                }
+                wizardWsConfig.url = urlObj.toString();
+            }
+        } catch (e) {
+            console.error('Failed to parse WebSocket URL:', e);
+        }
+    }
 
     function formatWizardCount(value) {
         var num = Number(value);
