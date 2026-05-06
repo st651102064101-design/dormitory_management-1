@@ -1860,6 +1860,56 @@ try {
           gap: 0.6rem;
         }
       }
+
+      /* ===== Action Button Styles ===== */
+      .action-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 8px;
+        border: none;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        background: #3b82f6;
+        color: white;
+      }
+
+      .action-btn svg {
+        transition: transform 0.2s ease;
+        width: 14px;
+        height: 14px;
+      }
+
+      .action-btn:hover {
+        background: #2563eb;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+      }
+
+      .action-btn:hover svg {
+        transform: scale(1.15);
+      }
+
+      .btn-verify {
+        background: #10b981;
+      }
+
+      .btn-verify:hover {
+        background: #059669;
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+      }
+
+      .btn-verify:hover svg {
+        animation: verifyPop 0.3s ease;
+      }
+
+      @keyframes verifyPop {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.3); }
+      }
     </style>
     <link rel="stylesheet" href="/dormitory_management/Public/Assets/Css/futuristic-bright.css" />
     <style>
@@ -2446,6 +2496,7 @@ main > div:first-of-type,
                           <?php
                             $chargesPaid = (int)$rowStatus['chargesPaid'];
                             $chargesRemain = (int)$rowStatus['chargesRemain'];
+                            $expStatus = (string)($rowStatus['status'] ?? '');
                           ?>
                           <div class="payment-cell-wrap">
                             <div class="payment-compact">
@@ -2462,7 +2513,14 @@ main > div:first-of-type,
                               </div>
                               <?php endif; ?>
                             </div>
-
+                            <?php if ($expStatus === '2' && $chargesPaid > 0): ?>
+                              <div style="margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button type="button" class="action-btn btn-verify" onclick="openPaymentPreview(<?php echo (int)$exp['exp_id']; ?>, { tenantName: '<?php echo htmlspecialchars($exp['tnt_name'] ?? '-', ENT_QUOTES, 'UTF-8'); ?>', statusText: 'รอตรวจสอบ' })">
+                                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> 
+                                  ตรวจสอบ
+                                </button>
+                              </div>
+                            <?php endif; ?>
                           </div>
                         </td>
                       </tr>
