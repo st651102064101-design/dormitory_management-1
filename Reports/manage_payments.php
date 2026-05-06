@@ -3250,7 +3250,7 @@ main > div:first-of-type,
                         </td>
                         <td>
                           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                            <?php if ((int)($pay['_has_rejected_history'] ?? 0) !== 1 && (string)($pay['pay_status'] ?? '0') !== '2' && (string)($pay['pay_status'] ?? '0') !== 'unpaid' && (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1)): ?>
+                            <?php if ((string)($pay['pay_status'] ?? '0') !== '2' && (string)($pay['pay_status'] ?? '0') !== 'unpaid' && (int)($pay['_has_rejected_history'] ?? 0) === 0 && (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1)): ?>
                               <button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(<?php echo (int)$pay['pay_id']; ?>, '<?php echo htmlspecialchars((string)($pay['pay_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                             <?php endif; ?>
                           </div>
@@ -3282,7 +3282,7 @@ main > div:first-of-type,
                             <td style="color:#64748b;font-size:0.9rem;">-</td>
                             <td>
                               <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                                <?php if ((int)($pay['_has_rejected_history'] ?? 0) !== 1 && (string)($subItem['status'] ?? '') !== '2' && (string)($subItem['status'] ?? '') !== 'unpaid' && (((string)($subItem['status'] ?? '') === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink)): ?>
+                                <?php if ((string)($subItem['status'] ?? '') !== '2' && (string)($subItem['status'] ?? '') !== 'unpaid' && (int)($pay['_has_rejected_history'] ?? 0) === 0 && (((string)($subItem['status'] ?? '') === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink)): ?>
                                   <button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(<?php echo (int)($subItem['pay_id'] ?? 0); ?>, '<?php echo htmlspecialchars((string)($subItem['pay_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                                 <?php endif; ?>
                               </div>
@@ -3364,7 +3364,7 @@ main > div:first-of-type,
                         <?php endif; ?>
                       </div>
                       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                        <?php if ((int)($pay['_has_rejected_history'] ?? 0) !== 1 && (string)($pay['pay_status'] ?? '0') !== '2' && (string)($pay['pay_status'] ?? '0') !== 'unpaid' && (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1)): ?>
+                        <?php if ((string)($pay['pay_status'] ?? '0') !== '2' && (string)($pay['pay_status'] ?? '0') !== 'unpaid' && (int)($pay['_has_rejected_history'] ?? 0) === 0 && (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1)): ?>
                           <button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(<?php echo (int)$pay['pay_id']; ?>, '<?php echo htmlspecialchars((string)($pay['pay_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                         <?php endif; ?>
                       </div>
