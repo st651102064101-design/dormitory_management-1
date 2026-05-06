@@ -140,7 +140,7 @@ try {
             LEFT JOIN (
                 SELECT exp_id,
                                         SUM(CASE WHEN pay_status = '1' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN pay_amount ELSE 0 END) AS approved_amount,
-                                        SUM(CASE WHEN pay_status = '0' AND pay_proof IS NOT NULL AND pay_proof <> '' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN 1 ELSE 0 END) AS pending_count
+                                        SUM(CASE WHEN pay_status = '0' AND TRIM(COALESCE(pay_remark, '')) <> 'มัดจำ' THEN 1 ELSE 0 END) AS pending_count
                 FROM payment GROUP BY exp_id
             ) pay_agg ON pay_agg.exp_id = e.exp_id
             WHERE (COALESCE(tw.step_5_confirmed, 0) = 1 OR COALESCE(tw.current_step, 0) >= 5)
