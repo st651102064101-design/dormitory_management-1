@@ -4013,30 +4013,38 @@ main > div:first-of-type,
       let groupPaymentsDataTable = null;
 
       function initGroupPaymentsDataTable() {
-        if (typeof simpleDatatables === 'undefined' || typeof simpleDatatables.DataTable !== 'function') return;
-        
-        // Destroy existing DataTable if it exists
-        if (groupPaymentsDataTable) {
-          groupPaymentsDataTable.destroy();
-          groupPaymentsDataTable = null;
-        }
-        
-        const tableEl = document.getElementById('groupPaymentsDataTable');
-        if (!tableEl) return;
-        
-        groupPaymentsDataTable = new simpleDatatables.DataTable(tableEl, {
-          perPage: 10,
-          perPageSelect: [5, 10, 15, 20],
-          columns: [
-            { select: 2, type: 'string' }
-          ],
-          labels: {
-            placeholder: 'ค้นหา...',
-            perPage: '{select} รายการต่อหน้า',
-            noRows: 'ไม่พบรายการที่ตรงกับการค้นหา',
-            info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+        // Wait a tick to ensure DOM is fully updated
+        setTimeout(function() {
+          if (typeof simpleDatatables === 'undefined' || typeof simpleDatatables.DataTable !== 'function') {
+            console.warn('SimpleDatatables library not loaded');
+            return;
           }
-        });
+          
+          const tableEl = document.getElementById('groupPaymentsDataTable');
+          if (!tableEl) {
+            console.warn('groupPaymentsDataTable element not found');
+            return;
+          }
+          
+          // Destroy existing DataTable if it exists
+          if (groupPaymentsDataTable) {
+            try { groupPaymentsDataTable.destroy(); } catch (e) {}
+            groupPaymentsDataTable = null;
+          }
+          
+          groupPaymentsDataTable = new simpleDatatables.DataTable(tableEl, {
+            searchable: true,
+            fixedHeight: false,
+            perPage: 10,
+            perPageSelect: [5, 10, 15, 20],
+            labels: {
+              placeholder: 'ค้นหา...',
+              perPage: 'รายการต่อหน้า',
+              noRows: 'ไม่พบรายการที่ตรงกับการค้นหา',
+              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+            }
+          });
+        }, 50);
       }
 
       function destroyGroupPaymentsDataTable() {
