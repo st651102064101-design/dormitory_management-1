@@ -514,7 +514,7 @@ $lightThemeClass = $isLight ? 'light-theme' : '';
         }
         .status-chip.reserved { background: rgba(245,158,11,0.15); color: #fbbf24; }
         .status-chip.checkedin { background: rgba(16,185,129,0.15); color: #34d399; }
-        .status-chip.unpaid { background: rgba(239,68,68,0.15); color: #f87171; }
+        .status-chip.unpaid { background: rgba(245,158,11,0.15); color: #fbbf24; }
         .status-chip.pending { background: rgba(245,158,11,0.15); color: #fbbf24; }
         .status-chip.partial { background: rgba(139,92,246,0.15); color: #a78bfa; }
         .status-chip.paid { background: rgba(16,185,129,0.15); color: #34d399; }
