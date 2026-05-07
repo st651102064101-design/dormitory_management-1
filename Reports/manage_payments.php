@@ -429,7 +429,7 @@ $buildPaymentKey = static function(array $pay): string {
   ]);
 };
 
-$statusRank = ['1' => 5, 'unpaid' => 4, '0' => 3, '2' => 2];
+$statusRank = ['1' => 5, 'unpaid' => 4, '0' => 4, '2' => 2];
 $sourceRank = ['unpaid_expense' => 3, 'payment' => 2, 'booking_deposit' => 1];
 $shouldReplacePayment = static function(array $existing, array $candidate) use ($statusRank, $sourceRank): bool {
   $existingSource = (string)($existing['payment_source'] ?? 'payment');
@@ -619,13 +619,10 @@ foreach ($payments as $pay) {
     $hadRejectedEverCount++;
   }
 
-    if (($pay['pay_status'] ?? '') === '0') {
+    if (($pay['pay_status'] ?? '') === '0' || ($pay['pay_status'] ?? '') === 'unpaid') {
         $pendingOnlyCount++;
         $pendingOnlyTotal += (int)($pay['pay_amount'] ?? 0);
-    } elseif (($pay['pay_status'] ?? '') === 'unpaid') {
-        $unpaidOnlyCount++;
-        $unpaidOnlyTotal += (int)($pay['pay_amount'] ?? 0);
-  } elseif (($pay['pay_status'] ?? '') === '2') {
+    } elseif (($pay['pay_status'] ?? '') === '2') {
     $rejectedOnlyCount++;
     } elseif (($pay['pay_status'] ?? '') === '1') {
         $verifiedFilteredCount++;
@@ -928,10 +925,10 @@ $filterRoomOptions = array_values($filterRoomOptions);
         border: none !important;
       }
       html.light-theme .status-badge.status-unpaid {
-        background: linear-gradient(135deg, #ef4444, #dc2626) !important;
+        background: linear-gradient(135deg, #f59e0b, #d97706) !important;
         color: #ffffff !important;
         border: none !important;
-        box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3) !important;
+        box-shadow: 0 4px 12px rgba(217, 119, 6, 0.3) !important;
       }
       html.light-theme .status-badge.status-unpaid svg {
         stroke: #ffffff !important;
@@ -2450,11 +2447,9 @@ $filterRoomOptions = array_values($filterRoomOptions);
         border: 1px solid rgba(34, 197, 94, 0.3);
       }
       .status-unpaid {
-        background: linear-gradient(135deg, rgba(239, 68, 68, 0.2), rgba(220, 38, 38, 0.15));
-        color: #dc2626;
-        border: 1.5px solid rgba(239, 68, 68, 0.5);
-        box-shadow: 0 2px 8px rgba(239, 68, 68, 0.2);
-        font-weight: 700;
+        background: rgba(251, 191, 36, 0.15);
+        color: #fbbf24;
+        border: 1px solid rgba(251, 191, 36, 0.3);
       }
 
       .proof-link {
@@ -3061,9 +3056,6 @@ main > div:first-of-type,
                 <?php if ($pendingOnlyCount > 0): ?>
                   <span><span class="pcp-dot pending"></span>รอตรวจสอบ <?php echo number_format($pendingOnlyCount); ?> รายการ</span>
                 <?php endif; ?>
-                <?php if ($unpaidOnlyCount > 0): ?>
-                  <span><span class="pcp-dot unpaid"></span>รอชำระ <?php echo number_format($unpaidOnlyCount); ?> รายการ</span>
-                <?php endif; ?>
               </div>
             </div>
           </section>
@@ -3077,7 +3069,6 @@ main > div:first-of-type,
             <div class="payment-filter-tabs" id="paymentFilterTabs">
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="" onclick="window.handlePaymentFilterTab(this)">ทั้งหมด <span class="tab-count"><?php echo $allFilteredCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0" onclick="window.handlePaymentFilterTab(this)">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid" onclick="window.handlePaymentFilterTab(this)">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '2' ? 'active' : ''; ?>" data-status="2" onclick="window.handlePaymentFilterTab(this)">ตีกลับ <span class="tab-count"><?php echo $rejectedOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'had_rejected' ? 'active' : ''; ?>" data-status="had_rejected" onclick="window.handlePaymentFilterTab(this)">เคยตีกลับ <span class="tab-count"><?php echo $hadRejectedEverCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '1' ? 'active' : ''; ?>" data-status="1" onclick="window.handlePaymentFilterTab(this)">ตรวจสอบแล้ว <span class="tab-count"><?php echo $verifiedFilteredCount; ?></span></button>
@@ -3183,7 +3174,7 @@ main > div:first-of-type,
                               </svg>
                             </button>
                           <?php endif; ?>
-                          <?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?>
+                          <?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? 'N/A')); ?>
                         <td><?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?></td>
                         <td><?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></td>
                         <td><?php echo $pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-'; ?></td>
@@ -3246,7 +3237,7 @@ main > div:first-of-type,
                         </td>
                         <td>
                           <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                            <?php if ((string)($pay['pay_status'] ?? '0') !== '2' && (string)($pay['pay_status'] ?? '0') !== 'unpaid' && (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1)): ?>
+                            <?php if ((string)($pay['pay_status'] ?? '0') !== '2' && (($pay['pay_status'] === '0' || $pay['pay_status'] === 'unpaid' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1)): ?>
                               <button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(<?php echo (int)$pay['pay_id']; ?>, '<?php echo htmlspecialchars((string)($pay['pay_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                             <?php endif; ?>
                           </div>
@@ -3324,7 +3315,7 @@ main > div:first-of-type,
                   <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>">
                     <div class="payment-row-top">
                       <div class="payment-row-main">
-                        <strong>#<?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? (string)((int)$pay['pay_id']))); ?></strong>
+                        <strong>#<?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? 'N/A')); ?></strong>
                         <span class="payment-row-sub">ห้อง <?php echo htmlspecialchars((string)($pay['room_number'] ?? '-')); ?> • <?php echo htmlspecialchars($pay['tnt_name'] ?? '-'); ?></span>
                       </div>
                       <span class="status-badge <?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
@@ -3360,7 +3351,7 @@ main > div:first-of-type,
                         <?php endif; ?>
                       </div>
                       <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
-                        <?php if ((string)($pay['pay_status'] ?? '0') !== '2' && (string)($pay['pay_status'] ?? '0') !== 'unpaid' && (($pay['pay_status'] === '0' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1)): ?>
+                        <?php if ((string)($pay['pay_status'] ?? '0') !== '2' && (($pay['pay_status'] === '0' || $pay['pay_status'] === 'unpaid' || (int)($pay['_has_pending_history'] ?? 0) === 1) && !$isDepositRemark && $hasExpenseLink && $groupCount <= 1)): ?>
                           <button type="button" class="action-btn btn-verify" onclick="showPaymentProofAndVerify(<?php echo (int)$pay['pay_id']; ?>, '<?php echo htmlspecialchars((string)($pay['pay_proof'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>', <?php echo (int)$pay['exp_id']; ?>)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><polyline points="20 6 9 17 4 12"/></svg> ยืนยัน</button>
                         <?php endif; ?>
                       </div>
@@ -3512,7 +3503,9 @@ main > div:first-of-type,
             if ((element.dataset.hasRejected || '0') !== '1') return false;
           } else {
             const rowStatus = element.dataset.status || '';
-            if (rowStatus !== filters.status) return false;
+            // Treat unpaid status as part of pending (0) for filtering
+            const normalizedStatus = (rowStatus === 'unpaid') ? '0' : rowStatus;
+            if (normalizedStatus !== filters.status) return false;
           }
         }
 
