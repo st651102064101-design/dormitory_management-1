@@ -6,6 +6,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/../includes/repair_spam_check.php';
+require_once __DIR__ . '/../GitHelper.php';
 
 $auth = checkTenantAuth();
 $pdo = $auth['pdo'];
@@ -223,6 +224,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string)($_POST['action'] ?? '') !=
                     $detail = $lastErr['message'] ?? 'unknown error';
                     throw new Exception('ไม่สามารถอัปโหลดรูปภาพได้ (' . $detail . ')');
                 }
+                
+                // Auto-commit the uploaded repair image to git
+                $relativeFilePath = 'Public/Assets/Images/Repairs/' . $filename;
+                GitHelper::autoCommitFile($relativeFilePath);
+                
                 $repair_image = $filename;
             }
             

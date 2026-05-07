@@ -18,6 +18,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../GitHelper.php';
 
 try {
     $pdo = connectDB();
@@ -127,6 +128,10 @@ try {
     // Update room image in database
     $stmt = $pdo->prepare("UPDATE room SET room_image = ? WHERE room_id = ?");
     $stmt->execute([$filename, $room_id]);
+    
+    // Auto-commit the uploaded file to git
+    $relativeFilePath = 'Public/Assets/Images/Rooms/' . $filename;
+    GitHelper::autoCommitFile($relativeFilePath);
     
     echo json_encode([
         'success' => true,

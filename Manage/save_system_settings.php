@@ -15,6 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../GitHelper.php';
 
 try {
     $pdo = connectDB();
@@ -381,6 +382,10 @@ try {
             $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
             $stmt->execute(['logo_filename', $settingLogoFilename, $settingLogoFilename]);
 
+            // Auto-commit the logo to git
+            $relativeLogoPath = 'Public/Assets/Images/' . $settingLogoFilename;
+            GitHelper::autoCommitFile($relativeLogoPath);
+
             header('Content-Type: application/json');
             $msg = 'บันทึก Logo สำเร็จ';
             if (!empty($deleted)) {
@@ -619,6 +624,10 @@ try {
             $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
             $stmt->execute(['bg_filename', $filename, $filename]);
 
+            // Auto-commit the background image to git
+            $relativeBgPath = 'Public/Assets/Images/' . $filename;
+            GitHelper::autoCommitFile($relativeBgPath);
+
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'message' => 'อัพโหลดภาพพื้นหลังสำเร็จ', 'filename' => $filename]);
             exit;
@@ -659,6 +668,10 @@ try {
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
             $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
             $stmt->execute(['line_qr_code_image', $filename, $filename]);
+
+            // Auto-commit the LINE QR code image to git
+            $relativeQrPath = 'Public/Assets/Images/' . $filename;
+            GitHelper::autoCommitFile($relativeQrPath);
 
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'message' => 'อัพโหลด QR Code สำหรับเพิ่มเพื่อนสำเร็จ', 'filename' => $filename]);
@@ -720,6 +733,10 @@ try {
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
             $stmt = $pdo->prepare("INSERT INTO system_settings (setting_key, setting_value) VALUES (?, ?) ON DUPLICATE KEY UPDATE setting_value = ?");
             $stmt->execute(['owner_signature', $filename, $filename]);
+
+            // Auto-commit the owner signature to git
+            $relativeSignaturePath = 'Public/Assets/Images/' . $filename;
+            GitHelper::autoCommitFile($relativeSignaturePath);
 
             header('Content-Type: application/json');
             echo json_encode(['success' => true, 'message' => 'อัพโหลดลายเซ็นสำเร็จ', 'filename' => $filename]);

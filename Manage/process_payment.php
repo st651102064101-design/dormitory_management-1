@@ -14,6 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../GitHelper.php';
 
 try {
     $pdo = connectDB();
@@ -85,17 +86,8 @@ try {
             $pay_proof = $newFilename;
             
             // Auto-commit the uploaded file to git
-            $gitDir = __DIR__ . '/..';
             $relativeFilePath = 'Public/Assets/Images/Payments/' . $newFilename;
-            
-            // Try to auto-commit
-            $commitCmd = "cd " . escapeshellarg($gitDir) . " && git add " . escapeshellarg($relativeFilePath) . " && git commit -m 'Auto-commit: Payment proof uploaded (" . escapeshellarg($newFilename) . ")' 2>&1";
-            exec($commitCmd, $output, $exitCode);
-            
-            // Log the git commit attempt (don't fail if it doesn't work)
-            if ($exitCode !== 0 && $exitCode !== 1) {
-                error_log("Git auto-commit warning: " . implode("\n", $output));
-            }
+            GitHelper::autoCommitFile($relativeFilePath);
         } else {
             die(json_encode(['success' => false, 'error' => 'ไม่สามารถอัปโหลดไฟล์ได้ (ตรวจสอบสิทธิ์โฟลเดอร์หรือขนาดไฟล์)']));
         }

@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../GitHelper.php';
 
 try {
     $pdo = connectDB();
@@ -193,10 +194,8 @@ try {
             }
             
             // Auto-commit the uploaded file to git
-            $gitDir = __DIR__ . '/..';
             $relativeFilePath = 'Public/Assets/Images/Payments/' . $newName;
-            $commitCmd = "cd " . escapeshellarg($gitDir) . " && git add " . escapeshellarg($relativeFilePath) . " && git commit -m 'Auto-commit: Deposit refund proof uploaded (" . escapeshellarg($newName) . ")' 2>&1";
-            exec($commitCmd, $output, $exitCode);
+            GitHelper::autoCommitFile($relativeFilePath);
             if ($exitCode !== 0 && $exitCode !== 1) {
                 error_log("Git auto-commit warning: " . implode("\n", $output));
             }

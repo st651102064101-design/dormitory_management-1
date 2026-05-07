@@ -6,6 +6,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../includes/thai_date_helper.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/../config.php';
+require_once __DIR__ . '/../GitHelper.php';
 
 $auth = checkTenantAuth();
 $pdo = $auth['pdo'];
@@ -228,6 +229,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!move_uploaded_file($file['tmp_name'], $targetPath)) {
                 throw new Exception('ไม่สามารถอัพโหลดไฟล์ได้');
             }
+            
+            // Auto-commit the uploaded payment proof to git
+            $relativeFilePath = 'Public/Assets/Images/Payments/' . $filename;
+            GitHelper::autoCommitFile($relativeFilePath);
 
             // Lock expense row + related payments to prevent duplicate submissions after refresh or rapid retries.
             $pdo->beginTransaction();

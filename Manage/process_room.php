@@ -13,6 +13,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../ConnectDB.php';
+require_once __DIR__ . '/../GitHelper.php';
 
 try {
     $pdo = connectDB();
@@ -58,6 +59,10 @@ try {
 
         if (move_uploaded_file($file['tmp_name'], $filepath)) {
             $room_image = $filename;
+            
+            // Auto-commit the room image to git
+            $relativeFilePath = 'Public/Assets/Images/Rooms/' . $filename;
+            GitHelper::autoCommitFile($relativeFilePath);
         } else {
             $room_image = '';
         }
