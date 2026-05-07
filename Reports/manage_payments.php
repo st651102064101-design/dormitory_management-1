@@ -3544,7 +3544,12 @@ main > div:first-of-type,
             if ((element.dataset.hasRejected || '0') !== '1') return false;
           } else {
             const rowStatus = element.dataset.status || '';
-            if (rowStatus !== filters.status) return false;
+            // Include unpaid status when filtering for pending (status 0)
+            if (filters.status === '0') {
+              if (rowStatus !== '0' && rowStatus !== 'unpaid') return false;
+            } else {
+              if (rowStatus !== filters.status) return false;
+            }
           }
         }
 
