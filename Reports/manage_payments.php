@@ -357,6 +357,25 @@ $sortPaymentsByRoom = static function(array $a, array $b): int {
     return $roomCompare;
   }
 
+  // Within same room, prioritize unpaid status first, then pending, then verified, then rejected
+  $statusPriority = static function(string $status): int {
+    $status = strtolower(trim($status));
+    return match($status) {
+      'unpaid' => 0,
+      '0' => 1,
+      '1' => 2,
+      '2' => 3,
+      default => 4,
+    };
+  };
+  
+  $aStatusPriority = $statusPriority((string)($a['pay_status'] ?? ''));
+  $bStatusPriority = $statusPriority((string)($b['pay_status'] ?? ''));
+  
+  if ($aStatusPriority !== $bStatusPriority) {
+    return $aStatusPriority <=> $bStatusPriority;
+  }
+
   $aTime = strtotime((string)($a['pay_date'] ?? $a['exp_month'] ?? '')) ?: 0;
   $bTime = strtotime((string)($b['pay_date'] ?? $b['exp_month'] ?? '')) ?: 0;
   if ($aTime !== $bTime) {
