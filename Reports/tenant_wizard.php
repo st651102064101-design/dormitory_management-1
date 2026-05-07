@@ -23,14 +23,10 @@ if (empty($_SESSION['csrf_token'])) {
 $csrfToken = $_SESSION['csrf_token'];
 
 
-// ดึง theme color + websocket settings จากการตั้งค่าระบบ
+// ดึง theme color จากการตั้งค่าระบบ
 $themeColor = '#0f172a';
 $isLight = false;
-$wsEnabled = false;
-$wsUrl = '';
-$wsHost = '';
-$wsPort = '';
-$settingsStmt = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key IN ('theme_color', 'ws_enabled', 'ws_url', 'ws_port', 'ws_host')");
+$settingsStmt = $conn->query("SELECT setting_key, setting_value FROM system_settings WHERE setting_key = 'theme_color'");
 if ($settingsStmt) {
     while ($row = $settingsStmt->fetch(PDO::FETCH_ASSOC)) {
         $key = (string)($row['setting_key'] ?? '');
@@ -43,34 +39,7 @@ if ($settingsStmt) {
             $b = hexdec(substr($hex, 4, 2));
             $brightness = (($r * 299) + ($g * 587) + ($b * 114)) / 1000;
             $isLight = $brightness > 155;
-        } elseif ($key === 'ws_enabled') {
-            $wsEnabled = ((int)$value === 1);
-        } elseif ($key === 'ws_url') {
-            $wsUrl = trim($value);
-        } elseif ($key === 'ws_host') {
-            $wsHost = trim($value);
-        } elseif ($key === 'ws_port') {
-            $wsPort = trim($value);
         }
-    }
-}
-
-$wsEndpoint = '';
-if ($wsUrl !== '') {
-    if (stripos($wsUrl, 'wss://') === 0 || stripos($wsUrl, 'ws://') === 0) {
-        $wsEndpoint = $wsUrl;
-    } elseif (stripos($wsUrl, 'https://') === 0) {
-        $wsEndpoint = 'wss://' . substr($wsUrl, 8);
-    } elseif (stripos($wsUrl, 'http://') === 0) {
-        $wsEndpoint = 'ws://' . substr($wsUrl, 7);
-    } else {
-        $wsEndpoint = 'ws://' . $wsUrl;
-    }
-} elseif ($wsHost !== '' && $wsPort !== '') {
-    if (stripos($wsHost, 'wss://') === 0 || stripos($wsHost, 'ws://') === 0) {
-        $wsEndpoint = rtrim($wsHost, '/') . ':' . $wsPort;
-    } else {
-        $wsEndpoint = 'ws://' . rtrim($wsHost, '/') . ':' . $wsPort;
     }
 }
 
@@ -5572,39 +5541,6 @@ main > div:first-of-type,
         });
     }
 
-    var wizardWsConfig = {
-        enabled: <?php echo $wsEnabled ? 'true' : 'false'; ?>,
-        url: <?php echo json_encode($wsEndpoint, JSON_UNESCAPED_SLASHES); ?>
-    };
-    
-    // Auto-adjust websocket URL for dynamic hosts (like trycloudflare tunnels)
-    if (wizardWsConfig.url) {
-        try {
-            var urlObj = new URL(wizardWsConfig.url);
-            // Always overwrite hostname if different
-            if (window.location.hostname !== urlObj.hostname) {
-                // Use the new hostname (e.g. localhost, 127.0.0.1, or trycloudflare URL)
-                urlObj.hostname = window.location.hostname;
-                
-                if (window.location.protocol === 'https:') {
-                    urlObj.protocol = 'wss:';
-                    // Cloudflare tunnels use 443 for wss: traffic and port 8080 is an HTTP port on Cloudflare edge.
-                    // So connecting to wss://*.trycloudflare.com:8080 will throw ERR_SSL_PROTOCOL_ERROR.
-                    // We drop the port to force it through Cloudflare's default HTTPS port (443).
-                    // Note: This requires Apache/Nginx to proxy the WS request to the internal 8080 port.
-                    if (urlObj.hostname.includes('trycloudflare.com')) {
-                        urlObj.port = '';
-                    }
-                } else {
-                    urlObj.protocol = 'ws:';
-                }
-                wizardWsConfig.url = urlObj.toString();
-            }
-        } catch (e) {
-            console.error('Failed to parse WebSocket URL:', e);
-        }
-    }
-
     function formatWizardCount(value) {
         var num = Number(value);
         if (!Number.isFinite(num)) return '0';
@@ -5649,72 +5585,7 @@ main > div:first-of-type,
         }
     }
 
-    function initWizardCountsWebSocket() {
-        if (!wizardWsConfig || !wizardWsConfig.enabled || !wizardWsConfig.url) return;
-        var ws = null;
-        var retry = 0;
-        var maxRetries = 5;
 
-        function scheduleReconnect() {
-            if (retry >= maxRetries) {
-                console.warn('Wizard WebSocket disabled after ' + maxRetries + ' failed connection attempts.');
-                return;
-            }
-            var delay = Math.min(30000, 1000 * Math.pow(2, retry));
-            retry++;
-            setTimeout(connect, delay);
-        }
-
-        function connect() {
-            try {
-                ws = new WebSocket(wizardWsConfig.url);
-            } catch (err) {
-                scheduleReconnect();
-                return;
-            }
-
-            ws.addEventListener('open', function() {
-                retry = 0;
-                try {
-                    ws.send(JSON.stringify({ type: 'subscribe', channel: 'wizard_counts' }));
-                } catch (err) { /* noop */ }
-            });
-
-            ws.addEventListener('message', function(event) {
-                var payload = null;
-                try {
-                    payload = JSON.parse(event.data || '{}');
-                } catch (err) {
-                    return;
-                }
-
-                if (payload && payload.channel === 'wizard_counts' && payload.data) {
-                    payload = payload.data;
-                }
-
-                if (payload && payload.type === 'wizard_counts' && payload.data) {
-                    payload = payload.data;
-                }
-
-                if (!payload || typeof payload !== 'object') return;
-                var pending = payload.pending ?? payload.pending_count ?? payload.pendingCount;
-                var completed = payload.completed ?? payload.completed_count ?? payload.completedCount;
-                if (pending != null || completed != null) {
-                    updateWizardCounts(pending, completed);
-                }
-            });
-
-            ws.addEventListener('close', function() {
-                scheduleReconnect();
-            });
-
-            ws.addEventListener('error', function() {
-                try { ws.close(); } catch (err) { /* noop */ }
-            });
-        }
-
-        connect();
-    }
 
     // === AJAX Wizard Step Submission ===
     function submitWizardStep(formId, closeModalFn) {
@@ -5919,7 +5790,6 @@ main > div:first-of-type,
     document.addEventListener('DOMContentLoaded', function() {
         wizFilter(_wizCurrentGroup);
         bindSlipPreviewInteractions(document);
-        initWizardCountsWebSocket();
         
         // Auto-refresh the wizard table every 30 seconds to reflect status changes in real-time
         var wizRefreshInterval = setInterval(function() {
