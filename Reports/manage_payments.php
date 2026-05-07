@@ -357,25 +357,6 @@ $sortPaymentsByRoom = static function(array $a, array $b): int {
     return $roomCompare;
   }
 
-  // Within same room, prioritize unpaid status first, then pending, then verified, then rejected
-  $statusPriority = static function(string $status): int {
-    $status = strtolower(trim($status));
-    return match($status) {
-      'unpaid' => 0,
-      '0' => 1,
-      '1' => 2,
-      '2' => 3,
-      default => 4,
-    };
-  };
-  
-  $aStatusPriority = $statusPriority((string)($a['pay_status'] ?? ''));
-  $bStatusPriority = $statusPriority((string)($b['pay_status'] ?? ''));
-  
-  if ($aStatusPriority !== $bStatusPriority) {
-    return $aStatusPriority <=> $bStatusPriority;
-  }
-
   $aTime = strtotime((string)($a['pay_date'] ?? $a['exp_month'] ?? '')) ?: 0;
   $bTime = strtotime((string)($b['pay_date'] ?? $b['exp_month'] ?? '')) ?: 0;
   if ($aTime !== $bTime) {
@@ -3108,7 +3089,7 @@ main > div:first-of-type,
             <div class="payment-controls-row">
             <div class="payment-filter-tabs" id="paymentFilterTabs">
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="" onclick="window.handlePaymentFilterTab(this)">ทั้งหมด <span class="tab-count"><?php echo $allFilteredCount; ?></span></button>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0" onclick="window.handlePaymentFilterTab(this)">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount + $unpaidOnlyCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0" onclick="window.handlePaymentFilterTab(this)">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid" onclick="window.handlePaymentFilterTab(this)">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '2' ? 'active' : ''; ?>" data-status="2" onclick="window.handlePaymentFilterTab(this)">ตีกลับ <span class="tab-count"><?php echo $rejectedOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'had_rejected' ? 'active' : ''; ?>" data-status="had_rejected" onclick="window.handlePaymentFilterTab(this)">เคยตีกลับ <span class="tab-count"><?php echo $hadRejectedEverCount; ?></span></button>
@@ -3547,12 +3528,7 @@ main > div:first-of-type,
             if ((element.dataset.hasRejected || '0') !== '1') return false;
           } else {
             const rowStatus = element.dataset.status || '';
-            // Include unpaid status when filtering for pending (status 0)
-            if (filters.status === '0') {
-              if (rowStatus !== '0' && rowStatus !== 'unpaid') return false;
-            } else {
-              if (rowStatus !== filters.status) return false;
-            }
+            if (rowStatus !== filters.status) return false;
           }
         }
 
