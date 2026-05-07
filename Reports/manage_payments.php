@@ -3439,7 +3439,7 @@ main > div:first-of-type,
     <script src="/dormitory_management/Public/Assets/Javascript/confirm-modal.js"></script>
     <script>
       // Toast fallback (ถ้าไม่มีประกาศไว้จากไฟล์อื่น)
-      if (typeof showSuccessToast !== 'function' || typeof showErrorToast !== 'function') {
+      if (typeof showSuccessToast !== 'function' || typeof showErrorToast !== 'function' || typeof showToast !== 'function') {
         const ensureToastContainer = () => {
           let c = document.getElementById('toast-container');
           if (!c) {
@@ -3466,6 +3466,9 @@ main > div:first-of-type,
         }
         if (typeof showErrorToast !== 'function') {
           window.showErrorToast = (msg) => makeToast(msg || 'เกิดข้อผิดพลาด', 'error');
+        }
+        if (typeof showToast !== 'function') {
+          window.showToast = (msg, type) => makeToast(msg || 'ข้อความ', type === 'error' ? 'error' : 'success');
         }
       }
 
