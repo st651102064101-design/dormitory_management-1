@@ -191,6 +191,15 @@ try {
                 echo json_encode(['success' => false, 'error' => 'ไม่สามารถตรวจสอบไฟล์ที่อัพโหลด']);
                 exit;
             }
+            
+            // Auto-commit the uploaded file to git
+            $gitDir = __DIR__ . '/..';
+            $relativeFilePath = 'Public/Assets/Images/Payments/' . $newName;
+            $commitCmd = "cd " . escapeshellarg($gitDir) . " && git add " . escapeshellarg($relativeFilePath) . " && git commit -m 'Auto-commit: Deposit refund proof uploaded (" . escapeshellarg($newName) . ")' 2>&1";
+            exec($commitCmd, $output, $exitCode);
+            if ($exitCode !== 0 && $exitCode !== 1) {
+                error_log("Git auto-commit warning: " . implode("\n", $output));
+            }
 
             $dbPath = 'dormitory_management/Public/Assets/Images/Payments/' . $newName;
             $upd = $pdo->prepare("UPDATE deposit_refund SET refund_proof=? WHERE refund_id=?");

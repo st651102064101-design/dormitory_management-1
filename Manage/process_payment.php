@@ -83,6 +83,19 @@ try {
 
         if (move_uploaded_file($_FILES['pay_proof']['tmp_name'], $targetPath)) {
             $pay_proof = $newFilename;
+            
+            // Auto-commit the uploaded file to git
+            $gitDir = __DIR__ . '/..';
+            $relativeFilePath = 'Public/Assets/Images/Payments/' . $newFilename;
+            
+            // Try to auto-commit
+            $commitCmd = "cd " . escapeshellarg($gitDir) . " && git add " . escapeshellarg($relativeFilePath) . " && git commit -m 'Auto-commit: Payment proof uploaded (" . escapeshellarg($newFilename) . ")' 2>&1";
+            exec($commitCmd, $output, $exitCode);
+            
+            // Log the git commit attempt (don't fail if it doesn't work)
+            if ($exitCode !== 0 && $exitCode !== 1) {
+                error_log("Git auto-commit warning: " . implode("\n", $output));
+            }
         } else {
             die(json_encode(['success' => false, 'error' => 'ไม่สามารถอัปโหลดไฟล์ได้ (ตรวจสอบสิทธิ์โฟลเดอร์หรือขนาดไฟล์)']));
         }

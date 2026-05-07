@@ -150,6 +150,16 @@ try {
         }
         
         error_log("DEBUG repair: move_uploaded_file SUCCESS, filename=$filename");
+        
+        // Auto-commit the uploaded file to git
+        $gitDir = dirname(__DIR__);
+        $relativeFilePath = 'Public/Assets/Images/Repairs/' . $filename;
+        $commitCmd = "cd " . escapeshellarg($gitDir) . " && git add " . escapeshellarg($relativeFilePath) . " && git commit -m 'Auto-commit: Repair image uploaded (" . escapeshellarg($filename) . ")' 2>&1";
+        exec($commitCmd, $output, $exitCode);
+        if ($exitCode !== 0 && $exitCode !== 1) {
+            error_log("Git auto-commit warning: " . implode("\n", $output));
+        }
+        
         $repair_image = $filename;
     } else {
         error_log("DEBUG repair: No image uploaded");
