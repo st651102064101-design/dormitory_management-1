@@ -4013,38 +4013,47 @@ main > div:first-of-type,
       let groupPaymentsDataTable = null;
 
       function initGroupPaymentsDataTable() {
-        // Wait a tick to ensure DOM is fully updated
-        setTimeout(function() {
-          if (typeof simpleDatatables === 'undefined' || typeof simpleDatatables.DataTable !== 'function') {
-            console.warn('SimpleDatatables library not loaded');
-            return;
-          }
-          
-          const tableEl = document.getElementById('groupPaymentsDataTable');
-          if (!tableEl) {
-            console.warn('groupPaymentsDataTable element not found');
-            return;
-          }
-          
-          // Destroy existing DataTable if it exists
-          if (groupPaymentsDataTable) {
-            try { groupPaymentsDataTable.destroy(); } catch (e) {}
-            groupPaymentsDataTable = null;
-          }
-          
-          groupPaymentsDataTable = new simpleDatatables.DataTable(tableEl, {
-            searchable: true,
-            fixedHeight: false,
-            perPage: 10,
-            perPageSelect: [5, 10, 15, 20],
-            labels: {
-              placeholder: 'ค้นหา...',
-              perPage: 'รายการต่อหน้า',
-              noRows: 'ไม่พบรายการที่ตรงกับการค้นหา',
-              info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+        requestAnimationFrame(function() {
+          setTimeout(function() {
+            if (typeof window.simpleDatatables === 'undefined') {
+              console.error('SimpleDatatables not loaded');
+              return;
             }
-          });
-        }, 50);
+            
+            const tableEl = document.getElementById('groupPaymentsDataTable');
+            if (!tableEl) {
+              console.error('Table element groupPaymentsDataTable not found');
+              return;
+            }
+            
+            if (groupPaymentsDataTable) {
+              try { 
+                groupPaymentsDataTable.destroy(); 
+              } catch (e) {
+                console.error('Error destroying previous DataTable:', e);
+              }
+              groupPaymentsDataTable = null;
+            }
+            
+            try {
+              groupPaymentsDataTable = new window.simpleDatatables.DataTable(tableEl, {
+                searchable: true,
+                fixedHeight: false,
+                perPage: 10,
+                perPageSelect: [5, 10, 15, 20],
+                labels: {
+                  placeholder: 'ค้นหา...',
+                  perPage: 'รายการต่อหน้า',
+                  noRows: 'ไม่พบรายการ',
+                  info: 'แสดง {start} ถึง {end} จาก {rows}'
+                }
+              });
+              console.log('DataTable initialized successfully');
+            } catch (err) {
+              console.error('Error initializing DataTable:', err);
+            }
+          }, 100);
+        });
       }
 
       function destroyGroupPaymentsDataTable() {
@@ -4126,20 +4135,22 @@ main > div:first-of-type,
         }).join('');
 
         bodyEl.innerHTML = `
-          <table id="groupPaymentsDataTable" class="datatable-table" style="width:100%;border-collapse:collapse;font-size:0.9rem;">
-            <thead>
-              <tr style="text-align:left;border-bottom:1px solid rgba(148,163,184,0.25);">
-                <th style="padding:0.55rem 0.5rem;">รหัส</th>
-                <th style="padding:0.55rem 0.5rem;">วันที่ชำระ</th>
-                <th style="padding:0.55rem 0.5rem;text-align:right;">จำนวนเงิน</th>
-                <th style="padding:0.55rem 0.5rem;">สถานะ</th>
-                <th style="padding:0.55rem 0.5rem;">หมายเหตุ</th>
-                <th style="padding:0.55rem 0.5rem;">หลักฐาน</th>
-                <th style="padding:0.55rem 0.5rem;">ดำเนินการ</th>
-              </tr>
-            </thead>
-            <tbody>${rows}</tbody>
-          </table>
+          <div style="width:100%;">
+            <table id="groupPaymentsDataTable" style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+              <thead>
+                <tr style="text-align:left;border-bottom:1px solid rgba(148,163,184,0.25);">
+                  <th style="padding:0.55rem 0.5rem;">รหัส</th>
+                  <th style="padding:0.55rem 0.5rem;">วันที่ชำระ</th>
+                  <th style="padding:0.55rem 0.5rem;text-align:right;">จำนวนเงิน</th>
+                  <th style="padding:0.55rem 0.5rem;">สถานะ</th>
+                  <th style="padding:0.55rem 0.5rem;">หมายเหตุ</th>
+                  <th style="padding:0.55rem 0.5rem;">หลักฐาน</th>
+                  <th style="padding:0.55rem 0.5rem;">ดำเนินการ</th>
+                </tr>
+              </thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
         `;
         modal.classList.add('active');
         initGroupPaymentsDataTable();
