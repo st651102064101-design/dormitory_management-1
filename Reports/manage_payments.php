@@ -4123,29 +4123,29 @@ main > div:first-of-type,
           
           return `
             <tr>
-              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${displayPayId}</td>
-              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${dateText}</td>
-              <td style="padding:0.55rem 0.5rem;text-align:right;white-space:nowrap;">฿${amount.toLocaleString()}</td>
-              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${statusBadge}</td>
-              <td style="padding:0.55rem 0.5rem;">${remark}</td>
-              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${proofLink}</td>
-              <td style="padding:0.55rem 0.5rem;white-space:nowrap;">${verifyBtn}</td>
+              <td style="padding:0.35rem 0.4rem;">${displayPayId}</td>
+              <td style="padding:0.35rem 0.4rem;">${dateText}</td>
+              <td style="padding:0.35rem 0.4rem;text-align:right;">฿${amount.toLocaleString()}</td>
+              <td style="padding:0.35rem 0.4rem;">${statusBadge}</td>
+              <td style="padding:0.35rem 0.4rem;">${remark}</td>
+              <td style="padding:0.35rem 0.4rem;">${proofLink}</td>
+              <td style="padding:0.35rem 0.4rem;">${verifyBtn}</td>
             </tr>
           `;
         }).join('');
 
         bodyEl.innerHTML = `
-          <div style="width:100%;">
-            <table id="groupPaymentsDataTable" style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+          <div style="width:100%;overflow-x:auto;">
+            <table id="groupPaymentsDataTable" style="width:100%;border-collapse:collapse;font-size:0.75rem;">
               <thead>
                 <tr style="text-align:left;border-bottom:1px solid rgba(148,163,184,0.25);">
-                  <th style="padding:0.55rem 0.5rem;">รหัส</th>
-                  <th style="padding:0.55rem 0.5rem;">วันที่ชำระ</th>
-                  <th style="padding:0.55rem 0.5rem;text-align:right;">จำนวนเงิน</th>
-                  <th style="padding:0.55rem 0.5rem;">สถานะ</th>
-                  <th style="padding:0.55rem 0.5rem;">หมายเหตุ</th>
-                  <th style="padding:0.55rem 0.5rem;">หลักฐาน</th>
-                  <th style="padding:0.55rem 0.5rem;">ดำเนินการ</th>
+                  <th style="padding:0.35rem 0.4rem;white-space:nowrap;">รหัส</th>
+                  <th style="padding:0.35rem 0.4rem;white-space:nowrap;">วันที่ชำระ</th>
+                  <th style="padding:0.35rem 0.4rem;text-align:right;white-space:nowrap;">จำนวนเงิน</th>
+                  <th style="padding:0.35rem 0.4rem;white-space:nowrap;">สถานะ</th>
+                  <th style="padding:0.35rem 0.4rem;white-space:nowrap;">หมายเหตุ</th>
+                  <th style="padding:0.35rem 0.4rem;white-space:nowrap;">หลักฐาน</th>
+                  <th style="padding:0.35rem 0.4rem;white-space:nowrap;">ดำเนินการ</th>
                 </tr>
               </thead>
               <tbody>${rows}</tbody>
