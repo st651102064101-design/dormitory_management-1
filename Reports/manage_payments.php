@@ -286,12 +286,15 @@ try {
       LEFT JOIN tenant t ON c.tnt_id = t.tnt_id
       LEFT JOIN room r ON c.room_id = r.room_id
       LEFT JOIN roomtype rt ON r.type_id = rt.type_id
-      LEFT JOIN payment p ON p.exp_id = e.exp_id
-                          AND TRIM(COALESCE(p.pay_remark, '')) NOT LIKE '%มัดจำ%'
       WHERE c.ctr_status = '0'
-        AND p.exp_id IS NULL
         AND DATE_FORMAT(e.exp_month, '%Y-%m') <= '{$effectiveCurrentMonth}'
         AND e.exp_status NOT IN ('1')
+        AND NOT EXISTS (
+          SELECT 1 FROM payment p
+          WHERE p.exp_id = e.exp_id
+            AND p.pay_status IN ('0', '1')
+            AND TRIM(COALESCE(p.pay_remark, '')) NOT LIKE '%มัดจำ%'
+        )
         AND EXISTS (
           SELECT 1 FROM utility u
           WHERE u.ctr_id = e.ctr_id
@@ -389,7 +392,6 @@ $buildPaymentKey = static function(array $pay): string {
     if ($expId > 0) {
       return implode('|', [
         $category,
-        'source:' . $source,
         'ctr:' . $ctrKey,
         'exp:' . $expId,
       ]);
@@ -427,8 +429,8 @@ $buildPaymentKey = static function(array $pay): string {
   ]);
 };
 
-$statusRank = ['1' => 5, '0' => 4, '2' => 3, 'unpaid' => 2];
-$sourceRank = ['payment' => 3, 'booking_deposit' => 2, 'unpaid_expense' => 1];
+$statusRank = ['1' => 5, 'unpaid' => 4, '0' => 3, '2' => 2];
+$sourceRank = ['unpaid_expense' => 3, 'payment' => 2, 'booking_deposit' => 1];
 $shouldReplacePayment = static function(array $existing, array $candidate) use ($statusRank, $sourceRank): bool {
   $existingSource = (string)($existing['payment_source'] ?? 'payment');
   $candidateSource = (string)($candidate['payment_source'] ?? 'payment');
