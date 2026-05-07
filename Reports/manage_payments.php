@@ -4082,7 +4082,7 @@ main > div:first-of-type,
         }).join('');
 
         bodyEl.innerHTML = `
-          <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
+          <table id="groupPaymentsDataTable" class="datatable-table" style="width:100%;border-collapse:collapse;font-size:0.9rem;">
             <thead>
               <tr style="text-align:left;border-bottom:1px solid rgba(148,163,184,0.25);">
                 <th style="padding:0.55rem 0.5rem;">รหัส</th>
@@ -4098,9 +4098,47 @@ main > div:first-of-type,
           </table>
         `;
         modal.classList.add('active');
+        initGroupPaymentsDataTable();
+      }
+
+      let groupPaymentsDataTable = null;
+
+      function initGroupPaymentsDataTable() {
+        if (typeof simpleDatatables === 'undefined' || typeof simpleDatatables.DataTable !== 'function') return;
+        
+        // Destroy existing DataTable if it exists
+        if (groupPaymentsDataTable) {
+          groupPaymentsDataTable.destroy();
+          groupPaymentsDataTable = null;
+        }
+        
+        const tableEl = document.getElementById('groupPaymentsDataTable');
+        if (!tableEl) return;
+        
+        groupPaymentsDataTable = new simpleDatatables.DataTable(tableEl, {
+          perPage: 10,
+          perPageSelect: [5, 10, 15, 20],
+          columns: [
+            { select: 2, type: 'string' }
+          ],
+          labels: {
+            placeholder: 'ค้นหา...',
+            perPage: '{select} รายการต่อหน้า',
+            noRows: 'ไม่พบรายการที่ตรงกับการค้นหา',
+            info: 'แสดง {start} ถึง {end} จาก {rows} รายการ'
+          }
+        });
+      }
+
+      function destroyGroupPaymentsDataTable() {
+        if (groupPaymentsDataTable) {
+          groupPaymentsDataTable.destroy();
+          groupPaymentsDataTable = null;
+        }
       }
 
       function closeGroupPaymentsModal() {
+        destroyGroupPaymentsDataTable();
         document.getElementById('groupPaymentsModal')?.classList.remove('active');
       }
 
