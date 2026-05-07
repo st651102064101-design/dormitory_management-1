@@ -3108,7 +3108,7 @@ main > div:first-of-type,
             <div class="payment-controls-row">
             <div class="payment-filter-tabs" id="paymentFilterTabs">
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '' ? 'active' : ''; ?>" data-status="" onclick="window.handlePaymentFilterTab(this)">ทั้งหมด <span class="tab-count"><?php echo $allFilteredCount; ?></span></button>
-              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0" onclick="window.handlePaymentFilterTab(this)">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount; ?></span></button>
+              <button type="button" class="payment-filter-tab <?php echo $filterStatus === '0' ? 'active' : ''; ?>" data-status="0" onclick="window.handlePaymentFilterTab(this)">รอตรวจสอบ <span class="tab-count"><?php echo $pendingOnlyCount + $unpaidOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'unpaid' ? 'active' : ''; ?>" data-status="unpaid" onclick="window.handlePaymentFilterTab(this)">รอชำระ <span class="tab-count"><?php echo $unpaidOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === '2' ? 'active' : ''; ?>" data-status="2" onclick="window.handlePaymentFilterTab(this)">ตีกลับ <span class="tab-count"><?php echo $rejectedOnlyCount; ?></span></button>
               <button type="button" class="payment-filter-tab <?php echo $filterStatus === 'had_rejected' ? 'active' : ''; ?>" data-status="had_rejected" onclick="window.handlePaymentFilterTab(this)">เคยตีกลับ <span class="tab-count"><?php echo $hadRejectedEverCount; ?></span></button>
