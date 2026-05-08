@@ -725,17 +725,32 @@ function _bankFormFields(?array $term): string {
                             <span style="color:#000000;"><?php echo thaiDate($depositRefund['refund_date'], 'long'); ?></span>
                         </div>
                         <?php endif; ?>
-                        <?php if (!empty($depositRefund['refund_proof'])): ?>
+                        <?php
+                        $refundProofUrl = '';
+                        $refundProofMissing = false;
+                        if (!empty($depositRefund['refund_proof'])) {
+                            $proofPath = ltrim($depositRefund['refund_proof'], '/');
+                            $proofFullPath = rtrim($_SERVER['DOCUMENT_ROOT'], '/') . '/' . $proofPath;
+                            if (file_exists($proofFullPath)) {
+                                $refundProofUrl = '/' . $proofPath;
+                            } else {
+                                $refundProofMissing = true;
+                            }
+                        }
+                        ?>
+                        <?php if ($refundProofUrl !== ''): ?>
                         <div style="margin-top:0.8rem;border-top:1px dashed rgba(34,197,94,0.2);padding-top:0.8rem;">
                             <div style="color:#94a3b8;margin-bottom:0.4rem;font-size:0.85rem;">หลักฐานการโอนคืน:</div>
-                            <a href="/<?php echo htmlspecialchars($depositRefund['refund_proof']); ?>" target="_blank" style="display:block;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
-                                <img src="/<?php echo htmlspecialchars($depositRefund['refund_proof']); ?>" alt="หลักฐานการโอนคืน" style="width:100%;max-width:100%;display:block;object-fit:cover;" />
+                            <a href="<?php echo htmlspecialchars($refundProofUrl); ?>" target="_blank" style="display:block;border-radius:6px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">
+                                <img src="<?php echo htmlspecialchars($refundProofUrl); ?>" alt="หลักฐานการโอนคืน" style="width:100%;max-width:100%;display:block;object-fit:cover;" />
                             </a>
                             <div style="text-align:center;margin-top:0.4rem;">
-                                <a href="/<?php echo htmlspecialchars($depositRefund['refund_proof']); ?>" target="_blank"
+                                <a href="<?php echo htmlspecialchars($refundProofUrl); ?>" target="_blank"
                                    style="color:#38bdf8;font-size:0.82rem;text-decoration:none;">📎 เปิดดูภาพขนาดเต็ม</a>
                             </div>
                         </div>
+                        <?php elseif ($refundProofMissing): ?>
+                        <div style="margin-top:0.8rem;color:#f87171;font-size:0.9rem;">ไม่พบไฟล์หลักฐานการโอนคืนในระบบ โปรดอัปโหลดใหม่หรือแจ้งผู้ดูแล</div>
                         <?php endif; ?>
                     </div>
                 </div>
