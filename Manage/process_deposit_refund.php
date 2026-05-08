@@ -39,6 +39,14 @@ try {
         exit;
     }
 
+    // ตรวจสอบว่าสัญญาต้องถูกยกเลิก (ctr_status = '1') เท่านั้นจึงจะสามารถคืนเงินมัดจำได้
+    // สัญญาที่ยังไม่ได้ยกเลิกจะไม่สามารถประมวลผลการคืนเงินได้
+    if ((string)$contract['ctr_status'] !== '1') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'ไม่สามารถคืนเงินมัดจำได้ เนื่องจากสัญญาที่ยังไม่ได้ยกเลิก ห้องพักนี้ต้องแจ้งยกเลิกสัญญาก่อน']);
+        exit;
+    }
+
     switch ($action) {
         case 'create':
             $deduction_amount = max(0, (int)($_POST['deduction_amount'] ?? 0));
