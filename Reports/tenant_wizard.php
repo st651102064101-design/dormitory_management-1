@@ -5385,15 +5385,6 @@ main > div:first-of-type,
                 return;
             }
 
-            const ok = typeof showAppleConfirm === 'function'
-                ? await showAppleConfirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงิน')
-                : window.confirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
-                
-            if (!ok) {
-                _updateConfirmButtonState();
-                return;
-            }
-
             document.getElementById('_rfProofProgress').style.display = 'block';
 
             // 1. อัพโหลดสลิปก่อน
