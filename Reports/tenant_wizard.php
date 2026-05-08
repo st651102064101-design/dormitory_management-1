@@ -2383,6 +2383,7 @@ main > div:first-of-type,
                                     $bankAccNameBtn = $tenant['bank_account_name'] ?? '';
                                     $bankAccNumBtn = $tenant['bank_account_number'] ?? '';
                                     $depositAmtBtn = (int)($tenant['ctr_deposit'] ?? 0);
+                                    $refundPendingBtn = (int)($tenant['refund_pending'] ?? 0) === 1 ? 'true' : 'false';
                                     $openBillingModalJsRaw = 'openRefundModal('
                                         . $ctrIdCancelBtn . ', '
                                         . json_encode($tenant['tnt_name'], JSON_UNESCAPED_UNICODE) . ', '
@@ -2390,7 +2391,8 @@ main > div:first-of-type,
                                         . json_encode($bankNameBtn, JSON_UNESCAPED_UNICODE) . ', '
                                         . json_encode($bankAccNameBtn, JSON_UNESCAPED_UNICODE) . ', '
                                         . json_encode($bankAccNumBtn, JSON_UNESCAPED_UNICODE) . ', '
-                                        . $depositAmtBtn
+                                        . $depositAmtBtn . ', '
+                                        . $refundPendingBtn
                                         . ')';
                                 } else {
                                     $openBillingModalJsRaw = 'openBillingModal('
