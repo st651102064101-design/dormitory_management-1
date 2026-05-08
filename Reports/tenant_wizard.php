@@ -2377,7 +2377,12 @@ main > div:first-of-type,
                                     }
                                 }
 
-                                if ($isCancelPending) {
+                                // ไป openRefundModal ได้แต่เมื่อสัญญายกเลิกแล้ว (ctr_status = '1') 
+                                // ถ้าสัญญาเป็น status 2 (pending) ยังไม่สามารถเข้า refund ได้ต้องยืนยันยกเลิกก่อน
+                                $canRefund = $isCancelPending && ((string)($tenant['ctr_status'] ?? '') === '1');
+                                
+                                if ($canRefund) {
+                                    // สัญญายกเลิกแล้ว (status = '1') ให้เข้า refund modal ได้
                                     $ctrIdCancelBtn = (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0);
                                     $bankNameBtn = $tenant['bank_name'] ?? '';
                                     $bankAccNameBtn = $tenant['bank_account_name'] ?? '';
@@ -2411,8 +2416,8 @@ main > div:first-of-type,
                                     'UTF-8'
                                 );
                                 
-                                // ป้องกันการคลิกปุ่มขั้นตอน 5 หากการคืนเงินเสร็จแล้ว
-                                $canOpenStep5Circle = (int)$tenant['ctr_id'] > 0 && !($isCancelPending && $step4 == 1 && $refundDone);
+                                // ป้องกันการคลิกปุ่มขั้นตอน 5 เมื่อ: (1) สัญญา pending (status=2) หรือ (2) การคืนเงินเสร็จแล้ว
+                                $canOpenStep5Circle = (int)$tenant['ctr_id'] > 0 && !($isCancelPending && $step4 == 1 && $refundDone) && ($canRefund || !$isCancelPending);
 
                                 // Advance currentStep based on completed steps
                                 // Ensure we move to the next action step based on what's completed
