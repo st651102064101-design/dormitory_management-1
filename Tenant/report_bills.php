@@ -125,14 +125,15 @@ foreach ($expenses as $expIndex => $exp) {
     $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
     
     $depositPaymentCount = (int)($exp['deposit_payment_count'] ?? 0);
-    $isDepositOnly = ($depositPaymentCount > 0) 
-        || ($expIndex === count($expenses) - 1 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $roomPrice > 0 && $expTotal != $calculatedTotal);
+    $depositAmountInExpense = max(0, $expTotal - $calculatedTotal);
+    $isDepositOnly = ($expTotal > 0 && $expTotal === $ctrDeposit && $roomPrice === 0 && $elecChg === 0 && $waterChg === 0);
+    $hasDepositPortion = $depositAmountInExpense > 0 || $isDepositOnly;
 
-    if ($isDepositOnly) {
-        $paidAmount = $paidAmount + $depositPaidAmount;
-        $pendingAmount = $pendingAmount + $depositPendingAmount;
+    if ($hasDepositPortion) {
+        $paidAmount += $depositPaidAmount;
+        $pendingAmount += $depositPendingAmount;
     }
-    
+
     $statusBasisAmount = $isDepositOnly ? $ctrDeposit : $expTotal;
     $remaining = max(0, $statusBasisAmount - $paidAmount);
     
@@ -165,11 +166,11 @@ foreach ($latestExpenseByMonth as $monthEntry) {
     $calculatedTotal = $roomPrice + $elecChg + $waterChg;
     $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
     $depositPaymentCount = (int)($exp['deposit_payment_count'] ?? 0);
+    $depositAmountInExpense = max(0, $expTotal - $calculatedTotal);
+    $isDepositOnly = ($expTotal > 0 && $expTotal === $ctrDeposit && $roomPrice === 0 && $elecChg === 0 && $waterChg === 0);
+    $hasDepositPortion = $depositAmountInExpense > 0 || $isDepositOnly;
 
-    $isDepositOnly = ($depositPaymentCount > 0)
-        || ($expIndex === $expenseCount - 1 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $roomPrice > 0 && $expTotal != $calculatedTotal);
-
-    if ($isDepositOnly) {
+    if ($hasDepositPortion) {
         $paidAmount += $depositPaidAmount;
         $pendingAmount += $depositPendingAmount;
     }
@@ -474,23 +475,14 @@ $precomputedBillCount = $billCount;
             $otherFee = $expTotal - $calculatedTotal;
             $ctrDeposit = (float)($contract['ctr_deposit'] ?? 2000);
             $depositPaymentCount = (int)($exp['deposit_payment_count'] ?? 0);
-            
-            // บิลแจ้งชำระมัดจำ (สร้างจาก Booking/Wizard) จะมีประวัติหรือมีเจตนาให้เป็นบิลมัดจำ
-            $isDepositOnly = ($depositPaymentCount > 0) 
-                || ($expIndex === count($expenses) - 1 && $expTotal == $ctrDeposit && $elecChg == 0 && $waterChg == 0 && $roomPrice > 0 && $expTotal != $calculatedTotal);
+            $depositAmountInExpense = max(0, $expTotal - $calculatedTotal);
+            $isDepositOnly = ($expTotal > 0 && $expTotal === $ctrDeposit && $roomPrice === 0 && $elecChg === 0 && $waterChg === 0);
+            $hasDepositPortion = $depositAmountInExpense > 0 || $isDepositOnly;
+            $otherFeeWithoutDeposit = max(0, $otherFee - $depositAmountInExpense);
 
-            if ($isDepositOnly || $depositPaidAmount > 0 || $depositPendingAmount > 0) {
-                // Remove deposit from other fee if it was lumped in
-                if ($otherFee >= $ctrDeposit) {
-                    $otherFee -= $ctrDeposit;
-                }
-            }
-
-            if ($isDepositOnly) {
-                // สำหรับบิลมัดจำเพียวๆ ให้รวมยอดทั้งหมด (ทั้งที่ระบุมัดจำและไม่ได้ระบุ)
-                // เพื่อป้องกันบั๊กเวลา tenant จ่ายผ่านหน้าแจ้งชำระเงินปกติแล้วไม่ได้ระบุ remark
-                $paidAmount = $paidAmount + $depositPaidAmount;
-                $pendingAmount = $pendingAmount + $depositPendingAmount;
+            if ($hasDepositPortion) {
+                $paidAmount += $depositPaidAmount;
+                $pendingAmount += $depositPendingAmount;
             }
 
             $statusBasisAmount = $isDepositOnly ? $ctrDeposit : $expTotal;
@@ -510,7 +502,7 @@ $precomputedBillCount = $billCount;
                 $displayLabel = 'รอยืนยันการจอง';
             }
 
-            $showDepositOnlyCard = $isDepositOnly || $depositPaidAmount > 0 || $depositPendingAmount > 0;
+            $showDepositOnlyCard = $isDepositOnly;
         ?>
         <div class="bill-card">
             <div class="bill-header">
@@ -520,7 +512,7 @@ $precomputedBillCount = $billCount;
                 </span>
             </div>
             <div class="bill-details">
-                <?php if ($showDepositOnlyCard): ?>
+                <?php if ($isDepositOnly): ?>
                 <div class="bill-row">
                     <span class="bill-label" style="font-weight: 600; color: #f59e0b;">เงินมัดจำสถานที่</span>
                     <span class="bill-value" style="font-weight: 600; color: #f59e0b;"><?php echo number_format($ctrDeposit); ?> บาท</span>
@@ -530,29 +522,37 @@ $precomputedBillCount = $billCount;
                     <span class="bill-label">ค่าห้อง</span>
                     <span class="bill-value"><?php echo number_format($roomPrice); ?> บาท</span>
                 </div>
-                <?php if ($elecChg > 0 || $waterChg > 0 || $expIndex !== count($expenses) - 1): ?>
+                <?php if ($elecChg > 0): ?>
                 <div class="bill-row">
                     <span class="bill-label">ค่าไฟ (<?php echo $exp['exp_elec_unit'] ?? 0; ?> หน่วย × <?php echo $exp['rate_elec'] ?? 0; ?> บาท)</span>
                     <span class="bill-value"><?php echo number_format($elecChg); ?> บาท</span>
                 </div>
+                <?php endif; ?>
+                <?php if ($waterChg > 0): ?>
                 <div class="bill-row">
                     <span class="bill-label">ค่าน้ำ (<?php echo $exp['exp_water_unit'] ?? 0; ?> หน่วย × <?php echo $exp['rate_water'] ?? 0; ?> บาท)</span>
                     <span class="bill-value"><?php echo number_format($waterChg); ?> บาท</span>
                 </div>
                 <?php endif; ?>
-                <?php if ($otherFee > 0): ?>
+                <?php if ($depositAmountInExpense > 0): ?>
+                <div class="bill-row">
+                    <span class="bill-label" style="font-weight: 600; color: #f59e0b;">เงินมัดจำสถานที่</span>
+                    <span class="bill-value" style="font-weight: 600; color: #f59e0b;"><?php echo number_format($depositAmountInExpense); ?> บาท</span>
+                </div>
+                <?php endif; ?>
+                <?php if ($otherFeeWithoutDeposit > 0): ?>
                 <div class="bill-row">
                     <span class="bill-label" style="color: #f59e0b;">ค่าใช้จ่ายอื่นๆ</span>
-                    <span class="bill-value" style="color: #f59e0b;"><?php echo number_format($otherFee); ?> บาท</span>
+                    <span class="bill-value" style="color: #f59e0b;"><?php echo number_format($otherFeeWithoutDeposit); ?> บาท</span>
                 </div>
                 <?php endif; ?>
                 <?php endif; ?>
                 
                 <div class="bill-total">
-                    <span class="bill-label"><?php echo $showDepositOnlyCard ? 'ยอดมัดจำ' : 'ยอดรวม'; ?></span>
-                    <span class="bill-value"><?php echo number_format($showDepositOnlyCard ? $ctrDeposit : $expTotal); ?> บาท</span>
+                    <span class="bill-label"><?php echo $isDepositOnly ? 'ยอดมัดจำ' : 'ยอดรวม'; ?></span>
+                    <span class="bill-value"><?php echo number_format($isDepositOnly ? $ctrDeposit : $expTotal); ?> บาท</span>
                 </div>
-                <?php if (!$showDepositOnlyCard && ($paidAmount - $depositPaidAmount) > 0): ?>
+                <?php if (!$isDepositOnly && ($paidAmount - $depositPaidAmount) > 0): ?>
                 <div class="bill-row" style="color: #10b981; font-size: 0.85rem; margin-top: 0.5rem;">
                     <span class="bill-label" style="color: #10b981;">ชำระแล้ว (ค่าห้อง/บิลปกติ)</span>
                     <span class="bill-value" style="color: #10b981;"><?php echo number_format($paidAmount - $depositPaidAmount); ?> บาท</span>
@@ -564,7 +564,7 @@ $precomputedBillCount = $billCount;
                     <span class="bill-value" style="color: #6366f1;"><?php echo number_format($depositPaidAmount); ?> บาท</span>
                 </div>
                 <?php endif; ?>
-                <?php if (!$showDepositOnlyCard && $pendingAmount > 0): ?>
+                <?php if (!$isDepositOnly && $pendingAmount > 0): ?>
                 <div class="bill-row" style="color: #8b5cf6; font-size: 0.85rem; margin-top: 0.25rem;">
                     <span class="bill-label" style="color: #8b5cf6;">รอตรวจสอบ</span>
                     <span class="bill-value" style="color: #8b5cf6;"><?php echo number_format($pendingAmount); ?> บาท</span>
@@ -572,7 +572,7 @@ $precomputedBillCount = $billCount;
                 <?php endif; ?>
                 <?php 
                     $actualRemaining = max(0, $remaining - $pendingAmount);
-                    if (!$showDepositOnlyCard && $actualRemaining > 0): 
+                    if (!$isDepositOnly && $actualRemaining > 0): 
                 ?>
                 <div class="bill-row" style="color: #ef4444; font-size: 0.85rem;">
                     <span class="bill-label" style="color: #ef4444;">ค้างชำระ</span>
