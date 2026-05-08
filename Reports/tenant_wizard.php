@@ -5164,6 +5164,18 @@ main > div:first-of-type,
         try { localStorage.setItem(key, raw); } catch (e) {}
     }
 
+    function _clearRefundData(ctrId) {
+        const stateKey = _getRefundStateKey(ctrId);
+        const stageKey = _getRefundStageKey(ctrId);
+        const savedKey = _getRefundSavedKey(ctrId);
+        try { sessionStorage.removeItem(stateKey); } catch (e) {}
+        try { localStorage.removeItem(stateKey); } catch (e) {}
+        try { sessionStorage.removeItem(stageKey); } catch (e) {}
+        try { localStorage.removeItem(stageKey); } catch (e) {}
+        try { sessionStorage.removeItem(savedKey); } catch (e) {}
+        try { localStorage.removeItem(savedKey); } catch (e) {}
+    }
+
     function _updateConfirmButtonState() {
         const btn = document.getElementById('_rfConfirmBtn');
         const fileInput = document.getElementById('_rfProofFile');
@@ -5426,6 +5438,7 @@ main > div:first-of-type,
                 document.getElementById('_rfProofProgress').style.display = 'none';
                 if (data.success) {
                     if (typeof showSuccessToast === 'function') showSuccessToast('✅ ยืนยันคืนเงินมัดจำเรียบร้อย');
+                    _clearRefundData(_rfCtrId);
                     closeRefundModal();
                     if (typeof refreshWizardTable === 'function') refreshWizardTable();
                 } else {
