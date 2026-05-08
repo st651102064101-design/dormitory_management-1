@@ -2497,12 +2497,16 @@ main > div:first-of-type,
                                                         style="display:inline-flex;align-items:center;gap:0.35rem;font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid #10b981;background:rgba(16,185,129,0.1);color:#10b981;font-weight:600;cursor:pointer;transition:all 0.2s;" onmouseover="this.style.background='rgba(16,185,129,0.2)'" onmouseout="this.style.background='rgba(16,185,129,0.1)'">
                                                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg> แจ้งผู้เช่า
                                                     </button>
-                                                    <?php elseif ($needsRefund && !$refundDone): ?>
+                                                    <?php elseif ($needsRefund && !$refundDone && ((string)($tenant['ctr_status'] ?? '') === '1')): ?>
                                                     <button type="button"
                                                         onclick="openRefundModal(<?php echo $ctrIdCancel; ?>, <?php echo htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccName), ENT_QUOTES, 'UTF-8'); ?>, <?php echo htmlspecialchars(json_encode($bankAccNum), ENT_QUOTES, 'UTF-8'); ?>, <?php echo $depositAmt; ?>, <?php echo $refundPending ? 'true' : 'false'; ?>)"
                                                         style="font-size:0.78rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(251,191,36,0.5);background:rgba(251,191,36,0.1);color:#fbbf24;font-weight:600;cursor:pointer;">
                                                         💰 คืนเงินมัดจำก่อน
                                                     </button>
+                                                    <?php elseif ($needsRefund && !$refundDone && ((string)($tenant['ctr_status'] ?? '') === '2')): ?>
+                                                    <div style="display:inline-flex;align-items:center;gap:0.35rem;padding:0.25rem 0.65rem;border-radius:16px;border:1px solid rgba(249,115,22,0.55);background:rgba(249,115,22,0.1);color:#fb923c;font-size:0.78rem;font-weight:600;" title="ต้องยืนยันยกเลิกสัญญาก่อนจึงจะสามารถคืนเงินมัดจำได้">
+                                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:14px;height:14px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg> รอยืนยันยกเลิกสัญญา
+                                                    </div>
                                                     <?php elseif ($needsRefund && $refundDone): ?>
                                                     <span style="font-size:0.78rem;color:#4ade80;font-weight:600;">✓ คืนเงินมัดจำแล้ว</span>
                                                     <?php endif; ?>
