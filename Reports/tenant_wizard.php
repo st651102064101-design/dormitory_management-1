@@ -5439,6 +5439,7 @@ main > div:first-of-type,
             } else {
                 if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
                 else console.error(data.error || 'เกิดข้อผิดพลาด');
+                _updateConfirmButtonState();
             }
         } catch(e) { 
             document.getElementById('_rfProofProgress').style.display = 'none';
