@@ -5365,85 +5365,93 @@ main > div:first-of-type,
     }
 
     async function doConfirmRefund() {
-        const confirmBtn = document.getElementById('_rfConfirmBtn');
-        const fileInput = document.getElementById('_rfProofFile');
-        const proofError = document.getElementById('_rfProofError');
-        if (confirmBtn) {
-            confirmBtn.disabled = true;
-            confirmBtn.style.opacity = '0.6';
-            confirmBtn.style.cursor = 'not-allowed';
-        }
-        if (proofError) proofError.style.display = 'none';
-        
-        // เช็คก่อนว่าได้เลือกไฟล์หรือยัง
-        if (fileInput && fileInput.files.length === 0) {
-            if (proofError) proofError.style.display = 'block';
-            if (typeof showErrorToast === 'function') showErrorToast('❌ กรุณาแนบไฟล์สลิปหลักฐานการโอนเงินครับ');
-            if (fileInput) fileInput.focus();
-            _updateConfirmButtonState();
-            return;
-        }
-
-        const ok = typeof showAppleConfirm === 'function'
-            ? await showAppleConfirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงิน')
-            : window.confirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
-            
-        if (!ok) {
-            _updateConfirmButtonState();
-            return;
-        }
-
-        document.getElementById('_rfProofProgress').style.display = 'block';
-
-        // 1. อัพโหลดสลิปก่อน
         try {
-            const uploadFd = new FormData();
-            uploadFd.append('action', 'upload');
-            uploadFd.append('ctr_id', _rfCtrId);
-            uploadFd.append('deduction_amount', document.getElementById('_rfDeduct').value || '0');
-            uploadFd.append('deduction_reason', document.getElementById('_rfReason').value || '');
-            uploadFd.append('room_rate', document.getElementById('_rfRoomRate').value || '0');
-            uploadFd.append('water_cost', document.getElementById('_rfWaterCost').value || '0');
-            uploadFd.append('elec_cost', document.getElementById('_rfElecCost').value || '0');
-            uploadFd.append('refund_proof', fileInput.files[0]);
+            const confirmBtn = document.getElementById('_rfConfirmBtn');
+            const fileInput = document.getElementById('_rfProofFile');
+            const proofError = document.getElementById('_rfProofError');
+            if (confirmBtn) {
+                confirmBtn.disabled = true;
+                confirmBtn.style.opacity = '0.6';
+                confirmBtn.style.cursor = 'not-allowed';
+            }
+            if (proofError) proofError.style.display = 'none';
             
-            const upRes = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: uploadFd });
-            const upData = await upRes.json();
-            if (!upData.success) {
-                document.getElementById('_rfProofProgress').style.display = 'none';
-                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (upData.error || 'ไฟล์อัพโหลดล้มเหลว'));
-                else console.error(upData.error || 'ไฟล์อัพโหลดล้มเหลว');
+            // เช็คก่อนว่าได้เลือกไฟล์หรือยัง
+            if (fileInput && fileInput.files.length === 0) {
+                if (proofError) proofError.style.display = 'block';
+                if (typeof showErrorToast === 'function') showErrorToast('❌ กรุณาแนบไฟล์สลิปหลักฐานการโอนเงินครับ');
+                if (fileInput) fileInput.focus();
                 _updateConfirmButtonState();
                 return;
             }
-        } catch(e) {
-            document.getElementById('_rfProofProgress').style.display = 'none';
-            if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่ายขณะอัพโหลดสลิป');
-            _updateConfirmButtonState();
-            return;
-        }
 
-        // 2. ถ้าอัพโหลดผ่าน จึงส่งคำสั่งยืนยัน (Confirm) การคืนเงิน
-        const fd = new FormData();
-        fd.append('action', 'confirm');
-        fd.append('ctr_id', _rfCtrId);
-        try {
-            const res = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd });
-            const data = await res.json();
-            
-            document.getElementById('_rfProofProgress').style.display = 'none';
-            if (data.success) {
-                if (typeof showSuccessToast === 'function') showSuccessToast('✅ ยืนยันคืนเงินมัดจำเรียบร้อย');
-                closeRefundModal();
-                if (typeof refreshWizardTable === 'function') refreshWizardTable();
-            } else {
-                if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
-                else console.error(data.error || 'เกิดข้อผิดพลาด');
+            const ok = typeof showAppleConfirm === 'function'
+                ? await showAppleConfirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?', 'ยืนยันการคืนเงิน')
+                : window.confirm('ยืนยันว่าแนบสลิปและโอนคืนเงินมัดจำเรียบร้อยแล้ว?');
+                
+            if (!ok) {
+                _updateConfirmButtonState();
+                return;
+            }
+
+            document.getElementById('_rfProofProgress').style.display = 'block';
+
+            // 1. อัพโหลดสลิปก่อน
+            try {
+                const uploadFd = new FormData();
+                uploadFd.append('action', 'upload');
+                uploadFd.append('ctr_id', _rfCtrId);
+                uploadFd.append('deduction_amount', document.getElementById('_rfDeduct').value || '0');
+                uploadFd.append('deduction_reason', document.getElementById('_rfReason').value || '');
+                uploadFd.append('room_rate', document.getElementById('_rfRoomRate').value || '0');
+                uploadFd.append('water_cost', document.getElementById('_rfWaterCost').value || '0');
+                uploadFd.append('elec_cost', document.getElementById('_rfElecCost').value || '0');
+                uploadFd.append('refund_proof', fileInput.files[0]);
+                
+                const upRes = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: uploadFd });
+                const upData = await upRes.json();
+                if (!upData.success) {
+                    document.getElementById('_rfProofProgress').style.display = 'none';
+                    if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (upData.error || 'ไฟล์อัพโหลดล้มเหลว'));
+                    else console.error(upData.error || 'ไฟล์อัพโหลดล้มเหลว');
+                    _updateConfirmButtonState();
+                    return;
+                }
+            } catch(e) {
+                document.getElementById('_rfProofProgress').style.display = 'none';
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่ายขณะอัพโหลดสลิป');
+                _updateConfirmButtonState();
+                return;
+            }
+
+            // 2. ถ้าอัพโหลดผ่าน จึงส่งคำสั่งยืนยัน (Confirm) การคืนเงิน
+            const fd = new FormData();
+            fd.append('action', 'confirm');
+            fd.append('ctr_id', _rfCtrId);
+            try {
+                const res = await fetch('../Manage/process_deposit_refund.php', { method: 'POST', headers: {'X-Requested-With':'XMLHttpRequest'}, body: fd });
+                const data = await res.json();
+                
+                document.getElementById('_rfProofProgress').style.display = 'none';
+                if (data.success) {
+                    if (typeof showSuccessToast === 'function') showSuccessToast('✅ ยืนยันคืนเงินมัดจำเรียบร้อย');
+                    closeRefundModal();
+                    if (typeof refreshWizardTable === 'function') refreshWizardTable();
+                } else {
+                    if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'เกิดข้อผิดพลาด'));
+                    else console.error(data.error || 'เกิดข้อผิดพลาด');
+                    _updateConfirmButtonState();
+                }
+            } catch(e) { 
+                document.getElementById('_rfProofProgress').style.display = 'none';
+                if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); 
                 _updateConfirmButtonState();
             }
-        } catch(e) { 
+        } catch(e) {
+            // Catch any unexpected errors (e.g., from confirmation dialog)
+            console.error('Unexpected error in doConfirmRefund:', e);
             document.getElementById('_rfProofProgress').style.display = 'none';
-            if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดเครือข่าย'); 
+            if (typeof showErrorToast === 'function') showErrorToast('❌ ข้อผิดพลาดที่ไม่คาดคิด');
             _updateConfirmButtonState();
         }
     }
