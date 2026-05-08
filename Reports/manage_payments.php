@@ -601,34 +601,50 @@ $unpaidOnlyTotal  = 0;
 $verifiedFilteredCount = 0;
 $allFilteredCount = 0;
 $cancelledContractCount = 0;
-foreach ($payments as $pay) {
+
+// นับจำนวนรายการตามสถานะ โดยพิจารณาจากกลุ่มรายการที่มี items หลายชิ้น
+foreach ($paymentGroups as $paymentKey => $group) {
+    // ดึง payment ตัวแทนของกลุ่มนี้
+    $pay = $dedupedPayments[$paymentKey] ?? null;
+    if ($pay === null) continue;
+    
     [$payM, $payY] = $getPayMonthYear($pay);
     $monthMatch = ($filterMonth === '' || $payM === $filterMonth);
     $yearMatch  = ($filterYear  === '' || $payY === $filterYear);
-  $scopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active';
-  $scopeMatch = ($filterContractScope === '' || $scopeValue === $filterContractScope);
-  if (!$monthMatch || !$yearMatch || !$scopeMatch) continue;
+    $scopeValue = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true) ? 'cancelled' : 'active';
+    $scopeMatch = ($filterContractScope === '' || $scopeValue === $filterContractScope);
+    
+    if (!$monthMatch || !$yearMatch || !$scopeMatch) continue;
 
-  $allFilteredCount++;
-  $isCancelledContract = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true);
-  if ($isCancelledContract) {
-    $cancelledContractCount++;
-  }
+    $allFilteredCount++;
+    $isCancelledContract = in_array((string)($pay['ctr_status'] ?? ''), ['1', '2'], true);
+    if ($isCancelledContract) {
+        $cancelledContractCount++;
+    }
 
-  if ((int)($pay['_has_rejected_history'] ?? 0) === 1) {
-    $hadRejectedEverCount++;
-  }
+    // นับ "เคยตีกลับ" ถ้ากลุ่มมีรายการที่ถูกตีกลับ
+    if ($group['has_rejected']) {
+        $hadRejectedEverCount++;
+    }
 
-    if (($pay['pay_status'] ?? '') === '0') {
+    // นับตามสถานะของรายการที่มีอยู่ในกลุ่ม เลือกเอาแบบ priority
+    if ($group['has_pending'] && isset($group['amount_by_status']['0']) && $group['amount_by_status']['0'] > 0) {
+        // ถ้ากลุ่มมีรายการ pending ให้นับเป็น pending
         $pendingOnlyCount++;
-        $pendingOnlyTotal += (int)($pay['pay_amount'] ?? 0);
-    } elseif (($pay['pay_status'] ?? '') === 'unpaid') {
-        $unpaidOnlyCount++;
-        $unpaidOnlyTotal += (int)($pay['pay_amount'] ?? 0);
-  } elseif (($pay['pay_status'] ?? '') === '2') {
-    $rejectedOnlyCount++;
-    } elseif (($pay['pay_status'] ?? '') === '1') {
+        $pendingOnlyTotal += (int)($group['amount_by_status']['0'] ?? 0);
+    } elseif ($group['has_verified'] && isset($group['amount_by_status']['1']) && $group['amount_by_status']['1'] > 0) {
+        // ถ้าไม่มี pending แต่มี verified ให้นับเป็น verified
         $verifiedFilteredCount++;
+    } elseif (isset($group['amount_by_status']['unpaid']) && $group['amount_by_status']['unpaid'] > 0) {
+        // ถ้าไม่มี pending/verified แต่มี unpaid ให้นับเป็น unpaid
+        $unpaidOnlyCount++;
+        $unpaidOnlyTotal += (int)($group['amount_by_status']['unpaid'] ?? 0);
+    } elseif ($group['has_rejected']) {
+        // ถ้าเหลือแต่ rejected ให้นับเป็น rejected
+        $rejectedOnlyCount++;
+    } else {
+        // Fallback เป็น pending ถ้ากลุ่มว่างเปล่า
+        $pendingOnlyCount++;
     }
 }
 $totalPaymentCount = count($payments);
@@ -3187,7 +3203,14 @@ main > div:first-of-type,
                       <?php $groupCount = (int)($pay['_group_count'] ?? 1); ?>
                       <?php $groupItemsJson = htmlspecialchars(json_encode($pay['_group_items'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8'); ?>
                       <?php $groupTitle = 'รายการย่อยบิลเดือน ' . ($pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-') . ' ห้อง ' . (string)($pay['room_number'] ?? '-'); ?>
-                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>" class="payment-group-row <?php echo $groupCount > 1 ? 'has-subrows' : ''; ?>"<?php echo $groupCount > 1 ? ' title="คลิกเพื่อดูรายการย่อย"' : ''; ?>>
+                      <?php
+                        // Calculate display status: if group has pending items, show as pending even if representative is verified
+                        $displayPayStatus = (string)($pay['pay_status'] ?? '0');
+                        if ((int)($pay['_has_pending_history'] ?? 0) === 1 && $displayPayStatus !== '0') {
+                          $displayPayStatus = '0';
+                        }
+                      ?>
+                      <tr data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars($displayPayStatus, ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>" class="payment-group-row <?php echo $groupCount > 1 ? 'has-subrows' : ''; ?>"<?php echo $groupCount > 1 ? ' title="คลิกเพื่อดูรายการย่อย"' : ''; ?>>
                         <td style="position:relative;">
                           <?php if ($groupCount > 1): ?>
                             <button type="button" class="expand-btn" onclick="openGroupPaymentsModal(this)" style="background:none;border:none;cursor:pointer;padding:0.2rem;margin-right:0.3rem;" data-group-title="<?php echo htmlspecialchars($groupTitle, ENT_QUOTES, 'UTF-8'); ?>" data-group-items="<?php echo $groupItemsJson; ?>" data-exp-id="<?php echo (int)$pay['exp_id']; ?>" title="ดูรายการย่อย">
@@ -3334,7 +3357,7 @@ main > div:first-of-type,
                     $groupItemsJson = htmlspecialchars(json_encode($pay['_group_items'] ?? [], JSON_UNESCAPED_UNICODE), ENT_QUOTES, 'UTF-8');
                     $groupTitle = 'รายการย่อยบิลเดือน ' . ($pay['exp_month'] ? thaiMonthYear($pay['exp_month']) : '-') . ' ห้อง ' . (string)($pay['room_number'] ?? '-');
                   ?>
-                  <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars((string)($pay['pay_status'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>">
+                  <div class="payment-row-card" data-pay-id="<?php echo (int)$pay['pay_id']; ?>" data-filter-item="payment" data-room="<?php echo htmlspecialchars((string)($pay['room_number'] ?? ''), ENT_QUOTES, 'UTF-8'); ?>" data-status="<?php echo htmlspecialchars($payStatus, ENT_QUOTES, 'UTF-8'); ?>" data-month="<?php echo htmlspecialchars($filterMonthValue, ENT_QUOTES, 'UTF-8'); ?>" data-year="<?php echo htmlspecialchars($filterYearValue, ENT_QUOTES, 'UTF-8'); ?>" data-contract-scope="<?php echo $contractScopeValue; ?>" data-has-rejected="<?php echo (int)($pay['_has_rejected_history'] ?? 0); ?>">
                     <div class="payment-row-top">
                       <div class="payment-row-main">
                         <strong>#<?php echo htmlspecialchars((string)($pay['display_pay_id'] ?? 'N/A')); ?></strong>
