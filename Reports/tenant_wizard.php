@@ -2275,6 +2275,7 @@ main > div:first-of-type,
 
                                 $isCancelPending = ((string)($tenant['ctr_status'] ?? '') === '2');
                                 $isBookingCancelled = ((string)($tenant['bkg_status'] ?? '') === '5');
+                                $refundDone = (int)($tenant['refund_confirmed'] ?? 0) === 1;
 
                                 $step5CircleClass = $step5 ? 'current' : (($currentStep == 5) ? 'current' : 'pending');
                                 $step5CircleLabel = ($step5 || $currentStep == 5) ? "<svg class=\"bill-anim\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect class=\"b-doc\" x=\"5\" y=\"2\" width=\"14\" height=\"18\" rx=\"2\" stroke=\"rgba(255,255,255,0.85)\" stroke-width=\"1.8\" fill=\"rgba(255,255,255,0.1)\"/><line class=\"b-line1\" x1=\"8\" y1=\"7\" x2=\"16\" y2=\"7\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line2\" x1=\"8\" y1=\"11\" x2=\"16\" y2=\"11\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line3\" x1=\"8\" y1=\"15\" x2=\"13\" y2=\"15\" stroke=\"rgba(255,255,255,0.7)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/></svg>" : '5';
@@ -2359,13 +2360,21 @@ main > div:first-of-type,
 
                                 // ถ้าผู้เช่าแจ้งยกเลิกสัญญา — override step5 เฉพาะกรณีที่ผ่านขั้นตอนเช็คอิน (step 4) ไปแล้ว
                                 if ($isCancelPending && $step4 == 1) {
-                                    $step5CircleClass = 'cancel-pending';
-                                    $step5CircleLabel = '<svg class="cancel-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
-                                        . '<circle class="ca-ring" cx="12" cy="12" r="9" stroke="#f87171" stroke-width="2.5" stroke-dasharray="14 42" stroke-linecap="round"/>'
-                                        . '<line x1="8" y1="8" x2="16" y2="16" stroke="#f87171" stroke-width="2.2" stroke-linecap="round"/>'
-                                        . '<line x1="16" y1="8" x2="8" y2="16" stroke="#f87171" stroke-width="2.2" stroke-linecap="round"/>'
-                                        . '</svg>';
-                                    $step5Tooltip = '5. แจ้งยกเลิกสัญญาแล้ว';
+                                    if ($refundDone) {
+                                        // ถ้าคืนเงินเสร็จแล้ว แสดง checkmark
+                                        $step5CircleClass = 'completed';
+                                        $step5CircleLabel = '✓';
+                                        $step5Tooltip = '5. คืนเงินมัดจำเสร็จแล้ว';
+                                    } else {
+                                        // ถ้ายังไม่คืนเงิน แสดง X mark เพื่อติดตามการคืนเงิน
+                                        $step5CircleClass = 'cancel-pending';
+                                        $step5CircleLabel = '<svg class="cancel-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">'
+                                            . '<circle class="ca-ring" cx="12" cy="12" r="9" stroke="#f87171" stroke-width="2.5" stroke-dasharray="14 42" stroke-linecap="round"/>'
+                                            . '<line x1="8" y1="8" x2="16" y2="16" stroke="#f87171" stroke-width="2.2" stroke-linecap="round"/>'
+                                            . '<line x1="16" y1="8" x2="8" y2="16" stroke="#f87171" stroke-width="2.2" stroke-linecap="round"/>'
+                                            . '</svg>';
+                                        $step5Tooltip = '5. แจ้งยกเลิกสัญญาแล้ว';
+                                    }
                                 }
 
                                 if ($isCancelPending) {
@@ -2399,7 +2408,9 @@ main > div:first-of-type,
                                     ENT_QUOTES,
                                     'UTF-8'
                                 );
-                                $canOpenStep5Circle = (int)$tenant['ctr_id'] > 0;
+                                
+                                // ป้องกันการคลิกปุ่มขั้นตอน 5 หากการคืนเงินเสร็จแล้ว
+                                $canOpenStep5Circle = (int)$tenant['ctr_id'] > 0 && !($isCancelPending && $step4 == 1 && $refundDone);
 
                                 // Advance currentStep based on completed steps
                                 // Ensure we move to the next action step based on what's completed
@@ -2458,7 +2469,6 @@ main > div:first-of-type,
                                         <?php if ($isCancelPending && $step4 == 1):
                                               $ctrIdCancel = (int)($tenant['ctr_id'] ?? $tenant['workflow_ctr_id'] ?? 0);
                                               $termDateDisplay = !empty($tenant['term_date']) ? thaiDate($tenant['term_date']) : '-';
-                                              $refundDone = (int)($tenant['refund_confirmed'] ?? 0) === 1;
                                               $refundPending = (int)($tenant['refund_pending'] ?? 0) === 1;
                                               $bankName = $tenant['bank_name'] ?? '';
                                               $bankAccName = $tenant['bank_account_name'] ?? '';
