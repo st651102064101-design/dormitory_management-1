@@ -195,9 +195,9 @@ try {
             
             // Auto-commit the uploaded file to git
             $relativeFilePath = 'Public/Assets/Images/Payments/' . $newName;
-            GitHelper::autoCommitFile($relativeFilePath);
-            if ($exitCode !== 0 && $exitCode !== 1) {
-                error_log("Git auto-commit warning: " . implode("\n", $output));
+            $gitResult = GitHelper::autoCommitFile($relativeFilePath);
+            if (!$gitResult['success']) {
+                error_log("Git auto-commit warning: " . $gitResult['message']);
             }
 
             $dbPath = 'dormitory_management/Public/Assets/Images/Payments/' . $newName;
