@@ -5000,16 +5000,13 @@ main > div:first-of-type,
 
     // === ยืนยันยกเลิกสัญญา (ctr_status → 1) ===
     async function confirmCancelContract(ctrId, tntName, btn) {
-        let confirmed = false;
-        const msg = `ยืนยันการยกเลิกสัญญาของ "${tntName}" หรือไม่?\n\nการดำเนินการนี้จะเปลี่ยนสถานะสัญญาเป็น "ยกเลิกแล้ว" และไม่สามารถย้อนกลับได้`;
-        if (typeof showAppleConfirm === 'function') {
-            confirmed = await showAppleConfirm(msg, 'ยืนยันยกเลิกสัญญา');
-        } else {
-            confirmed = window.confirm(msg);
-        }
-        if (!confirmed) return;
-
-        if (btn) { btn.disabled = true; btn.textContent = 'กำลังดำเนินการ...'; }
+        if (!btn) return;
+        
+        // Show loading state
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = 'กำลังดำเนินการ...';
+        if (typeof showLoadingToast === 'function') showLoadingToast('กำลังยกเลิกสัญญา...');
 
         try {
             const fd = new FormData();
@@ -5025,20 +5022,22 @@ main > div:first-of-type,
 
             if (data.success) {
                 if (typeof showSuccessToast === 'function') showSuccessToast('✅ ยกเลิกสัญญาเรียบร้อยแล้ว');
-                else alert('ยกเลิกสัญญาเรียบร้อยแล้ว');
                 refreshWizardTable();
             } else if (data.need_refund) {
-                if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันยกเลิกสัญญา'; }
+                btn.disabled = false;
+                btn.textContent = originalText;
                 if (typeof showErrorToast === 'function') showErrorToast('⚠️ ' + data.error);
                 else alert(data.error);
             } else {
-                if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันยกเลิกสัญญา'; }
+                btn.disabled = false;
+                btn.textContent = originalText;
                 if (typeof showErrorToast === 'function') showErrorToast('❌ ' + (data.error || 'ไม่สามารถยกเลิกสัญญาได้'));
                 else alert(data.error || 'ไม่สามารถยกเลิกสัญญาได้');
             }
         } catch (err) {
             console.error(err);
-            if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันยกเลิกสัญญา'; }
+            btn.disabled = false;
+            btn.textContent = originalText;
             if (typeof showErrorToast === 'function') showErrorToast('❌ เกิดข้อผิดพลาดในการเชื่อมต่อ');
         }
     }
