@@ -2277,6 +2277,10 @@ main > div:first-of-type,
                                 $isBookingCancelled = ((string)($tenant['bkg_status'] ?? '') === '5');
                                 $refundDone = (int)($tenant['refund_confirmed'] ?? 0) === 1;
 
+                                // Initialize cancel-pending circle click variables
+                                $showCancelPendingCircleClick = false;
+                                $openCancelPendingCircleJs = '';
+
                                 $step5CircleClass = $step5 ? 'current' : (($currentStep == 5) ? 'current' : 'pending');
                                 $step5CircleLabel = ($step5 || $currentStep == 5) ? "<svg class=\"bill-anim\" viewBox=\"0 0 24 24\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect class=\"b-doc\" x=\"5\" y=\"2\" width=\"14\" height=\"18\" rx=\"2\" stroke=\"rgba(255,255,255,0.85)\" stroke-width=\"1.8\" fill=\"rgba(255,255,255,0.1)\"/><line class=\"b-line1\" x1=\"8\" y1=\"7\" x2=\"16\" y2=\"7\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line2\" x1=\"8\" y1=\"11\" x2=\"16\" y2=\"11\" stroke=\"#fff\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/><line class=\"b-line3\" x1=\"8\" y1=\"15\" x2=\"13\" y2=\"15\" stroke=\"rgba(255,255,255,0.7)\" stroke-width=\"1.5\" stroke-linecap=\"round\" stroke-dasharray=\"8\" stroke-dashoffset=\"8\"/></svg>" : '5';
                                 $step5Tooltip = '5. เริ่มบิลรายเดือน';
@@ -2418,6 +2422,23 @@ main > div:first-of-type,
                                 
                                 // ป้องกันการคลิกปุ่มขั้นตอน 5 เมื่อ: (1) สัญญา pending (status=2) หรือ (2) การคืนเงินเสร็จแล้ว
                                 $canOpenStep5Circle = (int)$tenant['ctr_id'] > 0 && !($isCancelPending && $step4 == 1 && $refundDone) && ($canRefund || !$isCancelPending);
+                                
+                                // สำหรับ cancel-pending: ให้คลิกได้เพื่อดูรายละเอียดการยกเลิก
+                                $showCancelPendingCircleClick = $isCancelPending && $step4 == 1 && !$refundDone;
+                                if ($showCancelPendingCircleClick) {
+                                    $bankName = $tenant['bank_name'] ?? '';
+                                    $bankAccName = $tenant['bank_account_name'] ?? '';
+                                    $bankAccNum = $tenant['bank_account_number'] ?? '';
+                                    $termDateDisplay = !empty($tenant['term_date']) ? thaiDate($tenant['term_date']) : '-';
+                                    $openCancelPendingCircleJs = 'viewTerminationDetails('
+                                        . htmlspecialchars(json_encode($tenant['tnt_name']), ENT_QUOTES, 'UTF-8') . ', '
+                                        . htmlspecialchars(json_encode($tenant['room_number'] ?? '-'), ENT_QUOTES, 'UTF-8') . ', '
+                                        . htmlspecialchars(json_encode($termDateDisplay), ENT_QUOTES, 'UTF-8') . ', '
+                                        . htmlspecialchars(json_encode($bankName), ENT_QUOTES, 'UTF-8') . ', '
+                                        . htmlspecialchars(json_encode($bankAccName), ENT_QUOTES, 'UTF-8') . ', '
+                                        . htmlspecialchars(json_encode($bankAccNum), ENT_QUOTES, 'UTF-8')
+                                        . ')';
+                                }
 
                                 // Advance currentStep based on completed steps
                                 // Ensure we move to the next action step based on what's completed
@@ -2467,7 +2488,7 @@ main > div:first-of-type,
                                                 <?php echo $step4 ? '✓' : ($currentStep == 4 ? '<svg class="checkin-anim" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="9" y="2" width="10" height="20" rx="1.5" stroke="rgba(255,255,255,0.8)" stroke-width="1.8" fill="rgba(255,255,255,0.08)"/><circle cx="16.5" cy="12" r="1.2" fill="rgba(255,255,255,0.8)"/><g class="c-arrow"><line x1="2" y1="12" x2="9" y2="12" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><polyline points="6,9 9.5,12 6,15" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g></svg>' : '4'); ?>
                                             </div>
                                             <span class="step-arrow" aria-hidden="true"></span>
-                                            <div class="step-circle <?php echo $step5CircleClass; ?>" data-ctr-id="<?php echo (int)$tenant['ctr_id']; ?>" data-tooltip="<?php echo htmlspecialchars($step5Tooltip, ENT_QUOTES, 'UTF-8'); ?>" <?php if ($canOpenStep5Circle): ?>role="button" tabindex="0" onclick="<?php echo $openBillingModalJsEscaped; ?>" onkeydown="<?php echo $openBillingModalKeydownEscaped; ?>" style="cursor: pointer;"<?php endif; ?>>
+                                            <div class="step-circle <?php echo $step5CircleClass; ?>" data-ctr-id="<?php echo (int)$tenant['ctr_id']; ?>" data-tooltip="<?php echo htmlspecialchars($step5Tooltip, ENT_QUOTES, 'UTF-8'); ?>" <?php if ($canOpenStep5Circle || $showCancelPendingCircleClick): ?>role="button" tabindex="0" onclick="<?php if ($showCancelPendingCircleClick): echo $openCancelPendingCircleJs; else: echo $openBillingModalJsEscaped; endif; ?>" onkeydown="<?php if (!$showCancelPendingCircleClick): echo $openBillingModalKeydownEscaped; endif; ?>" style="cursor: pointer;"<?php endif; ?>>
                                                 <?php echo $step5CircleLabel; ?>
                                             </div>
                                         </div>
