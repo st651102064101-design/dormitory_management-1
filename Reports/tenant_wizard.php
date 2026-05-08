@@ -1132,44 +1132,19 @@ $currentMonthDisplay = thaiMonthYear(date('Y-m-d'));
             animation: wizShake 0.4s ease-in-out;
         }
         .step-circle.cancel-pending {
-            display: inline-flex !important;
-            align-items: center;
-            gap: 0.35rem;
-            padding: 0.28rem 0.7rem !important;
-            width: auto !important;
-            height: auto !important;
-            border-radius: 20px !important;
-            background: rgba(239, 68, 68, 0.12) !important;
-            border: 1px solid rgba(239, 68, 68, 0.4) !important;
-            color: #f87171 !important;
-            font-size: 0.82rem;
-            font-weight: 700;
-            box-shadow: none !important;
-            transition: all 0.2s ease;
-            cursor: pointer !important;
-        }
-        .step-circle.cancel-pending:hover {
-            background: rgba(239, 68, 68, 0.2) !important;
-            transform: none !important;
-        }
-        .step-circle.cancel-pending:hover::before,
-        .step-circle.cancel-pending:hover::after {
-            display: none !important;
-        }
-        .step-circle.cancel-pending:focus-visible {
-            outline: 2px solid #f87171;
-            outline-offset: 2px;
+            background: linear-gradient(135deg, rgba(239,68,68,0.18), rgba(239,68,68,0.28));
+            color: #f87171;
+            border: 1.5px solid rgba(239,68,68,0.65);
+            box-shadow: 0 0 0 3px rgba(239,68,68,0.15), 0 3px 10px rgba(239,68,68,0.2);
+            animation: cancelPulse 1.8s ease-in-out infinite;
         }
         @keyframes cancelPulse {
-            0%, 100% { box-shadow: none; }
-            50% { box-shadow: none; }
+            0%, 100% { box-shadow: 0 0 0 3px rgba(239,68,68,0.15), 0 3px 10px rgba(239,68,68,0.2); }
+            50% { box-shadow: 0 0 0 6px rgba(239,68,68,0.28), 0 3px 14px rgba(239,68,68,0.4); }
         }
         .cancel-anim {
-            width: 16px; 
-            height: 16px;
-            display: inline-block;
-            flex-shrink: 0;
-            stroke-width: 2;
+            width: 20px; height: 20px;
+            display: block;
         }
         .cancel-anim .ca-ring {
             animation: cancelRingSpin 2s linear infinite;
