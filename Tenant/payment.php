@@ -61,6 +61,13 @@ try {
                           AND u.utl_water_end IS NOT NULL
                           AND u.utl_elec_end IS NOT NULL
                   )
+                  OR EXISTS (
+                      SELECT 1
+                      FROM payment p
+                      WHERE p.exp_id = expense.exp_id
+                          AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+                  )
+                  OR (expense.exp_elec_chg = 0 AND expense.exp_water = 0 AND expense.room_price > 0)
               )
               AND DATE_FORMAT(exp_month, '%Y-%m') >= ?
               AND DATE_FORMAT(exp_month, '%Y-%m') <= ?

@@ -46,7 +46,8 @@ try {
         WHERE e.ctr_id = ?
           AND DATE_FORMAT(e.exp_month, '%Y-%m') >= ?
           AND DATE_FORMAT(e.exp_month, '%Y-%m') <= ?
-          AND EXISTS (
+          AND (
+                  EXISTS (
                       SELECT 1
                       FROM utility u
                       WHERE u.ctr_id = e.ctr_id
@@ -55,6 +56,14 @@ try {
                           AND u.utl_water_end IS NOT NULL
                           AND u.utl_elec_end IS NOT NULL
                   )
+                  OR EXISTS (
+                      SELECT 1
+                      FROM payment p
+                      WHERE p.exp_id = e.exp_id
+                          AND TRIM(COALESCE(p.pay_remark, '')) = 'มัดจำ'
+                  )
+                  OR (e.exp_elec_chg = 0 AND e.exp_water = 0 AND e.room_price > 0)
+              )
         ORDER BY e.exp_month DESC, e.exp_id DESC
     ");
     $stmt->execute([$contract['ctr_id'], $firstBillMonth, $currentBillMonth]);
