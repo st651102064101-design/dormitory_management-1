@@ -3911,9 +3911,69 @@ main > div:first-of-type,
         }
         
         body.innerHTML = proofHtml;
-        footer.innerHTML = `<button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(${payId}, '1', ${expId});" style="display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยันการชำระเงิน</button>`;
+        footer.innerHTML = `<div style="display:flex;gap:0.75rem;justify-content:center;">
+          <button type="button" class="action-btn btn-verify" onclick="updatePaymentStatus(${payId}, '1', ${expId});" style="display:flex;align-items:center;gap:6px;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><polyline points="20 6 9 17 4 12"></polyline></svg>ยืนยันการชำระเงิน</button>
+          <button type="button" class="action-btn" onclick="rejectPaymentFromProof(${payId}, ${expId});" style="display:flex;align-items:center;gap:6px;background-color:#ef4444;color:#fff;"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>ตีกลับ</button>
+        </div>`;
         
         modal.classList.add('active');
+      }
+
+      function rejectPaymentFromProof(payId, expId) {
+        if (typeof showAppleConfirm === 'function') {
+          showAppleConfirm('คุณแน่ใจว่าต้องการตีกลับการชำระเงินนี้ใช่หรือไม่?', 'ตีกลับ').then(confirmed => {
+            if (confirmed) {
+              doRejectPaymentFromProof(payId, expId);
+            }
+          });
+        } else {
+          if (confirm('คุณแน่ใจว่าต้องการตีกลับการชำระเงินนี้ใช่หรือไม่?')) {
+            doRejectPaymentFromProof(payId, expId);
+          }
+        }
+      }
+
+      function doRejectPaymentFromProof(payId, expId) {
+        const formData = new URLSearchParams();
+        formData.append('csrf_token', '<?php echo $csrfToken; ?>');
+        formData.append('pay_id', String(payId));
+        formData.append('pay_status', '2');
+        formData.append('exp_id', String(expId));
+
+        fetch('/dormitory_management/Manage/update_payment_status.php', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: formData.toString(),
+          credentials: 'include'
+        })
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            if (typeof showSuccessToast === 'function') {
+              showSuccessToast('ตีกลับการชำระเงินเรียบร้อย');
+            } else {
+              alert('ตีกลับการชำระเงินเรียบร้อย');
+            }
+            setTimeout(() => { 
+              closeProofModal();
+              location.reload(); 
+            }, 1500);
+          } else {
+            if (typeof showErrorToast === 'function') {
+              showErrorToast(data.error || 'เกิดข้อผิดพลาด');
+            } else {
+              alert(data.error || 'เกิดข้อผิดพลาด');
+            }
+          }
+        })
+        .catch(err => {
+          if (typeof showErrorToast === 'function') {
+            showErrorToast('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์');
+          } else {
+            alert('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์');
+          }
+          console.error('Reject error:', err);
+        });
       }
 
       function rejectVerifiedPayment(payId, expId) {
