@@ -573,13 +573,19 @@ $stats = [
     'total_verified' => 0,
 ];
 foreach ($payments as $pay) {
-  if ($pay['pay_status'] === '1') {
-        $stats['verified']++;
-        $stats['total_verified'] += (int)($pay['pay_amount'] ?? 0);
+  // ใช้ effective display status - ถ้า group มี pending item ให้นับเป็น pending แม้ representative เป็น verified
+  $effectiveStatus = (string)($pay['pay_status'] ?? '0');
+  if ((int)($pay['_has_pending_history'] ?? 0) === 1 && $effectiveStatus !== '0') {
+    $effectiveStatus = '0';
+  }
+
+  if ($effectiveStatus === '1') {
+    $stats['verified']++;
+    $stats['total_verified'] += (int)($pay['pay_amount'] ?? 0);
   } else {
     $stats['pending']++;
     $stats['total_pending'] += (int)($pay['pay_amount'] ?? 0);
-    }
+  }
 }
 
 // Helper: ดึงเดือน/ปีของ payment (ใช้ exp_month ก่อน ถ้าไม่มีใช้ pay_date)
