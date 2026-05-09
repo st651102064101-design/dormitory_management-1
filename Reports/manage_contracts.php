@@ -2987,9 +2987,9 @@ body.loading-skeleton {
 
     /* ---- Deposit Refund Section ---- */
     function _renderRefundSection(data, t, c) {
-      // ห้องที่ status = ปกติ (0) ต้องจัดการพวกนี้ไม่ได้ 
-      // คืนเงินมัดจำสามารถทำได้เฉพาะเมื่อสัญญาถูกยกเลิก (status = 1) เท่านั้น
-      if (c.ctr_status !== '1') return '';
+      // ห้องที่ status = ปกติ (0) ต้องจัดการพวกนี้ไม่ได้
+      // คืนเงินมัดจำสามารถทำได้เฉพาะเมื่อสัญญาถูกยกเลิกหรือแจ้งยกเลิก (status = 1 หรือ 2)
+      if (c.ctr_status !== '1' && c.ctr_status !== '2') return '';
 
       const rf = data.refund;
       const ctrId = c.ctr_id;
